@@ -979,12 +979,12 @@ class IrafPythonTask(IrafTask):
 				if isinstance(par, irafpar.IrafParL):
 					# list parameters get passed as objects
 					pl.append(par)
-				elif par.isLegal():
+				elif par.mode == "h" and not par.isLegal():
+					# illegal hidden value (generally undefined) passed as None
+					pl.append(None)
+				else:
 					# other parameters get passed by value
 					pl.append(par.get(native=1))
-				else:
-					# illegal (generally undefined) values passed as None
-					pl.append(None)
 		# run function on the parameters
 		apply(self._pyFunction, pl)
 
