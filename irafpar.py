@@ -2035,7 +2035,8 @@ class IrafParList:
 				value = task.getParam(value[1:],native=native,mode="h")
 			except KeyError:
 				# if task is not known, use generic function to get param
-				value = iraf.clParGet(value[1:],native=native,mode="h")
+				value = iraf.clParGet(value[1:],native=native,mode="h",
+					prompt=prompt)
 		return value
 
 	def setParam(self,param,value):

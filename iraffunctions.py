@@ -740,7 +740,7 @@ def listVars(prefix="", equals="\t= ", **kw):
 # these do not have extra keywords because they should not
 # be called as tasks
 
-def clParGet(paramname,pkg=None,native=1,mode=None):
+def clParGet(paramname,pkg=None,native=1,mode=None,prompt=1):
 	"""Return value of IRAF parameter
 
 	Parameter can be a cl task parameter, a package parameter for
@@ -751,7 +751,7 @@ def clParGet(paramname,pkg=None,native=1,mode=None):
 	# if taskname is '_', use current package as task
 	if paramname[:2] == "_.":
 		paramname = pkg.getName() + paramname[1:]
-	return pkg.getParam(paramname,native=native,mode=mode)
+	return pkg.getParam(paramname,native=native,mode=mode,prompt=prompt)
 
 def envget(var,default=""):
 	"""Get value of IRAF or OS environment variable"""
@@ -912,7 +912,7 @@ def clDms(x,digits=1,deg=1):
 def defpar(paramname):
 	"""Returns true if parameter is defined"""
 	try:
-		value = clParGet(paramname)
+		value = clParGet(paramname,prompt=0)
 		return 1
 	except IrafError, e:
 		# ambiguous name is an error, not found is OK

@@ -435,7 +435,7 @@ class IrafTask:
 			raise iraf.IrafError("Attempt to set unknown parameter " +
 				qualifiedName)
 
-	def getParam(self,qualifiedName,native=0,mode=None,exact=0):
+	def getParam(self,qualifiedName,native=0,mode=None,exact=0,prompt=1):
 		"""Return parameter specified by qualifiedName.
 
 		qualifiedName can be a simple parameter name or can be
@@ -445,6 +445,8 @@ class IrafTask:
 		floating point parameter.)  Default is return string value.
 		If exact is set, parameter name must match exactly.  Default
 		is to do minimum match.
+		If prompt is 0, does not prompt for parameter value (even if
+		parameter is undefined.)
 		"""
 
 		package, task, paramname, pindex, field = _splitName(qualifiedName)
@@ -452,7 +454,7 @@ class IrafTask:
 		if (not task) or (task == self._name):
 			# no task specified, just search the standard dictionaries
 			return self._getParValue(paramname, pindex, field, native, mode,
-				exact=exact)
+				exact=exact, prompt=prompt)
 
 		# when task is specified, ignore exact flag -- always do minmatch
 
@@ -466,7 +468,7 @@ class IrafTask:
 				if dictname == task:
 					if paramdict.has_key(paramname):
 						return self._getParFromDict(paramdict, paramname,
-								pindex, field, native, mode="h")
+								pindex, field, native, mode="h", prompt=prompt)
 					else:
 						raise iraf.IrafError("Unknown parameter requested: " +
 							qualifiedName)
@@ -475,7 +477,8 @@ class IrafTask:
 		if package: task = package + '.' + task
 		try:
 			tobj = iraf.getTask(task)
-			return tobj._getParValue(paramname, pindex, field, native, mode="h")
+			return tobj._getParValue(paramname, pindex, field, native, mode="h",
+				prompt=prompt)
 		except KeyError:
 			raise iraf.IrafError("Could not find task " + task +
 				" to get parameter " + qualifiedName)
@@ -483,14 +486,15 @@ class IrafTask:
 			raise iraf.IrafError(str(e) + "\nFailed to get parameter " +
 				qualifiedName)
 
-	def _getParValue(self, paramname, pindex, field, native, mode, exact=0):
+	def _getParValue(self, paramname, pindex, field, native, mode, exact=0,
+			prompt=1):
 		# search the standard dictionaries for the parameter
 		# most of the time it will be in the active task dictionary
 		paramdict = self.getParDict()
 		try:
 			if paramdict.has_key(paramname,exact=exact):
 				return self._getParFromDict(paramdict, paramname, pindex,
-								field, native, mode)
+								field, native, mode=mode, prompt=prompt)
 		except minmatch.AmbiguousKeyError, e:
 			# re-raise the error with a bit more info
 			raise iraf.IrafError("Cannot get parameter `%s'\n%s" %
@@ -503,7 +507,7 @@ class IrafTask:
 		for dictname, paramdict in self._parDictList:
 			if paramdict.has_key(paramname,exact=exact):
 				return self._getParFromDict(paramdict, paramname, pindex,
-								field, native, mode="h")
+								field, native, mode="h", prompt=prompt)
 		else:
 			raise iraf.IrafError("Unknown parameter requested: " +
 				paramname)
@@ -767,7 +771,7 @@ class IrafTask:
 		self._parDictList = parDictList
 
 	def _getParFromDict(self, paramdict, paramname, pindex, field,
-			native, mode):
+			native, mode, prompt):
 		# helper method for getting parameter value (with indirection)
 		# once we find a dictionary that contains it
 		par = paramdict[paramname]
@@ -775,7 +779,7 @@ class IrafTask:
 		if pmode == "a":
 			pmode = mode or self.getMode()
 		v = par.get(index=pindex,field=field,
-					native=native,mode=pmode)
+					native=native,mode=pmode,prompt=prompt)
 		if type(v) is types.StringType and v[:1] == ")":
 
 			# parameter indirection: call getParam recursively
@@ -787,7 +791,7 @@ class IrafTask:
 			# ')task.param.p_min' refers to the min or
 			# choice string, etc.
 
-			return self.getParam(v[1:],native=native,mode="h")
+			return self.getParam(v[1:],native=native,mode="h",prompt=prompt)
 		else:
 			return v
 
