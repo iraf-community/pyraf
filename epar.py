@@ -4,13 +4,13 @@ $Id$
 
 M.D. De La Pena, 2000 February 04
 """
-# System level modules
+#System level modules
 from Tkinter import *
 from types import *
 from tkMessageBox import askokcancel
 import os, sys, string
 
-#PyRAF modules
+# PyRAF modules
 import iraf, irafpar, irafhelp, cStringIO, wutil
 from irafglobals import pyrafDir, userWorkingHome, IrafError
 
