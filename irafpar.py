@@ -43,6 +43,7 @@ _string_types = [ 's', 'f', 'struct', '*imcur', '*struct', '*s', '*i']
 _real_types = [ 'r', 'd' ]
 
 def IrafParFactory(fields,filename=None,strict=0):
+
 	"""IRAF parameter factory
 
 	Set the strict parameter to non-zero value to do stricter parsing
@@ -95,7 +96,9 @@ del flist, field
 # -----------------------------------------------------
 
 class IrafPar:
+
 	"""IRAF parameter base class"""
+
 	def __init__(self,fields,filename,strict=0):
 		orig_len = len(fields)
 		if orig_len < 3:
@@ -116,7 +119,7 @@ class IrafPar:
 		self.prompt = None
 
 	def setChoice(self,s,strict=0):
-		# set choice parameter from string s
+		"""Set choice parameter from string s"""
 		clist = _getChoice(self,s,strict)
 		newchoice = len(clist)*[0]
 		for i in xrange(len(clist)):
@@ -195,14 +198,15 @@ class IrafPar:
 			return string.join(sval,' ')
 
 	def toString(self, value):
-		# convert a single (non-array) value of the appropriate type for this
-		# parameter to a string
+		"""Convert a single (non-array) value of the appropriate type for
+		this parameter to a string"""
 		if value == None:
 			return ""
 		else:
 			return str(value)
 
 	def getField(self, field, native=0):
+		"""Get a parameter field value"""
 		try:
 			field = _getFieldDict[field]
 		except KeyError, e:
@@ -263,6 +267,7 @@ class IrafPar:
 			return
 
 	def setField(self, value, field, check=1):
+		"""Set a parameter field value"""
 		try:
 			field = _setFieldDict[field]
 		except KeyError, e:
@@ -286,9 +291,13 @@ class IrafPar:
 			raise RuntimeError("Program bug in IrafPar.setField()" +
 				"Requested field " + field + " for parameter " + self.name)
 
-	# raises exception if value is not permitted for this parameter
-	# otherwise returns the value (converted to right type)
 	def checkValue(self,value,strict=0):
+		"""Check and convert a parameter value.
+
+		Raises an exception if the value is not permitted for this
+		parameter.  Otherwise returns the value (converted to the
+		right type.)
+		"""
 		v = self.coerceValue(value,strict)
 		if self.dim == 1:
 			return self.checkOneValue(v)
@@ -296,12 +305,14 @@ class IrafPar:
 			for i in xrange(self.dim): self.checkOneValue(v[i])
 			return v
 
-	# checks single value to see if it is in range or choice list
-	# ignores indirection strings starting with ")"
-	# assumes v has already been converted to right value by
-	# coerceOneValue
-	# returns value if OK, or raises ValueError if not OK
 	def checkOneValue(self,v):
+		"""Checks a single value to see if it is in range or choice list
+
+		Ignores indirection strings starting with ")".  Assumes
+		v has already been converted to right value by
+		coerceOneValue.  Returns value if OK, or raises
+		ValueError if not OK.
+		"""
 		if v == None or v == "" or \
 				((type(v) is StringType) and (v[0] == ")")):
 			return v
@@ -314,14 +325,19 @@ class IrafPar:
 				self.name)
 		return v
 
-	# coerce a scalar parameter to the appropriate type
-	# should accept None or null string
 	def coerceOneValue(self,value,strict=0):
+		"""Coerce a scalar parameter to the appropriate type
+		
+		Should accept None or null string.
+		"""
 		raise RuntimeError("Bug: base class IrafPar cannot be used directly")
 
-	# coerce parameter to appropriate type
-	# should accept None or null string
 	def coerceValue(self,value,strict=0):
+		"""Coerce parameter to appropriate type
+		
+		Should accept None or null string.  Must be an array for
+		an array parameter.
+		"""
 		if self.dim == 1:
 			return self.coerceOneValue(value,strict)
 		if (type(value) not in [ListType,TupleType]) or len(value) != self.dim:
@@ -332,8 +348,8 @@ class IrafPar:
 			v[i] = self.coerceOneValue(value[i],strict)
 		return v
 
-	# return pretty list description of parameter
 	def pretty(self,verbose=0):
+		"""Return pretty list description of parameter"""
 		# split prompt lines and add blanks in later lines to align them
 		plines = string.split(self.prompt,'\n')
 		for i in xrange(len(plines)-1): plines[i+1] = 32*' ' + plines[i+1]
@@ -365,8 +381,8 @@ class IrafPar:
 				s = s + " <= " + str(self.max)
 		return s
 
-	# return readable description of parameter
 	def __str__(self):
+		"""Return readable description of parameter"""
 		s = "<IrafPar " + self.name + " " + self.type
 		if self.dim > 1: s = s + "[" + str(self.dim) + "]"
 		s = s + " " + self.mode + " " + `self.value`
@@ -384,15 +400,18 @@ class IrafPar:
 # -----------------------------------------------------
 
 class IrafParS(IrafPar):
+
 	"""IRAF string parameter class"""
+
 	def __init__(self,fields,filename,strict=0):
 		IrafPar.__init__(self,fields,filename,strict)
 		orig_len = len(fields)
 		while len(fields) < 7: fields.append("")
 		#
 		self.value = fields[3]
-		# string (s) can have choice of values; min,max must be null for others
-		# if not in strict mode, allow file (f) to act just like string (s)
+		# string (s) can have choice of values; min,max must be null for
+		# others if not in strict mode, allow file (f) to act just like
+		# string (s)
 		if self.type == "s" or ((not strict) and (self.type == "f")):
 			# only min can be defined and it must have choices
 			if fields[4] != "":
@@ -424,14 +443,22 @@ class IrafParS(IrafPar):
 						strict, irafpar=self)
 		self.prompt = _removeEscapes(fields[6])
 		# check parameter to see if it is correct
-		self.checkValue(self.value,strict)
+		try:
+			self.checkValue(self.value,strict)
+		except ValueError, e:
+			warning("Illegal initial value for parameter\n" + str(e),
+				strict, irafpar=self, exception=ValueError)
+			# Set to null string, just like IRAF
+			self.value = ""
+
 	def setChoice(self,s,strict=0):
-		# set choice parameter and min-match dictionary from string
+		"""Set choice parameter and min-match dictionary from string"""
 		self.choice = _getChoice(self,s,strict)
 		# minimum-match dictionary for choice list
 		# value is full name of choice parameter
 		self.mmchoice = minmatch.MinMatchDict()
 		for c in self.choice: self.mmchoice.add(c, c)
+
 	def coerceOneValue(self,value,strict=0):
 		if value == None:
 			return ""
