@@ -1272,7 +1272,11 @@ class glColorManager:
         if self.rgbamode:
             Ptogl.cursorTrue = self.config.defaultColors[self.config.cursorColor]
         else:
-            Ptogl.cursorColor = self.indexmap[self.config.cursorColor]
+            # cursor color is result of xor-ing desired cursor color with
+            # background color
+            fgcolor = self.indexmap[self.config.cursorColor]
+            bgcolor = self.indexmap[0]
+            Ptogl.cursorColor = fgcolor ^ bgcolor
 
     def setDrawingColor(self, irafColorIndex):
 
