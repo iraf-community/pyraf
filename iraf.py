@@ -7,7 +7,7 @@ R. White, 1999 Jan 25
 """
 
 import sys, os, string, re, types, time, struct
-import irafpar, irafexecute, minmatch
+import irafpar, irafexecute, irafutils, minmatch
 from iraftask import *
 import irafnames
 
@@ -298,7 +298,7 @@ def listpkgs():
 		keylist.sort()
 		# append '/' to identify packages
 		for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
-		_printcols(keylist)
+		irafutils.printCols(keylist)
 
 def listloaded():
 	"""List loaded IRAF packages"""
@@ -309,7 +309,7 @@ def listloaded():
 		keylist.sort()
 		# append '/' to identify packages
 		for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
-		_printcols(keylist)
+		irafutils.printCols(keylist)
 
 def listtasks(pkglist=None,hidden=0):
 	"""List IRAF tasks, optionally specifying a list of packages to include.
@@ -356,12 +356,12 @@ def listtasks(pkglist=None,hidden=0):
 				else:
 					if len(tlist) and pkgdict.has_key(lastpkg):
 						print lastpkg + '/:'
-						_printcols(tlist)
+						irafutils.printCols(tlist)
 					tlist = [task]
 					lastpkg = pkg
 		if len(tlist) and pkgdict.has_key(lastpkg):
 			print lastpkg + '/:'
-			_printcols(tlist)
+			irafutils.printCols(tlist)
 
 def listcurrent(n=1,hidden=0):
 	"""List IRAF tasks in current package (equivalent to '?' in the cl.)
@@ -555,7 +555,16 @@ def _regexp_init():
 
 	# type statement takes a filename
 	type_stmt = r'type' + required_whitespace + \
-		r'(?P<typefilename>[^ \t;]+)' + optional_whitespace
+		r'(?P<typefilename>[^ \t;(]+)' + optional_whitespace
+	typeexp_stmt = r'type' + optional_whitespace + \
+		r'(?P<typeexpr>' + balpar + ')' + optional_whitespace
+
+	# error(value, msg)
+	#XXX not general in expressions allowed
+	error_stmt = r'error' + optional_whitespace + r'\(' + \
+		optional_whitespace + r'(?P<errornum>[0-9]+)' + \
+		optional_whitespace + ',' + optional_whitespace + \
+		r'(?P<errormsg>[^)]*)\)' + optional_whitespace
 
 	# beep statement
 	beep_stmt = r'(?P<beepstmt>beep)' + optional_whitespace
@@ -564,6 +573,10 @@ def _regexp_init():
 	sleep_stmt = r'sleep' + optional_whitespace + \
 		r'\(' + optional_whitespace + '(?P<sleeptime>[0-9.]+)' + \
 		optional_whitespace + '\)' + optional_whitespace
+
+	# declaration statement
+	declaration_stmt = r'(?P<vartype>int|float|bool|string|struct|file)' + \
+		required_whitespace
 
 	# block statement (after initial parsing and substitution
 	block_stmt = _blockMarker + r'(?P<block>[^' + _blockMarker + r']*)' +  \
@@ -603,25 +616,28 @@ def _regexp_init():
 	# combined statement
 	# Note rest_stmt, which cannot fail to match, is last so
 	# that all the other options are tried first
-	combined_stmt = r'(?:' + set_stmt      + r')|' + \
-					r'(?:' + empty_stmt    + r')|' + \
-					r'(?:' + set_file_stmt + r')|' + \
-					r'(?:' + cl_redir_stmt + r')|' + \
-					r'(?:' + package_stmt  + r')|' + \
-					r'(?:' + task_stmt     + r')|' + \
-					r'(?:' + hide_stmt     + r')|' + \
-					r'(?:' + print_stmt    + r')|' + \
-					r'(?:' + printexp_stmt + r')|' + \
-					r'(?:' + eqprint_stmt  + r')|' + \
-					r'(?:' + type_stmt     + r')|' + \
-					r'(?:' + beep_stmt     + r')|' + \
-					r'(?:' + sleep_stmt    + r')|' + \
-					r'(?:' + block_stmt    + r')|' + \
-					r'(?:' + if_stmt       + r')|' + \
-					r'(?:' + else_stmt     + r')|' + \
-					r'(?:' + assign_stmt   + r')|' + \
-					r'(?:' + misc_stmt     + r')|' + \
-					r'(?:' + rest_stmt     + r')'
+	combined_stmt = r'(?:' + set_stmt         + r')|' + \
+					r'(?:' + empty_stmt       + r')|' + \
+					r'(?:' + set_file_stmt    + r')|' + \
+					r'(?:' + cl_redir_stmt    + r')|' + \
+					r'(?:' + package_stmt     + r')|' + \
+					r'(?:' + task_stmt        + r')|' + \
+					r'(?:' + hide_stmt        + r')|' + \
+					r'(?:' + print_stmt       + r')|' + \
+					r'(?:' + printexp_stmt    + r')|' + \
+					r'(?:' + eqprint_stmt     + r')|' + \
+					r'(?:' + type_stmt        + r')|' + \
+					r'(?:' + typeexp_stmt     + r')|' + \
+					r'(?:' + error_stmt       + r')|' + \
+					r'(?:' + beep_stmt        + r')|' + \
+					r'(?:' + sleep_stmt       + r')|' + \
+					r'(?:' + block_stmt       + r')|' + \
+					r'(?:' + if_stmt          + r')|' + \
+					r'(?:' + else_stmt        + r')|' + \
+					r'(?:' + assign_stmt      + r')|' + \
+					r'(?:' + misc_stmt        + r')|' + \
+					r'(?:' + declaration_stmt + r')|' + \
+					r'(?:' + rest_stmt        + r')'
 
 	_re_combined_stmt = re.compile(combined_stmt)
 
@@ -631,12 +647,6 @@ def _regexp_init():
 
 def readcl(filename,pkgname,pkgbinary):
 	"""Read and execute an IRAF .cl file"""
-
-	global _re_ComSngDbl, _re_block
-
-	# initialize regular expressions
-
-	if not _re_ComSngDbl: _regexp_init()
 
 	spkgname = string.replace(pkgname, '.', '_')
 	if spkgname != pkgname:
@@ -658,48 +668,60 @@ def readcl(filename,pkgname,pkgbinary):
 		return
 	all = fh.read()
 	fh.close()
+	execcl(all,pkgname,pkgbinary,filename)
+
+
+# -----------------------------------------------------
+# execcl: Execute IRAF .cl command(s)
+# -----------------------------------------------------
+
+def execcl(clstring,pkgname=None,pkgbinary=None,filename="<no file>"):
+	"""Execute IRAF .cl command(s), possibly with embedded newlines"""
+
+	global _re_ComSngDbl, _re_block
+
+	# initialize regular expressions
+	if not _re_ComSngDbl: _regexp_init()
 
 	# delete comments and replace quoted strings with marker+pointer
 	# into list of extracted strings
-	if verbose>2: print '%%%%%% before ComSngDbl substitution:\n', all
+	if verbose>2: print '%%%%%% before ComSngDbl substitution:\n', clstring
 	qlist = []
-	mm = _re_ComSngDbl.search(all)
+	mm = _re_ComSngDbl.search(clstring)
 	while mm:
 		if mm.group("comment"):
 			# just delete comments
-			all = all[0:mm.start()] + all[mm.end():]
+			clstring = clstring[0:mm.start()] + clstring[mm.end():]
 		else:
 			# extract quoted strings (including quotes)
 			s = mm.group()
 			this = _quoteMarker + `len(qlist)` + _quoteMarker
 			qlist.append(_joinContinuation(s))
-			all = all[0:mm.start()] + this + all[mm.end():]
-		mm = _re_ComSngDbl.search(all,mm.start())
+			clstring = clstring[0:mm.start()] + this + clstring[mm.end():]
+		mm = _re_ComSngDbl.search(clstring,mm.start())
 
-	if verbose>2: print '%%%%%% after ComSngDbl substitution:\n', all
+	if verbose>2: print '%%%%%% after ComSngDbl substitution:\n', clstring
 	# join continuation lines
-	all = _joinContinuation(all)
-	if verbose>2: print '%%%%%% after joinContinuation:\n', all
+	clstring = _joinContinuation(clstring)
+	if verbose>2: print '%%%%%% after joinContinuation:\n', clstring
 
 	# Break code up into blocks delimited by {} and
 	# replace blocks with marker+pointer.
 	# The block pattern matches only interior blocks (with no
 	# embedded blocks), so this replaces from the inside out.
 	blist = []
-	mm = _re_block.search(all)
+	mm = _re_block.search(clstring)
 	while mm:
 		this = _blockMarker + `len(blist)` + _blockMarker
 		# note blocks get split into lines here
 		blist.append(string.split(mm.group("block"),'\n'))
-		all = all[0:mm.start()] + this + all[mm.end():]
-		mm = _re_block.search(all)
-		# print filename+': Found block'
-		# print blist[-1]
+		clstring = clstring[0:mm.start()] + this + clstring[mm.end():]
+		mm = _re_block.search(clstring)
 
-	if verbose>2: print '%%%%%% after block substitution:\n', all
+	if verbose>2: print '%%%%%% after block substitution:\n', clstring
 
 	# Split the remaining lines
-	lines = string.split(all,'\n')
+	lines = string.split(clstring,'\n')
 
 	# Execute the cleaned-up lines
 	_execCl(filename,lines,qlist,blist,pkgname,pkgbinary)
@@ -794,6 +816,9 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 		_re_ComSngDbl, _re_word, _re_rest, _re_bstrail, _re_taskname, \
 		_re_continuation, _re_combined_stmt
 
+	# initialize regular expressions
+	if not _re_ComSngDbl: _regexp_init()
+
 	# state is a stack used to determine how to handle if/else statements.
 	# All states are active for only a single statement (because blocks
 	# have been turned into one statement.)  But that "single" statement
@@ -830,8 +855,8 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 		try:
 			mmlist = _parseLine(line)
 		except IrafError, e:
-			raise IrafError(filename + ": " + str(e) + "\n'" + line + "'\n" +
-						"(line " + `next+offset` + ")")
+			raise IrafError(str(e) + "\n'" + line + "'\n" +
+						"(line " + `next+offset` + ", " + filename + ")")
 
 		i2 = mmlist[-1].end()
 		mm = mmlist[0]
@@ -839,7 +864,6 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 			mmvalue = mmlist[1]
 		else:
 			mmvalue = None
-
 
 		# state determines what to do with this statement
 		# always go to next state on list after executing this one
@@ -885,9 +909,9 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 			elif mm.group('else') != None:
 				# error to encounter else in S_EXECUTE state
 				if verbose:
-					print filename + ": Unexpected 'else' statement\n" + \
+					print "Unexpected 'else' statement\n" + \
 						"'" + line + "'\n" + \
-						"(line " + `next+offset` + ")"
+						"(line " + `next+offset` + ", " + filename + ")"
 			elif mm.group('empty') != None:
 				# ignore empty statements (but note they do get used
 				# for state changes)
@@ -896,7 +920,7 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 				# If this is a package name, load it.  Otherwise print warning.
 				value = mm.group('firstword')
 				try:
-					p = getPkg(value)
+					p = getTask(value)
 					value = p.getName()
 					if value == pkgname:
 						if verbose>1:
@@ -907,11 +931,20 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 						# Parse parameters to package
 						tail = string.strip(mm.group('tail'))
 						args, kw = parseArgs(tail)
-						load(value,args,kw,doprint=0)
+						if isinstance(p,IrafPkg):
+							# load IRAF package
+							load(p,args,kw,doprint=0)
+						else:
+							# run IRAF task
+							run(p,args,kw)
 				except KeyError:
 					if verbose:
-						print filename + ": Ignoring '" + line[:i2] + \
-							"' (line " + `next+offset` + ")"
+						print "Ignoring '" + line[:i2] + \
+							"' (line " + `next+offset` + ", " + filename + ")"
+				except IrafError, e:
+					raise e.__class__("Error at '" + line[:i2] + \
+						"' (line " + `next+offset` + ", " + filename + ")\n" + \
+						str(e))
 			elif mm.group('setfilename') != None:
 				# This peculiar syntax 'set @filename' only gets used in the
 				# zzsetenv.def file, where it reads extern.pkg.  That file
@@ -928,6 +961,16 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 			elif mm.group('eqprintval') != None:
 				# equals print statement
 				print mm.group('eqprintval')
+			elif mm.group('errornum') != None:
+				# error(errornum, errormsg)
+				try:
+					errormsg = mm.group('errormsg')
+					msg = cleval(errormsg)
+				except Exception:
+					msg = errormsg
+				# try to print something sensible if msg=None
+				if not msg: msg = errormsg
+				raise IrafError('ERROR: ' + msg)
 			elif mm.group('beepstmt') != None:
 				# beep statement
 				sys.stdout.write("")
@@ -938,14 +981,16 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 					time.sleep(float(mm.group('sleeptime')))
 				except:
 					if verbose:
-						print filename + ": Error in sleep(" + \
+						print "Error in sleep(" + \
 							mm.group("sleeptime") + ")" + \
-							" (line " + `next+offset` + ")"
+							" (line " + `next+offset` + ", " + filename + ")"
 					pass
-			elif mm.group('typefilename') != None:
+			elif mm.group('typefilename') or mm.group('typeexpr'):
 				# copy file to stdout if it exists
 				# Is there a standard library procedure to do this?
 				typefile = mm.group('typefilename')
+				if not typefile:
+					typefile = cleval(mm.group('typeexpr'))
 				# strip quotes
 				mdq = _re_double.match(typefile)
 				if mdq != None: typefile = mdq.group('value')
@@ -959,8 +1004,8 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 							tline = fh_type.readline()
 						fh_type.close()
 				except SyntaxError:
-					print filename + ":	WARNING: Could not expand", \
-						typefile, "(line " + `next+offset` + ")"
+					print "WARNING: Could not expand", typefile, \
+						"(line " + `next+offset` + ", " + filename + ")"
 			elif mm.group('packagename') != None:
 				pkgname = mm.group('packagename')
 				spkgname = string.replace(pkgname, '.', '_')
@@ -970,6 +1015,11 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 				pkgname = spkgname
 				if mm.group('packagebin') != None:
 					pkgbinary = mm.group('packagebin')
+			elif mm.group('vartype') != None:
+				# Declaration: currently ignored
+				if verbose:
+					print "Ignoring '" + line[:i2] + \
+						"' (line " + `next+offset` + ", " + filename + ")"
 			elif mm.group('miscstmt') != None:
 				# Miscellaneous: parsed but quietly ignored
 				pass
@@ -977,9 +1027,9 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 
 				# other statements take a value
 				if not mmvalue:
-					raise IrafError(filename + ": Expected a value???\n" +
+					raise IrafError("Expected a value???\n" +
 						"'" + line + "'\n" +
-						"(line " + `next+offset` + ")")
+						"(line " + `next+offset` + ", " + filename + ")")
 
 				value = mmvalue.group('value')
 
@@ -997,18 +1047,26 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 						clset(name,value,pkg=getPkg(pkgname))
 					except IrafError:
 						if verbose:
-							print filename + ": Ignoring '" + line[:i2] + \
-								"' (line " + `next+offset` + ")"
+							print "Ignoring '" + line[:i2] + \
+								"' (line " + `next+offset` + ", " + \
+								filename + ")"
 				elif mm.group('hidestmt') != None:
 					# hide can take multiple task names
+					# XXX messy stuff here to allow parenthesized
+					# XXX list of quoted names.  remove this when
+					# XXX parser gets better.
+					if value[:1] == '(': value = value[1:]
+					if value[-1:] == ')': value = value[:-1]
 					mw = _re_word.match(value,0)
 					while mw != None:
 						word = mw.group('word')
 						try:
+							word = irafutils.stripQuotes(word)
 							getTask(word).setHidden(1)
 						except KeyError, e:
-							print filename + ":	WARNING: Could not find task", \
-								word, "to hide (line " + `next+offset` + ")"
+							print "WARNING: Could not find task", \
+								word, "to hide (line " + `next+offset` + \
+								", " + filename + ")"
 							print e
 						mw = _re_word.match(value,mw.end())
 				elif mm.group('tasklist') != None:
@@ -1037,9 +1095,9 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 						mm.group('empty')):
 				# probably a parsing error
 				if verbose:
-					print 'Error:', filename
 					print "Non-blank characters after end of command\n" + \
-						"'" + line + "' (line " + `next+offset` + ")"
+						"'" + line + \
+						"' (line " + `next+offset` + ", " + filename + ")"
 		line = line[i2:]
 	return offset+nlines
 
@@ -1068,6 +1126,7 @@ def _parseLine(line):
 	if (mm.group('clredir') or
 		mm.group('varname') or
 		mm.group('assign_var') or
+		mm.group('vartype') or
 		mm.group('hidestmt') or
 		mm.group('tasklist') ) :
 
@@ -1107,7 +1166,7 @@ def clset(paramname,value,pkg=None):
 
 	if value[:1] == "(" and value[-1:] == ")":
 		# try evaluating expressions in parantheses
-		result = cleval(value[1:-1],[],pkg,native=0)
+		result = cleval(value[1:-1],pkg=pkg,native=0)
 		if result == None: result = value
 	else:
 		result = value
@@ -1168,7 +1227,7 @@ def defpac(pkgname):
 # statement
 # -----------------------------------------------------
 
-_re_varname = re.compile(r'(?P<var>[a-zA-Z_][a-zA-Z_0-9.]*)' +
+_re_varname = re.compile(r'(?P<var>[$a-zA-Z_][$a-zA-Z_0-9.]*)' +
 	r'[ \t]*(?![a-zA-Z_0-9. \t(])')
 
 def _evalCondition(s,pkgname):
@@ -1247,8 +1306,12 @@ def _evalPrint(s,pkgname):
 # Currently pretty limited in its capabilities
 # -----------------------------------------------------
 
-def cleval(s,qlist,pkg,native=1):
+def cleval(s,qlist=None,pkg=None,native=1):
 	"""Evaluate expression and return value"""
+
+	# extract any quoted strings and replace with markers
+	if qlist == None: s, qlist = _markQuotes(s)
+
 	# replace variable names with calls to clget()
 	s = _re_varname.sub(_convertVar,s)
 
@@ -1283,7 +1346,7 @@ def parseArgs(s):
 	args = []
 	kw = {}
 	smod = string.strip(s)
-	if not smod: return (args, kw)
+	if not smod: return (tuple(args), kw)
 
 	if verbose>1:
 		print "(Parsing package parameters '" + smod + "')"
@@ -1302,7 +1365,7 @@ def parseArgs(s):
 	else:
 		if verbose>1:
 			print "(args", args, "kw", kw, ")"
-		return (args, kw)
+		return (tuple(args), kw)
 
 	# now build list of keyword arguments
 	while i < len(words):
@@ -1341,7 +1404,7 @@ def parseArgs(s):
 		i = i+1
 	if verbose>1:
 		print "(args", args, "kw", kw, ")"
-	return (args, kw)
+	return (tuple(args), kw)
 
 # -----------------------------------------------------
 # expand: Expand a string with embedded IRAF variables
@@ -1389,28 +1452,6 @@ def _expand1(instring):
 	else:
 		raise IrafError("Undefined variable " + varname + \
 			" in string " + instring)
-
-# -----------------------------------------------------
-# _printcols: Utility function to print elements of list
-# in cols columns
-# -----------------------------------------------------
-
-# This probably exists somewhere in the Python standard libraries?
-# If not and it is really useful, probably should move it
-# somewhere else (and rewrite it too, this is crude...)
-
-def _printcols(strlist,cols=5,width=80):
-	nlines = (len(strlist)+cols-1)/cols
-	line = nlines*[""]
-	for i in xrange(len(strlist)):
-		c, r = divmod(i,nlines)
-		nwid = c*width/cols - len(line[r])
-		if nwid>0:
-			line[r] = line[r] + nwid*" " + strlist[i]
-		else:
-			line[r] = line[r] + " " + strlist[i]
-	for s in line:
-		print s
 
 def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 
@@ -1495,13 +1536,3 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 	addPkg(newpkg)
 	return newpkg
 
-def isBigEndian():
-
-	"""Determine if processor is big endian or little endian"""
-
-	i = 1
-	tup = struct.unpack('hh',struct.pack('=i',i))
-	if tup[1] == 1:
-		return 1
-	else:
-		return 0
