@@ -531,6 +531,8 @@ class IrafPar:
 		fields[3] = self.toString(self.value,quoted=quoted)
 		if self.choice is not None:
 			schoice = map(self.toString, self.choice)
+			schoice.insert(0,'')
+			schoice.append('')
 			fields[4] = repr(string.join(schoice,'|'))
 		elif self.min not in [None,INDEF]:
 			fields[4] = self.toString(self.min,quoted=quoted)
@@ -897,6 +899,8 @@ class IrafArrayPar(IrafPar):
 		fields[5] = '1'
 		if self.choice is not None:
 			schoice = map(self.toString, self.choice)
+			schoice.insert(0,'')
+			schoice.append('')
 			fields[6] = repr(string.join(schoice,'|'))
 		elif self.min not in [None,INDEF]:
 			fields[6] = self.toString(self.min,quoted=quoted)
