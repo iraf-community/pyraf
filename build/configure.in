@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(cdl.h)
+AC_INIT(sscanfmodule.c)
 
 
 dnl Checks for programs.
@@ -10,7 +10,7 @@ dnl Checks for programs.
 AC_PROG_CC
 
 AC_ARG_WITH(python, [  --with-python=DIR          provide Python LIBs directory],
-	PYTHON_LIB_DIR=$withval, PYTHON_LIB_DIR=`cd ../../..; pwd`)
+	PYTHON_LIB_DIR=$withval, PYTHON_LIB_DIR=`cd ../../../../; pwd`)
 if test ! -d $PYTHON_LIB_DIR; then
     AC_MSG_ERROR(PYTHON LIB directory $PYTHON_LIB_DIR doesn't exist)
 fi
@@ -95,6 +95,13 @@ then
 else AC_MSG_RESULT($system)
 fi
 case $system in
+    SunOS-5.8)	
+        IRAFARCH="ssun"
+	toglplatform="sunos"
+	CFLAGS="-c -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+	EXTRA_LFLAGS="-lnsl -lsocket"
+	LDFLAG='-G'
+	;;
     SunOS-5.*)	
         IRAFARCH="ssun"
 	toglplatform="sunos"

@@ -456,7 +456,7 @@ echo > confdefs.h
 
 # A filename unique to this package, relative to the directory that
 # configure is in, which we can look for to find out if srcdir is correct.
-ac_unique_file=cdl.h
+ac_unique_file=sscanfmodule.c
 
 # Find the source files, if location was not specified.
 if test -z "$srcdir"; then
@@ -706,7 +706,7 @@ if test "${with_python+set}" = set; then
   withval="$with_python"
   PYTHON_LIB_DIR=$withval
 else
-  PYTHON_LIB_DIR=`cd ../../..; pwd`
+  PYTHON_LIB_DIR=`cd ../../../../; pwd`
 fi
 
 if test ! -d $PYTHON_LIB_DIR; then
@@ -1490,6 +1490,13 @@ then
 else echo "$ac_t""$system" 1>&6
 fi
 case $system in
+    SunOS-5.8)	
+        IRAFARCH="ssun"
+	toglplatform="sunos"
+	CFLAGS="-c -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+	EXTRA_LFLAGS="-lnsl -lsocket"
+	LDFLAG='-G'
+	;;
     SunOS-5.*)	
         IRAFARCH="ssun"
 	toglplatform="sunos"
