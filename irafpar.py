@@ -586,7 +586,7 @@ class IrafParUKey(IrafParS):
 				" is ukey parameter, cannot use index")
 		if field: return self.getField(field)
 		if lpar: return str(self.value)
-		return irafukey.UserKey()()
+		return irafukey.ukey()
 
 # -----------------------------------------------------
 # IRAF boolean parameter class

@@ -12,7 +12,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from Tkinter import _default_root
 from Tkinter import *
-import gki
+#import gki
 
 eventCount = 0 #
 REDRAW_DELAY = 100 # in milliseconds
@@ -48,9 +48,10 @@ class RawOpengl(Widget, Misc):
 
   def __init__(self, master=None, cnf={}, **kw):
     Widget.__init__(self, master, 'togl', cnf, kw)
-    self.bind('<Map>', self.tkMap)
+#    self.bind('<Map>', self.tkMap)
     self.bind('<Expose>', self.tkExpose)
     self.bind('<Configure>', self.tkExpose)
+    self.ignoreNextRedraw = 1
 
   def immediateRedraw(self):
        self.tk.call(self._w, 'makecurrent')
@@ -62,6 +63,9 @@ class RawOpengl(Widget, Misc):
        self.tk.call(self._w, 'swapbuffers')
 
   def delayedRedraw(self, eventNumber):
+    if self.ignoreNextRedraw:
+        self.ignoreNextRedraw = 0
+        return
     if eventNumber == eventCount:
        # No events since the event that generated this delayed call;
        # perform the redraw
@@ -103,9 +107,13 @@ Subclassing the togl widget
     self.r_back = 1.
     self.g_back = 0.
     self.b_back = 1.
+    
+    # to save last cursor position if switching to another window
+    self.lastX = None
+    self.lastY = None
 
     # Basic bindings for the virtual trackball
-    self.bind('<Map>', self.tkMap)
+#    self.bind('<Map>', self.tkMap)
     self.bind('<Expose>', self.tkExpose)
     self.bind('<Configure>', self.tkExpose)
 
