@@ -401,9 +401,14 @@ class IrafTask:
 			paramdict = self._currentParList.getParDict()
 		else:
 			paramdict = None
-		if paramdict and paramdict.has_key(paramname):
-			return self._getParFromDict(paramdict, paramname, pindex,
-							field, native, mode)
+		try:
+			if paramdict and paramdict.has_key(paramname):
+				return self._getParFromDict(paramdict, paramname, pindex,
+								field, native, mode)
+		except minmatch.AmbiguousKeyError, e:
+			# re-raise the error with a bit more info
+			raise iraf.IrafError("Cannot get parameter `%s'\n%s" %
+				(paramname, str(e)))
 
 		# OK, the easy case didn't work -- now initialize the
 		# complete parDictList (if necessary) and search them all
