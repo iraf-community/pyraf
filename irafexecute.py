@@ -118,17 +118,16 @@ def IrafIO(process,task):
 				elif chan == 5:
 					sys.stderr.write(Iraf2AscString(xdata))
 				elif chan == 6:
-					print "data for STDGRAPH"
+#					print "data for STDGRAPH"
 					stdgraph.append(Numeric.fromstring(xdata,'s'))
 				elif chan == 7:
 					print "data for STDIMAGE"
 				elif chan == 8:
 					print "data for STDPLOT"
 				elif chan == 9:
-					print "data for PSIOCNTRL"
+#					print "data for PSIOCNTRL"
 					sdata = Numeric.fromstring(xdata,'s')
 					forChan = sdata[1] # a bit sloppy here
-					print forChan
 					if forChan == 6:
 						# STDPLOT control
 						# first see if OPENWS to get device, otherwise

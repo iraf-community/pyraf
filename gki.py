@@ -12,7 +12,7 @@ NOP = 0	  # no op value
 GKI_MAX = 32767
 GKI_MAX_FLOAT = Numeric.array(GKI_MAX,Numeric.Float32)
 GKI_MAX_OP_CODE = 27
-GKI_FLOAT_FACTOR = 100
+GKI_FLOAT_FACTOR = 100.
 
 # need to treat this more generally
 # Could do a test with struct & byte-swapping option to determine byte order

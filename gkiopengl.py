@@ -110,7 +110,7 @@ class GkiOpenGlKernel(GkiKernel):
 		
 	def setWCS(self, arg):
 
-		print 'setwcs'
+#		print 'setwcs'
 		__main__.wcs = arg # pass it up to play with
 		win = gwm.getActiveWindow()
 		win.iplot.wcs = irafgwcs.IrafGWcs(arg)
@@ -142,7 +142,7 @@ def gki_deactivatews(arg): print "GKI_DEACTIVATEWS"
 def gki_mftitle(arg): print "GKI_MFTITLE"
 def gki_clearws(arg):
 
-	print "GKI_CLEARWS"
+#	print "GKI_CLEARWS"
 	win = gwm.getActiveWindow()
 	win.iplot.gkiBuffer.reset()
 	win.iplot.glBuffer.reset()
@@ -169,8 +169,7 @@ def gki_plset(arg): print "GKI_PLSET"
 def gki_pmset(arg): print "GKI_PMSET"
 def gki_txset(arg):
 
-	print "GKI_TXSET"
-	charUp = arg[0]/GKI_FLOAT_FACTOR
+	charUp = float(arg[0])
 	charSize = arg[1]/GKI_FLOAT_FACTOR
 	charSpace = arg[2]/GKI_FLOAT_FACTOR
 	textPath = arg[3]
@@ -190,7 +189,7 @@ def gki_getcursor(arg): print "GKI_GETCURSOR (GKI_CURSORVALUE)"
 def gki_getcellarray(arg): print "GKI_GETCELLARRAY"
 def gki_unknown(arg): print "GKI_UNKNOWN"
 def gki_escape(arg): print "GKI_ESCAPE"
-def gki_setwcs(arg): print "GKI_SETWCS"
+def gki_setwcs(arg): pass #print "GKI_SETWCS"
 def gki_getwcs(arg): print "GKI_GETWCS"
 
 #*****************************************
@@ -226,7 +225,6 @@ def gl_txset(charUp, charSize, charSpace, textPath, textHorizontalJust,
 			 textVerticalJust, textFont, textQuality, textColor):
 	
 	win = gwm.getActiveWindow()
-	# Ignore attributes for initial testing!!!!!   	
 	win.iplot.textAttributes =  TextAttributes(charUp, charSize, charSpace,
 		textPath, textHorizontalJust, textVerticalJust, textFont,
 		textQuality, textColor)
@@ -349,9 +347,10 @@ class IrafGkiConfig:
 		self.fontAspect = 42./27.
 		self.fontMax2MinSizeRatio = 4.
 		# Empirical constants for font sizes; try xterm fractions for now
-		self.UnitFontWindowFraction = 1./80
+		self.UnitFontHWindowFraction = 1./100
+		self.UnitFontVWindowFraction = 1./35
 		# minimum unit font size in pixels
-		self.minUnitHFontSize = 6.
+		self.minUnitHFontSize = 7.
 		self.minUnitVFontSize = self.minUnitHFontSize * self.fontAspect
 		# maximum unit font size in pixels
 		self.maxUnitHFontSize = \
@@ -384,8 +383,8 @@ class IrafGkiConfig:
 		win = gwm.getActiveWindow()
 		hWin = win.winfo_width()
 		vWin = win.winfo_height()
-		hSize = hWin * self.UnitFontWindowFraction
-		vSize = vWin * self.UnitFontWindowFraction/self.fontAspect
+		hSize = hWin * self.UnitFontHWindowFraction
+		vSize = vWin * self.UnitFontVWindowFraction*self.fontAspect
 		if not self.isFixedAspectFont:
 			if self.hasMinPixSizeUnitFont:
 				hSize = max(hSize,self.minUnitHFontSize)
@@ -395,17 +394,11 @@ class IrafGkiConfig:
 				vSize = min(hSize,self.maxUnitVFontSize)
 			fontAspect = vSize/hSize		
 		else:
-			if vWin >= hWin:
-				if self.hasMinPixSizeUnitFont:
-					hSize = max(hSize,self.minUnitHFontSize)
-				if self.hasMaxPixSizeUnitFont:
-					hSize = min(hSize,self.maxUnitHFontSize)
-				vSize = hSize * self.fontAspect
-			else:
-				if self.hasMinPixSizeUnitFont:
-					vSize = max(vSize,self.minUnitVFontSize)
-				if self.hasMaxPixSizeUnitFont:
-					vSize = min(vSize,self.maxUnitVFontSize)
-				hSize = vSize/self.fontAspect
+			hSize = min(hSize,vSize/self.fontAspect)
+			if self.hasMinPixSizeUnitFont:
+				hSize = max(hSize,self.minUnitHFontSize)
+			if self.hasMaxPixSizeUnitFont:
+				hSize = min(hSize,self.maxUnitHFontSize)
+			vSize = hSize * self.fontAspect
 			fontAspect = self.fontAspect
 		return (hSize, fontAspect)

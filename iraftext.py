@@ -84,6 +84,8 @@ def softText(x,y,textstr):
 	vsize = hsize * fontAspect
 	# get current size in unit font units (!)
 	fsize = ta.charSize
+	# We draw the line at fontSizes less than 1/2! Get real.
+	fsize = max(fsize,0.5)
 	# Character spacing depends on whether text is 'vertical' or 'horizontal'
 	#  (relative to character orientation). Figure out what the character
 	#  delta offset is in the coordinate system where charUp is the y axis.
@@ -100,7 +102,7 @@ def softText(x,y,textstr):
 		if ta.textPath == CHARPATH_UP: dy = -dy
 	# Figure out 'path' size of the text string for use in justification
 	xpath,ypath = (dx*(len(textstr)-1),dy*(len(textstr)-1))
-	charUp = math.fmod(ta.charUp+90., 360.)
+	charUp = math.fmod(ta.charUp, 360.)
 	if charUp < 0: charUp = charUp + 360.
 	if ta.textPath == CHARPATH_RIGHT:
 		textdir = math.fmod(charUp+270,360.)
@@ -120,7 +122,7 @@ def softText(x,y,textstr):
 	deg2rad = math.pi/180.
 	cosv = math.cos((charUp-90.)*deg2rad)
 	sinv = math.sin((charUp-90.)*deg2rad)
-	xpathwin, ypathwin = (cosv*xpath+sinv*ypath,-sinv*xpath+cosv*ypath)
+	xpathwin, ypathwin = (cosv*xpath-sinv*ypath,sinv*xpath+cosv*ypath)
 	xcharsize = fsize * max(abs(cosv*hsize+sinv*vsize),
 					        abs(cosv*hsize-sinv*vsize))
 	ycharsize = fsize * max(abs(-sinv*hsize+cosv*vsize),
