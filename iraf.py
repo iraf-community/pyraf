@@ -1434,11 +1434,14 @@ def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 		# check for consistency of definition by comparing to the new
 		# object (which will be discarded)
 		if task.getFilename()   != newtask.getFilename() or \
-		   task.getPkgbinary()  != newtask.getPkgbinary() or \
 		   task.getHasparfile() != newtask.getHasparfile() or \
 		   task.getForeign()    != newtask.getForeign() or \
 		   task.getTbflag()     != newtask.getTbflag():
 			print 'Warning: ignoring attempt to redefine task',fullname
+		if task.getPkgbinary()  != newtask.getPkgbinary():
+			# only package binary differs -- add it to search path
+			if verbose>1: print 'Adding',pkgbinary,'to',task,'path'
+			task.addPkgbinary(pkgbinary)
 		return task
 	# add it to the task list
 	addTask(newtask)
@@ -1479,9 +1482,12 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 	newpkg = IrafPkg(prefix,taskname,suffix,value,pkgname,pkgbinary)
 	if pkg:
 		if pkg.getFilename()   != newpkg.getFilename() or \
-		   pkg.getHasparfile() != newpkg.getHasparfile() or \
-		   pkg.getPkgbinary()  != newpkg.getPkgbinary():
+		   pkg.getHasparfile() != newpkg.getHasparfile():
 			print 'Warning: ignoring attempt to redefine package',taskname
+		if pkg.getPkgbinary() != newpkg.getPkgbinary():
+			# only package binary differs -- add it to search path
+			if verbose>1: print 'Adding',pkgbinary,'to',pkg,'path'
+			pkg.addPkgbinary(pkgbinary)
 		if pkgname != pkg.getPkgname():
 			# add existing task as an item in the new package
 			addTask(pkg,pkgname=pkgname)

@@ -5,7 +5,7 @@ $Id$
 R. White, 1999 March 25
 """
 
-import os, string
+import os, string, types
 import iraf, irafpar, irafexecute, minmatch
 
 # -----------------------------------------------------
@@ -27,7 +27,8 @@ class IrafTask:
 				"to", spkgname
 		self.__name = sname
 		self.__pkgname = spkgname
-		self.__pkgbinary = pkgbinary
+		self.__pkgbinary = []
+		self.addPkgbinary(pkgbinary)
 		# tasks with names starting with '_' are implicitly hidden
 		if name[0] == '_':
 			self.__hidden = 1
@@ -113,6 +114,21 @@ class IrafTask:
 		self.initTask()
 		return self.__pardict
 
+	def addPkgbinary(self, pkgbinary):
+		"""Add another entry in list of possible package binary locations
+		
+		Parameter can be a string or a list of strings"""
+
+		if not pkgbinary:
+			return
+		elif type(pkgbinary) == types.StringType:
+			if pkgbinary and (pkgbinary not in self.__pkgbinary):
+				self.__pkgbinary.append(pkgbinary)
+		else:
+			for pbin in pkgbinary:
+				if pbin and (pbin not in self.__pkgbinary):
+					self.__pkgbinary.append(pbin)
+
 	# public access to set hidden attribute, which can be specified
 	# in a separate 'hide' statement
 
@@ -153,8 +169,8 @@ class IrafTask:
 		if self.__foreign:
 			print "No run yet for foreign task",self.__name
 		elif self.__cl:
-			print "No run yet for cl task", self.__name, \
-				"("+self.__fullpath+")"
+			raise iraf.IrafError("Cannot run cl tasks yet: " +
+				self.__name + " ("+self.__fullpath+")")
 		else:
 			# set parameters
 			apply(self.setParList,args,kw)
@@ -407,23 +423,27 @@ class IrafTask:
 			if self.__foreign:
 				self.__fullpath = self.__filename
 			else:
-				# first look in the task binary directory
-				try:
-					exename2 = iraf.expand(self.__pkgbinary + basename)
-				except iraf.IrafError, e:
-					if iraf.verbose:
-						print "Error searching for executable for task " + \
-							self.__name
-						print str(e)
-					exename2 = ""
-				if os.path.exists(exename2):
-					self.__fullpath = exename2
-				elif os.path.exists(exename1):
-					self.__fullpath = exename1
+				# first look in the task binary directories
+				exelist = []
+				for pbin in self.__pkgbinary:
+					try:
+						exelist.append(iraf.expand(pbin + basename))
+					except iraf.IrafError, e:
+						if iraf.verbose:
+							print "Error searching for executable for task " + \
+								self.__name
+							print str(e)
+				for exename2 in exelist:
+					if os.path.exists(exename2):
+						self.__fullpath = exename2
+						break
 				else:
-					self.__fullpath = ""
-					raise iraf.IrafError("Cannot find executable for task " +
-						self.__name + "\nTried "+exename1+" and "+exename2)
+					if os.path.exists(exename1):
+						self.__fullpath = exename1
+					else:
+						self.__fullpath = ""
+						raise iraf.IrafError("Cannot find executable for task " +
+							self.__name + "\nTried "+exename1+" and "+exename2)
 
 		if self.__hasparfile and (not self.__parpath):
 			if basedir == None:
@@ -459,6 +479,9 @@ class IrafTask:
 					self.__pars = [
 						irafpar.IrafParFactory(["mode","s","h","al"]),
 						irafpar.IrafParFactory(["$nargs","i","h","0"]) ]
+				elif self.__cl:
+					raise iraf.IrafError("Cannot run cl tasks yet: " +
+						self.__name + " ("+self.__fullpath+")")
 				else:
 					self.__parpath = ""
 					raise iraf.IrafError("Cannot find .par file for task " +
@@ -521,7 +544,8 @@ class IrafTask:
 
 	def __str__(self):
 		s = '<IrafTask ' + self.__name + ' (' + self.__filename + ')' + \
-			' Pkg: ' + self.__pkgname + ' Bin: ' + self.__pkgbinary
+			' Pkg: ' + self.__pkgname + ' Bin: ' + self.__pkgbinary[0]
+		for pbin in self.__pkgbinary[1:]: s = s + ':' + pbin
 		if self.__cl: s = s + ' Cl'
 		if self.__foreign: s = s + ' Foreign'
 		if self.__hidden: s = s + ' Hidden'
