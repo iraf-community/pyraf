@@ -993,7 +993,7 @@ class IrafCLTask(IrafTask):
 		if self._clFunction is None:
 			return self.__dict__
 		# replace _clFunction in shallow copy of dictionary
-		dict = copy.copy(self.__dict__)
+		dict = self.__dict__.copy()
 		dict['_clFunction'] = None
 		return dict
 

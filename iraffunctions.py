@@ -48,7 +48,7 @@ def _writeError(msg):
 # now it is safe to import other iraf modules
 # -----------------------------------------------------
 
-import sys, os, string, re, math, types, time, copy
+import sys, os, string, re, math, types, time
 import minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, cl2py
 
@@ -73,7 +73,6 @@ _re = re
 _math = math
 _types = types
 _time = time
-_copy = copy
 _StringIO = StringIO
 _pickle = pickle
 
@@ -87,7 +86,7 @@ _iraftask = iraftask
 _irafpar = irafpar
 _cl2py = cl2py
 
-del sys, os, string, re, math, types, time, copy, StringIO, pickle
+del sys, os, string, re, math, types, time, StringIO, pickle
 del minmatch, subproc, wutil
 del irafnames, irafutils, iraftask, irafpar, cl2py
 
@@ -156,7 +155,9 @@ def Init(doprint=1,hush=0,savefile=None):
 		set(iraf = _os.environ['iraf'])
 		set(host = _os.environ['host'])
 		set(hlib = _os.environ['hlib'])
-		set(arch = '.'+_os.environ['IRAFARCH'])
+		arch = _os.environ.get('IRAFARCH','')
+		if arch: arch = '.' + arch
+		set(arch = arch)
 		if _os.environ.has_key('tmp'):
 			set(tmp = _os.environ['tmp'])
 		global userIrafHome
@@ -248,7 +249,7 @@ def saveToFile(savefile, **kw):
 	"""Save IRAF environment to pickle file"""
 	# make a shallow copy of the dictionary and edit out
 	# functions, modules, and objects named in _unsavedVarsDict
-	dict = _copy.copy(globals())
+	dict = globals().copy()
 	for key in dict.keys():
 		item = dict[key]
 		if type(item) in (_types.FunctionType, _types.ModuleType) or \
@@ -1135,7 +1136,6 @@ def stty(terminal=None, **kw):
 	if kw.has_key('_save'): del kw['_save']
 	resetList = redirApply(redirKW)
 	try:
-		import copy
 		expkw = _sttyArgs.copy()
 		if terminal is not None: expkw['terminal'] = terminal
 		for key, item in kw.items():

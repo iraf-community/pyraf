@@ -588,10 +588,12 @@ class IrafPar:
 		"""Deep copy of this parameter object"""
 		new = _EmptyClass()
 		# shallow copy of dictionary suffices for most attributes
-		new.__dict__ = copy.copy(self.__dict__)
+		new.__dict__ = self.__dict__.copy()
 		# value, choice may be lists of atomic items
-		new.value = copy.copy(self.value)
-		new.choice = copy.copy(self.choice)
+		if isinstance(self.value, types.ListType):
+			new.value = list(self.value)
+		if isinstance(self.choice, types.ListType):
+			new.choice = list(self.choice)
 		# choiceDict needs deep copy
 		if new.choice is not None:
 			new.choiceDict = copy.deepcopy(self.choiceDict, memo)
@@ -604,7 +606,7 @@ class IrafPar:
 		if self.choice is None:
 			return self.__dict__
 		else:
-			d = copy.copy(self.__dict__)
+			d = self.__dict__.copy()
 			d['choiceDict'] = None
 			return d
 
