@@ -91,6 +91,9 @@ class EparDialog:
         self.pkgName    = self.taskObject.getPkgname()
         self.paramList  = self.taskObject.getParList()
 
+        # Obtain the default parameter list - THIS IS NOT A GOOD WAY. OK NOW
+        self.defaultParamList = self.taskObject._defaultParList.getParList()
+
         # Ignore the last parameter which is $nargs
         self.numParams  = len(self.paramList) - 1
 
@@ -119,6 +122,7 @@ class EparDialog:
         self.top.f.canvas = Canvas(self.top.f, width = 100, height = 100)
 
         # Only build the scrollbar, if there is something to scroll
+        self.isScrollable = "no"
         if (self.numParams > MINPARAMS):
 
             # Attach a vertical Scrollbar to the Frame/Canvas
@@ -130,6 +134,9 @@ class EparDialog:
 
             # Pack the Scrollbar
             self.top.f.vscroll.pack(side = RIGHT, fill = Y)
+
+            # Reset the variable used to reveal the canvas on Tab
+            self.isScrollable = "yes"
 
         # Pack the Frame and Canvas
         self.top.f.canvas.pack(side = TOP, expand = TRUE, fill = BOTH)
@@ -197,7 +204,7 @@ class EparDialog:
             self.top.f.canvas.config(scrollregion = (0, 0, width, height))
 
             # Smooth scroll 
-            self.top.f.canvas.config(yscrollincrement = 15)
+            self.top.f.canvas.config(yscrollincrement = 50)
 
         # Set the actual viewable region for the Canvas
         self.top.f.canvas.config(width = width, height = viewHeight)
@@ -240,46 +247,55 @@ class EparDialog:
             # the EnumEparOption
             if (self.paramList[i].choice != None):
                 self.entryNo[i] = EnumEparOption(master, statusBar,
-                                  self.paramList[i], self.fieldWidths)
+                                  self.paramList[i], self.defaultParamList[i],
+                                  self.isScrollable, self.fieldWidths)
 
             # PSET
             elif (self.paramList[i].type == "pset"):
                  self.entryNo[i] = PsetEparOption(master, statusBar,
-                                   self.paramList[i], self.fieldWidths)
+                                   self.paramList[i],
+                                   self.isScrollable, self.fieldWidths)
 
             # *GCUR 
             #elif (self.paramList[i].type == "*gcur"):
             #    self.entryNo[i] = GcurEparOption(master, statusBar,
-            #                      self.paramList[i], self.fieldWidths)
+            #                      self.paramList[i],
+            #                      self.isScrollable, self.fieldWidths)
 
             # *UKEY
             #elif (self.paramList[i].type == "*ukey"):
             #    self.entryNo[i] = UkeyEparOption(master, statusBar,
-            #                      self.paramList[i], self.fieldWidths)
+            #                      self.paramList[i],
+            #                      self.isScrollable, self.fieldWidths)
 
             # BOOLEAN
             elif (self.paramList[i].type == 'b'):
                 self.entryNo[i] = BooleanEparOption(master, statusBar,
-                                  self.paramList[i], self.fieldWidths)
+                                  self.paramList[i],
+                                  self.isScrollable, self.fieldWidths)
 
             # STRING (s, f, struct, *imcur, *struct, *s, *i) 
             elif (self.paramList[i].type in irafpar._string_types):
                 self.entryNo[i] = StringEparOption(master, statusBar,
-                                  self.paramList[i], self.fieldWidths)
+                                  self.paramList[i], self.defaultParamList[i], 
+                                  self.isScrollable, self.fieldWidths)
 
             # REAL
             elif (self.paramList[i].type in irafpar._real_types):
                 self.entryNo[i] = RealEparOption(master, statusBar,
-                                  self.paramList[i], self.fieldWidths)
+                                  self.paramList[i], self.defaultParamList[i],
+                                  self.isScrollable, self.fieldWidths)
 
             # INT
             elif (self.paramList[i].type == 'i'): 
                 self.entryNo[i] = IntEparOption(master, statusBar,
-                                  self.paramList[i], self.fieldWidths)
+                                  self.paramList[i], self.defaultParamList[i], 
+                                  self.isScrollable, self.fieldWidths)
 
             else:
                 self.entryNo[i] = StringEparOption(master, statusBar,
-                                  self.paramList[i], self.fieldWidths)
+                                  self.paramList[i], self.defaultParamList[i],
+                                  self.isScrollable, self.fieldWidths)
                 # Need to keep commented out until *gcur and such are resolved
                 #raise SyntaxError("Cannot handle parameter type" + type)
 
@@ -576,8 +592,8 @@ class EparDialog:
     # back to the system default
     def unlearn(self, event = None):
 
-        # This sets the memory objects back to the defaults
-        self.taskObject.unlearn()
+        ## This sets the memory objects back to the defaults
+        #self.taskObject.unlearn()
       
         # Reset the view of the parameters
         self.unlearnAllEntries(self.top.f.canvas.entries)
@@ -695,11 +711,12 @@ class EparDialog:
     def unlearnAllEntries(self, master):
 
         # Obtain the parameter list anew
-        self.newParamList = self.taskObject.getParList()
+        #self.newParamList = self.taskObject.getParList()
 
         # Loop over the parameters to reset the values
         for i in range(self.numParams):
-            self.entryNo[i].unlearnOption(self.newParamList[i])
+            self.entryNo[i].unlearnOption(self.defaultParamList[i])
+            #self.entryNo[i].unlearnOption(self.newParamList[i])
 
 
     # Read, save, and validate the entries

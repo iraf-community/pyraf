@@ -35,16 +35,18 @@ import iraftask, epar
 # Constants 
 MAXLIST  =  15
 MAXLINES = 100
+XSHIFT   = 100
+
+# This value is dependent upon the yscroll increment.  This is a test
+# implementation.
+SDOWNLIMIT = 680
 
 class EparOption:
 
     # Chosen option 
     choiceClass = StringVar
 
-    def entryCheck(self, event = None):
-        pass
-
-    def __init__(self, master, statusBar, paramInfo, fieldWidths):
+    def __init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths):
 
         # Connect to the information/status Label
         self.status = statusBar
@@ -53,6 +55,7 @@ class EparOption:
         self.master       = master
         self.master.frame = Frame(self.master)
         self.paramInfo    = paramInfo
+        self.isScrollable = isScrollable
         self.inputWidth   = fieldWidths.get('inputWidth')
         self.valueWidth   = fieldWidths.get('valueWidth')
         self.promptWidth  = fieldWidths.get('promptWidth')
@@ -129,30 +132,56 @@ class EparOption:
             self.master.infoText.label.pack(side = LEFT)
             self.master.infoText.pack(side = TOP, anchor = W)
 
+    # Method called with the "unlearn" menu option is chosen from the 
+    # popup menu.  Used to unlearn a single parameter value.
+    def unlearnValue(self):
+ 
+        self.defaultValue = self.defaultParamInfo.get(field = "p_filename", 
+                            native = 0, prompt = 0) 
+        self.choice.set(self.defaultValue)
 
+
+    # If using the Tab key to move down the parameter panel, scroll the panel
+    # down to ensure the input widget with focus is visible.
+    def scrollDown(self, event):
+
+        widgetWithFocus = self.master.frame.focus_get()
+        ylocation       = widgetWithFocus.winfo_rooty()
+        if (ylocation > SDOWNLIMIT):
+            parentToplevel  = self.master.winfo_toplevel()
+            parentToplevel.f.canvas.yview_scroll(1, "units") 
+
+
+    # Check the validity of the entry
+    def entryCheck(self, event = None):
+        pass
+
+
+    # Generate the the input widget as appropriate to the parameter datatype
     def makeInputWidget(self):
         pass
 
 
+    # Method called when the UNLEARN action button is invoked to
+    # unlearn the values of all the task parameters.
     def unlearnOption(self, newParamInfo):
 
         self.newParamInfo = newParamInfo
 
         # Clear the Entry widget and obtain the default value
-        self.entry.delete(0, END)
+        #self.entry.delete(0, END)
 
         self.newValue = self.newParamInfo.get(field = "p_filename", native = 0, 
                                               prompt = 0) 
         self.choice.set(self.newValue)
-        self.entry = Entry(self.master.frame, width = self.valueWidth,
-                     background   = "WhiteSmoke",
-                     textvariable = self.choice)
 
 
 class EnumEparOption(EparOption):
 
-    def __init__(self, master, statusBar, paramInfo, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, fieldWidths)
+    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, isScrollable, fieldWidths):
+        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
+
+        self.defaultParamInfo = defaultParamInfo
 
     def makeInputWidget(self):
 
@@ -170,7 +199,9 @@ class EnumEparOption(EparOption):
                                  relief = RAISED,           
                                  anchor = W,                      # alignment
                                  textvariable = self.choice,      # var to sync 
-                                 indicatoron  = 1)                # tiny box
+                                 indicatoron  = 1,
+                                 takefocus    = 1,
+                                 highlightthickness = 1)
 
         self.button.menu = Menu(self.button,  
                                 tearoff = 0,
@@ -189,13 +220,36 @@ class EnumEparOption(EparOption):
 
         self.button.pack(side = LEFT)
 
+        # Bind the button to a popup menu of choices
+        self.button.bind('<Button-3>', self.popupChoices)
 
-    def unlearnOption(self, newParamInfo):
+        if (self.isScrollable == "yes"):
+            # Piggyback additional functionality to the Tab key
+            self.button.bind('<Tab>', self.scrollDown, "+")
 
-        self.newParamInfo = newParamInfo
-        self.newValue = self.newParamInfo.get(field = "p_filename", native = 0, 
-                                           prompt = 0) 
-        self.choice.set(self.newValue)
+    def popupChoices(self, event):
+ 
+        self.menu = Menu(self.button, tearoff = 0, background = "WhiteSmoke",
+                         activebackground = "gainsboro")
+        self.menu.add_command(label   = "File Browser",
+                              state   = DISABLED)
+        self.menu.add_separator()
+        self.menu.add_command(label   = "Clear",
+                              state   = DISABLED)
+        self.menu.add_command(label   = "Unlearn",
+                             command = self.unlearnValue)
+
+        # Get the current coordinates of the Entry 
+        xcoord = self.button.winfo_rootx()
+        ycoord = self.button.winfo_rooty()
+
+        # Shift the popup menu to smaller X coordinates so the cursor is 
+        # not sitting right on the menu.
+        xcoord = xcoord - XSHIFT
+
+        # Display the Menu as a popup as it is not associated with a Button
+        self.menu.tk_popup(xcoord, ycoord)
+
 
 
 class BooleanEparOption(EparOption):
@@ -203,8 +257,8 @@ class BooleanEparOption(EparOption):
     # Override base close option 
     choiceClass = BooleanVar
 
-    def __init__(self, master, statusBar, paramInfo, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, fieldWidths)
+    def __init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths):
+        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
 
     def makeInputWidget(self):
 
@@ -217,27 +271,38 @@ class BooleanEparOption(EparOption):
         # That's OK, just leave it with no choice
         self.choice.set(self.value)
 
-        self.frame = Frame(self.master.frame, relief = FLAT, width = self.valueWidth)
+        self.frame = Frame(self.master.frame, 
+                           relief    = FLAT, 
+                           width     = self.valueWidth,
+                           takefocus = 1,
+                           highlightthickness = 1)
+
         self.rbyes = Radiobutton(self.frame, text = "Yes",
                                  variable    = self.choice,
                                  value       = "yes",  
                                  anchor      = E,
+                                 takefocus   = 0,
                                  selectcolor = "black")
         self.rbyes.pack(side = LEFT, ipadx = self.padWidth)
         self.rbno  = Radiobutton(self.frame, text = "No", 
                                  variable    = self.choice,
                                  value       = "no",  
                                  anchor      = W,
+                                 takefocus   = 0,
                                  selectcolor = "black")
         self.rbno.pack(side = RIGHT, ipadx = self.padWidth)
         self.frame.pack(side = LEFT)
 
-    def unlearnOption(self, newParamInfo):
+        if (self.isScrollable == "yes"):
+            # Piggyback additional functionality to the Tab key
+            self.frame.bind('<Tab>', self.scrollDown, "+")
 
-        self.newParamInfo = newParamInfo
-        self.newValue = self.newParamInfo.get(field = "p_filename", native = 0, 
-                                              prompt = 0) 
-        self.choice.set(self.newValue)
+    # Method called with the "unlearn" menu option is chosen from the 
+    # popup menu.  Used to unlearn a single parameter value.
+    def unlearnValue(self):
+        pass
+
+
 
 #XXX For string parameters, we currently lose the information that
 #XXX a parameter is undefined.  The initialization gets the string
@@ -250,8 +315,10 @@ class BooleanEparOption(EparOption):
 
 class StringEparOption(EparOption):
 
-    def __init__(self, master, statusBar, paramInfo, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, fieldWidths)
+    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, isScrollable, fieldWidths):
+        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
+
+        self.defaultParamInfo = defaultParamInfo
 
     def makeInputWidget(self):
 
@@ -260,17 +327,13 @@ class StringEparOption(EparOption):
                      background   = "WhiteSmoke",
                      textvariable = self.choice)
         self.entry.pack(side = LEFT, fill = X, expand = TRUE)
+
+        # Bind the entry to a popup menu of choices
         self.entry.bind('<Button-3>', self.popupChoices)
 
-        # Piggyback additional functionality to the Tab key
-        self.entry.bind('<Tab>', self.scrollDown)
-
-    # This is bad for windows without a scrollbar
-    def scrollDown(self, event):
-
-        pass
-        #parentToplevel  = self.master.winfo_toplevel()
-        #parentToplevel.f.canvas.yview_scroll(1, "units") 
+        if (self.isScrollable == "yes"):
+            # Piggyback additional functionality to the Tab key
+            self.entry.bind('<Tab>', self.scrollDown, "+")
 
 
     def popupChoices(self, event):
@@ -283,13 +346,16 @@ class StringEparOption(EparOption):
         self.menu.add_command(label   = "Clear",
                               command = self.clearEntry)
         self.menu.add_command(label   = "Unlearn",
-                              state   = DISABLED,
-                              command = self.unlearnEntry)
+                              command = self.unlearnValue)
+
 
         # Get the current coordinates of the Entry 
         xcoord = self.entry.winfo_rootx()
         ycoord = self.entry.winfo_rooty()
-        # print xcoord, ycoord
+
+        # Shift the popup menu to smaller X coordinates so the cursor is 
+        # not sitting right on the menu.
+        xcoord = xcoord - XSHIFT
 
         # Display the Menu as a popup as it is not associated with a Button
         self.menu.tk_popup(xcoord, ycoord)
@@ -312,14 +378,14 @@ class StringEparOption(EparOption):
 
         self.entry.delete(0, END)
 
-    # Unlearn just this Entry
-    def unlearnEntry(self):
-        pass
+
 
 class IntEparOption(EparOption):
 
-    def __init__(self, master, statusBar, paramInfo, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, fieldWidths)
+    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, isScrollable, fieldWidths):
+        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
+
+        self.defaultParamInfo = defaultParamInfo
 
     def notNull(self, value):
         return value not in ["", "INDEF"]
@@ -353,7 +419,44 @@ class IntEparOption(EparOption):
 
         # Set up key bindings
         self.entry.bind('<Return>', self.entryCheck)
-        self.entry.bind('<Tab>', self.entryCheck)
+        self.entry.bind('<Tab>', self.entryCheck, "+")
+
+        # Bind the button to a popup menu of choices
+        self.entry.bind('<Button-3>', self.popupChoices)
+
+        if (self.isScrollable == "yes"):
+            # Piggyback additional functionality to the Tab key
+            self.entry.bind('<Tab>', self.scrollDown, "+")
+
+
+    def popupChoices(self, event):
+ 
+        self.menu = Menu(self.entry, tearoff = 0, background = "WhiteSmoke",
+                         activebackground = "gainsboro")
+        self.menu.add_command(label   = "File Browser",
+                              state   = DISABLED)
+        self.menu.add_separator()
+        self.menu.add_command(label   = "Clear",
+                              command = self.clearEntry)
+        self.menu.add_command(label   = "Unlearn",
+                             command = self.unlearnValue)
+
+        # Get the current coordinates of the Entry 
+        xcoord = self.entry.winfo_rootx()
+        ycoord = self.entry.winfo_rooty()
+
+        # Shift the popup menu to smaller X coordinates so the cursor is 
+        # not sitting right on the menu.
+        xcoord = xcoord - XSHIFT
+
+        # Display the Menu as a popup as it is not associated with a Button
+        self.menu.tk_popup(xcoord, ycoord)
+
+    # Clear just this Entry
+    def clearEntry(self):
+
+        self.entry.delete(0, END)
+
 
 
     # Check the validity of the entry
@@ -427,8 +530,10 @@ class IntEparOption(EparOption):
 
 class RealEparOption(EparOption):
 
-    def __init__(self, master, statusBar, paramInfo, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, fieldWidths)
+    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, isScrollable, fieldWidths):
+        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
+
+        self.defaultParamInfo = defaultParamInfo
 
     def notNull(self, value):
         return value not in ["", "INDEF"]
@@ -462,7 +567,43 @@ class RealEparOption(EparOption):
 
         # Set up key bindings
         self.entry.bind('<Return>', self.entryCheck)
-        self.entry.bind('<Tab>', self.entryCheck)
+        self.entry.bind('<Tab>', self.entryCheck, "+")
+
+        # Bind the button to a popup menu of choices
+        self.entry.bind('<Button-3>', self.popupChoices)
+
+        if (self.isScrollable == "yes"):
+            # Piggyback additional functionality to the Tab key
+            self.entry.bind('<Tab>', self.scrollDown, "+")
+
+
+    def popupChoices(self, event):
+ 
+        self.menu = Menu(self.entry, tearoff = 0, background = "WhiteSmoke",
+                         activebackground = "gainsboro")
+        self.menu.add_command(label   = "File Browser",
+                              state   = DISABLED)
+        self.menu.add_separator()
+        self.menu.add_command(label   = "Clear",
+                              command = self.clearEntry)
+        self.menu.add_command(label   = "Unlearn",
+                             command = self.unlearnValue)
+
+        # Get the current coordinates of the Entry 
+        xcoord = self.entry.winfo_rootx()
+        ycoord = self.entry.winfo_rooty()
+
+        # Shift the popup menu to smaller X coordinates so the cursor is 
+        # not sitting right on the menu.
+        xcoord = xcoord - XSHIFT
+
+        # Display the Menu as a popup as it is not associated with a Button
+        self.menu.tk_popup(xcoord, ycoord)
+
+    # Clear just this Entry
+    def clearEntry(self):
+
+        self.entry.delete(0, END)
 
 
     # Check the validity of the entry
@@ -537,8 +678,8 @@ class RealEparOption(EparOption):
 
 class PsetEparOption(EparOption):
 
-    def __init__(self, master, statusBar, paramInfo, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, fieldWidths)
+    def __init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths):
+        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
 
     def makeInputWidget(self):
 
@@ -567,6 +708,10 @@ class PsetEparOption(EparOption):
                                  command = self.childEparDialog)
         self.button.pack(side = LEFT)
 
+        if (self.isScrollable == "yes"):
+            # Piggyback additional functionality to the Tab key
+            self.button.bind('<Tab>', self.scrollDown, "+")
+
     def childEparDialog(self):
         
         # Get a reference to the parent TopLevel
@@ -577,9 +722,7 @@ class PsetEparOption(EparOption):
                                           title   = "PSET Parameter Editor") 
         parentToplevel.childList.append(childPsetHandle)
 
-    def unlearnOption(self, newParamInfo):
-
-        self.newParamInfo = newParamInfo
-        self.newValue = self.newParamInfo.get(field = "p_filename", native = 0, 
-                                           prompt = 0) 
-        self.choice.set(self.newValue)
+    # Method called with the "unlearn" menu option is chosen from the 
+    # popup menu.  Used to unlearn a single parameter value.
+    def unlearnValue(self):
+        pass
