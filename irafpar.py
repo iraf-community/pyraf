@@ -273,7 +273,7 @@ class IrafPar:
 				"\nCould be any of " + `ffield`)
 		field = ffield[0]
 		if field == "p_prompt":
-			self.prompt = _stripQuote(value)
+			self.prompt = _removeEscapes(_stripQuote(value))
 		elif field == "p_value":
 			self.set(value,check=check)
 		elif field == "p_filename":
@@ -426,7 +426,7 @@ class IrafParS(IrafPar):
 					warning("Illegal min/max/choice values for type '" +
 						self.type + "' for parameter " + self.name,
 						strict, irafpar=self)
-		self.prompt = fields[6]
+		self.prompt = _removeEscapes(fields[6])
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 	def setChoice(self,s,strict=0):
@@ -483,6 +483,27 @@ def _stripQuote(value):
 	return value
 
 # -----------------------------------------------------
+# Utility function to remove escapes from in front of quotes
+# -----------------------------------------------------
+
+def _removeEscapes(value):
+	"""Remove escapes from in front of quotes (which IRAF seems to
+	just stick in for fun sometimes.)
+	Don't worry about multiple-backslash case -- this will replace
+	\\" with just ", which is fine by me."""
+
+	i = string.find(value,r'\"')
+	while i>=0:
+		value = value[:i] + value[i+1:]
+		# search from beginning every time to handle multiple \\ case
+		i = string.find(value,r'\"')
+	i = string.find(value,r"\'")
+	while i>=0:
+		value = value[:i] + value[i+1:]
+		i = string.find(value,r"\'")
+	return value
+
+# -----------------------------------------------------
 # IRAF gcur (graphics cursor) parameter class
 # -----------------------------------------------------
 
@@ -531,7 +552,7 @@ class IrafParB(IrafPar):
 				warning("Illegal min/max/choice values for type '" + \
 					self.type + "' for parameter " + self.name,
 					strict, irafpar=self)
-		self.prompt = fields[6]
+		self.prompt = _removeEscapes(fields[6])
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
@@ -603,7 +624,7 @@ class IrafParI(IrafPar):
 		else:
 			self.min = self.coerceOneValue(fields[4],strict)
 			self.max = self.coerceOneValue(fields[5],strict)
-		self.prompt = fields[6]
+		self.prompt = _removeEscapes(fields[6])
 		if self.min != None and self.max != None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
@@ -688,7 +709,7 @@ class IrafParAI(IrafParI):
 		else:
 			self.min = self.coerceOneValue(fields[6],strict)
 			self.max = self.coerceOneValue(fields[7],strict)
-		self.prompt = fields[8]
+		self.prompt = _removeEscapes(fields[8])
 		if self.min != None and self.max != None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
@@ -719,7 +740,7 @@ class IrafParR(IrafPar):
 		else:
 			self.min = self.coerceOneValue(fields[4],strict)
 			self.max = self.coerceOneValue(fields[5],strict)
-		self.prompt = fields[6]
+		self.prompt = _removeEscapes(fields[6])
 		if self.min != None and self.max != None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " +
 				" for parameter " + self.name + str(self.min),
@@ -808,7 +829,7 @@ class IrafParAR(IrafParR):
 		else:
 			self.min = self.coerceOneValue(fields[6],strict)
 			self.max = self.coerceOneValue(fields[7],strict)
-		self.prompt = fields[8]
+		self.prompt = _removeEscapes(fields[8])
 		if self.min != None and self.max != None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
