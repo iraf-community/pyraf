@@ -64,7 +64,7 @@ R. White, 2000 January 21
 """
 
 import os, sys
-from irafglobals import yes, no, INDEF, pyrafDir
+from irafglobals import yes, no, INDEF, EOF, pyrafDir
 
 __version__ = "$Revision$"
 

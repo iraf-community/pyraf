@@ -106,11 +106,10 @@ class _EOFClass:
 		return self
 
 	def __cmp__(self, other):
-		if type(other) is _types.InstanceType and \
-				other.__class__ == self.__class__:
+		if type(other) is _types.InstanceType:
 			# Despite trying to create only one EOF object, there
 			# could be more than one.  All EOFs are equal.
-			return 0
+			return other.__class__ != self.__class__
 		elif type(other) is _types.StringType:
 			# If a string, compare with 'EOF'
 			return cmp("EOF", other)
@@ -151,11 +150,10 @@ class _INDEFClass:
 		return self
 
 	def __cmp__(self, other):
-		if type(other) is _types.InstanceType and \
-				other.__class__ == self.__class__:
+		if type(other) is _types.InstanceType:
 			# Despite trying to create only one INDEF object, there
 			# could be more than one.  All INDEFs are equal.
-			return 0
+			return other.__class__ != self.__class__
 		else:
 			#XXX Note this implies INDEF is equivalent to +infinity
 			#XXX This is the only way to get the right answer
