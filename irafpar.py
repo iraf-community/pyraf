@@ -453,13 +453,19 @@ class IrafParS(IrafPar):
 		elif self.choice != None:
 			vchoice = self.mmchoice.get(v)
 			if vchoice == None:
+				s = self.choice[0]
+				for i in xrange(len(self.choice)-1):
+					s = s + "|" + str(self.choice[i+1])
 				raise ValueError("Value '" + str(v) +
-					"' is not in choice list for " + self.name)
+					"' is not in choice list for " + self.name +
+					"\nChoices are " + s)
 			elif len(vchoice) > 1:
+				s = self.choice[0]
+				for i in xrange(len(self.choice)-1):
+					s = s + "|" + str(self.choice[i+1])
 				raise ValueError("Ambiguous value '" + str(v) +
-					"' from choice list for " + self.name)
-			else:
-				v = vchoice[0]
+					"' from choice list for " + self.name +
+					"\nChoices are " + s)
 		elif (self.min != None and v < self.min) or \
 			 (self.max != None and v > self.max):
 			raise ValueError("Value '" + str(v) + "' is out of min-max range for " +
