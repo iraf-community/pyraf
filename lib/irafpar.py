@@ -358,6 +358,10 @@ class IrafPar:
     #--------------------------------------------
 
     def getPrompt(self):
+        """Alias for getWithPrompt() for backward compatibility"""
+        return self.getWithPrompt()
+
+    def getWithPrompt(self):
         """Interactively prompt for parameter value"""
         if self.prompt:
             pstring = string.strip( string.split(self.prompt,"\n")[0] )
@@ -691,7 +695,7 @@ class IrafPar:
         if (self.mode == "h") or (self.mode == "a" and mode == "h"):
             # hidden parameter
             if not self.isLegal():
-                self.getPrompt()
+                self.getWithPrompt()
         elif self.mode == "u":
             # "u" is a special mode used for local variables in CL scripts
             # They should never prompt under any circumstances
@@ -702,7 +706,7 @@ class IrafPar:
         else:
             # query parameter
             if self.isCmdline()==0:
-                self.getPrompt()
+                self.getWithPrompt()
 
     def _getPFilename(self,native,prompt):
         """Get p_filename field for this parameter
@@ -1388,7 +1392,7 @@ class IrafParLS(IrafParL):
         try:
             # get rid of default value in prompt
             self.value = None
-            self.getPrompt()
+            self.getWithPrompt()
             retval = self.value
             return retval
         finally:
