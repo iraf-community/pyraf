@@ -133,7 +133,7 @@ class IrafTask:
 	# public access to set hidden attribute, which can be specified
 	# in a separate 'hide' statement
 
-	def setHidden(self,value):     self.__hidden = value
+	def setHidden(self,value=1):     self.__hidden = value
 
 	def getParObject(self,param):
 		"""Get the IrafPar object for a parameter"""
@@ -226,7 +226,7 @@ class IrafTask:
 		satisfies min-max range or choice list.
 		"""
 
-		if self.__parDictList == None: self.setParDictList()
+		if self.__parDictList is None: self.setParDictList()
 
 		package, task, paramname, pindex, field = _splitName(qualifiedName)
 
@@ -281,7 +281,7 @@ class IrafTask:
 		floating point parameter.)  Default is return string value.
 		"""
 
-		if self.__parDictList == None: self.setParDictList()
+		if self.__parDictList is None: self.setParDictList()
 		package, task, paramname, pindex, field = _splitName(qualifiedName)
 
 		# special syntax for package parameters
@@ -421,7 +421,7 @@ class IrafTask:
 				# no parameter file -- create default parameter list anyway
 				self.__parList = irafpar.IrafParList(self.__name)
 			else:
-				if basedir == None:
+				if basedir is None:
 					try:
 						exename1 = iraf.Expand(self.__filename)
 						basedir, basename = os.path.split(exename1)
@@ -582,7 +582,7 @@ class IrafPkg(IrafTask):
 
 	def run(self,*args,**kw):
 		"""Load this package with the specified parameters"""
-		if self.getFullpath() == None: self.initTask()
+		if self.getFullpath() is None: self.initTask()
 
 		# Special _doprint keyword is used to control whether tasks are listed
 		# after package has been loaded.  Default is to list them.
