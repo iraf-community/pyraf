@@ -15,8 +15,16 @@ import iraf, irafpar, irafexecute, minmatch
 class IrafTask:
 	"""IRAF task class"""
 	def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
-		self.__name = name
-		self.__pkgname = pkgname
+		sname = string.replace(name, '.', '_')
+		if sname != name:
+			print "Warning: '.' illegal in task name, changing", name, \
+				"to", sname
+		spkgname = string.replace(pkgname, '.', '_')
+		if spkgname != pkgname:
+			print "Warning: '.' illegal in pkgname, changing", pkgname, \
+				"to", spkgname
+		self.__name = sname
+		self.__pkgname = spkgname
 		self.__pkgbinary = pkgbinary
 		# tasks with names starting with '_' are implicitly hidden
 		if name[0] == '_':
@@ -138,7 +146,7 @@ class IrafTask:
 		else:
 			# set parameters
 			apply(self.setParList,args,kw)
-			if iraf._verbose>1:
+			if iraf.verbose>1:
 				print "Connected subproc run ", self.__name, \
 					"("+self.__fullpath+")"
 				self.lpar()
@@ -147,7 +155,7 @@ class IrafTask:
 				self.setParDictList()
 				# run the task
 				irafexecute.IrafExecute(self, iraf._vars)
-				if iraf._verbose>1: print 'Successful task termination'
+				if iraf.verbose>1: print 'Successful task termination'
 			except irafexecute.IrafProcessError, value:
 				raise iraf.IrafError("Error running IRAF task " + self.__name +
 					"\n" + str(value))
@@ -343,8 +351,8 @@ class IrafTask:
 		else:
 			for i in xrange(len(self.__pars)):
 				p = self.__pars[i]
-				if iraf._verbose or p.name != '$nargs':
-					print p.pretty(verbose=verbose or iraf._verbose)
+				if iraf.verbose or p.name != '$nargs':
+					print p.pretty(verbose=verbose or iraf.verbose)
 
 	# fill in full pathnames of files and read parameter file (if it exists)
 	# if names are None then need to run this
@@ -480,14 +488,14 @@ class IrafPkg(IrafTask):
 		if not self.__loaded:
 			self.__loaded = 1
 			iraf._loaded[self.getName()] = len(iraf._loaded)
-			if iraf._verbose>1:
+			if iraf.verbose>1:
 				print "Loading pkg ",self.getName(), "("+self.getFullpath()+")",
 				if self.getHasparfile():
 					print "par", self.getParpath(), \
 						"["+`len(self.getPars())`+"] parameters",
 				print
 			iraf.readcl(self.getFullpath(), self.getPkgname(), self.getPkgbinary())
-			if iraf._verbose>1:
+			if iraf.verbose>1:
 				print "Done loading",self.getName()
 			# if other packages were loaded, put this on the
 			# _loadedPath list one more time
