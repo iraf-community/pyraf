@@ -237,6 +237,7 @@ class GkiOpenGlKernel(gki.GkiKernel):
 		glLoadIdentity()
 		glOrtho(0,1,0,1,-1,1)
 		glDisable(GL_LIGHTING)
+                glDisable(GL_DITHER)
 		glShadeModel(GL_FLAT)
 		
 		for (function, args) in o.iplot.glBuffer.get():
@@ -566,22 +567,22 @@ class IrafGkiConfig:
 		# The following is a list of rgb tuples (0.0-1.0 range) for the
 		# default IRAF set of colors
 		self.defaultColors = [
-			(0.,0.,0.0), # black
-			(1.,1.,1.), # white
-			(1.,0.,0.), # red
-			(0.,1.,0.), # green
+			(0.,0.,0.),  # black
+			(1.,1.,1.),  # white
+			(1.,0.,0.),  # red
+			(0.,1.,0.),  # green
 			(0.,0.,0.1), # blue
-			(1.,1.,0.), # yellow
-			(0.,1.,1.), # cyan
-			(1.,0.,1.), # magenta
-			(1.,0.5,0.), # coral
-			(0.7,0.19,0.38), # maroon
-			(1.,0.65,0.), # orange
-			(0.94,0.9,0.55), # khaki
-			(0.85,0.45,0.83), # orchid
-			(0.25,0.88,0.82), # turquoise
-			(0.91,0.53,0.92), # violet
-			(0.96,0.87,0.72) # wheat
+			(0.,1.,1.),  # cyan
+			(1.,1.,0.),  # yellow
+			(1.,0.,1.),  # magenta
+			(1.,1.,1.),  # white
+			(0.32,0.32,0.32),  # gray32
+			(1.,1.,1.),  # white
+			(1.,1.,1.),  # white
+			(1.,1.,1.),  # white
+			(1.,1.,1.),  # white
+			(1.,1.,1.),  # white
+			(1.,1.,1.)   # white
 		]
 	def fontSize(self):
 	
