@@ -836,8 +836,15 @@ def radix(value, base=10):
 	return sign+_string.join(outdigits,'')
 
 def osfn(filename):
-	"""Convert IRAF virtual path name to OS pathname"""
-	return Expand(filename)
+	"""Convert IRAF virtual path name to absolute OS pathname"""
+	ename = Expand(filename)
+	if _os.path.isabs(ename):
+		return ename
+	fname = _os.path.abspath(ename)
+	# append '/' for directories (but only for relative paths)
+	if _os.path.isdir(fname):
+		fname = _os.path.join(fname,'')
+	return fname
 
 def clSexagesimal(d, m, s=0):
 	"""Convert d:m:s value to float"""
