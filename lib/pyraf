@@ -1,6 +1,10 @@
-#! /usr/ra/pyssg/Python-2.3/bin/python2.3 -i
-#Generated automatically from pyraf.in by configure.
+#! python -i
 """
+Copyright (C) 2003 Association of Universities for Research in Astronomy
+(AURA)
+See LICENSE.txt in the docs directory of the source distribution for the 
+terms of use.
+
 Usage: pyraf [options] [savefile]
 
 where savefile is an optional save file to start from and options are one
