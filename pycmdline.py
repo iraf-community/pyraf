@@ -179,6 +179,7 @@ class PyCmdLine(CmdConsole):
 			clemulate=1):
 		CmdConsole.__init__(self, locals=locals,
 			cmddict=_cmdDict, prompt1="--> ", prompt2="... ")
+		self.reword = re.compile('[a-z]*')
 		self.complete = complete
 		self.debug = debug
 		self.clemulate = clemulate
@@ -362,39 +363,43 @@ class PyCmdLine(CmdConsole):
 		elif line[i:i+1] != "" and line[i] in '=,[':
 			# don't even try if it doesn't look like a procedure call
 			return line
-		else:
-			# see if cmd is an IRAF task or procedure name
-			try:
-				t = getattr(iraf,cmd)
-				# OK, we found it in the iraf module
-				# It could still be a Python expression, so check to see
-				# if the variable exists in the local namespace
-				if line[i:i+1] == "":
-					if self.isLocal(cmd):
-						return line
-					elif not callable(t):
-						# variable from iraf module is not callable (e.g.
-						# yes, no, INDEF, etc.) -- add 'iraf.' so it echoes OK
-						j = string.find(line,cmd)
-						return line[:j] + 'iraf.' + line[j:]
-					# otherwise it is an IRAF task execution
-				elif line[i:i+1] == '(':
-					if self.isLocal(cmd) or cmd in ['type', 'dir']:
-						return line
-					# Not a local function, so user presumably intends to
-					# call IRAF task.  Force Python mode but add the 'iraf.'
-					# string to the task name for convenience.
-					j = string.find(line,cmd)
-					return line[:j] + 'iraf.' + line[j:]
-				elif self.isLocal(cmd) and \
-				  line[i] not in string.digits and \
-				  line[i] not in string.letters and \
-				  line[i] not in "<>|":
-					# don't override local variable unless this really
-					# does look like an IRAF command
-					return line
-			except AttributeError, e:
+		elif not hasattr(iraf,cmd):
+			# not an IRAF command
+			#XXX Eventually want to improve error message for
+			#XXX case where user intended to use IRAF syntax but
+			#XXX forgot to load package
+			return line
+		elif self.isLocal(cmd):
+			# cmd is both a local variable and an IRAF task or procedure name
+			# figure out whether IRAF or CL syntax is intended from syntax
+			if line[i:i+1] == "" or line[i] == "(":
 				return line
+			if line[i] not in string.digits and \
+			   line[i] not in string.letters and \
+			   line[i] not in "<>|":
+				# this does not look like an IRAF command
+				return line
+			# check for some Python operator keywords
+			mm = self.reword.match(line[i:])
+			if mm.group() in ["is","in","and","or","not"]:
+				return line
+		elif line[i:i+1] == '(':
+			if cmd in ['type', 'dir']:
+				# assume a standalone call of Python type, dir functions
+				# rather than IRAF task
+				return line
+			else:
+				# Not a local function, so user presumably intends to
+				# call IRAF task.  Force Python mode but add the 'iraf.'
+				# string to the task name for convenience.
+				#XXX this find() may be improved with latest Python readline features
+				j = string.find(line,cmd)
+				return line[:j] + 'iraf.' + line[j:]
+		elif line[i:i+1] == "" and not callable(getattr(iraf,cmd)):
+			# variable from iraf module is not callable (e.g.
+			# yes, no, INDEF, etc.) -- add 'iraf.' so it echoes OK
+			j = string.find(line,cmd)
+			return line[:j] + 'iraf.' + line[j:]
 
 		# if we get to here then it looks like CL code
 		if self.debug>1: self.write('CL: %s\n' % line)
@@ -414,10 +419,7 @@ class PyCmdLine(CmdConsole):
 	def isLocal(self, value):
 		"""Returns true if value is local variable"""
 		ff = string.split(value,'.')
-		if self.locals.has_key(ff[0]):
-			return 1
-		else:
-			return 0
+		return self.locals.has_key(ff[0])
 
 	def start(self, banner="Python/CL command line wrapper\n"
 			"  .help describes executive commands"):
