@@ -38,12 +38,12 @@ class Gcursor:
 		self.win = gwm.getActiveWindow()
 		gwm.raiseActiveWindow()
 		self.top.update()
-		if not gwm.isFocusElsewhere():
+		if not wutil.isFocusElsewhere():
 			if wutil.isViewable(self.win.winfo_id()):
 				curWinID = wutil.getWindowID()
-				if curWinID == gwm.getTerminalWindowID():
+				if curWinID == wutil.getTerminalWindowID():
 					# save terminal cursor position if in that window
-					gwm.saveTerminalCursorPosition()
+					wutil.saveTerminalCursorPosition()
 				if ((wutil.getTopID(self.win.winfo_id()) !=
 					   wutil.getTopID(curWinID))):
 					# if focus not in graphics window already
