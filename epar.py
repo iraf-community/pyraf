@@ -523,15 +523,16 @@ class EparDialog:
         #    self.top.initial_focus.focus_set()
         #    return
 
-        # Remove the main epar window
-        self.top.focus_set()
-        self.top.withdraw()
-        self.top.destroy()
-
         # save all the entries and verify them 
         try:
             self.saveEntries()
         finally:
+
+            # Remove the main epar window
+            self.top.focus_set()
+            self.top.withdraw()
+            self.top.destroy()
+
             if (self.isChild == "no"):
                 self.top.quit()
 
