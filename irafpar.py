@@ -1,12 +1,12 @@
-"""module 'irafpar.py' -- parse IRAF .par files and create lists of
-IrafPar objects
+"""irafpar.py -- parse IRAF .par files and create lists of IrafPar objects
 
 $Id$
 
-R. White, 1999 May 28
+R. White, 1999 July 16
 """
 
-import os, sys, string, re, irafgcur, irafimcur, irafukey, minmatch
+import os, sys, string, re
+import irafgcur, irafimcur, irafukey, irafutils, minmatch
 from types import *
 
 # -----------------------------------------------------
@@ -26,10 +26,12 @@ import iraf
 def warning(msg, strict=0, exception=SyntaxError,
 		filename=None, irafparam=None):
 	# prepend filename to message if known
-	if irafparam:
+	if irafparam and irafparam.filename:
 		prefix = irafparam.filename + ":\n"
 	elif filename:
 		prefix = filename + ":\n"
+	else:
+		prefix = "<no filename>:\n"
 	if strict:
 		raise exception(prefix + msg)
 	elif iraf.verbose:
@@ -99,33 +101,83 @@ del flist, field
 
 class IrafPar:
 
-	"""IRAF parameter base class"""
+	"""Non-array IRAF parameter base class"""
 
 	def __init__(self,fields,filename,strict=0):
 		orig_len = len(fields)
 		if orig_len < 3:
 			raise SyntaxError("Fewer than 3 fields in parameter line")
 		#
-		# all the attributes that are going to get defined (put them here
-		# to make them easier to find)
+		# all the attributes that are going to get defined
 		#
 		self.filename = filename
 		self.name   = fields[0]
 		self.type   = fields[1]
 		self.mode   = fields[2]
 		self.value  = None
-		self.dim    = 1
 		self.min    = None
 		self.max    = None
 		self.choice = None
 		self.prompt = None
+		#
+		# put fields into appropriate attributes
+		#
+		while len(fields) < 7: fields.append("")
+		#
+		self.value = self.coerceValue(fields[3],strict)
+		s = string.strip(fields[4])
+		if '|' in s:
+			self.setChoice(s,strict)
+			if fields[5] != "":
+				if orig_len < 7:
+					warning("Max value illegal when choice list given" +
+							" for parameter " + self.name +
+							" (probably missing comma)",
+							strict, irafparam=self)
+					# try to recover by assuming max string is prompt
+					fields[6] = fields[5]
+					fields[5] = ""
+				else:
+					warning("Max value illegal when choice list given" +
+						" for parameter " + self.name, strict, irafparam=self)
+		else:
+			# XXX should catch ValueError exceptions here and set to null
+			# XXX could also check for missing comma (null prompt, prompt in max field)
+			if fields[4]: self.min = self.coerceValue(fields[4],strict)
+			if fields[5]: self.max = self.coerceValue(fields[5],strict)
+		if self.min != None and self.max != None and self.max < self.min:
+			warning("Max " + str(self.max) + " is less than min " + \
+				str(self.min) + " for parameter " + self.name,
+				strict, irafparam=self)
+			self.min, self.max = self.max, self.min
+		self.prompt = irafutils.removeEscapes(fields[6])
+		#
+		# check attributes to make sure they are appropriate for
+		# this parameter type (e.g. some do not allow choice list
+		# or min/max)
+		#
+		self.checkAttribs(strict)
+		#
+		# check parameter value to see if it is correct
+		#
+		try:
+			self.checkValue(self.value,strict)
+		except ValueError, e:
+			warning("Illegal initial value for parameter\n" + str(e),
+				strict, irafparam=self, exception=ValueError)
+			# Set illegal values to null string, just like IRAF
+			self.value = ""
+
+	def checkAttribs(self,strict=0):
+		# by default no restrictions on attributes
+		pass
 
 	def setChoice(self,s,strict=0):
 		"""Set choice parameter from string s"""
 		clist = _getChoice(self,s,strict)
 		newchoice = len(clist)*[0]
 		for i in xrange(len(clist)):
-			newchoice[i] = self.coerceOneValue(clist[i])
+			newchoice[i] = self.coerceValue(clist[i])
 		self.choice = newchoice
 
 	def getPrompt(self):
@@ -175,43 +227,17 @@ class IrafPar:
 		if prompt and self.mode == "q": self.getPrompt()
 
 		if index != None:
-			if self.dim < 2:
-				raise SyntaxError("Parameter "+self.name+" is not an array")
-			try:
-				if native:
-					return self.value[index]
-				else:
-					return self.toString(self.value[index])
-			except IndexError:
-				raise SyntaxError("Illegal index [" + `index` +
-					"] for array parameter " + self.name)
+			raise SyntaxError("Parameter "+self.name+" is not an array")
 
-		if self.dim == 1:
-			if native:
-				return self.value
-			else:
-				return self.toString(self.value)
-		elif native:
-			# return list of values for array
+		if native:
 			return self.value
 		else:
-			# return blank-separated string of values for array
-			sval = self.dim*[None]
-			for i in xrange(self.dim):
-				sval[i] = self.toString(self.value[i])
-			return string.join(sval,' ')
-
-	def toString(self, value):
-		"""Convert a single (non-array) value of the appropriate type for
-		this parameter to a string"""
-		if value == None:
-			return ""
-		else:
-			return str(value)
+			return self.toString(self.value)
 
 	def getField(self, field, native=0, prompt=1):
 		"""Get a parameter field value"""
 		try:
+			# expand field name using minimum match
 			field = _getFieldDict[field]
 		except KeyError, e:
 			# re-raise the exception with a bit more info
@@ -258,19 +284,10 @@ class IrafPar:
 		Index is optional array index (zero-based).  Set check=0 to
 		assign the value without checking to see if it is within
 		the min-max range or in the choice list."""
+
 		if index != None:
-			if self.dim < 2:
-				raise SyntaxError("Parameter "+self.name+" is not an array")
-			try:
-				value = self.coerceOneValue(value)
-				if check:
-					self.value[index] = self.checkOneValue(value)
-				else:
-					self.value[index] = value
-				return
-			except IndexError:
-				raise SyntaxError("Illegal index [" + `index` +
-					"] for array parameter " + self.name)
+			raise SyntaxError("Parameter "+self.name+" is not an array")
+
 		if field:
 			self.setField(value,field,check=check)
 		else:
@@ -283,22 +300,23 @@ class IrafPar:
 	def setField(self, value, field, check=1):
 		"""Set a parameter field value"""
 		try:
+			# expand field name using minimum match
 			field = _setFieldDict[field]
 		except KeyError, e:
 			raise SyntaxError("Cannot set field " + field +
 				" for parameter " + self.name + "\n" + str(e))
 		if field == "p_prompt":
-			self.prompt = _removeEscapes(_stripQuote(value))
+			self.prompt = irafutils.removeEscapes(irafutils.stripQuotes(value))
 		elif field == "p_value":
 			self.set(value,check=check)
 		elif field == "p_filename":
 			# this is only relevant for list parameters (*imcur, *gcur, etc.)
-			self.value = _stripQuote(value)
+			self.value = irafutils.stripQuotes(value)
 		elif field == "p_maximum":
 			self.max = self.coerceOneValue(value)
 		elif field == "p_minimum":
 			if type(value) == StringType and '|' in value:
-				self.setChoice(_stripQuote(value))
+				self.setChoice(irafutils.stripQuotes(value))
 			else:
 				self.min = self.coerceOneValue(value)
 		else:
@@ -313,16 +331,12 @@ class IrafPar:
 		right type.)
 		"""
 		v = self.coerceValue(value,strict)
-		if self.dim == 1:
-			return self.checkOneValue(v)
-		else:
-			for i in xrange(self.dim): self.checkOneValue(v[i])
-			return v
+		return self.checkOneValue(v)
 
 	def checkOneValue(self,v):
 		"""Checks a single value to see if it is in range or choice list
 
-		Ignores indirection strings starting with ")".  Assumes
+		Allows indirection strings starting with ")".  Assumes
 		v has already been converted to right value by
 		coerceOneValue.  Returns value if OK, or raises
 		ValueError if not OK.
@@ -339,28 +353,20 @@ class IrafPar:
 				self.name)
 		return v
 
-	def coerceOneValue(self,value,strict=0):
-		"""Coerce a scalar parameter to the appropriate type
-		
-		Should accept None or null string.
-		"""
-		raise RuntimeError("Bug: base class IrafPar cannot be used directly")
-
 	def coerceValue(self,value,strict=0):
 		"""Coerce parameter to appropriate type
 		
-		Should accept None or null string.  Must be an array for
-		an array parameter.
+		Should accept None or null string.
 		"""
-		if self.dim == 1:
-			return self.coerceOneValue(value,strict)
-		if (type(value) not in [ListType,TupleType]) or len(value) != self.dim:
-			raise ValueError("Value must be a " + `self.dim` + \
-				"-element integer array for "+self.name)
-		v = self.dim*[0]
-		for i in xrange(self.dim):
-			v[i] = self.coerceOneValue(value[i],strict)
-		return v
+		return self.coerceOneValue(value,strict)
+
+	def coerceOneValue(self,value,strict=0):
+		"""Coerce a scalar parameter to the appropriate type
+		
+		Default implementation simply prevents direct use of base class.
+		Should accept None or null string.
+		"""
+		raise RuntimeError("Bug: base class IrafPar cannot be used directly")
 
 	def pretty(self,verbose=0):
 		"""Return pretty list description of parameter"""
@@ -398,7 +404,6 @@ class IrafPar:
 	def __str__(self):
 		"""Return readable description of parameter"""
 		s = "<IrafPar " + self.name + " " + self.type
-		if self.dim > 1: s = s + "[" + str(self.dim) + "]"
 		s = s + " " + self.mode + " " + `self.value`
 		if self.choice != None:
 			s = s + " |"
@@ -410,60 +415,209 @@ class IrafPar:
 		return s
 
 # -----------------------------------------------------
-# IRAF string parameter class
+# IRAF array parameter base class
 # -----------------------------------------------------
 
-class IrafParS(IrafPar):
+class IrafArrayPar(IrafPar):
 
-	"""IRAF string parameter class"""
+	"""IRAF integer array parameter class"""
 
 	def __init__(self,fields,filename,strict=0):
-		IrafPar.__init__(self,fields,filename,strict)
 		orig_len = len(fields)
-		while len(fields) < 7: fields.append("")
+		if orig_len < 3:
+			raise SyntaxError("Fewer than 3 fields in parameter line")
 		#
-		self.value = fields[3]
-		# string (s) can have choice of values; min,max must be null for
-		# others if not in strict mode, allow file (f) to act just like
-		# string (s)
-		if self.type == "s" or ((not strict) and (self.type == "f")):
-			# only min can be defined and it must have choices
-			if fields[4] != "":
-				self.setChoice(string.strip(fields[4]),strict)
-			if fields[5] != "":
-				if orig_len < 7:
-					warning("Illegal max value for string-type parameter " + 
-							self.name + " (probably missing comma)",
+		# all the attributes that are going to get defined
+		#
+		self.filename = filename
+		self.name   = fields[0]
+		self.type   = fields[1]
+		self.mode   = fields[2]
+		self.value  = None
+		self.min    = None
+		self.max    = None
+		self.choice = None
+		self.prompt = None
+		self.dim    = None
+		#
+		while len(fields) < 7: fields.append("")
+		# for array parameter, get dimensions from normal values field
+		# and get values from fields after prompt
+		ndim = int(fields[3])
+		if ndim != 1:
+			raise SyntaxError("Cannot handle multi-dimensional array" +
+				" for parameter " + self.name)
+		self.dim = int(fields[4])
+		while len(fields) < 9+self.dim: fields.append("")
+		if len(fields) > 9+self.dim:
+			raise SyntaxError("Too many values for array" +
+				" for parameter " + self.name)
+		#
+		self.value = self.coerceValue(fields[9:9+self.dim],strict)
+		s = string.strip(fields[6])
+		if '|' in s:
+			self.setChoice(s,strict)
+			if fields[7] != "":
+				if orig_len < 9:
+					warning("Max value illegal when choice list given" +
+							" for parameter " + self.name +
+							" (probably missing comma)",
 							strict, irafparam=self)
-					# try to recover by assuming this string is prompt
-					fields[6] = fields[5]
-					fields[5] = ""
-				else:
-					warning("Illegal max value for string-type parameter " +
-						self.name, strict, irafparam=self)
-		else:
-			# otherwise, min & max must be blank
-			if fields[4] != "" or fields[5] != "":
-				if orig_len < 7:
-					warning("Illegal min/max/choice values for type '" +
-							self.type + "' for parameter " + self.name +
-							" (probably missing comma)", strict, irafparam=self)
 					# try to recover by assuming max string is prompt
-					fields[6] = fields[5]
-					fields[5] = ""
+					fields[8] = fields[7]
+					fields[7] = ""
 				else:
-					warning("Illegal min/max/choice values for type '" +
-						self.type + "' for parameter " + self.name,
-						strict, irafparam=self)
-		self.prompt = _removeEscapes(fields[6])
-		# check parameter to see if it is correct
+					warning("Max value illegal when choice list given" +
+						" for parameter " + self.name, strict, irafparam=self)
+		else:
+			self.min = self.coerceOneValue(fields[6],strict)
+			self.max = self.coerceOneValue(fields[7],strict)
+		self.prompt = irafutils.removeEscapes(fields[8])
+		if self.min != None and self.max != None and self.max < self.min:
+			warning("Max " + str(self.max) + " is less than min " + \
+				str(self.min) + " for parameter " + self.name,
+				strict, irafparam=self)
+			self.min, self.max = self.max, self.min
+		#
+		# check attributes to make sure they are appropriate for
+		# this parameter type (e.g. some do not allow choice list
+		# or min/max)
+		#
+		self.checkAttribs(strict)
+		#
+		# check parameter value to see if it is correct
+		#
 		try:
 			self.checkValue(self.value,strict)
 		except ValueError, e:
 			warning("Illegal initial value for parameter\n" + str(e),
 				strict, irafparam=self, exception=ValueError)
-			# Set to null string, just like IRAF
+			# Set illegal values to null string, just like IRAF
 			self.value = ""
+
+	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
+		"""Return value of this parameter as a string (or in native format
+		if native is non-zero.)"""
+
+		if field: return self.getField(field,native=native,prompt=prompt)
+
+		# prompt for query parameters unless prompt is set to zero
+		if prompt and self.mode == "q": self.getPrompt()
+
+		if index != None:
+			try:
+				if native:
+					return self.value[index]
+				else:
+					return self.toString(self.value[index])
+			except IndexError:
+				raise SyntaxError("Illegal index [" + `index` +
+					"] for array parameter " + self.name)
+		if native:
+			# return list of values for array
+			return self.value
+		else:
+			# return blank-separated string of values for array
+			sval = self.dim*[None]
+			for i in xrange(self.dim):
+				sval[i] = self.toString(self.value[i])
+			return string.join(sval,' ')
+
+	def set(self, value, field=None, index=None, check=1):
+		"""Set value of this parameter from a string or other value.
+		Field is optional parameter field (p_prompt, p_minimum, etc.)
+		Index is optional array index (zero-based).  Set check=0 to
+		assign the value without checking to see if it is within
+		the min-max range or in the choice list."""
+		if index != None:
+			try:
+				value = self.coerceOneValue(value)
+				if check:
+					self.value[index] = self.checkOneValue(value)
+				else:
+					self.value[index] = value
+				return
+			except IndexError:
+				raise SyntaxError("Illegal index [" + `index` +
+					"] for array parameter " + self.name)
+		if field:
+			self.setField(value,field,check=check)
+		else:
+			if check:
+				self.value = self.checkValue(value)
+			else:
+				self.value = self.coerceValue(value)
+			return
+
+	def checkValue(self,value,strict=0):
+		"""Check and convert a parameter value.
+
+		Raises an exception if the value is not permitted for this
+		parameter.  Otherwise returns the value (converted to the
+		right type.)
+		"""
+		v = self.coerceValue(value,strict)
+		for i in xrange(self.dim): self.checkOneValue(v[i])
+		return v
+
+	def coerceValue(self,value,strict=0):
+		"""Coerce parameter to appropriate type
+		
+		Should accept None or null string.  Must be an array.
+		"""
+		if (type(value) not in [ListType,TupleType]) or len(value) != self.dim:
+			raise ValueError("Value must be a " + `self.dim` + \
+				"-element integer array for "+self.name)
+		v = self.dim*[0]
+		for i in xrange(self.dim):
+			v[i] = self.coerceOneValue(value[i],strict)
+		return v
+
+	def __str__(self):
+		"""Return readable description of parameter"""
+		s = "<IrafPar " + self.name + " " + self.type + "[" + str(self.dim) + "]"
+		s = s + " " + self.mode + " " + `self.value`
+		if self.choice != None:
+			s = s + " |"
+			for i in xrange(len(self.choice)):
+				s = s + str(self.choice[i]) + "|"
+		else:
+			s = s + " " + `self.min` + " " + `self.max`
+		s = s + ' "' + self.prompt + '">'
+		return s
+
+# -----------------------------------------------------
+# IRAF string parameter mixin class
+# -----------------------------------------------------
+
+class _StringMixin:
+
+	"""IRAF string parameter mixin class"""
+
+	def checkAttribs(self, strict):
+		"""Check initial attributes to make sure they are legal"""
+		if self.min:
+			warning("Minimum value not allowed for string-type parameter " +
+				self.name, strict, irafparam=self)
+			self.min = None
+		if self.max:
+			if not self.prompt:
+				warning("Maximum value not allowed for string-type parameter " +
+						self.name + " (probably missing comma)",
+						strict, irafparam=self)
+				# try to recover by assuming max string is prompt
+				self.prompt = self.max
+			else:
+				warning("Maximum value not allowed for string-type parameter " +
+					self.name, strict, irafparam=self)
+			self.max = None
+		# If not in strict mode, allow file (f) to act just like string (s).
+		# Otherwise choice is also forbidden for file type
+		if strict and self.type == "f" and self.choice:
+			warning("Illegal choice value for type '" +
+				self.type + "' for parameter " + self.name,
+				strict, irafparam=self)
+			self.choice = None
 
 	def setChoice(self,s,strict=0):
 		"""Set choice parameter and min-match dictionary from string"""
@@ -473,12 +627,20 @@ class IrafParS(IrafPar):
 		self.mmchoice = minmatch.MinMatchDict()
 		for c in self.choice: self.mmchoice.add(c, c)
 
+	def toString(self, value):
+		"""Convert a single (non-array) value of the appropriate type for
+		this parameter to a string"""
+		if value == None:
+			return ""
+		else:
+			return value
+
 	def coerceOneValue(self,value,strict=0):
 		if value == None:
 			return ""
 		elif type(value) is StringType:
 			# strip double quotes
-			return _stripQuote(value)
+			return irafutils.stripQuotes(value)
 		else:
 			return str(value)
 
@@ -505,51 +667,28 @@ class IrafParS(IrafPar):
 				"' is out of min-max range for " + self.name)
 		return v
 
-
 # -----------------------------------------------------
-# Utility function to strip single or double quotes off string
-# -----------------------------------------------------
-
-def _stripQuote(value):
-	if value[:1] == '"':
-		value = value[1:]
-		if value[-1:] == '"':
-			value = value[:-1]
-	elif value[:1] == "'":
-		value = value[1:]
-		if value[-1:] == "'":
-			value = value[:-1]
-	return value
-
-# -----------------------------------------------------
-# Utility function to remove escapes from in front of quotes
+# IRAF string parameter class
 # -----------------------------------------------------
 
-def _removeEscapes(value):
-	"""Remove escapes from in front of quotes (which IRAF seems to
-	just stick in for fun sometimes.)
-	Don't worry about multiple-backslash case -- this will replace
-	\\" with just ", which is fine by me."""
+class IrafParS(_StringMixin, IrafPar):
 
-	i = string.find(value,r'\"')
-	while i>=0:
-		value = value[:i] + value[i+1:]
-		# search from beginning every time to handle multiple \\ case
-		i = string.find(value,r'\"')
-	i = string.find(value,r"\'")
-	while i>=0:
-		value = value[:i] + value[i+1:]
-		i = string.find(value,r"\'")
-	return value
+	"""IRAF string parameter class"""
+
+	def __init__(self,fields,filename,strict=0):
+		IrafPar.__init__(self,fields,filename,strict)
 
 # -----------------------------------------------------
 # IRAF pset parameter class
 # -----------------------------------------------------
 
 class IrafParPset(IrafParS):
-	"""IRAF graphics cursor parameter class"""
+
+	"""IRAF pset parameter class"""
+
 	def __init__(self,fields,filename,strict=0):
 		IrafParS.__init__(self,fields,filename,strict)
+
 	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
 		"""Return pset value (IrafTask object)"""
 		if index:
@@ -558,6 +697,7 @@ class IrafParPset(IrafParS):
 		if field: return self.getField(field)
 		if lpar: return str(self.value)
 		return iraf.getTask(self.value or self.name)
+
 	def set(self, value, field=None, index=None, check=1):
 		raise ValueError("Pset parameter " + self.name +
 			" cannot be assigned a value")
@@ -590,18 +730,18 @@ class IrafParGCur(IrafParS):
 # -----------------------------------------------------
 
 class IrafParImCur(IrafParS):
-	"""IRAF image cursor parameter class"""
+	"""IRAF image display cursor parameter class"""
 	def __init__(self,fields,filename,strict=0):
 		IrafParS.__init__(self,fields,filename,strict)
 	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
-		"""return image display cursor value"""
+		"""Return image display cursor value"""
 		if index:
-			raise SyntaxError("Parameter "+self.name +
+			raise SyntaxError("Parameter " + self.name +
 				" is image cursor, cannot use index")
 		if field: return self.getField(field)
 		if lpar: return str(self.value)
 		return irafimcur.imcur()
-				
+
 # -----------------------------------------------------
 # IRAF ukey (user typed key) parameter class
 # -----------------------------------------------------
@@ -620,34 +760,34 @@ class IrafParUKey(IrafParS):
 		return irafukey.ukey()
 
 # -----------------------------------------------------
-# IRAF boolean parameter class
+# IRAF boolean parameter mixin class
 # -----------------------------------------------------
 
-class IrafParB(IrafPar):
-	"""IRAF boolean parameter class"""
-	def __init__(self,fields,filename,strict=0):
-		IrafPar.__init__(self,fields,filename,strict)
-		orig_len = len(fields)
-		while len(fields) < 7: fields.append("")
-		#
-		self.value = self.coerceValue(fields[3],strict)
-		# other, min & max must be blank
-		if fields[4] != "" or fields[5] != "":
-			if orig_len < 7:
-				warning("Illegal min/max/choice values for type '" +
-						self.type + "' for parameter " + self.name +
-						" (probably missing comma)",
+class _BooleanMixin:
+
+	"""IRAF boolean parameter mixin class"""
+
+	def checkAttribs(self, strict):
+		"""Check initial attributes to make sure they are legal"""
+		if self.min:
+			warning("Minimum value not allowed for boolean-type parameter " +
+				self.name, strict, irafparam=self)
+			self.min = None
+		if self.max:
+			if not self.prompt:
+				warning("Maximum value not allowed for boolean-type parameter " +
+						self.name + " (probably missing comma)",
 						strict, irafparam=self)
 				# try to recover by assuming max string is prompt
-				fields[6] = fields[5]
-				fields[5] = ""
+				self.prompt = self.max
 			else:
-				warning("Illegal min/max/choice values for type '" + \
-					self.type + "' for parameter " + self.name,
-					strict, irafparam=self)
-		self.prompt = _removeEscapes(fields[6])
-		# check parameter to see if it is correct
-		self.checkValue(self.value,strict)
+				warning("Maximum value not allowed for boolean-type parameter " +
+					self.name, strict, irafparam=self)
+			self.max = None
+		if self.choice:
+			warning("Choice values not allowed for boolean-type parameter " +
+				self.name, strict, irafparam=self)
+			self.choice = None
 
 	def toString(self, value):
 		if value == None:
@@ -688,43 +828,23 @@ class IrafParB(IrafPar):
 			" for parameter " + self.name)
 
 # -----------------------------------------------------
-# IRAF integer parameter class
+# IRAF boolean parameter class
 # -----------------------------------------------------
 
-class IrafParI(IrafPar):
-	"""IRAF integer parameter class"""
+class IrafParB(_BooleanMixin,IrafPar):
+
+	"""IRAF boolean parameter class"""
+
 	def __init__(self,fields,filename,strict=0):
 		IrafPar.__init__(self,fields,filename,strict)
-		orig_len = len(fields)
-		while len(fields) < 7: fields.append("")
-		#
-		self.value = self.coerceValue(fields[3],strict)
-		s = string.strip(fields[4])
-		if '|' in s:
-			self.setChoice(s,strict)
-			if fields[5] != "":
-				if orig_len < 7:
-					warning("Max value illegal when choice list given" +
-							" for parameter " + self.name +
-							" (probably missing comma)",
-							strict, irafparam=self)
-					# try to recover by assuming max string is prompt
-					fields[6] = fields[5]
-					fields[5] = ""
-				else:
-					warning("Max value illegal when choice list given" +
-						" for parameter " + self.name, strict, irafparam=self)
-		else:
-			self.min = self.coerceOneValue(fields[4],strict)
-			self.max = self.coerceOneValue(fields[5],strict)
-		self.prompt = _removeEscapes(fields[6])
-		if self.min != None and self.max != None and self.max < self.min:
-			warning("Max " + str(self.max) + " is less than min " + \
-				str(self.min) + " for parameter " + self.name,
-				strict, irafparam=self)
-			self.min, self.max = self.max, self.min
-		# check parameter to see if it is correct
-		self.checkValue(self.value,strict)
+
+# -----------------------------------------------------
+# IRAF integer parameter mixin class
+# -----------------------------------------------------
+
+class _IntMixin:
+
+	"""IRAF integer parameter mixin class"""
 
 	def toString(self, value):
 		if value == None:
@@ -761,86 +881,46 @@ class IrafParI(IrafPar):
 			else:
 				return int(s2)
 
+
+# -----------------------------------------------------
+# IRAF integer parameter class
+# -----------------------------------------------------
+
+class IrafParI(_IntMixin,IrafPar):
+
+	"""IRAF integer parameter class"""
+
+	def __init__(self,fields,filename,strict=0):
+		IrafPar.__init__(self,fields,filename,strict)
+
 # -----------------------------------------------------
 # IRAF integer array parameter class
 # -----------------------------------------------------
 
-class IrafParAI(IrafParI):
+class IrafParAI(_IntMixin,IrafArrayPar):
+
 	"""IRAF integer array parameter class"""
+
 	def __init__(self,fields,filename,strict=0):
-		IrafPar.__init__(self,fields,filename,strict)
-		orig_len = len(fields)
-		while len(fields) < 7: fields.append("")
-		# for array parameter, get dimensions from normal values field
-		# and get values from fields after prompt
-		ndim = int(fields[3])
-		if ndim != 1:
-			raise SyntaxError("Cannot handle multi-dimensional arrays" +
-				" for parameter " + self.name)
-		self.dim = int(fields[4])
-		while len(fields) < 9+self.dim: fields.append("")
-		if len(fields) > 9+self.dim:
-			raise SyntaxError("Too many values for array" +
-				" for parameter " + self.name)
-		#
-		self.value = self.coerceValue(fields[9:9+self.dim],strict)
-		s = string.strip(fields[6])
-		if '|' in s:
-			self.setChoice(s,strict)
-			if fields[7] != "":
-				if orig_len < 9:
-					warning("Max value illegal when choice list given" +
-							" for parameter " + self.name +
-							" (probably missing comma)",
-							strict, irafparam=self)
-					# try to recover by assuming max string is prompt
-					fields[8] = fields[7]
-					fields[7] = ""
-				else:
-					warning("Max value illegal when choice list given" +
-						" for parameter " + self.name, strict, irafparam=self)
-		else:
-			self.min = self.coerceOneValue(fields[6],strict)
-			self.max = self.coerceOneValue(fields[7],strict)
-		self.prompt = _removeEscapes(fields[8])
-		if self.min != None and self.max != None and self.max < self.min:
-			warning("Max " + str(self.max) + " is less than min " + \
-				str(self.min) + " for parameter " + self.name,
-				strict, irafparam=self)
-			self.min, self.max = self.max, self.min
-		# check parameter to see if it is correct
-		self.checkValue(self.value,strict)
+		IrafArrayPar.__init__(self,fields,filename,strict)
 
 # -----------------------------------------------------
-# IRAF real parameter class
+# IRAF real parameter mixin class
 # -----------------------------------------------------
 
 _re_d = re.compile(r'[Dd]')
 _re_colon = re.compile(r':')
 
-class IrafParR(IrafPar):
-	"""IRAF real parameter class"""
-	def __init__(self,fields,filename,strict=0):
-		IrafPar.__init__(self,fields,filename,strict)
-		orig_len = len(fields)
-		while len(fields) < 7: fields.append("")
-		#
-		self.value = self.coerceValue(fields[3],strict)
-		s = string.strip(fields[4])
-		if '|' in s:
-			warning("Choice list not allowed for float parameter " +
-					self.name, strict, irafparam=self)
-		else:
-			self.min = self.coerceOneValue(fields[4],strict)
-			self.max = self.coerceOneValue(fields[5],strict)
-		self.prompt = _removeEscapes(fields[6])
-		if self.min != None and self.max != None and self.max < self.min:
-			warning("Max " + str(self.max) + " is less than min " +
-				" for parameter " + self.name + str(self.min),
-				strict, irafparam=self)
-			self.min, self.max = self.max, self.min
-		# check parameter to see if it is correct
-		self.checkValue(self.value,strict)
+class _RealMixin:
+
+	"""IRAF real parameter mixin class"""
+
+	def checkAttribs(self, strict):
+		"""Check initial attributes to make sure they are legal"""
+		if self.choice:
+			warning("Choice values not allowed for real-type parameter " +
+				self.name, strict, irafparam=self)
+			self.choice = None
 
 	def toString(self, value):
 		if value == None:
@@ -862,7 +942,7 @@ class IrafParR(IrafPar):
 					(strict and (s2 == "INDEF")):
 				return None
 			elif s2[0] == ")":
-				# assume this is indirection -- for now just save it as a string
+				# assume this is indirection -- just save it as a string
 				return s2
 			else:
 				# allow +dd:mm:ss.s sexagesimal format for floats
@@ -891,77 +971,36 @@ class IrafParR(IrafPar):
 					return vsign*(value + \
 						float(s2[i1:mm.start()]+"E"+s2[mm.end():])/vscale)
 
+# -----------------------------------------------------
+# IRAF real parameter class
+# -----------------------------------------------------
+
+class IrafParR(_RealMixin,IrafPar):
+
+	"""IRAF real parameter class"""
+
+	def __init__(self,fields,filename,strict=0):
+		IrafPar.__init__(self,fields,filename,strict)
 
 # -----------------------------------------------------
 # IRAF real array parameter class
 # -----------------------------------------------------
 
-class IrafParAR(IrafParR):
+class IrafParAR(_RealMixin,IrafArrayPar):
+
 	"""IRAF real array parameter class"""
+
 	def __init__(self,fields,filename,strict=0):
-		IrafPar.__init__(self,fields,filename,strict)
-		orig_len = len(fields)
-		while len(fields) < 7: fields.append("")
-		# for array parameter, get dimensions from normal values field
-		# and get values from fields after prompt
-		ndim = int(fields[3])
-		if ndim != 1:
-			raise SyntaxError("Cannot handle multi-dimensional arrays" +
-				" for parameter " + self.name)
-		self.dim = int(fields[4])
-		while len(fields) < 9+self.dim: fields.append("")
-		if len(fields) > 9+self.dim:
-			raise SyntaxError("Too many values for array" +
-				" for parameter " + self.name)
-		#
-		self.value = self.coerceValue(fields[9:9+self.dim],strict)
-		s = string.strip(fields[6])
-		if '|' in s:
-			warning("Choice list not allowed for float parameter " +
-					self.name, strict, irafparam=self)
-		else:
-			self.min = self.coerceOneValue(fields[6],strict)
-			self.max = self.coerceOneValue(fields[7],strict)
-		self.prompt = _removeEscapes(fields[8])
-		if self.min != None and self.max != None and self.max < self.min:
-			warning("Max " + str(self.max) + " is less than min " + \
-				str(self.min) + " for parameter " + self.name,
-				strict, irafparam=self)
-			self.min, self.max = self.max, self.min
-		# check parameter to see if it is correct
-		self.checkValue(self.value,strict)
-
-# -----------------------------------------------------
-# utility routine for parsing choice string
-# -----------------------------------------------------
-
-_re_choice = re.compile(r'\|')
-
-def _getChoice(self, s, strict):
-	if (s[0] != "|") or (s[-1] != "|"):
-		warning("Choice string does not start and end with '|'" +
-			" for parameter " + self.name, strict, irafparam=self)
-	if s[0] == "|":
-		i1 = 1
-	else:
-		i1 = 0
-	clist = []
-	mm = _re_choice.search(s,i1)
-	while mm != None:
-		i2 = mm.start()
-		clist.append(s[i1:i2])
-		i1 = mm.end()
-		mm = _re_choice.search(s,i1)
-	if i1 < len(s):
-		clist.append(s[i1:])
-	return clist
+		IrafArrayPar.__init__(self,fields,filename,strict)
 
 # -----------------------------------------------------
 # IRAF parameter list class
 # -----------------------------------------------------
 
 class IrafParList:
+
 	"""List of Iraf parameters"""
+
 	def __init__(self, taskname, filename=""):
 		"""Create a parameter list for task taskname by reading a .par file"""
 		self.__filename = filename
@@ -1219,4 +1258,29 @@ def _readpar(filename,strict=0):
 		param_dict[par.name] = par
 		param_list.append(par)
 	return param_list
+
+# -----------------------------------------------------
+# Utility routine for parsing choice string
+# -----------------------------------------------------
+
+_re_choice = re.compile(r'\|')
+
+def _getChoice(self, s, strict):
+	if (s[0] != "|") or (s[-1] != "|"):
+		warning("Choice string does not start and end with '|'" +
+			" for parameter " + self.name, strict, irafparam=self)
+	if s[0] == "|":
+		i1 = 1
+	else:
+		i1 = 0
+	clist = []
+	mm = _re_choice.search(s,i1)
+	while mm != None:
+		i2 = mm.start()
+		clist.append(s[i1:i2])
+		i1 = mm.end()
+		mm = _re_choice.search(s,i1)
+	if i1 < len(s):
+		clist.append(s[i1:])
+	return clist
 
