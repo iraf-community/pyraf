@@ -56,9 +56,14 @@ Verbose = _VerboseClass()
 # -----------------------------------------------------
 
 if __name__ == "__main__":
-    pyrafDir = _os.path.dirname(_sys.argv[0])
+    thisfile = _sys.argv[0]
 else:
-    pyrafDir = _os.path.dirname(__file__)
+    thisfile = __file__
+# follow links to get to the real filename
+while _os.path.islink(thisfile):
+    thisfile = _os.readlink(thisfile)
+pyrafDir = _os.path.dirname(thisfile)
+del thisfile
 
 if not pyrafDir: pyrafDir = _os.getcwd()
 if not _os.path.isabs(pyrafDir):

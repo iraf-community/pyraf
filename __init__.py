@@ -7,7 +7,7 @@ $Id$
 
 R. White, 2000 February 18
 """
-__version__ = "v0.9.6 (2002Feb14)"
+__version__ = "v0.9.7 (2002Mar18)"
 
 import os, sys, __main__
 
@@ -32,16 +32,15 @@ import cllinecache
 
 import irafnames
 
-# initialization is silent unless program name is 'pyraf'
-# (I'd like to find a better way to trigger this behavior.)
-_silent = os.path.split(sys.argv[0])[1] != 'pyraf'
+# initialization is silent unless program name is 'pyraf' or
+# silent flag is set on command line
 
-# If graphics is available, use splash window
-if _silent:
-    _splash = None
-else:
-    import splash
-    _splash = splash.splash('PyRAF '+__version__)
+# follow links to get to the real executable filename
+executable = sys.argv[0]
+while os.path.islink(executable):
+    executable = os.readlink(executable)
+_pyrafMain = os.path.split(executable)[1] != 'pyraf'
+del executable
 
 import irafexecute, clcache
 
@@ -58,7 +57,7 @@ del atexit
 
 import iraf
 
-if _silent:
+if _pyrafMain:
     # if not executing as pyraf main, just initialize iraf module
     # quietly load initial iraf symbols and packages
     iraf.Init(doprint=0, hush=1)
@@ -69,7 +68,8 @@ else:
 
     import getopt
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], "imvh")
+        optlist, args = getopt.getopt(sys.argv[1:], "imvhsn",
+            ["commandwrapper=", "verbose", "help", "silent", "nosplash"])
         if len(args) > 1:
             print 'Error: more than one savefile argument'
             usage()
@@ -78,31 +78,56 @@ else:
         usage()
     verbose = 0
     doCmdline = 1
+    _silent = 0
+    _dosplash = 1
     if optlist:
         for opt, value in optlist:
             if opt == "-i":
                 doCmdline = 0
             elif opt == "-m":
                 doCmdline = 1
-            elif opt == "-v":
+            elif opt == "--commandwrapper":
+                if value in ("yes", "y"):
+                    doCmdline = 1
+                elif value in ("no", "n"):
+                    doCmdline = 0
+                else:
+                    usage()
+            elif opt in ("-v", "--verbose"):
                 verbose = verbose + 1
-            elif opt == "-h":
+            elif opt in ("-h", "--help"):
                 usage()
+            elif opt in ("-s", "--silent"):
+                _silent = 1
+            elif opt in ("-n", "--nosplash"):
+                _dosplash = 0
             else:
                 print "Program bug, uninterpreted option", opt
                 raise SystemExit
     iraf.setVerbose(verbose)
     del getopt, verbose, usage, optlist
 
+    # If not silent and graphics is available, use splash window
+    if _silent:
+        _splash = None
+        _initkw = {'doprint': 0, 'hush': 1}
+    else:
+        _initkw = {}
+        if _dosplash:
+            import splash
+            _splash = splash.splash('PyRAF '+__version__)
+        else:
+            _splash = None
+
     # load initial iraf symbols and packages
     if args:
-        iraf.Init(savefile=args[0])
+        iraf.Init(savefile=args[0], **_initkw)
     else:
-        iraf.Init()
+        iraf.Init(**_initkw)
     del args
 
-help = iraf.help
+    if _splash:
+        _splash.Destroy()
+    del _splash, _silent, _dosplash
 
-if _splash:
-    _splash.Destroy()
-del _splash
+help = iraf.help
