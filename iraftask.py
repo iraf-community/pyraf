@@ -476,8 +476,14 @@ class IrafTask:
 		self.initTask()
 		if self._hasparfile:
 			if self._defaultParList:
-				self._currentParpath = self._defaultParpath
+				if self._scrunchParpath and \
+				  (self._scrunchParpath == self._currentParpath):
+					try:
+						os.remove(self._scrunchParpath)
+					except OSError:
+						pass
 				self._currentParList = copy.deepcopy(self._defaultParList)
+				self._currentParpath = self._defaultParpath
 			else:
 				raise iraf.IrafError("Cannot find default .par file for task " +
 					self._name)
