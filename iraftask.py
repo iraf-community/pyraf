@@ -611,10 +611,10 @@ class IrafPkg(IrafTask):
 		if t: return t
 		# try subpackages
 		if not triedpkgs: triedpkgs = {}
+		triedpkgs[self] = 1
 		for p in self.__pkgs.values():
 			if p.__loaded and (not triedpkgs.get(p)):
 				try:
-					triedpkgs[p] = 1
 					return p.__getattr__(name,triedpkgs=triedpkgs)
 				except AttributeError, e:
 					pass
