@@ -7,6 +7,7 @@ M.D. De La Pena, 2000 February 04
 # System level modules
 from Tkinter import *
 from types import *
+from tkMessageBox import askokcancel
 import os, sys, string
 
 # PYRAF modules
@@ -115,6 +116,15 @@ class EparDialog:
         Frame(self.top, bg = self.bkgColor, height = 15).pack(side = TOP, 
               fill = X)
 
+        # Set up an information Frame at the bottom of the EPAR window
+        # RESIZING is currently disabled.
+        # Do this here so when resizing to a smaller sizes, the parameter
+        # panel is reduced - not the information frame.
+        self.top.status = Label(self.top, text = "", relief = SUNKEN,
+                           borderwidth = 1, anchor = W)
+        self.top.status.pack(side = BOTTOM, fill = X, padx = 0, pady = 3,
+                             ipady = 3) 
+
         # Set up a Frame to hold a scrollable Canvas
         self.top.f = Frame(self.top, relief = RIDGE, borderwidth = 1)
 
@@ -153,12 +163,6 @@ class EparDialog:
         # Insert a spacer between the Canvas and the information frame
         Frame(self.top, bg = self.bkgColor, height = 4).pack(side = TOP, 
               fill = X)
-
-        # Set up an information Frame after the spacer
-        self.top.status = Label(self.top, text = "", relief = SUNKEN,
-                           borderwidth = 1, anchor = W)
-        self.top.status.pack(side = BOTTOM, fill = X, padx = 0, pady = 3,
-                             ipady = 3) 
 
         # The parent has the control, unless there are children
         # Fix the geometry of where the windows first appear on the screen
@@ -516,25 +520,57 @@ class EparDialog:
              " Execute the task and exit this edit session")
 
 
+    # Process invalid input values and invoke a query dialog
+    def processBadEntries(self, badEntriesList, taskname):
+
+        badEntriesString = "Task " + string.upper(taskname) + " --\n" \
+            "Invalid values have been entered.\n\n" \
+            "Parameter   Bad Value   Reset Value\n"
+
+        for i in range (len(badEntriesList)):
+            badEntriesString = badEntriesString + \
+                "%15s %10s %10s\n" % (badEntriesList[i][0], \
+                badEntriesList[i][1], badEntriesList[i][2])
+
+        badEntriesString = badEntriesString + "\nOK to continue using"\
+            " the reset\nvalues or cancel to re-enter\nvalues?\n"
+ 
+        # Invoke the modal message dialog
+        return (askokcancel("Notice", badEntriesString))
+
+ 
     # QUIT: save the parameter settings and exit epar
     def quit(self, event = None):
 
-        #if not self.top.validate():
-        #    self.top.initial_focus.focus_set()
-        #    return
+        # Declare the global variables so they can be updated
+        global CHILDX
+        global CHILDY
 
-        # save all the entries and verify them 
-        try:
-            self.saveEntries()
-        finally:
+        # Save all the entries and verify them, keeping track of the
+        # invalid entries which have been reset to their original input values
+        self.badEntriesList = self.saveEntries()
+
+        # If there were invalid entries, prepare the message dialog
+        ansOKCANCEL = FALSE
+        if (self.badEntriesList):
+            ansOKCANCEL = self.processBadEntries(self.badEntriesList, 
+                          self.taskName)
+
+        # If there were no invalid entries or the user says OK
+        if ((not self.badEntriesList) or ansOKCANCEL):
 
             # Remove the main epar window
             self.top.focus_set()
             self.top.withdraw()
             self.top.destroy()
 
+            # If not a child window, quit the entire session
             if (self.isChild == "no"):
                 self.top.quit()
+
+            # Reset to the start location
+            CHILDX = 600
+            CHILDY = 0
 
 
     # EXECUTE: save the parameter settings and run the task
@@ -545,29 +581,59 @@ class EparDialog:
         global CHILDY
 
         # Need to get all the entries and verify them 
-        # First save the parameter values of the children
-        for n in range(len(self.top.childList)):
-            self.top.childList[n].saveEntries()
+        # First save the parameter values of the children, but save the
+        # children in backwards order to coincide with the display of the
+        # dialogs (LIFO)
+        continueFlag = TRUE
+        for n in range (len(self.top.childList)-1, -1, -1):
+            self.badEntriesList = self.top.childList[n].saveEntries()
+            ansOKCANCEL = FALSE
+            if (self.badEntriesList):
+                ansOKCANCEL = self.processBadEntries(self.badEntriesList, 
+                              self.top.childList[n].taskName)
 
-        # Now save the parameter values of the parent
-        self.saveEntries()
+            # If there were no invalid entries or the user says OK,
+            # close down the child and increment to the next child
+            if ((not self.badEntriesList) or ansOKCANCEL):
+                self.top.childList[n].top.focus_set()
+                self.top.childList[n].top.withdraw()
+                n = n + 1
 
-        # Remove the main epar window
-        self.top.focus_set()
-        self.top.withdraw()
-        self.top.destroy()
+            if (self.badEntriesList and (not ansOKCANCEL)):
+                continueFlag = FALSE
+                break
+
+        if (continueFlag):
+
+            # Now save the parameter values of the parent
+            self.badEntriesList = self.saveEntries()
+
+            # If there were invalid entries in the parent epar dialog, prepare 
+            # the message dialog
+            ansOKCANCEL = FALSE
+            if (self.badEntriesList):
+                ansOKCANCEL = self.processBadEntries(self.badEntriesList,
+                              self.taskName)
+
+            # If there were no invalid entries or the user says OK
+            if ((not self.badEntriesList) or ansOKCANCEL):
+
+                # Remove the main epar window
+                self.top.focus_set()
+                self.top.withdraw()
+                self.top.destroy()
  
-        # Reset to the start location
-        CHILDX = 600
-        CHILDY = 0
+                print "\nTask %s is running...\n" % self.taskName
 
-        print "\nTask %s is running...\n" % self.taskName
+                # Run the task
+                try:
+                    self.runTask()
+                finally:
+                    self.top.quit()
 
-        # Run the task
-        try:
-            self.runTask()
-        finally:
-            self.top.quit()
+                # Reset to the start location
+                CHILDX = 600
+                CHILDY = 0
 
 
     # ABORT: abort this epar session
@@ -723,12 +789,17 @@ class EparDialog:
     # Read, save, and validate the entries
     def saveEntries(self):
 
+        self.badEntries = []
+
         # Loop over the parameters to obtain the modified information
         for i in range(self.numParams):
 
             # Verify the value is valid. If it is numeric and invalid,
             # the value will be converted to its original valid value.
-            self.entryNo[i].entryCheck()
+            # Maintain a list of the reset values for user notification.
+            resetValue = self.entryNo[i].entryCheck(event = None)
+            if (resetValue != None):
+               self.badEntries.append(resetValue)
 
             # Cannot change an entry if it is a PSET, just skip
             if (self.paramList[i].type != "pset"):
@@ -755,6 +826,8 @@ class EparDialog:
 
         # save results to the uparm directory
         self.taskObject.save()
+
+        return self.badEntries
 
     # Run the task
     def runTask(self):

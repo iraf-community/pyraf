@@ -154,7 +154,8 @@ class EparOption:
 
     # Check the validity of the entry
     def entryCheck(self, event = None):
-        pass
+        return None
+        #pass
 
 
     # Generate the the input widget as appropriate to the parameter datatype
@@ -467,7 +468,7 @@ class IntEparOption(EparOption):
         # Make sure the input is legal
         value = self.choice.get()
         if not self.notNull(value):
-            return
+            return None
         else:
             try:
                 value = int(value)
@@ -477,8 +478,9 @@ class IntEparOption(EparOption):
                 errorMsg = "Parameter " + `self.name` + \
                       ": Input value is the wrong data type."
                 self.status.bell()
-                self.status.config(text = errorMsg)
-                return
+                if (event != None):
+                    self.status.config(text = errorMsg)
+                return [self.name, value, self.previousValue]
 
         # Check the range if min and/or max are defined
         if self.notNull(self.min) or self.notNull(self.max):
@@ -499,8 +501,9 @@ class IntEparOption(EparOption):
                                " Value is out of range.  Minimum: " + \
                                `self.min` + " Maximum: -"
                 self.status.bell()
-                self.status.config(text = errorMsg)
-                return
+                if (event != None):
+                    self.status.config(text = errorMsg)
+                return [self.name, value, self.previousValue]
 
             if self.notNull(self.max) and (value > self.max):
 
@@ -519,8 +522,11 @@ class IntEparOption(EparOption):
                                " Value is out of range.  Minimum: - " + \
                                " Maximum: " + `self.max`
                 self.status.bell()
-                self.status.config(text = errorMsg)
+                if (event != None):
+                    self.status.config(text = errorMsg)
+                return [self.name, value, self.previousValue]
 
+        return None
 
 class RealEparOption(EparOption):
 
@@ -613,7 +619,7 @@ class RealEparOption(EparOption):
         # Make sure the input is legal
         value = self.choice.get()
         if not self.notNull(value):
-            return
+            return None
         else:
             try:
                 value = float(value)
@@ -623,8 +629,9 @@ class RealEparOption(EparOption):
                 errorMsg = "Parameter " + `self.name` + \
                       ": Input value is the wrong data type."
                 self.status.bell()
-                self.status.config(text = errorMsg)
-                return
+                if (event != None):
+                    self.status.config(text = errorMsg)
+                return [self.name, value, self.previousValue]
 
         # Check the range if min and/or max are defined
         if self.notNull(self.min) or self.notNull(self.max):
@@ -645,8 +652,9 @@ class RealEparOption(EparOption):
                                " Value is out of range.  Minimum: " + \
                                `self.min` + " Maximum: -"
                 self.status.bell()
-                self.status.config(text = errorMsg)
-                return
+                if (event != None):
+                    self.status.config(text = errorMsg)
+                return [self.name, value, self.previousValue]
 
             if self.notNull(self.max) and (value > self.max):
 
@@ -665,7 +673,11 @@ class RealEparOption(EparOption):
                                " Value is out of range.  Minimum: - " + \
                                " Maximum: " + `self.max`
                 self.status.bell()
-                self.status.config(text = errorMsg)
+                if (event != None):
+                    self.status.config(text = errorMsg)
+                return [self.name, value, self.previousValue]
+
+        return None
 
 
 class PsetEparOption(EparOption):
