@@ -7,7 +7,7 @@ $Id$
 
 import linecache, string, os, sys
 from stat import *
-import iraf, clcache
+import iraf
 
 # Discard cache entries that are out of date.
 # (This is not checked upon each call!)
@@ -15,25 +15,18 @@ import iraf, clcache
 def checkcache():
 	for filename in linecache.cache.keys():
 		size, mtime, lines, fullname = linecache.cache[filename]
-		if filename[:10] == "<CL script":
-			# special CL script case
-			try:
-				taskobj = iraf.getTask(fullname)
-				filename = taskobj.getFullpath()
-				newsize, newctime, newmtime = \
-					clcache.codeCache.getAttributes(filename)
-			except iraf.IrafError:
-				del linecache.cache[filename]
-				continue
-		else:
-			# normal case
-			try:
-				stat = os.stat(fullname)
-				newsize = stat[ST_SIZE]
-				newmtime = stat[ST_MTIME]
-			except os.error:
-				del linecache.cache[filename]
-				continue
+		try:
+			if filename[:10] == "<CL script":
+				# special CL script case - find original script file for time check
+				taskname = fullname
+				taskobj = iraf.getTask(taskname)
+				fullname = taskobj.getFullpath()
+			stat = os.stat(fullname)
+			newsize = stat[ST_SIZE]
+			newmtime = stat[ST_MTIME]
+		except (os.error, iraf.IrafError):
+			del linecache.cache[filename]
+			continue
 		if size <> newsize or mtime <> newmtime:
 			del linecache.cache[filename]
 
@@ -84,8 +77,10 @@ def updateCLscript(filename):
 	try:
 		taskname = filename[11:-1]
 		taskobj = iraf.getTask(taskname)
-		filename = taskobj.getFullpath()
-		size, ctime, mtime = clcache.codeCache.getAttributes(filename)
+		fullname = taskobj.getFullpath()
+		stat = os.stat(fullname)
+		size = stat[ST_SIZE]
+		mtime = stat[ST_MTIME]
 		lines = string.split(taskobj.getCode(),'\n')
 		linecache.cache[filename] = size, mtime, lines, taskname
 		return lines
