@@ -307,7 +307,11 @@ class IrafTask:
 		self.initTask(force=1)
 		if not self._currentParList:
 			return None
-		newParList = copy.deepcopy(self._currentParList)
+		if self._runningParList is None:
+			newParList = copy.deepcopy(self._currentParList)
+		else:
+			# only one runningParList at a time -- all tasks use it
+			newParList = self._runningParList
 		if kw.has_key('_setMode'):
 			_setMode = kw['_setMode']
 			del kw['_setMode']
@@ -916,7 +920,7 @@ class IrafPythonTask(IrafTask):
 
 	def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary,
 			function):
-		# filename is the .par file for this task? XXX
+		# filename is the .par file for this task
 		IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
 		if self.getForeign():
 			raise iraf.IrafError(
@@ -934,15 +938,25 @@ class IrafPythonTask(IrafTask):
 	#=========================================================
 
 	def __getstate__(self):
-		"""Return state for pickling"""
-		#XXXraise RuntimeError("save not implemented for %s object" %
-		#XXX	self.__class__.__name__)
-		# Dictionary is OK except for function pointer
-		# Note that __setstate__ is not needed because
-		# returned state is a dictionary
+
+		"""Return state for pickling
+		
+		Note that __setstate__ is not needed because
+		returned state is a dictionary
+		"""
+
+		# Dictionary is OK except for function pointer, which can't
+		# be restored unless function is in the pyraf package
 		if self._pyFunction is None:
 			return self.__dict__
-		# replace _pyFunction in shallow copy of dictionary
+		try:
+			module = self._pyFunction.func_globals['__name__']
+			if module[:6] == 'pyraf.':
+				return self.__dict__
+		except KeyError:
+			pass
+		file = self._pyFunction.func_code.co_filename
+		# oh well, replace _pyFunction in shallow copy of dictionary
 		dict = self.__dict__.copy()
 		dict['_pyFunction'] = None
 		return dict
@@ -962,7 +976,15 @@ class IrafPythonTask(IrafTask):
 		pl = []
 		for par in parList:
 			if par.name not in ['mode', '$nargs']:
-				pl.append(par.get(native=1))
+				if isinstance(par, irafpar.IrafParL):
+					# list parameters get passed as objects
+					pl.append(par)
+				elif par.isLegal():
+					# other parameters get passed by value
+					pl.append(par.get(native=1))
+				else:
+					# illegal (generally undefined) values passed as None
+					pl.append(None)
 		# run function on the parameters
 		apply(self._pyFunction, pl)
 

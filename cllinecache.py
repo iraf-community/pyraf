@@ -10,74 +10,58 @@ from stat import *
 import iraf
 
 
-def checkcache():
+def checkcache(orig_checkcache=linecache.checkcache):
+
 	"""Discard cache entries that are out of date.
 	(This is not checked upon each call!)"""
 
+	# Rather than repeat linecache.checkcache code, we check & save the
+	# CL script entries, call the original function, and then
+	# restore the saved entries.  (Modelled after Idle/PyShell.py.)
 	cache = linecache.cache
+	save = {}
 	for filename in cache.keys():
-		size, mtime, lines, fullname = cache[filename]
-		try:
-			if filename[:10] == "<CL script":
-				# special CL script case - find original script file for time check
-				taskname = fullname
-				taskobj = iraf.getTask(taskname)
-				fullname = taskobj.getFullpath()
-			stat = os.stat(fullname)
-			newsize = stat[ST_SIZE]
-			newmtime = stat[ST_MTIME]
-		except (os.error, iraf.IrafError):
-			del cache[filename]
-			continue
-		if size <> newsize or mtime <> newmtime:
-			del cache[filename]
-
-
-def updatecache(filename):
-	"""Update a cache entry and return its list of lines.
-	If something's wrong, print a message, discard the cache entry,
-	and return an empty list."""
-
-	cache = linecache.cache
-	if cache.has_key(filename):
-		del cache[filename]
-	if not filename or filename[0] + filename[-1] == '<>':
 		if filename[:10] == "<CL script":
-			# special CL script case
-			return updateCLscript(filename)
-		else:
-			# normal case
-			return []
-	fullname = filename
-	try:
-		stat = os.stat(fullname)
-	except os.error, msg:
-		# Try looking through the module search path
-		basename = os.path.split(filename)[1]
-		for dirname in sys.path:
-			fullname = os.path.join(dirname, basename)
-			try:
-				stat = os.stat(fullname)
-				break
-			except os.error:
-				pass
-		else:
-			# No luck
-##			print '*** Cannot stat', filename, ':', msg
-			return []
-	try:
-		fp = open(fullname, 'r')
-		lines = fp.readlines()
-		fp.close()
-	except IOError, msg:
-##		print '*** Cannot open', fullname, ':', msg
-		return []
-	size, mtime = stat[ST_SIZE], stat[ST_MTIME]
-	cache[filename] = size, mtime, lines, fullname
-	return lines
+			entry = cache[filename]
+			del cache[filename]
+			# special CL script case - find original script file for time check
+			if filename[10:13] == " CL":
+				# temporary script created dynamically -- just save it
+				save[filename] = entry
+			else:
+				size, mtime, lines, taskname = entry
+				try:
+					taskobj = iraf.getTask(taskname)
+					fullname = taskobj.getFullpath()
+					stat = os.stat(fullname)
+					newsize = stat[ST_SIZE]
+					newmtime = stat[ST_MTIME]
+				except (os.error, iraf.IrafError):
+					continue
+				if size == newsize and mtime == newmtime:
+					# save the ones that didn't change
+					save[filename] = entry
+	orig_checkcache()
+	cache.update(save)
+
+
+def updatecache(filename, orig_updatecache=linecache.updatecache):
+
+	"""Update a cache entry and return its list of lines.  If something's
+	wrong, discard the cache entry and return an empty list."""
+
+	if filename[:10] == "<CL script":
+		# special CL script case
+		return updateCLscript(filename)
+	else:
+		# original version handles other cases
+		return orig_updatecache(filename)
+
 
 def updateCLscript(filename):
 	cache = linecache.cache
+	if cache.has_key(filename):
+		del cache[filename]
 	try:
 		taskname = filename[11:-1]
 		taskobj = iraf.getTask(taskname)
@@ -90,6 +74,7 @@ def updateCLscript(filename):
 		return lines
 	except (iraf.IrafError, KeyError, AttributeError):
 		return []
+
 
 # insert these symbols into standard linecache module
 

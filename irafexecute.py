@@ -399,7 +399,11 @@ class IrafProcess:
 		self.default_stdout = stdout
 		self.default_stderr = stderr
 
-		self.stdinIsatty = hasattr(stdin,'isatty') and stdin.isatty()
+		# stdinIsatty flag is used in xfer to decide whether to
+		# read inputs in blocks or not.  As long as input comes
+		# from __stdin__, consider it equivalent to a tty.
+		self.stdinIsatty = (hasattr(stdin,'isatty') and stdin.isatty()) or \
+			self.stdin == sys.__stdin__
 		self.stdoutIsatty = hasattr(stdout,'isatty') and stdout.isatty()
 
 		# redir_info tells task that IO has been redirected

@@ -65,20 +65,17 @@ def removeEscapes(value, quoted=0):
 	If quoted is true, removes all blanks following \-newline
 	(which is a nasty thing IRAF does for continuations inside
 	quoted strings.)
-
-	Don't worry about multiple-backslash case -- this will replace
-	\\" with just ", which is fine by me.
+	XXX Should we remove \\ too?
 	"""
 
 	i = string.find(value,r'\"')
 	while i>=0:
 		value = value[:i] + value[i+1:]
-		# search from beginning every time to handle multiple \\ case
-		i = string.find(value,r'\"')
+		i = string.find(value,r'\"',i+1)
 	i = string.find(value,r"\'")
 	while i>=0:
 		value = value[:i] + value[i+1:]
-		i = string.find(value,r"\'")
+		i = string.find(value,r"\'",i+1)
 	# delete backslash-newlines
 	i = string.find(value,"\\\n")
 	while i>=0:
@@ -90,7 +87,7 @@ def removeEscapes(value, quoted=0):
 					break
 				j = j+1
 		value = value[:i] + value[j:]
-		i = string.find(value,"\\\n")
+		i = string.find(value,"\\\n",i+1)
 	return value
 
 # Must modify Python keywords to make Python code legal.  I add 'PY' to

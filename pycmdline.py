@@ -25,7 +25,7 @@ $Id$
 R. White, 2000 February 20
 """
 
-import string, re, os, sys, code, types, keyword, traceback
+import string, re, os, sys, code, types, keyword, traceback, linecache
 import minmatch, iraf, irafcompleter
 import wutil
 from irafglobals import pyrafDir
@@ -434,6 +434,7 @@ class PyCmdLine(CmdConsole):
 				type, value, tbmod = self.lasttrace
 			else:
 				type, value, tb = sys.exc_info()
+				linecache.checkcache()
 				sys.last_type = type
 				sys.last_value = value
 				sys.last_traceback = tb
@@ -446,7 +447,7 @@ class PyCmdLine(CmdConsole):
 					tbmod = []
 					for tb1 in tblist:
 						path, filename = os.path.split(tb1[0])
-						if path != pyrafDir:
+						if path[:len(pyrafDir)] != pyrafDir:
 							tbmod.append(tb1)
 			list = traceback.format_list(tbmod)
 			if list:

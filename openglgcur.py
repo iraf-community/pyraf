@@ -28,6 +28,8 @@ class Gcursor:
 		self.top = window.top
 		self.markcur = 0
 		self.retString = None
+		self.active = 0
+		self.eof = None
 
 	def __call__(self): return self.startCursorMode()
 
@@ -43,13 +45,19 @@ class Gcursor:
 		if activate:
 			self.window.control_reactivatews(None)
 		try:
+			self.active = 1
 			self.top.mainloop()
 		finally:
 			try:
+				self.active = 0
 				self.unbind()
 				self.cursorOff()
 			except Tkinter.TclError:
 				pass
+		if self.eof:
+			# EOF flag can get set by window-close event
+			# It should be set to string message
+			raise EOFError(self.eof)
 		if activate:
 			self.window.control_deactivatews(None)
 		return self.retString

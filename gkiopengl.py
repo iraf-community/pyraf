@@ -4,7 +4,7 @@ OpenGL implementation of the gki kernel class
 $Id$
 """
 
-import Numeric, os, sys, string, wutil
+import Numeric, os, sys, string, re, wutil
 import Tkinter, msgiobuffer
 from OpenGL.GL import *
 import toglcolors
@@ -119,7 +119,8 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 	redraw()			Redraw method (don't call this directly, used by
 						the gwidget class)
 	gRedraw()			Redraw that defers to gwidget
-	gcursor()			Wait for key to be typed and return cursor value
+	gcur()				Wait for key to be typed and return cursor value
+	gcurTerminate()		Terminate active gcur so window can be destroyed
 	incrPlot()			Plot the stuff added to buffer since last draw
 	prepareToRedraw()	Prepare for complete redraw from metacode
 	getHistory()		Get information that needs to be saved in page history
@@ -212,11 +213,11 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 
 		self.StatusLine = StatusLine(self.top.status, self.windowName)
 		self.history = [(self.gkibuffer, self.wcs, "", self.getHistory())]
-		self.historyMarker = 0
-		self._historyVar = Tkinter.IntVar()
-		self._historyVar.set(self.historyMarker)
-		# _setHistoryMarker is callback for changes to _historyVar
-		self._historyVar.trace('w', self._setHistoryMarker)
+		self._currentPage = 0
+		self.pageVar = Tkinter.IntVar()
+		self.pageVar.set(self._currentPage)
+		# _setPageVar is callback for changes to pageVar
+		self.pageVar.trace('w', self._setPageVar)
 		windowID = self.gwidget.winfo_id()
 		wutil.setBackingStore(windowID)
 		self.flush()
@@ -365,7 +366,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 	def deletePlot(self):
 
 		# delete current plot
-		del self.history[self.historyMarker]
+		del self.history[self._currentPage]
 		if len(self.history)==0:
 			# that was the last plot
 			# clear all buffers and put them back on the history
@@ -373,10 +374,10 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 			self.clearPage()
 			self.wcs.set()
 			self.history = [(self.gkibuffer, self.wcs, "", self.getHistory())]
-		n = max(0, min(self.historyMarker, len(self.history)-1))
+		n = max(0, min(self._currentPage, len(self.history)-1))
 		# ensure that redraw happens
-		self.historyMarker = -1
-		self._historyVar.set(n)
+		self._currentPage = -1
+		self.pageVar.set(n)
 
 	def deleteAllPlots(self):
 
@@ -388,8 +389,8 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 			self.wcs.set()
 			self.history = [(self.gkibuffer, self.wcs, "", self.getHistory())]
 			# ensure that redraw happens
-			self.historyMarker = -1
-			self._historyVar.set(0)
+			self._currentPage = -1
+			self.pageVar.set(0)
 
 	def makePageMenu(self, menubar):
 
@@ -422,7 +423,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 
 		button = self.pageMenu
 		menu = button.menu
-		page = self.historyMarker
+		page = self._currentPage
 		# Next
 		if page < len(self.history)-1:
 			menu.entryconfigure(button.nextNum, state=Tkinter.NORMAL)
@@ -449,8 +450,8 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 		# Add radio buttons for pages
 		# Only show limited window around active page
 		halfsize = 10
-		pmin = self.historyMarker-halfsize
-		pmax = self.historyMarker+halfsize+1
+		pmin = self._currentPage-halfsize
+		pmax = self._currentPage+halfsize+1
 		lhis = len(self.history)
 		if pmin<0:
 			pmax = pmax-pmin
@@ -463,40 +464,40 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 		h = self.history
 		for i in range(pmin,pmax):
 			menu.add_radiobutton(label="%d %s" % (i+1,h[i][2]), value=i,
-				variable=self._historyVar)
-		# Make sure historyVar matches the real index value
-		self._historyVar.set(self.historyMarker)
+				variable=self.pageVar)
+		# Make sure pageVar matches the real index value
+		self.pageVar.set(self._currentPage)
 
-	def _setHistoryMarker(self, *args):
+	def _setPageVar(self, *args):
 
-		"""Called when historyVar is changed (by .set() or by Page menu)"""
+		"""Called when pageVar is changed (by .set() or by Page menu)"""
 
-		n = self._historyVar.get()
+		n = self.pageVar.get()
 		n = max(0, min(n, len(self.history)-1))
-		if self.historyMarker != n:
-			self.historyMarker = n
+		if self._currentPage != n:
+			self._currentPage = n
 			self.gkibuffer, self.wcs, name, otherHistory = \
-					self.history[self.historyMarker]
+					self.history[self._currentPage]
 			self.setHistory(otherHistory)
 			self.gRedraw()
 			self.pageMenuInit()
 
 	def backPage(self):
 
-		self._historyVar.set(max(0,self.historyMarker-1))
+		self.pageVar.set(max(0,self._currentPage-1))
 
 	def nextPage(self):
 
-		self._historyVar.set(
-			max(0,min(self.historyMarker+1, len(self.history)-1)))
+		self.pageVar.set(
+			max(0,min(self._currentPage+1, len(self.history)-1)))
 
 	def firstPage(self):
 
-		self._historyVar.set(0)
+		self.pageVar.set(0)
 
 	def lastPage(self):
 
-		self._historyVar.set(len(self.history)-1)
+		self.pageVar.set(len(self.history)-1)
 
 	def makeWindowMenu(self, menubar):
 
@@ -593,7 +594,8 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 		"""Flush any pending graphics requests"""
 
 		try:
-			self.gwidget.update_idletasks()
+			if self.gwidget:
+				self.gwidget.update_idletasks()
 		except Tkinter.TclError:
 			pass
 
@@ -616,9 +618,10 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 
 		"""Delete this object from the gwm window list"""
 
-		gwm.delete(self.windowName)
-		# protect against bugs that try to access deleted object
+		# if gcur is active, terminate it
+		self.gcurTerminate()
 		self.gwidget = None
+		self.top.after_idle(gwm.delete,self.windowName)
 
 	# -----------------------------------------------
 	# the following methods implement the FocusEntity interface
@@ -633,14 +636,15 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 			# window does not have focus
 			return
 		gwidget = self.gwidget
-		x = gwidget.winfo_pointerx()-gwidget.winfo_rootx()
-		y = gwidget.winfo_pointery()-gwidget.winfo_rooty()
-		maxX = gwidget.winfo_width()
-		maxY = gwidget.winfo_height()
-		if x < 0 or y < 0 or x >= maxX or y >= maxY:
-			return
-		gwidget.lastX = x
-		gwidget.lastY = y
+		if gwidget:
+			x = gwidget.winfo_pointerx()-gwidget.winfo_rootx()
+			y = gwidget.winfo_pointery()-gwidget.winfo_rooty()
+			maxX = gwidget.winfo_width()
+			maxY = gwidget.winfo_height()
+			if x < 0 or y < 0 or x >= maxX or y >= maxY:
+				return
+			gwidget.lastX = x
+			gwidget.lastY = y
 
 	def forceFocus(self):
 
@@ -650,15 +654,17 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 		# warp cursor
 		# if no previous position, move to center
 		gwidget = self.gwidget
-		if gwidget.lastX is None:
-			gwidget.lastX = gwidget.winfo_width()/2
-			gwidget.lastY = gwidget.winfo_height()/2
-		wutil.moveCursorTo(gwidget.winfo_id(),gwidget.lastX,gwidget.lastY)
-		gwidget.focus_force()
+		if gwidget:
+			if gwidget.lastX is None:
+				gwidget.lastX = gwidget.winfo_width()/2
+				gwidget.lastY = gwidget.winfo_height()/2
+			wutil.moveCursorTo(gwidget.winfo_id(),gwidget.lastX,gwidget.lastY)
+			gwidget.focus_force()
 
 	def getWindowID(self):
 
-		return self.gwidget.winfo_id()
+		if self.gwidget:
+			return self.gwidget.winfo_id()
 
 	# -----------------------------------------------
 	# GkiKernel methods
@@ -680,7 +686,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 				name = ""
 			self.history.append(
 				(self.gkibuffer, self.wcs, name, self.getHistory()) )
-			self._historyVar.set(len(self.history)-1)
+			self.pageVar.set(len(self.history)-1)
 			self.StatusLine.write(text=" ")
 			self.flush()
 		elif (self.history[-1][2] == "") and gki.tasknameStack:
@@ -710,7 +716,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 		self.stdin = self.stdout
 		# disable stderr while graphics is active (to supress xgterm gui
 		# messages)
-		self.stderr = DevNullError()
+		self.stderr = FilterStderr()
 		if mode == 5:
 			# clear the display
 			self.clear()
@@ -741,7 +747,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 			self.stdout = self.StatusLine
 			self.stdin = self.stdout
 		if not self.stderr:
-			self.stderr = DevNullError()
+			self.stderr = FilterStderr()
 
 	def control_deactivatews(self, arg):
 
@@ -770,19 +776,16 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 	def control_closews(self, arg):
 
 		gwidget = self.gwidget
-		gwidget.deactivateSWCursor()  # turn off software cursor
-		if self.stdout:
-			self.stdout.close()
-			self.stdout = None
-			self.stdin = None
-		if self.stderr:
-			self.stderr.close()
-			self.stderr = None
+		if gwidget:
+			gwidget.deactivateSWCursor()  # turn off software cursor
+			if self.stdout:
+				self.stdout.close()
+				self.stdout = None
+				self.stdin = None
+			if self.stderr:
+				self.stderr.close()
+				self.stderr = None
 		wutil.focusController.restoreLast()
-
-	def gcur(self):
-
-		return self.gcursor()
 
 #-----------------------------------------------
 
@@ -808,11 +811,22 @@ class GkiOpenGlKernel(GkiInteractiveBase):
 		self._gcursorObject = openglgcur.Gcursor(self)
 		self.gRedraw()
 
-	def gcursor(self):
+	def gcur(self):
 
 		"""Return cursor value after key is typed"""
 
 		return self._gcursorObject()
+
+	def gcurTerminate(self):
+
+		"""Terminate active gcur and set EOF flag"""
+
+		if self._gcursorObject.active:
+			self._gcursorObject.eof = 'Window destroyed by user'
+			# end the gcur mainloop -- this is what allows
+			# closing the window to act the same as EOF
+			# XXX If problems are encountered, comment this out...
+			self.top.quit()
 
 	def taskDone(self, name):
 
@@ -845,7 +859,7 @@ class GkiOpenGlKernel(GkiInteractiveBase):
 		# and to ignore the event.
 		# This is ugly but appears to work as far as I can tell.
 		gwidget = self.gwidget
-		if not gwidget.firstPlotDone:
+		if gwidget and not gwidget.firstPlotDone:
 			gwidget.ignoreNextRedraw = 1
 			gwidget.firstPlotDone = 1
 
@@ -892,15 +906,18 @@ class GkiOpenGlKernel(GkiInteractiveBase):
 
 		"""Plot any new commands in the buffer"""
 
-		active = self.gwidget.isSWCursorActive()
-		if active:
-			self.gwidget.deactivateSWCursor()
-		# render new contents of glBuffer
-		for (function, args) in self.glBuffer.getNewCalls():
-			apply(function, args)
-		self.gwidget.flush()
-		if active:
-			self.gwidget.activateSWCursor()
+		gwidget = self.gwidget
+		if gwidget:
+			active = gwidget.isSWCursorActive()
+			if active:
+				gwidget.deactivateSWCursor()
+			# render new contents of glBuffer
+			self.activate()
+			for (function, args) in self.glBuffer.getNewCalls():
+				apply(function, args)
+			gwidget.flush()
+			if active:
+				gwidget.activateSWCursor()
 
 	# special methods that go into the function tables
 
@@ -1011,7 +1028,8 @@ class GkiOpenGlKernel(GkiInteractiveBase):
 
 	def gRedraw(self):
 
-		self.gwidget.tkRedraw()
+		if self.gwidget:
+			self.gwidget.tkRedraw()
 
 	def redraw(self, o=None):
 
@@ -1040,6 +1058,7 @@ class GkiOpenGlKernel(GkiInteractiveBase):
 		glShadeModel(GL_FLAT)
 
 		# finally ready to do the drawing
+		self.activate()
 		for (function, args) in self.glBuffer.get():
 			apply(function, args)
 		self.gwidget.flush()
@@ -1301,14 +1320,23 @@ class GLBuffer:
 
 #-----------------------------------------------
 
-class DevNullError:
+class FilterStderr:
+
+	"""Filter GUI messages out of stderr during plotting"""
+
+	pat = re.compile('\031[^\035]*\035\037')
 
 	def __init__(self):
-		pass
+		self.fh = sys.stderr
+
 	def write(self, text):
-		pass
+		# remove GUI junk
+		edit = self.pat.sub('',text)
+		if edit: self.fh.write(edit)
+
 	def flush(self):
-		pass
+		self.fh.flush()
+
 	def close(self):
 		pass
 

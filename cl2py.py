@@ -86,7 +86,9 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
 			if hasattr(filename,'name'):
 				efilename = filename.name
 			else:
-				efilename = 'cmdline.cl'
+				efilename = ''
+				# don't cache scripts if filename is not known
+				index = None
 		else:
 			raise TypeError('filename must be a string or a filehandle')
 	elif str is not None:
@@ -883,7 +885,6 @@ _translateList = {
 # builtin task names that are translated
 
 _taskList = {
-			"cl"			: "clProcedure",
 			"print"			: "clPrint",
 			"_curpack"		: "curpack",
 			"_allocate"		: "clAllocate",

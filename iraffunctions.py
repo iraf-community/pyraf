@@ -48,7 +48,7 @@ def _writeError(msg):
 # now it is safe to import other iraf modules
 # -----------------------------------------------------
 
-import sys, os, string, re, math, types, time, fnmatch, glob
+import sys, os, string, re, math, types, time, fnmatch, glob, linecache
 import sscanf, minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 
@@ -171,8 +171,9 @@ def Init(doprint=1,hush=0,savefile=None):
 		# add the cl as a task, because its parameters are sometimes needed,
 		# but make it a hidden task
 
-		# Make cl a pset since parameters are all we care about
-		cl = IrafTaskFactory('','cl','','cl$cl.par','clpackage','bin$')
+		# cl is implemented as a Python task
+		cl = IrafTaskFactory('','cl','','cl$cl.par','clpackage','bin$',
+			function=_clProcedure)
 		cl.setHidden()
 
 		# load clpackage
@@ -1773,8 +1774,34 @@ def allPkgHelp(**kw):
 		rv = redirReset(resetList, closeFHList)
 	return rv
 
+def _clProcedure(*args, **kw):
+	"""Core function for the CL task
+	
+	Gets passed to IrafPythonTask as function argument.
+	Note I/O redirection has already been set up before calling this.
+	"""
+	# just ignore the arguments -- they are only used through .par list
+	# if input is not redirected, don't do anything
+	if _sys.stdin == _sys.__stdin__:
+		return
+	# initialize environment
+	locals = {}
+	exec 'import math' in locals
+	exec 'from pyraf import iraf' in locals
+	exec 'from pyraf.irafpar import makeIrafPar' in locals
+	exec 'from pyraf.irafglobals import *' in locals
+	# feed the input to clExecute
+	clExecute(_sys.stdin.read(), locals=locals, mode="single")
+
 def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
-	"""Run CL commands from a file (cl < input)"""
+	"""Run CL commands from a file (cl < input) -- OBSOLETE
+
+	This is obsolete, replaced by the IrafPythonTask version of
+	the cl, using above _clProcedure function.  It is being
+	retained only for backward compatibility since translated
+	versions of CL scripts could use it.  New versions will
+	not use it.
+	"""
 	# handle redirection and save keywords
 	redirKW, closeFHList = redirProcess(kw)
 	if kw.has_key('_save'): del kw['_save']
@@ -2336,6 +2363,10 @@ def clArray(array_size, datatype, name="<anonymous>", mode="h",
 # clExecute: execute a single cl statement
 # -----------------------------------------------------
 
+# count number of CL tasks currently executing
+# used to give unique name to each one
+_clExecuteCount = 0
+
 def clExecute(s, locals=None, mode="proc",
 		local_vars_dict={}, local_vars_list=[], verbose=0, **kw):
 	"""Execute a single cl statement"""
@@ -2345,17 +2376,25 @@ def clExecute(s, locals=None, mode="proc",
 		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
 	resetList = redirApply(redirKW)
 	try:
+		global _clExecuteCount
+		_clExecuteCount = _clExecuteCount + 1
 		pycode = _cl2py.cl2py(str=s, mode=mode, local_vars_dict=local_vars_dict,
 			local_vars_list=local_vars_list)
-		# put code in the filename so it appears in messages
-		code = _string.lstrip(pycode.code)
-		codeObject = compile(code,_string.rstrip(code),'exec')
+		# use special scriptname
+		taskname = "CL%s" % (_clExecuteCount,)
+		scriptname = "<CL script %s>" % (taskname,)
+		code = _string.lstrip(pycode.code) #YYY needed?
+		codeObject = compile(code,scriptname,'exec')
+		# add this script to linecache
+		codeLines = _string.split(code,'\n')
+		linecache.cache[scriptname] = (0,0,codeLines,taskname)
 		if locals is None: locals = {}
 		exec codeObject in locals
 		if pycode.vars.proc_name:
 			exec pycode.vars.proc_name+"()" in locals
 		return code
 	finally:
+		_clExecuteCount = _clExecuteCount - 1
 		# note return value not used
 		rv = redirReset(resetList, closeFHList)
 
