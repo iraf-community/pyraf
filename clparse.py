@@ -67,7 +67,7 @@ class CLStrictParser(GenericASTBuilder):
         try:
             return token.type
         except AttributeError:
-            return self._EOF
+            return token
 
     def error(self, token, value=None):
         if hasattr(token, 'lineno'):

@@ -435,8 +435,11 @@ class IrafProcess:
         # redir_info tells task that IO has been redirected
 
         redir_info = ''
-        if pstdin and pstdin != sys.__stdin__: redir_info = '<'
-        if pstdout or pstderr: redir_info = redir_info+'>'
+        if pstdin and pstdin != sys.__stdin__:
+            redir_info = '<'
+        if (pstdout and pstdout != sys.__stdout__) or \
+           (pstderr and pstderr != sys.__stderr__):
+            redir_info = redir_info+'>'
 
         # update IRAF environment variables if necessary
         if self.envVarList:

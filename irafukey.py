@@ -6,8 +6,14 @@ $Id$
 
 import sys
 import wutil
-import termios, TERMIOS, sys, os, string
+import termios, sys, os, string
 import irafutils
+
+# TERMIOS is deprecated in Python 2.1
+if hasattr(termios, 'ICANON'):
+    TERMIOS = termios
+else:
+    import TERMIOS
 
 # This class emulates the IRAF ukey parameter mechanism. IRAF calls for
 # a ukey parameter and expects that the user will type a character in

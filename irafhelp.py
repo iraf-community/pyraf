@@ -399,7 +399,7 @@ def _irafHelp(taskname, irafkw):
         print str(e)
         return 0
 
-_HelpURL = "http://ra.stsci.edu/cgi-bin/gethelp.cgi?task="
+_HelpURL = "http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?task="
 _Netscape = "netscape"
 
 def _htmlHelp(taskname):

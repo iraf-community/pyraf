@@ -18,6 +18,8 @@
 #               F.DialogCleanup()
 ####
 
+import os, commands
+import alert
 from dialog import *
 import Tkinter
 
@@ -26,13 +28,10 @@ class FileDialog(ModalDialog):
     #       constructor
 
     def __init__(self, widget, title, filter="*"):
-        from os import getcwd
-        from string import strip
-
         self.widget = widget
-        self.filter = strip(filter)
-        self.orig_dir = getcwd()
-        self.cwd = getcwd()                             #       the logical current working directory
+        self.filter = filter.strip()
+        self.orig_dir = os.getcwd()
+        self.cwd = os.getcwd()       # the logical current working directory
         Dialog.__init__(self, widget)
 
     #       setup routine called back from Dialog
@@ -165,10 +164,6 @@ class FileDialog(ModalDialog):
     #       update the listboxes and directory label after a change of directory
 
     def UpdateListBoxes(self):
-        import os
-        from commands import getoutput
-        from string import splitfields
-
         cwd = self.cwd
         self.fileLb.delete(0, self.fileLb.size())
         filter = self.filterEntry.get()
@@ -176,8 +171,8 @@ class FileDialog(ModalDialog):
         if filter == '*':
             filter = ''
         cmd = "/bin/ls " + os.path.join(cwd, filter)
-        cmdOutput = getoutput(cmd)
-        files = splitfields(cmdOutput, "\n")
+        cmdOutput = commands.getoutput(cmd)
+        files = cmdOutput.split("\n")
         files.sort()
         for i in range(len(files)):
             if os.path.isfile(os.path.join(cwd, files[i])):
@@ -195,11 +190,10 @@ class FileDialog(ModalDialog):
     #       selection handlers
 
     def DoSelection(self, event):
-        from posixpath import join
         lb = event.widget
         field = self.fileNameEntry
         field.delete(0, AtEnd())
-        field.insert(0, join(self.cwd_print(), lb.get(lb.nearest(event.y))))
+        field.insert(0, os.path.join(self.cwd_print(), lb.get(lb.nearest(event.y))))
         if Tkinter.TkVersion >= 4.0:
             lb.select_clear(0, "end")
             lb.select_anchor(lb.nearest(event.y))
@@ -208,9 +202,8 @@ class FileDialog(ModalDialog):
             lb.select_from(lb.nearest(event.y))
 
     def DoDoubleClickDir(self, event):
-        from posixpath import join
         lb = event.widget
-        self.cwd = join(self.cwd, lb.get(lb.nearest(event.y)))
+        self.cwd = os.path.join(self.cwd, lb.get(lb.nearest(event.y)))
         self.UpdateListBoxes()
 
     def DoDoubleClickFile(self, event):
@@ -220,19 +213,16 @@ class FileDialog(ModalDialog):
         self.TerminateDialog(1)
 
     def FileNameReturnKey(self, event):
-        from posixpath import isabs, expanduser, join
-        from string import strip
         #       if its a relative path then include the cwd in the name
-        name = strip(self.fileNameEntry.get())
-        if not isabs(expanduser(name)):
+        name = self.fileNameEntry.get().strip()
+        if not os.path.isabs(os.path.expanduser(name)):
             self.fileNameEntry.delete(0, 'end')
-            self.fileNameEntry.insert(0, join(self.cwd_print(), name))
+            self.fileNameEntry.insert(0, os.path.join(self.cwd_print(), name))
         self.okButton.flash()
         self.OkPressed()
 
     def FilterReturnKey(self, event):
-        from string import strip
-        filter = strip(self.filterEntry.get())
+        filter = self.filterEntry.get().strip()
         self.filterEntry.delete(0, 'end')
         self.filterEntry.insert(0, filter)
         self.filterButton.flash()
@@ -252,10 +242,9 @@ class FileDialog(ModalDialog):
     #       chdir to cwd and get the path there.
 
     def cwd_print(self):
-        from os import chdir, getcwd
-        chdir(self.cwd)
-        p = getcwd()
-        chdir(self.orig_dir)
+        os.chdir(self.cwd)
+        p = os.getcwd()
+        os.chdir(self.orig_dir)
         return p
 ####
 #       Class LoadFileDialog
@@ -273,12 +262,10 @@ class LoadFileDialog(FileDialog):
         self.top.title(title)
 
     def OkPressed(self):
-        from utils import file_exists
-        from alert import ErrorDialog
         fileName = self.GetFileName()
-        if file_exists(fileName) == 0:
+        if os.path.exists(fileName) == 0:
             str = 'File ' + fileName + ' not found.'
-            errorDlg = ErrorDialog(self.top, str)
+            errorDlg = alert.ErrorDialog(self.top, str)
             errorDlg.Show()
             errorDlg.DialogCleanup()
             return
@@ -300,12 +287,10 @@ class SaveFileDialog(FileDialog):
         self.top.title(title)
 
     def OkPressed(self):
-        from utils import file_exists
-        from alert import WarningDialog
         fileName = self.GetFileName()
-        if file_exists(fileName) == 1:
+        if os.path.exists(fileName) == 1:
             str = 'File ' + fileName + ' exists.\nDo you wish to overwrite it?'
-            warningDlg = WarningDialog(self.top, str)
+            warningDlg = alert.WarningDialog(self.top, str)
             if warningDlg.Show() == 0:
                 warningDlg.DialogCleanup()
                 return
@@ -367,12 +352,10 @@ class PersistLoadFileDialog(PersistFileDialog):
         self.top.title(title)
 
     def OkPressed(self):
-        from utils import file_exists
-        from alert import ErrorDialog
         fileName = self.GetFileName()
-        if file_exists(fileName) == 0:
+        if os.path.exists(fileName) == 0:
             str = 'File ' + fileName + ' not found.'
-            errorDlg = ErrorDialog(self.top, str)
+            errorDlg = alert.ErrorDialog(self.top, str)
             errorDlg.Show()
             errorDlg.DialogCleanup()
             return
@@ -394,12 +377,10 @@ class PersistSaveFileDialog(PersistFileDialog):
         self.top.title(title)
 
     def OkPressed(self):
-        from utils import file_exists
-        from alert import WarningDialog
         fileName = self.GetFileName()
-        if file_exists(fileName) == 1:
+        if os.path.exists(fileName) == 1:
             str = 'File ' + fileName + ' exists.\nDo you wish to overwrite it?'
-            warningDlg = WarningDialog(self.top, str)
+            warningDlg = alert.WarningDialog(self.top, str)
             if warningDlg.Show() == 0:
                 warningDlg.DialogCleanup()
                 return
