@@ -2763,7 +2763,7 @@ def redirProcess(kw):
                 if outputFlag:
                     raise IrafError("%s redirection must "
                             "be to a file handle or string\n"
-                            "Value is type " %
+                            "Value is type %s" %
                             (key, type(value)))
                 try:
                     if value and value[0][-1:] == '\n':

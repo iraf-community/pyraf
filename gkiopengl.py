@@ -116,26 +116,26 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
     which extends this class and must have the attributes:
 
     makeGWidget()           Create the gwidget Tk object and colorManager object
-    redraw()                        Redraw method (don't call this directly, used by
-                                            the gwidget class)
-    gRedraw()                       Redraw that defers to gwidget
-    gcur()                          Wait for key to be typed and return cursor value
+    redraw()                Redraw method (don't call this directly, used by
+                            the gwidget class)
+    gRedraw()               Redraw that defers to gwidget
+    gcur()                  Wait for key to be typed and return cursor value
     gcurTerminate()         Terminate active gcur so window can be destroyed
-    incrPlot()                      Plot the stuff added to buffer since last draw
+    incrPlot()              Plot the stuff added to buffer since last draw
     prepareToRedraw()       Prepare for complete redraw from metacode
     getHistory()            Get information that needs to be saved in page history
     setHistory()            Restore page using getHistory info
-    clearPage()                     Clear page (for initialization)
+    clearPage()             Clear page (for initialization)
     startNewPage()          Setup for new page
     isPageBlank()           Returns true if current page is blank
-    gki_*()                         Implement various GKI metacode commands
+    gki_*()                 Implement various GKI metacode commands
 
     The gwidget object (created by makeGWidget) should have these
     attributes (in addition to the usual Tk methods):
 
     lastX, lastY            Last cursor position, initially None
-    rgbamode                        Flag indicating RGB (if true) or indexed color mode
-    activate()                      Make this the focus of plots
+    rgbamode                Flag indicating RGB (if true) or indexed color mode
+    activate()              Make this the focus of plots
 
     activateSWCursor()      Various methods for handling the crosshair cursor
     deactivateSWCursor()    (Should rename and clean these up)

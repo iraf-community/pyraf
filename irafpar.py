@@ -665,7 +665,7 @@ class IrafPar:
 
     def _setChoice(self,s,strict=0):
         """Set choice parameter from string s"""
-        clist = _getChoice(self,s,strict)
+        clist = _getChoice(s,strict)
         self.choice = map(self._coerceValue, clist)
         self._setChoiceDict()
 
@@ -2444,7 +2444,7 @@ def _readpar(filename,strict=0):
 
 _re_choice = re.compile(r'\|')
 
-def _getChoice(self, s, strict):
+def _getChoice(s, strict):
     clist = string.split(s, "|")
     # string is allowed to start and end with "|", so ignore initial
     # and final empty strings

@@ -163,7 +163,7 @@ def softText(win,x,y,textstr):
         if left: xoffset = xpathwin
         xcharoff = xcharsize/2.
     if ta.textVerticalJust == JUSTIFIED_CENTER:
-        yoffset = -ypathwin/2
+        yoffset = -ypathwin/2.
     elif ta.textVerticalJust == JUSTIFIED_TOP:
         if up: yoffset = -ypathwin
         ycharoff = -ycharsize/2.
