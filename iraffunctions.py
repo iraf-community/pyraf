@@ -2670,7 +2670,12 @@ def redirProcess(kw):
 					if value and value[0][-1:] == '\n':
 						s = _string.join(value,'')
 					else:
-						s = _string.join(value,'\n')
+						# ensure there is a newline at the end 
+						value.append('')
+						try:
+							s = _string.join(value,'\n')
+						finally:
+							value.pop()
 					fh = _StringIO.StringIO(s)
 					# close this when we're done
 					closeFHList.append(fh)
