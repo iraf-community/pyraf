@@ -1,7 +1,7 @@
 """
 implement IRAF ukey functionality
 
-$id$
+$Id$
 """
 
 import sys
@@ -36,8 +36,9 @@ def ukey():
 	"""Returns the string expected for the IRAF ukey parameter"""
 
 	char = getSingleTTYChar()
-	# should determine what Control-C maps to, for now, CR
-	if not char: returnStr = r'\012'
+	if not char:
+		# on control-C, raise KeyboardInterrupt
+		raise KeyboardInterrupt
 	elif ord(char) <= ord(' '):
 		# convert to octal ascii representation
 		returnStr = '\\'+"%03o" % ord(char)

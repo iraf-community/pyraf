@@ -2,7 +2,7 @@
 
 $Id$
 
-R. White, 1999 December 7
+R. White, 1999 December 15
 """
 
 import os, sys, string, types, copy, re
@@ -237,6 +237,10 @@ class IrafTask:
 		self.initTask()
 		newParList = copy.deepcopy(self._currentParList)
 		apply(newParList.setParList, args, kw)
+		# set mode of automatic parameters
+		mode = self.getMode(newParList)
+		for p in newParList.getParList():
+			p.mode = string.replace(p.mode,"a",mode)
 		return newParList
 
 	def updateParList(self, newParList):
@@ -260,7 +264,8 @@ class IrafTask:
 				tpar.min = par.min
 				tpar.max = par.max
 				tpar.choice = par.choice
-				tpar.mode = par.mode
+				# don't propagate modes since I changed them
+				# tpar.mode = par.mode
 				tpar.prompt = par.prompt
 				tpar.setChanged()
 		return changed

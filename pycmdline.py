@@ -319,7 +319,8 @@ Commands can be abbreviated.
 					return line[:j] + 'iraf.' + line[j:]
 				elif self.isLocal(cmd) and line[i:i+1] != "" and \
 				  line[i] not in string.digits and \
-				  line[i] not in string.letters:
+				  line[i] not in string.letters and \
+				  line[i] not in "<>|":
 					# don't override local variable unless this really
 					# does not look like a legal Python command
 					return line

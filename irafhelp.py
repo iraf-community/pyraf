@@ -93,7 +93,10 @@ def help(object=__main__, variables=1, functions=1, modules=1,
 	The keywords can be abbreviated.  See module documentation
 	for more info."""
 
-	# get the keywords
+	# handle I/O redirection keywords
+	redirKW, closeFHList = iraf.redirProcess(kw)
+
+	# get the keywords using minimum-match
 	for key in kw.keys():
 		try:
 			fullkey = _kwdict[key]
@@ -101,97 +104,128 @@ def help(object=__main__, variables=1, functions=1, modules=1,
 		except KeyError, e:
 			raise e.__class__("Error in keyword "+key+"\n"+str(e))
 
-	# for IrafTask object, display help and also print info on the object
-	# for string parameter, if it looks like a task name try getting help
-	# on it too (XXX this is a bit risky, but I suppose people will not often
-	# be asking for help with simple strings as an argument...)
+	resetList = iraf.redirApply(redirKW)
 
-	if isinstance(object,iraftask.IrafTask):
-		if html:
-			print object
-			_htmlHelp(object)
-		else:
-			# if help is successful, return
-			# otherwise print help on the object
-			if _irafHelp(object): return
-	if type(object) == types.StringType and re.match(r'_?[a-z]+$',object):
-		if html:
-			_htmlHelp(object)
-		else:
-			if _irafHelp(object): return
+	# try block for I/O redirection
 
 	try:
-		vlist = vars(object)
-	except Exception:
-		# just print info on the object itself
-		vstr = _valueString(object,verbose=1)
+		# for IrafTask object, display help and also print info on the object
+		# for string parameter, if it looks like a task name try getting help
+		# on it too (XXX this is a bit risky, but I suppose people will not
+		# often be asking for help with simple strings as an argument...)
+
+		if isinstance(object,iraftask.IrafTask):
+			if _printIrafHelp(object, html): return
+
+		if type(object) == types.StringType and re.match(r'_?[a-z]+$',object):
+			if _printIrafHelp(object, html): return
+
 		try:
-			name = object.__name__
-		except AttributeError:
-			name = ''
-		if len(name) < padchars:
-			name = name + (padchars-len(name))*" "
-		print name, ":", vstr
-		return
+			vlist = vars(object)
+		except Exception:
+			# simple object with no vars()
+			_valueHelp(object, padchars)
+			return
 
-	# make one pass through names getting the type and sort order
-	# also split IrafTask and IrafPkg objects into separate lists
-	names = vlist.keys()
-	tasklist = []
-	pkglist = []
-	namelist = []
-	for vname in names:
-		value = vlist[vname]
-		if isinstance(value,iraftask.IrafPkg):
-			pkglist.append(vname)
-		elif isinstance(value,iraftask.IrafTask):
-			tasklist.append(vname)
-		else:
-			vtype = type(value)
-			vorder = _sortOrder(vtype)
-			namelist.append((vorder, vname, value))
+		# look inside the object
 
-	# now sort to group types of objects, and within types to put in
-	# alphabetical order
-	namelist.sort()
-	if regexp: re_check = re.compile(regexp)
-	for vorder, vname, value in namelist:
-		if (hidden or vname[0:1] != '_') and \
-				((not regexp) or re_check.match(vname)):
-			if (functions and vorder == _FUNCTION) or \
-					(modules and vorder == _MODULE) or \
-					(variables and vorder == _OTHER):
-				vstr = _valueString(value)
-				# pad name to padchars chars if shorter
-				if len(vname) < padchars:
-					vname = vname + (padchars-len(vname))*" "
-				print vname, ":", vstr
+		tasklist, pkglist, functionlist, modulelist, otherlist = \
+			_getContents(vlist, regexp)
 
-	# IRAF packages and tasks get listed in simple column format
-	if packages:
-		if pkglist:
-			pkglist.sort()
-			for i in xrange(len(pkglist)):
-				pkglist[i] = pkglist[i] + '/'
+		if modules: _printValueList(modulelist, hidden, padchars)
+		if functions: _printValueList(functionlist, hidden, padchars)
+		if variables: _printValueList(otherlist, hidden, padchars)
+
+		# IRAF packages and tasks get listed in simple column format
+		if packages and pkglist:
 			print "IRAF Packages:"
 			irafutils.printCols(pkglist)
 
-	if tasks:
-		if tasklist:
-			tasklist.sort()
+		if tasks and tasklist:
 			print "IRAF Tasks:"
 			irafutils.printCols(tasklist)
 
-	# XXX Need to modify this to look at all parents of this class
-	# XXX too.  That's tricky because want to sort all methods/attributes
-	# XXX together and, to be completely correct, need to resolve
-	# XXX name clashes using the same scheme as Python does for multiple
-	# XXX inheritance and multiply-overridden attributes.
-	if (type(object) == types.InstanceType) and functions:
-		# for instances, call recursively to list class methods
-		help(object.__class__, functions=functions, tasks=tasks,
-			packages=packages, variables=variables, hidden=hidden,
-			padchars=padchars, regexp=regexp)
+		# XXX Need to modify this to look at all parents of this class
+		# XXX too.  That's tricky because want to sort all methods/attributes
+		# XXX together and, to be completely correct, need to resolve
+		# XXX name clashes using the same scheme as Python does for multiple
+		# XXX inheritance and multiply-overridden attributes.
+		if (type(object) == types.InstanceType) and functions:
+			# for instances, call recursively to list class methods
+			help(object.__class__, functions=functions, tasks=tasks,
+				packages=packages, variables=variables, hidden=hidden,
+				padchars=padchars, regexp=regexp)
+	finally:
+		iraf.redirReset(resetList, closeFHList)
+
+#------------------------------------
+# helper functions
+#------------------------------------
+
+# return 1 if they handle the object, 0 if they don't
+
+def _printIrafHelp(object, html):
+	if html:
+		_htmlHelp(object)
+		return 0
+	else:
+		return _irafHelp(object)
+
+def _valueHelp(object, padchars):
+	# just print info on the object itself
+	vstr = _valueString(object,verbose=1)
+	try:
+		name = object.__name__
+	except AttributeError:
+		name = ''
+	if len(name) < padchars:
+		name = name + (padchars-len(name))*" "
+	print name, ":", vstr
+
+def _getContents(vlist, regexp):
+	# make one pass through names getting the type and sort order
+	# also split IrafTask and IrafPkg objects into separate lists
+	# returns lists of various types of included objects
+	if regexp: re_check = re.compile(regexp)
+	tasklist = []
+	pkglist = []
+	# lists for functions, modules, other types
+	functionlist = []
+	modulelist = []
+	otherlist = []
+	sortlist = 3*[None]
+	sortlist[_FUNCTION] = functionlist
+	sortlist[_MODULE] = modulelist
+	sortlist[_OTHER] = otherlist
+	names = vlist.keys()
+	for vname in names:
+		if (regexp is None) or re_check.match(vname):
+			value = vlist[vname]
+			if isinstance(value,iraftask.IrafPkg):
+				pkglist.append(vname + '/')
+			elif isinstance(value,iraftask.IrafTask):
+				tasklist.append(vname)
+			else:
+				vtype = type(value)
+				vorder = _sortOrder(type(value))
+				sortlist[vorder].append((vname,value))
+	# sort into alphabetical order by name
+	tasklist.sort()
+	pkglist.sort()
+	functionlist.sort()
+	modulelist.sort()
+	otherlist.sort()
+	return tasklist, pkglist, functionlist, modulelist, otherlist
+
+def _printValueList(varlist, hidden, padchars):
+	for vname, value in varlist:
+		if (hidden or vname[0:1] != '_'):
+			vstr = _valueString(value)
+			# pad name to padchars chars if shorter
+			if len(vname) < padchars:
+				vname = vname + (padchars-len(vname))*" "
+			print vname, ":", vstr
+
 
 _functionTypes = (types.BuiltinFunctionType, types.BuiltinMethodType,
 				types.FunctionType, types.LambdaType, types.MethodType,
