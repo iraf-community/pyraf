@@ -47,8 +47,9 @@ def _open(imtdev=None):
 
     This is a factory function that returns an instance of the ImageDisplay
     class for the specified imtdev.  The default connection if no imtdev is
-    specified is "unix:/tmp/.IMT%d".  Failing that, a connection is
-    attempted on the /dev/imt1[io] named fifo pipes.
+    specified is given in the environment variable IMTDEV (if defined) or
+    is "unix:/tmp/.IMT%d".  Failing that, a connection is attempted on the
+    /dev/imt1[io] named fifo pipes.
 
     The syntax for the imtdev argument is <domain>:<address> where <domain>
     is one of "inet" (internet tcp/ip socket), "unix" (unix domain socket)
@@ -56,26 +57,26 @@ def _open(imtdev=None):
     domain, as illustrated in the examples below.
 
     inet:5137                   Server connection to port 5137 on the local
-                                                            host.  For a client, a connection to the
-                                                            given port on the local host.
+                                host.  For a client, a connection to the
+                                given port on the local host.
 
     inet:5137:foo.bar.edu       Client connection to port 5137 on internet
-                                                            host foo.bar.edu.  The dotted form of address
-                                                            may also be used.
+                                host foo.bar.edu.  The dotted form of address
+                                may also be used.
 
     unix:/tmp/.IMT212           Unix domain socket with the given pathname
-                                                            IPC method, local host only.
+                                IPC method, local host only.
 
     fifo:/dev/imt1i:/dev/imt1o  FIFO or named pipe with the given pathname.
-                                                            IPC method, local host only.  Two pathnames
-                                                            are required, one for input and one for
-                                                            output, since FIFOs are not bidirectional.
-                                                            For a client the first fifo listed will be
-                                                            the client's input fifo; for a server the
-                                                            first fifo will be the server's output fifo.
-                                                            This allows the same address to be used for
-                                                            both the client and the server, as for the
-                                                            other domains.
+                                IPC method, local host only.  Two pathnames
+                                are required, one for input and one for
+                                output, since FIFOs are not bidirectional.
+                                For a client the first fifo listed will be
+                                the client's input fifo; for a server the
+                                first fifo will be the server's output fifo.
+                                This allows the same address to be used for
+                                both the client and the server, as for the
+                                other domains.
 
     The address field may contain one or more "%d" fields.  If present, the
     user's UID will be substituted (e.g. "unix:/tmp/.IMT%d").
@@ -83,7 +84,10 @@ def _open(imtdev=None):
 
     if not imtdev:
         # try defaults
-        for imtdev in _default_imtdev:
+        defaults = list(_default_imtdev)
+        if os.environ.has_key('IMTDEV'):
+            defaults.insert(0, os.environ['IMTDEV'])
+        for imtdev in defaults:
             try:
                 return _open(imtdev)
             except IOError, error:
@@ -289,14 +293,18 @@ class ImageDisplayProxy(ImageDisplay):
         if not self._display:
             self.open()
         try:
-            return self._display.readCursor(sample)
+            value = self._display.readCursor(sample)
+            # Null value indicates display was probably closed
+            if value:
+                return value
         except IOError, error:
-            # This error can occur if image display was closed.
-            # If a new display has been started then closing and
-            # reopening the connection will fix it.  If that
-            # fails then give up.
-            self.open()
-            return self._display.readCursor(sample)
+            pass
+        # This error can occur if image display was closed.
+        # If a new display has been started then closing and
+        # reopening the connection will fix it.  If that
+        # fails then give up.
+        self.open()
+        return self._display.readCursor(sample)
 
 
 _display = ImageDisplayProxy()
