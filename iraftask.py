@@ -121,12 +121,18 @@ class IrafTask:
 	def getParList(self):
 		"""Return list of all parameter objects"""
 		self.initTask(force=1)
-		return self._currentParList.getParList()
+		if self._currentParList:
+			return self._currentParList.getParList()
+		else:
+			return []
 
 	def getParDict(self):
 		"""Return (min-match) dictionary of all parameter objects"""
 		self.initTask(force=1)
-		return self._currentParList.getParDict()
+		if self._currentParList:
+			return self._currentParList.getParDict()
+		else:
+			return minmatch.MinMatchDict()
 
 	def getParObject(self,paramname,exact=0,alldict=0):
 		"""Get the IrafPar object for a parameter
@@ -167,7 +173,7 @@ class IrafTask:
 	def getAllMatches(self,param):
 		"""Return list of names of all parameters that may match param"""
 		self.initTask(force=1)
-		if self._currentParList is not None:
+		if self._currentParList:
 			return self._currentParList.getAllMatches(param)
 		else:
 			return []
@@ -221,7 +227,8 @@ class IrafTask:
 		if iraf.Verbose>1:
 			print "Connected subproc run ", self._name, \
 				"("+self._fullpath+")"
-			self._runningParList.lParam()
+			if self._runningParList:
+				self._runningParList.lParam()
 		try:
 			# delete list of param dictionaries so it will be
 			# recreated in up-to-date version if needed
@@ -237,7 +244,8 @@ class IrafTask:
 			finally:
 				rv = iraf.redirReset([], closeFHList)
 				self._runningParList = None
-				if self._parDictList: self._parDictList[0] = (self._name,
+				if self._parDictList and self._currentParList:
+					self._parDictList[0] = (self._name,
 									self._currentParList.getParDict())
 		except irafexecute.IrafProcessError, value:
 			raise iraf.IrafError("Error running IRAF task " + self._name +
@@ -292,6 +300,8 @@ class IrafTask:
 		Special arguments: _setMode=1 to set modes of automatic parameters
 		"""
 		self.initTask(force=1)
+		if not self._currentParList:
+			return None
 		newParList = copy.deepcopy(self._currentParList)
 		if kw.has_key('_setMode'):
 			_setMode = kw['_setMode']
@@ -361,8 +371,8 @@ class IrafTask:
 		elif self._currentParList is not None:
 			paramdict = self._currentParList.getParDict()
 		else:
-			paramdict = {}
-		if paramdict.has_key(paramname,exact=exact):
+			paramdict = None
+		if paramdict and paramdict.has_key(paramname,exact=exact):
 			paramdict[paramname].set(newvalue,index=pindex,
 				field=field,check=check)
 			return
@@ -465,29 +475,29 @@ class IrafTask:
 	def lpar(self,verbose=0):
 		"""List the task parameters"""
 		self.initTask(force=1)
-		if not self._hasparfile:
+		if self._currentParList:
+			self._currentParList.lParam(verbose=verbose)
+		else:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
-		else:
-			self._currentParList.lParam(verbose=verbose)
 
 	def epar(self):
 		"""Edit the task parameters"""
 		self.initTask(force=1)
-		if not self._hasparfile:
+		if self._currentParList:
+			epar.epar(self)
+		else:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
-		else:
-			epar.epar(self)
 
 	def dpar(self):
 		"""Dump the task parameters"""
 		self.initTask(force=1)
-		if not self._hasparfile:
+		if self._currentParList:
+			self._currentParList.dParam(self._name)
+		else:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
-		else:
-			self._currentParList.dParam(self._name)
 
 	def save(self,filename=None):
 		"""Write task parameters in .par format to filename (name or handle)
@@ -496,7 +506,8 @@ class IrafTask:
 		Returns a string with the results.
 		"""
 		self.initTask()
-		if not self._hasparfile: return
+		if not self._currentParList:
+			return "No parameters to save for task %s" % (self._name,)
 		if filename is None:
 			if self._scrunchParpath:
 				filename = self._scrunchParpath
@@ -515,19 +526,20 @@ class IrafTask:
 	def unlearn(self):
 		"""Reset task parameters to their default values"""
 		self.initTask(force=1)
-		if self._hasparfile:
-			if self._defaultParList is not None:
-				if self._scrunchParpath and \
-				  (self._scrunchParpath == self._currentParpath):
-					try:
-						os.remove(self._scrunchParpath)
-					except OSError:
-						pass
-				self._currentParList = copy.deepcopy(self._defaultParList)
-				self._currentParpath = self._defaultParpath
-			else:
-				raise iraf.IrafError("Cannot find default .par file for task " +
-					self._name)
+		if not self._currentParList:
+			return
+		if self._defaultParList is not None:
+			if self._scrunchParpath and \
+			  (self._scrunchParpath == self._currentParpath):
+				try:
+					os.remove(self._scrunchParpath)
+				except OSError:
+					pass
+			self._currentParList = copy.deepcopy(self._defaultParList)
+			self._currentParpath = self._defaultParpath
+		else:
+			raise iraf.IrafError("Cannot find default .par file for task " +
+				self._name)
 
 	def scrunchName(self):
 		"""Return scrunched version of filename (used for uparm files)
@@ -599,6 +611,8 @@ class IrafTask:
 		set, all changes are saved; if save flag is false, only
 		explicit parameter changes requested by the task are saved.
 		"""
+		if not self._currentParList:
+			return 0
 		mode = self.getMode(newParList)
 		changed = 0
 		for par in newParList.getParList():
@@ -793,7 +807,8 @@ class IrafTask:
 
 		"""Initialize parameter list by reading parameter file"""
 
-		if not self._hasparfile: return
+		if not self._hasparfile:
+			return
 
 		self._defaultParList = irafpar.IrafParList(self._name,
 							self._defaultParpath)
@@ -821,7 +836,8 @@ class IrafTask:
 
 	def _isConsistentPar(self):
 		"""Check current par list and default par list for consistency"""
-		return self._currentParList.isConsistent(self._defaultParList)
+		return (not self._currentParList) or \
+			self._currentParList.isConsistent(self._defaultParList)
 
 # -----------------------------------------------------
 # IRAF Pset class
@@ -883,21 +899,24 @@ class IrafPythonTask(IrafTask):
 		self._runningParList = apply(self.setParList,args,kw)
 		if iraf.Verbose>1:
 			print "Python task run ", self.getName(), "("+self.getFullpath()+")"
-			self._runningParList.lParam()
+			if self._runningParList:
+				self._runningParList.lParam()
 		# delete list of param dictionaries so it will be
 		# recreated in up-to-date version if needed
 		self._parDictList = None
 		# redirect the I/O
 		resetList = iraf.redirApply(redirKW)
 		try:
-			# run the task
-			parList = self._runningParList.getParList()
 			# extract all parameters
+			if self._runningParList:
+				parList = self._runningParList.getParList()
+			else:
+				parList = []
 			pl = []
 			for par in parList:
 				if par.name not in ['mode', '$nargs']:
 					pl.append(par.get(native=1))
-			# pl = map(lambda x: x.get(native=1), parList)
+			# run the task
 			apply(self._pyFunction, pl)
 			changed = self._updateParList(self._runningParList, save)
 			if changed:
@@ -907,7 +926,8 @@ class IrafPythonTask(IrafTask):
 			# restore I/O
 			rv = iraf.redirReset(resetList, closeFHList)
 			self._runningParList = None
-			if self._parDictList: self._parDictList[0] = (self._name,
+			if self._parDictList and self._currentParList:
+				self._parDictList[0] = (self._name,
 								self._currentParList.getParDict())
 		if iraf.Verbose>1: print 'Successful task termination'
 		return rv
