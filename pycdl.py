@@ -49,6 +49,14 @@ def cdl_writeSubRaster(displayDevPtr, lx, ly, image):
 		raise TypeError("Numeric Array must be of Int8 (byte) type")
 	xcdl_writeSubRaster(displayDevPtr, lx, ly, nx, ny, timage)
 
+def cdl_zscaleImage(displayDevPtr, image, z1, z2):
+	timage, nx, ny, bitpix = cdl_arrayPrep(image)
+	xcdl_zscaleImage(displayDevPtr, timage, nx, ny, bitpix, z1, z2)
+	# Now the tricky part. The previous call has written a byte image
+	# back into the data area of timage. The following creates a new
+	# numeric array to return from that overwritten part.
+	return n.reshape(n.fromstring(timage.tostring()[:nx*ny],n.Int8),(nx,ny))
+	
 #int cdl_displayPix(CDLPtr cdl, uchar *pix_in, int nx, int ny, int bitpix, int frame, int fbconfig, int zscale);
 #void cdl_computeZscale(CDLPtr cdl, uchar *pix_in, int nx, int ny, int bitpix, float *z1, float *z2);
 #int cdl_printPix(CDLPtr cdl, char *cmd, uchar *pix_in, int nx, int ny, int annotate);
@@ -59,4 +67,5 @@ def cdl_writeSubRaster(displayDevPtr, lx, ly, image):
 
 # int cdl_readImage(CDLPtr cdl, uchar **pix, int *nx, int *ny);
 # int cdl_readFrameBuffer(CDLPtr cdl, uchar **pix, int *nx, int *ny);
-# void cdl_zscaleImage(CDLPtr cdl, uchar **pix, int nx, int ny, int bitpix, flo# int cdl_readSubRaster(CDLPtr cdl, int lx, int ly, int nx, int ny, uchar **pix);
+# void cdl_zscaleImage(CDLPtr cdl, uchar **pix,int nx, int ny, int bitpix, flo
+# int cdl_readSubRaster(CDLPtr cdl, int lx, int ly, int nx, int ny, uchar **pix);

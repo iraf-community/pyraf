@@ -21,6 +21,8 @@
 %apply char *OUTPUT {char *name_out, char *title_out, char *imname_out,
 	char *imtitle_out}
 %apply char *OUTPUT_1CHAR {char *key_out_1char}
+
+
 %typemap(python,in) char *STR_OR_NULL {
 	int size;
 	if (!PyString_Check($source)) {
@@ -54,7 +56,23 @@
 	}
 	$target = (uchar *) ((PyArrayObject *)$source)->data;
 }
+
+%typemap(python,in) uchar **NUMARR_INOUT {
+	uchar *tempptr;
+	if (!PyArray_Check($source)) {
+		PyErr_SetString(PyExc_TypeError,"not a Numeric array");
+		return NULL;
+	}
+	if (!PyArray_ISCONTIGUOUS((PyArrayObject *)$source)) {
+		PyErr_SetString(PyExc_TypeError,
+			"not a contiguous Numeric Array");
+		return NULL;
+	}
+	tempptr = (uchar *) ((PyArrayObject *)$source)->data;
+	$target = (uchar **) &tempptr;
+}
 %apply uchar *NUMARR_IN {uchar *pix_in}
+%apply uchar **NUMARR_INOUT {uchar **pix_inout}
 %inline %{
 
 %}

@@ -268,7 +268,7 @@ int cdl_displayPix(CDLPtr cdl, uchar *pix_in, int nx, int ny, int bitpix, int fr
 int cdl_readImage(CDLPtr cdl, uchar **pix, int *nx, int *ny);
 int cdl_readFrameBuffer(CDLPtr cdl, uchar **pix, int *nx, int *ny);
 void cdl_computeZscale(CDLPtr cdl, uchar *pix_in, int nx, int ny, int bitpix, float *z1_out, float *z2_out);
-void cdl_zscaleImage(CDLPtr cdl, uchar **pix, int nx, int ny, int bitpix, float z1, float z2);
+void cdl_zscaleImage(CDLPtr cdl, uchar **pix_inout, int nx, int ny, int bitpix, float z1, float z2);
 int cdl_printPix(CDLPtr cdl, char *cmd, uchar *pix_in, int nx, int ny, int annotate);
 int cdl_printPixToFile(CDLPtr cdl, char *fname, uchar *pix_in, int nx, int ny, int annotate);
 int cdl_readSubRaster(CDLPtr cdl, int lx, int ly, int nx, int ny, uchar **pix);
@@ -280,7 +280,7 @@ int cdl_writeSubRaster(CDLPtr cdl, int lx, int ly, int nx, int ny, uchar *pix_in
 %name(xcdl_readImage) int cdl_readImage(CDLPtr cdl, uchar **pix, int *nx, int *ny);
 %name(xcdl_readFrameBuffer) int cdl_readFrameBuffer(CDLPtr cdl, uchar **pix, int *nx, int *ny);
 %name(xcdl_computeZscale) void cdl_computeZscale(CDLPtr cdl, uchar *pix_in, int nx, int ny, int bitpix, float *z1_out, float *z2_out);
-%name(xcdl_zscaleImage) void cdl_zscaleImage(CDLPtr cdl, uchar **pix, int nx, int ny, int bitpix, float z1, float z2);
+%name(xcdl_zscaleImage) void cdl_zscaleImage(CDLPtr cdl, uchar **pix_inout, int nx, int ny, int bitpix, float z1, float z2);
 %name(xcdl_printPix) int cdl_printPix(CDLPtr cdl, char *cmd, uchar *pix_in, int nx, int ny, int annotate);
 %name(xcdl_printPixToFile) int cdl_printPixToFile(CDLPtr cdl, char *fname, uchar *pix_in, int nx, int ny, int annotate);
 %name(xcdl_readSubRaster) int cdl_readSubRaster(CDLPtr cdl, int lx, int ly, int nx, int ny, uchar **pix);
