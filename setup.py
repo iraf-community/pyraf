@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, os.path, sys, shutil, glob
+import os, os.path, sys, shutil, commands
 from distutils.core import setup,Extension
 from distutils.command.build_ext import build_ext
 from distutils.sysconfig import *
@@ -19,16 +19,26 @@ if Tkinter.TkVersion < 8.3:
 
 tk=Tkinter.Tk()
 tk.withdraw()
-tcl_lib = glob.glob(os.path.join((tk.getvar('tcl_library')), '../'))
-tcl_inc = glob.glob(os.path.join((tk.getvar('tcl_library')), '../../include'))
+tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
+tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
+tkv = str(Tkinter.TkVersion)[:3]
+tklib='libtk'+tkv+'.so'
+command = "ldd %s" % (os.path.join(tcl_lib, tklib))
+lib_list = string.split(commands.getoutput(command))
+for lib in lib_list:
+    if string.find(lib, 'libX11') == 0:
+        ind = lib_list.index(lib)
+        x_lib_dirs = os.path.dirname(lib_list[ind + 2])
+        break
+x_inc_dirs = os.path.join(x_lib_dirs, '../include')
 local_libs = parse_makefile(get_makefile_filename())['LOCALMODLIBS']
 py_includes = get_python_inc(plat_specific=1)
 py_libs =  get_python_lib(plat_specific=1, standard_lib = 1)
 py_bin = parse_makefile(get_makefile_filename())['BINDIR']
 x_libraries = 'X11'
-scripts = parse_makefile(get_makefile_filename())['SCRIPTDIR']
+#scripts = parse_makefile(get_makefile_filename())['SCRIPTDIR']
 ver = sys.version_info
-python_exec = 'python' + str(ver[0])+'.'+str(ver[1])
+python_exec = 'python' + str(ver[0]) + '.' + str(ver[1])
 
 
 def getExtensions(args, x_inc_dirs, x_lib_dirs):
@@ -80,7 +90,6 @@ def getDataDir(args):
             data_dir = os.path.join(dir, 'lib', python_exec, 'site-packages/pyraf')
         elif string.find(a, '--install-data=') == 0:
             dir = string.split(a, '=')[1]
-            print "dir = ", dir
             data_dir = dir
         else:
             data_dir = os.path.join(sys.prefix, 'lib', python_exec, 'site-packages/pyraf')
@@ -90,29 +99,35 @@ def getDataDir(args):
 
 
 def dosetup(x_lib_dirs, x_inc_dirs, data_dir, ext):
-    r = setup(name="PyRAF",
-     version="1.1",
-     description="A Python based CL for IRAF",
-     author="Rick White, Perry Greenfield",
-     maintainer_email="help@stsci.edu",
-     url="http://www.stsci.edu/resources/software_hardware/pyraf",
-     packages=['pyraf'],
+    r = setup(name = "PyRAF",
+     version = "1.1",
+     description = "A Python based CL for IRAF",
+     author = "Rick White, Perry Greenfield",
+     maintainer_email = "help@stsci.edu",
+     url = "http://www.stsci.edu/resources/software_hardware/pyraf",
+     packages = ['pyraf'],
      package_dir = {'pyraf':'lib'},
-     data_files=[(data_dir,['data/blankcursor.xbm']), (data_dir, ['data/dbcopy']), (data_dir, ['data/epar.optionDB']), (data_dir,['data/pyraflogo_rgb_web.gif']), (data_dir,['lib/LICENSE.txt'])],
-     scripts=['lib/pyraf'],
-     ext_modules=ext)
+     data_files = [(data_dir,['data/blankcursor.xbm']), (data_dir, ['data/dbcopy']), (data_dir, ['data/epar.optionDB']), (data_dir,['data/pyraflogo_rgb_web.gif']), (data_dir,['lib/LICENSE.txt'])],
+     scripts = ['lib/pyraf'],
+     ext_modules = ext)
 
     return r
 
 
 def main():
-    x_lib_dirs = get_x_libraries(local_libs)
-    x_inc_dirs  = os.path.normpath(os.path.join(x_lib_dirs, '../include'))
+#    x_lib_dirs = get_x_libraries(local_libs)
+#    if x_lib_dirs != None:
+#        x_inc_dirs  = os.path.normpath(os.path.join(x_lib_dirs, '../include'))
+#    else:
+#        ldpath = string.split(os.environ['LD_LIBRARY_PATH'], ':')
+#        for xdir in ldpath:
+#            if os.path.isfile(os.path.join(xdir, 'libX11.so')):
+#                x_lib_dirs = xdir
+#                x_inc_dirs = os.path.join(xdir, '/../include')
+#               break
     args = sys.argv
-    print args
     data_dir = getDataDir(args)
-    print "data_dir = ", data_dir
-    ext=getExtensions(args, x_inc_dirs, x_lib_dirs)
+    ext = getExtensions(args, x_inc_dirs, x_lib_dirs)
     dosetup(x_lib_dirs, x_inc_dirs, data_dir, ext)
     shutil.copytree('data/clcache/', os.path.join(data_dir,'clcache'))
 
