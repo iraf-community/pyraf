@@ -161,7 +161,7 @@ class IrafTask:
 		"""Execute this task with the specified arguments"""
 		self.initTask()
 		if self.__foreign:
-			print "No run yet for foreign task",self.__name
+			print "No run yet for foreign task '" + self.__name + "'"
 		elif self.__cl:
 			raise iraf.IrafError("Cannot run cl tasks yet: " +
 				self.__name + " ("+self.__fullpath+")")
