@@ -13,7 +13,9 @@ import iraf, irafpar, irafexecute, minmatch
 # -----------------------------------------------------
 
 class IrafTask:
+
 	"""IRAF task class"""
+
 	def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
 		sname = string.replace(name, '.', '_')
 		if sname != name:
@@ -103,26 +105,29 @@ class IrafTask:
 		"""Return full path name of executable"""
 		if self.__fullpath == None: self.initTask()
 		return self.__fullpath
+
 	def getParpath(self):
 		"""Return full path name of parameter file"""
 		if self.__fullpath == None: self.initTask()
 		return self.__parpath
+
 	def getParList(self):
 		"""Return list of all parameter objects"""
 		if self.__fullpath == None: self.initTask()
 		return self.__pars
+
 	def getParDict(self):
 		"""Return (min-match) dictionary of all parameter objects"""
 		if self.__fullpath == None: self.initTask()
 		return self.__pardict
 
-	# public access to set hidden attribute, which is specified
+	# public access to set hidden attribute, which can be specified
 	# in a separate 'hide' statement
 
 	def setHidden(self,value):     self.__hidden = value
 
-	# Get the IrafPar object for a parameter
 	def getParObject(self,param):
+		"""Get the IrafPar object for a parameter"""
 		if self.__fullpath == None: self.initTask()
 		if not self.__hasparfile:
 			raise KeyError("Task "+self.__name+" has no parameter file")
@@ -159,13 +164,12 @@ class IrafTask:
 			param + "' for " + ttype + " " + self.__name +
 			"\n" + str(e))
 
-	# get value for parameter 'param' with minimum-matching
-	# returns a string
 	def get(self,param):
+		"""Return string value for task parameter 'param' (with min-match)"""
 		return self.getParObject(param).get()
 
-	# set task parameter 'param' to value with minimum-matching
 	def set(self,param,value):
+		"""Set task parameter 'param' to value (with minimum-matching)"""
 		self.getParObject(param).set(value)
 
 	# allow running task using taskname() or with
@@ -173,7 +177,9 @@ class IrafTask:
 
 	def __call__(self,*args,**kw):
 		apply(self.run,args,kw)
+
 	def run(self,*args,**kw):
+		"""Execute this task with the specified arguments"""
 		if self.__fullpath == None: self.initTask()
 		if self.__foreign:
 			print "No run yet for foreign task",self.__name
@@ -198,6 +204,7 @@ class IrafTask:
 					"\n" + str(value))
 
 	def setParList(self,*args,**kw):
+		"""Set arguments to task"""
 		# first expand all keywords to their full names
 		fullkw = {}
 		for key in kw.keys():
@@ -233,7 +240,9 @@ class IrafTask:
 		if self.__hasparfile: self.set('$nargs',len(args))
 
 	def setParDictList(self):
-		"""Parameter dictionaries for execution consist of this
+		"""Set the list of parameter dictionaries for task execution.
+		
+		Parameter dictionaries for execution consist of this
 		task's parameters, any psets referenced, all the
 		parameters for packages that have been loaded, and the
 		cl parameters.  Each dictionary has an associated name
@@ -243,7 +252,8 @@ class IrafTask:
 		Create this list anew for each execution in case the
 		list of loaded packages has changed.  It is stored as
 		an attribute of this object so it can be accessed by
-		the getParam() and setParam() methods."""
+		the getParam() and setParam() methods.
+		"""
 
 		if self.__fullpath == None: self.initTask()
 		parDictList = [(self.__name,self.__pardict)]
@@ -253,7 +263,7 @@ class IrafTask:
 				# pset name is from either parameter value (if not null)
 				# or from parameter name (XXX I'm just guessing at this)
 				try:
-					psetname = param.get() or param.name
+					psetname = param.value or param.name
 					pset = iraf.getTask(psetname)
 					parDictList.append( (param.name,pset.getParDict()) )
 				except KeyError:
@@ -272,8 +282,12 @@ class IrafTask:
 
 	def setParam(self,qualifiedName,newvalue,check=1):
 		"""Set parameter specified by qualifiedName to newvalue.
+
+		qualifiedName can be a simple parameter name or can be
+		[[package.]task.]paramname[.field].
 		If check is set to zero, does not check value to make sure it
-		satisfies min-max range or choice list."""
+		satisfies min-max range or choice list.
+		"""
 
 		if self.__parDictList == None: self.setParDictList()
 
@@ -321,8 +335,10 @@ class IrafTask:
 				qualifiedName)
 
 	def getParam(self,qualifiedName,native=0):
-		"""Return parameter specified by qualifiedName, which can be a simple
-		parameter name or can be [[package.]task.]paramname[.field].
+		"""Return parameter specified by qualifiedName.
+
+		qualifiedName can be a simple parameter name or can be
+		[[package.]task.]paramname[.field].
 		Paramname can also have an optional subscript, "param[1]".
 		If native is non-zero, returns native format (e.g. float for
 		floating point parameter.)  Default is return string value.
@@ -383,6 +399,7 @@ class IrafTask:
 				qualifiedName)
 
 	def lpar(self,verbose=0):
+		"""List the task parameters"""
 		if self.__fullpath == None: self.initTask()
 		if not self.__hasparfile:
 			print "Task",self.__name," has no parameter file"
@@ -392,15 +409,18 @@ class IrafTask:
 				if iraf.verbose or p.name != '$nargs':
 					print p.pretty(verbose=verbose or iraf.verbose)
 
-	# fill in full pathnames of files and read parameter file (if it exists)
-	# if names are None then need to run this
-	# if names are "" then already tried and failed
-	# if names are strings then already did it
 	def initTask(self):
+		"""Fill in full pathnames of files and read parameter file
+
+		If names are None then need to run this.
+		If names are "" then already tried and failed.
+		If names are strings then already did it.
+		"""
+
 		if self.__fullpath == "":
-			raise iraf.IrafError("Cannot find executable for task " + self.__name)
+			raise iraf.IrafError("Cannot find executable for task "+self.__name)
 		if (self.__hasparfile and self.__parpath == ""):
-			raise iraf.IrafError("Cannot find .par file for task " + self.__name)
+			raise iraf.IrafError("Cannot find .par file for task "+self.__name)
 		if self.__fullpath == None:
 			# This follows the search strategy used by findexe in
 			# cl/exec.c: first it checks in the BIN directory for the
@@ -485,7 +505,9 @@ class IrafTask:
 					self.__pardict.add(p.name, p)
 					if isinstance(p, irafpar.IrafParPset):
 						self.__psetlist.append(p)
+
 	def unlearn(self):
+		"""Reset task parameters to their default values"""
 		if self.__fullpath == None: self.initTask()
 		if self.__hasparfile:
 			exename1 = iraf.expand(self.__filename)
@@ -503,9 +525,13 @@ class IrafTask:
 				self.__pardict.add(p.name, p)
 				if isinstance(p, irafpar.IrafParPset):
 					self.__psetlist.append(p)
+
 	def scrunchName(self):
-		# scrunched version of filename is chars 1,2,last from package
-		# name and chars 1-5,last from task name
+		"""Return scrunched version of filename (used for uparm files)
+
+		Scrunched version of filename is chars 1,2,last from package
+		name and chars 1-5,last from task name.
+		"""
 		s = self.__pkgname[0:2]
 		if len(self.__pkgname) > 2:
 			s = s + self.__pkgname[-1:]
@@ -513,6 +539,7 @@ class IrafTask:
 		if len(self.__name) > 6:
 			s = s + self.__name[-1:]
 		return s
+
 	def __str__(self):
 		s = '<IrafTask ' + self.__name + ' (' + self.__filename + ')' + \
 			' Pkg: ' + self.__pkgname + ' Bin: ' + self.__pkgbinary
@@ -529,7 +556,9 @@ class IrafTask:
 # -----------------------------------------------------
 
 class IrafPkg(IrafTask):
+
 	"""IRAF package class (special case of IRAF task)"""
+
 	def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
 		IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
 		# a package cannot be a foreign task or be a pset (both of which get
@@ -540,10 +569,16 @@ class IrafPkg(IrafTask):
 		self.__loaded = 0
 		self.__tasks = minmatch.MinMatchDict()
 		self.__pkgs = minmatch.MinMatchDict()
-	def getLoaded(self): return self.__loaded
+
+	def getLoaded(self):
+		"""Returns true if this package has already been loaded"""
+		return self.__loaded
+
 	def __getattr__(self, name):
-		"""Return the task identified by name (if it exists).  Also searches
-		subpackages for the task."""
+		"""Return the task 'name' from this package (if it exists).
+		
+		Also searches subpackages for the task.
+		"""
 		if name[:1] == '_':
 			raise AttributeError(name)
 		if not self.__loaded:
@@ -559,12 +594,15 @@ class IrafPkg(IrafTask):
 				except AttributeError, e:
 					pass
 		raise AttributeError(name)
+
 	def addTask(self, task):
 		"""Add a task to the task list for this package"""
 		self.__tasks.add(task.getName(), task)
 		# sub-packages get added to a separate list
 		if isinstance(task, IrafPkg): self.__pkgs.add(task.getName(), task)
+
 	def run(self,*args,**kw):
+		"""Load this package with the specified parameters"""
 		if self.getFullpath() == None: self.initTask()
 
 		# Special _doprint keyword is used to control whether tasks are listed
@@ -599,6 +637,7 @@ class IrafPkg(IrafTask):
 			if iraf._loadedPath[-1] != self:
 				iraf._loadedPath.append(self)
 		if doprint: iraf.listtasks(self)
+
 	def __str__(self):
 		s = '<IrafPkg ' + self.getName() + ' (' + self.getFilename() + ')' + \
 			' Pkg: ' + self.getPkgname()
@@ -611,7 +650,9 @@ class IrafPkg(IrafTask):
 # -----------------------------------------------------
 
 def _splitName(qualifiedName):
-	"""qualifiedName looks like [[package.]task.]paramname[subscript][.field],
+	"""Split qualifiedName into components.
+	
+	qualifiedName looks like [[package.]task.]paramname[subscript][.field],
 	where subscript is an index in brackets.  Returns a tuple with
 	(package, task, paramname, subscript, field). IRAF one-based subscript
 	is changed to Python zero-based subscript.
