@@ -738,7 +738,7 @@ def stty(terminal=None, baud=9600, ncols=80, nlines=24, show=no, all=no,
 		# returns a string with size of display
 		# also sets CL environmental CL parameters
 		if _sys.stdout != _sys.__stdout__:
-			# a kluge -- if sys.stdout is not the terminal,
+			# a kluge -- if _sys.stdout is not the terminal,
 			# assume it is a file and give a large number for
 			# the number of lines
 			# don't set the environment variables in this case
@@ -757,7 +757,7 @@ def eparam(*args):
 		try:
 			getTask(taskname).epar()
 		except KeyError, e:
-			sys.stderr.write("WARNING: Could not find task %s for epar" %
+			_sys.stderr.write("WARNING: Could not find task %s for epar" %
 				taskname)
 
 def lparam(*args,**kw):
@@ -771,7 +771,7 @@ def lparam(*args,**kw):
 			try:
 				getTask(taskname).lpar()
 			except KeyError, e:
-				sys.stderr.write("WARNING: Could not find task %s for lpar" %
+				_sys.stderr.write("WARNING: Could not find task %s for lpar" %
 					taskname)
 	finally:
 		redirReset(resetList, closeFHList)
@@ -787,7 +787,7 @@ def dparam(*args,**kw):
 			try:
 				getTask(taskname).dpar()
 			except KeyError, e:
-				sys.stderr.write("WARNING: Could not find task %s for dpar" %
+				_sys.stderr.write("WARNING: Could not find task %s for dpar" %
 					taskname)
 	finally:
 		redirReset(resetList, closeFHList)
@@ -1566,7 +1566,7 @@ def redirProcess(kw):
 
 def redirApply(redirKW):
 
-	"""Modify sys.stdin, stdout, stderr using the redirKW dictionary
+	"""Modify _sys.stdin, stdout, stderr using the redirKW dictionary
 
 	Returns a list of the original filehandles so they can be
 	restored (by redirReset)
@@ -1583,7 +1583,7 @@ def redirApply(redirKW):
 
 def redirReset(resetList, closeFHList):
 
-	"""Restore sys.stdin, stdout, stderr to their original values
+	"""Restore _sys.stdin, stdout, stderr to their original values
 
 	Also closes the filehandles in closeFHList
 	"""
