@@ -193,6 +193,8 @@ def _help(object, variables, functions, modules,
 	#XXX name clashes using the same scheme as Python does for multiple
 	#XXX inheritance and multiply-overridden attributes.
 	if (type(object) == types.InstanceType) and functions:
+		# print a help line for the object itself first
+		_valueHelp(object, padchars=0)
 		# for instances, call recursively to list class methods
 		help(object.__class__, functions=functions, tasks=tasks,
 			packages=packages, variables=variables, hidden=hidden,
@@ -220,7 +222,11 @@ def _valueHelp(object, padchars):
 		name = ''
 	if len(name) < padchars:
 		name = name + (padchars-len(name))*" "
-	print name, ":", vstr
+	if name:
+		print name, ":", vstr
+	else:
+		# omit the colon if name is null
+		print vstr
 
 def _getContents(vlist, regexp):
 	# make one pass through names getting the type and sort order
