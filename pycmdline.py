@@ -395,9 +395,10 @@ class PyCmdLine(CmdConsole):
 				#XXX this find() may be improved with latest Python readline features
 				j = string.find(line,cmd)
 				return line[:j] + 'iraf.' + line[j:]
-		elif line[i:i+1] == "" and not callable(getattr(iraf,cmd)):
-			# variable from iraf module is not callable (e.g.
-			# yes, no, INDEF, etc.) -- add 'iraf.' so it echoes OK
+		elif not callable(getattr(iraf,cmd)):
+			# variable from iraf module is not callable task (e.g.,
+			# yes, no, INDEF, etc.) -- add 'iraf.' so it can be used
+			# as a variable and execute as Python
 			j = string.find(line,cmd)
 			return line[:j] + 'iraf.' + line[j:]
 
