@@ -99,7 +99,7 @@ INDEF = _INDEFClass()
 # now it is safe to import other iraf modules
 
 import sys, os, string, re, types, time
-import irafnames, irafutils, minmatch, iraftask
+import irafnames, irafutils, minmatch, iraftask, irafpar
 
 # hide these modules so we can use 'from iraffunctions import *'
 _sys = sys
@@ -115,8 +115,9 @@ _irafnames = irafnames
 _irafutils = irafutils
 _minmatch = minmatch
 _iraftask = iraftask
+_irafpar = irafpar
 
-del irafnames, irafutils, minmatch, iraftask
+del irafnames, irafutils, minmatch, iraftask, irafpar
 
 class IrafError(Exception):
 	pass
@@ -1146,8 +1147,7 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,hush,offset=0):
 				raise IrafError('ERROR: ' + msg)
 			elif mm.group('beepstmt') is not None:
 				# beep statement
-				_sys.stdout.write("")
-				_sys.stdout.flush()
+				clBeep()
 			elif mm.group('sleeptime') is not None:
 				# sleep statement
 				try:
@@ -1347,10 +1347,31 @@ def clParSet(paramname,value,pkg=None):
 		print "clParSet name", paramname, "value", `value`, "eval", result
 	pkg.setParam(paramname,result)
 
-def envSet(**kw):
+def envSet(*args, **kw):
 	"""Set IRAF environment variables"""
-	for keyword, value in kw.items():
-		varDict[keyword] = str(value)
+	if len(args) == 0:
+		if len(kw) != 0:
+			# normal case is only keyword,value pairs
+			for keyword, value in kw.items():
+				varDict[keyword] = str(value)
+		else:
+			# set with no arguments lists all variables (using same format
+			# as IRAF)
+			keys = kw.keys()
+			keys.sort()
+			for key in keys:
+				print "    "+key+"="+kw[key]
+	else:
+		# The only other case allowed is the peculiar syntax 'set @filename',
+		# which only gets used in the zzsetenv.def file, where it reads
+		# extern.pkg.  That file also gets read (in full cl mode) by clpackage.cl.
+		# I get errors if I read this during zzsetenv.def, so just ignore
+		# it here...
+		#
+		# Flag any other syntax as an error.
+		if len(args) != 1 or len(kw) != 0 or type(args[0]) != _types.StringType \
+				or args[0][:1] != '@':
+			raise SyntaxError("set requires name=value pairs")
 
 def envget(var):
 	"""Get value of IRAF or OS environment variable"""
@@ -1373,14 +1394,15 @@ def clFlprcache(*args):
 	print "No process cache in Pyraf"
 
 def clTime():
-	print _time.ctime(time.time())
+	print _time.ctime(_time.time())
 
 def clSleep(seconds):
 	_time.sleep(float(seconds))
 
 def clBeep():
-	_sys.stdout.write("")
-	_sys.stdout.flush()
+	if _sys.stdout == _sys.__stdout__:
+		_sys.stdout.write("")
+		_sys.stdout.flush()
 
 # some dummy routines
 
@@ -1521,6 +1543,56 @@ def curPkgbinary():
 		return loadedPath[-1].getPkgbinary()
 	else:
 		return ""
+
+# -----------------------------------------------------
+# clArray: IRAF array class with type checking and
+# subscripts that start at 1 instead of zero
+# -----------------------------------------------------
+
+def clArray(array_size, datatype, name="<anonymous>", min=None, max=None,
+		choice=None, prompt=None, init_value=None, strict=0):
+	"""Create an IrafPar object that can be used as a CL array"""
+	typedict = { 'string': 's',
+				'char': 's',
+				'file': 'f',
+				'int': 'i',
+				'bool': 'b',
+				'real': 'r',
+				'double': 'd', }
+	shorttype = "a" + typedict[datatype]
+	if prompt is None and name != "<anonymous>": prompt = name
+	# messy stuff -- construct strings like we would read
+	# from .par file for this parameter
+	fields = [ name,
+				shorttype,
+				"h",				# mode
+				"1",				# number of dims
+				str(array_size),	# dimension
+				"1",				# apparently always 1
+				min,
+				max,
+				prompt ]
+	if fields[6] is None: fields[6] = choice
+	if init_value is not None:
+		try:
+			fields = fields + init_value
+		except TypeError:
+			# init_value is probably a scalar instead of a list
+			# initialize all elements to same value
+			fields = fields + array_size*[init_value] 
+	if len(fields) < 9+array_size:
+		fields = fields + (array_size+9-len(fields))*[None]
+	for i in range(len(fields)):
+		if fields[i] is None:
+			fields[i] = ""
+		else:
+			fields[i] = str(fields[i])
+	try:
+		return _irafpar.IrafParFactory(fields, filename, strict=strict)
+	except ValueError, e:
+		raise ValueError("Error creating Cl array `%s'\n%s" %
+			(name, str(e)))
+
 
 # -----------------------------------------------------
 # _evalCondition: evaluate the condition from a cl if
@@ -1819,7 +1891,7 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 
 	# does package with exactly this name exist in minimum-match
 	# dictionary _pkgs?
-	pkg = _pkgs.data.get(taskname)
+	pkg = _pkgs.get_exact_key(taskname)
 	newpkg = _iraftask.IrafPkg(prefix,taskname,suffix,value,pkgname,pkgbinary)
 	if pkg:
 		if pkg.getFilename() != newpkg.getFilename() or \
@@ -1835,4 +1907,3 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 		return pkg
 	addPkg(newpkg)
 	return newpkg
-

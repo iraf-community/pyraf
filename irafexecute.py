@@ -1,5 +1,4 @@
-"""Module contains functions to allow the execution of IRAF connected
-subprocesses
+"""irafexecute.py: Functions to execute IRAF connected subprocesses
 
 $Id$
 """
@@ -14,324 +13,427 @@ IPC_PREFIX = Numeric.array([01120],Numeric.Int16).tostring()
 class IrafProcessError(Exception):
 	pass
 
-def IrafExecute(task, envdict):
+def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 
 	"""Execute IRAF task (defined by the IrafTask object task)
-	using the provided envionmental variables.  The IrafTask object
-	must have these methods:
-
-	getName(): return the name of the task
-	getFullpath(): return the full path name of the executable
-	getParam(param): get parameter value
-	setParam(param,value): set parameter value
-	"""
+	using the provided envionmental variables."""
 
 	# Start 'er up
 	try:
-		executable = task.getFullpath()
-		process = subproc.Subprocess(executable+' -c')
+		irafprocess = IrafProcess(task)
 	except (iraf.IrafError, subproc.SubprocessError), value:
-		raise IrafProcessError("problems starting IRAF executable\n" + value)
+		raise IrafProcessError("Cannot start IRAF executable\n" + value)
 
+	# Run it
 	try:
-		keys = envdict.keys()
-		if len(keys) > 0:
-			# write environment variables in one big block
-			outenvstr = len(keys)*[""]
-			for i in xrange(len(keys)):
-				outenvstr[i] = "set "+keys[i]+"="+envdict[keys[i]]+"\n"
-			WriteStringToIrafProc(process, string.join(outenvstr,""))
-		# terminate set up mode
-		WriteStringToIrafProc(process,'_go_\n')
-		# start IRAF logical task
-		WriteStringToIrafProc(process,task.getName()+'\n')
-		# begin slave mode
-		IrafIO(process,task)
-		# kill the damn thing, process caches are for weenies
-		IrafTerminate(process)
+		irafprocess.initialize(envdict)
+		irafprocess.run(stdin=stdin,stdout=stdout,stderr=stderr)
+		# just kill the damn thing, process caches are for weenies
+		irafprocess.terminate()
 	except KeyboardInterrupt:
-		# On keyboard interrupt (^c), kill the subprocess
-		IrafKill(process)
+		# On keyboard interrupt (^C), kill the subprocess
+		irafprocess.kill()
 	except (iraf.IrafError, IrafProcessError), exc:
 		# on error, kill the subprocess, then re-raise the original exception
 		try:
-			IrafKill(process)
+			irafprocess.kill()
 		except Exception, exc2:
 			# append new exception text to previous one (right thing to do?)
 			exc.args = exc.args + exc2.args
 		raise exc
 	return
 
-_re_chan_len = re.compile(r'\((\d+),(\d+)\)\n')
+# message strings received from process start with one of these commands
+_p_bye     = r'bye\n'
+_p_error   = r'ERROR|error'
+_p_xmit    = r'xmit\((?P<xmitchan>\d+),(?P<xmitnbytes>\d+)\)\n'
+_p_xfer    = r'xfer\((?P<xferchan>\d+),(?P<xfernbytes>\d+)\)\n'
+_p_par_get = r'=(?P<gname>[a-zA-Z_$][\w.]*(?:\[\d+\])?)\n'
+_p_par_set = r'(?P<sname>[a-zA-Z_][\w.]*(?:\[\d+\])?)\s*=\s*(?P<svalue>.*)\n'
 
-# _optsub is the pattern for an optional integer subscript in brackets
-_optsub = r'(?:\[\d+\])?'
-_re_paramset = re.compile(r'([a-zA-Z_][\w.]*' + _optsub + ')\s*=\s*(.*)\n')
-_re_paramrequest = re.compile(r'=([a-zA-Z_$][\w.]*' + _optsub + ')\n')
+_re_msg = re.compile(
+			r'(?P<bye>'     + _p_bye     + ')|' +
+			r'(?P<error>'   + _p_error   + ')|' +
+			r'(?P<xmit>'    + _p_xmit    + ')|' +
+			r'(?P<xfer>'    + _p_xfer    + ')|' +
+			r'(?P<par_get>' + _p_par_get + ')|' +
+			r'(?P<par_set>' + _p_par_set + ')'
+			)
 
-def IrafIO(process,task):
-
-	"""Talk to the IRAF process in slave mode. Raises an IrafProcessError
-	if an error occurs."""
-
-	# This routine has gotten to the point that it could be better
-	# organized with calls to more specialized routines. It's gotten
-	# way too long.
-	
-	global stdgraph
-	msg = ''
-	xferline = ''
-	while 1:
-
-		# each read may return multiple lines; only
-		# read new data when old has been used up
-		if not msg:
-			data = ReadFromIrafProc(process)
-			msg = Iraf2AscString(data)
-#			print "~~~~~~  "+msg
-		if msg[0:4] == 'bye\n':
-			return
-		elif msg[0:5] == "ERROR" or msg[0:5] == 'error':
-			raise IrafProcessError("IRAF task terminated abnormally\n" + msg)
-		elif msg[0:4] == 'xmit':
-			if msg == "xmit(4,6)\n" or msg == "xmit(4,5)\n":
-				checkForEscapeSeq = 1
-			else:
-				checkForEscapeSeq = 0
-			mo = _re_chan_len.match(msg,4)
-			if not mo:
-				raise IrafProcessError("Illegal xmit command format\n" + msg)
-			chan = int(mo.group(1))
-			nbytes = int(mo.group(2))
-			# this must always be the last command in a message
-			msg = msg[mo.end():]
-			if msg: raise IrafProcessError("Bad xmit: " +
-					`len(msg)` + " bytes follow request")
-			xdata = ReadFromIrafProc(process)
-			if len(xdata) != 2*nbytes:
-				raise IrafProcessError("Error, wrong number of bytes read\n" +
-					("(got %d, expected %d, chan %d)" %
-						(len(xdata), 2*nbytes, chan)))
-			else:
-				if chan == 4:
-					txdata = Iraf2AscString(xdata)
-					if checkForEscapeSeq:
-						if ((txdata[0:5] == "\033=rDw") or
-						    (txdata[0:5] == "\033+rAw") or
-							(txdata[0:5] == "\033-rAw")):
-							# ignore IRAF io escape sequences for now
-							continue
-					print txdata,
-					sys.stdout.flush()
-				elif chan == 5:
-					sys.stderr.write(Iraf2AscString(xdata))
-					sys.stderr.flush()
-				elif chan == 6:
-					# need to handle cases where WS not open yet
-					if not stdgraph:
-						stdgraph = gkiopengl.GkiOpenGlKernel()
-					stdgraph.append(Numeric.fromstring(xdata,'s'))
-				elif chan == 7:
-					print "data for STDIMAGE"
-					sys.stdout.flush()
-				elif chan == 8:
-					print "data for STDPLOT"
-					sys.stdout.flush()
-				elif chan == 9:
-					sdata = Numeric.fromstring(xdata,'s')
-					if irafutils.isBigEndian():
-						# Actually, the channel destination is sent
-						# by the iraf process as a 4 byte int, the following
-						# code basically chooses the right two bytes to
-						# find it in.
-						forChan = sdata[1]
-					else:
-						forChan = sdata[0]
-					if forChan == 6:
-						# STDPLOT control
-						# first see if OPENWS to get device, otherwise
-						# pass through to current kernel, use braindead
-						# interpretation to look for openws 
-						if (sdata[2] == -1) and (sdata[3] == 1):
-							length = sdata[4]
-							device = sdata[5:length+2].astype('b').tostring()
-							# but of course, for the time being (until
-							# we manage another graphics kernel) we ignore
-							# device!
-							if stdgraph is None:
-								stdgraph = gkiopengl.GkiOpenGlKernel()
-						
-						# Pass it to the kernel to deal with
-						# Only in the case of a GETWCS command will
-						# stdgraph.control return a value.
-						wcs = stdgraph.control(sdata[2:])
-						if wcs:
-							# Write directly to stdin of subprocess;
-							# strangely enough, it doesn't use the
-							# STDGRAPH I/O channel.
-							WriteToIrafProc(process ,wcs)
-							stdgraph.clearReturnData()
- 					else:
-						print "GRAPHICS control data for channel",forChan
-						sys.stdout.flush()
-				else:
-					print "data for channel", chan
-					sys.stdout.flush()
-		elif msg[0:4] == 'xfer':
-			mo = _re_chan_len.match(msg,4)
-			if not mo:
-				raise IrafProcessError("Illegal xfer command format\n" + msg)
-			chan = int(mo.group(1))
-			nbytes = int(mo.group(2))
-			if chan == 3:
-				#XXX Flush output to make sure prompts without newlines appear
-				#XXX sys.stdout.flush()
-
-				# Read a line from stdin unless xferline already has
-				# some untransmitted data from a previous read
-
-				if not xferline: xferline = sys.stdin.readline()
-
-				# Send two messages, the first with the number of characters
-				# in the line and the second with the line itself.
-				# For very long lines, may need multiple messages.  Task
-				# will keep sending xfer requests until it gets the
-				# newline.
-
-				nchars = nbytes/2
-				lsection = xferline[:nchars]
-				WriteStringToIrafProc(process, str(len(lsection)))
-				WriteStringToIrafProc(process, lsection)
-				xferline = xferline[nchars:]
-			else:
-				raise IrafProcessError("xfer request for unknown channel " +
-					msg)
-			# this must always be the last command in a message
-			msg = msg[mo.end():]
-			if msg: raise IrafProcessError("Bad xfer: " +
-					`len(msg)` + " bytes follow request")
-		elif msg[0] == '=':
-			# parameter get request
-			mo = _re_paramrequest.match(msg)
-			if mo:
-				paramname = mo.group(1)
-				WriteStringToIrafProc(process, task.getParam(paramname) + '\n')
-				msg = msg[mo.end():]
-			else:
-				raise IrafProcessError("Bad parameter request from task: " +
-					`msg`)
-		else:
-			# set value of parameter?
-			mo = _re_paramset.match(msg)
-			if mo:
-				msg = msg[mo.end():]
-				paramname, newvalue = mo.groups()
-				try:
-					task.setParam(paramname,newvalue)
-				except ValueError, e:
-					# on ValueError, just print warning and then force set
-					if iraf.Verbose>0:
-						print 'Warning:',e
-						sys.stdout.flush()
-					task.setParam(paramname,newvalue,check=0)
-			else:
-				# Could be any legal CL command. 
-				msg = executeClCommand(process,msg)
-
-				
 _re_stty_command = re.compile(r'stty .*?\n')
 _re_display_command = re.compile(r'display')
 _re_curpack_command = re.compile(r'_curpack\n')
 _re_paren_pair = re.compile(r'\(.*\)')
 _re_iraf_sys_escape = re.compile(r'!!(.*\n)')
 
-def executeClCommand(process, msg):
-	
-	"""The beginnings of a black hole!
-	This function endevours to try to execute cl commands issued by
-	a connected subprocess. Initially, the supported set will be quite
-	small. Ultimately, we intend to support a limited set of built-in
-	commands and the ability to run all iraf tasks (and perhaps foreign
-	tasks). The structure of this function will change dramatically as
-	it is made more general"""
-	
-	mo = _re_stty_command.match(msg)
-	if mo:
-		if sys.stdout != sys.__stdout__:
-			#XXX a kluge -- if sys.stdout is not the terminal,
-			#XXX assume it is a file and give a large number for
-			#XXX the number of lines 
-			nlines = 1000000
-			ncols = 80
+
+class IrafProcess:
+
+	"""IRAF process class"""
+
+	def __init__(self, task):
+
+		"""Start IRAF task defined by the IrafTask object task.
+		The IrafTask object must have these methods:
+
+		getName(): return the name of the task
+		getFullpath(): return the full path name of the executable
+		getParam(param): get parameter value
+		setParam(param,value): set parameter value
+		"""
+
+		self.task = task
+		executable = task.getFullpath()
+		self.process = subproc.Subprocess(executable+' -c')
+
+	def initialize(self, envdict):
+
+		"""Initialization: Copy environment variables to process"""
+
+		outenvstr = []
+		for key, value in envdict.items():
+			outenvstr.append("set " + key + "=" + value + "\n")
+		if outenvstr: self.writeString(string.join(outenvstr,""))
+
+		# end set up mode
+		self.writeString('_go_\n')
+
+	def run(self, stdin=None, stdout=None, stderr=None):
+
+		"""Run the IRAF logical task"""
+
+		# set IO streams
+		if stdin is None: stdin = sys.stdin
+		if stdout is None:
+			if stderr is not None:
+				stdout = stderr
+			else:
+				stdout = sys.stdout
+		if stderr is None: stderr = sys.stderr
+		self.stdin = stdin
+		self.stdout = stdout
+		self.stderr = stderr
+
+		# redir_info tells task that IO has been redirected
+
+		redir_info = ''
+		if stdin != sys.__stdin__: redir_info = '<'
+		if stdout != sys.__stdout__: redir_info = redir_info+'>'
+
+		self.writeString(self.task.getName()+redir_info+'\n')
+		# begin slave mode
+		self.slave()
+
+	def terminate(self):
+
+		"""Terminate the IRAF process"""
+
+		# Standard IRAF task termination (assuming we already have the
+		# task's attention for input):
+		#   Send bye message to task
+		#   Wait briefly for EOF, which signals task is done
+		#   Kill it anyway if it is still hanging around
+
+		if self.process.pid:
+			self.writeString("bye\n")
+			if not self.process.wait(0.5): self.process.die()
+
+	def kill(self):
+
+		"""Kill the IRAF process"""
+
+		# Try stopping process in IRAF-approved way first; if that fails
+		# blow it away. Copied with minor mods from subproc.py.
+
+		if not self.process.pid: return		# no need, process gone
+
+		self.stdout.flush()
+		self.stderr.flush()
+		sys.stderr.write(" Killing IRAF task")
+		sys.stderr.flush()
+		if not self.process.cont():
+			raise IrafProcessError("Can't kill IRAF subprocess")
+		# get the task's attention for input
+		try:
+			os.kill(self.process.pid, signal.SIGTERM)
+		except os.error:
+			pass
+		self.terminate()
+
+	def writeString(self, s):
+
+		"""Convert ascii string to IRAF form and write to IRAF process"""
+
+		self.write(Asc2IrafString(s))
+
+	def readString(self):
+
+		"""Read IRAF string from process and convert to ascii string"""
+
+		return Iraf2AscString(self.read())
+
+	def write(self, data):
+
+		"""write binary data to IRAF process in blocks of <= 4096 bytes"""
+
+		i = 0
+		block = 4096
+		while i<len(data):
+			# Write:
+			#  IRAF magic number
+			#  number of following bytes
+			#  data
+			dsection = data[i:i+block]
+			self.process.write(IPC_PREFIX +
+							struct.pack('=h',len(dsection)) +
+							dsection)
+			i = i + block
+
+	def read(self):
+
+		"""Read binary data from IRAF pipe"""
+
+		# read pipe header first
+		header = self.process.read(4)
+		if (header[0:2] != IPC_PREFIX):
+			raise IrafProcessError("Not a legal IRAF pipe record")
+		ntemp = struct.unpack('=h',header[2:])
+		nbytes = ntemp[0]
+		# read the rest
+		data = self.process.read(nbytes)
+		return data
+
+	def slave(self):
+
+		"""Talk to the IRAF process in slave mode.
+		Raises an IrafProcessError if an error occurs."""
+
+		self.msg = ''
+		self.xferline = ''
+		while 1:
+
+			# each read may return multiple lines; only
+			# read new data when old has been used up
+
+			if not self.msg:
+				self.msg = self.readString()
+
+			# pattern match to see what this message is
+
+			mcmd = _re_msg.match(self.msg)
+			if mcmd is None:
+				# Could be any legal CL command.
+				self.executeClCommand()
+			elif mcmd.group('bye'):
+				return
+			elif mcmd.group('error'):
+				raise IrafProcessError("IRAF task terminated abnormally\n" +
+						self.msg)
+			elif mcmd.group('xmit'):
+				self.xmit(mcmd)
+			elif mcmd.group('xfer'):
+				self.xfer(mcmd)
+			elif mcmd.group('par_get'):
+				# parameter get request
+				paramname = mcmd.group('gname')
+				self.writeString(self.task.getParam(paramname) + '\n')
+				self.msg = self.msg[mcmd.end():]
+			elif mcmd.group('par_set'):
+				# set value of parameter
+				paramname = mcmd.group('sname')
+				newvalue = mcmd.group('svalue')
+				self.msg = self.msg[mcmd.end():]
+				try:
+					self.task.setParam(paramname,newvalue)
+				except ValueError, e:
+					# on ValueError, just print warning and then force set
+					if iraf.Verbose>0:
+						self.stderr.write('Warning: %s\n' % (e,))
+						self.stderr.flush()
+					self.task.setParam(paramname,newvalue,check=0)
+			else:
+				# should never get here
+				raise RuntimeError(
+						"Program bug: uninterpreted message `%s'"
+						% (self.msg,))
+
+	def xmit(self, mcmd):
+
+		"""Handle xmit data transmissions"""
+
+		global stdgraph
+
+		# this must always be the last command in a message
+		self.msg = self.msg[mcmd.end():]
+		if self.msg: raise IrafProcessError("Bad xmit: " +
+				`len(self.msg)` + " bytes follow request")
+
+		chan = int(mcmd.group('xmitchan'))
+		nbytes = int(mcmd.group('xmitnbytes'))
+		checkForEscapeSeq = (chan == 4 and (nbytes==6 or nbytes==5))
+		xdata = self.read()
+		if len(xdata) != 2*nbytes:
+			raise IrafProcessError(
+				"Error, wrong number of bytes read\n" +
+				("(got %d, expected %d, chan %d)" %
+					(len(xdata), 2*nbytes, chan)))
+		if chan == 4:
+			txdata = Iraf2AscString(xdata)
+			if checkForEscapeSeq:
+				if ((txdata[0:5] == "\033=rDw") or
+					(txdata[0:5] == "\033+rAw") or
+					(txdata[0:5] == "\033-rAw")):
+					# ignore IRAF io escape sequences for now
+					return
+			self.stdout.write(txdata)
+			self.stdout.flush()
+		elif chan == 5:
+			self.stderr.write(Iraf2AscString(xdata))
+			self.stderr.flush()
+		elif chan == 6:
+			# need to handle cases where WS not open yet
+			if not stdgraph:
+				stdgraph = gkiopengl.GkiOpenGlKernel()
+			stdgraph.append(Numeric.fromstring(xdata,'s'))
+		elif chan == 7:
+			self.stdout.write("data for STDIMAGE\n")
+			self.stdout.flush()
+		elif chan == 8:
+			self.stdout.write("data for STDPLOT\n")
+			self.stdout.flush()
+		elif chan == 9:
+			sdata = Numeric.fromstring(xdata,'s')
+			if irafutils.isBigEndian():
+				# Actually, the channel destination is sent
+				# by the iraf process as a 4 byte int, the following
+				# code basically chooses the right two bytes to
+				# find it in.
+				forChan = sdata[1]
+			else:
+				forChan = sdata[0]
+			if forChan == 6:
+				# STDPLOT control
+				# first see if OPENWS to get device, otherwise
+				# pass through to current kernel, use braindead
+				# interpretation to look for openws
+				if (sdata[2] == -1) and (sdata[3] == 1):
+					length = sdata[4]
+					device = sdata[5:length+2].astype('b').tostring()
+					# but of course, for the time being (until
+					# we manage another graphics kernel) we ignore
+					# device!
+					if stdgraph is None:
+						stdgraph = gkiopengl.GkiOpenGlKernel()
+
+				# Pass it to the kernel to deal with
+				# Only in the case of a GETWCS command will
+				# stdgraph.control return a value.
+				wcs = stdgraph.control(sdata[2:])
+				if wcs:
+					# Write directly to stdin of subprocess;
+					# strangely enough, it doesn't use the
+					# STDGRAPH I/O channel.
+					self.write(wcs)
+					stdgraph.clearReturnData()
+			else:
+				self.stdout.write("GRAPHICS control data for channel %d\n" % (forChan,))
+				self.stdout.flush()
 		else:
-			nlines,ncols = wutil.getTermWindowSize()
-		WriteStringToIrafProc(process,
-			"set ttyncols="+str(ncols)+"\n" + 
-			"set ttynlines="+str(nlines)+"\n")
-		return msg[mo.end():]
-	mo = _re_iraf_sys_escape.match(msg)
-	if mo:
-		tmsg = msg[mo.start(1):mo.end(1)]
-		sysstatus = os.system(tmsg)
-		WriteToIrafProc(process,
-			Asc2IrafString(str(sysstatus)+"\n"))
-		print msg[mo.end():]
-		return msg[mo.end():]	
-	mo = _re_display_command.match(msg)
-	if mo:
-		# Now extract arguments. Will eventually use general parsing
-		# stuff Rick developed
-		tmsg = msg[mo.end():]
-		pmo = _re_paren_pair.search(tmsg)
-		if pmo:
-			# hmmm, let's just try using the string and paste together
-			# something for exec
-			argstr = tmsg[pmo.start():pmo.end()]
-			argstr = string.replace(argstr,'\\','')
-			displaytask = iraf.getTask("display")
-			execstr= "displaytask"+argstr
-			exec(execstr)
-			pos = string.find(tmsg, '\n')
-			return tmsg[pos+1:]
+			self.stdout.write("data for channel %d\n" % (chan,))
+			self.stdout.flush()
+
+	def xfer(self, mcmd):
+
+		"""Handle xfer data requests"""
+
+		chan = int(mcmd.group('xferchan'))
+		nbytes = int(mcmd.group('xfernbytes'))
+		if chan == 3:
+
+			# Read a line from stdin unless xferline already has
+			# some untransmitted data from a previous read
+
+			if not self.xferline: self.xferline = self.stdin.readline()
+
+			# Send two messages, the first with the number of characters
+			# in the line and the second with the line itself.
+			# For very long lines, may need multiple messages.  Task
+			# will keep sending xfer requests until it gets the
+			# newline.
+
+			nchars = nbytes/2
+			lsection = self.xferline[:nchars]
+			self.writeString(str(len(lsection)))
+			self.writeString(lsection)
+			self.xferline = self.xferline[nchars:]
 		else:
-			raise IrafProcessError("display command not in expected format")
-	mo = _re_curpack_command.match(msg)
-	if mo:
-		WriteStringToIrafProc(process, iraf.curpack()+"\n")
-		return msg[mo.end():]
-	# apparently something that is not supported	
-	raise IrafProcessError(
-		"Unsupported CL command called by IRAF task: "+msg)
-	
+			raise IrafProcessError("xfer request for unknown channel " +
+				self.msg)
+		# this must always be the last command in a message
+		self.msg = self.msg[mcmd.end():]
+		if self.msg: raise IrafProcessError("Bad xfer: " +
+				`len(self.msg)` + " bytes follow request")
 
-def IrafKill(process):
-	"""Try stopping process in IRAF approved way first; if that fails
-	blow it away. Copied with minor mods from subproc.py."""
+	def executeClCommand(self):
 
-	if not process.pid: return		# no need, process gone
+		"""The beginnings of a black hole!
+		This function endevours to try to execute cl commands issued by
+		a connected subprocess. Initially, the supported set will be quite
+		small. Ultimately, we intend to support a limited set of built-in
+		commands and the ability to run all iraf tasks (and perhaps foreign
+		tasks). The structure of this function will change dramatically as
+		it is made more general"""
 
-	print " Killing IRAF task"
-	sys.stdout.flush()
-	if not process.cont():
-		raise IrafProcessError("Can't kill IRAF subprocess")
-	# get the task's attention for input
-	try:
-		os.kill(process.pid, signal.SIGTERM)
-	except os.error:
-		pass
-	IrafTerminate(process)
+		mo = _re_stty_command.match(self.msg)
+		if mo:
+			if self.stdout != sys.__stdout__:
+				#XXX a kluge -- if self.stdout is not the terminal,
+				#XXX assume it is a file and give a large number for
+				#XXX the number of lines
+				nlines = 1000000
+				ncols = 80
+			else:
+				nlines,ncols = wutil.getTermWindowSize()
+			self.writeString("set ttyncols="+str(ncols)+"\n" +
+							"set ttynlines="+str(nlines)+"\n")
+			self.msg = self.msg[mo.end():]
+			return
+		mo = _re_iraf_sys_escape.match(self.msg)
+		if mo:
+			tmsg = self.msg[mo.start(1):mo.end(1)]
+			sysstatus = os.system(tmsg)
+			self.writeString(str(sysstatus)+"\n")
+			self.msg = self.msg[mo.end():]
+			# self.stdout.write(self.msg + "\n")
+			return
+		mo = _re_display_command.match(self.msg)
+		if mo:
+			# Now extract arguments. Will eventually use general parsing
+			# stuff Rick developed
+			tmsg = self.msg[mo.end():]
+			pmo = _re_paren_pair.search(tmsg)
+			if pmo:
+				# hmmm, let's just try using the string and paste together
+				# something for exec
+				argstr = tmsg[pmo.start():pmo.end()]
+				argstr = string.replace(argstr,'\\','')
+				displaytask = iraf.getTask("display")
+				execstr= "displaytask"+argstr
+				exec(execstr)
+				pos = string.find(tmsg, '\n')
+				self.msg = tmsg[pos+1:]
+				return
+			else:
+				raise IrafProcessError("display command not in expected format")
+		mo = _re_curpack_command.match(self.msg)
+		if mo:
+			self.writeString(iraf.curpack()+"\n")
+			self.msg = self.msg[mo.end():]
+			return
+		# apparently something that is not supported
+		raise IrafProcessError("Unsupported CL command called by IRAF task: " +
+					self.msg)
 
-def IrafTerminate(process):
-	"""Standard IRAF task termination (assuming we already have the task's
-	attention for input.)"""
-
-	# Send bye message to task
-	# Wait briefly for EOF, which signals task is done
-	# Kill it anyway if it is still hanging around
-
-	if process.pid:
-		WriteStringToIrafProc(process,"bye\n")
-		if not process.wait(0.5): process.die()
 
 # IRAF string conversions using Numeric module
 
@@ -344,36 +446,4 @@ def Iraf2AscString(iraf_string):
 	"""translate 16-bit IRAF characters to ascii"""
 	inarr = Numeric.fromstring(iraf_string, Numeric.Int16)
 	return inarr.astype(Numeric.Int8).tostring()
-
-def WriteStringToIrafProc(process, astring):
-
-	"""convert ascii string to IRAF form and write to IRAF process"""
-
-	WriteToIrafProc(process, Asc2IrafString(astring))
-
-def WriteToIrafProc(process, data):
-
-	"""write binary data to IRAF process in blocks of <= 4096 bytes"""
-
-	i = 0
-	block = 4096
-	while i<len(data):
-		dsection = data[i:i+block]
-		#     IRAF magic number    number of following bytes      data
-		process.write(IPC_PREFIX+struct.pack('=h',len(dsection))+dsection)
-		i = i + block
-
-def ReadFromIrafProc(process):
-	
-	"""read input from IRAF pipe"""
-	
-	# read pipe header first
-	header = process.read(4)
-	if (header[0:2] != IPC_PREFIX):
-		raise IrafProcessError("Not a legal IRAF pipe record")
-	ntemp = struct.unpack('=h',header[2:])
-	nbytes = ntemp[0]
-	# read the rest
-	data = process.read(nbytes)
-	return data
 

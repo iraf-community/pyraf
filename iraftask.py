@@ -167,6 +167,32 @@ class IrafTask:
 			raise iraf.IrafError("Cannot run cl tasks yet: " +
 				self.__name + " ("+self.__fullpath+")")
 		else:
+			# Special Stdout, Stdin, Stderr keywords are used to redirect IO
+			#XXX This list is not complete yet -- need the appending versions
+			#XXX (StdoutAppend, StderrAppend) and the graphics stream versions
+			#XXX (StdoutIPG etc.) too
+			additionalKW = {}
+			closeFHList = []
+			for key in ('Stdout', 'Stdin', 'Stderr'):
+				if kw.has_key(key):
+					# if it is a string, open as a file
+					# otherwise assume it is a filehandle
+					value = kw[key]
+					if type(value) == types.StringType:
+						if key in ['Stdout','Stderr']:
+							# output file
+							fh = open(value,'w')
+							# close this when we're done
+							closeFHList.append(fh)
+						else:
+							# input file
+							fh = open(value,'w')
+							closeFHList.append(fh)
+					else:
+						fh = value
+					additionalKW[string.lower(key)] = fh
+					del kw[key]
+
 			# set parameters
 			apply(self.setParList,args,kw)
 			if iraf.Verbose>1:
@@ -177,9 +203,12 @@ class IrafTask:
 				# create the list of parameter dictionaries to use
 				self.setParDictList()
 				# run the task
-				irafexecute.IrafExecute(self, iraf.varDict)
+				apply(irafexecute.IrafExecute,
+						(self, iraf.varDict), additionalKW)
 				if iraf.Verbose>1: print 'Successful task termination'
+				for fh in closeFHList: fh.close()
 			except irafexecute.IrafProcessError, value:
+				for fh in closeFHList: fh.close()
 				raise iraf.IrafError("Error running IRAF task " + self.__name +
 					"\n" + str(value))
 
