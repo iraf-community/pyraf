@@ -43,7 +43,7 @@ copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
 # is still up-to-date for the given file so the md5 digest
 # does not have to be recomputed.
 
-import binshelve, stat, md5
+import dirshelve, stat, md5
 
 _versionKey = 'CACHE_VERSION'
 _currentVersion = "v1"
@@ -82,14 +82,14 @@ class _CodeCache:
 		"""
 		# first try opening the cache read-write
 		try:
-			fh = binshelve.open(filename)
+			fh = dirshelve.open(filename)
 			writeflag = 1
-		except binshelve.error:
+		except dirshelve.error:
 			# initial open failed -- try opening the cache read-only
 			try:
-				fh = binshelve.open(filename,"r")
+				fh = dirshelve.open(filename,"r")
 				writeflag = 0
-			except binshelve.error:
+			except dirshelve.error:
 				self.warning("Unable to open CL script cache file %s" %
 					(filename,))
 				return None
@@ -119,11 +119,11 @@ class _CodeCache:
 				msg.append("Renamed old cache to %s" % rfilename)
 				try:
 					# create new cache file
-					fh = binshelve.open(filename)
+					fh = dirshelve.open(filename)
 					fh[_versionKey] = _currentVersion
 					msg.append("Created new cache file %s" % filename)
 					rv = (writeflag, fh)
-				except binshelve.error:
+				except dirshelve.error:
 					msg.append("Could not create new cache file %s" % filename)
 			except OSError:
 				msg.append("Could not rename old cache file %s" % filename)
@@ -307,7 +307,7 @@ if not os.path.exists(userCacheDir):
 	except OSError:
 		print 'Could not create directory %s' % userCacheDir
 
-dbfile = 'pyraf.Database'
+dbfile = 'clcache'
 codeCache = _CodeCache([
 	os.path.join(userCacheDir,dbfile),
 	os.path.join(pyrafDir,dbfile),

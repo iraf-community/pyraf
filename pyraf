@@ -63,7 +63,7 @@ $Id$
 R. White, 2000 January 21
 """
 
-__version__ = "v0.7.1 (2000Aug16)"
+__version__ = "v0.8 (2000Sep26)"
 
 
 import sys, os, string

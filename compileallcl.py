@@ -2,8 +2,8 @@
 
 """compileall.py: Load all the packages in IRAF and compile all the CL scripts
 
-Store the results in the system cache.
-Run this in the directory with the system cache.
+The results are stored in the system cache.  The system cache
+must be writable for this script to run.
 
 Set the -r flag to recompile (default is to rename the system cache so
 that everything gets compiled from scratch.)
@@ -13,48 +13,14 @@ $Id$
 
 import os, sys, traceback, time
 
-# set search path to include directory containing this script
-# and current directory
-
-pyrafDir = os.path.dirname(sys.argv[0])
-absPyrafDir = os.path.abspath(os.path.join(pyrafDir,'..'))
-if absPyrafDir not in sys.path: sys.path.insert(0, absPyrafDir)
-del absPyrafDir, pyrafDir
-
-if "." not in sys.path: sys.path.insert(0, ".")
-
 def printcenter(s, length=70, char="-"):
 	l1 = (length-len(s))/2
 	l2 = length-l1-len(s)
 	print l1*char, s, l2*char
 	sys.stdout.flush()
 
-def recompileall():
-	"""Recompile all CL procedures & packages (don't clear cache)"""
-	compileall(clearcache=0)
-
-def compileall(clearcache=1):
-	"""Clear cache and compile all CL procedures & packages"""
-	# can only clear cache if this is main module
-	if clearcache and __name__ != '__main__':
-		raise ValueError('Cannot clear cache unless this is main module')
-	# move the old system and user caches
-	sysCache = 'pyraf.Database'
-	usrCache = os.path.expanduser('~/iraf/pyraf/pyraf.Database')
-
-	if clearcache:
-		if os.path.exists(sysCache): os.rename(sysCache, sysCache + '.old')
-		if os.path.exists(usrCache): os.rename(usrCache, usrCache + '.old')
-		#
-		# create dummy user cache with protections so that it is
-		# not readable or writable
-		# this forces all compiled code to go into the system cache
-		#
-		fh=open(usrCache,'w')
-		fh.close()
-		os.chmod(usrCache,0)
-		print 'Locked user cache to force updates into system cache'
-		sys.stdout.flush()
+def compileall():
+	"""Compile all CL procedures & packages"""
 
 	# start the timer
 
@@ -66,10 +32,6 @@ def compileall(clearcache=1):
 	from pyraf.iraftask import IrafCLTask, IrafPkg
 
 	iraf.setVerbose()
-
-	if not clearcache:
-		saveSystem = cl2py.codeCache.useSystem
-		cl2py.codeCache.writeSystem()
 
 	pkgs_tried = {}
 	tasks_tried = {}
@@ -155,23 +117,10 @@ They screw up subsequent loading of imred/digiphot tasks.
 			(npass, npkg_new, npkg_total, ntask_total), char="=")
 		pkg_list = iraf.getPkgList()
 
-	if clearcache:
-		cl2py.codeCache.close()
-		# get rid of the dummy user cache, and restore the old one
-		# if it exists
-		os.chmod(usrCache,0777)
-		os.remove(usrCache)
-		if os.path.exists(usrCache + '.old'):
-			os.rename(usrCache + '.old', usrCache)
-	else:
-		cl2py.codeCache.writeSystem(saveSystem)
-
 	t1 = time.time()
 	print "Finished package and task loading (%f seconds)" % (t1-t0,)
 	print "Compiled %d CL tasks -- %d failed" % (ntask_total, ntask_failed)
 	sys.stdout.flush()
-	print "Saving to compileallcl.save"
-	iraf.saveToFile("compileallcl.save")
 
 
 def usage():
@@ -182,6 +131,14 @@ def usage():
 """
 	sys.stdout.flush()
 	sys.exit()
+
+
+# set search path to include directory containing this script
+
+scriptDir = os.path.dirname(sys.argv[0])
+absPyrafDir = os.path.abspath(os.path.join(scriptDir,'..'))
+if absPyrafDir not in sys.path: sys.path.insert(0, absPyrafDir)
+del scriptDir
 
 if __name__ == '__main__':
 	# command-line options
@@ -204,5 +161,25 @@ if __name__ == '__main__':
 			print "Program bug, uninterpreted option", opt
 			raise SystemExit
 
-	compileall(clearcache)
+	sysCache = os.path.join(absPyrafDir, 'pyraf', 'clcache')
+	usrCache = os.path.expanduser('~/iraf/pyraf/clcache')
+
+	if clearcache:
+		# move the old system cache
+		if os.path.exists(sysCache): os.rename(sysCache, sysCache + '.old')
+
+	# lock user cache so that it is not readable or writable
+	# this forces all compiled code to go into the system cache
+
+	if not os.path.exists(usrCache):
+		os.mkdir(usrCache)
+	os.chmod(usrCache,0)
+	print 'Locked user cache to force updates into system cache'
+	sys.stdout.flush()
+
+	try:
+		compileall()
+	finally:
+		# restore user cache permissions
+		os.chmod(usrCache,0755)
 
