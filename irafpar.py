@@ -1609,8 +1609,7 @@ class _RealMixin:
 				# assume this is indirection -- just save it as a string
 				return s2
 			# allow +dd:mm:ss.s sexagesimal format for floats
-			original_value = s2
-			value = 0.0
+			fvalue = 0.0
 			vscale = 1.0
 			vsign = 1
 			i1 = 0
@@ -1623,7 +1622,7 @@ class _RealMixin:
 					i1 = 1
 				while mm is not None:
 					i2 = mm.start()
-					value = value + int(s2[i1:i2])/vscale
+					fvalue = fvalue + int(s2[i1:i2])/vscale
 					i1 = i2+1
 					vscale = vscale*60.0
 					mm = _re_colon.search(s2,i1)
@@ -1631,9 +1630,9 @@ class _RealMixin:
 			mm = _re_d.search(s2,i1)
 			try:
 				if mm is None:
-					return vsign*(value + float(s2[i1:])/vscale)
+					return vsign*(fvalue + float(s2[i1:])/vscale)
 				else:
-					return vsign*(value + \
+					return vsign*(fvalue + \
 						float(s2[i1:mm.start()]+"E"+s2[mm.end():])/vscale)
 			except ValueError:
 				pass
