@@ -83,7 +83,7 @@ class IrafCompleter(Completer):
 		"""Turn off completion, restoring old behavior for character"""
 		if self.completionChar:
 			# restore normal behavior for previous completion character
-			lab = lab2char.get(self.completionChar, self.completionChar)
+			lab = char2lab.get(self.completionChar, self.completionChar)
 			readline.parse_and_bind("%s: self-insert" % lab)
 			self.completionChar = None
 

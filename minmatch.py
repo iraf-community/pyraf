@@ -200,6 +200,45 @@ class MinMatchDict(UserDict):
 		if self.mmkeys is None: self._mmInit()
 		return self.mmkeys.get(key, failobj)
 
+
+class QuietMinMatchDict(MinMatchDict):
+
+	"""Minimum match dictionary that does not raise unexpected AmbiguousKeyError
+	
+	Unlike MinMatchDict, if key is ambiguous then both get() and
+	has_key() methods return false (just as if there is no match).
+	For most uses this is probably not the preferred behavior (use
+	MinMatchDict instead), but for applications that rely on the
+	usual dictionary behavior where .get() and .has_key() do not
+	raise exceptions, this is useful.
+	"""
+
+	def get(self, key, failobj=None, exact=0):
+
+		"""Returns failobj if key is not found or is ambiguous"""
+
+		if not exact:
+			try:
+				key = self.getfullkey(key)
+			except KeyError:
+				return failobj
+		return self.data.get(key,failobj)
+
+
+	def has_key(self, key, exact=0):
+
+		"""Returns false if key is not found or is ambiguous"""
+
+		if not exact:
+			try:
+				key = self.getfullkey(key)
+				return 1
+			except KeyError:
+				return 0
+		else:
+			return self.data.has_key(key)
+
+
 # some simple tests
 
 if __name__ == "__main__":

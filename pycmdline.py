@@ -142,7 +142,7 @@ class CmdConsole(code.InteractiveConsole):
 
 # put the executive commands in a minimum match dictionary
 
-_cmdDict = minmatch.MinMatchDict({
+_cmdDict = minmatch.QuietMinMatchDict({
 				'.help': 'do_help',
 				'.clemulate': 'do_clemulate',
 				'.logfile': 'do_logfile',
