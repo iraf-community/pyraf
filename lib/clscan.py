@@ -16,12 +16,12 @@ import irafutils
 # contexts for scanner
 
 _START_LINE_MODE = 0            # beginning of line
-_COMMAND_MODE = 1                       # simple command mode
+_COMMAND_MODE = 1               # simple command mode
 _COMPUTE_START_MODE = 2         # initial compute mode (similar to command mode)
 _COMPUTE_EQN_MODE = 3           # compute mode in task arg when equation-mode
-                                                        # change flag has been seen.  Reverts to
-                                                        # _COMPUTE_START_MODE on comma, redirection, etc.
-_COMPUTE_MODE = 4                       # compute (script, equation) mode
+                                # change flag has been seen.  Reverts to
+                                # _COMPUTE_START_MODE on comma, redirection, etc.
+_COMPUTE_MODE = 4               # compute (script, equation) mode
 _SWALLOW_NEWLINE_MODE = 5       # mode at points where embedded newlines allowed
 _ACCEPT_REDIR_MODE = 6          # mode at points where redirection allowed
 
@@ -352,13 +352,15 @@ class _CommandScanner(_LaxScanner,_StrictCommandScanner):
 class _ComputeStartScanner_1(_BasicScanner_1):
 
     def t_string(self, s, m, parent):
-        r'[^ \t\n()\\;{}&,+\-*/%]+(\\(.|\n)[^ \t\n()\\;{}&,+\-*/%]*)*'
-        # This is similar to the command-mode t_string, but there
-        # are some extra characters (,+-*/)forbidden in the string
-        nline = _countNewlines(s)
-        s = irafutils.removeEscapes(s)
+        r'[a-zA-Z_$][a-zA-Z_$.0-9]*'
+        # This is a quoteless string with some strict syntax limits.
+        # Most special characters are excluded.  Escapes are not allowed
+        # either.
         parent.addToken(type='STRING', attr=s)
-        parent.lineno = parent.lineno + nline
+
+    def t_integer(self, s, m, parent):
+        r' \d+([bB]|([\da-fA-F]*[xX]))? '
+        parent.addToken(type='INTEGER', attr=s)
 
     def t_comma(self, s, m, parent):
         r','
@@ -429,6 +431,13 @@ class _ComputeStartScanner_2(_BasicScanner_2,_ComputeStartScanner_1):
             parent.addToken(type='REDIR', attr=s)
         parent.current.append(_SWALLOW_NEWLINE_MODE)
 
+    def t_sexagesimal(self, s, m, parent):
+        r'\d+:\d+(:\d+(\.\d*)?)?'
+        parent.addToken(type='SEXAGESIMAL', attr=s)
+
+    def t_float(self, s, m, parent):
+        r'(\d+[eEdD][+\-]?\d+) | (((\d*\.\d+)|(\d+\.\d*))([eEdD][+\-]?\d+)?)'
+        parent.addToken(type='FLOAT', attr=s)
 
 class _StrictComputeStartScanner(_BasicScanner_3,_ComputeStartScanner_2):
     """Strict scanner class for tokens recognized in initial compute mode
@@ -742,13 +751,13 @@ def _getScannerDict():
     global _scannerDict
     if _scannerDict is None:
         _scannerDict = {
-                        _START_LINE_MODE:               _StartScanner(),
-                        _COMMAND_MODE:                  _CommandScanner(),
+                        _START_LINE_MODE:       _StartScanner(),
+                        _COMMAND_MODE:          _CommandScanner(),
                         _COMPUTE_START_MODE:    _ComputeStartScanner(),
-                        _COMPUTE_EQN_MODE:              _ComputeEqnScanner(),
-                        _COMPUTE_MODE:                  _ComputeScanner(),
+                        _COMPUTE_EQN_MODE:      _ComputeEqnScanner(),
+                        _COMPUTE_MODE:          _ComputeScanner(),
                         _SWALLOW_NEWLINE_MODE:  _SwallowNewlineScanner(),
-                        _ACCEPT_REDIR_MODE:             _AcceptRedirScanner(),
+                        _ACCEPT_REDIR_MODE:     _AcceptRedirScanner(),
                         }
     return _scannerDict
 
@@ -757,13 +766,13 @@ def _getStrictScannerDict():
     # create strict scanners
     if _strictScannerDict is None:
         _strictScannerDict = {
-                        _START_LINE_MODE:               _StrictStartScanner(),
-                        _COMMAND_MODE:                  _StrictCommandScanner(),
+                        _START_LINE_MODE:       _StrictStartScanner(),
+                        _COMMAND_MODE:          _StrictCommandScanner(),
                         _COMPUTE_START_MODE:    _StrictComputeStartScanner(),
-                        _COMPUTE_EQN_MODE:              _StrictComputeEqnScanner(),
-                        _COMPUTE_MODE:                  _StrictComputeScanner(),
+                        _COMPUTE_EQN_MODE:      _StrictComputeEqnScanner(),
+                        _COMPUTE_MODE:          _StrictComputeScanner(),
                         _SWALLOW_NEWLINE_MODE:  _StrictSwallowNewlineScanner(),
-                        _ACCEPT_REDIR_MODE:             _StrictAcceptRedirScanner(),
+                        _ACCEPT_REDIR_MODE:     _StrictAcceptRedirScanner(),
                         }
     return _strictScannerDict
 
