@@ -46,9 +46,11 @@ def IrafExecute(task, envdict):
 	try:
 		keys = envdict.keys()
 		if len(keys) > 0:
+			# write environment variables in one big block
+			outenvstr = len(keys)*[""]
 			for i in xrange(len(keys)):
-				outenvstr = "set "+keys[i]+"="+envdict[keys[i]]+"\n"
-				WriteStringToIrafProc(process, outenvstr)
+				outenvstr[i] = "set "+keys[i]+"="+envdict[keys[i]]+"\n"
+			WriteStringToIrafProc(process, string.join(outenvstr,""))
 		# terminate set up mode
 		WriteStringToIrafProc(process,'_go_\n')
 		# start IRAF logical task
@@ -250,23 +252,21 @@ def Iraf2AscString(iraf_string):
 
 def WriteStringToIrafProc(process, astring):
 
-	"""convert ascii string to IRAF form, prepend necessary bytes,
-	and write to IRAF process"""
+	"""convert ascii string to IRAF form and write to IRAF process"""
 
-	istring = Asc2IrafString(astring)
-	#     IRAF magic number    number of following bytes
-	# XXX In these calls, should we check for len(istring) > 32767?
-	# or maybe len(istring) > 4096?
-	record = '\002\120'    + struct.pack('>h',len(istring)) + istring
-	process.write(record)
-	return
+	WriteToIrafProc(process, Asc2IrafString(astring))
 
 def WriteToIrafProc(process, data):
 
-	"""write binary data to IRAF process"""
+	"""write binary data to IRAF process in blocks of <= 4096 bytes"""
 
-	process.write('\002\120'+struct.pack('>h',len(data))+data)
-	return
+	i = 0
+	block = 4096
+	while i<len(data):
+		dsection = data[i:i+block]
+		#     IRAF magic number    number of following bytes      data
+		process.write('\002\120'+struct.pack('>h',len(dsection))+dsection)
+		i = i + block
 
 def ReadFromIrafProc(process):
 	
