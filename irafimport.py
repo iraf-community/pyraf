@@ -7,7 +7,6 @@
 
 import iraf
 import __builtin__
-from ldir import ldir
 
 def _irafImport(name, globals={}, locals={}, fromlist=[]):
 	if name == "iraf":
