@@ -152,25 +152,6 @@ _cmdDict = minmatch.QuietMinMatchDict({
 				'.debug': 'do_debug',
 				})
 
-# short CL commands to allow
-# there are others that I could add, but are they really necessary?
-# bc, cv, dq, fc, nm, od, rc, rv, sh, su, w
-
-_shortCmdDict = {
-	'cd': 1,
-	'cl': 1,
-	'cp': 1,
-	'df': 1,
-	'du': 1,
-	'ls': 1,
-	'mv': 1,
-	'ps': 1,
-	'tv': 1,
-	'vi': 1,
-	'wc': 1,
-	'xc': 1,
-	}
-
 class PyCmdLine(CmdConsole):
 
 	"""Simple Python interpreter with executive commands"""
@@ -269,7 +250,6 @@ class PyCmdLine(CmdConsole):
 			del args[0]
 			oflag = 'a'
 			if len(args) > 0:
-				sarg = string.strip(args[0])
 				if args[0] == 'overwrite':
 					oflag = 'w'
 					del args[0]
