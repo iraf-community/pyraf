@@ -24,28 +24,41 @@ $Id$
 #  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# modifications by R. White:
-# - allow named groups in scanner patterns (other than the ones
-#   inserted by the class constructor)
-# - speed up GenericScanner.tokenize()
-#   this version is about 2x faster than original version
-#   + use move-to-front strategy in searching for patterns, which keeps
-#     most common patterns early in the list to check
-#   + move some code from re module directly into the loop
-# - add optional value parameter to GenericParser.error
-# - fix bug in buildState (in predictor section, for case where a rule
-#   is entirely completed within a single step)
-# - various speedups in parser
-#   + add FIRST sets
-#   + use list instead of dictionary for states
-#   + use direct comparisons to token.type rather than relying on (slow)
-#     __cmp__ method.  If this is removed, need to add __hash__ method
-#     for Token class too (which should just use the type string hash value.)
-# - fixed a change in scanner behavior.  Previous version guaranteed
-#   that scanned patterns would be in inheritance order, i.e. all
-#   patterns from first this class, then its parents, etc.  The
-#   new version of _namelist() did not preserve that.  I modified
-#   _namelist() to fix it.
+# Modifications by R. White:
+#
+# - Fixed a change in scanner behavior from v0.4.  Previous version
+#   guaranteed that scanned patterns would be in inheritance order,
+#   i.e. all patterns from first this class, then its parents, etc.
+#   The new version of _namelist() did not preserve that.  I modified
+#   _namelist() to restore it.
+#
+# - Fixed bug in buildState (in predictor section, for case where a rule
+#   is entirely completed within a single step.)
+#
+# - Allow named groups in scanner patterns (other than the ones
+#   inserted by the class constructor.)
+#
+# - Speed up GenericScanner.tokenize().  This version is about 2x faster
+#   than the original version.
+#   + Keep a list (indexlist) of the group numbers to check.
+#   + Break out of loop after finding a match, since more than
+#     one of the primary patterns cannot match (by construction of
+#     the pattern.)
+#   + Move some code from re module (function groups) directly into
+#     the loop to avoid multiple passes through groups.
+#
+# - Add optional value parameter to GenericParser.error
+#
+# - Various speedups in parser
+#   + Add FIRST sets.  For this to work, tokens must have a __hash__ method
+#     (which is just def __hash__(self): return hash(self.type) for the
+#     usual token definitions.)
+#   + Use preallocated list instead of dictionary for states
+#   + Use direct comparisons to token.type rather than relying on (slow)
+#     __cmp__ method.  This also removes the need for the __hash__ method
+#     in the token class.
+#
+# - Add check for assertion error in ambiguity resolution (see RLW comments)
 
 import re
 import sys
@@ -103,10 +116,12 @@ class GenericScanner:
 			if m is None:
 				self.error(s, pos)
 
-			groups = m.groups()
 			for i in self.indexlist:
-				if groups[i]:
-					self.index2func[i](groups[i])
+				# code to check for group i match lifted from re
+				a, b = m.regs[i]
+				if a != -1 and b != -1:
+					grp = s[a:b]
+					self.index2func[i](grp)
 					# assume there is only a single match
 					break
 			pos = m.end()
@@ -402,10 +417,10 @@ class GenericParser:
 				#
 				children = tree[want]
 				if len(children) > 1:
-					#XXX RLW I'm leaving in this try block for the moment,
-					#XXX although the current ambiguity resolver never
-					#XXX raises and assertion error (which I think may
-					#XXX be a bug.)
+					# RLW I'm leaving in this try block for the moment,
+					# RLW although the current ambiguity resolver never
+					# RLW raises and assertion error (which I think may
+					# RLW be a bug.)
 					try:
 						child = self.ambiguity(children)
 					except AssertionError:
@@ -435,8 +450,8 @@ class GenericParser:
 		#	 user probably gets what they deserve :-)  Also
 		#	 undefined results if rules causing the ambiguity
 		#	 appear in the same method.
-		# XXX RLW Modified so it uses rule as the key
-		# XXX If we stick with this, can eliminate rule2name
+		# RLW Modified so it uses rule as the key
+		# RLW If we stick with this, can eliminate rule2name
 		#
 		sortlist = []
 		name2index = {}
@@ -456,9 +471,9 @@ class GenericParser:
 		#  Since we walk the tree from the top down, this
 		#  should effectively resolve in favor of a "shift".
 		#
-		#XXX RLW question -- used to raise an assertion error
-		#XXX here if there were two choices with the same RHS length.
-		#XXX Why doesn't that happen now?  Looks like an error?
+		# RLW Question -- This used to raise an assertion error
+		# RLW here if there were two choices with the same RHS length.
+		# RLW Why doesn't that happen now?  Looks like an error?
 		return list[0]
 
 #

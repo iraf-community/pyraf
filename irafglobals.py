@@ -1,13 +1,13 @@
 """module irafglobals.py -- widely used IRAF constants and objects
 
 yes, no			Boolean values
-EOF				End-of-file string
 IrafError		Standard IRAF exception
 Verbose			Flag indicating verbosity level
 pyrafDir		Directory with these Pyraf programs
 userIrafHome	User's IRAF home directory (./ or ~/iraf/)
 userWorkingHome	User's working home directory (the directory
 				when this module gets imported.)
+EOF				End-of-file indicator object
 INDEF			Undefined object
 
 This is defined so it is safe to say 'from irafglobals import *'
@@ -25,7 +25,6 @@ del os, sys, types
 
 yes = 1
 no = 0
-EOF = 'EOF'
 
 class IrafError(Exception):
 	pass
@@ -81,6 +80,55 @@ else:
 # -----------------------------------------------------
 
 userWorkingHome = _os.getcwd()
+
+# -----------------------------------------------------
+# define end-of-file object
+# if printed, says 'EOF'
+# if converted to integer, has value -2 (special IRAF value)
+# Implemented as a singleton, although the singleton
+# nature is not really essential
+# -----------------------------------------------------
+
+class _EOFClass:
+	"""Class of singleton EOF (end-of-file) object"""
+	def __init__(self):
+		global EOF
+		if EOF is not None:
+			# only allow one to be created
+			raise RuntimeError("Use EOF object, not _EOFClass")
+
+	def __copy__(self):
+		"""Not allowed to make a copy"""
+		return self
+
+	def __deepcopy__(self, memo=None):
+		"""Not allowed to make a copy"""
+		return self
+
+	def __cmp__(self, other):
+		if type(other) is _types.InstanceType and \
+				other.__class__ == self.__class__:
+			# Despite trying to create only one EOF object, there
+			# could be more than one.  All EOFs are equal.
+			return 0
+		elif type(other) is _types.StringType:
+			# If a string, compare with 'EOF'
+			return cmp("EOF", other)
+		elif type(other) in (_types.IntType, _types.FloatType):
+			# If a number, compare with -2
+			return cmp(-2, other)
+		else:
+			return 1
+
+	def __repr__(self): return "EOF"
+	def __str__(self): return "EOF"
+	def __int__(self): return -2
+	def __float__(self): return -2.0
+
+# initialize EOF to None first so singleton scheme works
+
+EOF = None
+EOF = _EOFClass()
 
 # -----------------------------------------------------
 # define IRAF-like INDEF object

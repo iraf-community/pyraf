@@ -935,7 +935,7 @@ def fscan(locals, line, *namelist, **kw):
 
 	Returns number of arguments set to new values.  If there are
 	too few space-delimited arguments on the input line, it does
-	not set all the arguments.  Returns -2 on end-of-file.
+	not set all the arguments.  Returns EOF on end-of-file.
 	"""
 	# get the value of the line (which may be a variable, string literal,
 	# expression, or an IRAF list parameter)
@@ -945,7 +945,7 @@ def fscan(locals, line, *namelist, **kw):
 	except EOFError:
 		_weirdEOF(locals, namelist)
 		_nscan = 0
-		return -2
+		return EOF
 	f = _string.split(line)
 	n = min(len(f),len(namelist))
 	# a tricky thing -- null input is OK if the first variable is
@@ -1050,7 +1050,7 @@ def scan(locals, *namelist, **kw):
 			_weirdEOF(locals, namelist)
 			global _nscan
 			_nscan = 0
-			return -2
+			return EOF
 		else:
 			return apply(fscan, (locals, `line`) + namelist, kw)
 	finally:

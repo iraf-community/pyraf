@@ -1546,8 +1546,14 @@ class _IntMixin:
 					return int(s2)
 				except ValueError:
 					pass
-		raise ValueError("Illegal integer value " + `value` +
-			" for parameter " + self.name)
+		else:
+			# maybe it has an int method
+			try:
+				return int(value)
+			except ValueError:
+				pass
+		raise ValueError("Illegal integer value %s for parameter %s" % 
+			(`value`, self.name))
 
 
 # -----------------------------------------------------
@@ -1621,38 +1627,43 @@ class _RealMixin:
 			elif s2[0:1] == ")":
 				# assume this is indirection -- just save it as a string
 				return s2
-			else:
-				# allow +dd:mm:ss.s sexagesimal format for floats
-				original_value = s2
-				value = 0.0
-				vscale = 1.0
-				vsign = 1
-				i1 = 0
-				mm = _re_colon.search(s2)
-				if mm is not None:
-					if s2[0:1] == "-":
-						i1 = 1
-						vsign = -1
-					elif s2[0:1] == "+":
-						i1 = 1
-					while mm is not None:
-						i2 = mm.start()
-						value = value + int(s2[i1:i2])/vscale
-						i1 = i2+1
-						vscale = vscale*60.0
-						mm = _re_colon.search(s2,i1)
-				# special handling for d exponential notation
-				mm = _re_d.search(s2,i1)
-				try:
-					if mm is None:
-						return vsign*(value + float(s2[i1:])/vscale)
-					else:
-						return vsign*(value + \
-							float(s2[i1:mm.start()]+"E"+s2[mm.end():])/vscale)
-				except ValueError:
-					raise ValueError(
-						"string cannot be converted to float: `%s'" %
-						original_value)
+			# allow +dd:mm:ss.s sexagesimal format for floats
+			original_value = s2
+			value = 0.0
+			vscale = 1.0
+			vsign = 1
+			i1 = 0
+			mm = _re_colon.search(s2)
+			if mm is not None:
+				if s2[0:1] == "-":
+					i1 = 1
+					vsign = -1
+				elif s2[0:1] == "+":
+					i1 = 1
+				while mm is not None:
+					i2 = mm.start()
+					value = value + int(s2[i1:i2])/vscale
+					i1 = i2+1
+					vscale = vscale*60.0
+					mm = _re_colon.search(s2,i1)
+			# special handling for d exponential notation
+			mm = _re_d.search(s2,i1)
+			try:
+				if mm is None:
+					return vsign*(value + float(s2[i1:])/vscale)
+				else:
+					return vsign*(value + \
+						float(s2[i1:mm.start()]+"E"+s2[mm.end():])/vscale)
+			except ValueError:
+				pass
+		else:
+			# maybe it has a float method
+			try:
+				return float(value)
+			except ValueError:
+				pass
+		raise ValueError("Illegal float value %s for parameter %s" % 
+			(`value`, self.name))
 
 # -----------------------------------------------------
 # IRAF real parameter class
