@@ -5,6 +5,7 @@ $Id$
 
 import Numeric
 from types import *
+import gwm
 
 BOI = -1  # beginning of instruction sentinel
 NOP = 0	 # no op value
@@ -55,7 +56,7 @@ class GkiBuffer:
 		self.reset()	
 	
 	def reset(self):
-	
+
 		self.buffer = None
 		self.bufferSize = 0
 		self.bufferEnd = 0 
@@ -91,13 +92,8 @@ class GkiKernel:
 	
 	def __init__(self):
 	
-		self.gkiBuffer = GkiBuffer()
 		self.functionTable = []
 	
-	def clear(self):
-	
-		self.gkiBuffer.reset()
-		
 	def control(self, gkiMetacode):
 
 		# stub routine to be overridden in subclass. Purpose is to act
@@ -110,13 +106,18 @@ class GkiKernel:
 		# if input parameter is string, assume it is a filename and read into
 		# a numeric array
 		if type(gkiMetacode) == StringType:
-			self.gkiBuffer.append(getdata(gkiMetacode))
+			gwm.g.activeWindow.gwidget.iplot.gkiBuffer.append(
+				getdata(gkiMetacode))
 		else:
-			self.gkiBuffer.append(gkiMetacode)
-		# a hook for acting on the metacode, but is only a stub routine
-		# that must be overridden in the subclass (or not, depending)
-		self.translate(gkiMetacode, self.functionTable)
-
+			win = gwm.g.activeWindow
+		try:
+			win.gwidget.iplot.gkiBuffer.append(gkiMetacode)
+			# a hook for acting on the metacode, but is only a stub routine
+			# that must be overridden in the subclass (or not, depending)
+			self.translate(gkiMetacode, self.functionTable)
+		except AttributeError:
+			print "Error, no IRAF plot window active"
+			
 	def translate(self, gkiMetacode, functionTable):
 
 		# stub routine to be overridden in subclass of GkiKernel

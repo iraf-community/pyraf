@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 """
 Adapted from that distributed in the Tk.__init__ file that came with
 PyOpenGL. (to get rid of 3-d cursor effects among other things)
