@@ -6,8 +6,9 @@ Usage: pyraf [options]
   where options are one or more of:
   -p  Packages are defined as variables (default)
   -t  Both tasks and packages are defined as variables
-  -n  Keep user namespace clean, don't define tasks or packages
-      as variables
+  -n  Keep user namespace clean, don't define tasks or packages as variables
+  -i  Do not run Monty command line wrapper, just run standard Python front end
+  -m  Run Monty command line wrapper to provide extra capabilities (default)
   -v  Set verbosity level (may be repeated to increase verbosity)
   -h  Print this message
 
@@ -72,7 +73,7 @@ To run tasks, use one of these forms:
 
 $Id$
 
-R. White, 1999 March 4
+R. White, 1999 May 27
 """
 
 import os, sys
@@ -121,11 +122,12 @@ if __name__ == "__main__":
 
 	import getopt, irafnames
 	try:
-		optlist,args = getopt.getopt(sys.argv[1:], "ptnvh")
+		optlist,args = getopt.getopt(sys.argv[1:], "ptnimvh")
 	except getopt.error, e:
 		print str(e)
 		usage()
 	verbose = 0
+	doMonty = 1
 	if optlist:
 		for opt, value in optlist:
 			if opt == "-p":
@@ -134,6 +136,10 @@ if __name__ == "__main__":
 				irafnames.setTaskStrategy()
 			elif opt == "-n":
 				irafnames.setCleanStrategy()
+			elif opt == "-m":
+				doMonty = 1
+			elif opt == "-i":
+				doMonty = 0
 			elif opt == "-v":
 				verbose = verbose + 1
 			elif opt == "-h":
@@ -152,12 +158,13 @@ flpr = "This is not the IRAF cl!  Forget those old bad habits!"
 retall = "This is not IDL..."
 
 if __name__ == "__main__":
-	#
-	# start up monty keeping definitions in local name space
-	#
-	import monty
 	print "Pyraf, Python front end to IRAF, version", __version__, "(copyright AURA 1999)"
 	print "Python: " + sys.copyright
-	m = monty.monty(locals=locals())
-	m.start()
+	if doMonty:
+		#
+		# start up monty keeping definitions in local name space
+		#
+		import monty
+		m = monty.monty(locals=locals())
+		m.start()
 
