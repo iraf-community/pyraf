@@ -5,13 +5,50 @@
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
 #include <stdio.h>
-
-/* Windows and cursor manipulations not provided by Tkinter or any other
-** standard python library
-*/
+#include <setjmp.h>
+#include <string.h>
 
 /* $Id$ */
 
+/* Windows and cursor manipulations not provided by Tkinter or any other 
+** standard python library 
+*/ 
+
+/* the following macro is used to trap x window exceptions and trigger 
+** a python exception in turn 
+*/
+
+jmp_buf ErrorEnv;
+int xstatus;
+int (* oldErrorHandler)(Display *);
+int (* oldIOErrorHandler)(Display *);
+char XErrorMsg[80];
+char ErrorPrefix[] = "XWindows Error!\n";
+char ErrorMsg[120];
+
+#define TrapXlibErrors \
+  oldIOErrorHandler = XSetIOErrorHandler(MyXlibErrorHandler); \
+  oldErrorHandler = XSetErrorHandler(MyXlibErrorHandler); \
+  xstatus = setjmp(ErrorEnv); \
+  if ( xstatus != 0) { \
+    XSetIOErrorHandler(oldIOErrorHandler); \
+    XSetErrorHandler(oldErrorHandler); \
+    strncat(ErrorMsg,ErrorPrefix, 20); \
+    strncat(ErrorMsg,XErrorMsg, 80); \
+    PyErr_SetString(PyExc_EnvironmentError, ErrorMsg); \
+    return NULL; \
+  }
+
+#define RestoreOldXlibErrorHandlers \
+	XSetIOErrorHandler(oldIOErrorHandler); \
+	XSetErrorHandler(oldErrorHandler); 
+
+/* Exception handler for Xwindows I/O errors */
+
+int MyXlibErrorHandler(Display *d, XErrorEvent *myerror) {
+	XGetErrorText(d, myerror->error_code, XErrorMsg, 80);
+	longjmp(ErrorEnv, 1);
+}
 
 void moveCursorTo(int win, int x, int y) {
   Display *d;
@@ -36,7 +73,9 @@ PyObject *wrap_moveCursorTo(PyObject *self, PyObject *args) {
   int x, y, w;
   if (!PyArg_ParseTuple(args,"iii",&w, &x, &y))
     return NULL;
+  TrapXlibErrors /* macro code to handle xlib exceptions */
   moveCursorTo(w,x,y);
+  RestoreOldXlibErrorHandlers /* macro */
   return Py_None; 
 }
 
@@ -58,7 +97,9 @@ int getWindowID() {
 
 PyObject *wrap_getWindowID(PyObject *self, PyObject *args) {
   int result;
+  TrapXlibErrors /* macro code to handle xlib exceptions */
   result = getWindowID();
+  RestoreOldXlibErrorHandlers /* macro */
   return Py_BuildValue("i",result);
 }
 
@@ -81,7 +122,9 @@ PyObject *wrap_setFocusTo(PyObject *self, PyObject *args) {
   int win;
   if (!PyArg_ParseTuple(args,"i", &win))
     return NULL;
+  TrapXlibErrors /* macro code to handle xlib exceptions */
   setFocusTo(win);
+  RestoreOldXlibErrorHandlers /* macro */
   return Py_None;
 }
 
@@ -113,14 +156,15 @@ PyObject *wrap_setBackingStore(PyObject *self, PyObject *args) {
   int win;
   if (!PyArg_ParseTuple(args,"i", &win))
     return NULL;
+  TrapXlibErrors /* macro code to handle xlib exceptions */
   setBackingStore(win);
+  RestoreOldXlibErrorHandlers /* macro */
   return Py_None;
 }
 
 void getWindowAttributes(int win, XWindowAttributes *winAttr) {
   Window w;
   Display *d;
-  /*  Display *XOpenDisplay(char *); */
   Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
   w = (Window) win;
   d = XOpenDisplay(NULL);
@@ -137,12 +181,14 @@ PyObject *wrap_getWindowAttributes(PyObject *self, PyObject *args) {
 	XWindowAttributes wa;
 	if (!PyArg_ParseTuple(args,"i", &win))
 		return NULL;
+	TrapXlibErrors /* macro code to handle xlib exceptions */
 	getWindowAttributes(win, &wa);
 	if (wa.map_state == IsViewable) {
 	  viewable = 1;
 	} else {
 	  viewable = 0;
 	}
+	RestoreOldXlibErrorHandlers /* macro */
 	return Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
 		"x", wa.x,
 		"y", wa.y,
@@ -167,14 +213,17 @@ PyObject *wrap_getPointerPosition(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args,"i", &win))
 		return NULL;
 	w = (Window) win;
+	TrapXlibErrors /* macro code to handle xlib exceptions */
 	d = XOpenDisplay(NULL);
 	if (d == NULL) {
 		printf("could not open display!\n");
+		RestoreOldXlibErrorHandlers /* macro */
 		return;
 	}
 	inScreen = XQueryPointer(d, w, &root, &child, &root_x, &root_y,
 		&win_x, &win_y, &mask);
 	XCloseDisplay(d);
+	RestoreOldXlibErrorHandlers /* macro */
 	return Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
 		"inScreen", (int) inScreen,
 		"rootID", (int) root,
@@ -198,14 +247,17 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args,"i", &win))
 		return NULL;
 	w = (Window) win;
+	TrapXlibErrors /* macro code to handle xlib exceptions */
 	d = XOpenDisplay(NULL);
 	if (d == NULL) {
 		printf("could not open display!\n");
+		RestoreOldXlibErrorHandlers /* macro */
 		return;
 	}
 	XQueryTree(d, w, &root, &parent, &children, &nchildren);
 	XFree(children);
 	XCloseDisplay(d);
+	RestoreOldXlibErrorHandlers /* macro */
 	if (root == parent) {
 	  return Py_None;
 	} else {

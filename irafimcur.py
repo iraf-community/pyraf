@@ -11,18 +11,26 @@ except ImportError:
 		raise iraf.IrafError(
 		"image display library (cdlmodule.so) not available")
 
+prevDisplayHandle = None
+
 def _imcur():
 
 	"""Returns the string expected for IRAF's imcur parameter"""
 
+	global prevDisplayHandle
 	try:
 		termWinID = wutil.getTerminalWindowID()
 		imtdev = ""
 		if os.environ.has_key('IMTDEV'):
 			imtdev = os.environ['IMTDEV']
-		displayHandle = cdl.cdl_open(imtdev)
-		if displayHandle == "NULL":
-			raise iraf.IrafProcessError("Unable to open image display")
+		# must open the display only once in cdl!
+		if not prevDisplayHandle:
+			displayHandle = cdl.cdl_open(imtdev)
+			prevDisplayHandle = displayHandle
+			if displayHandle == "NULL":
+				raise iraf.IrafProcessError("Unable to open image display")
+		else:
+			displayHandle = prevDisplayHandle
 		wutil.imcurActive = 1
 		if wutil.imageWindowID:
 			# move focus and cursor to window if focus in pyraf window family
@@ -30,28 +38,28 @@ def _imcur():
 				imID = wutil.getImageWindowID()
 				if wutil.isViewable(imID):
 					curWinID = wutil.getWindowID()
-					if curWinID == wutil.getTerminalWindowID():
-						# save terminal cursor position if in that window
-						wutil.saveTerminalCursorPosition()
-					pos = wutil.getLastImagePos()
+#					if curWinID == wutil.getTerminalWindowID():
+#						# save terminal cursor position if in that window
+#						wutil.saveTerminalCursorPosition()
+#					pos = wutil.getLastImagePos()
 					wutil.setFocusTo(imID)
-					wutil.moveCursorTo(imID,pos[0],pos[1])
+#					wutil.moveCursorTo(imID,pos[0],pos[1])
 		# Require keystroke to read cursor position (0 arg)
 		key, xpos, ypos, dummy = cdl.cdl_readCursor(displayHandle, 0)
 		if not wutil.imageWindowID:
 			wutil.imageWindowID = wutil.getWindowID()
-		wutil.saveImageCursorPosition()
+#		wutil.saveImageCursorPosition()
 		frame = cdl.cdl_getFrame(displayHandle)
-		cdl.cdl_close(displayHandle)
+		# don't close the display!
 		if key == ':':
 			returnFocusToTermWindow()
 			colonString = raw_input(": ")
 			imID = wutil.getWindowID()
 			if wutil.isViewable(imID):
-				wutil.saveTerminalCursorPosition()
+#				wutil.saveTerminalCursorPosition()
 				wutil.setFocusTo(imID)
-				x, y = wutil.getLastImagePos()
-				wutil.moveCursorTo(imID,x,y)
+#				x, y = wutil.getLastImagePos()
+#				wutil.moveCursorTo(imID,x,y)
 		else:
 			colonString = ""
 		# The following is a bit of a kludge, but appears to be the only
@@ -77,7 +85,7 @@ def returnFocusToTermWindow():
 
 	termWinID = wutil.getTerminalWindowID()
 	if wutil.isViewable(termWinID):
-		wutil.saveImageCursorPosition()
+#		wutil.saveImageCursorPosition()
 		wutil.setFocusTo(termWinID)
-		x, y = wutil.getLastTermPos()
-		wutil.moveCursorTo(termWinID,x,y)		
+#		x, y = wutil.getLastTermPos()
+#		wutil.moveCursorTo(termWinID,x,y)		

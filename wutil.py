@@ -6,7 +6,7 @@ If the c versions do not exist, then these routines will do nothing
 $Id$
 """
 
-import struct, fcntl, sys, gwm
+import struct, fcntl, sys
 
 def getWindowID(): return None
 def moveCursorTo(WindowID, x, y): pass
@@ -131,6 +131,7 @@ def saveImageCursorPosition():
 def isFocusElsewhere():
 
 	# Determine if focus lies outside of terminal/graphics window set.
+	import gwm
 	currentFocusWinID = getWindowID()
 	currentTopID = getTopID(currentFocusWinID)
 	terminalWindowTopID = getTopID(getTerminalWindowID())
