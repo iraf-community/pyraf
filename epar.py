@@ -562,10 +562,14 @@ class EparDialog:
             # Remove the main epar window
             self.top.focus_set()
             self.top.withdraw()
-            self.top.destroy()
+
+            # Do not destroy the window, just hide it for now.
+            # This is so EXECUTE will not get an error - properly use Mediator.
+            #self.top.destroy()
 
             # If not a child window, quit the entire session
             if (self.isChild == "no"):
+                self.top.destroy()
                 self.top.quit()
 
             # Reset to the start location
@@ -650,8 +654,13 @@ class EparDialog:
         # Give focus back to parent window and abort
         self.top.focus_set()
         self.top.withdraw()
-        self.top.destroy()
+
+        # Do not destroy the window, just hide it for now.
+        # This is so EXECUTE will not get an error - properly use Mediator.
+        #self.top.destroy()
+
         if (self.isChild == "no"):
+            self.top.destroy()
             self.top.quit()
 
 
