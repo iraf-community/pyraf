@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, os.path, sys, shutil, commands
+import os, os.path, sys, shutil, commands, fnmatch
 from distutils.core import setup,Extension
 from distutils.command.build_ext import build_ext
 from distutils.sysconfig import *
@@ -89,7 +89,7 @@ def getDataDir(args):
     return data_dir
 
 def dolocal():
-    """Adds a command line parameter --local=<dir> which is an abbreviation for
+    """Adds a command line option --local=<install-dir> which is an abbreviation for
     'put all of pyraf in <install-dir>/pyraf'."""
     if "--help" in sys.argv:
         print >>sys.stderr
@@ -116,7 +116,7 @@ def dosetup(x_lib_dirs, x_inc_dirs, data_dir, ext):
      url = "http://www.stsci.edu/resources/software_hardware/pyraf",
      packages = ['pyraf'],
      package_dir = {'pyraf':'lib'},
-     data_files = [(data_dir,['data/blankcursor.xbm']), (data_dir, ['data/dbcopy']), (data_dir, ['data/epar.optionDB']), (data_dir,['data/pyraflogo_rgb_web.gif']), (data_dir,['lib/LICENSE.txt'])],
+     data_files = [(data_dir,['data/blankcursor.xbm']), (data_dir, ['data/epar.optionDB']), (data_dir,['data/pyraflogo_rgb_web.gif']), (data_dir,['lib/LICENSE.txt'])],
      scripts = ['lib/pyraf'],
      ext_modules = ext)
 
@@ -124,7 +124,15 @@ def dosetup(x_lib_dirs, x_inc_dirs, data_dir, ext):
 
 def copy_clcache(data_dir, args):
     if 'install' in args:
-        shutil.copytree('data/clcache/', os.path.join(data_dir,'clcache'))
+        clcache_dir = os.path.join(data_dir,'clcache')
+        if os.path.exists(clcache_dir):
+            shutil.rmtree(clcache_dir)
+            os.mkdir(clcache_dir)
+            for file in os.listdir('data/clcache'):
+                if fnmatch.fnmatch(file, 'CVS'):
+                    pass
+                else:
+                    shutil.copy2(os.path.join('data/clcache', file), clcache_dir)
 
 
 def main():
