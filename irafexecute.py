@@ -3,8 +3,8 @@
 $Id$
 """
 
-import os, re, signal, string, struct, sys, time, Numeric, cStringIO
-import subproc, iraf, gki, gkiopengl, gwm, wutil, irafutils
+import os, re, signal, string, struct, sys, time, types, Numeric, cStringIO
+import subproc, iraf, gki, gkiopengl, gwm, wutil, irafutils, iraftask
 
 stdgraph = None
 firstPlotDone = 0
@@ -14,43 +14,210 @@ IPC_PREFIX = Numeric.array([01120],Numeric.Int16).tostring()
 class IrafProcessError(Exception):
 	pass
 
+def _getExecutable(arg):
+	"""Get executable pathname.
+	
+	Arg may be a string with the path, an IrafProcess, an IrafTask,
+	or a string with the name of an IrafTask.
+	"""
+	if isinstance(arg, IrafProcess):
+		return arg.executable
+	elif isinstance(arg, iraftask.IrafTask):
+		return arg.getFullpath()
+	elif isinstance(arg, types.StringType):
+		if os.path.exists(arg):
+			return arg
+		task = iraf.getTask(arg, found=1)
+		if task:
+			return task.getFullpath()
+	raise IrafProcessError("Cannot find task or executable %s" % arg)
+
+class _ProcessCache:
+
+	"""Cache of active processes indexed by executable path"""
+
+	def __init__(self, limit=8):
+		self._data = {}          # dictionary with active processes
+		self._pcount = 0         # total number of processes started
+		self._plimit = limit     # number of active processes allowed
+		self._locked = {}        # processes locked into cache
+
+	def get(self, task, envdict):
+		"""Get process for given task.  Create a new one if needed."""
+		executable = _getExecutable(task)
+		value = self._data.get(executable)
+		if value is None:
+			# create and initialize a new process
+			process = IrafProcess(executable)
+			process.initialize(envdict)
+		else:
+			# use existing process
+			rank, process = value
+		return process
+
+	def add(self, process):
+		"""Add process to cache or update its rank if already there"""
+		if self._plimit <= len(self._locked):
+			# no cache if plimit is zero or if all processes are locked
+			process.terminate()
+			return
+		self._pcount = self._pcount+1
+		executable = process.executable
+		if (len(self._data) >= self._plimit) and \
+		  not self._data.has_key(executable):
+			# delete the oldest entry
+			self._deleteOldest()
+		self._data[executable] = (self._pcount, process)
+
+	def _deleteOldest(self):
+		"""Delete oldest unlocked process from the cache
+		
+		If all processes are locked, delete oldest locked process.
+		"""
+		# each entry contains rank (to sort and find oldest) and process
+		values = self._data.values()
+		values.sort()
+		if len(self._locked) >= len(self._data):
+			rank, oldprocess = values[0]
+			self.terminate(oldprocess.executable)
+		else:
+			for rank, oldprocess in values:
+				executable = oldprocess.executable
+				if not self._locked.has_key(executable):
+					# terminate it
+					self.terminate(executable)
+
+	def setSize(self, limit):
+		"""Set number of processes allowed in cache"""
+		self._plimit = limit
+		if self._plimit <= 0:
+			self._locked = {}
+			self.flush()
+		else:
+			while len(self._data) > self._plimit:
+				self._deleteOldest()
+
+	def lock(self, *args):
+		"""Lock the specified tasks into the cache
+		
+		Takes task names (strings) as arguments.
+		"""
+		# don't bother if cache is disabled or full
+		if self._plimit <= len(self._locked):
+			return
+		for taskname in args:
+			task = iraf.getTask(taskname, found=1)
+			if not task:
+				print "No such task `%s'" % taskname
+			elif task.__class__ == iraftask.IrafTask:
+				# cache only executable tasks (not CL tasks, etc.)
+				executable = task.getFullpath()
+				process = self.get(task, iraf.getVarDict())
+				self.add(process)
+				if self._data.has_key(executable):
+					self._locked[executable] = 1
+				else:
+					if iraf.Verbose>0: print "Cannot cache %s" % taskname
+
+	def kill(self, process):
+		"""Kill process and delete it from cache"""
+		executable = _getExecutable(process)
+		if self._data.has_key(executable):
+			rank, process = self._data[executable]
+			del self._data[executable]
+			if self._locked.has_key(executable):
+				del self._locked[executable]
+				#XXX could restart the process if locked
+		if isinstance(process, IrafProcess):
+			process.kill()
+
+	def terminate(self, process):
+		"""Terminate process and delete it from cache"""
+		# This is gentler than kill(), which should be used only
+		# when there are process errors.
+		executable = _getExecutable(process)
+		if self._data.has_key(executable):
+			rank, process = self._data[executable]
+			del self._data[executable]
+			if self._locked.has_key(executable):
+				del self._locked[executable]
+				#XXX could restart the process if locked
+		if isinstance(process, IrafProcess):
+			process.terminate()
+
+	def flush(self, *args):
+		"""Flush given processes (all non-locked if no args given)
+		
+		Takes task names (strings) as arguments.
+		"""
+		if args:
+			for taskname in args:
+				task = iraf.getTask(taskname, found=1)
+				if task: self.terminate(task)
+		else:
+			for rank, process in self._data.values():
+				executable = process.executable
+				if not self._locked.has_key(executable):
+					self.terminate(executable)
+
+	def list(self):
+		"""List processes sorted from newest to oldest with locked flag"""
+		values = self._data.values()
+		values.sort()
+		values.reverse()
+		n = 0
+		for rank, process in values:
+			n = n+1
+			executable = process.executable
+			if self._locked.has_key(executable):
+				print "%2d: L %s" % (n, executable)
+			else:
+				print "%2d:   %s" % (n, executable)
+
+	def __del__(self):
+		self._locked = {}
+		self.flush()
+
+processCache = _ProcessCache()
+
 def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 
 	"""Execute IRAF task (defined by the IrafTask object task)
 	using the provided envionmental variables."""
 
-	global firstPlotDone
-	# Start 'er up
+	global firstPlotDone, processCache
 	try:
-		irafprocess = IrafProcess(task)
-	except (iraf.IrafError, subproc.SubprocessError), value:
+		# Start 'er up
+		irafprocess = processCache.get(task, envdict)
+	except (iraf.IrafError, subproc.SubprocessError, IrafProcessError), value:
 		raise IrafProcessError("Cannot start IRAF executable\n" + value)
 
 	# Run it
 	try:
-		irafprocess.initialize(envdict,stdout=stdout or stderr)
-		irafprocess.run(stdin=stdin,stdout=stdout,stderr=stderr)
-		# just kill the damn thing, no process cache
-		irafprocess.terminate()
+		irafprocess.run(task, stdin=stdin,stdout=stdout,stderr=stderr)
 		wutil.focusController.restoreLast()
 		if stdgraph:
 			stdgraph.stdout = None
 			stdgraph.stderr = None
 	except KeyboardInterrupt:
 		# On keyboard interrupt (^C), kill the subprocess
-		irafprocess.kill()
+		processCache.kill(irafprocess)
 		wutil.focusController.resetFocusHistory()
 		if stdgraph:
 			stdgraph.stdout = None
 			stdgraph.stderr = None
+		raise KeyboardInterrupt
 	except (iraf.IrafError, IrafProcessError), exc:
 		# on error, kill the subprocess, then re-raise the original exception
 		try:
-			irafprocess.kill()
+			processCache.kill(irafprocess)
 		except Exception, exc2:
 			# append new exception text to previous one (right thing to do?)
 			exc.args = exc.args + exc2.args
 		raise exc
+	else:
+		# add to the process cache on successful exit
+		processCache.add(irafprocess)
 	# this next bit is really a hack to prevent the double redraw on first
 	# plots (when they are not interactive plots). This should be done
 	# better, but it appears to work.
@@ -91,33 +258,17 @@ class IrafProcess:
 
 	"""IRAF process class"""
 
-	def __init__(self, task):
+	def __init__(self, executable):
 
-		"""Start IRAF task defined by the IrafTask object task.
-		The IrafTask object must have these methods:
+		"""Start IRAF task executable."""
 
-		getName(): return the name of the task
-		getFullpath(): return the full path name of the executable
-		getParam(param): get parameter value
-		setParam(param,value): set parameter value
-		"""
-
-		self.task = task
-		executable = task.getFullpath()
+		self.executable = executable
 		self.process = subproc.Subprocess(executable+' -c')
 
-	def initialize(self, envdict, stdout=None):
+	def initialize(self, envdict):
 
 		"""Initialization: Copy environment variables to process"""
 
-		if stdout is None: stdout = sys.stdout
-		if stdout.isatty():
-			# if stdout is a terminal, set the lines & columns sizes
-			# this ensures that they are up-to-date at the start of the task
-			# (which is better than the CL does)
-			nlines,ncols = wutil.getTermWindowSize()
-			envdict['ttyncols'] = str(ncols)
-			envdict['ttynlines'] = str(nlines)
 		outenvstr = []
 		for key, value in envdict.items():
 			outenvstr.append("set " + key + "=" + str(value) + "\n")
@@ -126,10 +277,18 @@ class IrafProcess:
 		# end set up mode
 		self.writeString('_go_\n')
 
-	def run(self, stdin=None, stdout=None, stderr=None):
+	def run(self, task, stdin=None, stdout=None, stderr=None):
 
-		"""Run the IRAF logical task"""
+		"""Run the IRAF logical task (which must be in this executable)
 
+		The IrafTask object must have these methods:
+
+		getName(): return the name of the task
+		getParam(param): get parameter value
+		setParam(param,value): set parameter value
+		"""
+
+		self.task = task
 		# set IO streams
 		if stdin is None: stdin = sys.stdin
 		if stdout is None:
@@ -154,6 +313,13 @@ class IrafProcess:
 		if stdin != sys.__stdin__: redir_info = '<'
 		if stdout != sys.__stdout__: redir_info = redir_info+'>'
 
+		if stdout.isatty():
+			# if stdout is a terminal, set the lines & columns sizes
+			# this ensures that they are up-to-date at the start of the task
+			# (which is better than the CL does)
+			nlines,ncols = wutil.getTermWindowSize()
+			self.writeString("set ttyncols=%d\nset ttynlines=%d\n" %
+				(ncols, nlines))
 		self.writeString(self.task.getName()+redir_info+'\n')
 		# begin slave mode
 		self.slave()
@@ -183,7 +349,7 @@ class IrafProcess:
 
 		self.stdout.flush()
 		self.stderr.flush()
-		sys.stderr.write(" Killing IRAF task\n")
+		sys.stderr.write("Killing IRAF task\n")
 		sys.stderr.flush()
 		if not self.process.cont():
 			raise IrafProcessError("Can't kill IRAF subprocess")
@@ -501,8 +667,8 @@ class IrafProcess:
 				ncols = 80
 			else:
 				nlines,ncols = wutil.getTermWindowSize()
-			self.writeString("set ttyncols="+str(ncols)+"\n" +
-							"set ttynlines="+str(nlines)+"\n")
+			self.writeString("set ttyncols=%d\nset ttynlines=%d\n" %
+				(ncols,nlines))
 			self.msg = self.msg[mcmd.end():]
 		elif mcmd.group('sysescape'):
 			# OS escape

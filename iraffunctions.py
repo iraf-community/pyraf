@@ -50,7 +50,7 @@ def _writeError(msg):
 
 import sys, os, string, re, math, types, time
 import minmatch, subproc, wutil
-import irafnames, irafutils, iraftask, irafpar, cl2py
+import irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 
 try:
 	import cPickle
@@ -84,11 +84,12 @@ _irafnames = irafnames
 _irafutils = irafutils
 _iraftask = iraftask
 _irafpar = irafpar
+_irafexecute = irafexecute
 _cl2py = cl2py
 
 del sys, os, string, re, math, types, time, StringIO, pickle
 del minmatch, subproc, wutil
-del irafnames, irafutils, iraftask, irafpar, cl2py
+del irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 
 # -----------------------------------------------------
 # private dictionaries:
@@ -380,6 +381,16 @@ def run(taskname,args=(),kw=None,save=1):
 def getAllTasks(taskname):
 	"""Returns list of names of all IRAF tasks that may match taskname"""
 	return _mmtasks.getallkeys(taskname, [])
+
+
+# -----------------------------------------------------
+# getAllPkgs: Get list of all IRAF pkgs that match partial name
+# -----------------------------------------------------
+
+def getAllPkgs(pkgname):
+	"""Returns list of names of all IRAF pkgs that may match pkgname"""
+	return _pkgs.getallkeys(pkgname, [])
+
 
 # -----------------------------------------------------
 # getTask: Find an IRAF task by name
@@ -1402,6 +1413,32 @@ def clear(*args, **kw):
 		rv = redirReset(resetList, closeFHList)
 	return rv
 
+def flprcache(*args, **kw):
+	"""Flush process cache.  Takes optional list of tasknames."""
+	# handle redirection and save keywords
+	redirKW, closeFHList = redirProcess(kw)
+	resetList = redirApply(redirKW)
+	try:
+		apply(_irafexecute.processCache.flush, args)
+		if Verbose>0: print "Flushed process cache"
+	finally:
+		rv = redirReset(resetList, closeFHList)
+	return rv
+
+def prcache(*args, **kw):
+	"""Print process cache.  If args are given, locks tasks into cache."""
+	# handle redirection and save keywords
+	redirKW, closeFHList = redirProcess(kw)
+	resetList = redirApply(redirKW)
+	try:
+		if args:
+			apply(_irafexecute.processCache.lock, args)
+		else:
+			_irafexecute.processCache.list()
+	finally:
+		rv = redirReset(resetList, closeFHList)
+	return rv
+
 # dummy routines
 
 def clNoHistory(*args, **kw):
@@ -1444,23 +1481,10 @@ def clDummy(*args, **kw):
 	# just ignore keywords and arguments
 	pass
 
-bye = keep = logout = clbye = gflush = clDummy
+bye = keep = logout = clbye = gflush = cache = clDummy
 
 # unimplemented but no exception raised (and no message
 # printed if not in verbose mode)
-
-def flprcache(*args, **kw):
-	"""Dummy process cache function"""
-	# handle redirection and save keywords
-	redirKW, closeFHList = redirProcess(kw)
-	resetList = redirApply(redirKW)
-	try:
-		if Verbose>0: print "No process cache in Pyraf"
-	finally:
-		rv = redirReset(resetList, closeFHList)
-	return rv
-
-cache = prcache = clDummy
 
 def _notImplemented(cmd, args, kw):
 	"""Dummy unimplemented function"""

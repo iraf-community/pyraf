@@ -75,7 +75,11 @@ class IrafTask:
 			objdict['_filename'] = filename
 
 	def initTask(self, force=0):
-		"""Fill in full pathnames of files and read parameter file(s)"""
+		"""Fill in full pathnames of files and read parameter file(s)
+		
+		Force indicates whether shortcut initialization can be used
+		or not.  (No difference for base IrafTask.)
+		"""
 		if self._filename and not self._fullpath: self._initFullpath()
 		if self._currentParList is None:
 			self._initParpath()
@@ -116,12 +120,12 @@ class IrafTask:
 
 	def getParList(self):
 		"""Return list of all parameter objects"""
-		self.initTask()
+		self.initTask(force=1)
 		return self._currentParList.getParList()
 
 	def getParDict(self):
 		"""Return (min-match) dictionary of all parameter objects"""
-		self.initTask()
+		self.initTask(force=1)
 		return self._currentParList.getParDict()
 
 	def getParObject(self,param):
@@ -131,7 +135,7 @@ class IrafTask:
 
 	def getAllMatches(self,param):
 		"""Return list of names of all parameters that may match param"""
-		self.initTask()
+		self.initTask(force=1)
 		if self._currentParList:
 			return self._currentParList.getAllMatches(param)
 		else:
@@ -169,7 +173,7 @@ class IrafTask:
 
 	def run(self,*args,**kw):
 		"""Execute this task with the specified arguments"""
-		self.initTask()
+		self.initTask(force=1)
 		# special _save keyword turns on parameter-saving
 		# default is *not* to save parameters (so it is necessary
 		# to use _save=1 to get parameter changes to be persistent.)
@@ -256,7 +260,7 @@ class IrafTask:
 		
 		Special arguments: _setMode=1 to set modes of automatic parameters
 		"""
-		self.initTask()
+		self.initTask(force=1)
 		newParList = copy.deepcopy(self._currentParList)
 		if kw.has_key('_setMode'):
 			_setMode = kw['_setMode']
@@ -423,7 +427,7 @@ class IrafTask:
 
 	def lpar(self,verbose=0):
 		"""List the task parameters"""
-		self.initTask()
+		self.initTask(force=1)
 		if not self._hasparfile:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
@@ -432,7 +436,7 @@ class IrafTask:
 
 	def epar(self):
 		"""Edit the task parameters"""
-		self.initTask()
+		self.initTask(force=1)
 		if not self._hasparfile:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
@@ -441,7 +445,7 @@ class IrafTask:
 
 	def dpar(self):
 		"""Dump the task parameters"""
-		self.initTask()
+		self.initTask(force=1)
 		if not self._hasparfile:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
@@ -473,7 +477,7 @@ class IrafTask:
 
 	def unlearn(self):
 		"""Reset task parameters to their default values"""
-		self.initTask()
+		self.initTask(force=1)
 		if self._hasparfile:
 			if self._defaultParList:
 				if self._scrunchParpath and \
@@ -824,7 +828,7 @@ class IrafPythonTask(IrafTask):
 
 	def run(self,*args,**kw):
 		"""Execute this task with the specified arguments"""
-		self.initTask()
+		self.initTask(force=1)
 		if kw.has_key('_save'):
 			save = kw['_save']
 			del kw['_save']
@@ -960,7 +964,7 @@ class IrafCLTask(IrafTask):
 	# other public methods
 	#=========================================================
 
-	def initTask(self,filehandle=None,force=0):
+	def initTask(self,force=0,filehandle=None):
 		"""Fill in full pathnames of files, read par file, compile CL code
 
 		If filehandle is specified, reads CL code from there
@@ -1154,7 +1158,7 @@ class IrafPkg(IrafCLTask):
 
 	def getAllMatches(self, name, triedpkgs=None):
 		"""Return list of names of all parameters/tasks that may match name"""
-		self.initTask()
+		self.initTask(force=1)
 		if self._currentParList:
 			matches = self._currentParList.getAllMatches(name)
 		else:

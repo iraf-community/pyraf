@@ -33,6 +33,15 @@ import cllinecache
 import irafnames
 irafnames.setCleanStrategy()
 
+# set up exit handler to close caches
+import irafexecute, clcache
+_oldexitfunc = getattr(sys, 'exitfunc', None)
+def _cleanup(last_exit = _oldexitfunc):
+	del irafexecute.processCache
+	del clcache.codeCache
+	if last_exit: last_exit()
+sys.exitfunc = _cleanup
+
 # now get ready to do the serious IRAF initialization
 
 import iraf

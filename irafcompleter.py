@@ -49,13 +49,18 @@ taskArgDict = minmatch.MinMatchDict({
 				'lparam': 1,
 				'update': 1,
 				'help': 1,
+				'prcache': 1,
+				'flprcache': 1,
 				})
+
+# commands that take a package name as argument
+pkgArgDict = { '?': 1, }
 
 class IrafCompleter(Completer):
 
 	def __init__(self):
 		self.completionChar = None
-		self.taskpat = re.compile(r"(\w+)[ \t]+(?=$|[\w.<>|/~'" +r'"])')
+		self.taskpat = re.compile(r"(\?|(?:\w+))[ \t]+(?=$|[\w.<>|/~'" +r'"])')
 
 	def activate(self, char="\t"):
 		"""Turn on completion using the specified character"""
@@ -149,6 +154,7 @@ class IrafCompleter(Completer):
 			else:
 				return Completer.global_matches(self,text)
 		else:
+			taskname = m.group(1)
 			# check for pipe/redirection using last non-blank character
 			mpipe = re.search(r"[|><][ \t]*$", line[:lt])
 			if mpipe:
@@ -159,11 +165,14 @@ class IrafCompleter(Completer):
 				else:
 					# redirection -- just match filenames
 					return self.filename_matches(text, line[:lt])
-			elif taskArgDict.has_key(m.group(1)):
+			elif taskArgDict.has_key(taskname):
 				# task takes task names as arguments
 				return iraf.getAllTasks(text)
+			elif pkgArgDict.has_key(taskname):
+				# task takes package names as arguments
+				return iraf.getAllPkgs(text)
 			else:
-				return self.argument_matches(text, m.group(1), line)
+				return self.argument_matches(text, taskname, line)
 
 	def argument_matches(self, text, taskname, line):
 		"""Compute matches for tokens that could be file or parameter names"""
