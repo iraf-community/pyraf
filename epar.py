@@ -11,8 +11,8 @@ from tkMessageBox import askokcancel
 import os, sys, string
 
 # PyRAF modules
-import iraf, irafpar, irafhelp, cStringIO
-from irafglobals import pyrafDir, userWorkingHome
+import iraf, irafpar, irafhelp, cStringIO, wutil
+from irafglobals import pyrafDir, userWorkingHome, IrafError
 
 import eparoption
 
@@ -165,6 +165,8 @@ the "Execute" button.
 
 def epar(taskName, parent=None, isChild=0):
 
+    if not wutil.hasGraphics:
+        raise IrafError("Cannot run epar without X-windows")
     EparDialog(taskName, parent, isChild)
 
 class EparDialog:

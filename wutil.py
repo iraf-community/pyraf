@@ -143,8 +143,11 @@ class TerminalFocusEntity(FocusEntity):
     def __init__(self):
         """IMPORTANT: This class must be instantiated while focus
         is in the terminal window"""
-        self.windowID = getWindowID()
-        if self.windowID == -1:
+        try:
+            self.windowID = getWindowID()
+            if self.windowID == -1:
+                self.windowID = None
+        except EnvironmentError, e:
             self.windowID = None
         self.lastX = 30
         self.lastY = 30

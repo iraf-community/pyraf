@@ -4,7 +4,7 @@ R. White, 2001 Dec 15
 """
 
 import os, sys, Tkinter
-import irafglobals
+import irafglobals, wutil
 
 logo = "pyraflogo_rgb_web.gif"
 
@@ -190,10 +190,12 @@ def splash(label="PyRAF Execution Monitor", background="LightYellow", **kw):
 
     Silently does nothing if Tkinter is not usable.
     """
-    try:
-        return IrafMonitorSplash(label, background=background, **kw)
-    except Tkinter.TclError:
-        return None
+    if wutil.hasGraphics:
+        try:
+            return IrafMonitorSplash(label, background=background, **kw)
+        except Tkinter.TclError:
+            pass
+    return None
 
 
 if __name__ == "__main__":
