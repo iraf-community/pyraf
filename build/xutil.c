@@ -27,6 +27,9 @@ char ErrorPrefix[] = "XWindows Error!\n";
 char ErrorMsg[120];
 char IOError[] = "XWindows IO exception.";
 
+static GC cursorGC;
+static GC graphGC;
+
 #define TrapXlibErrors \
     oldIOErrorHandler = XSetIOErrorHandler(&MyXlibIOErrorHandler); \
     oldErrorHandler = XSetErrorHandler(&MyXlibErrorHandler); \
@@ -89,7 +92,7 @@ PyObject *wrap_moveCursorTo(PyObject *self, PyObject *args) {
   return Py_None;
 }
 
-int getWindowID() {
+int getWindowID(void) {
    Display *d;
    Window w;
    int revert;
@@ -105,17 +108,8 @@ int getWindowID() {
    return (int) w;
 }
 
-PyObject *wrap_getDeepestVisual(PyObject *self, PyObject *args) {
-  int depth;
-  TrapXlibErrors /* macro code to handle xlib exceptions */
-  depth = getDeepestVisual();
-  RestoreOldXlibErrorHandlers /* macro */
-  return Py_BuildValue("i",depth);
-}
-
-int getDeepestVisual() {
+int getDeepestVisual(void) {
   Display *d;
-  XVisualInfo vTemplate;
   XVisualInfo *visualList;
   int i, visualsMatched, maxDepth;
   maxDepth = 1;
@@ -134,6 +128,14 @@ int getDeepestVisual() {
   XFlush(d);
   XCloseDisplay(d);
   return maxDepth;
+}
+
+PyObject *wrap_getDeepestVisual(PyObject *self, PyObject *args) {
+  int depth;
+  TrapXlibErrors /* macro code to handle xlib exceptions */
+  depth = getDeepestVisual();
+  RestoreOldXlibErrorHandlers /* macro */
+  return Py_BuildValue("i",depth);
 }
 
 PyObject *wrap_getWindowID(PyObject *self, PyObject *args) {
@@ -331,128 +333,82 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
         }
 }
 
-long getColorCell(long red, long green, long blue) {
+void initXGraphics(void) {
 
-  /* not much error checking in this to see that read/write colors are
-         supported */
   Display *d;
-  int screen_num;
-  Colormap cmap;
-  XColor singlecolor;
-  long colorindex;
-  Status status;
-
-  d = XOpenDisplay(NULL);
-
-  if (d == NULL) {
-    printf("could not open XWindow display\n");
-    return NULL;
-  }
-  screen_num = DefaultScreen(d);
-  cmap = DefaultColormap(d, screen_num);
-  singlecolor.flags = DoRed | DoGreen | DoBlue;
-  singlecolor.pixel = 0;
-  singlecolor.red = (unsigned short) red;
-  singlecolor.green = (unsigned short) green;
-  singlecolor.blue = (unsigned short) blue;
-  status = XAllocColor(d, cmap, &singlecolor);
-  if (status==0)
-        colorindex = -1;
-  else
-        colorindex = (long) singlecolor.pixel;
-
-  XFlush(d);
-  XCloseDisplay(d);
-  return colorindex;
-}
-
-PyObject *wrap_getColorCell(PyObject *self, PyObject *args) {
-
-  long colorindex, red, green, blue;
-  if (!PyArg_ParseTuple(args,"lll",&red,&green,&blue))
-    return NULL;
-  TrapXlibErrors /* macro code to handle xlib exceptions */
-  colorindex = getColorCell(red, green, blue);
-  RestoreOldXlibErrorHandlers /* macro */
-  if (colorindex == -1)
-    return Py_BuildValue("");
-  else
-        return Py_BuildValue("l",(long) colorindex);
-}
-void getColor(long colorindex, long *red, long *green, long *blue) {
-
-  /* not much error checking in this to see that read/write colors are
-         supported */
-  Display *d;
-  int screen_num;
-  Colormap cmap;
-  XColor color;
-
   d = XOpenDisplay(NULL);
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return;
   }
-  screen_num = DefaultScreen(d);
-  cmap = DefaultColormap(d, screen_num);
-  color.pixel = (unsigned long) colorindex;
-  XQueryColor(d, cmap, &color);
-  XFlush(d);
+  cursorGC = XCreateGC(d, RootWindow(d, 0), 0, NULL);
+  XSetForeground(d, cursorGC, WhitePixel(d, 0));
+  graphGC  = XCreateGC(d, RootWindow(d, 0), 0, NULL);
+  XSetForeground(d, graphGC, WhitePixel(d, 0));
   XCloseDisplay(d);
-  *red   = color.red;
-  *green = color.green;
-  *blue  = color.blue;
-}
-
-PyObject *wrap_getColor(PyObject *self, PyObject *args) {
-
-  long colorindex, red, green, blue;
-
-  if (!PyArg_ParseTuple(args,"l",&colorindex))
-    return NULL;
-  TrapXlibErrors /* macro code to handle xlib exceptions */
-  getColor(colorindex, &red, &green, &blue);
   RestoreOldXlibErrorHandlers /* macro */
-  return Py_BuildValue("lll",red, green, blue);
 }
 
+PyObject *wrap_initXGraphics(PyObject *self, PyObject *args) {
 
-void freeColor(long colorindex) {
-
-  /* not much error checking in this to see that read/write colors are
-         supported */
-  Display *d;
-  int screen_num;
-  unsigned long colorindicies[1];
-  Colormap cmap;
-  XColor color;
-
-  d = XOpenDisplay(NULL);
-  if (d == NULL) {
-    printf("could not open XWindow display\n");
-    return;
-  }
-  colorindicies[0] = (unsigned long) colorindex;
-  screen_num = DefaultScreen(d);
-  cmap = DefaultColormap(d, screen_num);
-  XFreeColors(d, cmap, colorindicies, 1, 0);
-  XFlush(d);
-  XCloseDisplay(d);
-}
-
-PyObject *wrap_freeColor(PyObject *self, PyObject *args) {
-
-  long colorindex;
-
-  if (!PyArg_ParseTuple(args,"l",&colorindex))
-    return NULL;
   TrapXlibErrors /* macro code to handle xlib exceptions */
-  freeColor(colorindex);
+  initXGraphics();
   RestoreOldXlibErrorHandlers /* macro */
   Py_INCREF(Py_None);
-  return Py_BuildValue("");
+  return Py_None;
 }
 
+void drawCursor(int win, double x, double y) {
+  /* plot cursor at x and y where x,y are normalized (range from 0 to 1) */
+  Window w;
+  Display *d;
+  GC gc;
+  XColor color;
+  Colormap default_cmap;
+  int screen_num;
+  Window wroot;
+  int xr, yr;
+  unsigned int width, height, border, depth;
+
+  w = (Window) win;
+  d = XOpenDisplay(NULL);
+  if (d == NULL) {
+    printf("could not open XWindow display\n");
+    return;
+  }
+  screen_num = DefaultScreen(d);
+  default_cmap = DefaultColormap(d, screen_num);
+  if (!XParseColor(d, default_cmap, "#ffff00000000", &color)) {
+     printf("could not parse color string\n");
+     return;
+  }
+  (void) XAllocColor(d, default_cmap, &color);
+  gc = XCreateGC(d, RootWindow(d, 0), 0, NULL);
+  XSetFunction(d, gc, GXxor);
+  XSetForeground(d, gc, color.pixel);
+  if (!XGetGeometry(d,w,&wroot, &xr, &yr, &width, &height, &border, &depth)) {
+    printf("could not get window geometry\n");
+    return;
+  } 
+  XDrawLine(d, w, gc, (int) (x*width), 0, (int) (x*width),     height);
+  XDrawLine(d, w, gc, 0, (int) ((1-y)*height), width, (int) ((1-y)*height));
+  XFlush(d); 
+  XCloseDisplay(d);
+}
+
+PyObject *wrap_drawCursor(PyObject *self, PyObject *args) {
+
+  double x, y;
+  int win;
+
+  if (!PyArg_ParseTuple(args, "idd", &win, &x, &y))
+    return NULL;
+  TrapXlibErrors /* macro code to handle xlib exceptions */
+  drawCursor(win, x, y);
+  RestoreOldXlibErrorHandlers /* macro */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
 
 static PyMethodDef xutilMethods[] = {
   { "moveCursorTo",wrap_moveCursorTo, 1},
@@ -462,14 +418,13 @@ static PyMethodDef xutilMethods[] = {
   { "getWindowAttributes",wrap_getWindowAttributes, 1},
   { "getPointerPosition",wrap_getPointerPosition, 1},
   { "getParentID",wrap_getParentID, 1},
-  { "getColorCell",wrap_getColorCell, 1},
-  { "getColor",wrap_getColor, 1},
-  { "freeColor",wrap_freeColor, 1},
   { "getDeepestVisual", wrap_getDeepestVisual, 1},
+  { "initXGraphics",wrap_initXGraphics, 1},
+  { "drawCursor",wrap_drawCursor, 1},
   {NULL, NULL}
 };
 
-void initxutil() {
+void initxutil(void) {
   PyObject *m;
   m = Py_InitModule("xutil", xutilMethods);
 }
