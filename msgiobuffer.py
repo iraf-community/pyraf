@@ -168,7 +168,7 @@ class MsgIOBuffer(Frame):
 
         # Combine any label value and the entry value in order
         # to update the current text
-        self.currentText = self.currentText + " " + self.entryValue + '\n'
+        self.currentText = self.currentText + " " + self.entryValue
 
         # Disable the entry
         self.msgIO.canvas.f.iomb.entry.configure(state = DISABLED)

@@ -563,11 +563,20 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         hb = Tkinter.Toplevel(self.top, visual='best')
         hb.title("PyRAF Graphics Help")
         hb.iconname("PyRAF Graphics Help")
+
+        # Set up the Menu Bar with 'Close' button
+        hb.menubar = Tkinter.Frame(hb, relief=Tkinter.RIDGE, borderwidth=0)
+        hb.menubar.button = Tkinter.Button(hb.menubar, text="Close",
+                                     relief=Tkinter.RAISED,
+                                     command=hb.destroy)
+        hb.menubar.button.pack()
+        hb.menubar.pack(side=Tkinter.BOTTOM, padx=5, pady=5)
+
         # Define the Listbox and setup the Scrollbar
         hb.list = Tkinter.Listbox(hb,
                                                         relief = Tkinter.FLAT,
                                                         height = 25,
-                                                        width = 70,
+                                                        width = 80,
                                                         selectmode = Tkinter.SINGLE,
                                                         selectborderwidth = 0)
 
