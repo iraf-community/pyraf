@@ -17,16 +17,15 @@ import minmatch
 import __builtin__
 
 def _irafImport(name, globals={}, locals={}, fromlist=[]):
-	if name in ["iraf", "pyraf.iraf"]:
-		if fromlist:
-			for task in fromlist:
-				pkg = iraf.getPkg(task,found=1)
-				if pkg and not pkg.isLoaded():
-					pkg.run(_doprint=0, _hush=1)
-			# must return a module for 'from' import
-			return _irafModuleProxy.module
-		else:
-			return _irafModuleProxy
+	if fromlist and (name in ["iraf", "pyraf.iraf"]):
+		for task in fromlist:
+			pkg = iraf.getPkg(task,found=1)
+			if pkg is not None and not pkg.isLoaded():
+				pkg.run(_doprint=0, _hush=1)
+		# must return a module for 'from' import
+		return _irafModuleProxy.module
+	elif name == "iraf":
+		return _irafModuleProxy
 	else:
 		return _originalImport(name, globals, locals, fromlist)
 
