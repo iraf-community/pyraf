@@ -255,3 +255,6 @@ def activate(c="\t"):
 
 def deactivate():
 	completer.deactivate()
+
+# turn on completion on import
+activate()
