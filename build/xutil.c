@@ -363,35 +363,50 @@ void drawCursor(int win, double x, double y) {
   Window w;
   Display *d;
   GC gc;
-  XColor color;
-  Colormap default_cmap;
+  XWindowAttributes wa;
+  XColor colorfg, colorbg, color;
+  Colormap cmap;
   int screen_num;
   Window wroot;
+  Status status;
   int xr, yr;
   unsigned int width, height, border, depth;
 
-  w = (Window) win;
+  w = (Drawable) win;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return;
   }
   screen_num = DefaultScreen(d);
-  default_cmap = DefaultColormap(d, screen_num);
-  if (!XParseColor(d, default_cmap, "#ffff00000000", &color)) {
+  /*default_cmap = DefaultColormap(d, screen_num);*/
+  if (!XGetWindowAttributes(d, w, &wa)) {
+    printf("Problem getting window attributes\n");
+    return;
+  }
+  cmap = wa.colormap;
+  if (!XParseColor(d, cmap, "red", &colorfg)) {
      printf("could not parse color string\n");
      return;
   }
-  (void) XAllocColor(d, default_cmap, &color);
-  gc = XCreateGC(d, RootWindow(d, 0), 0, NULL);
-  XSetFunction(d, gc, GXxor);
+  if (!XParseColor(d, cmap, "black", &colorbg)) {
+     printf("could not parse color string\n");
+     return;
+  }
+  if (!(XAllocColor(d, cmap, &colorfg) && XAllocColor(d, cmap, &colorbg))) {
+     printf("Problem allocating colors for cursor color determination\n");
+     return;
+  }
+  gc = XCreateGC(d, w, 0, NULL);
+  color.pixel = colorfg.pixel ^ colorbg.pixel;
+  XSetFunction(d, gc, GXxor);  
   XSetForeground(d, gc, color.pixel);
   if (!XGetGeometry(d,w,&wroot, &xr, &yr, &width, &height, &border, &depth)) {
     printf("could not get window geometry\n");
     return;
-  } 
-  XDrawLine(d, w, gc, (int) (x*width), 0, (int) (x*width),     height);
-  XDrawLine(d, w, gc, 0, (int) ((1-y)*height), width, (int) ((1-y)*height));
+  }
+  XDrawLine(d, w, gc, (int) (x*width), 0, (int) (x*width),  height);
+  XDrawLine(d, w, gc, 0, (int) ((1.-y)*height),  width, (int) ((1.-y)*height));
   XFlush(d); 
   XCloseDisplay(d);
 }
