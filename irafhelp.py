@@ -2,8 +2,9 @@
 IRAF packages, etc.
 
 - help() with no arguments will list all the defined variables.
-- help("taskname") or help(IrafTaskObject) will direct Netscape to display
-  the HTML version of IRAF help for the task
+- help("taskname") or help(IrafTaskObject) display the IRAF help for the task
+- help("taskname",html=1) or help(IrafTaskObject,html=1) will direct Netscape
+  to display the HTML version of IRAF help for the task
 - help(object) where object is a module, instance, ? will display
   information on the attributes and methods of the object (or the
   variables, functions, and classes in the module)
@@ -19,6 +20,7 @@ modules=1	Print info on modules
 tasks=0		Print info on IrafTask objects
 packages=0	Print info on IrafPkg objects
 hidden=0	Print info on hidden variables/attributes (starting with '_')
+html=0		Use HTML help instead of standard IRAF help for tasks
 
 regexp=None	Specify a regular expression that matches the names of
 			variables of interest.  E.g. help(sys, regexp='std') will
@@ -32,7 +34,7 @@ The **kw argument allows minimum matching for the keyword arguments
 
 $Id$
 
-R. White, 1999 May 28
+R. White, 1999 September 23
 """
 
 import __main__, re, os, types
@@ -77,13 +79,13 @@ _OTHER = 2
 # set up minimum-match dictionary with function keywords
 
 kwnames = ( 'variables', 'functions', 'modules',
-		'tasks', 'packages', 'hidden', 'padchars', 'regexp' )
+		'tasks', 'packages', 'hidden', 'padchars', 'regexp', 'html' )
 _kwdict = minmatch.MinMatchDict()
 for key in kwnames: _kwdict.add(key,key)
 del kwnames, key
 
 def help(object=__main__, variables=1, functions=1, modules=1,
-		tasks=0, packages=0, hidden=0, padchars=16, regexp=None,
+		tasks=0, packages=0, hidden=0, padchars=16, regexp=None, html=0,
 		**kw):
 
 	"""List the type and value of all the variables in the
@@ -99,16 +101,24 @@ def help(object=__main__, variables=1, functions=1, modules=1,
 		except KeyError, e:
 			raise e.__class__("Error in keyword "+key+"\n"+str(e))
 
-	# for IrafTask object, display HTML help and also print info on the object
-	# for string parameter, if it looks like a task name try getting HTML help
+	# for IrafTask object, display help and also print info on the object
+	# for string parameter, if it looks like a task name try getting help
 	# on it too (XXX this is a bit risky, but I suppose people will not often
 	# be asking for help with simple strings as an argument...)
 
 	if isinstance(object,iraftask.IrafTask):
-		print object
-		_htmlHelp(object)
+		if html:
+			print object
+			_htmlHelp(object)
+		else:
+			# if help is successful, return
+			# otherwise print help on the object
+			if _irafHelp(object): return
 	if type(object) == types.StringType and re.match(r'_?[a-z]+$',object):
-		_htmlHelp(object)
+		if html:
+			_htmlHelp(object)
+		else:
+			if _irafHelp(object): return
 
 	try:
 		vlist = vars(object)
@@ -242,6 +252,19 @@ def _valueString(value,verbose=0):
 		# default -- just return the type
 		pass
 	return vstr
+
+
+def _irafHelp(taskname):
+	"""Display IRAF help for given task.
+	Task can be either a name or an IrafTask object.
+	Returns 1 on success or 0 on failure."""
+
+	if isinstance(taskname,iraftask.IrafTask): taskname = taskname.getName()
+	try:
+		iraf.system.help(taskname,page=1)
+		return 1
+	except iraf.IrafError:
+		return 0
 
 _HelpURL = "http://ra.stsci.edu/cgi-bin/gethelp.cgi?task="
 _Netscape = "netscape"
