@@ -729,7 +729,7 @@ else
 fi
 
 
-if test "$gcc_ok"=no; then
+if test "$gcc_ok" = "no"; then
     # Extract the first word of "gcc", so it can be a program name with args.
 set dummy gcc; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
@@ -902,7 +902,7 @@ fi
 
 fi
 
-if test $CC=gcc; then
+if test "$CC" = "gcc"; then
     SHLIB_CFLAGS=-fPIC
     
 fi
@@ -1493,14 +1493,12 @@ case $system in
         IRAFARCH="ssun"
 	toglplatform="sunos"
 	CFLAGS="-c"
-#        SHLIB_CFLAGS="-KPIC"
 	EXTRA_LFLAGS="-lnsl -lsocket"
 	LDFLAG='-G'
 	;;
     Linux*)
         IRAFARCH="redhat"
 	toglplatform="linux"
-#        SHLIB_CFLAGS="-fPIC"
 	CFLAGS=" -c" 
 	EXTRA_LFLAGS="-lc"
         LDFLAG='-shared'
@@ -1509,7 +1507,6 @@ case $system in
         IRAFARCH="alpha"
 	toglplatform="osf1"
 	CFLAGS=" -c"
-#        SHLIB_CFLAGS=""
         LDFLAG='-shared -expect_unresolved "*"'
 	EXTRA_LFLAGS=""
         ;;
@@ -1682,7 +1679,7 @@ s%@infodir@%$infodir%g
 s%@mandir@%$mandir%g
 s%@CC@%$CC%g
 s%@PYTHON_LIB_DIR@%$PYTHON_LIB_DIR%g
-s%@SHLIB_CFLGS@%$SHLIB_CFLGS%g
+s%@SHLIB_CFLAGS@%$SHLIB_CFLAGS%g
 s%@pyraf_dir@%$pyraf_dir%g
 s%@PythonIncludePath@%$PythonIncludePath%g
 s%@PythonBin@%$PythonBin%g
@@ -1695,7 +1692,6 @@ s%@x_libraries@%$x_libraries%g
 s%@ToglPath@%$ToglPath%g
 s%@EXTRA_LFLAGS@%$EXTRA_LFLAGS%g
 s%@LDFLAG@%$LDFLAG%g
-s%@SHLIB_CFLAGS@%$SHLIB_CFLAGS%g
 
 CEOF
 EOF

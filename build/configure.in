@@ -25,13 +25,13 @@ AC_SUBST(PYTHON_LIB_DIR)
 AC_ARG_WITH(gcc,   [--with-gcc         allow for use of gcc if available],
        CC=gcc, gcc_ok=no)
 
-if test "$gcc_ok"=no; then
+if test "$gcc_ok" = "no"; then
     AC_PROG_CC
 fi
 
-if test $CC=gcc; then
+if test "$CC" = "gcc"; then
     SHLIB_CFLAGS=-fPIC
-    AC_SUBST(SHLIB_CFLGS)
+    AC_SUBST(SHLIB_CFLAGS)
 fi
 
 #------------------------------------------------------------------
