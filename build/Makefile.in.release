@@ -78,7 +78,7 @@ libcdl.a:
 	cd CDL; ./configure; make World; cp libcdl.a ../
 
 install:
-	cp *.so ../; chmod +x ../pyraf
+	cp *.so ../; chmod +x ../pyraf ../../Bin/pyraf
 
 
 
