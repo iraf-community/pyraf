@@ -37,6 +37,8 @@ except ImportError:
         magicConstant = 0x5413
     elif platform == 'osf1V4':
         magicConstant = 0x40087468 # temp fix for Tru64 ejmc 3/9/00
+    elif platform == 'osf1V5':
+        magicConstant = 0x40087468
     else:
         raise ImportError(
                 "wutil.py: Needs definition of TIOCGWINSZ constant for platform %s"
