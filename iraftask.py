@@ -13,7 +13,6 @@ import irafglobals, iraf, irafpar, irafexecute, epar, cl2py, irafutils
 # function gets called for every task execution
 executionMonitor = None
 
-
 # -----------------------------------------------------
 # IRAF task class
 # -----------------------------------------------------
@@ -1589,13 +1588,17 @@ class IrafForeignTask(IrafTask):
         # Insure that all arguments passed to ForeignTasks are
         # converted to strings, including objects which are not
         # naturally converted to strings.
-
-        fixwildcards = lambda s: s.replace('\\*','*')
-        self._args = map(fixwildcards,map(re.escape,map(str,args)))
+        #self._args = map(re.escape,map(str,args))
+        self._args = map(self._str_escape, args)
 
     #=========================================================
     # private methods
     #=========================================================
+    def _str_escape(self, arg):
+        if not isinstance(arg, types.StringType):
+            _arg = re.escape(str(arg))
+        else: _arg = arg
+        return _arg
 
     def _applyRedir(self, redirKW):
         """Apply I/O redirection"""
