@@ -28,7 +28,7 @@ by a system-wide configuration state. See gkiopengl.py
 import fontdata
 import Numeric
 import math
-import gki
+from textattrib import *
 
 def softText(win,x,y,textstr):
 
@@ -49,25 +49,25 @@ def softText(win,x,y,textstr):
     # First include added space if any
     hspace = fsize * hsize * (1. + ta.charSpace)
     vspace = fsize * vsize * (1. + ta.charSpace)
-    if ta.textPath in (gki.CHARPATH_LEFT, gki.CHARPATH_RIGHT):
+    if ta.textPath in (CHARPATH_LEFT, CHARPATH_RIGHT):
         dx = hspace
-        if ta.textPath == gki.CHARPATH_LEFT: dx = -dx
+        if ta.textPath == CHARPATH_LEFT: dx = -dx
         dy = 0.
     else:
         dx = 0.
         dy = -vspace
-        if ta.textPath == gki.CHARPATH_UP: dy = -dy
+        if ta.textPath == CHARPATH_UP: dy = -dy
     # Figure out 'path' size of the text string for use in justification
     xpath,ypath = (dx*(len(textstr)-1),dy*(len(textstr)-1))
     charUp = math.fmod(ta.charUp, 360.)
     if charUp < 0: charUp = charUp + 360.
-    if ta.textPath == gki.CHARPATH_RIGHT:
+    if ta.textPath == CHARPATH_RIGHT:
         textdir = math.fmod(charUp+270,360.)
-    elif ta.textPath == gki.CHARPATH_LEFT:
+    elif ta.textPath == CHARPATH_LEFT:
         textdir = math.fmod(charUp+90,360.)
-    elif ta.textPath ==     gki.CHARPATH_UP:
+    elif ta.textPath ==     CHARPATH_UP:
         textdir = charUp
-    elif ta.textPath ==     gki.CHARPATH_DOWN:
+    elif ta.textPath ==     CHARPATH_DOWN:
         textdir = math.fmod(charUp+180,360.)
     # IRAF definition of justification is a bit weird, justification is
     # for the text string relative to the window. So a rotated string will
@@ -86,20 +86,20 @@ def softText(win,x,y,textstr):
                                             abs(-sinv*hsize-cosv*vsize))
     xoffset, yoffset = (0., 0.)
     xcharoff, ycharoff = (0., 0.)
-    if ta.textHorizontalJust == gki.JUSTIFIED_CENTER:
+    if ta.textHorizontalJust == JUSTIFIED_CENTER:
         xoffset = -xpathwin/2.
-    elif ta.textHorizontalJust == gki.JUSTIFIED_RIGHT:
+    elif ta.textHorizontalJust == JUSTIFIED_RIGHT:
         if not left: xoffset = -xpathwin
         xcharoff = -xcharsize/2.
-    elif ta.textHorizontalJust in (gki.JUSTIFIED_LEFT,gki.JUSTIFIED_NORMAL):
+    elif ta.textHorizontalJust in (JUSTIFIED_LEFT,JUSTIFIED_NORMAL):
         if left: xoffset = xpathwin
         xcharoff = xcharsize/2.
-    if ta.textVerticalJust == gki.JUSTIFIED_CENTER:
+    if ta.textVerticalJust == JUSTIFIED_CENTER:
         yoffset = -ypathwin/2.
-    elif ta.textVerticalJust == gki.JUSTIFIED_TOP:
+    elif ta.textVerticalJust == JUSTIFIED_TOP:
         if up: yoffset = -ypathwin
         ycharoff = -ycharsize/2.
-    elif ta.textVerticalJust in (gki.JUSTIFIED_BOTTOM, gki.JUSTIFIED_NORMAL):
+    elif ta.textVerticalJust in (JUSTIFIED_BOTTOM, JUSTIFIED_NORMAL):
         if not up: yoffset = ypathwin
         ycharoff = ycharsize/2.
     xNetOffset = xoffset + xcharoff
@@ -127,10 +127,10 @@ def softText(win,x,y,textstr):
             vertex = Numeric.zeros((len(charstrokes[0][i]),2),Numeric.Float64)
             xf = size * charstrokes[0][i]/27. -fsize*hsize/2.
             yf = size * charstrokes[1][i]*fontAspect/27. - fsize*vsize/2.
-            vertex[:,0]=      cosrot*xf - sinrot*yf + \
-                                             xNetOffset + xwin*x  + nchar*dx
-            vertex[:,1]=ywin-(sinrot*xf + cosrot*yf + \
-                                             yNetOffset + ywin*y) + nchar*dy
+            vertex[:,0]=      cosrot*(xf + nchar*dx) \
+                            - sinrot*(yf + nchar*dy) + xNetOffset + xwin*x
+            vertex[:,1]=ywin-(sinrot*(xf + nchar*dx) \
+                            + cosrot*(yf + nchar*dy) + yNetOffset + ywin*y)
             apply(gw.create_line, tuple(vertex.flat.astype(Numeric.Int32)),
                       options)
         nchar = nchar + 1
