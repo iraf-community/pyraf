@@ -128,11 +128,11 @@ def copy_clcache(data_dir, args):
         if os.path.exists(clcache_dir):
             shutil.rmtree(clcache_dir)
             os.mkdir(clcache_dir)
-            for file in os.listdir('data/clcache'):
-                if fnmatch.fnmatch(file, 'CVS'):
-                    pass
-                else:
-                    shutil.copy2(os.path.join('data/clcache', file), clcache_dir)
+        for file in os.listdir('data/clcache'):
+            if fnmatch.fnmatch(file, 'CVS'):
+                pass
+            else:
+                shutil.copy2(os.path.join('data/clcache', file), clcache_dir)
 
 
 def main():
