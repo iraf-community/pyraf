@@ -57,7 +57,7 @@ toglcolorsmodule.so: toglcolors.c
 	$(CC) $(CFLAGS) $(SHLIB_CFLAGS) -I$(PythonIncludePath) -I$(x_includes) \
 		-I$(TclIncludePath) -I$(OpenGLIncludePath) toglcolors.c
 	$(LD) $(LDFLAG) toglcolors.o -o toglcolorsmodule.so \
-		$(ToglLib)/Togl.so \
+		$(ToglLib)/togl.so \
 		$(EXTRA_LFLAGS)
 #
 # Dependent on Python and Numeric and a static build of CDL
