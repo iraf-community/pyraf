@@ -38,6 +38,9 @@ class Gcursor:
 		self.win = gwm.getActiveWindow()
 		gwm.raiseActiveWindow()
 		self.top.update()
+		if not self.win.lastX:
+			self.win.lastX = self.win.winfo_width()/2
+			self.win.lastY = self.win.winfo_height()/2
 		if not wutil.isFocusElsewhere():
 			if wutil.isViewable(self.win.winfo_id()):
 				curWinID = wutil.getWindowID()
@@ -48,9 +51,6 @@ class Gcursor:
 					   wutil.getTopID(curWinID))):
 					# if focus not in graphics window already
 					self.top.focus_force()
-				if not self.win.lastX:
-					self.win.lastX = self.win.winfo_width()/2
-					self.win.lastY = self.win.winfo_height()/2
 				wutil.moveCursorTo(self.win.winfo_id(),
 							   self.win.lastX, self.win.lastY)
 		self.win.focus_set()
@@ -106,6 +106,10 @@ class Gcursor:
 		if key == ':':
 			# pop up text entry dialog
 			colonString = tkSimpleDialog.askstring("Gcur colon command","")
+			# Explicitly return focus to graphics window since some
+			# window managers apparently don't do this automatically
+			# (e.g. openwindows)
+			self.top.focus_force()
 			if colonString[0] == '.':
 				print "Not quite ready to handle CL level gcur :. commands."
 				print "Please check back later."
@@ -114,6 +118,7 @@ class Gcursor:
 		elif key == '=':
 			# snap command - print the plot
 			printPlot()
+			print "snap completed"
 		elif 'A' <= key <= 'Z':
 			print "Not quite ready to handle CL level gcur commands."
 			print "Please check back later."
