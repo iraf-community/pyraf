@@ -29,7 +29,7 @@ class Gcursor:
 
 	def __call__(self): return self.startCursorMode()
 
-	def startCursorMode(self ):
+	def startCursorMode(self):
 		
 		# Get reference to active graphics window and bind event handling
 		#  from it.

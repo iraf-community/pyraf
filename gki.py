@@ -678,7 +678,7 @@ class GkiController(GkiKernel):
 			self.openKernel(device)
 			self.lastDevName = device
 			# call the active kernel's openws function
-			#self.stdgraph.controlFunctionTable[GKI_OPENWS](dummy, arg) 
+			self.stdgraph.controlFunctionTable[GKI_OPENWS](dummy, arg) 
 
 	def getDevice(self, device=None):
 		"""Starting with stdgraph, drill until a device is found in

@@ -270,7 +270,6 @@ class IrafProcess:
 		outenvstr.append("chdir %s\n" % os.getcwd())
 		if outenvstr: self.writeString(string.join(outenvstr,""))
 		self.envVarList = []
-		self.running = 0
 
 		# end set up mode
 		self.writeString('_go_\n')
@@ -279,12 +278,12 @@ class IrafProcess:
 
 		"""Append environment variable set command to list"""
 
-		if self.running:
-			# send change immediately for running task
-			self.writeString(msg)
-		else:
-			# cache change for idle task
-			self.envVarList.append(msg)
+		# Changes are saved and sent to task before starting
+		# it next time.  Note that environment variable changes
+		# are not immediately sent to a running task (because it is
+		# not expecting them.)
+
+		self.envVarList.append(msg)
 
 	def run(self, task, stdin=None, stdout=None, stderr=None):
 
@@ -340,11 +339,7 @@ class IrafProcess:
 		if taskname[:1]=='_': taskname = taskname[1:]
 		self.writeString(taskname+redir_info+'\n')
 		# begin slave mode
-		try:
-			self.running = 1
-			self.slave()
-		finally:
-			self.running = 0
+		self.slave()
 
 	def terminate(self):
 
