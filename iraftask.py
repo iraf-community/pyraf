@@ -173,13 +173,16 @@ class IrafTask:
 			#XXX (StdoutIPG etc.) too
 			additionalKW = {}
 			closeFHList = []
+			# output redirection keywords
+			# eventually this will get bigger
+			outputRedir = {'Stdout': 1 , 'Stderr': 1 }
 			for key in ('Stdout', 'Stdin', 'Stderr'):
 				if kw.has_key(key):
 					# if it is a string, open as a file
 					# otherwise assume it is a filehandle
 					value = kw[key]
 					if type(value) == types.StringType:
-						if key in ['Stdout','Stderr']:
+						if outputRedir.has_key(key):
 							# output file
 							fh = open(value,'w')
 							# close this when we're done
@@ -189,6 +192,17 @@ class IrafTask:
 							fh = open(value,'w')
 							closeFHList.append(fh)
 					else:
+						if outputRedir.has_key(key):
+							if not hasattr(value, 'write'):
+								raise iraf.IrafError("%s redirection must "
+									"be to a file handle or string\n"
+									"Value is `%s'" %
+									(key, value))
+						elif not hasattr(value, 'read'):
+							raise iraf.IrafError("%s redirection must "
+								"be from a file handle or string\n"
+								"Value is `%s'" %
+								(key, value))
 						fh = value
 					additionalKW[string.lower(key)] = fh
 					del kw[key]
