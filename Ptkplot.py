@@ -176,9 +176,9 @@ class PyrafCanvas(Canvas):
             y = 1.-(event.y+0.5)/self.winfo_height()
         self._SWCursor.moveTo(x,y,SWmove=0)
 
-    def moveCursorTo(self, x, y, width, height, SWmove=0):
-        self._SWCursor.moveTo(float(x)/width,
-                              float(y)/height,
+    def moveCursorTo(self, x, y, SWmove=0):
+        self._SWCursor.moveTo(float(x)/self.width,
+                              float(y)/self.height,
                               SWmove)
 
     def activate(self):
