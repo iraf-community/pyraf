@@ -1474,11 +1474,16 @@ def eparam(*args, **kw):
 	resetList = redirApply(redirKW)
 	try:
 		for taskname in args:
-			try:
-				getTask(taskname).epar()
-			except KeyError, e:
-				_writeError("Warning: Could not find task %s for epar\n" %
-					taskname)
+			if isinstance(taskname, _iraftask.IrafTask):
+				taskname.epar()
+			elif isinstance(taskname, _irafpar.IrafParList):
+				taskname.eParam()
+			else:
+				try:
+					getTask(taskname).epar()
+				except KeyError, e:
+					_writeError("Warning: Could not find task %s for epar\n" %
+						taskname)
 	finally:
 		# note return value not used here
 		rv = redirReset(resetList, closeFHList)

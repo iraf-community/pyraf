@@ -1953,6 +1953,10 @@ class IrafParList:
 		"""Clear all status flags for all parameters"""
 		for p in self.__pars: p.setFlags(0)
 
+	def setAllFlags(self):
+		"""Set all status flags to indicate parameters were set on cmdline"""
+		for p in self.__pars: p.setCmdline()
+
 	# parameters are accessible as attributes
 
 	def __getattr__(self,name):
@@ -2090,6 +2094,11 @@ class IrafParList:
 		# now set all keyword parameters
 		# clear changed flags and set cmdline flags for arguments
 		self.clearFlags()
+		# Count number of positional parameters set on cmdline
+		# Note that this counts positional parameters set through
+		# keywords in $nargs -- that is different from IRAF, which
+		# counts only non-keyword parameters.  That is a bug in IRAF.
+		nargs = 0
 		for key, value in fullkw.items():
 			param, tail = key
 			p = self.getParObject(param)
@@ -2098,10 +2107,11 @@ class IrafParList:
 				p = p.get().getParObject(tail)
 			p.set(value)
 			p.setFlags(_cmdlineFlag)
+			if p.mode != "h": nargs = nargs+1
 
 		# Number of arguments on command line, $nargs, is used by some IRAF
 		# tasks (e.g. imheader).
-		self.setParam('$nargs',len(args))
+		self.setParam('$nargs',nargs)
 
 	def eParam(self):
 		epar.epar(self)

@@ -311,16 +311,37 @@ class IrafTask:
 		parameters.  It is up to subsequent code (in the run method)
 		to propagate these changes to the persistent parameter list.
 
-		Special arguments: _setMode=1 to set modes of automatic parameters
+		Special arguments:
+		_setMode=1 to set modes of automatic parameters
+		ParList can be used to pass in an entire parameter list object
 		"""
 		self.initTask(force=1)
+
 		if not self._currentParList:
 			return None
-		if self._runningParList is None:
-			newParList = copy.deepcopy(self._currentParList)
+
+		# Special ParList parameter is used to pass in an entire
+		# parameter list
+		if kw.has_key('ParList'):
+			parList = kw['ParList']
+			del kw['ParList']
+			if isinstance(parList, types.StringType):
+				# must be a .par filename
+				filename = parList
+				parList = irafpar.IrafParList(self.getName(), filename)
+			elif parList and not isinstance(parList, irafpar.IrafParList):
+				raise TypeError("ParList parameter must be a filename or "
+					"an IrafParList object")
 		else:
+			parList = None
+
+		if self._runningParList is not None:
 			# only one runningParList at a time -- all tasks use it
 			newParList = self._runningParList
+			parList = None
+		else:
+			newParList = copy.deepcopy(parList or self._currentParList)
+
 		if kw.has_key('_setMode'):
 			_setMode = kw['_setMode']
 			del kw['_setMode']
@@ -337,6 +358,12 @@ class IrafTask:
 			mode = self.getMode(newParList)
 			for p in newParList.getParList():
 				p.mode = string.replace(p.mode,"a",mode)
+		if parList:
+			#XXX Set all command-line flags for parameters when a
+			#XXX parlist is supplied so that it does not prompt for
+			#XXX missing parameters.  Is this the preferred behavior?
+			newParList.setAllFlags()
+			
 		self._runningParList = newParList
 
 	#---------------------------------------------------------
