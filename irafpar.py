@@ -1170,8 +1170,9 @@ class IrafParL(_StringMixin, IrafPar):
 				if value[-1:] == "\n": value = value[:-1]
 			except IOError, e:
 				if not self.errMsg:
-					warning("Unable to read from file %s\n%s" %
-						(self.value,str(e)), level=-1)
+					warning("Unable to read values for list parameter `%s' "
+						"from file `%s'\n%s" %
+						(self.name, self.value,str(e)), level=-1)
 					# only print message one time
 					self.errMsg = 1
 				# fall back on default behavior if file is not readable
