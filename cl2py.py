@@ -11,7 +11,7 @@ from cltoken import Token
 import clscan, clparse
 
 import pyraf, irafpar, minmatch, iraftask, irafutils
-from iraffunctions import Verbose
+import iraffunctions
 
 # The parser object can be constructed once and used many times.
 # The other classes have instance variables (e.g. lineno in CLScanner),
@@ -62,7 +62,8 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
 			efilename = os.path.expanduser(filename)
 			index, attributes, pycode = codeCache.get(efilename,mode=mode)
 			if pycode is not None:
-				if Verbose>1: print index,"found in CL script cache"
+				if iraffunctions.Verbose>1:
+					print index,"found in CL script cache"
 				return pycode
 			fh = open(efilename)
 			clInput = fh.read()
@@ -71,7 +72,8 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
 			clInput = filename.read()
 			index, attributes, pycode = codeCache.get(filename,mode=mode)
 			if pycode is not None:
-				if Verbose>1: print index,"found in CL script cache"
+				if iraffunctions.Verbose>1:
+					print index,"found in CL script cache"
 				return pycode
 			if hasattr(filename,'name'):
 				efilename = filename.name
@@ -177,7 +179,7 @@ def _checkVars(vars, parlist, parfile):
 		#XXX Maybe could improve this by allowing certain types of
 		#XXX mismatches (e.g. additional parameters) but not others
 		#XXX (name or type disagreements for the same parameters.)
-		if Verbose>0:
+		if iraffunctions.Verbose>0:
 			sys.stdout.flush()
 			sys.stderr.write("Parameters from CL code inconsistent "
 				"with .par file for task %s\n" % (vars.proc_name,))
@@ -1704,7 +1706,7 @@ class _CodeCache:
 
 		"""Print warning message to stderr, using verbose flag"""
 
-		if Verbose >= level:
+		if iraffunctions.Verbose >= level:
 			sys.stdout.flush()
 			sys.stderr.write(msg + "\n")
 			sys.stderr.flush()
@@ -1860,7 +1862,7 @@ def dummy_pickler(dummy):
 copy_reg.pickle(types.MethodType, dummy_pickler, dummy_unpickler)
 
 codeCache = _CodeCache([
-	os.path.join(pyraf.userDir,"pyraf.Database"),
+	os.path.join(iraffunctions._userIrafHome,'pyraf','pyraf.Database'),
 	os.path.join(pyraf.homeDir,"pyraf.Database"),
 	])
 

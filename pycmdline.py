@@ -295,13 +295,9 @@ Commands can be abbreviated.
 		elif self.clemulate == 0:
 			# if CL emulation is turned off then just return
 			return line
-		#elif (len(cmd)<3 and not _shortCmdDict.has_key(cmd)) or \
-		#		keyword.iskeyword(cmd):
-		#	# don't mess with Python keywords
-		#	# require at least 3 characters in keywords to reduce chance
-		#	# of spurious matches (except for a few special cases:
-		#	# cd, cl, tv, etc.)
-		#	return line
+		elif keyword.iskeyword(cmd):
+			# don't mess with Python keywords
+			return line
 		elif line[i:i+1] != "" and line[i] in '=,[':
 			# don't even try if it doesn't look like a procedure call
 			return line

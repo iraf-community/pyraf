@@ -126,6 +126,26 @@ def setVerbose(value=1):
 	Verbose.set(value)
 
 
+# -----------------------------------------------------
+# set location of user's IRAF home directory
+# -----------------------------------------------------
+
+# If login.cl exists here, use this directory as home.
+# Otherwise look for ~/iraf.
+
+import os
+_os = os
+del os
+
+if _os.path.exists('./login.cl'):
+	_userIrafHome = _os.path.join(_os.getcwd(),'')
+else:
+	_userIrafHome = _os.path.join(_os.environ['HOME'],'iraf','')
+	if not _os.path.exists(_userIrafHome):
+		# no ~/iraf, just use '.' as home
+		_userIrafHome = _os.path.join(_os.getcwd(),'')
+
+
 # now it is safe to import other iraf modules
 
 import sys, os, string, re, types, time
@@ -202,6 +222,7 @@ loadedPath = []
 
 cl = None
 
+
 # -----------------------------------------------------
 # help: implemented in irafhelp.py
 # -----------------------------------------------------
@@ -226,10 +247,8 @@ def Init(doprint=1,hush=0):
 		set(arch = '.'+_os.environ['IRAFARCH'])
 		if _os.environ.has_key('tmp'):
 			set(tmp = _os.environ['tmp'])
-		# XXX Note that this setting of home may not be correct -- should
-		# XXX do something more sophisticated like making current directory
-		# XXX home if it contains a login.cl and uparm?
-		set(home = _os.path.join(_os.environ['HOME'],'iraf',''))
+		global _userIrafHome
+		set(home = _userIrafHome)
 
 		# define initial symbols
 		clProcedure(Stdin='hlib$zzsetenv.def')
@@ -354,6 +373,8 @@ def getPkg(pkgname,found=0):
 		raise TypeError("Bad package name `%s'" % (`pkgname`))
 	try:
 		if isinstance(pkgname,_iraftask.IrafPkg): return pkgname
+		# undo any modifications to the pkgname
+		pkgname = _irafutils.unreplaceReserved(pkgname)
 		return _pkgs[pkgname]
 	except _minmatch.AmbiguousKeyError, e:
 		# re-raise the error with a bit more info
@@ -403,6 +424,9 @@ def getTask(taskname, found=0):
 	"""
 
 	if isinstance(taskname,_iraftask.IrafTask): return taskname
+
+	# undo any modifications to the taskname
+	taskname = _irafutils.unreplaceReserved(taskname)
 
 	# Try assuming fully qualified name first
 

@@ -109,17 +109,6 @@ if not os.path.isabs(homeDir):
 if homeDir not in sys.path: sys.path.insert(0, homeDir)
 if "." not in sys.path: sys.path.insert(0, ".")
 
-# create pyraf directory in user's IRAF home directory
-
-userDir = os.path.expanduser('~/iraf/pyraf/')
-if not os.path.exists(userDir):
-	try:
-		os.mkdir(userDir)
-		print 'Created directory',userDir
-	except OSError:
-		print 'Could not create directory',userDir
-
-
 # The following is to grab the terminal window's id at the earliest
 # possible moment
 import wutil
