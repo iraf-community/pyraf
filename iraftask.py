@@ -231,7 +231,7 @@ class IrafTask:
 		if mode[:1] != "a": return mode
 
 		# cl is the court of last resort, don't look at its packages
-		if self == iraf.cl: return "h"
+		if self is iraf.cl: return "h"
 
 		# package name is undefined only at very start of initialization
 		# just use the standard default
@@ -240,7 +240,7 @@ class IrafTask:
 		# up we go -- look in parent package
 		pkg = iraf.getPkg(self._pkgname)
 		# clpackage is at top and is its own parent
-		if pkg != self:
+		if pkg is not self:
 			return pkg.getMode()
 		# didn't find it in the package hierarchy, so use cl mode
 		mode = iraf.cl.mode
@@ -367,7 +367,8 @@ class IrafTask:
 		# get mode (used for prompting behavior)
 		#XXX Is this necessary now?
 
-		if mode is None: mode = self.getMode()
+		if mode is None:
+			mode = self.getMode()
 
 		if task and (not package):
 			# maybe this task is the name of one of the dictionaries?
@@ -513,7 +514,8 @@ class IrafTask:
 	# parameters are accessible as attributes
 
 	def __getattr__(self,name):
-		if name[:1] == '_': raise AttributeError(name)
+		if name[:1] == '_':
+			raise AttributeError(name)
 		self.initTask()
 		try:
 			return self.getParam(name,native=1)
@@ -899,7 +901,8 @@ class ParDictListSearch:
 		self.__dict__['_taskObj'] = taskObj
 
 	def __getattr__(self, paramname):
-		if paramname[:1] == '_': raise AttributeError(paramname)
+		if paramname[:1] == '_':
+			raise AttributeError(paramname)
 		try:
 			return self._taskObj.getParam(paramname,native=1)
 		except SyntaxError, e:
@@ -1132,6 +1135,7 @@ class IrafPkg(IrafCLTask):
 		IrafCLTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
 		self._loaded = 0
 		self._tasks = minmatch.MinMatchDict()
+		self._subtasks = minmatch.MinMatchDict()
 		self._pkgs = minmatch.MinMatchDict()
 
 	#=========================================================
@@ -1171,10 +1175,12 @@ class IrafPkg(IrafCLTask):
 				matches.extend(self._tasks.getallkeys(name, []))
 			# tasks in subpackages
 			if not triedpkgs: triedpkgs = {}
-			triedpkgs[self] = 1
+			triedpkgs[id(self)] = 1
+			getPkg = iraf.getPkg
+			getTried = triedpkgs.get
 			for fullname in self._pkgs.values():
-				p = iraf.getPkg(fullname)
-				if p._loaded and (not triedpkgs.get(p)):
+				p = getPkg(fullname)
+				if p._loaded and (not getTried(id(p))):
 					try:
 						matches.extend(p.getAllMatches(name,
 									triedpkgs=triedpkgs))
@@ -1182,15 +1188,10 @@ class IrafPkg(IrafCLTask):
 						pass
 		return matches
 
-	def __getattr__(self, name, triedpkgs=None):
-		"""Return the task 'name' from this package (if it exists).
-
-		Also searches subpackages for the task.  triedpkgs is
-		a dictionary with all the packages that have already been
-		tried.  It is used to avoid infinite recursion when
-		packages contain themselves.
-		"""
-		if name[:1] == '_': raise AttributeError(name)
+	def __getattr__(self, name):
+		"""Return the task or param 'name' from this package (if it exists)."""
+		if name[:1] == '_':
+			raise AttributeError(name)
 		self.initTask()
 		# return package parameter if it exists
 		if self._currentParList.hasPar(name):
@@ -1199,19 +1200,47 @@ class IrafPkg(IrafCLTask):
 		if not self._loaded:
 			raise AttributeError("Package " + self.getName() +
 				" has not been loaded; no tasks are defined")
-		fullname = self._tasks.get(name)
-		if fullname: return iraf.getTask(fullname)
+		fullname = self._getTaskFullname(name)
+		if fullname:
+			return iraf.getTask(fullname)
+		else:
+			raise AttributeError("Parameter %s not found" % name)
+
+	def _getTaskFullname(self, name, triedpkgs=None):
+		"""Return the full name (pkg.task) of task 'name' from this package
+		
+		Returns None if task is not found.
+
+		Also searches subpackages for the task.  triedpkgs is
+		a dictionary with all the packages that have already been
+		tried.  It is used to avoid infinite recursion when
+		packages contain themselves.
+
+		Tasks that are found are added to _tasks dictionary to speed
+		repeated searches.
+		"""
+		if not self._loaded:
+			return None
+		task = self._tasks.get(name)
+		if task:
+			return task
 		# try subpackages
+		task = self._subtasks.get(name)
+		if task:
+			return task
+		# search subpackages
 		if not triedpkgs: triedpkgs = {}
-		triedpkgs[self] = 1
+		triedpkgs[id(self)] = 1
+		getPkg = iraf.getPkg
+		getTried = triedpkgs.get
 		for fullname in self._pkgs.values():
-			p = iraf.getPkg(fullname)
-			if p._loaded and (not triedpkgs.get(p)):
-				try:
-					return p.__getattr__(name,triedpkgs=triedpkgs)
-				except AttributeError, e:
-					pass
-		raise AttributeError("Parameter "+name+" not found")
+			p = getPkg(fullname)
+			if p._loaded and (not getTried(id(p))):
+				task = p._getTaskFullname(name,triedpkgs=triedpkgs)
+				if task:
+					self._subtasks.add(name,task)
+					return task
+		return None
 
 	def run(self,*args,**kw):
 		"""Load this package with the specified parameters"""
@@ -1275,7 +1304,7 @@ class IrafPkg(IrafCLTask):
 					if iraf.Verbose>1: print rv
 				# if other packages were loaded, put this on the
 				# loadedPath list one more time
-				if iraf.loadedPath[-1] != self:
+				if iraf.loadedPath[-1] is not self:
 					iraf.loadedPath.append(self)
 				if doprint: iraf.listTasks(self)
 			finally:

@@ -186,7 +186,7 @@ class IrafCompleter(Completer):
 				# could be a parameter name
 				task = iraf.getTask(taskname, found=1)
 				# get all parameters that could match (null list if none)
-				if task: matches = task.getAllMatches(text)
+				if task is not None: matches = task.getAllMatches(text)
 		# add matching filenames
 		matches.extend(self.filename_matches(text, line[:lt]))
 		return matches

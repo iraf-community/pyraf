@@ -21,7 +21,7 @@ def _addName(task, module):
 		p = getattr(module, name)
 	else:
 		p = None
-	if (not p) or isinstance(p, iraftask.IrafTask):
+	if (p is None) or isinstance(p, iraftask.IrafTask):
 		setattr(module, name, task)
 	else:
 		if irafglobals.Verbose>0:

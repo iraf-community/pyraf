@@ -1205,6 +1205,8 @@ class IrafParL(_StringMixin, IrafPar):
 		IrafPar.__init__(self,fields,filename,strict)
 		# filehandle for input file
 		self.__dict__['fh'] = None
+		# lines used to store input when not reading from a tty
+		self.__dict__['lines'] = None
 		# flag inidicating error message has been printed if file does not exist
 		# message only gets printed once for each file
 		self.__dict__['errMsg'] = 0
@@ -1240,6 +1242,7 @@ class IrafParL(_StringMixin, IrafPar):
 				except IOError:
 					pass
 				self.fh = None
+				self.lines = None
 			self.errMsg = 0
 
 	def get(self, field=None, index=None, lpar=0, prompt=1, native=0, mode="h"):
@@ -1263,7 +1266,19 @@ class IrafParL(_StringMixin, IrafPar):
 			try:
 				if not self.fh:
 					self.fh = open(iraf.Expand(self.value), "r")
-				value = self.fh.readline()
+					if self.fh.isatty():
+						self.lines = None
+					else:
+						# read lines in a block
+						# reverse to make pop more convenient & faster
+						self.lines = self.fh.readlines()
+						self.lines.reverse()
+				if self.lines is None:
+					value = self.fh.readline()
+				elif self.lines:
+					value = self.lines.pop()
+				else:
+					value = ''
 				if not value:
 					# EOF -- raise exception
 					raise EOFError("EOF from list parameter `%s'" % self.name)
@@ -2044,10 +2059,13 @@ def _readpar(filename,strict=0):
 	param_dict = {}
 	param_list = []
 	fh = open(os.path.expanduser(filename),'r')
-	line = fh.readline()
-	while line != "":
+	lines = fh.readlines()
+	fh.close()
+	# reverse order of lines so we can use pop method
+	lines.reverse()
+	while lines:
 		# strip whitespace (including newline) off both ends
-		line = string.strip(line)
+		line = string.strip(lines.pop())
 		# skip comments and blank lines
 		# "..." is weird line that occurs in cl.par
 		if len(line)>0 and line[0] != '#' and line != "...":
@@ -2055,7 +2073,11 @@ def _readpar(filename,strict=0):
 			while line[-1:] == "\\":
 				# odd number of trailing backslashes means this is continuation
 				if (len(_re_bstrail.search(line).group()) % 2 == 1):
-					line = line[:-1] + string.rstrip(fh.readline())
+					try:
+						line = line[:-1] + string.rstrip(lines.pop())
+					except IndexError:
+						raise SyntaxError(filename + ": Continuation on last line\n" +
+								line)
 				else:
 					break
 			flist = []
@@ -2068,8 +2090,9 @@ def _readpar(filename,strict=0):
 					# want to restrict this behavior to only the prompt
 					# field.)
 					while mm is None:
-						nline = fh.readline()
-						if nline == "":
+						try:
+							nline = lines.pop()
+						except IndexError:
 							# serious error, run-on quote consumed entire file
 							sline = string.split(line,'\n')
 							raise SyntaxError(filename + ": Unmatched quote\n" +
@@ -2121,7 +2144,6 @@ def _readpar(filename,strict=0):
 			else:
 				param_dict[par.name] = par
 				param_list.append(par)
-		line = fh.readline()
 	return param_list
 
 # -----------------------------------------------------

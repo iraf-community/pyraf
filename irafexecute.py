@@ -28,7 +28,7 @@ def _getExecutable(arg):
 		if os.path.exists(arg):
 			return arg
 		task = iraf.getTask(arg, found=1)
-		if task:
+		if task is not None:
 			return task.getFullpath()
 	raise IrafProcessError("Cannot find task or executable %s" % arg)
 
@@ -112,7 +112,7 @@ class _ProcessCache:
 			return
 		for taskname in args:
 			task = iraf.getTask(taskname, found=1)
-			if not task:
+			if task is None:
 				print "No such task `%s'" % taskname
 			elif task.__class__ == iraftask.IrafTask:
 				# cache only executable tasks (not CL tasks, etc.)
@@ -158,7 +158,7 @@ class _ProcessCache:
 		if args:
 			for taskname in args:
 				task = iraf.getTask(taskname, found=1)
-				if task: self.terminate(task)
+				if task is not None: self.terminate(task)
 		else:
 			for rank, process in self._data.values():
 				executable = process.executable

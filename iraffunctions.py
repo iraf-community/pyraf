@@ -415,7 +415,7 @@ def getTask(taskname, found=0):
 	# Try assuming fully qualified name first
 
 	task = _tasks.get(taskname)
-	if task:
+	if task is not None:
 		if Verbose>1: print 'found',taskname,'in task list'
 		return task
 
@@ -500,10 +500,11 @@ def getPkg(pkgname,found=0):
 	is not found; default is to raise exception if package
 	is not found.
 	"""
-	if not pkgname:
-		raise TypeError("Bad package name `%s'" % `pkgname`)
 	try:
-		if isinstance(pkgname,_iraftask.IrafPkg): return pkgname
+		if isinstance(pkgname,_iraftask.IrafPkg):
+			return pkgname
+		if not pkgname:
+			raise TypeError("Bad package name `%s'" % `pkgname`)
 		# undo any modifications to the pkgname
 		pkgname = _irafutils.untranslateName(pkgname)
 		return _pkgs[pkgname]
@@ -632,7 +633,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
 			print 'No IRAF tasks defined'
 			return
 		# make a dictionary of pkgs to list
-		if not pkglist:
+		if pkglist is None:
 			pkgdict = _pkgs
 		else:
 			pkgdict = {}
@@ -873,10 +874,10 @@ def deftask(taskname):
 		return 0
 
 def defpac(pkgname):
-	"""Returns true if CL package is defined"""
+	"""Returns true if CL package is defined and loaded"""
 	try:
 		t = getPkg(pkgname)
-		return (t in loadedPath)
+		return t.isLoaded()
 	except KeyError, e:
 		# ambiguous name is an error, not found is OK
 		value = str(e)
@@ -2111,7 +2112,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
 	else:
 		newtask = _iraftask.IrafTask(prefix,taskname,suffix,value,
 						pkgname,pkgbinary)
-	if task:
+	if task is not None:
 		# check for consistency of definition by comparing to the
 		# new object
 		if task.getFilename() != newtask.getFilename() or \
@@ -2154,7 +2155,7 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 		_writeError("Warning: `%s' is not a defined task" % taskname)
 
 	newtask = _iraftask.IrafPset(prefix,taskname,suffix,value,pkgname,pkgbinary)
-	if task:
+	if task is not None:
 		# check for consistency of definition by comparing to the new
 		# object (which will be discarded)
 		if task.getFilename() != newtask.getFilename():
@@ -2195,7 +2196,7 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 	if pkg is None and redefine:
 		_writeError("Warning: `%s' is not a defined task" % taskname)
 	newpkg = _iraftask.IrafPkg(prefix,taskname,suffix,value,pkgname,pkgbinary)
-	if pkg:
+	if pkg is not None:
 		if pkg.getFilename() != newpkg.getFilename() or \
 		   pkg.hasParfile()  != newpkg.hasParfile():
 			if pkg.isLoaded():
