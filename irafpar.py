@@ -1737,12 +1737,20 @@ class ParCache(FileCache):
 
     """Parameter cache that updates from .par file when necessary"""
 
-    def __init__(self, filename, parlist):
+    def __init__(self, filename, parlist, strict=0):
         self.initparlist = parlist
         # special filename used by cl2py
         if filename is None or filename == 'string_proc':
             filename = ''
-        FileCache.__init__(self, filename)
+        try:
+            FileCache.__init__(self, filename)
+        except (OSError, IOError):
+            # whoops, couldn't open that file
+            # start with a null file instead unless strict is set
+            if strict:
+                raise
+            filename = ''
+            FileCache.__init__(self, filename)
 
     def getValue(self):
         return self.pars, self.pardict, self.psetlist
@@ -1847,12 +1855,13 @@ class IrafParList:
         else:
             filename = ""
         if self.__filename != filename:
-            self.__filename = filename
             if filename:
-                self.__filecache = ParCache(filename, None)
+                # it is an error if this file does not exist
+                self.__filecache = ParCache(filename, None, strict=1)
             else:
                 # for null filename, default parameter list is fixed
                 self.__filecache = ParCache(filename, self.__pars)
+            self.__filename = filename
 
     def __addPsetParams(self):
         """Merge pset parameters into the parameter lists"""

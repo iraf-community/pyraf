@@ -165,10 +165,11 @@ def _help(object, variables, functions, modules,
     if isinstance(object,IrafTask):
         if _printIrafHelp(object, html, irafkw): return
 
-    if type(object) == types.StringType and \
-                    (re.match(r'[a-z_][a-z0-9_.]*$',object) or
-                     os.path.exists(iraf.Expand(object, noerror=1))):
-        if _printIrafHelp(object, html, irafkw): return
+    if type(object) == types.StringType:
+        if re.match(r'[a-z_][a-z0-9_.]*$',object) or \
+          (re.match(r'[^\0]*$',object) and \
+                    os.path.exists(iraf.Expand(object, noerror=1))):
+            if _printIrafHelp(object, html, irafkw): return
 
     try:
         vlist = vars(object)
