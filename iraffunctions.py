@@ -2094,8 +2094,13 @@ def printf(format, *args, **kw):
 			# append the stuff preceding the format
 			newformat.append(format[oend:istart])
 			c = mm.group('c')
-			# dispatch function for this format type
-			f = _fDispatch[c]
+			# special handling for INDEF arguments
+			if args[i] == INDEF:
+				# INDEF always gets printed as string
+				f = _quietConv
+			else:
+				# dispatch function for this format type
+				f = _fDispatch[c]
 			if f is None:
 				# append the format
 				newformat.append(mm.group())
