@@ -7,7 +7,7 @@ R. White, 2000 June 26
 
 import os, sys, string, types, copy, re
 import minmatch, subproc
-import iraf, irafpar, irafexecute, epar, cl2py, irafutils
+import irafglobals, iraf, irafpar, irafexecute, epar, cl2py, irafutils
 
 # -----------------------------------------------------
 # IRAF task class
@@ -34,7 +34,9 @@ _IrafTask_attr_dict = {
 	'_foreign': 0,
 	}
 
-class IrafTask:
+# use empty "tag" class from irafglobals as base class
+
+class IrafTask(irafglobals.IrafTask):
 
 	"""IRAF task class"""
 
@@ -1331,7 +1333,9 @@ class IrafCLTask(IrafTask):
 # IRAF package class
 # -----------------------------------------------------
 
-class IrafPkg(IrafCLTask):
+# use empty "tag" class from irafglobals as base class
+
+class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
 
 	"""IRAF package class (special case of IRAF task)"""
 

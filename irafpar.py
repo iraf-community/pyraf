@@ -2422,8 +2422,8 @@ def _readpar(filename,strict=0):
 				i1 = mm.end()
 			try:
 				par = IrafParFactory(flist,filename,strict=strict)
-			except KeyboardInterrupt, e:
-				raise e
+			except KeyboardInterrupt:
+				raise
 			except Exception, exc:
 				#XXX Shouldn't catch all exceptions here -- this could
 				#XXX screw things up

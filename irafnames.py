@@ -8,7 +8,7 @@ R. White, 1999 March 26
 """
 
 import __main__
-import iraf, irafglobals, iraftask
+import iraf, irafglobals
 
 def _addName(task, module):
 	"""Add a task object to the module namespace
@@ -21,7 +21,7 @@ def _addName(task, module):
 		p = getattr(module, name)
 	else:
 		p = None
-	if (p is None) or isinstance(p, iraftask.IrafTask):
+	if (p is None) or isinstance(p, irafglobals.IrafTask):
 		setattr(module, name, task)
 	else:
 		if irafglobals.Verbose>0:

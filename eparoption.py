@@ -30,7 +30,7 @@ import FileDialog, tkFileDialog
 import filedlg
 
 # PYRAF modules
-import iraftask, epar
+import epar
 
 # Constants 
 MAXLIST  =  15

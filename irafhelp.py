@@ -38,7 +38,8 @@ R. White, 1999 September 23
 """
 
 import __main__, re, os, types
-import minmatch, describe, iraf, iraftask, irafutils
+import minmatch, describe, iraf, irafutils
+from irafglobals import IrafTask, IrafPkg
 
 # print info on Numeric arrays if Numeric is available
 
@@ -161,7 +162,7 @@ def _help(object, variables, functions, modules,
 	# on it too (XXX this is a bit risky, but I suppose people will not
 	# often be asking for help with simple strings as an argument...)
 
-	if isinstance(object,iraftask.IrafTask):
+	if isinstance(object,IrafTask):
 		if _printIrafHelp(object, html, irafkw): return
 
 	if type(object) == types.StringType and \
@@ -268,9 +269,9 @@ def _getContents(vlist, regexp, object):
 	for vname in names:
 		if (regexp is None) or re_check.match(vname):
 			value = vlist[vname]
-			if isinstance(value,iraftask.IrafPkg):
+			if isinstance(value,IrafPkg):
 				pkglist.append(vname + '/')
-			elif isinstance(value,iraftask.IrafTask):
+			elif isinstance(value,IrafTask):
 				tasklist.append(vname)
 			else:
 				vorder = _sortOrder(type(value))
@@ -381,7 +382,7 @@ def _irafHelp(taskname, irafkw):
 	Task can be either a name or an IrafTask object.
 	Returns 1 on success or 0 on failure."""
 
-	if isinstance(taskname,iraftask.IrafTask):
+	if isinstance(taskname,IrafTask):
 		taskname = taskname.getName()
 	else:
 		# expand IRAF variables in case this is name of a help file
@@ -403,7 +404,7 @@ def _htmlHelp(taskname):
 	Tries using 'netscape -remote' command to load the page in
 	a running Netscape.  If that fails, starts a new netscape."""
 
-	if isinstance(taskname,iraftask.IrafTask): taskname = taskname.getName()
+	if isinstance(taskname,IrafTask): taskname = taskname.getName()
 	pid = os.fork()
 	if pid == 0:
 		url = _HelpURL + taskname

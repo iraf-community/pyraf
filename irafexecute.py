@@ -5,7 +5,8 @@ $Id$
 
 import os, re, signal, string, struct, sys, time, types, Numeric, cStringIO
 import subproc, filecache, wutil
-import iraf, gki, irafutils, iraftask
+import iraf, gki, irafutils
+from irafglobals import IrafTask
 
 #stdgraph = None
 
@@ -27,7 +28,7 @@ def _getExecutable(arg):
 	"""
 	if isinstance(arg, IrafProcess):
 		return arg.executable
-	elif isinstance(arg, iraftask.IrafTask):
+	elif isinstance(arg, IrafTask):
 		return arg.getFullpath()
 	elif isinstance(arg, types.StringType):
 		if os.path.exists(arg):
@@ -82,6 +83,12 @@ class _ProcessCache:
 		self._plimit = limit     # number of active processes allowed
 		self._locked = {}        # processes locked into cache
 
+	def error(self, msg, level=0):
+		"""Write an error message if Verbose is set"""
+		if iraf.Verbose>level:
+			sys.stderr.write(msg)
+			sys.stderr.flush()
+
 	def get(self, task, envdict):
 		"""Get process for given task.  Create a new one if needed."""
 		executable = _getExecutable(task)
@@ -90,7 +97,15 @@ class _ProcessCache:
 			rank, proxy = self._data[executable]
 			process = proxy.getProcess(envdict)
 			if not process.running:
-				return process
+				if process.isAlive():
+					return process
+				# Hmm, looks like there is something wrong with this process
+				# Kill it and start a new one
+				#XXX Eventually can make this a level 0 message
+				#XXX Leave as level -1 for now so we see if bug is gone
+				self.error("Warning: process %s is bad, restarting it\n" %
+						(executable,), level=-1)
+				self.kill(executable, verbose=0)
 			# Whoops, process is already active...
 			# This could happen if one task in an executable tries to
 			# execute another task in the same executable.  Don't know
@@ -177,7 +192,7 @@ class _ProcessCache:
 			task = iraf.getTask(taskname, found=1)
 			if task is None:
 				print "No such task `%s'" % taskname
-			elif task.__class__ == iraftask.IrafTask:
+			elif task.__class__.__name__ == "IrafTask":
 				# cache only executable tasks (not CL tasks, etc.)
 				executable = task.getFullpath()
 				process = self.get(task, iraf.getVarDict())
@@ -185,7 +200,7 @@ class _ProcessCache:
 				if self._data.has_key(executable):
 					self._locked[executable] = 1
 				else:
-					if iraf.Verbose>0: print "Cannot cache %s" % taskname
+					self.error("Cannot cache %s\n" % taskname)
 
 	def delget(self, process):
 		"""Get process object and delete it from cache
@@ -206,7 +221,7 @@ class _ProcessCache:
 					# could restart the process if locked?
 		return process
 
-	def kill(self, process):
+	def kill(self, process, verbose=1):
 		"""Kill process and delete it from cache
 		
 		process can be an IrafProcess, task name, IrafTask, or
@@ -214,7 +229,7 @@ class _ProcessCache:
 		"""
 		process = self.delget(process)
 		if isinstance(process, IrafProcess):
-			process.kill()
+			process.kill(verbose)
 
 	def terminate(self, process):
 		"""Terminate process and delete it from cache"""
@@ -269,7 +284,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 		# Start 'er up
 		irafprocess = processCache.get(task, envdict)
 	except (iraf.IrafError, subproc.SubprocessError, IrafProcessError), value:
-		raise IrafProcessError("Cannot start IRAF executable\n" + value)
+		raise IrafProcessError("Cannot start IRAF executable\n%s" % value)
 
 	# Run it
 	try:
@@ -285,10 +300,10 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 			gki.kernel.popStdio()
 		# do any cleanup needed on task completion
 		gki.kernel.taskDone(taskname)
-	except KeyboardInterrupt, exc:
+	except KeyboardInterrupt:
 		# On keyboard interrupt (^C), kill the subprocess
 		processCache.kill(irafprocess)
-		raise exc
+		raise
 	except (iraf.IrafError, IrafProcessError), exc:
 		# on error, kill the subprocess, then re-raise the original exception
 		try:
@@ -433,9 +448,15 @@ class IrafProcess:
 		finally:
 			self.running = 0
 
+	def isAlive(self):
+
+		"""Returns true if process appears to be OK"""
+
+		return self.process.active()
+
 	def terminate(self):
 
-		"""Terminate the IRAF process"""
+		"""Terminate the IRAF process (when process in normal end state)"""
 
 		# Standard IRAF task termination (assuming we already have the
 		# task's attention for input):
@@ -443,13 +464,26 @@ class IrafProcess:
 		#   Wait briefly for EOF, which signals task is done
 		#   Kill it anyway if it is still hanging around
 
-		if self.process.pid:
+		if not self.process.pid: return		# no need, process gone
+		try:
 			self.writeString("bye\n")
-			if not self.process.wait(0.5): self.process.die()
+			if self.process.wait(0.5):
+				return
+		except (IrafProcessError, subproc.SubprocessError), e:
+			pass
+		# No more Mr. Nice Guy
+		try:
+			self.process.die()
+		except subproc.SubprocessError, e:
+			if iraf.Verbose>0:
+				# too bad, if we can't kill it assume it is already dead
+				self.stderr.write("Warning: cannot terminate process %s\n" %
+							(e,))
+				self.stderr.flush()
 
-	def kill(self):
+	def kill(self, verbose=1):
 
-		"""Kill the IRAF process"""
+		"""Kill the IRAF process (more drastic than terminate)"""
 
 		# Try stopping process in IRAF-approved way first; if that fails
 		# blow it away. Copied with minor mods from subproc.py.
@@ -458,15 +492,15 @@ class IrafProcess:
 
 		self.stdout.flush()
 		self.stderr.flush()
-		sys.stderr.write("Killing IRAF task `%s'\n" % self.task.getName())
-		sys.stderr.flush()
-		if not self.process.cont():
-			raise IrafProcessError("Can't kill IRAF subprocess")
-		# get the task's attention for input
-		try:
-			os.kill(self.process.pid, signal.SIGTERM)
-		except os.error:
-			pass
+		if verbose:
+			sys.stderr.write("Killing IRAF task `%s'\n" % self.task.getName())
+			sys.stderr.flush()
+		if self.process.cont():
+			# get the task's attention for input
+			try:
+				os.kill(self.process.pid, signal.SIGTERM)
+			except os.error:
+				pass
 		self.terminate()
 
 	def writeString(self, s):
@@ -487,30 +521,36 @@ class IrafProcess:
 
 		i = 0
 		block = 4096
-		while i<len(data):
-			# Write:
-			#  IRAF magic number
-			#  number of following bytes
-			#  data
-			dsection = data[i:i+block]
-			self.process.write(IPC_PREFIX +
-							struct.pack('=h',len(dsection)) +
-							dsection)
-			i = i + block
+		try:
+			while i<len(data):
+				# Write:
+				#  IRAF magic number
+				#  number of following bytes
+				#  data
+				dsection = data[i:i+block]
+				self.process.write(IPC_PREFIX +
+								struct.pack('=h',len(dsection)) +
+								dsection)
+				i = i + block
+		except subproc.SubprocessError, e:
+			raise IrafProcessError("Error in write: %s" % str(e))
 
 	def read(self):
 
 		"""Read binary data from IRAF pipe"""
 
-		# read pipe header first
-		header = self.process.read(4)
-		if (header[0:2] != IPC_PREFIX):
-			raise IrafProcessError("Not a legal IRAF pipe record")
-		ntemp = struct.unpack('=h',header[2:])
-		nbytes = ntemp[0]
-		# read the rest
-		data = self.process.read(nbytes)
-		return data
+		try:
+			# read pipe header first
+			header = self.process.read(4)
+			if (header[0:2] != IPC_PREFIX):
+				raise IrafProcessError("Not a legal IRAF pipe record")
+			ntemp = struct.unpack('=h',header[2:])
+			nbytes = ntemp[0]
+			# read the rest
+			data = self.process.read(nbytes)
+			return data
+		except subproc.SubprocessError, e:
+			raise IrafProcessError("Error in read: %s" % str(e))
 
 	def slave(self):
 

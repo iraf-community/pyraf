@@ -1036,7 +1036,7 @@ class GkiOpenGlKernel(GkiInteractiveBase):
 		"""Redraw for expose or resize events
 
 		This method generally should not be called directly -- call
-		gwidget.gkRedraw() instead since it does some other
+		gwidget.tkRedraw() instead since it does some other
 		preparations.
 		"""
 

@@ -9,8 +9,15 @@ userWorkingHome	User's working home directory (the directory
 				when this module gets imported.)
 EOF				End-of-file indicator object
 INDEF			Undefined object
+IrafTask		"Tag" class for IrafTask type.
+IrafPkg			"Tag" class for IrafPkg type
 
 This is defined so it is safe to say 'from irafglobals import *'
+
+The tag classes do nothing except allow checks of types via (e.g.)
+isinstance(o,IrafTask).  Including it here decouples the other classes
+from the module that actually implements IrafTask, greatly reducing the
+need for mutual imports of modules by one another.
 
 $Id$
 
@@ -273,4 +280,14 @@ class _INDEFClass:
 
 INDEF = None
 INDEF = _INDEFClass()
+
+# -----------------------------------------------------
+# tag classes
+# -----------------------------------------------------
+
+class IrafTask:
+	pass
+
+class IrafPkg(IrafTask):
+	pass
 
