@@ -1863,10 +1863,22 @@ def dummy_pickler(dummy):
 
 copy_reg.pickle(types.MethodType, dummy_pickler, dummy_unpickler)
 
+# create code cache
+
+userDir = os.path.join(iraffunctions._userIrafHome,'pyraf')
+if not os.path.exists(userDir):
+	try:
+		os.mkdir(userDir)
+		print 'Created directory %s for cache' % userDir
+	except OSError:
+		print 'Could not create directory %s' % userDir
+
+dbfile = 'pyraf.Database'
 codeCache = _CodeCache([
-	os.path.join(iraffunctions._userIrafHome,'pyraf','pyraf.Database'),
-	os.path.join(pyraf.homeDir,"pyraf.Database"),
+	os.path.join(userDir,dbfile),
+	os.path.join(pyraf.homeDir,dbfile),
 	])
+del userDir, dbfile
 
 if __name__ == "__main__":
 
