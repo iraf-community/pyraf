@@ -72,7 +72,7 @@ class IrafTask:
 
 	def __getattr__(self,name):
 		if name[:1] == '_': raise AttributeError(name)
-		return self.get(name)
+		return self.get(name,native=1)
 
 	def __setattr__(self,name,value):
 		# hidden Python parameters go into the standard dictionary
@@ -149,9 +149,13 @@ class IrafTask:
 			param + "' for " + ttype + " " + self.__name +
 			"\n" + str(e))
 
-	def get(self,param):
-		"""Return string value for task parameter 'param' (with min-match)"""
-		return self.getParObject(param).get()
+	def get(self,param,native=0):
+		"""Return value for task parameter 'param' (with min-match)
+		
+		If native is non-zero, returns native format for value.  Default is
+		to return a string.
+		"""
+		return self.getParObject(param).get(native=native)
 
 	def set(self,param,value):
 		"""Set task parameter 'param' to value (with minimum-matching)"""
@@ -590,10 +594,13 @@ class IrafPkg(IrafTask):
 		"""Returns true if this package has already been loaded"""
 		return self.__loaded
 
-	def __getattr__(self, name):
+	def __getattr__(self, name, triedpkgs={}):
 		"""Return the task 'name' from this package (if it exists).
 		
-		Also searches subpackages for the task.
+		Also searches subpackages for the task.  triedpkgs is
+		a dictionary with all the packages that have already been
+		tried.  It is used to avoid infinite recursion when
+		packages contain themselves.
 		"""
 		if name[:1] == '_':
 			raise AttributeError(name)
@@ -604,9 +611,11 @@ class IrafPkg(IrafTask):
 		if t: return t
 		# try subpackages
 		for p in self.__pkgs.values():
-			if p.__loaded:
+			if p.__loaded and (not triedpkgs.get(p)):
 				try:
-					return getattr(p, name)
+					# return getattr(p, name)
+					triedpkgs[p] = 1
+					return p.__getattr__(name,triedpkgs=triedpkgs)
 				except AttributeError, e:
 					pass
 		raise AttributeError(name)
