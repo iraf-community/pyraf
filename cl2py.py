@@ -1336,7 +1336,7 @@ class Tree2Python(GenericASTTraversal):
 				attribs.insert(0, 'Vars')
 			else:
 				attribs.insert(0, 'iraf')
-			if attribs[-1][:2] == 'p_':
+			if irafpar.isParField(attribs[-1]):
 				attribs[-2] = 'getParObject(' + `attribs[-2]` +  ')'
 			self.write(string.join(attribs,'.'),
 					node.requireType, node.exprType)

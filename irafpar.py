@@ -180,6 +180,18 @@ for field in flist: _setFieldDict.add(field, field)
 
 del flist, field
 
+# utility function to check whether string is a parameter field
+
+def isParField(s):
+	"""Returns true if string s appears to be a parameter field"""
+	try:
+		return (s[:2] == "p_") and _setFieldDict.has_key(s)
+	except minmatch.AmbiguousKeyError, e:
+		# If ambiguous match, assume it is a parameter field.
+		# An exception will doubtless be raised later, but
+		# there's really no good choice here.
+		return 1
+
 # basic IrafPar attributes
 # IrafPar's are protected in setattr against adding arbitrary attributes,
 # and this dictionary is used as a helper in instance initialization
@@ -568,7 +580,7 @@ class IrafPar:
 		# don't allow any new parameters to be added
 		if self.__dict__.has_key(attr):
 			self.__dict__[attr] = value
-		elif attr[:2] == "p_":
+		elif isParField(attr):
 			#XXX should check=0 be used here?
 			self._setField(value, attr)
 		else:

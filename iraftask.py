@@ -1468,7 +1468,7 @@ def _splitName(qualifiedName):
 
 	# add field=None if not present
 
-	if slist[-1][:2] != "p_":
+	if len(slist)==1 or not irafpar.isParField(slist[-1]):
 		# no field
 		slist.append(None)
 	if len(slist) > 4:
