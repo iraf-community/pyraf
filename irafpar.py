@@ -368,8 +368,19 @@ class IrafParAI(IrafParI):
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
-	def get(self):
-		raise SyntaxError("No get yet for arrays")
+	def get(self, index=None):
+		if index==None:
+			# if no index, return blank-separated string of values
+			sval = len(self.value)*["INDEF"]
+			for i in xrange(len(self.value)):
+				if self.value[i] != None: sval[i] = str(self.value[i])
+			return string.join(sval,' ')
+		else:
+			# with index defined, return just the one string
+			if self.value[index] == None:
+				return "INDEF"
+			else:
+				return str(self.value[index])
 
 	def coerceValue(self,value,strict=0):
 		if (not type(value) in [ListType,TupleType]) or len(value) != self.dim:
@@ -494,8 +505,19 @@ class IrafParAR(IrafParR):
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
-	def get(self):
-		raise SyntaxError("No get yet for arrays")
+	def get(self, index=None):
+		if index==None:
+			# if no index, return blank-separated string of values
+			sval = len(self.value)*["INDEF"]
+			for i in xrange(len(self.value)):
+				if self.value[i] != None: sval[i] = str(self.value[i])
+			return string.join(sval,' ')
+		else:
+			# with index defined, return just the one string
+			if self.value[index] == None:
+				return "INDEF"
+			else:
+				return str(self.value[index])
 
 	def coerceValue(self,value,strict=0):
 		if (not type(value) in [ListType,TupleType]) or len(value) != self.dim:
