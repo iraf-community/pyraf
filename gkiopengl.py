@@ -10,9 +10,11 @@ import Numeric
 import gwm
 import irafgcur
 import irafgwcs
-import __main__
 
-DEBUG = 0
+# debugging purposes only
+
+import __main__
+import time
 
 class IrafPlot:
 
@@ -23,7 +25,7 @@ class IrafPlot:
 
 	def __init__(self):
 
-		self.glBuffer = []
+		self.glBuffer = GLBuffer()
 		self.gkiBuffer = GkiBuffer()
 		self.wcs = None
 
@@ -48,15 +50,16 @@ class GkiOpenGlKernel(GkiKernel):
 
 	def translate(self, gkiMetacode, fTable):
 
-		glbuf = gwm.g.activeWindow.gwidget.iplot.glBuffer
-		posStart = len(glbuf)
 		gkiTranslate(gkiMetacode, fTable)
-		posEnd = len(glbuf)
-		newgl = glbuf[posStart:posEnd]
-		self.draw(newgl) # render new stuff immediately
-		gwm.g.activeWindow.gwidget.tkRedraw()
+		win = gwm.getActiveWindow()
+		glbuf = win.iplot.glBuffer
+		# render new stuff immediately
+		function, args = glbuf.getNextCall()
+		while function:
+			apply(function, args)
+			function, args = glbuf.getNextCall()
+		glFlush()
 
-#*******************
 
 	def controlDefault(self, arg):
 
@@ -64,17 +67,18 @@ class GkiOpenGlKernel(GkiKernel):
 		print "controlDefault called"
 
 	def controlDoNothing(self, arg):
-
-		print "controlDoNothing called"
+		pass
+#		print "controlDoNothing called"
 
 	def openWS(self, arg):
 
 		mode = arg[0]
 		device = arg[1:].tostring() # but will be ignored
 		# first see if there are any graphics windows, if not, create one 
-		if gwm.g.activeWindow == None:
-			gwm.g.window()
-		win = gwm.g.activeWindow.gwidget
+		win = gwm.getActiveWindow()
+		if win == None:
+			gwm.createWindow()
+			win = gwm.getActiveWindow()
 		win.redraw = self.redraw
 		if not hasattr(win,"iplot"):
 			win.iplot = IrafPlot()
@@ -82,8 +86,9 @@ class GkiOpenGlKernel(GkiKernel):
 			# clear the display
 			print "clearing the display"
 			win.iplot.gkiBuffer.reset()
-			win.iplot.glBuffer = []
+			win.iplot.glBuffer.reset()
 			win.iplot.wcs = None
+			win.tkRedraw()
 		elif mode == 4:
 			# append, i.e., do nothing!
 			pass
@@ -93,17 +98,21 @@ class GkiOpenGlKernel(GkiKernel):
 
 	def clearWS(self, arg):
 
+		# apparently this control routine is not used???
+
 		print "clearws"
-		win = gwm.g.activeWindow.gwidget
+		win = gwm.getActiveWindow()
 		win.iplot.gkiBuffer.reset()
-		win.iplot.glBuffer  = []
+		win.iplot.glBuffer.reset()
 		win.iplot.wcs = None
+		win.tkRedraw()
 		
 	def setWCS(self, arg):
 
 		print 'setwcs'
 		__main__.wcs = arg # pass it up to play with
-		gwm.g.activeWindow.gwidget.iplot.wcs = irafgwcs.IrafGWcs(arg)
+		win = gwm.getActiveWindow()
+		win.iplot.wcs = irafgwcs.IrafGWcs(arg)
 
 	def redraw(self, o):
 
@@ -113,58 +122,50 @@ class GkiOpenGlKernel(GkiKernel):
 		glLoadIdentity()
 		glOrtho(0,1,0,1,-1,1)
 		glDisable(GL_LIGHTING)
-		glEnable(GL_VERTEX_ARRAY)
 
-		for gl in o.iplot.glBuffer:
-			apply(gl[0],gl[1])
+		for (function, args) in o.iplot.glBuffer.get():
+			apply(function, args)
+		glFlush()
 
-	def draw(self, glbuf):
-
-		for gl in glbuf:
-			apply(gl[0],gl[1])
-
-def gki_eof(arg): print "GKI_EOF "
-def gki_openws(arg): print "GKI_OPENWS "
-def gki_closews(arg): print "GKI_CLOSEWS "
-def gki_reactivatews(arg): print "GKI_REACTIVATEWS "
-def gki_deactivatews(arg): print "GKI_DEACTIVATEWS "
-def gki_mftitle(arg): print "GKI_MFTITLE "
+def gki_eof(arg): print "GKI_EOF"
+def gki_openws(arg): print "GKI_OPENWS"
+def gki_closews(arg): print "GKI_CLOSEWS"
+def gki_reactivatews(arg): print "GKI_REACTIVATEWS"
+def gki_deactivatews(arg): print "GKI_DEACTIVATEWS"
+def gki_mftitle(arg): print "GKI_MFTITLE"
 def gki_clearws(arg):
 
-	print "GKI_CLEARWS "
-	print "clearws (gki)"
-	win = gwm.g.activeWindow.gwidget
+	print "GKI_CLEARWS"
+	win = gwm.getActiveWindow()
 	win.iplot.gkiBuffer.reset()
-	win.iplot.glBuffer  = []
+	win.iplot.glBuffer.reset()
 	win.iplot.wcs = None
+	win.tkRedraw()
 
-def gki_cancel(arg): print "GKI_CANCEL "
-def gki_flush(arg): print "GKI_FLUSH "
+def gki_cancel(arg): print "GKI_CANCEL"
+def gki_flush(arg): print "GKI_FLUSH"
 
 def gki_polyline(arg):
+	win = gwm.getActiveWindow()
+	win.iplot.glBuffer.append( (gl_polyline,(ndc(arg[1:]),)) )
 
-#	print "GL_POLYLINE"
-#	print self.ndc(arg[1:])
-	gwm.g.activeWindow.gwidget.iplot.glBuffer.append(
-		(gl_polyline,(ndc(arg[1:]),)))
-
-def gki_polymarker(arg): print "GKI_POLYMARKER "
+def gki_polymarker(arg): print "GKI_POLYMARKER"
 def gki_text(arg):
 	print "GKI_TEXT:", arg[3:].tostring()
-def gki_fillarea(arg): print "GKI_FILLAREA "
-def gki_putcellarray(arg): print "GKI_PUTCELLARRAY "
-def gki_setcursor(arg): print "GKI_SETCURSOR "
-def gki_plset(arg): print "GKI_PLSET "
-def gki_pmset(arg): print "GKI_PMSET "
-def gki_txset(arg): print "GKI_TXSET "
-def gki_faset(arg): print "GKI_FASET "
-def gki_getcursor(arg): print "GKI_GETCURSOR (GKI_CURSORVALUE) "
-def gki_getcellarray(arg): print "GKI_GETCELLARRAY "
-def gki_unknown(arg): print "GKI_UNKNOWN "
-def gki_escape(arg): print "GKI_ESCAPE "
-def gki_setwcs(arg): print "GKI_SETWCS "
-def gki_getwcs(arg): print "GKI_GETWCS "
-		
+def gki_fillarea(arg): print "GKI_FILLAREA"
+def gki_putcellarray(arg): print "GKI_PUTCELLARRAY"
+def gki_setcursor(arg): print "GKI_SETCURSOR"
+def gki_plset(arg): print "GKI_PLSET"
+def gki_pmset(arg): print "GKI_PMSET"
+def gki_txset(arg): print "GKI_TXSET"
+def gki_faset(arg): print "GKI_FASET"
+def gki_getcursor(arg): print "GKI_GETCURSOR (GKI_CURSORVALUE)"
+def gki_getcellarray(arg): print "GKI_GETCELLARRAY"
+def gki_unknown(arg): print "GKI_UNKNOWN"
+def gki_escape(arg): print "GKI_ESCAPE"
+def gki_setwcs(arg): print "GKI_SETWCS"
+def gki_getwcs(arg): print "GKI_GETWCS"
+
 #*****************************************
 
 def gl_eof(arg): pass
@@ -181,13 +182,8 @@ def gl_polyline(vertices):
 
 	glBegin(GL_LINE_STRIP)
 	glColor3f(1,1,1)
-# 	for i in xrange(len(vertices)/2):
-# 		glVertex2f(vertices[2*i],vertices[2*i+1])
 	glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
 	glEnd()
-#*********
-#	glVertexPointer(2, 0, vertices)
-#	glDrawArrays(GL_LINE_STRIP, 0, len(vertices)/2)
 
 def gl_polymarker(arg): pass
 def gl_text(arg): pass
@@ -240,3 +236,62 @@ gkiFunctionTable = [
 	gki_getwcs]
 
 
+class GLBuffer:
+
+	"""implement a buffer for GL commands which allocates memory in blocks so that 
+	a new memory allocation is not needed everytime functions are appended"""
+
+	INCREMENT = 10000
+
+	def __init__(self):
+	
+		self.buffer = None
+		self.bufferSize = 0
+		self.bufferEnd = 0 
+		self.nextTranslate = 0
+
+	def reset(self):
+
+		# discard everything up to nextTranslate pointer
+
+		newEnd = self.bufferEnd - self.nextTranslate
+		if newEnd > 0:
+			self.buffer[0:newEnd] = self.buffer[self.nextTranslate:self.bufferEnd]
+			self.bufferEnd = newEnd
+		else:
+			self.buffer = None
+			self.bufferSize = 0
+			self.bufferEnd = 0
+		self.nextTranslate = 0
+
+	def append(self, funcargs):
+	
+		# append a single (function,args) tuple to the list
+
+		if self.bufferSize < self.bufferEnd + 1:
+			# increment buffer size and copy into new array
+			self.bufferSize = self.bufferSize + self.INCREMENT
+			newbuffer = self.bufferSize*[None]
+			if self.bufferEnd > 0:
+				newbuffer[0:self.bufferEnd] = self.buffer[0:self.bufferEnd]
+			self.buffer = newbuffer
+		self.buffer[self.bufferEnd] = funcargs
+		self.bufferEnd = self.bufferEnd + 1
+
+	def get(self):
+	
+		if self.buffer:
+			return self.buffer[0:self.bufferEnd]
+		else:
+			return []
+
+	def getNextCall(self):
+		"""Return a tuple with (function, args) for next call in buffer.
+		Returns (None,None) on end-of-buffer."""
+		ip = self.nextTranslate
+		if ip < self.bufferEnd:
+			retval = self.buffer[ip]
+			self.nextTranslate = ip + 1
+			return retval
+		else:
+			return (None, None)
