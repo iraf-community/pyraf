@@ -52,6 +52,12 @@ class _VerboseClass:
 Verbose = _VerboseClass()
 
 # -----------------------------------------------------
+# userWorkingHome is current working directory
+# -----------------------------------------------------
+
+userWorkingHome = _os.getcwd()
+
+# -----------------------------------------------------
 # pyrafDir is directory containing this script
 # -----------------------------------------------------
 
@@ -65,10 +71,9 @@ while _os.path.islink(thisfile):
 pyrafDir = _os.path.dirname(thisfile)
 del thisfile
 
-if not pyrafDir: pyrafDir = _os.getcwd()
-if not _os.path.isabs(pyrafDir):
-    # change relative directory paths to absolute
-    pyrafDir = _os.path.join(_os.getcwd(), pyrafDir)
+if not pyrafDir: pyrafDir = userWorkingHome
+# change relative directory paths to absolute and normalize path
+pyrafDir = _os.path.normpath(_os.path.join(userWorkingHome, pyrafDir))
 
 # -----------------------------------------------------
 # userIrafHome is location of user's IRAF home directory
@@ -78,18 +83,12 @@ if not _os.path.isabs(pyrafDir):
 # Otherwise look for ~/iraf.
 
 if _os.path.exists('./login.cl'):
-    userIrafHome = _os.path.join(_os.getcwd(),'')
+    userIrafHome = _os.path.join(userWorkingHome,'')
 else:
     userIrafHome = _os.path.join(_os.environ['HOME'],'iraf','')
     if not _os.path.exists(userIrafHome):
         # no ~/iraf, just use '.' as home
-        userIrafHome = _os.path.join(_os.getcwd(),'')
-
-# -----------------------------------------------------
-# userWorkingHome is current working directory
-# -----------------------------------------------------
-
-userWorkingHome = _os.getcwd()
+        userIrafHome = _os.path.join(userWorkingHome,'')
 
 # -----------------------------------------------------
 # Boolean constant class

@@ -66,7 +66,6 @@ def getTopID(WindowID):
     If window is already top (or not implemented), it returns its own ID.
     If the input Id represents the root window then it will just
     return itself"""
-    # Assuming root window has id 1 (should eliminate this dependency)
     wid = WindowID
     if wid <= 0:
         return wid
@@ -199,6 +198,12 @@ class TerminalFocusEntity(FocusEntity):
         self.lastY = y
 
     # some extra utility methods
+
+    def updateWindowID(self, id=None):
+        """Update terminal window ID (to current window if id is not given)"""
+        if id is None:
+            id = getWindowID()
+        self.windowID = id
 
     def getWindowSize(self):
 

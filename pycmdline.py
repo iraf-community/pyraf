@@ -1,4 +1,4 @@
-""" pycmdline.py -- Python/CL command line interface for Pyraf
+"""pycmdline.py -- Python/CL command line interface for Pyraf
 
 Provides this functionality:
 
@@ -81,6 +81,8 @@ class CmdConsole(code.InteractiveConsole):
         more = 0
         # number of consecutive EOFs
         neofs = 0
+        # flag indicating whether terminal ID needs to be set
+        needtermid = 1
         while 1:
             try:
                 if not sys.stdin.isatty():
@@ -92,6 +94,11 @@ class CmdConsole(code.InteractiveConsole):
                 # reset the focus to terminal if necessary
                 wutil.focusController.resetFocusHistory()
                 line = self.raw_input(prompt)
+                if needtermid and prompt:
+                    # reset terminal window ID immediately
+                    # after first input from terminal
+                    wutil.terminal.updateWindowID()
+                    needtermid = 0
                 neofs = 0
                 # add non-null lines to history
                 if string.strip(line): self.addHistory(line)
@@ -437,6 +444,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                     tbmod = []
                     for tb1 in tblist:
                         path, filename = os.path.split(tb1[0])
+                        path = os.path.normpath(os.path.join(os.getcwd(), path))
                         if path[:len(pyrafDir)] != pyrafDir:
                             tbmod.append(tb1)
             list = traceback.format_list(tbmod)
