@@ -201,7 +201,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 		irafprocess.run(task, stdin=stdin,stdout=stdout,stderr=stderr)
 		if wutil.hasGraphics:
 			gwm.restoreLastFocus()
-		if gki.kernel:
+		if gki.kernel and gki.kernel.stdgraph:
 			gki.kernel.stdgraph.stdout = None
 			gki.kernel.stdgraph.stderr = None
 	except KeyboardInterrupt:
@@ -209,7 +209,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 		processCache.kill(irafprocess)
 		if wutil.hasGraphics:
 			gwm.resetFocusHistory()
-		if gki.kernel:
+		if gki.kernel and gki.kernel.stdgraph:
 			gki.kernel.stdgraph.stdout = None
 			gki.kernel.stdgraph.stderr = None
 		raise KeyboardInterrupt
@@ -539,11 +539,11 @@ class IrafProcess:
 					# STDGRAPH I/O channel.
 					self.write(wcs)
 					gki.kernel.clearReturnData()
-				if gki.kernel.stdgraph.stdout:
+				if gki.kernel.stdgraph and gki.kernel.stdgraph.stdout:
 					self.stdout = gki.kernel.stdgraph.stdout
 				else:
 					self.stdout = self.default_stdout
-				if gki.kernel.stdgraph.stderr:
+				if gki.kernel.stdgraph and gki.kernel.stdgraph.stderr:
 					self.stderr = gki.kernel.stdgraph.stderr
 				else:
 					self.stderr = self.default_stderr
