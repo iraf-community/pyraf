@@ -46,6 +46,7 @@ class IrafCompleter(Completer):
 
 	def __init__(self):
 		self.completionChar = None
+		self.taskpat = re.compile(r"(\w+)[ \t]+(?=$|[\w<>|/~'" +r'"])')
 
 	def activate(self, char="\t"):
 		"""Turn on completion using the specified character"""
@@ -55,6 +56,7 @@ class IrafCompleter(Completer):
 		readline.set_completer(self.complete)
 		readline.parse_and_bind("%s: complete" % lab)
 		readline.parse_and_bind("set bell-style none")
+		readline.parse_and_bind("set show-all-if-ambiguous")
 		self.completionChar = char
 
 	def deactivate(self):
@@ -73,13 +75,18 @@ class IrafCompleter(Completer):
 		Also return IRAF task matches.
 		"""
 		line = self.get_line_buffer()
-		# for null line, insert the completion character itself (if known)
-		if line == "" and self.completionChar:
-			#XXX A bit ugly -- to suppress blank added by readline, put
-			#XXX two items in the list.  I wish there was a better way.
-			return [self.completionChar, self.completionChar*2]
+		# make tab insert blanks at the beginning of an empty line
+		if line == "" and self.completionChar == "\t":
+			# insert 4 spaces for tabs
+			# Note that readline adds an additional blank
+			#XXX is converting to blanks really a good idea?
+			return ["   "]
 		# if this is not the first token on the line, use a different
 		# completion strategy
+		#XXX once the index functions are available in readline (they tell
+		#XXX exactly where this string came from), we can make completion
+		#XXX work properly when the cursor is in the middle of a partially
+		#XXX editted line.
 		if line != text:
 			return self.secondary_matches(text, line)
 		else:
@@ -125,7 +132,7 @@ class IrafCompleter(Completer):
 		# If next char is alphabetic (or null) use filename matches.
 		# Otherwise use matches from Python dictionaries.
 		lt = len(line)-len(text)
-		m = re.match(r"(\w+)[ \t]+(?=$|[\w<>|/'" +r'"])', line)
+		m = self.taskpat.match(line)
 		if m is None or keyword.iskeyword(m.group(1)):
 			if line[lt-1:lt] in ['"', "'"]:
 				# use filename matches for quoted strings
@@ -176,7 +183,7 @@ class IrafCompleter(Completer):
 			dir = iraf.Expand(m.group())
 		elif line[-1] == os.sep:
 			# filename is preceded by path separator
-			m = re.search(r'[\w%s]*$' % os.sep, line)
+			m = re.search(r'[\w~%s]*$' % os.sep, line)
 			dir = iraf.Expand(m.group())
 		else:
 			dir = ''
@@ -228,7 +235,7 @@ class IrafCompleter(Completer):
 			# Otherwise use matches from Python dictionaries
 			#XXX need to make this consistent with the other places
 			#XXX where same tests are done
-			m = re.match(r"(\w+)[ \t]+(?=$|[\w<>|/'" +r'"])', line)
+			m = self.taskpat.match(line)
 			if m is None or keyword.iskeyword(m.group(1)):
 				fields = string.split(text,".")
 				if fields[0] == "iraf":
