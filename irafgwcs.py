@@ -48,7 +48,7 @@ class IrafGWcs:
             # commit immediately if arg=None
             self.wcs = _setWCSDefault()
             self.pending = None
-            print "Default WCS set for plotting window. Plot may not display properly."
+            #print "Default WCS set for plotting window. Plot may not display properly."
             return
         wcsStruct = arg[1:]
         if arg[0] != len(wcsStruct):
