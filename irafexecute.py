@@ -250,7 +250,7 @@ _re_msg = re.compile(
 			)
 
 _p_curpack   = r'_curpack(?:\s.*|)\n'
-_p_sysescape = r'!!(?P<sys_cmd>.*)\n'
+_p_sysescape = r'!(?P<sys_cmd>.*)\n'
 
 _re_clcmd = re.compile(
 			r'(?P<curpack>'   + _p_curpack   + ')|' +
