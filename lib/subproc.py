@@ -33,14 +33,14 @@ __version__ = "Revision: 1.7r "
 #       about to provide for different platform contingencies - at that extent, the
 #       effort would be better spent hacking 'expect' into python.
 # - Todo? - Incorporate an error-output handler approach, where error output is
-#                       checked on regular IO, when a handler is defined, and passed to the
-#                       handler (eg for printing) immediately as it shows...
+#       checked on regular IO, when a handler is defined, and passed to the
+#       handler (eg for printing) immediately as it shows...
 # - Detection of failed subprocess startup is a gross kludge, at present.
 
 # - new additions (1.3, 1.4):
 #  - Readbuf, taken from donn cave's iobuf addition, implements non-blocking
-#        reads based solely on os.read with select, while capitalizing big-time on
-#        multi-char read chunking.
+#       reads based solely on os.read with select, while capitalizing big-time on
+#       multi-char read chunking.
 #  - Subproc deletion frees up pipe file descriptors, so they're not exhausted.
 #
 # ken.manheimer@nist.gov
@@ -175,24 +175,29 @@ class Subprocess:
                 else:
                     raise SubprocessError("Subprocess '%s' failed [%d]: %s" %
                                     (self.cmd, errnum, msg))
-            if pid == self.pid:
-                # child exited already
-                self._closePipes()
-                if self.expire_noisily: self._noisy_print(err)
-                self.pid = None
+            if pid != self.pid:
+                # flag indicating process is still running
+                self.return_code = None
+            elif err == 0:
+                # Child has exited already but not in error, so we won't
+                # shut down the pipes or say anything more at this point.
+                # Set return_code so we don't call waitpid again.
+                self.return_code = 0
+            else:
+                # Process exited with an error.  Clean up immediately and
+                # raise an exception.
+                self._cleanUp(err)
                 sig = err & 0xff
                 rc = (err & 0xff00) >> 8
                 self.return_code = rc
                 if sig:
                     raise SubprocessError(
                     "Child process '%s' killed by signal %d with return code %d"
-                            % (self.cmd, sig, rc))
-                if rc:
+                    % (self.cmd, sig, rc))
+                else:
                     raise SubprocessError(
-                                    "Child process '%s' exited with return code %d" %
-                                    (self.cmd, rc))
-                # Child may have exited, but not in error, so we won't say
-                # anything more at this point.
+                    "Child process '%s' exited with return code %d" %
+                    (self.cmd, rc))
 
     ### Write input to subprocess ###
 
@@ -224,7 +229,7 @@ class Subprocess:
                 if select.select([],self.toChild_fdlist,[],printtime)[1]:
                     if os.write(self.toChild, strval) != len(strval):
                         raise SubprocessError("Write error to %s" % self)
-                    return                                                                                          # ===>
+                    return                                              # ===>
             raise SubprocessError("Write to %s blocked" % self)
         except select.error, e:
             raise SubprocessError(
@@ -390,6 +395,12 @@ class Subprocess:
     def wait(self,timeout=0):
         """Wait timeout seconds for process to die.  Returns true if process
         is dead (and was reaped), false if alive."""
+
+        if self.return_code is not None:
+            # process completed during startup, so just clean up now
+            self._cleanUp(self.return_code << 8)
+            return 1
+
         # Try a few times to reap the process with waitpid:
         totalwait = timeout
         deltawait = timeout/1000.0
@@ -397,14 +408,20 @@ class Subprocess:
         while totalwait >= 0:
             pid, err = os.waitpid(self.pid, os.WNOHANG)
             if pid:
-                if self.expire_noisily: self._noisy_print(err)
-                self._closePipes()
-                self.pid = None
-                self.return_code = (err & 0xff00) >> 8
+                self._cleanUp(err)
                 return 1
             time.sleep(deltawait)
             totalwait = totalwait - deltawait
         return 0
+
+    def _cleanUp(self, err):
+        """Cleanup after process is done"""
+        if not self.pid: return
+        if self.expire_noisily:
+            self._noisy_print(err)
+        self._closePipes()
+        self.pid = None
+        self.return_code = (err & 0xff00) >> 8
 
     def _closePipes(self):
         """Close all pipes from parent to child"""
@@ -488,7 +505,7 @@ class Subprocess:
                 # keep trying
                 pass
             # done if we can reap the process; else try next signal
-            if self.wait(0.5): return                                                                       # ===>
+            if self.wait(0.5): return                                   # ===>
         # Only got here if subprocess is not gone:
         raise SubprocessError(
                         "Failed kill of subproc %d, '%s', with signals %s" %
@@ -503,7 +520,7 @@ class Subprocess:
         return '<Subprocess ' + status + ', at ' + hex(id(self))[2:] + '>'
 
 #############################################################################
-#####                             Non-blocking read operations                                          #####
+#####                 Non-blocking read operations                      #####
 #############################################################################
 
 class ReadBuf:
@@ -517,7 +534,7 @@ class ReadBuf:
         if fd < 0:
             raise ValueError("File descriptor fd is negative")
         self.fd = fd
-        self.eof = 0                                    # May be set with stuff still in .buf
+        self.eof = 0                    # May be set with stuff still in .buf
         self.buf = ''
         self.chunkSize = maxChunkSize   # Biggest read chunk, default 1024.
 
@@ -530,9 +547,9 @@ class ReadBuf:
         timeout seconds before returning.  Default is timeout=0 (do not wait
         at all.)"""
 
-        if self.buf: return self.buf[0]                                                                 # ===>
+        if self.buf: return self.buf[0]                                 # ===>
 
-        if self.eof: return ''                                                                                  # ===>
+        if self.eof: return ''                                          # ===>
 
         try:
             sel = select.select([self.fd], [], [self.fd], timeout)
@@ -544,11 +561,11 @@ class ReadBuf:
         if sel[0]:
             self.buf = os.read(self.fd, self.chunkSize)
             if self.buf:
-                return self.buf[0]                                                                              # ===>
+                return self.buf[0]                                      # ===>
             else:
                 self.eof = 1
-                return ''                                                                                               # ===>
-        else: return ''                                                                                                 # ===>
+                return ''                                               # ===>
+        else: return ''                                                 # ===>
 
     def readPendingChar(self):
         """Consume first character of unconsumed output from file, or empty
@@ -556,9 +573,9 @@ class ReadBuf:
 
         if self.buf:
             got, self.buf = self.buf[0], self.buf[1:]
-            return got                                                                                                      # ===>
+            return got                                                  # ===>
 
-        if self.eof: return ''                                                                                  # ===>
+        if self.eof: return ''                                          # ===>
 
         try:
             sel = select.select([self.fd], [], [self.fd], 0)
@@ -574,23 +591,23 @@ class ReadBuf:
                 return got
             else:
                 self.eof = 1
-                return ''                                                                                               # ===>
-        else: return ''                                                                                                 # ===>
+                return ''                                               # ===>
+        else: return ''                                                 # ===>
 
     def readPendingChars(self, max=None):
         """Consume uncomsumed output from FILE, or empty string if nothing
         pending."""
 
-        if (max is not None) and (max <= 0): return ''                                  # ===>
+        if (max is not None) and (max <= 0): return ''                  # ===>
 
         if self.buf:
             if max and (len(self.buf) > max):
                 got, self.buf = self.buf[0:max], self.buf[max:]
             else:
                 got, self.buf = self.buf, ''
-            return got                                                                                                      # ===>
+            return got                                                  # ===>
 
-        if self.eof: return ''                                                                                  # ===>
+        if self.eof: return ''                                          # ===>
 
         try:
             sel = select.select([self.fd], [], [self.fd], 0)
@@ -604,13 +621,13 @@ class ReadBuf:
             if got:
                 if max and (len(got) > max):
                     self.buf = got[max:]
-                    return got[:max]                                                                        # ===>
+                    return got[:max]                                    # ===>
                 else:
-                    return got                                                                                      # ===>
+                    return got                                          # ===>
             else:
                 self.eof = 1
-                return ''                                                                                               # ===>
-        else: return ''                                                                                                 # ===>
+                return ''                                               # ===>
+        else: return ''                                                 # ===>
 
     def readPendingLine(self, block=0):
         """Return pending output from FILE, up to first newline (inclusive).
@@ -623,10 +640,10 @@ class ReadBuf:
             to = string.find(self.buf, '\n')
             if to != -1:
                 got, self.buf = self.buf[:to+1], self.buf[to+1:]
-                return got                                                                                              # ===>
+                return got                                              # ===>
             got, self.buf = self.buf, ''
         elif self.eof:
-            return ''                                                                                                       # ===>
+            return ''                                                   # ===>
         else:
             got = ''
 
@@ -639,7 +656,7 @@ class ReadBuf:
         else:
             # don't wait at all
             waittime = 0
-        while 1:                                                # (we'll only loop if block set)
+        while 1:                        # (we'll only loop if block set)
             try:
                 sel = select.select(fdlist, [], fdlist, waittime)
             except select.error:
@@ -654,19 +671,19 @@ class ReadBuf:
                     to = string.find(got, '\n')
                     if to != -1:
                         got, self.buf = got[:to+1], got[to+1:]
-                        return got                                                                              # ===>
+                        return got                                      # ===>
                 else:
                     # return partial line on EOF
                     self.eof = 1
-                    return got                                                                                      # ===>
+                    return got                                          # ===>
             if not block:
-                return got                                                                                              # ===>
+                return got                                              # ===>
             # otherwise - no newline, blocking requested, no eof - loop. # ==^
 
     def readline(self):
         """Return next output line from file, blocking until it is received."""
 
-        return self.readPendingLine(1)                                                                  # ===>
+        return self.readPendingLine(1)                                  # ===>
 
     def read(self, nchars):
         """Read nchars from input, blocking until they are available.
@@ -676,10 +693,10 @@ class ReadBuf:
         if self.buf:
             if len(self.buf) >= nchars:
                 got, self.buf = self.buf[:nchars], self.buf[nchars:]
-                return got                                                                                              # ===>
+                return got                                              # ===>
             got, self.buf = self.buf, ''
         elif self.eof:
-            return ''                                                                                                       # ===>
+            return ''                                                   # ===>
         else:
             got = ''
 
@@ -698,7 +715,7 @@ class ReadBuf:
                     got = got + newgot
                     if len(got) >= nchars:
                         got, self.buf = got[:nchars], got[nchars:]
-                        return got                                                                              # ===>
+                        return got                                      # ===>
                 else:
                     self.eof = 1
                     return got
@@ -707,7 +724,7 @@ class ReadBuf:
 
 
 #############################################################################
-#####                             Encapsulated reading and writing                                      #####
+#####                 Encapsulated reading and writing                  #####
 #############################################################################
 # Encapsulate messages so the end can be unambiguously identified, even
 # when they contain multiple, possibly empty lines.
@@ -739,7 +756,7 @@ class RecordFile:
                 l = string.atoi(line)
             except ValueError:
                 raise IOError("corrupt %s file structure"
-                                                % self.__class__.__name__)
+                                     % self.__class__.__name__)
             return f.read(l)
         else:
             # EOF.
@@ -755,8 +772,8 @@ class RecordFile:
 
     def __repr__(self):
         return "<%s of %s at %s>" % (self.__class__.__name__,
-                                                                 self.__dict__['file'],
-                                                                 hex(id(self))[2:])
+                                     self.__dict__['file'],
+                                     hex(id(self))[2:])
 
 def record_trial(s):
     """Exercise encapsulated write/read with an arbitrary string.
@@ -773,7 +790,7 @@ def record_trial(s):
         raise IOError("String distorted:\n%s" % show)
 
 #############################################################################
-#####                                   An example subprocess interfaces                                #####
+#####                   An example subprocess interfaces                #####
 #############################################################################
 
 class Ph:
@@ -793,7 +810,7 @@ class Ph:
             self.proc = Subprocess("ph", expire_noisily=1)
         except:
             raise SubprocessError("failure starting ph: %s" %
-                                                            str(sys.exc_value))
+                                  str(sys.exc_value))
 
     def query(self, q):
         """Send a query and return a list of dicts for responses.
@@ -813,7 +830,7 @@ class Ph:
                 got.append(it)
                 it = {}
             if not response:
-                return got                                                                                              # ===>
+                return got                                              # ===>
             elif type(response) == types.StringType:
                 raise ValueError("ph failed match: '%s'" % response)
             for line in response:
@@ -837,13 +854,13 @@ class Ph:
         elif nextChar == '-':
             # dashed line - discard it, and continue reading:
             self.proc.readline()
-            return self.getreply()                                                                          # ===>
+            return self.getreply()                                      # ===>
         elif nextChar == 'p':
             # 'ph> ' prompt - don't think we should hit this, but what the hay:
-            return ''                                                                                                       # ===>
+            return ''                                                   # ===>
         elif nextChar in '0123456789':
             # Error notice - we're currently assuming single line errors:
-            return self.proc.readline()[:-1]                                                        # ===>
+            return self.proc.readline()[:-1]                            # ===>
         elif nextChar in ' \t':
             # Get content, up to next dashed line:
             got = []
@@ -853,7 +870,7 @@ class Ph:
             return got
     def __repr__(self):
         return "<Ph instance, %s at %s>\n" % (self.proc.status(),
-                                                                                 hex(id(self))[2:])
+                                                hex(id(self))[2:])
     def clear(self):
         """Clear-out initial preface or residual subproc input and output."""
         pause = .5; maxIter = 10                # 5 seconds to clear
@@ -864,13 +881,13 @@ class Ph:
             got = got + self.proc.readPendingChars()
             # Strip out all but the last incomplete line:
             got = string.splitfields(got, '\n')[-1]
-            if got == 'ph> ': return        # Ok.                                                     ===>
+            if got == 'ph> ': return        # Ok.                       ===>
             time.sleep(pause)
         raise SubprocessError('ph not responding within %s secs' %
                                                         pause * maxIter)
 
 #############################################################################
-#####             Run a subprocess with Python I/O redirection                          #####
+#####         Run a subprocess with Python I/O redirection              #####
 #############################################################################
 # This runs a command rather like os.system does, but it redirects
 # the I/O using the current Python sys.stdin, sys.stdout, sys.stderr
@@ -1018,12 +1035,12 @@ class RedirProcess(Subprocess):
 
 
 #############################################################################
-#####                                                     Test                                                                  #####
+#####                           Test                                    #####
 #############################################################################
 
 def test():
     print "\tOpening subprocess:"
-    p = Subprocess('cat', expire_noisily=1)                 # set to expire noisily...
+    p = Subprocess('cat', expire_noisily=1)        # set to expire noisily...
     print p
     print "\tOpening bogus subprocess, should fail:"
     try:
@@ -1051,8 +1068,8 @@ def test():
         print '\tNonblocking read of paused subprocess (should be empty):'
         print p.readPendingChars()
         print '\tContinuing subprocess (verbose):'
-        if not p.cont(1):                               # verbose continue
-            print '\t** Continue seems to have failed!      Probly lost subproc...'
+        if not p.cont(1):                                   # verbose continue
+            print '\t** Continue seems to have failed!      Probably lost subproc...'
             return p
         else:
             print '\tReading accumulated line, blocking read:'
