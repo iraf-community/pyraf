@@ -22,7 +22,7 @@ import readline
 import __builtin__
 import __main__
 import string, re, keyword, glob, os
-import iraf, iraffunctions, minmatch
+import iraf, minmatch
 
 # dictionaries mapping between characters and readline names
 char2lab = {}

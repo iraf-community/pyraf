@@ -28,10 +28,8 @@ by a gwm-wide configuration state. See gkiopengl.py
 import fontdata
 import Numeric
 import gwm
-import gkiopengl
 import math
 from OpenGL.GL import *
-from gki import *
 
 CHARPATH_LEFT  = 2
 CHARPATH_RIGHT = 3

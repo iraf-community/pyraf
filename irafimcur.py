@@ -13,6 +13,7 @@ try:
 	import cdl
 	try:
 		import threading
+		import gwm
 		def imcur(): return  _imcur(_threadedReadCursor)
 	except ImportError:
 		def imcur(): return  _imcur()
@@ -40,7 +41,6 @@ def _threadedReadCursor(displayHandle):
 	timeout = 0.5
 	# messy -- I wish I could just sleep until thread is done, letting
 	# Python's implicit mainloop run.  That doesn't work though.
-	import gwm
 	win = gwm.getActiveWindowTop()
 	while th.isAlive():
 		th.join(timeout)
