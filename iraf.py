@@ -95,16 +95,14 @@ def init(doprint=1):
 
 		# define clpackage
 
-		clpkg = IrafPkg('', 'clpackage', '.pkg', 'hlib$clpackage.cl',
+		clpkg = IrafPkgFactory('', 'clpackage', '.pkg', 'hlib$clpackage.cl',
 			'clpackage', 'bin$')
-		addPkg(clpkg)
 
 		# add the cl as a task, because its parameters are sometimes needed,
 		# but make it a hidden task
 
-		_cl = IrafTask('','cl','','cl$cl.e','clpackage','bin$')
+		_cl = IrafTaskFactory('','cl','','cl$cl.e','clpackage','bin$')
 		_cl.setHidden(1)
-		addTask(_cl)
 
 		# load clpackage
 
@@ -119,9 +117,8 @@ def init(doprint=1):
 
 		if fname:
 			# define and load user package
-			# XXX userpkg = IrafPkg('', 'user', '.pkg', fname, 'user', 'bin$')
-			userpkg = IrafPkg('', 'user', '.pkg', fname, 'clpackage', 'bin$')
-			addPkg(userpkg)
+			userpkg = IrafPkgFactory('', 'user', '.pkg', fname,
+							'clpackage', 'bin$')
 			userpkg.run(_doprint=0)
 		else:
 			print "Warning: no login.cl found"
@@ -138,10 +135,10 @@ def addPkg(pkg):
 	global _pkgs
 	name = pkg.getName()
 	_pkgs.add(name,pkg)
-	addTask(pkg)
 	# add package to global namespace if desired
 	irafnames.strategy.addPkg(pkg)
-	irafnames.strategy.addTask(pkg)
+	# packages are tasks too, so add to task lists
+	addTask(pkg)
 
 # -----------------------------------------------------
 # addTask: Add an IRAF task to the tasks list
@@ -988,6 +985,7 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 					# open and read this file too
 					if verbose>1: print "Reading",value
 					readcl(value,pkgname,pkgbinary)
+					if verbose>1: print "Done reading",value
 				elif mm.group('varname') != None:
 					name = mm.group('varname')
 					_vars[name] = value
@@ -1019,14 +1017,8 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 						name = mtl.group('taskname')
 						prefix = mtl.group('taskprefix')
 						suffix = mtl.group('tasksuffix')
-						if suffix == '.pkg':
-							newtask = IrafPkg(prefix,name,suffix,value,
-								pkgname,pkgbinary)
-							addPkg(newtask)
-						else:
-							newtask = IrafTask(prefix,name,suffix,value,
-								pkgname,pkgbinary)
-							addTask(newtask)
+						newtask = IrafTaskFactory(prefix,name,suffix,value,
+							pkgname,pkgbinary)
 						mtl = _re_taskname.match(tlist,mtl.end())
 				else:
 					if verbose:
@@ -1416,4 +1408,54 @@ def _printcols(strlist,cols=5,width=80):
 			line[r] = line[r] + " " + strlist[i]
 	for s in line:
 		print s
+
+def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
+
+	"""Returns a new or existing IrafTask or IrafPkg object
+	
+	Type of returned object depends on value of suffix.  Returns a new
+	object unless this task or package is already defined, in which case
+	a warning is printed and a reference to the existing task is returned.
+	"""
+
+	if suffix == '.pkg':
+		return IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary)
+
+	fullname = pkgname + '.' + taskname
+	task = _tasks.get(fullname)
+	newtask = IrafTask(prefix,taskname,suffix,value,pkgname,pkgbinary)
+	if task:
+		# check for consistency of definition by comparing to the new
+		# object (which will be discarded)
+		if task.getFilename()   != newtask.getFilename() or \
+		   task.getPkgbinary()  != newtask.getPkgbinary() or \
+		   task.getHasparfile() != newtask.getHasparfile() or \
+		   task.getForeign()    != newtask.getForeign() or \
+		   task.getTbflag()     != newtask.getTbflag():
+			print 'Warning: ignoring attempt to redefine task',fullname
+		return task
+	# add it to the task list
+	addTask(newtask)
+	return newtask
+
+def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
+
+	"""Returns a new or existing IrafPkg object
+	
+	Returns a new object unless this package is already defined, in which case
+	a warning is printed and a reference to the existing task is returned.
+	"""
+
+	# does package with exactly this name exist in minimum-match
+	# dictionary _pkgs?
+	pkg = _pkgs.data.get(taskname)
+	newpkg = IrafPkg(prefix,taskname,suffix,value,pkgname,pkgbinary)
+	if pkg:
+		if pkg.getFilename()   != newpkg.getFilename() or \
+		   pkg.getHasparfile() != newpkg.getHasparfile() or \
+		   pkg.getPkgbinary()  != newpkg.getPkgbinary():
+			print 'Warning: ignoring attempt to redefine package',taskname
+		return pkg
+	addPkg(newpkg)
+	return newpkg
 
