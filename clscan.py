@@ -902,7 +902,7 @@ def toklist(tlist,filename=None):
 		sys.stdout = open(filename,'w')
 	for tok in tlist:
 		if tok.type == 'NEWLINE':
-			if token.verbose:
+			if cltoken.verbose:
 				print 'NEWLINE'
 			else:
 				print
