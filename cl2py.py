@@ -27,7 +27,7 @@ import irafpar, minmatch, irafutils
 _parser = clparse._parser
 
 def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
-        local_vars_dict=None, local_vars_list=None):
+        local_vars_dict=None, local_vars_list=None, usecache=1):
 
     """Read CL program from file and return pycode object with Python equivalent
 
@@ -57,6 +57,8 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
     local_vars_dict, local_vars_list: Initial definitions of local variables.
             May be modified by declarations in the CL code.  This is used only for
             "single" mode to allow definitions to persist across statements.
+    usecache: Set to false value to omit use of code cache for either saving
+            or retrieving code.  This is useful mainly for compiler testing.
     """
 
     global _parser, codeCache
@@ -68,21 +70,27 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
 
         if type(filename) == types.StringType:
             efilename = os.path.expanduser(filename)
-            index, pycode = codeCache.get(efilename,mode=mode)
-            if pycode is not None:
-                if Verbose>1:
-                    print efilename,"found in CL script cache"
-                return pycode
+            if usecache:
+                index, pycode = codeCache.get(efilename,mode=mode)
+                if pycode is not None:
+                    if Verbose>1:
+                        print efilename,"found in CL script cache"
+                    return pycode
+            else:
+                index = None
             fh = open(efilename)
             clInput = fh.read()
             fh.close()
         elif hasattr(filename,'read'):
             clInput = filename.read()
-            index, pycode = codeCache.get(filename,mode=mode,source=clInput)
-            if pycode is not None:
-                if Verbose>1:
-                    print filename,"found in CL script cache"
-                return pycode
+            if usecache:
+                index, pycode = codeCache.get(filename,mode=mode,source=clInput)
+                if pycode is not None:
+                    if Verbose>1:
+                        print filename,"found in CL script cache"
+                    return pycode
+            else:
+                index = None
             if hasattr(filename,'name'):
                 efilename = filename.name
             else:
@@ -94,11 +102,14 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
             raise TypeError('str must be a string')
         clInput = str
         efilename = 'string_proc'
-        index, pycode = codeCache.get(None,mode=mode,source=clInput)
-        if pycode is not None:
-            if Verbose>1:
-                print filename,"found in CL script cache"
-            return pycode
+        if usecache:
+            index, pycode = codeCache.get(None,mode=mode,source=clInput)
+            if pycode is not None:
+                if Verbose>1:
+                    print filename,"found in CL script cache"
+                return pycode
+        else:
+            index = None
     else:
         raise ValueError('Either filename or str must be specified')
 

@@ -489,7 +489,7 @@ class GkiKernel:
         for c in classlist:
             for b in c.__bases__:
                 classlist.append(b)
-            for name in dir(c):
+            for name in c.__dict__.keys():
                 if name[:4] == "gki_" or name[:8] == "control_":
                     gkidict[name] = 0
         # now loop over all methods that might be present

@@ -48,7 +48,7 @@ def _namelist(instance):
     for c in classlist:
         for b in c.__bases__:
             classlist.append(b)
-        for name in dir(c):
+        for name in c.__dict__.keys():
             if not namedict.has_key(name):
                 namelist.append(name)
                 namedict[name] = 1
@@ -64,8 +64,8 @@ class GenericScanner:
         for name, number in self.re.groupindex.items():
             # allow other named groups
             if hasattr(self, 't_' + name):
-                self.index2func[number] = getattr(self, 't_' + name)
-                self.indexlist.append(number)
+                self.index2func[number-1] = getattr(self, 't_' + name)
+                self.indexlist.append(number-1)
 
     def makeRE(self, name):
         doc = getattr(self, name).__doc__
@@ -98,7 +98,7 @@ class GenericScanner:
 
             groups = m.groups()
             for i in indexlist:
-                if groups[i]:
+                if groups[i] is not None:
                     index2func[i](groups[i])
                     # assume there is only a single match
                     break

@@ -22,44 +22,34 @@ Created 1999 September 10 by R. White
 
 class ContextSensitiveScanner:
 
-	"""Context-sensitive scanner"""
+    """Context-sensitive scanner"""
 
-	def __init__(self, scanners, start=0):
-		# scanners is a list or dictionary containing the
-		# stack of scanners
-		# start is default starting state
-		self.scanners = scanners
-		self.start = start
+    def __init__(self, scanners, start=0):
+        # scanners is a list or dictionary containing the
+        # stack of scanners
+        # start is default starting state
+        self.scanners = scanners
+        self.start = start
 
-	def tokenize(self, s, start=None):
-		if start is None: start = self.start
-		self.current = [start]
-		iend = 0
-		slen = len(s)
-		while iend < slen:
-			if not self.current: self.current = [start]
-			icur = self.current[-1]
-			m = self.scanners[icur].re.match(s, iend)
-			assert m
-
-			j = 0
-			for i in self.scanners[icur].indexlist:
-				# code to check for group i match lifted from re
-				a, b = m.regs[i]
-				if a != -1 and b != -1:
-					grp = s[a:b]
-					self.scanners[icur].index2func[i](grp,m,self)
-					# move-to-front strategy to speed up searches
-					if j > 0:
-						del self.scanners[icur].indexlist[j]
-						self.scanners[icur].indexlist.insert(0, i)
-					# assume there is only a single match
-					break
-				j = j+1
-			else:
-				print 'No group found in match?'
-				print 'Returning match object for debug'
-				self.rv = m
-				return
-			iend = m.end()
-
+    def tokenize(self, s, start=None):
+        if start is None: start = self.start
+        self.current = [start]
+        iend = 0
+        slen = len(s)
+        while iend < slen:
+            if not self.current: self.current = [start]
+            scanner = self.scanners[self.current[-1]]
+            m = scanner.re.match(s, iend)
+            assert m
+            groups = m.groups()
+            for i in scanner.indexlist:
+                if groups[i] is not None:
+                    scanner.index2func[i](groups[i],m,self)
+                    # assume there is only a single match
+                    break
+            else:
+                print 'cgeneric: No group found in match?'
+                print 'Returning match object for debug'
+                self.rv = m
+                return
+            iend = m.end()

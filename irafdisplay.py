@@ -30,8 +30,14 @@ $Id$
 
 """
 
-import os, socket, Numeric, fcntl, FCNTL
+import os, socket, Numeric, fcntl
 import irafutils
+
+# FCNTL is deprecated in Python 2.2
+if hasattr(fcntl,'F_SETFL'):
+    FCNTL = fcntl
+else:
+    import FCNTL
 
 _default_imtdev = ("unix:/tmp/.IMT%d", "fifo:/dev/imt1i:/dev/imt1o")
 
