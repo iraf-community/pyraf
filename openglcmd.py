@@ -1,7 +1,7 @@
 """gki metacode generating functions for use by Pyraf in generating
 iraf gki metacode (primarily for interactive graphics)"""
 
-import gki, irafexecute, gwm
+import gki, gwm
 import Numeric
 
 def gkiCoord(ndcCoord):
@@ -9,13 +9,13 @@ def gkiCoord(ndcCoord):
 	return Numeric.array(ndcCoord * gki.GKI_MAX,Numeric.Int16)
 
 def appendMetacode(metacode):
-	irafexecute.stdgraph.append(metacode,1)
+	gki.kernel.stdgraph.append(metacode,1)
 
 def undo():
-	irafexecute.stdgraph.undoN(1)
+	gki.kernel.stdgraph.undoN(1)
 
 def redrawOriginal():
-	irafexecute.stdgraph.redrawOriginal()
+	gki.kernel.stdgraph.redrawOriginal()
 
 def text(textstring, x, y):
 	gkiX = gkiCoord(x)

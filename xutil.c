@@ -445,7 +445,7 @@ PyObject *wrap_freeColor(PyObject *self, PyObject *args) {
 }
 
 
-static PyMethodDef xlibtricksMethods[] = {
+static PyMethodDef xutilMethods[] = {
   { "moveCursorTo",wrap_moveCursorTo, 1},
   { "getWindowID",wrap_getWindowID, 1},
   { "setFocusTo",wrap_setFocusTo, 1},
@@ -460,7 +460,7 @@ static PyMethodDef xlibtricksMethods[] = {
   {NULL, NULL}
 };
 
-void initxlibtricks() {
+void initxutil() {
   PyObject *m;
-  m = Py_InitModule("xlibtricks", xlibtricksMethods);
+  m = Py_InitModule("xutil", xutilMethods);
 }

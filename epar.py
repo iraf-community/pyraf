@@ -11,7 +11,7 @@ from tkMessageBox import askokcancel
 import os, sys, string
 
 # PYRAF modules
-import iraf, irafpar, iraftask, irafhelp, irafgcur, irafukey, cStringIO
+import iraf, irafpar, iraftask, irafhelp, openglgcur, irafukey, cStringIO
 from eparoption import *
 
 # Constants 

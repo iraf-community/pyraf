@@ -5,9 +5,10 @@ $Id$
 """
 
 import string, os
-import gwm, wutil, iraf, irafexecute, gkiopengl, gkicommand
+import gwm, wutil, iraf, gkiopengl, openglcmd, gki
 import irafgwcs
 import tkSimpleDialog
+import graphcap
 
 # The following class attempts to emulate the standard IRAF gcursor
 # mode of operation. That is to say, it is basically a keyboard driven
@@ -39,9 +40,9 @@ class Gcursor:
 		if not self.top:
 			# if graphics hasn't been started yet xxx depends implicitly on
 			# opengl kernel. This may become optional
-			irafexecute.stdgraph = gkiopengl.GkiOpenGlKernel()
-			irafexecute.stdgraph.openWS(irafexecute.Numeric.array([5,0]))
-			irafexecute.stdgraph.closeWS(None)
+			gki.kopen()
+			gki.stdgraph.openWS(irafexecute.Numeric.array([5,0]))
+			gki.stdgraph.closeWS(None)
 			self.top = gwm.getActiveWindowTop()
 		self.win = gwm.getActiveWindow()
 		gwm.raiseActiveWindow()
@@ -144,8 +145,8 @@ class Gcursor:
 			return
 		x,y = self.getNDCCursorPos()
    		if self.markcur and key not in 'q?:=UR':
-		   	metacode = gkicommand.markCross(x,y)
-			gkicommand.appendMetacode(metacode)
+		   	metacode = openglcmd.markCross(x,y)
+			openglcmd.appendMetacode(metacode)
 		if key == 'q': # Expecting the graphics task to end. Possibly false,
 		               # but no big deal if it is. The vast majority of the
 					   # time it is true.
@@ -182,17 +183,17 @@ class Gcursor:
 			print "snap completed"
 		elif key in string.uppercase:
 			if   key == 'R':
-				gkicommand.redrawOriginal()
+				openglcmd.redrawOriginal()
 			elif key == 'T':
 				wutil.focusController.saveCursorPos()
 				textstring = tkSimpleDialog.askstring("Annotation string","")
 				# This is needed for openwindows which doesn't automatically
 				# return focus to the graphics window.
 				wutil.focusController.setCurrent()
-				metacode = gkicommand.text(textstring,x,y)
-				gkicommand.appendMetacode(metacode)
+				metacode = openglcmd.text(textstring,x,y)
+				openglcmd.appendMetacode(metacode)
 			elif key == 'U':
-				gkicommand.undo()
+				openglcmd.undo()
 			else:
 				print "Not quite ready to handle this particular" + \
 					  "CL level gcur command."
@@ -233,17 +234,11 @@ def printPlot():
 		fout.write(gkibuff.tostring())
 		fout.close()
 		try:
-			iraf.stsdas.motd="no"
-			iraf.load("stsdas",doprint=0)
-			iraf.load("graphics",doprint=0)
-			iraf.load("stplot",doprint=0)
-			printkernel = iraf.getTask("psikern")
-			printkernel(tmpfn)
+			graphcap = gki.kernel.devices
+			stdplot = iraf.envget('stdplot')
+			printtaskname = graphcap[stdplot]['tn']
+			printtask = iraf.getTask(printtaskname)
+			printtask(tmpfn)
 		finally:
 			os.remove(tmpfn)
 		
-# Eventually there may be multiple Gcursor classes that return a string
-# that satisfies clgcur. In that case we will use a factory function
-# to set gcur to the desired mode of operation. For now Gcursor is it.
-
-gcur = Gcursor()
