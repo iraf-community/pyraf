@@ -74,7 +74,7 @@ def getTermWindowSize():
 	# created by IOCTL call
 	tstruct = ' '*20 # that should be more than enough memory
 	# xxx exception handling needed (but what exception to catch?)
-	rstruct = fcntl.ioctl(sys.stdin.fileno(), magicConstant, tstruct)
+	rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
 	xsize, ysize = struct.unpack('hh',rstruct[0:4])
 	return xsize, ysize
 
@@ -365,7 +365,7 @@ class TerminalFocusEntity:
 		# created by IOCTL call
 		tstruct = ' '*20 # that should be more than enough memory
 		# xxx exception handling needed (but what exception to catch?)
-		rstruct = fcntl.ioctl(sys.stdin.fileno(), magicConstant, tstruct)
+		rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
 		xsize, ysize = struct.unpack('hh',rstruct[0:4])
 		return xsize, ysize
 

@@ -90,7 +90,7 @@ class CmdConsole(code.InteractiveConsole):
 				self.resetbuffer()
 				more = 0
 			except KeyboardInterrupt:
-				self.write("\nKeyboardInterrupt\n")
+				self.write("^C\n")
 				self.resetbuffer()
 				more = 0
 
