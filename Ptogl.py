@@ -131,7 +131,7 @@ class RawOpengl(Widget, Misc):
 		self['cursor'] = '@' + _blankcursor + ' black'
 		# ignore type for now since only one type of software cursor
 		# is implemented
-		self.__isSWCcursorSleeping = 0
+		self.__isSWCursorSleeping = 0
 		if not self.__isSWCursorActive:
 			if not self.__SWCursor:
 				self.__SWCursor = FullWindowCursor(x,y,self.rgbamode)
@@ -187,13 +187,13 @@ class RawOpengl(Widget, Misc):
 		ndcY = float(winSizeY - y)/winSizeY
 		self.__SWCursor.moveTo(ndcX,ndcY,self.__isSWCursorSleeping)
 	
-	def tkMap(self, *dummy):
-		print "tkMap called"
-		self.tkExpose()
+#	def tkMap(self, *dummy):
+#		print "tkMap called"
+#		self.tkExpose()
 
-	def tkExpose(self, *dummy):
-		print "tkExpose called"
-		self.tkRedraw()
+#	def tkExpose(self, *dummy):
+#		print "tkExpose called"
+#		self.tkRedraw()
 
 class Ptogl(RawOpengl):
 	"""

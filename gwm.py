@@ -51,8 +51,8 @@ class GraphicsWindowManager:
 		if not windowName: # think up a default name!
 			number = 1
 			while 1:
-				windowname = 'graphics'+str(number)
-				if not self.windows.has_key(windowname):
+				windowName = 'graphics'+str(number)
+				if not self.windows.has_key(windowName):
 					break
 				number = number + 1
 		if not self.windows.has_key(windowName):
@@ -125,6 +125,7 @@ class GraphicsWindow:
 					 fill=Tkinter.X, padx=2, pady=1, ipady=1)
 		self.gwidget.pack(side = 'top', expand=1, fill='both')
 		self.top.protocol("WM_DELETE_WINDOW", self.gwdestroy)
+		self.gwidget.firstPlotDone = 0
 		self.gwidget.interactive = 0
 		windowID = self.gwidget.winfo_id()
 		wutil.setBackingStore(windowID)
@@ -207,21 +208,11 @@ available, we take what we can get. We do not attempt to get a
 private colormap"""
 
 class gColor:
-	"""Things are complicated for color index mode, primarily because
-	of the desire to reserve even,odd color indicies. To do that requires
-	searching through the color table, but the only way one can find free
-	indicies is by allocating a color. If it isn't consecutive, it must
-	be freed since we want a different color index for the same color, but
-	if we free it, we will only get it again on the next try...
-	The only way to get this to work is to use a whole set of dummy colors
-	(but distinct) to find consecutive even, odd pairs, when found, they
-	can be freed and reallocated. Hence it is necessary to allocate all
-	16 pairs right off the bat to avoid this silly searching."""
+
 	def __init__(self):
 
 		self.colorset = [None]*nIrafColors
 		self.indexmap = [None]*nIrafColors
-		self.invindexmap = [None]*nIrafColors
 		depth = wutil.getScreenDepth()
 		print "screen depth =", depth
 		if depth <=8:
@@ -236,102 +227,15 @@ class gColor:
 		self.colorset[colorindex] = (red, green, blue)
 
 	def setColors(self):
-		"""Does nothing in rgba mode, attempts to get even, odd pairs
-		of color indices for each color in the color set. The even is
-		the desired color, odd is the inverse so that xoring the lowest
-		index bit will result in the inverse color. If it fails to get all
-		such pairs, it takes what it can get."""
-		if self.rgbamode:
-			return
-		# pick a weird dummy color that has little chance of already being
-		# in the color table.
-		dummyRed   = 0.12
-		dummyGreen = 0.01
-		dummyBlue  = 0.07
-		indexlist = [] # the rejects, keep for later freeing
-		full = 0
-		cindex = 0
-		lastind = -10
-		ntrys = 0
-		# Two successive allocations that give the same index indicate
-		# that the table is full. A decrease in number means full or
-		# an unlucky match. Will assume full for now.
-		g = getActiveWindow()
-		while cindex < nIrafColors and not full:
-			newind = toglcolors.AllocateColor(g.toglStruct,
-							   dummyRed, dummyGreen, dummyBlue)
-			if (newind == lastind+1) and (lastind % 2) == 0: # a pair!
-				# free last two indicies
-				toglcolors.FreeColorIndex(g.toglStruct, newind)
-				toglcolors.FreeColorIndex(g.toglStruct, lastind)
-				# reallocate desired colors
-				ind1 = toglcolors.AllocateColor(g.toglStruct,
-										 self.colorset[cindex][0],
-										 self.colorset[cindex][1],
-										 self.colorset[cindex][2])
-				ind2 = toglcolors.AllocateColor(g.toglStruct,
-										 1.-self.colorset[cindex][0],
-										 1.-self.colorset[cindex][1],
-										 1.-self.colorset[cindex][2])
-				self.indexmap[cindex] = ind1
-				self.invindexmap[cindex] = ind2
-				if (ind2 != (ind1+1)) or (ind1 % 2) != 0:
-					raise "color allocation error!"
-				cindex = cindex + 1
-				lastind = -10
-			else:
-				if newind <= lastind:
-					full = 1
-					if lastind >= 0:
-						indexlist.append(lastind)
-					indexlist.append(newind)
-				else:
-					if lastind >= 0:
-						indexlist.append(lastind)
-					lastind = newind
-					# generate new dummy color, hopefully it won't match an
-					# existing color.
-					t = (ntrys % 3)
-					if t == 0:
-						dummyRed   = dummyRed + 0.01
-					elif t == 1:
-						dummyGreen = dummyGreen + 0.01
-					else:
-						dummyBlue  = dummyBlue + 0.01
-					ntrys = ntrys + 1
-		if full:
-			# allocate the remaining colors using whatever the window
-			# manager gives us. But first free all previously dummy
-			# allocated colors.
-			print "8-bit color table is full, using closest available colors"
-			for cind in indexlist:
-				toglcolors.FreeColorIndex(g.toglStruct, cind)
-			indexlist = []
-			# allocate remaining colors
-			for cind in xrange(cindex, nIrafColors):
-				ind = toglcolors.AllocateColor(g.toglStruct,
-										 self.colorset[cind][0],
-										 self.colorset[cind][1],
-										 self.colorset[cind][2])
-				self.indexmap[cind] = ind
-		# free any remaining dummy colors allocated
-		for cind in indexlist:
-			toglcolors.FreeColorIndex(g.toglStruct, cind)
-
-
-	def freeColors(self):
-		# does nothing for rgba mode
+		"""Does nothing in rgba mode, allocates 16 colors in index mode"""
 		if self.rgbamode:
 			return
 		g = getActiveWindow()
-		if not g:
-			raise "No active graphics windows to free colors for"
-		for cind in xrange(nIrafColors):
-			toglcolors.FreeColorIndex(g.toglStruct,self.indexmap[cind])
-			if self.invindexmap[cind]:
-				toglcolors.FreeColorIndex(g.toglStruct,self.invindexmap[cind])
-		self.indexmap = [None]*nIrafColors
-		self.invindexmap = [None]*nIrafColors
+		for i in xrange(16):
+			self.indexmap[i] = toglcolors.AllocateColor(g.toglStruct,
+							   self.colorset[i][0],
+							   self.colorset[i][1],
+							   self.colorset[i][2])
 
 	def setDrawingColor(self, irafColorIndex):
 		"""Apply the specified iraf color to the current OpenGL drawing
@@ -424,21 +328,18 @@ def setGraphicsDrawingColor(irafColorIndex):
 	_g.colorManager.setDrawingColor(irafColorIndex)
 
 
-firstPlotDone = 0
-
 def restoreLastFocus():
 	"""Restore focus to terminal window after first Tk plot"""
-	global firstPlotDone
-	if (not firstPlotDone) and wutil.hasGraphics:
-		gwin = getActiveWindow()
-		if gwin:
+	gwin = getActiveWindow()
+	if gwin:
+		if (not gwin.firstPlotDone) and wutil.hasGraphics:
 			# this is a hack to prevent the double redraw on first plots
 			# (when they are not interactive plots). This should be done
 			# better, but it appears to work.
 			if not gwin.interactive:
 				gwin.ignoreNextNRedraws = 2
 			wutil.focusController.restoreLast()
-			firstPlotDone = 1
+			gwin.firstPlotDone = 1
 
 def resetFocusHistory():
 	"""Reset focus history after an error occurs"""

@@ -4,10 +4,9 @@ $Id$
 """
 
 import os, re, signal, string, struct, sys, time, types, Numeric, cStringIO
-import subproc, iraf, gki, gkiopengl, gwm, wutil, irafutils, iraftask
+import subproc, iraf, gki, gwm, wutil, irafutils, iraftask
 
-stdgraph = None
-firstPlotDone = 0
+#stdgraph = None
 
 IPC_PREFIX = Numeric.array([01120],Numeric.Int16).tostring()
 
@@ -190,7 +189,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 	"""Execute IRAF task (defined by the IrafTask object task)
 	using the provided envionmental variables."""
 
-	global firstPlotDone, processCache
+	global processCache
 	try:
 		# Start 'er up
 		irafprocess = processCache.get(task, envdict)
@@ -201,16 +200,16 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 	try:
 		irafprocess.run(task, stdin=stdin,stdout=stdout,stderr=stderr)
 		gwm.restoreLastFocus()
-		if stdgraph:
-			stdgraph.stdout = None
-			stdgraph.stderr = None
+		if gki.kernel:
+			gki.kernel.stdgraph.stdout = None
+			gki.kernel.stdgraph.stderr = None
 	except KeyboardInterrupt:
 		# On keyboard interrupt (^C), kill the subprocess
 		processCache.kill(irafprocess)
 		gwm.resetFocusHistory()
-		if stdgraph:
-			stdgraph.stdout = None
-			stdgraph.stderr = None
+		if gki.kernel:
+			gki.kernel.stdgraph.stdout = None
+			gki.kernel.stdgraph.stderr = None
 		raise KeyboardInterrupt
 	except (iraf.IrafError, IrafProcessError), exc:
 		# on error, kill the subprocess, then re-raise the original exception
@@ -477,8 +476,6 @@ class IrafProcess:
 
 		"""Handle xmit data transmissions"""
 
-		global stdgraph
-
 		chan, nbytes = self.chanbytes()
 
 		checkForEscapeSeq = (chan == 4 and (nbytes==6 or nbytes==5))
@@ -504,9 +501,9 @@ class IrafProcess:
 			self.stderr.flush()
 		elif chan == 6:
 			# need to handle cases where WS not open yet
-			if not stdgraph:
-				stdgraph = gkiopengl.GkiOpenGlKernel()
-			stdgraph.append(Numeric.fromstring(xdata,'s'))
+			if not gki.kernel:
+				gki.kernel = gki.GkiController()
+			gki.kernel.append(Numeric.fromstring(xdata,'s'))
 		elif chan == 7:
 			self.stdout.write("data for STDIMAGE\n")
 			self.stdout.flush()
@@ -525,41 +522,28 @@ class IrafProcess:
 				forChan = sdata[0]
 			if forChan == 6:
 				# STDPLOT control
-				# first see if OPENWS to get device, otherwise
-				# pass through to current kernel, use braindead
-				# interpretation to look for openws
-				if stdgraph is None:
-					if wutil.hasGraphics:
-						stdgraph = gkiopengl.GkiOpenGlKernel()
-					else:
-						# install the "do nothing" kernel
-						stdgraph = gki.GkiNull()
-				if (sdata[2] == -1) and (sdata[3] == 1):
-					length = sdata[4]
-					device = sdata[5:length+2].astype('b').tostring()
-					# but of course, for the time being (until
-					# we manage another graphics kernel) we ignore
-					# device!
-
+				if gki.kernel is None:
+					gki.kernel = gki.GkiController()
 				# Pass it to the kernel to deal with
 				# Only returns a value for getwcs
-				wcs = stdgraph.control(sdata[2:])
+				wcs = gki.kernel.control(sdata[2:])
 				if wcs:
 					# Write directly to stdin of subprocess;
 					# strangely enough, it doesn't use the
 					# STDGRAPH I/O channel.
 					self.write(wcs)
-					stdgraph.clearReturnData()
-				if stdgraph.stdout:
-					self.stdout = stdgraph.stdout
+					gki.kernel.clearReturnData()
+				if gki.kernel.stdgraph.stdout:
+					self.stdout = gki.kernel.stdgraph.stdout
 				else:
 					self.stdout = self.default_stdout
-				if stdgraph.stderr:
-					self.stderr = stdgraph.stderr
+				if gki.kernel.stdgraph.stderr:
+					self.stderr = gki.kernel.stdgraph.stderr
 				else:
 					self.stderr = self.default_stderr
 			else:
 				self.stdout.write("GRAPHICS control data for channel %d\n" % (forChan,))
+				
 				self.stdout.flush()
 		else:
 			self.stdout.write("data for channel %d\n" % (chan,))

@@ -63,22 +63,17 @@ def _imcur(readCursor=_readCursor):
 #		imageDisplay.activateImcur()
 		wutil.focusController.setFocusTo("image")
 		# Read cursor position at keystroke
-		key, xpos, ypos, dummy = readCursor(displayHandle)
+		key, xpos, ypos, wcs, dummy = readCursor(displayHandle)
 		if not imageDisplay.getWindowID():
 			imageDisplay.setWindowID()
-		frame = cdl.cdl_getFrame(displayHandle)
+			
 		# don't close the display!
 		# Heuristc approach to focus return. Assumes that one of the following
 		# characters is intended by the task to change focus. It is not
 		# guaranteed that is true, but it almost always is.
-		if key in ('q','?','\\','\000'):
+		if key in ('q','?','\004','\032','\000'):
 			wutil.focusController.restoreLast()
-		if key in ['\\', '\000']:
-			# This is what cdl returns for any control key. (It seems
-			# to return '\\' for everything except ^D and ^Z, which return a
-			# null character.) Since we need to trap control-D, this is what
-			# we will interpret all control characters as EOF.
-			key = ' ' # just to give it a value
+		if key in ['\004', '\032']:
 			raise EOFError # irafexecute will handle this properly
 		if key == ':':
 			wutil.focusController.setFocusTo("terminal")
@@ -86,7 +81,6 @@ def _imcur(readCursor=_readCursor):
 			wutil.focusController.restoreLast()
 		else:
 			colonString = ""
-		wcs = 100*frame + 1
 	except:
 		# Above all, make sure the imcur flag doesn't stay on in case
 		# of an error.

@@ -28,9 +28,12 @@ class IrafGWcs:
 			raise IrafError
 		self.wcs = [None]*WCS_SLOTS
 		for i in xrange(WCS_SLOTS):
-			self.wcs[i] = struct.unpack('fffffffflll',
-								   wcsStruct[WCS_RECORD_SIZE*i:
-											 WCS_RECORD_SIZE*(i+1)].tostring())
+			record = wcsStruct[WCS_RECORD_SIZE*i:WCS_RECORD_SIZE*(i+1)]
+			# read 8 4 byte floats from beginning of record
+			fvals = Numeric.fromstring(record[:8*2].tostring(),Numeric.Float32)
+			# read 3 4 byte ints after that
+			ivals = Numeric.fromstring(record[8*2:].tostring(),Numeric.Int32)
+			self.wcs[i] = tuple(fvals) + tuple(ivals)
 
 	def pack(self):
 
@@ -39,12 +42,12 @@ class IrafGWcs:
 
 		wcsStruct = Numeric.zeros(WCS_RECORD_SIZE * WCS_SLOTS, Numeric.Int16)
 		for i in xrange(WCS_SLOTS):
-			x = list(self.wcs[i])
-			x.insert(0,'fffffffflll')
+			x = self.wcs[i]
+			farr = Numeric.array(x[:8],Numeric.Float32)
+			iarr = Numeric.array(x[8:],Numeric.Int32)
 			wcsStruct[WCS_RECORD_SIZE*i:
 				  WCS_RECORD_SIZE*(i+1)] = \
-				  Numeric.fromstring(apply(struct.pack, tuple(x)),
-									 Numeric.Int16)
+				  Numeric.fromstring(farr.tostring() + iarr.tostring())
 		return wcsStruct.tostring()
 
 	

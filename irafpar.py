@@ -6,8 +6,9 @@ R. White, 2000 January 7
 """
 
 import os, sys, string, re, types
-import irafgcur, irafimcur, irafukey, irafutils, minmatch, epar
+import irafimcur, irafukey, irafutils, minmatch, epar
 from irafglobals import INDEF, Verbose, yes, no
+import gki
 
 # container class used for __deepcopy__ method
 import copy
@@ -1376,7 +1377,7 @@ class IrafParGCur(IrafParL):
 
 	def _getNextValue(self):
 		"""Return next graphics cursor value"""
-		return irafgcur.gcur()
+		return gki.kernel.gcur()
 
 # -----------------------------------------------------
 # IRAF imcur (image display cursor) parameter class

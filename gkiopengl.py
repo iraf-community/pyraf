@@ -5,17 +5,17 @@ $Id$
 """
 
 from OpenGL.GL import *
-from gki import *
-import irafexecute
+#from gki import *
+import gki
 import iraf
 import Numeric
 import gwm
-import irafgcur
+import openglgcur
 import irafgwcs
 import wutil
 import sys
 import string
-from  iraftext import *
+from  opengltext import *
 
 # open /dev/null for general availability
 devNull = open('/dev/null','w')
@@ -47,7 +47,7 @@ class IrafPlot:
 	def __init__(self):
 
 		self.glBuffer = GLBuffer()
-		self.gkiBuffer = GkiBuffer()
+		self.gkiBuffer = gki.GkiBuffer()
 		self.wcs = None
 		self.kernel = None
 		self.colors = IrafColors()
@@ -58,31 +58,45 @@ class IrafPlot:
 		self.fillAttributes = FillAttributes()
 		self.markerAttributes = MarkerAttributes()
 
-class GkiOpenGlKernel(GkiKernel):
+def nullAction(arg): pass
+
+class GkiOpenGlKernel(gki.GkiKernel):
 
 	def __init__(self):
 
-		GkiKernel.__init__(self)
-		self.functionTable = gkiFunctionTable
+		gki.GkiKernel.__init__(self)
 		self.controlFunctionTable = [self.controlDefault]*(GKI_MAX_OP_CODE+1)
-		self.controlFunctionTable[GKI_OPENWS] = self.openWS
-		self.controlFunctionTable[GKI_CLOSEWS] = self.closeWS
-		self.controlFunctionTable[GKI_REACTIVATEWS] = self.reactivateWS
-		self.controlFunctionTable[GKI_DEACTIVATEWS] = self.deactivateWS
-		self.controlFunctionTable[GKI_CLEARWS] = self.clearWS
-		self.controlFunctionTable[GKI_SETWCS] = self.setWCS
-		self.controlFunctionTable[GKI_GETWCS] = self.getWCS
+		self.controlFunctionTable[gki.GKI_OPENWS] = self.openWS
+		self.controlFunctionTable[gki.GKI_CLOSEWS] = self.closeWS
+		self.controlFunctionTable[gki.GKI_REACTIVATEWS] = self.reactivateWS
+		self.controlFunctionTable[gki.GKI_DEACTIVATEWS] = self.deactivateWS
+		self.controlFunctionTable[gki.GKI_CLEARWS] = self.clearWS
+		self.controlFunctionTable[gki.GKI_SETWCS] = self.setWCS
+		self.controlFunctionTable[gki.GKI_GETWCS] = self.getWCS
 		self.stdout = None
 		self.stderr = None
+		self.gcursor = openglgcur.Gcursor()
+		self.name = 'OpenGL'
+		self._gkiAction = _glAppend
 
+	def getBuffer(self):
+
+   		if gwm.getActiveWindow():
+   			win = gwm.getActiveWindow()
+	   		return win.iplot.gkiBuffer
+		else:
+			print "ERROR: no IRAF plot window active"
+			raise IrafProcessError
+	
 	def control(self, gkiMetacode):
 
-		gkiTranslate(gkiMetacode, self.controlFunctionTable)
+		gki.gkiTranslate(gkiMetacode, self.controlFunctionTable,
+						 nullAction)
 		return self.returnData
 
 	def translate(self, gkiMetacode, fTable):
 
-		gkiTranslate(gkiMetacode, fTable)
+		gki.gkiTranslate(gkiMetacode, fTable, self._gkiAction)
 		win = gwm.getActiveWindow()
 		glbuf = win.iplot.glBuffer
 		# render new stuff immediately
@@ -92,20 +106,19 @@ class GkiOpenGlKernel(GkiKernel):
 			function, args = glbuf.getNextCall()
 		glFlush()
 
-	def controlDefault(self, arg):
+	def controlDefault(self, dummy, arg):
 
 		# This function should never be called.
 		print "controlDefault called"
 
-	def controlDoNothing(self, arg):
+	def controlDoNothing(self, dummy, arg):
 		pass
 
-	def openWS(self, arg):
+	def openWS(self, dummy, arg):
 
 		global _errorMessageCount
 		_errorMessageCount = 0
 		mode = arg[0]
-		device = arg[1:].tostring() # but will be ignored
 		wutil.focusController.saveCursorPos()
 		# first see if there are any graphics windows, if not, create one 
 		win = gwm.getActiveWindow()
@@ -136,7 +149,7 @@ class GkiOpenGlKernel(GkiKernel):
 			# Tee mode (?), ignore for now
 			pass
 			
-	def clearWS(self, arg):
+	def clearWS(self, dummy, arg):
 
 		# apparently this control routine is not used???
 
@@ -146,7 +159,7 @@ class GkiOpenGlKernel(GkiKernel):
 		win.iplot.wcs = None
 		win.immediateRedraw()
 
-	def reactivateWS(self, arg):
+	def reactivateWS(self, dummy, arg):
 
 		global _errorMessageCount
 		_errorMessageCount = 0
@@ -158,7 +171,7 @@ class GkiOpenGlKernel(GkiKernel):
 		if not self.stderr:
 			self.stderr = DevNullError()
 		
-	def deactivateWS(self, arg):
+	def deactivateWS(self, dummy, arg):
 		if self.stdout:
 			self.stdout.close()
 			self.stdout = None
@@ -166,13 +179,13 @@ class GkiOpenGlKernel(GkiKernel):
 			self.stderr.close()
 			self.stderr = None
 
-	def setWCS(self, arg):
+	def setWCS(self, dummy, arg):
 
 		#__main__.wcs = arg # pass it up to play with
 		win = gwm.getActiveWindow()
 		win.iplot.wcs = irafgwcs.IrafGWcs(arg)
 
-	def getWCS(self, arg):
+	def getWCS(self, dummy, arg):
 
 		win = gwm.getActiveWindow()
 		if not win.iplot.wcs:
@@ -183,7 +196,7 @@ class GkiOpenGlKernel(GkiKernel):
 		else:
 			self.returnData = win.iplot.wcs.pack()
 
-	def closeWS(self, arg):
+	def closeWS(self, dummy, arg):
 
 		wutil.focusController.saveCursorPos()
 		win = gwm.getActiveWindow()
@@ -215,11 +228,20 @@ class GkiOpenGlKernel(GkiKernel):
 			apply(function, args)
 		glFlush()
 
-def _glAppend(arg):
+	def gcur(self): return self.gcursor()
+
+def _glAppend(opcode, arg):
 
 	"""append a 2-tuple (gl_function, args) to the glBuffer"""
 	win = gwm.getActiveWindow()
-	win.iplot.glBuffer.append(arg)
+	if opcode == gki.GKI_CLEARWS:
+		win.iplot.gkiBuffer.reset()
+		win.iplot.glBuffer.reset()
+		win.iplot.wcs = None
+		win.immediateRedraw()
+		win.status.config(text=" ")
+	glarg = (glFunctionTable[opcode],arg)
+	win.iplot.glBuffer.append(glarg)
 
 class DevNullError:
 
@@ -247,120 +269,6 @@ class StatusLine:
 		
 #***********************************************************
 
-standardWarning = """
-The graphics kernel for IRAF tasks has just recieved a metacode
-instruction it never expected to see. Please inform the STSDAS
-group of this occurance"""
-
-standardNotImplemented = """
-You have tried to run an IRAF task which requires graphics kernel
-facility not implemented in the Python graphics kernel for IRAF tasks"""
-
-def gki_eof(arg): pass # ignored
-def gki_openws(arg): pass	# handled in control channel
-def gki_closews(arg): pass # handled in control channel
-def gki_reactivatews(arg): pass # ignored
-def gki_deactivatews(arg): pass # ignored
-def gki_mftitle(arg): pass # ignored
-def gki_clearws(arg):
-
-	win = gwm.getActiveWindow()
-	win.iplot.gkiBuffer.reset()
-	win.iplot.glBuffer.reset()
-	win.iplot.wcs = None
-	win.immediateRedraw()
-	win.status.config(text=" ")
-
-def gki_cancel(arg): gki_clearws(arg)
-
-def gki_flush(arg): _glAppend((gl_flush,(arg,)))
-
-def gki_polyline(arg): _glAppend((gl_polyline,(ndc(arg[1:]),)))
-
-def gki_polymarker(arg): 
-
-	errorMessage(standardWarning)
-		
-def gki_text(arg):
-	
-#	print "GKI_TEXT:", arg[3:].tostring()
-	x = ndc(arg[0])
-	y = ndc(arg[1])
-	text = arg[3:].astype(Numeric.Int8).tostring()
-	_glAppend((gl_text, (x, y, text)))
-
-def gki_fillarea(arg): 
-
-	_glAppend((gl_fillarea,(ndc(arg[1:]),)))
-
-def gki_putcellarray(arg): 
-	
-	errorMessage(standardNotImplemented)
-	
-def gki_setcursor(arg):
-
-	cursorNumber = arg[0]
-	x = arg[1]/GKI_MAX
-	y = arg[2]/GKI_MAX
-	_glAppend((gl_setcursor, (cursorNumber, x, y)))
-	
-def gki_plset(arg):
-
-	linetype = arg[0]
-	linewidth = arg[1]/GKI_FLOAT_FACTOR
-	color = arg[2]
-	_glAppend((gl_plset, (linetype, linewidth, color)))
-	
-def gki_pmset(arg):
-
-#	marktype = arg[0]
-#	marksize = arg[1]/GKI_MAX
-#	color = arg[2]
-#	print "GKI_PMSET", marktype, marksize, color
-#	_glAppend((gl_pmset, (marktype, marksize, color)))
-	errorMessage(standardWarning)
-
-def gki_txset(arg):
-
-	charUp = float(arg[0])
-	charSize = arg[1]/GKI_FLOAT_FACTOR
-	charSpace = arg[2]/GKI_FLOAT_FACTOR
-	textPath = arg[3]
-	textHorizontalJust = arg[4]
-	textVerticalJust = arg[5]
-	textFont = arg[6]
-	textQuality = arg[7]
-	textColor = arg[8]
-	_glAppend((gl_txset, (charUp, charSize, charSpace, textPath,
-		textHorizontalJust, textVerticalJust, textFont,
-		textQuality, textColor)))
-
-def gki_faset(arg):
-
-	fillstyle = arg[0]
-	color = arg[1]
-	_glAppend((gl_faset,(fillstyle, color)))
-
-def gki_getcursor(arg):
-
-	print "GKI_GETCURSOR"
-	raise standardNotImplemented
-	 
-def gki_getcellarray(arg):
-
-	print "GKI_GETCELLARRAY"
-	raise standardNotImplemented
-	
-def gki_unknown(arg): 
-	
-	errorMessage("GKI_UNKNOWN:\n"+standardWarning)
-	
-def gki_escape(arg): print "GKI_ESCAPE"
-def gki_setwcs(arg): pass #print "GKI_SETWCS"
-def gki_getwcs(arg): print "GKI_GETWCS"
-
-#*****************************************
-
 def gl_eof(arg): pass
 def gl_openws(arg): pass
 def gl_closews(arg): pass
@@ -380,6 +288,8 @@ def gl_polyline(vertices):
 	if cursorActive:
 		win.SWCursorSleep()
 	la = win.iplot.lineAttributes
+	glPointSize(1.0)
+	glDisable(GL_LINE_SMOOTH)
 	glLineWidth(la.linewidth)
 	stipple = 0
 	clear = 0
@@ -494,38 +404,38 @@ def gl_escape(arg): pass
 def gl_setwcs(arg): pass
 def gl_getwcs(arg): pass
 
+glFunctionTable = [
+	gl_eof,	   	# 0
+	gl_openws,  
+	gl_closews,
+	gl_reactivatews,
+	gl_deactivatews,
+	gl_mftitle,	# 5
+	gl_clearws,
+	gl_cancel,
+	gl_flush,
+	gl_polyline,
+	gl_polymarker,# 10
+	gl_text,
+	gl_fillarea,
+	gl_putcellarray,
+	gl_setcursor,
+	gl_plset,		# 15
+	gl_pmset,
+	gl_txset,
+	gl_faset,
+	gl_getcursor, # also gl_cursorvalue,
+	gl_getcellarray,#20  also	gl_cellarray,
+	gl_unknown,
+	gl_unknown,
+	gl_unknown,
+	gl_unknown,
+	gl_escape,		# 25
+	gl_setwcs,
+	gl_getwcs]
+
 #********************************************
 
-# function tables
-gkiFunctionTable = [
-	gki_eof,			# 0
-	gki_openws,  
-	gki_closews,
-	gki_reactivatews,
-	gki_deactivatews,
-	gki_mftitle,	# 5
-	gki_clearws,
-	gki_cancel,
-	gki_flush,
-	gki_polyline,
-	gki_polymarker,# 10
-	gki_text,
-	gki_fillarea,
-	gki_putcellarray,
-	gki_setcursor,
-	gki_plset,		# 15
-	gki_pmset,
-	gki_txset,
-	gki_faset,
-	gki_getcursor, # also gki_cursorvalue,
-	gki_getcellarray,#20  also	gki_cellarray,
-	gki_unknown,
-	gki_unknown,
-	gki_unknown,
-	gki_unknown,
-	gki_escape,		# 25
-	gki_setwcs,
-	gki_getwcs]
 
 
 class GLBuffer:
@@ -623,17 +533,17 @@ class IrafGkiConfig:
 		# The following is a list of rgb tuples (0.0-1.0 range) for the
 		# default IRAF set of colors
 		self.defaultColors = [
-			(0.,0.,0.01), # black
-			(0.99,1.,1.), # white
-			(0.99,0.,0.), # red
-			(0.,0.99,0.), # green
-			(0.,0.,0.99), # blue
-			(0.99,0.99,0.), # yellow
-			(0.,0.99,0.99), # cyan
-			(0.99,0.,0.99), # magenta
-			(0.99,0.51,0.), # coral
+			(0.,0.,0.0), # black
+			(1.,1.,1.), # white
+			(1.,0.,0.), # red
+			(0.,1.,0.), # green
+			(0.,0.,0.1), # blue
+			(1.,1.,0.), # yellow
+			(0.,1.,1.), # cyan
+			(1.,0.,1.), # magenta
+			(1.,0.5,0.), # coral
 			(0.7,0.19,0.38), # maroon
-			(0.99,0.65,0.), # orange
+			(1.,0.65,0.), # orange
 			(0.94,0.9,0.55), # khaki
 			(0.85,0.45,0.83), # orchid
 			(0.25,0.88,0.82), # turquoise

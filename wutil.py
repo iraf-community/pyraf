@@ -18,7 +18,7 @@ def getParentID(WindowID): pass
 def getDeepestVisual(): return 24
 
 try:
-	from xlibtricks import *
+	from xutil import *
 except ImportError:
 	pass
 
@@ -32,11 +32,6 @@ except ImportError:
 		magicConstant = ord('T')*256 + 104 # at least on Solaris!
 	elif platform == 'linux2':
 		magicConstant = 0x5413
-	elif platform == 'linux-i386':
-		magicConstant = 0x5413
-	elif platform == 'osf1V4':
-		magicConstant = 0x40087468 # temp fix for Tru64 ejmc 3/9/00
-
 
 
 def getTopID(WindowID):
@@ -78,6 +73,7 @@ def getTermWindowSize():
 	# define string to serve as memory area to recieve copy of structure
 	# created by IOCTL call
 	tstruct = ' '*20 # that should be more than enough memory
+	# xxx exception handling needed (but what exception to catch?)
 	try:
 		rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
 		ysize, xsize = struct.unpack('hh',rstruct[0:4])
@@ -371,12 +367,10 @@ class TerminalFocusEntity:
 		# define string to serve as memory area to recieve copy of structure
 		# created by IOCTL call
 		tstruct = ' '*20 # that should be more than enough memory
-		try:
-			rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
-			ysize, xsize = struct.unpack('hh',rstruct[0:4])
-			return ysize, xsize
-		except IOError:
-			return (24,80) # assume generic size
+		# xxx exception handling needed (but what exception to catch?)
+		rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
+		xsize, ysize = struct.unpack('hh',rstruct[0:4])
+		return xsize, ysize
 
 def getScreenDepth():
 
