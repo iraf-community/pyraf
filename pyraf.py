@@ -29,7 +29,7 @@ Other forms will be added later.
 
 $Id$
 
-R. White, 1999 Jan 25
+R. White, 1999 March 4
 """
 
 import os, sys, monty, iraf
@@ -38,19 +38,6 @@ import os, sys, monty, iraf
 # do this automatically in iraf.py)
 
 iraf.init()
-
-# make sure images and tv packages are loaded
-# (they should be if login.cl is found)
-
-iraf.load("tv",doprint=0)
-iraf.load("images",doprint=0)
-
-# get the imstat, imhead, disp tasks
-
-imstat = iraf.getTask("imstatistics")
-imhead = iraf.getTask("imheader")
-disp = iraf.getTask("display")
-implot = iraf.getTask("implot")
 
 yes = 1
 no = 0
