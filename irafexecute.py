@@ -334,14 +334,14 @@ class IrafProcess:
 				# first see if OPENWS to get device, otherwise
 				# pass through to current kernel, use braindead
 				# interpretation to look for openws
+				if stdgraph is None:
+					stdgraph = gkiopengl.GkiOpenGlKernel()
 				if (sdata[2] == -1) and (sdata[3] == 1):
 					length = sdata[4]
 					device = sdata[5:length+2].astype('b').tostring()
 					# but of course, for the time being (until
 					# we manage another graphics kernel) we ignore
 					# device!
-					if stdgraph is None:
-						stdgraph = gkiopengl.GkiOpenGlKernel()
 
 				# Pass it to the kernel to deal with
 				# Only in the case of a GETWCS command will
