@@ -44,7 +44,6 @@ class GraphicsWindowManager:
 	
 		self.windows = {}
 		self.initialized = 0
-		self.lastTermPos = (0, 0)
 		self.activeWindow = None
 		self.irafGkiConfig = gkiopengl.IrafGkiConfig()
 		self.colorManager = gColor()

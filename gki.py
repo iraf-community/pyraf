@@ -6,7 +6,6 @@ $Id$
 import Numeric
 from types import *
 import string, wutil, graphcap, iraf
-import gkiopengl
 
 BOI = -1  # beginning of instruction sentinel
 NOP = 0	  # no op value
@@ -22,7 +21,7 @@ GKI_EOF = 0
 GKI_OPENWS = 1
 GKI_CLOSEWS = 2
 GKI_REACTIVATEWS = 3
-GKI_DEACTIVATEWS =4
+GKI_DEACTIVATEWS = 4
 GKI_MFTITLE = 5
 GKI_CLEARWS = 6
 GKI_CANCEL = 7
@@ -44,6 +43,39 @@ GKI_SETWCS = 26
 GKI_GETWCS = 27
 
 GKI_ILLEGAL_LIST = (21,22,23,24)
+
+# mapping from gki opcode constants to names (for debug print)
+
+opcode2name = {
+	0: 'EOF',
+	1: 'OPENWS',
+	2: 'CLOSEWS',
+	3: 'REACTIVATEWS',
+	4: 'DEACTIVATEWS',
+	5: 'MFTITLE',
+	6: 'CLEARWS',
+	7: 'CANCEL',
+	8: 'FLUSH',
+	9: 'POLYLINE',
+	10: 'POLYMARKER',
+	11: 'TEXT',
+	12: 'FILLAREA',
+	13: 'PUTCELLARRAY',
+	14: 'SETCURSOR',
+	15: 'PLSET',
+	16: 'PMSET',
+	17: 'TXSET',
+	18: 'FASET',
+	19: 'GETCURSOR',
+	20: 'GETCELLARRAY',
+	21: 'ILLEGAL_21',
+	22: 'ILLEGAL_22',
+	23: 'ILLEGAL_23',
+	24: 'ILLEGAL_24',
+	25: 'ESCAPE',
+	26: 'SETWCS',
+	27: 'GETWCS',
+	}
 
 class EditHistory:
 	"""keeps track of where undoable appends are made so they can be
@@ -232,9 +264,6 @@ class GkiReturnBuffer:
 			raise Exception("Attempted read on empty gki input buffer")
 
 
-def _nullAction(arg):
-	pass
-
 class GkiKernel:
 
 	"""Abstract class intended to be subclassed by implementations of GKI
@@ -246,11 +275,12 @@ class GkiKernel:
 		self.functionTable = gkiFunctionTable
 		self.returnData = None
 		self.errorMessageCount = 0
-		self._gkiAction = _nullAction
 		self.gkibuffer = GkiBuffer() # no harm in allocating, doesn't
 		                             # actually allocate space unless
 									 # appended to.
-	
+
+	def _gkiAction(self, opcode, arg):
+		pass
 
 	def errorMessage(self, text):
 
@@ -500,6 +530,9 @@ class GkiController(GkiKernel):
 		self.lastFlushCount = 0
 		self._stdioStack = []
 
+	def __del__(self):
+		self.flush()
+
 	# most methods simply defer to stdgraph
 
 	def errorMessage(self, text):
@@ -628,7 +661,7 @@ class GkiController(GkiKernel):
 
 	def flush(self):
 
-		if self.stdgraph and self.stdgraph.__class__.__name__ == "GkiIrafKernel":
+		if self.stdgraph and isinstance(self.stdgraph, gkiiraf.GkiIrafKernel):
 			if self.gcount != self.lastFlushCount:
 				# this is to prevent flushes when no graphics activity
 				# occurred since the last time a task finished.
@@ -641,6 +674,7 @@ class GkiController(GkiKernel):
 		device = string.strip(arg[2:].astype(Numeric.Int8).tostring())
 		device = self.getDevice(device)
 		if device != self.lastDevName:
+			self.flush()
 			self.openKernel(device)
 			self.lastDevName = device
 			# call the active kernel's openws function
@@ -651,19 +685,35 @@ class GkiController(GkiKernel):
 		the graphcap or isn't"""
 		if self.devices is None:
 			self.devices = graphcap.GraphCap(iraf.osfn('dev$graphcap'))
-		devstr = iraf.envget("stdgraph")
-		if (not device) or (not self.devices.has_key(device)):
-			while 1:
-				# no protection against circular definitions!
-				if self.devices.has_key(devstr):
-					device = devstr
-					break
+		if device is None:
+			device = iraf.envget("stdgraph")
+		# protect against circular definitions
+		devstr = device
+		tried = {devstr: None}
+		while 1:
+			if self.devices.has_key(devstr):
+				device = devstr
+				break
+			else:
+				pdevstr = devstr
+				devstr = iraf.envget(pdevstr)
+				if not devstr:
+					raise iraf.IrafError(
+						"No entry found for specified stdgraph device")
+				elif tried.has_key(devstr):
+					# track back through circular definition
+					s = [devstr]
+					next = pdevstr
+					while next and (next != devstr):
+						s.append(next)
+						next = tried[next]
+					if next: s.append(next)
+					s.reverse()
+					raise iraf.IrafError(
+					"Circular definition in dev$graphcap for device\n%s"
+						% (string.join(s,' -> '),))
 				else:
-					devstr = iraf.envget(devstr)
-					if not devstr:
-						raise iraf.IrafError(
-							"No entry found for specified stdgraph device")
-		
+					tried[devstr] = pdevstr
 		return device
 
 	def openKernel(self, device=None):
@@ -679,7 +729,6 @@ class GkiController(GkiKernel):
 			self.openInteractiveKernel()
 		else:
 			task = self.devices[device]['tn']
-			import gkiiraf
 			self.stdgraph = gkiiraf.GkiIrafKernel(device, kernel, task)
 
 	def openInteractiveKernel(self):
@@ -746,6 +795,10 @@ def ndcpairs(intarr):
 	f = ndc(intarr)
 	return f[0::2],f[1::2]
 
+
+# import these last so everything in this module is defined
+
+import gkiopengl, gkiiraf
 
 # This is the proxy for the current graphics kernel
 

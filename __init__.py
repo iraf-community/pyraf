@@ -37,6 +37,7 @@ irafnames.setCleanStrategy()
 import irafexecute, clcache
 _oldexitfunc = getattr(sys, 'exitfunc', None)
 def _cleanup(last_exit = _oldexitfunc):
+	iraf.gflush()
 	del irafexecute.processCache
 	del clcache.codeCache
 	if last_exit: last_exit()

@@ -77,7 +77,19 @@ class GkiOpenGlKernel(gki.GkiKernel):
 		self.stderr = None
 		self.gcursor = openglgcur.Gcursor()
 		self.name = 'OpenGL'
-		self._gkiAction = _glAppend
+
+	def _gkiAction(self, opcode, arg):
+
+		"""append a 2-tuple (gl_function, args) to the glBuffer"""
+		win = gwm.getActiveWindow()
+		if opcode == gki.GKI_CLEARWS:
+			win.iplot.gkiBuffer.reset()
+			win.iplot.glBuffer.reset()
+			win.iplot.wcs = None
+			win.immediateRedraw()
+			win.status.updateIO(text=" ")
+		glarg = (glFunctionTable[opcode],arg)
+		win.iplot.glBuffer.append(glarg)
 
 	def getBuffer(self):
 
@@ -232,19 +244,6 @@ class GkiOpenGlKernel(gki.GkiKernel):
 		glFlush()
 
 	def gcur(self): return self.gcursor()
-
-def _glAppend(opcode, arg):
-
-	"""append a 2-tuple (gl_function, args) to the glBuffer"""
-	win = gwm.getActiveWindow()
-	if opcode == gki.GKI_CLEARWS:
-		win.iplot.gkiBuffer.reset()
-		win.iplot.glBuffer.reset()
-		win.iplot.wcs = None
-		win.immediateRedraw()
-		win.status.updateIO(text=" ")
-	glarg = (glFunctionTable[opcode],arg)
-	win.iplot.glBuffer.append(glarg)
 
 class DevNullError:
 
