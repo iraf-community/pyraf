@@ -368,7 +368,6 @@ void drawCursor(int win, double x, double y) {
   Colormap cmap;
   int screen_num;
   Window wroot;
-  Status status;
   int xr, yr;
   unsigned int width, height, border, depth;
 
