@@ -47,9 +47,12 @@ class Gcursor:
 		self.win.interactive = 1
 		self.top.update()
 		wutil.focusController.setFocusTo(gwm.getActiveGraphicsWindow())
-		self.win.activateSWCursor(
-			float(self.win.lastX)/self.win.winfo_width(),
-			float(self.win.lastY)/self.win.winfo_height())
+		if self.win.lastX is not None:
+			self.win.activateSWCursor(
+				float(self.win.lastX)/self.win.winfo_width(),
+				float(self.win.lastY)/self.win.winfo_height())
+		else:
+			self.win.activateSWCursor()
 		self.bind()
 		self.win.ignoreNextRedraw = 1
 		self.top.mainloop()
