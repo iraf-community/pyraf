@@ -463,8 +463,14 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
         pmin = max(0, pmin)
         h = self.history
         for i in range(pmin,pmax):
-            menu.add_radiobutton(label="%d %s" % (i+1,h[i][2]), value=i,
-                    variable=self.pageVar)
+            task = h[i][2]
+            if i==pmin and pmin>0:
+                label = "<< %s" % task
+            elif i==pmax-1 and pmax<lhis:
+                label = ">> %s" % task
+            else:
+                label = "%2d %s" % (i+1,task)
+            menu.add_radiobutton(label=label, value=i, variable=self.pageVar)
         # Make sure pageVar matches the real index value
         self.pageVar.set(self._currentPage)
 
