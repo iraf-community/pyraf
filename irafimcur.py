@@ -1,6 +1,11 @@
-"""This gives the ability to read the cursor position from
+"""irafimcur.py: image cursor interaction
+
+This gives the ability to read the cursor position from
 SAOIMAGE or XIMTOOL in a manner compatible with IRAF's imcur
-parameter"""
+parameter.
+
+$Id$
+"""
 
 import os, iraf, wutil
 try:

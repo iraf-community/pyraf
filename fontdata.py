@@ -1,3 +1,8 @@
+"""fontdata.py
+
+$Id$
+"""
+
 from Numeric import *
 
 font1 = [([], []), (

@@ -15,6 +15,8 @@ objects.
 
 I also added the re match object as an argument to the action function.
 
+$Id$
+
 Created 1999 September 10 by R. White
 """
 

@@ -1,3 +1,8 @@
+"""irafgwcs.py: WCS handling for graphics
+
+$Id$
+"""
+
 import struct, Numeric, math, iraf
 
 WCS_SLOTS = 16

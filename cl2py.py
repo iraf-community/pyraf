@@ -1,5 +1,7 @@
 """cl2py.py: Translate IRAF CL program to Python
 
+$Id$
+
 R. White, 1999 December 9
 """
 

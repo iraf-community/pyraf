@@ -1,5 +1,7 @@
 """clparse.py: Parse IRAF CL
 
+$Id$
+
 R. White, 1999 August 24
 """
 

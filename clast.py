@@ -1,3 +1,8 @@
+"""clast.py: abstract syntax tree node type for CL parsing
+
+$Id$
+"""
+
 #  Copyright (c) 1998-1999 John Aycock
 #  
 #  Permission is hereby granted, free of charge, to any person obtaining

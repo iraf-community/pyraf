@@ -1,7 +1,12 @@
 #! /usr/bin/env python
-# Load all the packages in IRAF and compile all
-# the CL scripts, storing the results in the system cache
-# Run this in the directory with the system cache
+
+"""compileall.py: Load all the packages in IRAF and compile all the CL scripts
+
+Store the results in the system cache.
+Run this in the directory with the system cache.
+
+$Id$
+"""
 
 import os, sys, traceback, time
 

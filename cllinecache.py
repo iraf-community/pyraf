@@ -1,5 +1,9 @@
-# Modify linecache so it works with translated CL scripts too
-# CL scripts have special filename "<CL script taskname>"
+"""cllinecache.py: Modify linecache so it works with translated CL scripts too
+
+CL scripts have special filename "<CL script taskname>"
+
+$Id$
+"""
 
 import linecache, string, os, sys
 from stat import *

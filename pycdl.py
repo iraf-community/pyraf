@@ -1,5 +1,9 @@
-"""Python wrapper around the NOAO Client Display Library to interact
-with SAOIMAGE and XIMTOOL image servers"""
+"""pycdl.py: Python wrapper around the NOAO Client Display Library
+
+Used to interact with SAOIMAGE and XIMTOOL image servers
+
+$Id$
+"""
 
 from cdl import *
 import Numeric

@@ -1,5 +1,9 @@
 #! /usr/bin/env python
-# Load all the main packages in IRAF with verbose turned on
+
+"""loadall.py: Load all the main packages in IRAF with verbose turned on
+
+$Id$
+"""
 
 import sys, traceback
 import pyraf, iraf

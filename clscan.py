@@ -2,6 +2,8 @@
 
 This version uses a context-sensitive pattern stack
 
+$Id$
+
 R. White, 1999 September 10
 """
 
