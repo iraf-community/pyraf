@@ -47,12 +47,16 @@ char IOError[] = "XWindows IO exception.";
 int MyXlibErrorHandler(Display *d, XErrorEvent *myerror) {
 	XGetErrorText(d, myerror->error_code, XErrorMsg, 80);
 	longjmp(ErrorEnv, 1);
+	/* Pointless, but it shuts up some compiler warning messages */
+	return 0;  
 }
 
 int MyXlibIOErrorHandler(Display *d) {
   /* just put a constant string in the error message */
   strncat(XErrorMsg,IOError,80);
   longjmp(ErrorEnv, 1);
+  /* Pointless, but it shuts up some compiler warning messages */
+  return 0;
 }
 
 void moveCursorTo(int win, int x, int y) {
@@ -276,7 +280,7 @@ PyObject *wrap_getPointerPosition(PyObject *self, PyObject *args) {
 	if (d == NULL) {
 		printf("could not open XWindow display\n");
 		RestoreOldXlibErrorHandlers /* macro */
-		return;
+		return NULL;
 	}
 	inScreen = XQueryPointer(d, w, &root, &child, &root_x, &root_y,
 		&win_x, &win_y, &mask);
@@ -313,7 +317,7 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
 	if (d == NULL) {
 		printf("could not open XWindow display\n");
 		RestoreOldXlibErrorHandlers /* macro */
-		return;
+		return NULL;
 	}
 	XQueryTree(d, w, &root, &parent, &children, &nchildren);
 	XFree(children);
@@ -342,7 +346,7 @@ long getColorCell(long red, long green, long blue) {
 
   if (d == NULL) {
     printf("could not open XWindow display\n");
-    return; 
+    return NULL; 
   }
   screen_num = DefaultScreen(d);
   cmap = DefaultColormap(d, screen_num);
