@@ -47,7 +47,6 @@ class IrafTask:
 		self.__pars = None
 		self.__pardict = None
 		self.__parDictList = None
-		self.__psetlist = None
 		if filename[0] == '$':
 			# this is a foreign task
 			self.__cl = 0
@@ -119,35 +118,16 @@ class IrafTask:
 
 	def setHidden(self,value):     self.__hidden = value
 
-	def getParObject(self,param,ttype='task'):
+	def getParObject(self,param):
 		"""Get the IrafPar object for a parameter"""
 		if self.__fullpath == None: self.initTask()
 		if not self.__hasparfile:
 			raise KeyError("Task "+self.__name+" has no parameter file")
 		try:
 			return self.__pardict[param]
-		except minmatch.AmbiguousKeyError, e:
-			# ambiguous parameter name is always an error
-			raise minmatch.AmbiguousKeyError("Error in parameter '" +
-				param + "' for " + ttype + " " + self.__name +
-				"\n" + str(e))
 		except KeyError, e:
-			pass
-
-		# if unknown parameter, search psets too before giving up
-		for pset in self.__psetlist:
-			try:
-				return pset.get().getParObject(param)
-			except minmatch.AmbiguousKeyError, e:
-				raise minmatch.AmbiguousKeyError("Error in parameter '" +
-					param + "' for task " + self.__name +
-					"\n" + str(e))
-			except KeyError, e:
-				pass
-
-		raise KeyError("Error in parameter '" +
-			param + "' for " + ttype + " " + self.__name +
-			"\n" + str(e))
+			raise e.__class__("Error in parameter '" +
+				param + "' for task " + self.__name + "\n" + str(e))
 
 	def get(self,param,native=0):
 		"""Return value for task parameter 'param' (with min-match)
@@ -230,13 +210,13 @@ class IrafTask:
 
 	def setParDictList(self):
 		"""Set the list of parameter dictionaries for task execution.
-		
+
 		Parameter dictionaries for execution consist of this
-		task's parameters, any psets referenced, all the
-		parameters for packages that have been loaded, and the
-		cl parameters.  Each dictionary has an associated name
-		(because parameters could be asked for as task.parname
-		as well as just parname).
+		task's parameters (which includes any psets
+		referenced), all the parameters for packages that have
+		been loaded, and the cl parameters.  Each dictionary
+		has an associated name (because parameters could be
+		asked for as task.parname as well as just parname).
 
 		Create this list anew for each execution in case the
 		list of loaded packages has changed.  It is stored as
@@ -246,18 +226,6 @@ class IrafTask:
 
 		if self.__fullpath == None: self.initTask()
 		parDictList = [(self.__name,self.__pardict)]
-		# look for any psets
-		for param in self.__pars:
-			if param.type == "pset":
-				# pset name is from either parameter value (if not null)
-				# or from parameter name (XXX I'm just guessing at this)
-				try:
-					psetname = param.value or param.name
-					pset = iraf.getTask(psetname)
-					parDictList.append( (param.name,pset.getParDict()) )
-				except KeyError:
-					raise iraf.IrafError("Cannot get pset " +
-						param.name + " for task " + self.__name)
 		# package parameters
 		for i in xrange(len(iraf._loadedPath)):
 			pkg = iraf._loadedPath[-1-i]
@@ -486,14 +454,23 @@ class IrafTask:
 						raise iraf.IrafError("Cannot find .par file for task " +
 							self.__name)
 				if self.__parpath: self.__pars = irafpar.readpar(self.__parpath)
-				# build minmatch dictionary and list of any psets
+				# build minmatch dictionary of all parameters, including
+				# those in psets
 				self.__pardict = minmatch.MinMatchDict()
-				self.__psetlist = []
-				for i in xrange(len(self.__pars)):
-					p = self.__pars[i]
+				psetlist = []
+				for p in self.__pars:
 					self.__pardict.add(p.name, p)
-					if isinstance(p, irafpar.IrafParPset):
-						self.__psetlist.append(p)
+					if isinstance(p, irafpar.IrafParPset): psetlist.append(p)
+				# Now add the pset parameters
+				# Work from the pset's pardict because then we get
+				# parameters from nested psets too
+				for p in psetlist:
+					# silently ignore parameters from this pset
+					# that already are defined
+					psetdict = p.get().getParDict()
+					for pname in psetdict.keys():
+						if not self.__pardict.has_exact_key(pname):
+							self.__pardict.add(pname, psetdict[pname])
 
 	def unlearn(self):
 		"""Reset task parameters to their default values"""
@@ -508,12 +485,15 @@ class IrafTask:
 				raise iraf.IrafError("Cannot find .par file for task " + self.__name)
 			self.__pars = irafpar.readpar(self.__parpath)
 			self.__pardict = minmatch.MinMatchDict()
-			self.__psetlist = []
-			for i in xrange(len(self.__pars)):
-				p = self.__pars[i]
+			psetlist = []
+			for p in self.__pars:
 				self.__pardict.add(p.name, p)
-				if isinstance(p, irafpar.IrafParPset):
-					self.__psetlist.append(p)
+				if isinstance(p, irafpar.IrafParPset): psetlist.append(p)
+			for p in psetlist:
+				psetdict = p.get().getParDict()
+				for pname in psetdict.keys():
+					if not self.__pardict.has_exact_key(pname):
+						self.__pardict.add(pname, psetdict[pname])
 
 	def scrunchName(self):
 		"""Return scrunched version of filename (used for uparm files)
@@ -560,7 +540,12 @@ class IrafPset(IrafTask):
 
 	def getParObject(self,param):
 		"""Get the IrafPar object for a parameter"""
-		IrafTask.getParObject(self,param,ttype='pset')
+		if self.__fullpath == None: self.initTask()
+		try:
+			return self.__pardict[param]
+		except KeyError, e:
+			raise e.__class__("Error in parameter '" +
+				param + "' for pset " + self.__name + "\n" + str(e))
 
 	def run(self,*args,**kw):
 		raise iraf.IrafError("Cannot execute Pset " + self.getName())
