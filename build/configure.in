@@ -1,10 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(cdl.h)
-#AC_SUBST(VERSION)
-#VERSION=v0.8.19 
+AC_SUBST(VERSION)
+VERSION=v0.8.19 
 
-#AC_SUBST(ReleaseDate)
-#ReleaseDate=2001Feb07
+AC_SUBST(ReleaseDate)
+ReleaseDate=2001Feb07
 
 
 
@@ -14,9 +14,8 @@ dnl Checks for programs.
 #	See if there was a command-line option for where Python libs are;  
 #	if not, assume that we are in site-packages.
 #--------------------------------------------------------------------
+AC_PROG_CC
 
-
-# Check whether --with-python or --without-python was given.
 AC_ARG_WITH(python, [  --with-python=DIR          provide Python LIBs directory],
 	PYTHON_LIB_DIR=$withval, PYTHON_LIB_DIR=`cd ../../..; pwd`)
 if test ! -d $PYTHON_LIB_DIR; then
@@ -28,19 +27,6 @@ fi
 
 AC_SUBST(PYTHON_LIB_DIR)
 
-# Check whether to use gcc
-
-AC_ARG_WITH(gcc,   [--with-gcc         allow use for gcc if available],
-       CC=gcc; , gcc_ok=no)
-
-if test "$gcc_ok"=no; then
-    AC_PROG_CC
-fi
-
-if test $CC=gcc; then
-    SHLIB_CFLAGS=-fPIC
-    AC_SUBST(SHLIB_CFLGS)
-fi
 
 #------------------------------------------------------------------
 #	Read site specific information, kept in site.config
@@ -59,7 +45,7 @@ file=$srcdir/config.site
 #-----------------------------------------------------------------
 
 AC_SUBST(PythonIncludePath)
-PythonIncludePath=`cd $PYTHON_LIB_DIR; cd ../../include/python2.0; pwd`
+PythonIncludePath=`cd $PYTHON_LIB_DIR; cd ../../include/python*; pwd`
 
 AC_SUBST(PythonBin)
 PYTHONBIN=`cd $PythonIncludePath; cd ../../; pwd`
@@ -75,6 +61,18 @@ AC_SUBST(TclIncludePath)
 AC_SUBST(TclLibPath)
 AC_SUBST(CDLPath)
 AC_SUBST(toglplatform)
+AC_SUBST(ToglLib)
+#ToglLib = $TclLibPath
+#ToglLib=`cd $PYTHON_LIB_DIR/site-packages/OpenGL/Tk*/$toglplatform*; pwd`
+
+AC_SUBST(IRAFPATH)
+#AC_MSG_CHECKING(iraf)
+#if test -z "$iraf"
+#then
+#	IRAF_PATH=""
+#else   IRAF_PATH=`echo $iraf`
+#fi
+#AC_MSG_RESULT(IRAFPATH)
 
 dnl Checks for libraries.
 
@@ -97,6 +95,8 @@ AC_CHECK_FUNCS(strtod)
 #	of a shared library
 #--------------------------------------------------------------------
 
+
+AC_SUBST(IRAFARCH)
 AC_MSG_CHECKING(platform)
 if test -z "$IRAFPLAT"
 then
@@ -109,12 +109,14 @@ case $system in
         IRAFARCH="ssun"
 	toglplatform="sunos"
 	CFLAGS="-c"
+        SHLIB_CFLAGS="-KPIC"
 	EXTRA_LFLAGS="-lnsl -lsocket"
 	LDFLAG='-G'
 	;;
     Linux*)
         IRAFARCH="redhat"
 	toglplatform="linux"
+        SHLIB_CFLAGS="-fPIC"
 	CFLAGS=" -c" 
 	EXTRA_LFLAGS="-lc"
         LDFLAG='-shared'
@@ -123,28 +125,15 @@ case $system in
         IRAFARCH="alpha"
 	toglplatform="osf1"
 	CFLAGS=" -c"
+        SHLIB_CFLAGS=""
         LDFLAG='-shared -expect_unresolved "*"'
 	EXTRA_LFLAGS=""
         ;;
 esac
 
-if test "$CC" != "gcc"
-then
-case $system in
-    SunOS-5.*)  
-        SHLIB_CFLAGS="-KPIC"
-        ;;
-    Linux*)
-        SHLIB_CFLAGS="-fPIC"
-        ;;
-    OSF1-V*)
-        SHLIB_CFLAGS=""
-        ;;
-esac
-fi
-
 
 AC_SUBST(ToglLib)
+#ToglLib = $TclLibPath
 ToglLib=`cd $PYTHON_LIB_DIR/site-packages/OpenGL/Tk*/$toglplatform*; pwd`
 
 AC_SUBST(CFLAGS)
