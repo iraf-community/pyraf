@@ -180,6 +180,7 @@ class PyCmdLine(CmdConsole):
 		self.debug = debug
 		self.clemulate = clemulate
 		self.logfile = None
+		self.lasttrace = None
 		if logfile is not None:
 			if hasattr(logfile,'write'):
 				self.logfile = logfile
@@ -424,6 +425,7 @@ class PyCmdLine(CmdConsole):
 		"""
 		try:
 			if reprint:
+				if self.lasttrace is None: return
 				type, value, tbmod = self.lasttrace
 			else:
 				type, value, tb = sys.exc_info()
