@@ -22,7 +22,7 @@ import readline
 import __builtin__
 import __main__
 import string, re, keyword, glob, os
-import iraf, iraffunctions
+import iraf, iraffunctions, minmatch
 
 # dictionaries mapping between characters and readline names
 char2lab = {}
@@ -41,6 +41,15 @@ char2lab["\033"] = "esc"
 lab2char["esc"] = "\033"
 lab2char["escape"] = "\033"
 lab2char[r"\e"] = "\033"
+
+# commands that take a taskname as argument
+taskArgDict = minmatch.MinMatchDict({
+				'unlearn': 1,
+				'eparam': 1,
+				'lparam': 1,
+				'update': 1,
+				'help': 1,
+				})
 
 class IrafCompleter(Completer):
 
@@ -150,6 +159,9 @@ class IrafCompleter(Completer):
 				else:
 					# redirection -- just match filenames
 					return self.filename_matches(text, line[:lt])
+			elif taskArgDict.has_key(m.group(1)):
+				# task takes task names as arguments
+				return iraf.getAllTasks(text)
 			else:
 				return self.argument_matches(text, m.group(1), line)
 
