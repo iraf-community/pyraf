@@ -612,9 +612,11 @@ class EparDialog:
 
                 # If the parameter is not a native type of string, it
                 # must be converted.
-                self.taskObject.set(self.paramList[i].get(field = "p_name",
+                self.taskObject.setParam(self.paramList[i].get(field = "p_name",
                                     native = 1, prompt = 0), value)
 
+		# save results to the uparm directory
+		self.taskObject.save()
 
     # Run the task
     def runTask(self):

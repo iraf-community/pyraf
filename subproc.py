@@ -46,10 +46,7 @@ __version__ = "Revision: 1.7r "
 # ken.manheimer@nist.gov
 
 
-import sys, os, string, time, types
-import select
-import signal
-
+import errno, os, select, signal, string, sys, time, types
 
 try:
 	class SubprocessError(Exception):
@@ -66,6 +63,10 @@ except TypeError:
 class Subprocess:
 	"""Run and communicate asynchronously with a subprocess.
 
+	control_(stderr,stdout,stdin) determines whether the corresponding
+	I/O streams of the subprocess are captured or not.  The default is
+	the capture stdout/stdin but not stderr.
+
 	Provides non-blocking reads in the form of .readPendingChars and
 	.readPendingLine.
 
@@ -80,17 +81,21 @@ class Subprocess:
 	There are corresponding read and peekPendingErrXXX routines, to read from
 	the subprocess stderr stream."""
 
-	def __init__(self, cmd, control_stderr=0, expire_noisily=0,
-				 in_fd=0, out_fd=1, err_fd=2, maxChunkSize=1024):
+	def __init__(self, cmd,
+				 control_stderr=0, control_stdout=1, control_stdin=1,
+				 expire_noisily=0, in_fd=0, out_fd=1, err_fd=2,
+				 maxChunkSize=1024):
 		"""Launch a subprocess, given command string COMMAND."""
 		self.cmd = cmd
 		self.pid = None
 		self.expire_noisily = expire_noisily	# Announce subproc destruction?
 		self.control_stderr = control_stderr
+		self.control_stdout = control_stdout
+		self.control_stdin  = control_stdin
 		self.maxChunkSize = maxChunkSize
 		self.in_fd, self.out_fd, self.err_fd = in_fd, out_fd, err_fd
-		self.readbuf = None 					# fork will assign to be a ReadBuf obj
-		self.errbuf = None						# fork will assign to be a ReadBuf obj
+		self.readbuf = None 			# fork will assign to be a ReadBuf obj
+		self.errbuf = None				# fork will assign to be a ReadBuf obj
 		self.fork()
 
 	def fork(self, cmd=None):
@@ -101,10 +106,16 @@ class Subprocess:
 		else:
 			cmd = self.cmd
 		# Create pipes
-		pRc, cWp = os.pipe()			# parent-read-child, child-write-parent
-		cRp, pWc = os.pipe()			# child-read-parent, parent-write-child
-		self.parentPipes = [pRc, pWc]
-		childPipes = [cWp, cRp]
+		self.parentPipes = []
+		childPipes = []
+		if self.control_stdout:
+			pRc, cWp = os.pipe()		# parent-read-child, child-write-parent
+			self.parentPipes.append(pRc)
+			childPipes.append(cWp)
+		if self.control_stdin:
+			cRp, pWc = os.pipe()		# child-read-parent, parent-write-child
+			self.parentPipes.append(pWc)
+			childPipes.append(cRp)
 		if self.control_stderr:
 			pRe, cWe = os.pipe()		# parent-read-error, child-write-error
 			self.parentPipes.append(pRe)
@@ -115,8 +126,10 @@ class Subprocess:
 		if self.pid == 0:		#### CHILD ####
 			parentErr = os.dup(self.in_fd) # Preserve handle on *parent* stderr
 			# Reopen stdin, out, err, on pipe ends:
-			os.dup2(cRp, self.in_fd)			# cRp = sys.stdin
-			os.dup2(cWp, self.out_fd)			# cWp = sys.stdout
+			if self.control_stdin:
+				os.dup2(cRp, self.in_fd)		# cRp = sys.stdin
+			if self.control_stdout:
+				os.dup2(cWp, self.out_fd)		# cWp = sys.stdout
 			if self.control_stderr:
 				os.dup2(cWe, self.err_fd)		# cWe = sys.stderr
 			# close parent ends of pipes
@@ -133,41 +146,48 @@ class Subprocess:
 
 			except os.error, e:
 				if self.control_stderr:
-					os.dup2(parentErr, 2)		# Reconnect to parent's stdout
+					os.dup2(parentErr, 2)		# Reconnect to parent's stderr
 				sys.stderr.write("**execvp failed, '%s'**\n" % str(e))
 				os._exit(1)
 			os._exit(1) 				# Shouldn't get here.
 
 		else:			### PARENT ###
 			# Connect to the child's file descriptors and close child ends of pipes
-			self.toChild = os.fdopen(pWc, 'w')
-			self.toChild_fdlist = [pWc]
-			self.readbuf = ReadBuf(pRc,self.maxChunkSize)
+			self.toChild = self.readbuf = self.errbuf = None
+			self.toChild_fdlist = []
+			self.fromChild_fdlist = []
+			if self.control_stdin:
+				self.toChild = os.fdopen(pWc, 'w')
+				self.toChild_fdlist.append(pWc)
 			if self.control_stderr:
 				self.errbuf = ReadBuf(pRe,self.maxChunkSize)
+				self.fromChild_fdlist.append(pRe)
+			if self.control_stdout:
+				self.readbuf = ReadBuf(pRc,self.maxChunkSize)
+				self.fromChild_fdlist.append(pRc)
 			# close child ends of pipes
 			for i in childPipes: os.close(i)
-			# I have deleted this sleep because it does not seem to be necessary. rlw
-			# time.sleep(execvp_grace_seconds)
 			try:
 				pid, err = os.waitpid(self.pid, os.WNOHANG)
-			except os.error, (errno, msg):
-				if errno == 10:
-					raise SubprocessError, ("Subprocess '%s' failed." % self.cmd)
+			except os.error, (errnum, msg):
+				if errnum == 10:
+					raise SubprocessError("Subprocess '%s' failed." % self.cmd)
 				else:
-					raise SubprocessError, ("Subprocess failed[%d]: %s" % (errno, msg))
+					raise SubprocessError("Subprocess failed[%d]: %s" %
+							(errnum, msg))
 			if pid == self.pid:
 				# child exited already
-				if self.expire_noisily: self.__noisy_print(err)
+				if self.expire_noisily: self._noisy_print(err)
 				self.pid = None
 				sig = err & 0xff
 				rc = (err & 0xff00) >> 8
+				self.return_code = rc
 				if sig:
-					raise SubprocessError, (
+					raise SubprocessError(
 						"child killed by signal %d with a return code of %d"
 						% (sig, rc))
 				if rc:
-					raise SubprocessError, (
+					raise SubprocessError(
 						  "child exited with return code %d" % rc)
 				# Child may have exited, but not in error, so we won't say
 				# anything more at this point.
@@ -181,7 +201,9 @@ class Subprocess:
 		printtime seconds."""
 
 		if not self.pid:
-			raise SubprocessError, ("no child process")				# ===>
+			raise SubprocessError("no child process")				# ===>
+		if not self.control_stdin:
+			raise SubprocessError("Haven't grabbed subprocess input stream.")
 
 		# See if subprocess is ready for write.
 		# Add a wait in case subprocess is still starting up or is
@@ -199,7 +221,7 @@ class Subprocess:
 				self.toChild.write(str)
 				self.toChild.flush()
 				return												# ===>
-		raise SubprocessError, "write to %s blocked" % self			# ===>
+		raise SubprocessError("write to %s blocked" % self)			# ===>
 
 	def writeline(self, line=''):
 		"""Write STRING, with added newline termination, to subprocess."""
@@ -207,6 +229,9 @@ class Subprocess:
 
 	def closeOutput(self):
 		"""Close write pipe to subprocess"""
+		if not self.control_stdin:
+			#XXX silently return here?
+			raise SubprocessError("Haven't grabbed subprocess input stream.")
 		self.toChild.close()
 
 	### Get output from subprocess ###
@@ -215,22 +240,25 @@ class Subprocess:
 		"""Return, but (effectively) do not consume a single pending output
 		char, or return null string if none pending."""
 
+		if not self.control_stdout:
+			raise SubprocessError("Haven't grabbed subprocess output stream.")
 		return self.readbuf.peekPendingChar()
 
 	def peekPendingErrChar(self):
 		"""Return, but (effectively) do not consume a single pending output
 		error char, or return null string if none pending."""
 
-		if self.control_stderr:
-			return self.errbuf.peekPendingChar()
-		else:
-			raise SubprocessError, ("Haven't grabbed subprocess error stream.")
+		if not self.control_stderr:
+			raise SubprocessError("Haven't grabbed subprocess error stream.")
+		return self.errbuf.peekPendingChar()
 
 	def waitForPendingChar(self, timeout, pollPause=.1):
 		"""Block max TIMEOUT secs until we peek a pending char, returning the
 		char, or '' if none encountered.
 		pollPause is included for backward compatibility, but does nothing."""
 		
+		if not self.control_stdout:
+			raise SubprocessError("Haven't grabbed subprocess output stream.")
 		return self.readbuf.peekPendingChar(timeout)
 
 	def waitForPendingErrChar(self, timeout, pollPause=.1):
@@ -238,13 +266,14 @@ class Subprocess:
 		char, or '' if none encountered.
 		pollPause is included for backward compatibility, but does nothing."""
 		
-		if self.control_stderr:
-			return self.errbuf.peekPendingChar(timeout)
-		else:
-			raise SubprocessError, ("Haven't grabbed subprocess error stream.")
+		if not self.control_stderr:
+			raise SubprocessError("Haven't grabbed subprocess error stream.")
+		return self.errbuf.peekPendingChar(timeout)
 
 	def read(self, n=None):
 		"""Read N chars (blocking), or all pending if no N specified."""
+		if not self.control_stdout:
+			raise SubprocessError("Haven't grabbed subprocess output stream.")
 		if n is None:
 			return self.readPendingChars()
 		else:
@@ -252,50 +281,52 @@ class Subprocess:
 
 	def readErr(self, n=None):
 		"""Read N chars from stderr (blocking), or all pending if no N specified."""
-		if self.control_stderr:
-			if n is None:
-				return self.readPendingErrChars()
-			else:
-				return self.errbuf.read(n)
+		if not self.control_stderr:
+			raise SubprocessError("Haven't grabbed subprocess error stream.")
+		if n is None:
+			return self.readPendingErrChars()
 		else:
-			raise SubprocessError, ("Haven't grabbed subprocess error stream.")
+			return self.errbuf.read(n)
 
 	def readPendingChars(self, max=None):
 		"""Read all currently pending subprocess output as a single string."""
+		if not self.control_stdout:
+			raise SubprocessError("Haven't grabbed subprocess output stream.")
 		return self.readbuf.readPendingChars(max)
 
 	def readPendingErrChars(self, max=None):
 		"""Read all currently pending subprocess error output as a single
 		string."""
-		if self.control_stderr:
-			return self.errbuf.readPendingChars(max)
-		else:
-			raise SubprocessError, ("Haven't grabbed subprocess error stream.")
+		if not self.control_stderr:
+			raise SubprocessError("Haven't grabbed subprocess error stream.")
+		return self.errbuf.readPendingChars(max)
 
 	def readPendingLine(self):
 		"""Read currently pending subprocess output, up to a complete line
 		(newline inclusive)."""
+		if not self.control_stdout:
+			raise SubprocessError("Haven't grabbed subprocess output stream.")
 		return self.readbuf.readPendingLine()
 
 	def readPendingErrLine(self):
 		"""Read currently pending subprocess error output, up to a complete
 		line (newline inclusive)."""
-		if self.control_stderr:
-			return self.errbuf.readPendingLine()
-		else:
-			raise SubprocessError, ("Haven't grabbed subprocess error stream.")
+		if not self.control_stderr:
+			raise SubprocessError("Haven't grabbed subprocess error stream.")
+		return self.errbuf.readPendingLine()
 
 	def readline(self):
 		"""Return next complete line of subprocess output, blocking until
 		then."""
+		if not self.control_stdout:
+			raise SubprocessError("Haven't grabbed subprocess output stream.")
 		return self.readbuf.readline()
 	def readlineErr(self):
 		"""Return next complete line of subprocess error output, blocking until
 		then."""
-		if self.control_stderr:
-			return self.errbuf.readline()
-		else:
-			raise SubprocessError, ("Haven't grabbed subprocess error stream.")
+		if not self.control_stderr:
+			raise SubprocessError("Haven't grabbed subprocess error stream.")
+		return self.errbuf.readline()
 
 	### Subprocess Control ###
 
@@ -330,17 +361,18 @@ class Subprocess:
 		while totalwait >= 0:
 			pid, err = os.waitpid(self.pid, os.WNOHANG)
 			if pid:
-				if self.expire_noisily: self.__noisy_print(err)
+				if self.expire_noisily: self._noisy_print(err)
 				for p in self.parentPipes:
 					try: os.close(p)
 					except os.error: pass
 				self.pid = None
+				self.return_code = (err & 0xff00) >> 8
 				return 1
 			time.sleep(deltawait)
 			totalwait = totalwait - deltawait
 		return 0
 
-	def __noisy_print(self,err):
+	def _noisy_print(self,err):
 		sig = err & 0xff
 		rc = (err & 0xff00) >> 8
 		if sig == 0:
@@ -355,9 +387,10 @@ class Subprocess:
 			retval = 'Status %d ' % rc
 		else:
 			retval = ''
-		print ("\n(%ssubproc %d '%s' %s/ %s)" %
+		sys.stderr.write("\n(%ssubproc %d '%s' %s/ %s)\n" %
 			   (sigval, self.pid, self.cmd, retval,
 				hex(id(self))[2:]))
+		sys.stderr.flush()
 
 	def stop(self, verbose=1):
 		"""Signal subprocess with STOP (17), returning 'stopped' if ok, or 0
@@ -391,9 +424,9 @@ class Subprocess:
 		SubprocessError is raised if process is not successfully killed."""
 
 		if not self.pid:
-			raise SubprocessError, ("No process") 						# ===>
+			raise SubprocessError("No process") 						# ===>
 		elif not self.cont():
-			raise SubprocessError, ("Can't signal subproc %s" % self) 	# ===>
+			raise SubprocessError("Can't signal subproc %s" % self) 	# ===>
 
 		# Try sending first a TERM and then a KILL signal.
 		sigs = [('TERM', signal.SIGTERM), ('KILL', signal.SIGKILL)]
@@ -406,7 +439,7 @@ class Subprocess:
 			# done if we can reap the process; else try next signal
 			if self.wait(0.5): return		 							# ===>
 		# Only got here if subprocess is not gone:
-		raise SubprocessError, (
+		raise SubprocessError(
 				"Failed kill of subproc %d, '%s', with signals %s" %
 				(self.pid, self.cmd, map(lambda(x): x[0], sigs)))		# ===>
 
@@ -624,7 +657,7 @@ class RecordFile:
 			try:
 				l = string.atoi(line)
 			except ValueError:
-				raise IOError, ("corrupt %s file structure"
+				raise IOError("corrupt %s file structure"
 								% self.__class__.__name__)
 			return f.read(l)
 		else:
@@ -637,7 +670,7 @@ class RecordFile:
 		if hasattr(f, attr):
 			return getattr(f, attr)
 		else:
-			raise AttributeError, attr
+			raise AttributeError(attr)
 
 	def __repr__(self):
 		return "<%s of %s at %s>" % (self.__class__.__name__,
@@ -656,7 +689,7 @@ def record_trial(s):
 	r = c.read()
 	show = " start:\t %s\n end:\t %s\n" % (`s`, `r`)
 	if r != s:
-		raise IOError, "String distorted:\n%s" % show
+		raise IOError("String distorted:\n%s" % show)
 
 #############################################################################
 #####					An example subprocess interfaces				#####
@@ -678,7 +711,7 @@ class Ph:
 		try:
 			self.proc = Subprocess("ph", expire_noisily=1)
 		except:
-			raise SubprocessError, ("failure starting ph: %s" %	 		# ===>
+			raise SubprocessError("failure starting ph: %s" %	 		# ===>
 									str(sys.exc_value))
 
 	def query(self, q):
@@ -701,7 +734,7 @@ class Ph:
 			if not response:
 				return got												# ===>
 			elif type(response) == types.StringType:
-				raise ValueError, "ph failed match: '%s'" % response	# ===>
+				raise ValueError("ph failed match: '%s'" % response)	# ===>
 			for line in response:
 				# convert to a dict:
 				line = string.splitfields(line, ':')
@@ -719,7 +752,7 @@ class Ph:
 
 		nextChar = self.proc.waitForPendingChar(60)
 		if not nextChar:
-			raise SubprocessError, ('ph subprocess not responding')		# ===>
+			raise SubprocessError('ph subprocess not responding')		# ===>
 		elif nextChar == '-':
 			# dashed line - discard it, and continue reading:
 			self.proc.readline()
@@ -752,8 +785,122 @@ class Ph:
 			got = string.splitfields(got, '\n')[-1]
 			if got == 'ph> ': return	# Ok.							  ===>
 			time.sleep(pause)
-		raise SubprocessError, ('ph not responding within %s secs' %
+		raise SubprocessError('ph not responding within %s secs' %
 								pause * maxIter)
+
+#############################################################################
+#####		  Run a subprocess with Python I/O redirection				#####
+#############################################################################
+# This runs a command rather like os.system does, but it redirects
+# the I/O using the current Python sys.stdin, sys.stdout, sys.stderr
+# filehandles.
+
+def systemRedir(cmd):
+	"""Run the command as a subprocess with Python I/O redirection in effect"""
+	#XXX should trap errors and return status?
+	process = RedirProcess(cmd)
+	try:
+		process.run()
+	except KeyboardInterrupt:
+		process.die()
+		sys.stderr.write("\nKilled process `%s'\n" % process.cmd)
+		sys.stderr.flush()
+	return process.return_code
+
+class RedirProcess(Subprocess):
+		
+	"""Run a system command with I/O redirected using sys.stdin/out/err"""
+
+	def __init__(self, cmd, expire_noisily=0):
+		# grab only streams for currently redirected IO
+		doIn = doOut = doErr = 1
+		if sys.stdin == sys.__stdin__: doIn = 0
+		if sys.stdout == sys.__stdout__: doOut = 0
+		if sys.stderr == sys.__stderr__: doErr = 0
+
+		# even if none are redirected, run it as subprocess
+		# so it can be interrupted with ^C
+
+		# initialize the process
+
+		Subprocess.__init__(self, cmd, expire_noisily=expire_noisily,
+			control_stderr=doErr, control_stdout=doOut, control_stdin=doIn)
+
+	def run(self, timeout=5):
+		"""Copy the subprocess I/O to the Python stdin/out/err filehandles"""
+
+		if not self.pid: return
+
+		doIn = self.control_stdin
+		doOut = self.control_stdout
+		doErr = self.control_stderr
+		while (doIn or doOut or doErr):
+			readable, writable, errors = select.select(self.fromChild_fdlist,
+						self.toChild_fdlist, [], timeout)
+			if readable:
+				# stderr is first in fromChild_fdlist (if present)
+				if doErr and (self.fromChild_fdlist[0] in readable):
+					# stderr
+					s = self.readPendingErrChars()
+					if s:
+						sys.stderr.write(s)
+						sys.stderr.flush()
+					else:
+						# EOF
+						os.close(self.fromChild_fdlist[0])
+						del self.fromChild_fdlist[0]
+						doErr = 0
+				else:
+					# stdout
+					s = self.readPendingChars()
+					if s:
+						sys.stdout.write(s)
+						sys.stdout.flush()
+					else:
+						# EOF
+						if doErr:
+							os.close(self.fromChild_fdlist[1])
+							del self.fromChild_fdlist[1]
+						else:
+							os.close(self.fromChild_fdlist[0])
+							del self.fromChild_fdlist[0]
+						doOut = 0
+			elif writable:
+				# stdin
+				try:
+					s = sys.stdin.read(self.maxChunkSize)
+					if s:
+						try:
+							self.write(s)
+						except IOError, (errnum, msg):
+							# broken pipe may be OK
+							# just call it an EOF and see what happens
+							if errnum == errno.EPIPE:
+								raise EOFError
+							else:
+								raise (errnum, msg)
+					else:
+						# EOF if readline returns null
+						os.close(self.toChild_fdlist[0])
+						del self.toChild_fdlist[0]
+						doIn = 0
+				except EOFError:
+					os.close(self.toChild_fdlist[0])
+					del self.toChild_fdlist[0]
+					doIn = 0
+			else:
+				sys.stderr.write('Timeout %d secs, continuing...\n' % timeout)
+				sys.stderr.flush()
+		# Finished with the IO under our control, but task could
+		# still be running.  Wait for it to finish.
+		while not self.wait(5):
+			# see whether something bad happened
+			if not self.active():
+				sys.stderr.write(self.status()+'\n')
+				sys.stderr.flush()
+				self.die()
+				break
+
 
 #############################################################################
 #####							  Test									#####

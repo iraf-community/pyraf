@@ -95,7 +95,7 @@ class monty:
 			self.subshell = subshell
 		else:
 			if os.name == "posix":
-				self.subshell = "/usr/bin/sh"
+				self.subshell = "/bin/sh"
 			else:
 				self.subshell = "cmd.exe"
 		self.logfile = logfile
@@ -363,14 +363,13 @@ be interpreted by python as a python string"""
 				self.reset()
 				return ("",)
 			
-	def start(self):
+	def start(self, banner="Monty command-line wrapper"):
 	
 		"""Start the front end interpreter"""
 	
-#		sys.stdout.write(self.primary_prompt)
-	
+		print banner
+		currentPrompt = self.primary_prompt
 		while not self.exit:
-			currentPrompt = self.primary_prompt
 			try:
 				# get line from user and parse
 				line = raw_input(currentPrompt)

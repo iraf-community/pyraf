@@ -5,14 +5,14 @@ $Id$
 R. White, 1999 Jul 16
 """
 
-import string, struct, re
-
-# This may exist somewhere in the Python standard libraries?
-# Should probably rewrite this, it is pretty crude.
+import string, struct, re, keyword
 
 def printCols(strlist,cols=5,width=80):
 
 	"""Print elements of list in cols columns"""
+
+	# This may exist somewhere in the Python standard libraries?
+	# Should probably rewrite this, it is pretty crude.
 
 	nlines = (len(strlist)+cols-1)/cols
 	line = nlines*[""]
@@ -81,4 +81,50 @@ def removeEscapes(value):
 		value = value[:i] + value[i+2:]
 		i = string.find(value,"\\\n")
 	return value
+
+# Must Python keywords to make Python code legal.  I add 'PY' to beginning
+# of Python keywords -- it will be stripped off where appropriate
+
+def replaceReserved(s, dot=0):
+
+	"""Convert CL parameter or variable name to Python-acceptable name
+
+	Translate embedded dollar signs to 'DOLLAR'
+	Add 'PY' prefix to components that are Python reserved words
+	If dot != 0, also replaces '.' with 'DOT'
+	"""
+
+	i = string.find(s, '$')
+	while (i >= 0):
+		s = s[:i] + 'DOLLAR' + s[i+1:]
+		i = string.find(s, '$', i+6)
+	sparts = string.split(s,'.')
+	for i in range(len(sparts)):
+		if keyword.iskeyword(sparts[i]):
+			sparts[i] = 'PY' + sparts[i]
+	if dot:
+		return string.join(sparts,'DOT')
+	else:
+		return string.join(sparts,'.')
+
+def unreplaceReserved(s, dot=0):
+
+	"""Undo Python conversion of CL parameter or variable name"""
+
+	# translate 'DOT' embedded in name to '.'
+	i = string.find(s, 'DOT')
+	while (i>=0):
+		s = s[:i] + '.' + s[i+3:]
+		i = string.find(s, 'DOT', i+1)
+	# translate 'DOLLAR' embedded in name to '$'
+	i = string.find(s, 'DOLLAR')
+	while (i>=0):
+		s = s[:i] + '$' + s[i+6:]
+		i = string.find(s, 'DOLLAR', i+1)
+	# delete 'PY' embedded in name
+	i = string.find(s, 'PY')
+	while (i>=0):
+		s = s[:i] + s[i+2:]
+		i = string.find(s, 'PY', i)
+	return s
 

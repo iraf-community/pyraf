@@ -15,6 +15,16 @@ from Tkinter import _default_root
 from Tkinter import *
 #import gki
 
+# XBM file for cursor is in same directory as this module
+_blankcursor = 'blankcursor.xbm'
+dirname = os.path.dirname(__file__)
+if os.path.isabs(dirname):
+	_blankcursor = os.path.join(dirname, _blankcursor)
+else:
+	# change relative directory paths to absolute
+	_blankcursor = os.path.join(os.getcwd(), dirname, _blankcursor)
+del dirname
+
 eventCount = 0 #
 REDRAW_DELAY = 100 # in milliseconds
 
@@ -97,9 +107,8 @@ class RawOpengl(Widget, Misc):
 		# Load a blank cursor from a file (isn't there a better way
 		# to disable a cursor in Tk?).
 		# XBM file for cursor is in same directory as this module
-		self['cursor'] = '@' + \
-				os.path.join(os.path.dirname(__file__), 'blankcursor.xbm') + \
-				' black'
+		global _blankcursor
+		self['cursor'] = '@' + _blankcursor + ' black'
 		# ignore type for now since only one type of software cursor
 		# is implemented
 		if not self.__isSWCursorActive:

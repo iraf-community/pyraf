@@ -3,7 +3,7 @@
 $Id$
 """
 
-import os, re, signal, string, struct, sys, time, Numeric
+import os, re, signal, string, struct, sys, time, Numeric, cStringIO
 import subproc, iraf, gki, gkiopengl, gwm, wutil, irafutils
 
 stdgraph = None
@@ -48,6 +48,11 @@ _p_bye     = r'bye\n'
 _p_error   = r'ERROR|error'
 _p_xmit    = r'xmit\((?P<xmitchan>\d+),(?P<xmitnbytes>\d+)\)\n'
 _p_xfer    = r'xfer\((?P<xferchan>\d+),(?P<xfernbytes>\d+)\)\n'
+
+# '=param' and '_curpack' have to be treated specially because
+# they write to the task rather than to stdout
+# 'set param=value' is special because it allows errors
+
 _p_par_get = r'=(?P<gname>[a-zA-Z_$][\w.]*(?:\[\d+\])?)\n'
 _p_par_set = r'(?P<sname>[a-zA-Z_][\w.]*(?:\[\d+\])?)\s*=\s*(?P<svalue>.*)\n'
 
@@ -60,12 +65,15 @@ _re_msg = re.compile(
 			r'(?P<par_set>' + _p_par_set + ')'
 			)
 
-_re_stty_command = re.compile(r'stty .*?\n')
-_re_display_command = re.compile(r'display')
-_re_curpack_command = re.compile(r'_curpack\n')
-_re_paren_pair = re.compile(r'\(.*\)')
-_re_iraf_sys_escape = re.compile(r'!!(.*\n)')
+_p_curpack   = r'_curpack(?:\s.*|)\n'
+_p_stty      = r'stty .*\n'
+_p_sysescape = r'!!(?P<sys_cmd>.*)\n'
 
+_re_clcmd = re.compile(
+			r'(?P<curpack>'   + _p_curpack   + ')|' +
+			r'(?P<stty>'      + _p_stty      + ')|' +
+			r'(?P<sysescape>' + _p_sysescape + ')'
+			)
 
 class IrafProcess:
 
@@ -92,7 +100,7 @@ class IrafProcess:
 
 		outenvstr = []
 		for key, value in envdict.items():
-			outenvstr.append("set " + key + "=" + value + "\n")
+			outenvstr.append("set " + key + "=" + str(value) + "\n")
 		if outenvstr: self.writeString(string.join(outenvstr,""))
 
 		# end set up mode
@@ -149,7 +157,7 @@ class IrafProcess:
 
 		self.stdout.flush()
 		self.stderr.flush()
-		sys.stderr.write(" Killing IRAF task")
+		sys.stderr.write(" Killing IRAF task\n")
 		sys.stderr.flush()
 		if not self.process.cont():
 			raise IrafProcessError("Can't kill IRAF subprocess")
@@ -288,6 +296,7 @@ class IrafProcess:
 			self.stdout.write(txdata)
 			self.stdout.flush()
 		elif chan == 5:
+			sys.stdout.flush()
 			self.stderr.write(Iraf2AscString(xdata))
 			self.stderr.flush()
 		elif chan == 6:
@@ -376,16 +385,26 @@ class IrafProcess:
 
 	def executeClCommand(self):
 
-		"""The beginnings of a black hole!
-		This function endevours to try to execute cl commands issued by
-		a connected subprocess. Initially, the supported set will be quite
-		small. Ultimately, we intend to support a limited set of built-in
-		commands and the ability to run all iraf tasks (and perhaps foreign
-		tasks). The structure of this function will change dramatically as
-		it is made more general"""
+		"""Execute an arbitrary CL command"""
 
-		mo = _re_stty_command.match(self.msg)
-		if mo:
+		# pattern match to handle special commands that write to task
+		mcmd = _re_clcmd.match(self.msg)
+		if mcmd is None:
+			# general command
+			i = string.find(self.msg,"\n")
+			if i>=0:
+				cmd = self.msg[:i+1]
+				self.msg = self.msg[i+1:]
+			else:
+				cmd = self.msg
+				self.msg = ""
+			iraf.clExecute(cmd)
+		elif mcmd.group('curpack'):
+			# current package request
+			self.writeString(iraf.curpack() + '\n')
+			self.msg = self.msg[mcmd.end():]
+		elif mcmd.group('stty'):
+			# terminal size request
 			if self.stdout != sys.__stdout__:
 				#XXX a kluge -- if self.stdout is not the terminal,
 				#XXX assume it is a file and give a large number for
@@ -396,44 +415,21 @@ class IrafProcess:
 				nlines,ncols = wutil.getTermWindowSize()
 			self.writeString("set ttyncols="+str(ncols)+"\n" +
 							"set ttynlines="+str(nlines)+"\n")
-			self.msg = self.msg[mo.end():]
-			return
-		mo = _re_iraf_sys_escape.match(self.msg)
-		if mo:
-			tmsg = self.msg[mo.start(1):mo.end(1)]
-			sysstatus = os.system(tmsg)
+			self.msg = self.msg[mcmd.end():]
+		elif mcmd.group('sysescape'):
+			# OS escape
+			tmsg = mcmd.group('sys_cmd')
+			# use my version of system command so redirection works
+			sysstatus = iraffunctions.clOscmd(tmsg, Stdin=self.stdin,
+				Stdout=self.stdout, Stderr=self.stderr)
 			self.writeString(str(sysstatus)+"\n")
-			self.msg = self.msg[mo.end():]
+			self.msg = self.msg[mcmd.end():]
 			# self.stdout.write(self.msg + "\n")
-			return
-		mo = _re_display_command.match(self.msg)
-		if mo:
-			# Now extract arguments. Will eventually use general parsing
-			# stuff Rick developed
-			tmsg = self.msg[mo.end():]
-			pmo = _re_paren_pair.search(tmsg)
-			if pmo:
-				# hmmm, let's just try using the string and paste together
-				# something for exec
-				argstr = tmsg[pmo.start():pmo.end()]
-				argstr = string.replace(argstr,'\\','')
-				displaytask = iraf.getTask("display")
-				execstr= "displaytask"+argstr
-				exec(execstr)
-				pos = string.find(tmsg, '\n')
-				self.msg = tmsg[pos+1:]
-				return
-			else:
-				raise IrafProcessError("display command not in expected format")
-		mo = _re_curpack_command.match(self.msg)
-		if mo:
-			self.writeString(iraf.curpack()+"\n")
-			self.msg = self.msg[mo.end():]
-			return
-		# apparently something that is not supported
-		raise IrafProcessError("Unsupported CL command called by IRAF task: " +
-					self.msg)
-
+		else:
+			# should never get here
+			raise RuntimeError(
+					"Program bug: uninterpreted message `%s'"
+					% (self.msg,))
 
 # IRAF string conversions using Numeric module
 

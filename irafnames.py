@@ -53,10 +53,6 @@ class IrafNameTask(IrafNameClean):
 		_addName(task, iraf)
 		_addName(task, __main__)
 
-# define adding package names as the default behavior
-
-strategy = IrafNamePkg()
-
 def setPkgStrategy():
 	global strategy
 	strategy = IrafNamePkg()
@@ -68,4 +64,10 @@ def setTaskStrategy():
 def setCleanStrategy():
 	global strategy
 	strategy = IrafNameClean()
+
+# define adding package names as the default behavior
+# setPkgStrategy()
+
+# define adding package names to iraf module only as the default behavior
+setCleanStrategy()
 

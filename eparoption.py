@@ -59,7 +59,7 @@ class EparOption:
 
         self.name  = self.paramInfo.get(field = "p_name", native = 0, 
                      prompt = 0) 
-        self.value = self.paramInfo.get(field = "p_value", native = 0, 
+        self.value = self.paramInfo.get(field = "p_filename", native = 0, 
                      prompt = 0) 
 
         # Generate the input label
@@ -134,7 +134,7 @@ class EparOption:
         # Clear the Entry widget and obtain the default value
         self.entry.delete(0, END)
 
-        self.newValue = self.newParamInfo.get(field = "p_value", native = 0, 
+        self.newValue = self.newParamInfo.get(field = "p_filename", native = 0, 
                                               prompt = 0) 
         self.choice.set(self.newValue)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
@@ -184,7 +184,7 @@ class EnumEparOption(EparOption):
     def unlearnOption(self, newParamInfo):
 
         self.newParamInfo = newParamInfo
-        self.newValue = self.newParamInfo.get(field = "p_value", native = 0, 
+        self.newValue = self.newParamInfo.get(field = "p_filename", native = 0, 
                                            prompt = 0) 
         self.choice.set(self.newValue)
 
@@ -230,7 +230,7 @@ class BooleanEparOption(EparOption):
     def unlearnOption(self, newParamInfo):
 
         self.newParamInfo = newParamInfo
-        self.newValue = self.newParamInfo.get(field = "p_value", native = 0, 
+        self.newValue = self.newParamInfo.get(field = "p_filename", native = 0, 
                                               prompt = 0) 
         # Check if boolean is not set
         if (self.newValue == ""):
@@ -557,6 +557,6 @@ class PsetEparOption(EparOption):
     def unlearnOption(self, newParamInfo):
 
         self.newParamInfo = newParamInfo
-        self.newValue = self.newParamInfo.get(field = "p_value", native = 0, 
+        self.newValue = self.newParamInfo.get(field = "p_filename", native = 0, 
                                            prompt = 0) 
         self.choice.set(self.newValue)

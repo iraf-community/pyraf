@@ -10,6 +10,9 @@ import Tkinter
 import gkiopengl
 import wutil
 
+class GWMError(Exception):
+	pass
+
 # for the moment this is a really crude implementation. It leaves out
 # lots of useful methods for managing these windows as well as handling
 # all the kinds of options for creating these windows that you would
@@ -154,6 +157,7 @@ def raiseActiveWindow():
 
 	"""deiconify if not mapped, and raise to top"""
 	top = getActiveWindowTop()
+	if not top: raise GWMError("No plot has been created yet")
 	if top.state() != 'normal':
 		top.deiconify()
 	top.tkraise()
@@ -167,6 +171,7 @@ def saveGraphicsCursorPosition():
  
 	# save current position unless (0,0), then save center position
 	graphicsWin = getActiveWindow()
+	if not graphicsWin: raise GWMError("No plot has been created yet")
 	posdict = wutil.getPointerPosition(graphicsWin.winfo_id())
 	if posdict:
 		x = posdict['win_x']

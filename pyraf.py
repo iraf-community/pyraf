@@ -1,26 +1,32 @@
 #! /usr/local/bin/python -i
-#  #! /usr/bin/env python -i
+# #! /usr/bin/python -i
+# #! /usr/bin/env python -i
 # twiddle area to tickle cvs to update version number
 """
 pyraf: Python IRAF front end
 
 Usage: pyraf [options]
   where options are one or more of:
-  -p  Packages are defined as variables (default)
-  -t  Both tasks and packages are defined as variables
   -n  Keep user namespace clean, don't define tasks or packages as variables
-  -i  Do not run Monty command line wrapper, just run standard Python front end
-  -m  Run Monty command line wrapper to provide extra capabilities (default)
+      (default)
+  -p  Packages are defined as variables
+  -t  Both tasks and packages are defined as variables
+  -i  Do not run command line wrapper, just run standard Python front end
+  -m  Run command line wrapper to provide extra capabilities (default)
+  -w name (pyraf|monty)
+      Name of command line wrapper to use.  Default is 'pyraf', but older
+	  'monty' wrapper can also be used.
   -v  Set verbosity level (may be repeated to increase verbosity)
   -h  Print this message
 
 Brief help:
 
 To load a package, use any of:
+	iraf.images()
     iraf.load("images")
     iraf.run("images")
-    pkg = iraf.getPkg("images")
-    pkg()
+    pkg = iraf.images; pkg()
+    pkg = iraf.getPkg("images"); pkg()
 You can also do iraf.load("images",doprint=0) or just
 iraf.load("images",0) to skip printing.  pkg(_doprint=0)
 has the same effect (note the '_' in front of the keyword,
@@ -28,12 +34,14 @@ which is necessary because you can also include package
 parameters as arguments.)
 
 To get short-hand task or package object:
+	imstat = iraf.imstat
     imstat = iraf.getTask("imstat")
     imhead = iraf.getTask("imheader")
     sts = iraf.getPkg("stsdas")
 Note minimum match is used for task names.  Packages are accessible
 using either getTask() or getPkg(), while tasks are available only
-through getTask().
+through getTask().  Both packages and tasks are available as attributes
+of the iraf module.
 
 If the -p option is used (the default), packages are defined as
 objects with the package name.  E.g. after startup you can load
@@ -63,7 +71,6 @@ To set task parameters there are various syntaxes:
     imhead.long = "yes"
     imstat.image = "dev$pix"
     imstat.set("images","dev$pix")
-    imhead.setParList("dev$pix",longhe="yes")
 As usual, minimum match is used for parameter names (so we can
 use just 'long' rather than 'longheader').
 
@@ -80,14 +87,38 @@ R. White, 1999 May 27
 
 import os, sys
 
+# if this script is being executed as __main__, add it as module 'pyraf'
+# too so 'import pyraf' gets the same module
+
+if __name__ == "__main__":
+	sys.modules['pyraf'] = sys.modules['__main__']
+
 # set search path to include directory containing this script
 # and current directory
 
-dirname = os.path.dirname(sys.argv[0])
-if not dirname: dirname = os.getcwd()
-if dirname not in sys.path: sys.path.insert(0, dirname)
+if __name__ == "__main__":
+	homeDir = os.path.dirname(sys.argv[0])
+else:
+	homeDir = os.path.dirname(__file__)
+
+if not homeDir: homeDir = os.getcwd()
+if not os.path.isabs(homeDir):
+	# change relative directory paths to absolute
+	homeDir = os.path.join(os.getcwd(), homeDir)
+
+if homeDir not in sys.path: sys.path.insert(0, homeDir)
 if "." not in sys.path: sys.path.insert(0, ".")
-del dirname
+
+# create pyraf directory in user's IRAF home directory
+
+userDir = os.path.expanduser('~/iraf/pyraf/')
+if not os.path.exists(userDir):
+	try:
+		os.mkdir(userDir)
+		print 'Created directory',userDir
+	except OSError:
+		print 'Could not create directory',userDir
+
 
 # The following is to grab the terminal window's id at the earliest
 # possible moment
@@ -100,6 +131,10 @@ import irafimport
 del irafimport
 
 import iraf
+
+# this gives more useful tracebacks for CL scripts
+import cllinecache
+del cllinecache
 
 help = iraf.help
 
@@ -120,8 +155,10 @@ def usage():
 if __name__ != "__main__":
 	# if not main program, just initialize iraf module
 
-	# XXX Should we set clean name strategy if not main?
-	# irafnames.setCleanStrategy()
+	# Set clean name strategy if not main
+	import irafnames
+	irafnames.setCleanStrategy()
+	del irafnames
 
 	# quietly load initial iraf symbols and packages
 	iraf.Init(doprint=0, hush=1)
@@ -134,20 +171,21 @@ else:
 		execfile(os.environ["PYTHONSTARTUP"])
 
 	# use command-line options to define behavior for iraf namespaces
-	# -p  Add packages to namespace (default)
+	# -n  Don't add anything to namespace (default)
+	# -p  Add packages to namespace
 	# -t  Add tasks (and packages) to namespace
-	# -n  Don't add anything to namespace
 	# -v  Increment verbosity (note can use multiple times to make
 	#     more verbose, e.g. -v -v)
 
 	import getopt, irafnames
 	try:
-		optlist, args = getopt.getopt(sys.argv[1:], "ptnimvh")
+		optlist, args = getopt.getopt(sys.argv[1:], "ptnimvhw:")
 	except getopt.error, e:
 		print str(e)
 		usage()
 	verbose = 0
-	doMonty = 1
+	doCmdline = 1
+	wrapper = "pyraf"
 	if optlist:
 		for opt, value in optlist:
 			if opt == "-p":
@@ -157,13 +195,21 @@ else:
 			elif opt == "-n":
 				irafnames.setCleanStrategy()
 			elif opt == "-m":
-				doMonty = 1
+				doCmdline = 1
 			elif opt == "-i":
-				doMonty = 0
+				doCmdline = 0
 			elif opt == "-v":
 				verbose = verbose + 1
 			elif opt == "-h":
 				usage()
+			elif opt == "-w":
+				if value in ["pyraf", "monty"]:
+					wrapper = value
+				else:
+					usage()
+			else:
+				print "Program bug, uninterpreted option", opt
+				raise SystemExit
 	iraf.setVerbose(verbose)
 	del getopt, irafnames, verbose, usage, optlist, args
 
@@ -171,19 +217,31 @@ else:
 
 	iraf.Init()
 
+if __name__ == "__main__":
 	print "Pyraf, Python front end to IRAF,", __version__, "(copyright AURA 1999)"
 	print "Python: " + sys.copyright
-	if doMonty:
+	if doCmdline:
 		#
-		# start up monty keeping definitions in local name space
+		# start up command line wrapper keeping definitions in local name space
 		#
 		exit = 'Use ".exit" to exit'
 		quit = exit
 		logout = exit
-		import monty
-		_monty = monty.monty(locals=locals())
-		del doMonty, monty
-		_monty.start()
+		if wrapper == "pyraf":
+			import pycmdline, cStringIO
+			from irafpar import makeIrafPar
+			_pycmdline = pycmdline.PyCmdLine(locals=locals())
+			del pycmdline
+		elif wrapper == "monty":
+			import monty
+			_pycmdline = monty.monty(locals=locals())
+			del monty
+		else:
+			print "Program bug, unknown wrapper module", wrapper
+			raise SystemExit
+		del doCmdline
+		_pycmdline.start()
+		del _pycmdline
 	else:
-		del doMonty
+		del doCmdline
 

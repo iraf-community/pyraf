@@ -13,7 +13,7 @@ $Id$
 R. White, 1999 August 17
 """
 
-import iraf
+import minmatch, iraf
 import __builtin__
 
 def _irafImport(name, globals={}, locals={}, fromlist=[]):
@@ -43,6 +43,8 @@ class _irafModuleClass:
 	def __init__(self, module):
 		self.module = module
 		self.__name__ = module.__name__
+		# create minmatch dictionary of current module contents
+		self.mmdict = minmatch.MinMatchDict(vars(self.module))
 	def __getattr__(self, attr):
 		# first try getting this attribute directly from the usual module 
 		try:
@@ -52,8 +54,16 @@ class _irafModuleClass:
 		# if that fails, try getting a task with this name
 		try:
 			return self.module.getTask(attr)
+		except minmatch.AmbiguousKeyError, e:
+			raise AttributeError(str(e))
+		except KeyError, e:
+			pass
+		# last try is minimum match dictionary of rest of module contents
+		try:
+			return self.mmdict[attr]
 		except KeyError:
-			raise AttributeError('Undefined IRAF task '+`attr`)
+			raise AttributeError("Undefined IRAF task `%s'" % (attr,))
+
 
 _irafModuleProxy = _irafModuleClass(iraf)
 

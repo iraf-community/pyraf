@@ -1,6 +1,8 @@
-"""Dictionary allowing minimum-match of string keys.  Entries can be
-retrieved using an abbreviated key as long as the key is unambiguous.
-__getitem__ and get() raise an error if the key is ambiguous.
+"""minmatch.py: Dictionary allowing minimum-match of string keys
+
+Entries can be retrieved using an abbreviated key as long as the key
+is unambiguous.  __getitem__ and get() raise an error if the key is
+ambiguous.
 
 A key is not consider ambiguous if it matches a full key, even if it
 also is an abbreviation for a longer key.  E.g., if there are keys
@@ -29,9 +31,11 @@ class AmbiguousKeyError(KeyError):
 
 class MinMatchDict(UserDict):
 
-	def __init__(self,dict=None):
+	def __init__(self,dict=None,minkeylength=1):
 		self.data = {}
 		self.mmkeys = {}
+		if minkeylength<1: minkeylength = 1
+		self.minkeylength = minkeylength
 		if dict:
 			for key in dict.keys(): self.add(key,dict[key])
 
@@ -39,7 +43,7 @@ class MinMatchDict(UserDict):
 		if type(key) != types.StringType:
 			raise KeyError("MinMatchDict keys must be strings")
 		keylist = self.mmkeys.get(key)
-		if not keylist:
+		if keylist is None:
 			# no such key -- ok only if new flag is set
 			if new: return key
 			raise KeyError("Key "+key+" not found")
@@ -50,14 +54,21 @@ class MinMatchDict(UserDict):
 			# ambiguous key is ok if there is exact match
 			return key
 		else:
-			raise AmbiguousKeyError("Ambiguous key "+ `key` +
-				", could be any of " + `keylist`)
+			return self.resolve(key,keylist)
+
+	def resolve(self, key, keylist):
+		"""Hook to resolve ambiguities in selected keys"""
+		raise AmbiguousKeyError("Ambiguous key "+ `key` +
+			", could be any of " + `keylist`)
 
 	def add(self, key, item):
 		"""Add a new key/item pair to the dictionary.  Resets an existing
 		key value only if this is an exact match to a known key."""
 		if not self.has_exact_key(key):
-			for i in xrange(len(key)):
+			# add abbreviations as short as minkeylength
+			# always add at least one entry (even for key="")
+			start = max(min(self.minkeylength,len(key)),0)-1
+			for i in xrange(start,len(key)):
 				s = key[0:i+1]
 				value = self.mmkeys.get(s)
 				if value is None:
@@ -73,7 +84,6 @@ class MinMatchDict(UserDict):
 			self.data[key] = item
 		except KeyError, e:
 			raise e.__class__(str(e) + "\nUse add() method to add new items")
-			# raise KeyError(str(e) + "\nUse add() method to add new items")
 
 	def __getitem__(self, key):
 		key = self.getfullkey(key)
@@ -91,10 +101,14 @@ class MinMatchDict(UserDict):
 	def __delitem__(self, key):
 		key = self.getfullkey(key)
 		del self.data[key]
-		for i in xrange(len(key)):
+		start = max(min(self.minkeylength,len(key)),0)-1
+		for i in xrange(start,len(key)):
 			s = key[0:i+1]
 			value = self.mmkeys.get(s)
 			value.remove(key)
+			if not value:
+				# delete entry from mmkeys if that was last value
+				del self.mmkeys[s]
 
 	def clear(self):
 		self.mmkeys.clear()
