@@ -10,7 +10,7 @@ import os, string, re, irafpar, irafexecute, types
 
 class IrafError(Exception):
 	pass
-
+ 
 # -----------------------------------------------------
 # dictionaries:
 # vars: all IRAF cl variables (defined with set name=value)
@@ -40,6 +40,7 @@ _verbose = 0
 # Used as search path to find fully qualified task name
 
 _loadedPath = []
+
 
 # -----------------------------------------------------
 # HTML help
