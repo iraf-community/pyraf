@@ -538,7 +538,7 @@ class IrafProcess:
 					# strangely enough, it doesn't use the
 					# STDGRAPH I/O channel.
 					self.write(wcs)
-					gki.kernel.clearReturnData()
+					gki.kernel.stdgraph.clearReturnData()
 				if gki.kernel.stdgraph and gki.kernel.stdgraph.stdout:
 					self.stdout = gki.kernel.stdgraph.stdout
 				else:

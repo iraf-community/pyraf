@@ -1,6 +1,6 @@
 #! /usr/local/bin/python -i
 # #! /usr/bin/python -i
-# # twiddle area to tickle cvs to update version number 
+# # twiddle area to tickle cvs to update version number  
 """
 pyraf: Python IRAF front end
 
@@ -63,7 +63,7 @@ $Id$
 R. White, 2000 January 21
 """
 
-__version__ = "v0.6.3 (2000May01)"
+__version__ = "v0.6.4 (2000May26)"
 
 
 import sys, os
