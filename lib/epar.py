@@ -849,7 +849,9 @@ class EparDialog:
         except (AttributeError, TclError):
             pass
         # Acquire the IRAF help as a string
-        helpString = self.getHelpString(self.taskName)
+        # Need to include the package name for the task to
+        # avoid name conflicts with tasks from other packages. WJH
+        helpString = self.getHelpString(self.pkgName+'.'+self.taskName)
         self.irafHelpWin = self.helpBrowser(helpString)
 
     # EPAR HELP: invoke help and put the epar help page in a window
