@@ -1701,7 +1701,7 @@ def redefine(*args, **kw):
 	kw['Redefine'] = 1
 	apply(task, args, kw)
 
-def package(pkgname, bin=None, PkgName='', PkgBinary='', **kw):
+def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
 	"""Define IRAF package, returning tuple with new package name and binary
 	
 	PkgName, PkgBinary are old default values"""
@@ -1712,40 +1712,52 @@ def package(pkgname, bin=None, PkgName='', PkgBinary='', **kw):
 		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
 	resetList = redirApply(redirKW)
 	try:
-		spkgname = _string.replace(pkgname, '.', '_')
-		# remove trailing comma
-		if spkgname[-1:] == ",": spkgname = spkgname[:-1]
-		if (spkgname != pkgname) and (Verbose > 0):
-			_writeError("Warning: illegal characters in task name, changing "
-				"`%s' to `%s'" % (pkgname, spkgname))
-		pkgname = spkgname
-		# is the package defined?
-		# if not, is there a CL task by this name?
-		# otherwise there is an error
-		pkg = getPkg(pkgname, found=1)
-		if pkg is None:
-			pkg = getTask(pkgname, found=1)
-			if pkg is None or not isinstance(pkg,_iraftask.IrafCLTask) or \
-					pkg.getName() != pkgname:
-				raise KeyError("Package `%s' not defined" % pkgname)
-			# Hack city -- there is a CL task with the package name, but it was
-			# not defined to be a package.  Convert it to an IrafPkg object.
+		if pkgname is None:
+			# no argument: list all loaded packages in search order
+			printed = {}
+			lp = loadedPath[:]
+			lp.reverse()
+			for pkg in lp:
+				pkgname = pkg.getName()
+				if not printed.has_key(pkgname):
+					printed[pkgname] = 1
+					print '    %s' % pkgname
+			return (PkgName, PkgBinary)
+		else:
+			spkgname = _string.replace(pkgname, '.', '_')
+			# remove trailing comma
+			if spkgname[-1:] == ",": spkgname = spkgname[:-1]
+			if (spkgname != pkgname) and (Verbose > 0):
+				_writeError("Warning: illegal characters in task name, "
+					"changing `%s' to `%s'" % (pkgname, spkgname))
+			pkgname = spkgname
+			# is the package defined?
+			# if not, is there a CL task by this name?
+			# otherwise there is an error
+			pkg = getPkg(pkgname, found=1)
+			if pkg is None:
+				pkg = getTask(pkgname, found=1)
+				if pkg is None or not isinstance(pkg,_iraftask.IrafCLTask) or \
+						pkg.getName() != pkgname:
+					raise KeyError("Package `%s' not defined" % pkgname)
+				# Hack city -- there is a CL task with the package name, but it was
+				# not defined to be a package.  Convert it to an IrafPkg object.
 
-			_iraftask.mutateCLTask2Pkg(pkg)
+				_iraftask.mutateCLTask2Pkg(pkg)
 
-			# We must be currently loading this package if we encountered
-			# its package statement (XXX can I confirm that?).
-			# Add it to the lists of loaded packages (this usually
-			# is done by the IrafPkg run method, but we are executing
-			# as an IrafCLTask instead.)
+				# We must be currently loading this package if we encountered
+				# its package statement (XXX can I confirm that?).
+				# Add it to the lists of loaded packages (this usually
+				# is done by the IrafPkg run method, but we are executing
+				# as an IrafCLTask instead.)
 
-			_addPkg(pkg)
-			loadedPath.append(pkg)
-			addLoaded(pkg)
-			if Verbose>0: _writeError("Warning: CL task `%s' apparently is "
-				"a package" % pkgname)
+				_addPkg(pkg)
+				loadedPath.append(pkg)
+				addLoaded(pkg)
+				if Verbose>0: _writeError("Warning: CL task `%s' apparently is "
+					"a package" % pkgname)
 
-		return (pkgname, bin or PkgBinary)
+			return (pkgname, bin or PkgBinary)
 	finally:
 		# note return value not used
 		rv = redirReset(resetList, closeFHList)
