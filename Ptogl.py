@@ -8,6 +8,7 @@ PyOpenGL. (to get rid of 3-d cursor effects among other things)
 $Id$
 """
 
+import os
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from Tkinter import _default_root
@@ -95,9 +96,10 @@ class RawOpengl(Widget, Misc):
 	def activateSWCursor(self, x=0.5, y=0.5, type=None):
 		# Load a blank cursor from a file (isn't there a better way
 		# to disable a cursor in Tk?).
-		# Currently has absolute path in the filename specification.
-		# XXXX THIS SHOULD BE CHANGED!
-		self['cursor'] = '@/usr/ra/pyraf/blankcursor.xbm black'
+		# XBM file for cursor is in same directory as this module
+		self['cursor'] = '@' + \
+				os.path.join(os.path.dirname(__file__), 'blankcursor.xbm') + \
+				' black'
 		# ignore type for now since only one type of software cursor
 		# is implemented
 		if not self.__isSWCursorActive:
