@@ -126,7 +126,8 @@ def _help(object, variables, functions, modules,
 	if isinstance(object,iraftask.IrafTask):
 		if _printIrafHelp(object, html): return
 
-	if type(object) == types.StringType and re.match(r'_?[a-z]+$',object):
+	if type(object) == types.StringType and \
+			re.match(r'[a-z_][a-z0-9_]*$',object):
 		if _printIrafHelp(object, html): return
 
 	try:
