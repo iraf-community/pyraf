@@ -123,6 +123,7 @@ class EparOption:
         self.entry.bind('<Shift-Return>', self.entryCheck, "+")
         self.entry.bind('<Tab>', self.entryCheck, "+")
         self.entry.bind('<Shift-Tab>', self.entryCheck, "+")
+        self.entry.bind('<KeyPress-ISO_Left_Tab>', self.entryCheck, "+")
         self.entry.bind('<Up>', self.entryCheck, "+")
         self.entry.bind('<Down>', self.entryCheck, "+")
 

@@ -283,6 +283,7 @@ class EparDialog:
         top.bind('<Down>', self.focusNext)
         top.bind('<Shift-Return>', self.focusPrev)
         top.bind('<Return>', self.focusNext)
+        top.bind('<KeyPress-ISO_Left_Tab>', self.focusPrev)
 
         # Pack the Frame and Canvas
         canvas.pack(side=TOP, expand=TRUE, fill=BOTH)
