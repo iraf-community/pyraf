@@ -1113,7 +1113,11 @@ class IrafParL(_StringMixin, IrafPar):
 		if native is non-zero.)"""
 
 		if field: return self.getField(field,native=native,prompt=prompt)
-		if lpar: return self.value
+		if lpar:
+			if self.value is None and native == 0:
+				return ""
+			else:
+				return self.value
 
 		# assume there are no query list parameters
 
@@ -1141,6 +1145,7 @@ class IrafParL(_StringMixin, IrafPar):
 
 	def getPFilename(self,native,prompt):
 		"""Get p_filename field for this parameter (returns filename)"""
+		#XXX is this OK? should we check for self.value==None?
 		return self.value
 
 	def getPType(self):

@@ -1543,8 +1543,8 @@ class Tree2Python(CleanupASTTraversal):
 			self.writeIndent(self.pipeOut[-1] + ".seek(0)")
 
 		if taskname == "clbye":
-			# must do a return after clbye()
-			self.writeIndent("return")
+			# must do a return after clbye() if not in 'single' mode
+			if self.vars.mode != "single": self.writeIndent("return")
 		self.prune()
 
 	def n_task_arglist(self, node):
