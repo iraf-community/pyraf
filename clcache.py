@@ -89,15 +89,6 @@ class _CodeCache:
 
         Returns tuple (writeflag, shelve-object) on success or None on failure.
         """
-        #YYY YYY YYY YYY
-        # Fix error in previous clcache naming scheme
-        # Remove this code after a little while (and before release)
-        try:
-            import fixcache
-            fixcache.fixit([filename])
-        except OSError:
-            pass
-        #YYY YYY YYY YYY
         # first try opening the cache read-write
         try:
             fh = dirshelve.open(filename)
