@@ -227,18 +227,19 @@ def printPlot():
 	gkibuff = win.iplot.gkiBuffer.get()
 	if gkibuff:
 		# write to a temporary file
-		# XXXX better temporary filename?
-		tmpfn = iraf.Expand('tmp$')+"pysnap"+str(os.getpid())+".gki"
+		tmpfn = iraf.mktemp("snap") + ".gki"
 		fout = open(tmpfn,'w')
 		fout.write(gkibuff.tostring())
 		fout.close()
-		iraf.stsdas.motd="no"
-		iraf.load("stsdas",doprint=0)
-		iraf.load("graphics",doprint=0)
-		iraf.load("stplot",doprint=0)
-		printkernel = iraf.getTask("psikern")
-		printkernel(tmpfn)
-		os.remove(tmpfn)
+		try:
+			iraf.stsdas.motd="no"
+			iraf.load("stsdas",doprint=0)
+			iraf.load("graphics",doprint=0)
+			iraf.load("stplot",doprint=0)
+			printkernel = iraf.getTask("psikern")
+			printkernel(tmpfn)
+		finally:
+			os.remove(tmpfn)
 		
 # Eventually there may be multiple Gcursor classes that return a string
 # that satisfies clgcur. In that case we will use a factory function

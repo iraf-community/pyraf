@@ -87,6 +87,11 @@ class _ProcessCache:
 					# terminate it
 					self.terminate(executable)
 
+	def setenv(self, msg):
+		"""Update process value of environment variable by sending msg"""
+		for rank, process in self._data.values():
+			process.writeString(msg)
+
 	def setSize(self, limit):
 		"""Set number of processes allowed in cache"""
 		self._plimit = limit
@@ -245,12 +250,10 @@ _re_msg = re.compile(
 			)
 
 _p_curpack   = r'_curpack(?:\s.*|)\n'
-_p_stty      = r'stty .*\n'
 _p_sysescape = r'!!(?P<sys_cmd>.*)\n'
 
 _re_clcmd = re.compile(
 			r'(?P<curpack>'   + _p_curpack   + ')|' +
-			r'(?P<stty>'      + _p_stty      + ')|' +
 			r'(?P<sysescape>' + _p_sysescape + ')'
 			)
 
@@ -271,7 +274,8 @@ class IrafProcess:
 
 		outenvstr = []
 		for key, value in envdict.items():
-			outenvstr.append("set " + key + "=" + str(value) + "\n")
+			outenvstr.append("set %s=%s\n" % (key, str(value)))
+		outenvstr.append("chdir %s\n" % os.getcwd())
 		if outenvstr: self.writeString(string.join(outenvstr,""))
 
 		# end set up mode
@@ -313,13 +317,12 @@ class IrafProcess:
 		if stdin != sys.__stdin__: redir_info = '<'
 		if stdout != sys.__stdout__: redir_info = redir_info+'>'
 
+		# if stdout is a terminal, set the lines & columns sizes
+		# this ensures that they are up-to-date at the start of the task
+		# (which is better than the CL does)
 		if stdout.isatty():
-			# if stdout is a terminal, set the lines & columns sizes
-			# this ensures that they are up-to-date at the start of the task
-			# (which is better than the CL does)
-			nlines,ncols = wutil.getTermWindowSize()
-			self.writeString("set ttyncols=%d\nset ttynlines=%d\n" %
-				(ncols, nlines))
+			iraf.stty('resize')
+
 		self.writeString(self.task.getName()+redir_info+'\n')
 		# begin slave mode
 		self.slave()
@@ -349,7 +352,7 @@ class IrafProcess:
 
 		self.stdout.flush()
 		self.stderr.flush()
-		sys.stderr.write("Killing IRAF task\n")
+		sys.stderr.write("Killing IRAF task `%s'\n" % self.task.getName())
 		sys.stderr.flush()
 		if not self.process.cont():
 			raise IrafProcessError("Can't kill IRAF subprocess")
@@ -656,19 +659,6 @@ class IrafProcess:
 		elif mcmd.group('curpack'):
 			# current package request
 			self.writeString(iraf.curpack() + '\n')
-			self.msg = self.msg[mcmd.end():]
-		elif mcmd.group('stty'):
-			# terminal size request
-			if self.stdout != sys.__stdout__:
-				#XXX a kluge -- if self.stdout is not the terminal,
-				#XXX assume it is a file and give a large number for
-				#XXX the number of lines
-				nlines = 1000000
-				ncols = 80
-			else:
-				nlines,ncols = wutil.getTermWindowSize()
-			self.writeString("set ttyncols=%d\nset ttynlines=%d\n" %
-				(ncols,nlines))
 			self.msg = self.msg[mcmd.end():]
 		elif mcmd.group('sysescape'):
 			# OS escape

@@ -1113,9 +1113,13 @@ def set(*args, **kw):
 		if len(args) == 0:
 			if len(kw) != 0:
 				# normal case is only keyword,value pairs
+				msg = []
 				for keyword, value in kw.items():
 					keyword = _irafutils.untranslateName(keyword)
-					_varDict[keyword] = str(value)
+					svalue = str(value)
+					_varDict[keyword] = svalue
+					msg.append("set %s=%s\n" % (keyword, svalue))
+				_irafexecute.processCache.setenv(_string.join(msg,""))
 			else:
 				# set with no arguments lists all variables (using same format
 				# as IRAF)
@@ -1256,24 +1260,13 @@ def stty(terminal=None, **kw):
 			_writeError("stty playback not implemented")
 			return
 		if expkw['resize'] or expkw['terminal'] == "resize":
-			# returns a string with size of display
-			# also sets CL environmental CL parameters
-			if _sys.stdout != _sys.__stdout__:
-				# a kluge -- if _sys.stdout is not the terminal,
-				# assume it is a file and give a large number for
-				# the number of lines
-				# don't set the environment variables in this case
-				nlines = 1000000
-				ncols = 80
-			else:
+			# sets CL environmental parameters giving screen size
+			if _sys.stdout.isatty():
 				nlines,ncols = _wutil.getTermWindowSize()
-				set(ttyncols=str(ncols))
-				set(ttynlines=str(nlines))
-			return ("set ttyncols="  + str(ncols)  + "\n" +
-					"set ttynlines=" + str(nlines) + "\n")
+				set(ttyncols=str(ncols), ttynlines=str(nlines))
 	finally:
-		# note return value not used here
 		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def eparam(*args, **kw):
 	"""Edit parameters for tasks.  Starts up epar GUI."""
@@ -1829,14 +1822,18 @@ def chdir(directory=None, **kw):
 		# dev but is equivalent to 'cd dev$' if there is no local
 		# directory.
 		try:
-			_os.chdir(Expand(directory))
+			edir = Expand(directory)
+			_os.chdir(edir)
 			_backDir = _newBack
+			_irafexecute.processCache.setenv('chdir %s\n' % edir)
 			return
 		except (IrafError, OSError):
 			pass
 		try:
-			_os.chdir(Expand(directory + '$'))
+			edir = Expand(directory + '$')
+			_os.chdir(edir)
 			_backDir = _newBack
+			_irafexecute.processCache.setenv('chdir %s\n' % edir)
 			return
 		except (IrafError, OSError):
 			raise IrafError("Cannot change directory to `%s'" % (directory,))
@@ -1861,6 +1858,7 @@ def back(**kw):
 		_newBack = _os.getcwd()
 		_os.chdir(_backDir)
 		print _backDir
+		_irafexecute.processCache.setenv('chdir %s\n' % _backDir)
 		_backDir = _newBack
 	finally:
 		rv = redirReset(resetList, closeFHList)
