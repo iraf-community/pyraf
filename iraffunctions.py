@@ -506,7 +506,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
 			for p in pkglist:
 				try:
 					pthis = getPkg(p)
-					if pthis.getLoaded():
+					if pthis.isLoaded():
 						pkgdict[pthis.getName()] = 1
 					else:
 						_writeError('Package %s has not been loaded' %
@@ -1906,7 +1906,7 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 	if pkg:
 		if pkg.getFilename() != newpkg.getFilename() or \
 		   pkg.hasParfile()  != newpkg.hasParfile():
-			if pkg.getLoaded():
+			if pkg.isLoaded():
 				_writeError("Warning: currently loaded package `%s' was not "
 					"redefined" % taskname)
 				return pkg
