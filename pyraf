@@ -57,11 +57,14 @@ To run tasks, use one of these forms:
     iraf.run("imstat")
     imhead("dev$pix",long="yes")
 
+
 $Id$
 
 R. White, 2000 January 21
 """
-__version__ = "v0.6.1 (2000Mar28)"
+
+__version__ = "v0.6.2 (2000Apr18)"
+
 
 import sys, os
 
