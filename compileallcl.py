@@ -13,6 +13,16 @@ $Id$
 
 import os, sys, traceback, time
 
+# set search path to include directory containing this script
+# and current directory
+
+pyrafDir = os.path.dirname(sys.argv[0])
+absPyrafDir = os.path.abspath(os.path.join(pyrafDir,'..'))
+if absPyrafDir not in sys.path: sys.path.insert(0, absPyrafDir)
+del absPyrafDir, pyrafDir
+
+if "." not in sys.path: sys.path.insert(0, ".")
+
 def printcenter(s, length=70, char="-"):
 	l1 = (length-len(s))/2
 	l2 = length-l1-len(s)
@@ -52,8 +62,8 @@ def compileall(clearcache=1):
 
 	# now do the IRAF startup
 
-	import pyraf, iraf, iraffunctions, cl2py
-	from iraftask import IrafCLTask, IrafPkg
+	from pyraf import iraf, cl2py
+	from pyraf.iraftask import IrafCLTask, IrafPkg
 
 	iraf.setVerbose()
 

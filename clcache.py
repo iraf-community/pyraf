@@ -5,7 +5,7 @@ $Id$
 R. White, 2000 January 19
 """
 
-import os, sys, types
+import os, sys, types, string
 from irafglobals import Verbose, userIrafHome, pyrafDir
 
 # set up pickle so it can pickle code objects
@@ -45,6 +45,9 @@ copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
 
 import binshelve, stat, md5
 
+_versionKey = 'CACHE_VERSION'
+_currentVersion = "v1"
+
 class _CodeCache:
 
 	"""Python code cache class"""
@@ -55,24 +58,11 @@ class _CodeCache:
 		flist = []
 		nwrite = 0
 		for file in cacheFileList:
-			# first try opening the cache read-write
-			# first argument of tuple is writeflag
-			try:
-				cacheList.append( (1, binshelve.open(file)) )
-				nwrite = nwrite+1
+			db = self._cacheOpen(file)
+			if db is not None:
+				cacheList.append(db)
+				nwrite = nwrite+db[0]
 				flist.append(file)
-			except:
-				# that failed -- try opening the cache read-only
-				# Note I'm catching all errors here because binshelve.open
-				# raises an unpredictable type of exception depending
-				# on the underlying database.  Ideally I should modify
-				# binshelve.open so it raises a standard error.
-				try:
-					cacheList.append( (0, binshelve.open(file,"r")) )
-					flist.append(file)
-				except:
-					self.warning("Unable to open CL script cache file %s" %
-						(file,))
 		self.clFileDict = {}
 		self.cacheList = cacheList
 		self.cacheFileList = flist
@@ -84,6 +74,62 @@ class _CodeCache:
 				"performance will be slow")
 		elif nwrite == 0:
 			self.warning("Unable to open any CL script cache for writing")
+
+	def _cacheOpen(self, filename):
+		"""Open shelve database in filename and check version to make sure it is OK
+
+		Returns tuple (writeflag, shelve-object) on success or None on failure.
+		"""
+		# first try opening the cache read-write
+		try:
+			fh = binshelve.open(filename)
+			writeflag = 1
+		except:
+			# initial open failed -- try opening the cache read-only
+			# Note I'm catching all errors here because binshelve.open
+			# raises an unpredictable type of exception depending
+			# on the underlying database.  Ideally I should modify
+			# binshelve.open so it raises a standard error.
+			try:
+				fh = binshelve.open(filename,"r")
+				writeflag = 0
+			except:
+				self.warning("Unable to open CL script cache file %s" %
+					(filename,))
+				return None
+		# check version of cache -- don't use it if out-of-date
+		if fh.has_key(_versionKey):
+			oldVersion = fh[_versionKey]
+		else:
+			oldVersion = 'v0'
+		if oldVersion == _currentVersion:
+			return (writeflag, fh)
+		# open succeeded, but version looks out-of-date
+		fh.close()
+		rv = None
+		msg = ["CL script cache file is obsolete version (old %s, current %s)" %
+			(`oldVersion`, `_currentVersion`)]
+		if not writeflag:
+			# we can't replace it if we couldn't open it read-write
+			msg.append("Ignoring obsolete cache file %s" % filename)
+		else:
+			# try renaming the old file and creating a new one
+			rfilename = filename + "." + oldVersion
+			try:
+				os.rename(filename, rfilename)
+				msg.append("Renamed old cache to %s" % rfilename)
+				try:
+					# create new cache file
+					fh = binshelve.open(filename)
+					fh[_versionKey] = _currentVersion
+					msg.append("Created new cache file %s" % filename)
+					rv = (writeflag, fh)
+				except:
+					msg.append("Could not create new cache file %s" % filename)
+			except OSError:
+				msg.append("Could not rename old cache file %s" % filename)
+		self.warning(string.join(msg,"\n"))
+		return rv
 
 	def warning(self, msg, level=0):
 

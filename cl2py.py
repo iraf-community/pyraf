@@ -13,8 +13,8 @@ from cltoken import Token
 import clscan, clparse
 from clcache import codeCache
 
-from irafglobals import Verbose, userIrafHome, pyrafDir
-import pyraf, irafpar, minmatch, irafutils
+from irafglobals import Verbose
+import irafpar, minmatch, irafutils
 
 # The parser object can be constructed once and used many times.
 # The other classes have instance variables (e.g. lineno in CLScanner),
@@ -1167,9 +1167,10 @@ class Tree2Python(GenericASTTraversal):
 		# parameters in the def statement
 
 		if not noHdr:
-			self.write("import pyraf, iraf, irafpar, math")
-			self.writeIndent("from irafpar import makeIrafPar")
-			self.writeIndent("from irafglobals import *")
+			self.write("from pyraf import iraf")
+			self.writeIndent("from pyraf.irafpar import makeIrafPar, IrafParList")
+			self.writeIndent("from pyraf.irafglobals import *")
+			self.writeIndent("import math")
 			self.write("\n")
 
 		if self.vars.proc_name:
@@ -1231,7 +1232,7 @@ class Tree2Python(GenericASTTraversal):
 		if deflist:
 			# add local and procedure parameters to Vars list
 			if not noHdr:
-				self.writeIndent("Vars = irafpar.IrafParList(" +
+				self.writeIndent("Vars = IrafParList(" +
 					`self.vars.proc_name` + ")")
 			for defargs in deflist:
 				if defargs:

@@ -6,6 +6,7 @@ Provides this functionality:
 	.logfile [filename [append]]
 	.exit
 	.help
+	.complete [ 1 | 0 ]
 	.clemulate
 	.debug
 - Shell escapes (!cmd, !!cmd to run in /bin/sh)
@@ -20,15 +21,11 @@ Uses standard code module plus some ideas from cmd.py module
 
 $Id$
 
-R. White, 1999 December 14
+R. White, 2000 February 20
 """
 
-#XXX additional ideas:
-#XXX add command-line completion?
-
 import string, re, os, sys, code, types, keyword
-import minmatch
-import pyraf, iraf
+import minmatch, iraf, irafcompleter
 
 class CmdConsole(code.InteractiveConsole):
 	"""Base class for command console.
@@ -39,7 +36,7 @@ class CmdConsole(code.InteractiveConsole):
 
 	def __init__(self, locals=None, filename="<console>",
 			cmddict=None, prompt1=">>> ", prompt2="... ",
-			cmdchars=("a-zA-Z_.","0-9_")):
+			cmdchars=("a-zA-Z_.","0-9")):
 		code.InteractiveConsole.__init__(self, locals=locals, filename=filename)
 		self.ps1 = prompt1
 		self.ps2 = prompt2
@@ -87,7 +84,7 @@ class CmdConsole(code.InteractiveConsole):
 				neofs = neofs+1
 				if neofs>=5:
 					self.write("\nToo many EOFs, exiting now\n")
-					self.do_exit('',0)
+					self.do_exit()
 				self.write("\nUse .exit to exit\n"
 					".help describes executive commands\n")
 				self.resetbuffer()
@@ -108,10 +105,7 @@ class CmdConsole(code.InteractiveConsole):
 			cmd = mo.group('cmd')
 			i = mo.end()
 			# look up command in dictionary
-			try:
-				method_name = self.cmddict[cmd]
-			except KeyError:
-				method_name = None
+			method_name = self.cmddict.get(cmd)
 		if method_name is None:
 			# no method, but have a look at it anyway
 			return self.default(cmd,line,i)
@@ -131,6 +125,7 @@ _cmdDict = minmatch.MinMatchDict({
 				'.clemulate': 'do_clemulate',
 				'.logfile': 'do_logfile',
 				'.exit': 'do_exit',
+				'.complete': 'do_complete',
 				'.debug': 'do_debug',
 				})
 
@@ -157,9 +152,11 @@ class PyCmdLine(CmdConsole):
 
 	"""Simple Python interpreter with executive commands"""
 
-	def __init__(self, locals=None, logfile=None, debug=0, clemulate=1):
+	def __init__(self, locals=None, logfile=None, complete=1, debug=0,
+			clemulate=1):
 		CmdConsole.__init__(self, locals=locals,
 			cmddict=_cmdDict, prompt1="--> ", prompt2="... ")
+		self.complete = complete
 		self.debug = debug
 		self.clemulate = clemulate
 		self.logfile = None
@@ -167,9 +164,11 @@ class PyCmdLine(CmdConsole):
 			if hasattr(logfile,'write'):
 				self.logfile = logfile
 			elif type(logfile) is types.StringType:
-				self.do_logfile(logfile, 0)
+				self.do_logfile(logfile)
 			else:
 				self.write('logfile ignored -- not string or filehandle\n')
+		if self.complete:
+			self.do_complete()
 
 	def runsource(self, source, filename="<input>", symbol="single"):
 		"""Compile and run some source in the interpreter.
@@ -194,36 +193,40 @@ class PyCmdLine(CmdConsole):
 			self.logfile.flush()
 		return 0
 
-	def do_help(self, line, i):
+	def do_help(self, line='', i=0):
 		"""Print help on executive commands"""
 		if self.debug: self.write('do_help: %s\n' % line[i:])
-		self.write("""Executive commands:
+		self.write("""Executive commands (commands can be abbreviated):
 .logfile [filename [append|overwrite]]
     If filename is specified, start logging commands to the file.  If filename
     is omitted, turns off logging.  The optional append/overwrite argument
     determines whether output is appended to (default) or overwrites an
     existing file.
+.complete [0|1]
+    Turn command-completion on or off.  When on, the tab character acts as the
+    completion character, attempting to complete a partially specified task
+    name, variable name, filename, etc.  Hit tab twice to get a list of the
+    possibilities if the result is ambiguous.  Use ^V+tab to insert a tab
+	other than at the line beginning.  If the argument is omitted, default
+    is 1 (turn on completion.)
 .clemulate [0|1]
-    Set the CL emulation flag, which determines whether lines starting
-    with a CL task name are interpreted in CL mode rather than Python mode.
-    If argument is omitted, default is 1 (turn on CL emulation.)
+    Set the CL emulation flag, which determines whether lines starting with a
+    CL task name are interpreted in CL mode rather than Python mode.  If
+    argument is omitted, default is 1 (turn on CL emulation.)
 .exit
     Exit from Pyraf.
 .help
     Print this help message.
 .debug [1|0]
-    Set the debugging flag.  If argument is omitted, default value is 1
-    (turn on debugging.)
-
-Commands can be abbreviated.
+    Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
 """)
 
-	def do_exit(self, line, i):
+	def do_exit(self, line='', i=0):
 		"""Exit from Python"""
 		if self.debug: self.write('do_exit: %s\n' % line[i:])
 		raise SystemExit
 
-	def do_logfile(self, line, i):
+	def do_logfile(self, line='', i=0):
 		"""Start or stop logging commands"""
 		if self.debug: self.write('do_logfile: %s\n' % line[i:])
 		args = string.split(line[i:])
@@ -255,7 +258,7 @@ Commands can be abbreviated.
 				self.write("error opening logfile %s\n%s\n" % (filename,str(e)))
 		return ""
 
-	def do_clemulate(self, line, i):
+	def do_clemulate(self, line='', i=0):
 		"""Turn CL emulation on or off"""
 		if self.debug: self.write('do_clemulate: %s\n' % line[i:])
 		self.clemulate = 1
@@ -267,7 +270,23 @@ Commands can be abbreviated.
 				pass
 		return ""
 
-	def do_debug(self, line, i):
+	def do_complete(self, line='', i=0):
+		"""Turn command completion on or off"""
+		if self.debug: self.write('do_complete: %s\n' % line[i:])
+		self.complete = 1
+		if line[i:] != "":
+			try:
+				self.complete = int(line[i:])
+			except ValueError, e:
+				if self.debug: self.write(str(e)+'\n')
+				pass
+		if self.complete:
+			irafcompleter.activate()
+		else:
+			irafcompleter.deactivate()
+		return ""
+
+	def do_debug(self, line='', i=0):
 		"""Turn debug output on or off"""
 		if self.debug: self.write('do_debug: %s\n' % line[i:])
 		self.debug = 1
@@ -278,7 +297,6 @@ Commands can be abbreviated.
 				if self.debug: self.write(str(e)+'\n')
 				pass
 		return ""
-
 
 	def default(self, cmd, line, i):
 		"""Check for IRAF task calls and use CL emulation mode if needed

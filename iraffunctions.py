@@ -1879,9 +1879,10 @@ def clCompatibilityMode(verbose=0, _save=0):
 	local_vars_dict = {}
 	local_vars_list = []
 	# initialize environment
-	exec 'import pyraf, iraf, math, cStringIO' in locals
-	exec 'from irafpar import makeIrafPar' in locals
-	exec 'from irafglobals import *' in locals
+	exec 'import math' in locals
+	exec 'from pyraf import iraf' in locals
+	exec 'from pyraf.irafpar import makeIrafPar' in locals
+	exec 'from pyraf.irafglobals import *' in locals
 	prompt2 = '>>>'
 	while (1):
 		try:
@@ -2024,7 +2025,7 @@ def _expand1(instring):
 			" in string " + instring)
 
 def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
-		pkgname=None, pkgbinary=None, redefine=0):
+		pkgname=None, pkgbinary=None, redefine=0, function=None):
 
 	"""Returns a new or existing IrafTask, IrafPset, or IrafPkg object
 	
@@ -2064,7 +2065,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
 			redefine=redefine)
 
 	root, ext = _os.path.splitext(value)
-	if ext == '.par':
+	if ext == '.par' and function is None:
 		return IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 			redefine=redefine)
 
@@ -2076,7 +2077,10 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
 	if task is None and redefine:
 		_writeError("Warning: `%s' is not a defined task" % taskname)
 
-	if ext == '.cl':
+	if function is not None:
+		newtask = _iraftask.IrafPythonTask(prefix,taskname,suffix,value,
+					pkgname,pkgbinary,function=function)
+	elif ext == '.cl':
 		newtask = _iraftask.IrafCLTask(prefix,taskname,suffix,value,
 						pkgname,pkgbinary)
 	elif value[:1] == '$':

@@ -6,7 +6,7 @@ $Id$
 """
 
 import sys, traceback
-import pyraf, iraf
+from pyraf import iraf
 
 iraf.setVerbose()
 

@@ -371,8 +371,8 @@ class IrafTask:
 			for dictname, paramdict in self._parDictList:
 				if dictname == task:
 					if paramdict.has_key(paramname):
-						return self._getParValue(paramdict, paramname, pindex,
-										field, native, mode)
+						return self._getParFromDict(paramdict, paramname,
+								pindex, field, native, mode)
 					else:
 						raise iraf.IrafError("Unknown parameter requested: " +
 							qualifiedName)
@@ -382,21 +382,19 @@ class IrafTask:
 			if package: task = package + '.' + task
 			try:
 				tobj = iraf.getTask(task)
-				if field:
-					return tobj.getParam(paramname+'.'+field,native=native,
-							mode=mode)
-				else:
-					return tobj.getParam(paramname,native=native,mode=mode)
+				return tobj._getParValue(paramname, pindex, field, native, mode)
 			except KeyError:
 				raise iraf.IrafError("Could not find task " + task +
 					" to get parameter " + qualifiedName)
 			except iraf.IrafError, e:
 				raise iraf.IrafError(str(e) + "\nFailed to get parameter " +
 					qualifiedName)
-
 		# no task specified, just search the standard dictionaries
-		# most of the time it will be in the active task dictionary
+		return self._getParValue(paramname, pindex, field, native, mode)
 
+	def _getParValue(self, paramname, pindex, field, native, mode):
+		# search the standard dictionaries for the parameter
+		# most of the time it will be in the active task dictionary
 		if self._runningParList:
 			paramdict = self._runningParList.getParDict()
 		elif self._currentParList:
@@ -404,7 +402,7 @@ class IrafTask:
 		else:
 			paramdict = None
 		if paramdict and paramdict.has_key(paramname):
-			return self._getParValue(paramdict, paramname, pindex,
+			return self._getParFromDict(paramdict, paramname, pindex,
 							field, native, mode)
 
 		# OK, the easy case didn't work -- now initialize the
@@ -413,11 +411,11 @@ class IrafTask:
 		if self._parDictList is None: self._setParDictList()
 		for dictname, paramdict in self._parDictList:
 			if paramdict.has_key(paramname):
-				return self._getParValue(paramdict, paramname, pindex,
+				return self._getParFromDict(paramdict, paramname, pindex,
 								field, native, mode)
 		else:
 			raise iraf.IrafError("Unknown parameter requested: " +
-				qualifiedName)
+				paramname)
 
 	#---------------------------------------------------------
 	# task parameter utility methods
@@ -534,8 +532,7 @@ class IrafTask:
 	def __str__(self):
 		s = '<%s %s (%s) Pkg: %s Bin: %s' % \
 			(self.__class__.__name__, self._name, self._filename, 
-			self._pkgname, self._pkgbinary[0])
-		for pbin in self._pkgbinary[1:]: s = s + ':' + pbin
+			self._pkgname, string.join(self._pkgbinary,':'))
 		if self._foreign: s = s + ' Foreign'
 		if self._hidden: s = s + ' Hidden'
 		if self._hasparfile == 0: s = s + ' No parfile'
@@ -617,7 +614,8 @@ class IrafTask:
 			parDictList.append( (iraf.cl.getName(),iraf.cl.getParDict()) )
 		self._parDictList = parDictList
 
-	def _getParValue(self, paramdict, paramname, pindex, field, native, mode):
+	def _getParFromDict(self, paramdict, paramname, pindex, field,
+			native, mode):
 		# helper method for getting parameter value (with indirection)
 		# once we find a dictionary that contains it
 		v = paramdict[paramname].get(index=pindex,field=field,
@@ -795,6 +793,92 @@ class IrafPset(IrafTask):
 	def run(self,*args,**kw):
 		# should executing a pset run epar?
 		raise iraf.IrafError("Cannot execute Pset " + self.getName())
+
+# -----------------------------------------------------
+# IRAF Python task class
+# -----------------------------------------------------
+
+class IrafPythonTask(IrafTask):
+
+	"""IRAF Python task class"""
+
+	def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary,
+			function):
+		# filename is the .par file for this task? XXX
+		IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
+		if self.getForeign():
+			raise iraf.IrafError(
+				"Python task `%s' cannot be foreign (filename=`%s')" %
+				(self.getName(), filename))
+		self.__dict__['_pyFunction'] = function
+
+	#=========================================================
+	# public methods
+	#=========================================================
+
+	def run(self,*args,**kw):
+		"""Execute this task with the specified arguments"""
+		self.initTask()
+		if kw.has_key('_save'):
+			save = kw['_save']
+			del kw['_save']
+		else:
+			save = 0
+		# Special Stdout, Stdin, Stderr keywords are used to redirect IO
+		redirKW, closeFHList = iraf.redirProcess(kw)
+		# set parameters
+		kw['_setMode'] = 1
+		self._runningParList = apply(self.setParList,args,kw)
+		if iraf.Verbose>1:
+			print "Python task run ", self.getName(), "("+self.getFullpath()+")"
+			self._runningParList.lParam()
+		# delete list of param dictionaries so it will be
+		# recreated in up-to-date version if needed
+		self._parDictList = None
+		# redirect the I/O
+		resetList = iraf.redirApply(redirKW)
+		try:
+			# run the task
+			parList = self._runningParList.getParList()
+			# extract all parameters
+			pl = []
+			for par in parList:
+				if par.name not in ['mode', '$nargs']:
+					pl.append(par.get(native=1))
+			# pl = map(lambda x: x.get(native=1), parList)
+			apply(self._pyFunction, pl)
+			changed = self._updateParList(self._runningParList, save)
+			if changed:
+				rv = self.save()
+				if iraf.Verbose>1: print rv
+		finally:
+			# restore I/O
+			rv = iraf.redirReset(resetList, closeFHList)
+			self._runningParList = None
+			if self._parDictList: self._parDictList[0] = (self._name,
+								self._currentParList.getParDict())
+		if iraf.Verbose>1: print 'Successful task termination'
+		return rv
+
+	#=========================================================
+	# special methods
+	#=========================================================
+
+	def __getstate__(self):
+		"""Return state for pickling"""
+		raise RuntimeError("save not implemented for %s object" %
+			self.__class__.__name__)
+		# Dictionary is OK except for function pointer
+		# Note that __setstate__ is not needed because
+		# returned state is a dictionary
+		if self._pyFunction is None:
+			return self.__dict__
+		# replace _pyFunction in shallow copy of dictionary
+		dict = self.__dict__.copy()
+		dict['_pyFunction'] = None
+		return dict
+
+
 
 # -----------------------------------------------------
 # parDictList search class (helper for IrafCLTask)
@@ -1343,35 +1427,29 @@ def _splitName(qualifiedName):
 	"""
 	# name components may have had 'PY' appended if they match Python keywords
 	slist = map(irafutils.untranslateName, string.split(qualifiedName,'.'))
-	package = None
-	task = None
-	pindex = None
-	field = None
-	ip = len(slist)-1
-	if ip>0 and slist[ip][:2] == "p_":
-		field = slist[ip]
-		ip = ip-1
-	paramname = slist[ip]
-	if ip > 0:
-		ip = ip-1
-		task = slist[ip]
-		if ip > 0:
-			ip = ip-1
-			package = slist[ip]
-			if ip > 0:
-				raise iraf.IrafError("Illegal syntax for parameter: " +
-					qualifiedName)
 
-	# parse possible subscript
+	# add field=None if not present
 
+	if slist[-1][:2] != "p_":
+		# no field
+		slist.append(None)
+	if len(slist) > 4:
+		raise iraf.IrafError("Illegal syntax for parameter: " + qualifiedName)
+	slist = [None]*(4-len(slist)) + slist
+
+	# parse possible subscript and insert into list
+
+	paramname = slist[2]
 	pstart = string.find(paramname,'[')
 	if pstart >= 0:
 		try:
 			pend = string.rindex(paramname,']')
 			pindex = int(paramname[pstart+1:pend])-1
-			paramname = paramname[:pstart]
+			slist[2:3] = [paramname[:pstart], pindex]
 		except:
 			raise iraf.IrafError("Illegal syntax for array parameter: " +
 				qualifiedName)
-	return (package, task, paramname, pindex, field)
+	else:
+		slist[3:3] = [None]
+	return slist
 

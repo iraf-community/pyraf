@@ -7,7 +7,7 @@ $Id$
 
 import linecache, string, os, sys
 from stat import *
-import pyraf, iraf, clcache
+import iraf, clcache
 
 # Discard cache entries that are out of date.
 # (This is not checked upon each call!)
