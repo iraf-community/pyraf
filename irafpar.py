@@ -6,7 +6,7 @@ $Id$
 R. White, 1999 Jan 5
 """
 
-import os, string, re
+import os, sys, string, re
 from types import *
 
 # -----------------------------------------------------
@@ -70,7 +70,36 @@ class IrafPar:
 		self.choice = None
 		self.prompt = None
 
-	def get(self, field=None, index=None):
+	def getPrompt(self):
+		"""Interactively prompt for parameter value"""
+		pstring = string.split(self.prompt,"\n")[0]
+		if self.choice:
+			schoice = [None]*len(self.choice)
+			for i in xrange(len(self.choice)):
+				schoice[i] = self.toString(self.choice[i])
+			pstring = pstring + " (" + string.join(schoice,"|") + ")"
+		elif self.min != None or self.max != None:
+			pstring = pstring + " ("
+			if self.min != None: pstring = pstring + self.toString(self.min)
+			pstring = pstring + ":"
+			if self.max != None: pstring = pstring + self.toString(self.max)
+			pstring = pstring + ")"
+		pstring = pstring + ": "
+		print pstring,
+		value = string.strip(sys.stdin.readline())
+		# loop until we get an acceptable value
+		while (1):
+			try:
+				self.set(value)
+				return
+			except ValueError, e:
+				print e
+			print pstring,
+			value = string.strip(sys.stdin.readline())
+	def get(self, field=None, index=None, prompt=1):
+		"""Return value of this parameter as a string"""
+		# prompt for query parameters unless prompt is set to zero
+		if prompt and self.mode == "q": self.getPrompt()
 		if index != None:
 			if self.dim < 2:
 				raise SyntaxError("Parameter "+self.name+" is not an array")
@@ -147,9 +176,9 @@ class IrafPar:
 				((type(v) is StringType) and (v[0] == ")")):
 			return
 		elif self.choice != None and not (v in self.choice):
-			raise SyntaxError("Value '" + str(v) + "' is not in choice list")
+			raise ValueError("Value '" + str(v) + "' is not in choice list")
 		elif (self.min != None and v < self.min) or (self.max != None and v > self.max):
-			raise SyntaxError("Value '" + str(v) + "' is out of min-max range")
+			raise ValueError("Value '" + str(v) + "' is out of min-max range")
 
 	# coerce parameter to appropriate type
 	# should accept None or null string
@@ -163,9 +192,11 @@ class IrafPar:
 		for i in xrange(len(plines)-1): plines[i+1] = 32*' ' + plines[i+1]
 		plines = string.join(plines,'\n')
 		if self.mode == "h":
-			s = "%13s = %-15s %s" % ("("+self.name, self.get()+")", plines)
+			s = "%13s = %-15s %s" % ("("+self.name,
+						self.get(prompt=0)+")", plines)
 		else:
-			s = "%13s = %-15s %s" % (self.name, self.get(), plines)
+			s = "%13s = %-15s %s" % (self.name,
+						self.get(prompt=0), plines)
 		if not verbose: return s
 
 		if self.choice != None:
@@ -308,7 +339,7 @@ class IrafParB(IrafPar):
 					return ival
 			except Exception:
 				pass
-		raise SyntaxError("Illegal boolean value "+`value`)
+		raise ValueError("Illegal boolean value "+`value`)
 
 # -----------------------------------------------------
 # IRAF integer parameter class
@@ -364,7 +395,7 @@ class IrafParI(IrafPar):
 				if (ival == value): return ival
 			except Exception:
 				pass
-			raise SyntaxError("Illegal integer value "+`value`)
+			raise ValueError("Illegal integer value "+`value`)
 		elif tval is StringType:
 			s2 = string.strip(value)
 			if s2 == "" or ((not strict) and (string.upper(s2) == "INDEF")) or \
@@ -425,7 +456,7 @@ class IrafParAI(IrafParI):
 
 	def coerceValue(self,value,strict=0):
 		if (not type(value) in [ListType,TupleType]) or len(value) != self.dim:
-			raise SyntaxError("Value must be a " + `self.dim` + \
+			raise ValueError("Value must be a " + `self.dim` + \
 				"-element integer array")
 		v = self.dim*[0]
 		for i in xrange(self.dim):
@@ -548,7 +579,7 @@ class IrafParAR(IrafParR):
 
 	def coerceValue(self,value,strict=0):
 		if (not type(value) in [ListType,TupleType]) or len(value) != self.dim:
-			raise SyntaxError("Value must be a " + `self.dim` + \
+			raise ValueError("Value must be a " + `self.dim` + \
 				"-element real array")
 		v = self.dim*[0]
 		for i in xrange(self.dim):
