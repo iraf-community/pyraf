@@ -207,7 +207,12 @@ def IrafIO(process,task):
 			if mo:
 				msg = msg[mo.end():]
 				paramname, newvalue = mo.groups()
-				task.setParam(paramname,newvalue)
+				try:
+					task.setParam(paramname,newvalue)
+				except ValueError, e:
+					# on ValueError, just print warning and then force set
+					print 'Warning:',e
+					task.setParam(paramname,newvalue,check=0)
 			else:
 				print "Warning, unrecognized IRAF pipe protocol"
 				print msg
