@@ -236,9 +236,11 @@ class IrafPar:
 				((type(v) is StringType) and (v[0] == ")")):
 			return v
 		elif self.choice != None and not (v in self.choice):
-			raise ValueError("Value '" + str(v) + "' is not in choice list")
+			raise ValueError("Value '" + str(v) + "' is not in choice list for " +
+				self.name)
 		elif (self.min != None and v < self.min) or (self.max != None and v > self.max):
-			raise ValueError("Value '" + str(v) + "' is out of min-max range")
+			raise ValueError("Value '" + str(v) + "' is out of min-max range for " +
+				self.name)
 		return v
 
 	# coerce a scalar parameter to the appropriate type
@@ -253,7 +255,7 @@ class IrafPar:
 			return self.coerceOneValue(value,strict)
 		if (type(value) not in [ListType,TupleType]) or len(value) != self.dim:
 			raise ValueError("Value must be a " + `self.dim` + \
-				"-element integer array")
+				"-element integer array for "+self.name)
 		v = self.dim*[0]
 		for i in xrange(self.dim):
 			v[i] = self.coerceOneValue(value[i],strict)
@@ -327,19 +329,22 @@ class IrafParS(IrafPar):
 				self.choice = _getChoice(s,strict)
 			if fields[5] != "":
 				if orig_len < 7:
-					raise SyntaxError("Illegal max value for string type" + \
-						" (possibly missing comma)")
+					raise SyntaxError(
+						"Illegal max value for string type parameter " + 
+						self.name + " (possibly missing comma)")
 				else:
-					raise SyntaxError("Illegal max value for string type")
+					raise SyntaxError(
+						"Illegal max value for string type parameter " + self.name)
 		else:
 			# otherwise, min & max must be blank
 			if fields[4] != "" or fields[5] != "":
 				if orig_len < 7:
 					raise SyntaxError("Illegal min/max/choice values for type " + \
-						self.type + " (possibly missing comma)")
+						self.type + " for parameter " + self.name +
+						" (possibly missing comma)")
 				else:
 					raise SyntaxError("Illegal min/max/choice values for type " + \
-						self.type)
+						self.type + " for parameter " + self.name)
 		self.prompt = fields[6]
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
@@ -380,14 +385,15 @@ class IrafParB(IrafPar):
 		if fields[4] != "" or fields[5] != "":
 			if orig_len < 7:
 				raise SyntaxError("Illegal min/max/choice values for type " + \
-					self.type + " (possibly missing comma)")
+					self.type + " for parameter " + self.name +
+					" (possibly missing comma)")
 			else:
 				raise SyntaxError("Illegal min/max/choice values for type " + \
-					self.type)
+					self.type + " for parameter " + self.name)
 		self.prompt = fields[6]
 		if self.min != None and self.max != None and self.max < self.min:
 			raise SyntaxError("Max " + str(self.max) + " is less than min " + \
-				str(self.min))
+				str(self.min) + " for parameter " + self.name)
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
@@ -426,7 +432,8 @@ class IrafParB(IrafPar):
 					return ival
 			except Exception:
 				pass
-		raise ValueError("Illegal boolean value "+`value`)
+		raise ValueError("Illegal boolean value "+`value` +
+			" for parameter " + self.name)
 
 # -----------------------------------------------------
 # IRAF integer parameter class
@@ -448,17 +455,21 @@ class IrafParI(IrafPar):
 				self.choice[i] = self.coerceOneValue(clist[i],strict)
 			if fields[5] != "":
 				if orig_len < 7:
-					raise SyntaxError("Max value illegal when choice list given" + \
+					raise SyntaxError(
+						"Max value illegal when choice list given" +
+						" for parameter " + self.name +
 						" (possibly missing comma)")
 				else:
-					raise SyntaxError("Max value illegal when choice list given")
+					raise SyntaxError(
+						"Max value illegal when choice list given" +
+						" for parameter " + self.name)
 		else:
 			self.min = self.coerceOneValue(fields[4],strict)
 			self.max = self.coerceOneValue(fields[5],strict)
 		self.prompt = fields[6]
 		if self.min != None and self.max != None and self.max < self.min:
 			raise SyntaxError("Max " + str(self.max) + " is less than min " + \
-				str(self.min))
+				str(self.min) + " for parameter " + self.name)
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
@@ -481,7 +492,8 @@ class IrafParI(IrafPar):
 				if (ival == value): return ival
 			except Exception:
 				pass
-			raise ValueError("Illegal integer value "+`value`)
+			raise ValueError("Illegal integer value " + `value` +
+				" for parameter " + self.name)
 		elif tval is StringType:
 			s2 = string.strip(value)
 			if s2 == "" or ((not strict) and (string.upper(s2) == "INDEF")) or \
@@ -510,11 +522,13 @@ class IrafParAI(IrafParI):
 		# and get values from fields after prompt
 		ndim = int(fields[3])
 		if ndim != 1:
-			raise SyntaxError("Cannot handle multi-dimensional arrays")
+			raise SyntaxError("Cannot handle multi-dimensional arrays" +
+				" for parameter " + self.name)
 		self.dim = int(fields[4])
 		while len(fields) < 9+self.dim: fields.append("")
 		if len(fields) > 9+self.dim:
-			raise SyntaxError("Too many values for array")
+			raise SyntaxError("Too many values for array" +
+				" for parameter " + self.name)
 		#
 		self.value = self.coerceValue(fields[9:9+self.dim],strict)
 		s = string.strip(fields[6])
@@ -525,17 +539,19 @@ class IrafParAI(IrafParI):
 				self.choice[i] = self.coerceOneValue(clist[i],strict)
 			if fields[7] != "":
 				if orig_len < 9:
-					raise SyntaxError("Max value illegal when choice list given" + \
+					raise SyntaxError("Max value illegal when choice list given" +
+						" for parameter " + self.name +
 						" (possibly missing comma)")
 				else:
-					raise SyntaxError("Max value illegal when choice list given")
+					raise SyntaxError("Max value illegal when choice list given" +
+						" for parameter " + self.name)
 		else:
 			self.min = self.coerceOneValue(fields[6],strict)
 			self.max = self.coerceOneValue(fields[7],strict)
 		self.prompt = fields[8]
 		if self.min != None and self.max != None and self.max < self.min:
 			raise SyntaxError("Max " + str(self.max) + " is less than min " + \
-				str(self.min))
+				str(self.min) + " for parameter " + self.name)
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
@@ -556,13 +572,15 @@ class IrafParR(IrafPar):
 		self.value = self.coerceValue(fields[3],strict)
 		s = string.strip(fields[4])
 		if '|' in s:
-			raise SyntaxError("Choice list not allowed for float values")
+			raise SyntaxError("Choice list not allowed for float values" +
+				" for parameter " + self.name)
 		else:
 			self.min = self.coerceOneValue(fields[4],strict)
 			self.max = self.coerceOneValue(fields[5],strict)
 		self.prompt = fields[6]
 		if self.min != None and self.max != None and self.max < self.min:
-			raise SyntaxError("Max " + str(self.max) + " is less than min " + \
+			raise SyntaxError("Max " + str(self.max) + " is less than min " +
+				" for parameter " + self.name +
 				str(self.min))
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
@@ -631,23 +649,26 @@ class IrafParAR(IrafParR):
 		# and get values from fields after prompt
 		ndim = int(fields[3])
 		if ndim != 1:
-			raise SyntaxError("Cannot handle multi-dimensional arrays")
+			raise SyntaxError("Cannot handle multi-dimensional arrays" +
+				" for parameter " + self.name)
 		self.dim = int(fields[4])
 		while len(fields) < 9+self.dim: fields.append("")
 		if len(fields) > 9+self.dim:
-			raise SyntaxError("Too many values for array")
+			raise SyntaxError("Too many values for array" +
+				" for parameter " + self.name)
 		#
 		self.value = self.coerceValue(fields[9:9+self.dim],strict)
 		s = string.strip(fields[6])
 		if '|' in s:
-			raise SyntaxError("Choice list not allowed for float values")
+			raise SyntaxError("Choice list not allowed for float values" +
+				" for parameter " + self.name)
 		else:
 			self.min = self.coerceOneValue(fields[6],strict)
 			self.max = self.coerceOneValue(fields[7],strict)
 		self.prompt = fields[8]
 		if self.min != None and self.max != None and self.max < self.min:
 			raise SyntaxError("Max " + str(self.max) + " is less than min " + \
-				str(self.min))
+				str(self.min) + " for parameter " + self.name)
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
