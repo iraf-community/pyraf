@@ -545,7 +545,7 @@ class GkiController(GkiKernel):
 		"""Used so that an existing opened interactive session persists"""
 
 		if not wutil.hasGraphics and not self.interactiveKernel:
-			interactiveKernel = GkiNull()
+			self.interactiveKernel = GkiNull()
 		if self.interactiveKernel:
 			self.stdgraph = self.interactiveKernel
 		else:
@@ -586,20 +586,20 @@ class GkiNull(GkiKernel):
 		return self.returnData
 
 	def translate(self, gkiMetacode, fTable): pass
-	def controlDefault(self, arg): pass
-	def controlDoNothing(self, arg): pass
-	def openWS(self, arg):
+	def controlDefault(self, dummy, arg): pass
+	def controlDoNothing(self, dummy, arg): pass
+	def openWS(self, dummy, arg):
 		print "Unable to plot graphics to screen"
 		raise iraf.IrafError
-	def clearWS(self, arg): pass
-	def reactivateWS(self, arg):
+	def clearWS(self, dummy, arg): pass
+	def reactivateWS(self, dummy, arg):
 		raise iraf.IrafError
-	def deactivateWS(self, arg): pass
-	def setWCS(self, arg): pass
-	def getWCS(self, arg):
+	def deactivateWS(self, dummy, arg): pass
+	def setWCS(self, dummy, arg): pass
+	def getWCS(self, dummy, arg):
 		print "Attempt to access graphics when it isn't available"
 		raise iraf.IrafError
-	def closeWS(self, arg): pass
+	def closeWS(self, dummy, arg): pass
 
 
 #********************************

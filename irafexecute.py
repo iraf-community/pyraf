@@ -199,14 +199,16 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 	# Run it
 	try:
 		irafprocess.run(task, stdin=stdin,stdout=stdout,stderr=stderr)
-		gwm.restoreLastFocus()
+		if wutil.hasGraphics:
+			gwm.restoreLastFocus()
 		if gki.kernel:
 			gki.kernel.stdgraph.stdout = None
 			gki.kernel.stdgraph.stderr = None
 	except KeyboardInterrupt:
 		# On keyboard interrupt (^C), kill the subprocess
 		processCache.kill(irafprocess)
-		gwm.resetFocusHistory()
+		if wutil.hasGraphics:
+			gwm.resetFocusHistory()
 		if gki.kernel:
 			gki.kernel.stdgraph.stdout = None
 			gki.kernel.stdgraph.stderr = None
