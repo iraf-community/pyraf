@@ -30,7 +30,7 @@ class GraphicsWindowManager:
 	def __init__(self):
 	
 		self.windows = {}
-		self.terminalWindowID = wutil.terminalWindowID
+#		self.terminalWindowID = wutil.terminalWindowID
 		self.lastTermPos = (0, 0)
 		self.activeWindow = None
 		self.irafGkiConfig = gkiopengl.IrafGkiConfig()
@@ -102,10 +102,16 @@ class GraphicsWindow:
 # the module.
 
 _g = GraphicsWindowManager()
+wutil.isGwmStarted = 1
 
 #
 # Public routines to access windows managed by _g
 #
+
+def getGraphicsWindowManager():
+
+	"""return window manager object"""
+	return _g
 
 def createWindow():
 
@@ -141,37 +147,8 @@ def getIrafGkiConfig():
 	"""return configuration object"""
 	return _g.irafGkiConfig
 
-def getTerminalWindowID():
-
-	"""return ID of python terminal window manager was started from"""
-	return _g.terminalWindowID
-
-def getLastTermPos():	return _g.lastTermPos
-def setLastTermPos(x, y): _g.lastTermPos = (x, y)
-
-def saveTerminalCursorPosition():
-
-	# save current position unless (0,0), then save center position
-	termWinID = getTerminalWindowID()
-	posdict = wutil.getPointerPosition(termWinID)
-	if posdict:
-		x = posdict['win_x']
-		y = posdict['win_y']
-	else:
-		x, y = 0, 0
-	#if x == 0 and y == 0:
-	windict = wutil.getWindowAttributes(termWinID)
-	if windict:
-		maxX = windict['width']
-		maxY = windict['height']
-	else:
-		maxX, maxY = 20,20
-	x = min(max(x,0),maxX)
-	y = min(max(y,0),maxY)
-	setLastTermPos(x,y)
-
 def saveGraphicsCursorPosition():
-
+ 
 	# save current position unless (0,0), then save center position
 	graphicsWin = getActiveWindow()
 	posdict = wutil.getPointerPosition(graphicsWin.winfo_id())
@@ -180,25 +157,11 @@ def saveGraphicsCursorPosition():
 		y = posdict['win_y']
 	else:
 		x, y = 0, 0
-	maxX = graphicsWin.winfo_width()
-	maxY = graphicsWin.winfo_height()
-	if x == 0 and y == 0:
-		x = maxX/2
-		y = maxY/2
-	graphicsWin.lastX = min(max(x,0),maxX)
-	graphicsWin.lastY = min(max(y,0),maxY)
-
-def isFocusElsewhere():
-
-	# Determine if focus lies outside of terminal/graphics window set.
-	currentFocusWinID = wutil.getWindowID()
-	currentTopID = wutil.getTopID(currentFocusWinID)
-	terminalWindowTopID = wutil.getTopID(getTerminalWindowID())
-	pyrafFamily = [terminalWindowTopID]
-	for win in _g.windows.values():
-		pyrafFamily.append(wutil.getTopID(win.top.winfo_id()))
-	if currentTopID in pyrafFamily:
-		return 0
-	else:
-		return 1
+		maxX = graphicsWin.winfo_width()
+		maxY = graphicsWin.winfo_height()
+		if x == 0 and y == 0:
+			x = maxX/2
+			y = maxY/2
+		graphicsWin.lastX = min(max(x,0),maxX)
+		graphicsWin.lastY = min(max(y,0),maxY)
 
