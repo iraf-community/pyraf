@@ -53,10 +53,6 @@ if _pname != "pyraf":
 	iraf.Init(doprint=0, hush=1)
 else:
 	# special initialization when this is the main program
-	# read the user's startup file (if there is one)
-	if os.environ.has_key("PYTHONSTARTUP") and \
-			os.path.isfile(os.environ["PYTHONSTARTUP"]):
-		execfile(os.environ["PYTHONSTARTUP"])
 
 	# command-line options
 
