@@ -105,10 +105,9 @@ class RawOpengl(Widget, Misc):
 				self.__SWCursor = FullWindowCursor(x,y)
 			self.__isSWCursorActive = 1
 			self.bind("<Motion>",self.moveCursor)
-		else:
-			if not self.__SWCursor.isVisible:
-				self.__SWCursor.draw()
-				self.update_idletasks()
+		if not self.__SWCursor.isVisible:
+			self.__SWCursor.draw()
+			self.update_idletasks()
 
 	def deactivateSWCursor(self):
 		if self.__isSWCursorActive:
