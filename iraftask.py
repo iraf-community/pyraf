@@ -480,7 +480,7 @@ class IrafTask:
 		if len(self.__pkgname) > 2:
 			s = s + self.__pkgname[-1:]
 		s = s + self.__name[0:5]
-		if len(self.__name) > 6:
+		if len(self.__name) > 5:
 			s = s + self.__name[-1:]
 		return s
 
