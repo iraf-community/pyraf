@@ -30,8 +30,7 @@ CC = @CC@
 RM = rm
 LD = ld
 
-all:	 xutilmodule.so toglcolorsmodule.so  \
-		sscanfmodule.so install
+all:	 xutilmodule.so sscanfmodule.so install
 
 clean: 
 	$(RM) -f *.o *.so *.a Makefile config.cache *~
