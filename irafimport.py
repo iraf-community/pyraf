@@ -1,9 +1,17 @@
-# modify import mechanism so that
-# (1) 'from iraf import pkg' automatically loads the IRAF package 'pkg'
-# (2) 'import iraf' returns a wrapped module instance that allows minimum-match
-#		access to task names (e.g. iraf.imhead, not just iraf.imheader)
-#
-# Assumes that all IRAF tasks and packages are accessible as iraf module attributes
+"""module irafimport.py -- modify import mechanism
+
+Modify module import mechanism so that
+(1) 'from iraf import pkg' automatically loads the IRAF package 'pkg'
+(2) 'import iraf' returns a wrapped module instance that allows minimum-match
+	access to task names (e.g. iraf.imhead, not just iraf.imheader)
+
+Assumes that all IRAF tasks and packages are accessible as iraf
+module attributes.  Only affects imports of iraf module.
+
+$Id$
+
+R. White, 1999 August 17
+"""
 
 import iraf
 import __builtin__
