@@ -19,7 +19,6 @@ Long versions of options:
   -m  --commandwrapper=yes
   -i  --commandwrapper=no
   -h  --help
-
 """
 
 # $Id$
