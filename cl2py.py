@@ -1737,6 +1737,9 @@ class _CodeCache:
 		self.cachelist = []
 		self.nwrite = 0
 
+	def __del__(self):
+		self.close()
+
 	def getIndex(self, filename):
 
 		"""Get cache key & file attributes for a file or filehandle"""
@@ -1783,6 +1786,8 @@ class _CodeCache:
 		if mode != "proc": return None, None, None
 
 		index, attributes = self.getIndex(filename)
+		if index is None: return None, None, None
+
 		for i in range(len(self.cachelist)):
 			writeflag, cache = self.cachelist[i]
 			if cache.has_key(index):
