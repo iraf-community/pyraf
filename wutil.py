@@ -6,7 +6,7 @@ If the c versions do not exist, then these routines will do nothing
 $Id$
 """
 
-import struct, fcntl, sys
+import struct, fcntl, sys, gwm
 
 def getWindowID(): return None
 def moveCursorTo(WindowID, x, y): pass
@@ -21,7 +21,6 @@ try:
 except ImportError:
 	pass
 
-terminalWindowID = getWindowID()
 
 def getTopID(WindowID):
 
@@ -66,7 +65,91 @@ def getTermWindowSize():
 	rstruct = fcntl.ioctl(sys.stdin.fileno(), magicConstant, tstruct)
 	xsize, ysize = struct.unpack('hh',rstruct[0:4])
 	return xsize, ysize
-		
 
+def getTerminalWindowID():
+
+	"""return ID of python terminal window manager was started from"""
+	return terminalWindowID
+
+def getImageWindowID():
+
+	"""return ID of image display window (e.g., SAOIMAGE or XIMTOOL)"""
+	return imageWindowID
+
+def getLastTermPos():	return lastTermPos
+def setLastTermPos(x, y):
+	global lastTermPos
+	lastTermPos = (x, y)
+def getLastImagePos():  return lastImagePos
+def setLastImagePos(x, y):
+	global lastImagePos
+	lastImagePos = (x, y)
+
+def saveTerminalCursorPosition():
+
+	# save current position unless (0,0), then save center position
+	termWinID = getTerminalWindowID()
+	posdict = getPointerPosition(termWinID)
+	if posdict:
+		x = posdict['win_x']
+		y = posdict['win_y']
+	else:
+		x, y = 0, 0
+	#if x == 0 and y == 0:
+	windict = getWindowAttributes(termWinID)
+	if windict:
+		maxX = windict['width']
+		maxY = windict['height']
+	else:
+		maxX, maxY = 20,20
+	x = min(max(x,0),maxX)
+	y = min(max(y,0),maxY)
+	setLastTermPos(x,y)
+
+def saveImageCursorPosition():
+
+	# save current position unless (0,0), then save center position
+	imageWinID = getImageWindowID()
+	if imageWinID:
+		posdict = getPointerPosition(imageWinID)
+		if posdict:
+			x = posdict['win_x']
+			y = posdict['win_y']
+		else:
+			x, y = 0, 0
+		#if x == 0 and y == 0:
+		windict = getWindowAttributes(imageWinID)
+		if windict:
+			maxX = windict['width']
+			maxY = windict['height']
+		else:
+			maxX, maxY = 20,400
+		x = min(max(x,0),maxX)
+		y = min(max(y,0),maxY)
+		setLastImagePos(x,y)
+
+def isFocusElsewhere():
+
+	# Determine if focus lies outside of terminal/graphics window set.
+	currentFocusWinID = getWindowID()
+	currentTopID = getTopID(currentFocusWinID)
+	terminalWindowTopID = getTopID(getTerminalWindowID())
+	pyrafFamily = [terminalWindowTopID]
+	wm = gwm.getGraphicsWindowManager()
+	if gwm.getActiveWindow():
+		for win in wm.windows.values():
+			pyrafFamily.append(getTopID(win.top.winfo_id()))
+	if imageWindowID:
+		pyrafFamily.append(getTopID(imageWindowID))
+	if currentTopID in pyrafFamily:
+		return 0
+	else:
+		return 1
+		
 # XXXX find more portable scheme for handling absence of FCNTL
 
+terminalWindowID = getWindowID()
+imageWindowID = None
+imcurActive = 0
+lastTermPos = (0,0)
+lastImagePos = (0,0)
