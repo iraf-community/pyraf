@@ -24,7 +24,6 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
 
         self.gwidget = Ptkplot.PyrafCanvas(self.top,
                                            width=width, height=height)
-#        self.gwidget = Ptogl.Ptogl(self.top,width=width,height=height)
         self.gwidget.firstPlotDone = 0
         self.colorManager = tkColorManager(self.irafGkiConfig)
         self.startNewPage()
@@ -148,8 +147,11 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
 
     def gki_clearws(self, arg):
 
-        # don't put clearws command in the gl buffer, just clear the display
+        # don't put clearws command in the tk buffer, just clear the display
         self.clear()
+        # This is needed to clear all the previously plotted objects
+        # within tkinter (it has its own buffer it uses to replot)
+        #self.gwidget.delete(Tkinter.ALL)
 
     def gki_cancel(self, arg):
 
@@ -157,7 +159,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
 
     def gki_flush(self, arg):
 
-        # don't put flush command in gl buffer
+        # don't put flush command in tk buffer
         # render current plot immediately on flush
         self.incrPlot()
 
@@ -265,6 +267,12 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         ta.setFontSize(self)
         # finally ready to do the drawing
         self.activate()
+        # Have Tk remove all previously plotted objects
+        self.gwidget.delete(Tkinter.ALL)
+        # Clear the screen
+        self.tkplot_faset(0,0)
+        self.tkplot_fillarea(Numeric.array([0.,0.,1.,0.,1.,1.,0.,1.]))
+        # Plot the current buffer
         for (function, args) in self.drawBuffer.get():
             apply(function, args)
         self.gwidget.flush()
@@ -317,10 +325,9 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         # Lack of intrinsic Tk point mode means that they must be explicitly
         # looped over.
         for i in xrange(npts):
-            gw.create_oval(scaled[i,0], scaled[i,1],
-                           scaled[i,0], scaled[i,1],
-                           fill=color,outline=color)
-
+            gw.create_rectangle(scaled[i,0], scaled[i,1],
+                                scaled[i,0], scaled[i,1],
+                                fill=color, outline='')
     def tkplot_text(self, x, y, text):
 
         tkplottext.softText(self,x,y,text)
