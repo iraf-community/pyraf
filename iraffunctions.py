@@ -151,21 +151,24 @@ def Init(doprint=1,hush=0,savefile=None):
     if len(_pkgs) == 0:
         try:
             iraf = _os.environ['iraf']
+            arch = _os.environ['IRAFARCH']
         except KeyError:
-            # iraf environment variable not defined yet
-            # try to get it from 'setenv iraf' line in cl startup file
-            mm = _re.search('^[ \t]*setenv[ \t]+iraf[ \t]+(?P<dir>[^ \t\n]*)',
-                                       open('/usr/local/bin/cl','r').read(),
-                                       _re.MULTILINE)
-            if mm is None:
-                raise IOError
-            iraf = _irafutils.stripQuotes(mm.group('dir'))
+            # iraf or IRAFARCH environment variable not defined
+            # try to them cl startup file
+            d = _getIrafEnv()
+            for key, value in d.items():
+                if not _os.environ.has_key(key):
+                    _os.environ[key] = value
+            iraf = _os.environ['iraf']
+            arch = _os.environ['IRAFARCH']
         except IOError:
             raise SystemExit("""
-Your iraf environment variable is not defined.  Before starting
-pyraf, define it by doing (for example)
-setenv iraf /usr/local/iraf/
-at the Unix command line.
+Your iraf and IRAFARCH environment variables are not defined and could not
+be determined from /usr/local/bin/cl.  Before starting pyraf, define them
+by doing (for example)
+   setenv iraf /usr/local/iraf/
+   setenv IRAFARCH redhat
+at the Unix command line.  The values will depend on your IRAF installation.
 """)
         # ensure trailing slash is present
         iraf = _os.path.join(iraf,'')
@@ -174,8 +177,7 @@ at the Unix command line.
         set(iraf = iraf)
         set(host = host)
         set(hlib = hlib)
-        arch = _os.environ.get('IRAFARCH','')
-        if arch: arch = '.' + arch
+        if arch and arch[0] != '.': arch = '.' + arch
         set(arch = arch)
         if _os.environ.has_key('tmp'):
             set(tmp = _os.environ['tmp'])
@@ -221,6 +223,44 @@ at the Unix command line.
         loadedPath.append(clpkg)
         if doprint: listTasks('clpackage')
 
+def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
+    """Returns dictionary environment vars defined in cl startup file"""
+    if not _os.path.exists(file):
+        raise IOError("CL startup file %s does not exist")
+    lines = open(file,'r').readlines()
+    # replace commands that exec cl with commands to print environment vars
+    pat = _re.compile(r'^\s*exec\s+')
+    newlines = []
+    nfound = 0
+    for line in lines:
+        if pat.match(line):
+            nfound += 1
+            for var in vars:
+                newlines.append('echo "%s=$%s"\n' % (var, var))
+            newlines.append('exit 0\n')
+        else:
+            newlines.append(line)
+    if nfound == 0:
+        raise IOError("No exec statement found in script %s" % file)
+    # write new script to temporary file
+    newfile = _os.tmpnam()
+    open(newfile,'w').writelines(newlines)
+    _os.chmod(newfile,0700)
+    # run new script and capture output
+    fh = _StringIO.StringIO()
+    status = clOscmd(newfile,Stdout=fh)
+    if status:
+        raise IOError("Execution error in script %s" % newfile)
+    _os.remove(newfile)
+    result = fh.getvalue().split('\n')
+    fh.close()
+    # extract environment variables from the output
+    d = {}
+    for entry in result:
+        if entry.find('=') >= 0:
+            key, value = entry.split('=',1)
+            d[key] = value
+    return d
 # module variables that don't get saved (they get
 # initialized when this module is imported)
 
@@ -268,12 +308,23 @@ del unsavedVars, v
 def saveToFile(savefile, **kw):
     """Save IRAF environment to pickle file
 
-    Set clobber keyword (or CL environment variable) to overwrite an existing file
+    savefile may be a filename or a file handle.
+    Set clobber keyword (or CL environment variable) to overwrite an
+    existing file.
     """
-    # if clobber is not set, do not overwrite file
-    savefile = Expand(savefile)
-    if (not kw.get('clobber')) and envget("clobber") != yes and _os.path.exists(savefile):
-        raise IOError("Output file `%s' already exists" % savefile)
+    if hasattr(savefile, 'write'):
+        fh = savefile
+        if hasattr(savefile, 'name'):
+            savefile = fh.name
+        doclose = 0
+    else:
+        # if clobber is not set, do not overwrite file
+        savefile = Expand(savefile)
+        if (not kw.get('clobber')) and envget("clobber") != yes and _os.path.exists(savefile):
+            raise IOError("Output file `%s' already exists" % savefile)
+        # open binary pickle file
+        fh = open(savefile,'wb')
+        doclose = 1
     # make a shallow copy of the dictionary and edit out
     # functions, modules, and objects named in _unsavedVarsDict
     dict = globals().copy()
@@ -285,20 +336,27 @@ def saveToFile(savefile, **kw):
     # save just the value of Verbose, not the object
     global Verbose
     dict['Verbose'] = Verbose.get()
-    # open binary pickle file
-    fh = open(savefile,'wb')
     p = _pickle.Pickler(fh,1)
     p.dump(dict)
-    fh.close()
+    if doclose:
+        fh.close()
 
 
 def restoreFromFile(savefile, doprint=1, **kw):
-    """Initialize IRAF environment from pickled save file"""
-    savefile = Expand(savefile)
-    fh = open(savefile, 'rb')
+    """Initialize IRAF environment from pickled save file (or file handle)"""
+    if hasattr(savefile, 'read'):
+        fh = savefile
+        if hasattr(savefile, 'name'):
+            savefile = fh.name
+        doclose = 0
+    else:
+        savefile = Expand(savefile)
+        fh = open(savefile, 'rb')
+        doclose = 1
     u = _pickle.Unpickler(fh)
     dict = u.load()
-    fh.close()
+    if doclose:
+        fh.close()
 
     # restore the value of Verbose
     global Verbose

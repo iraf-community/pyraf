@@ -443,7 +443,6 @@ def parse(tokens):
 if __name__ == '__main__':
 
     import clscan, time
-    global _parser
 
     t0 = time.time()
 
