@@ -16,7 +16,7 @@ void moveCursorTo(int win, int x, int y) {
   Window w;
   Display *XOpenDisplay(char *);
   int s;
-  d = XOpenDisplay("eclipse.stsci.edu:0");
+  d = XOpenDisplay(NULL);
   if (d == NULL)
     printf("could not open display!\n");
   w = (Window) win;
