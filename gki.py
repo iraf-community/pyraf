@@ -684,7 +684,8 @@ class GkiController(GkiKernel):
 		"""Starting with stdgraph, drill until a device is found in
 		the graphcap or isn't"""
 		if self.devices is None:
-			self.devices = graphcap.GraphCap(iraf.osfn('dev$graphcap'))
+			self.devices = graphcap.GraphCap(iraf.osfn(
+				iraf.envget('graphcap') or 'dev$graphcap'))
 		if device is None:
 			device = iraf.envget("stdgraph")
 		# protect against circular definitions
