@@ -26,7 +26,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 
 	# Run it
 	try:
-		irafprocess.initialize(envdict)
+		irafprocess.initialize(envdict,stdout=stdout or stderr)
 		irafprocess.run(stdin=stdin,stdout=stdout,stderr=stderr)
 		# just kill the damn thing
 		irafprocess.terminate()
@@ -85,10 +85,18 @@ class IrafProcess:
 		executable = task.getFullpath()
 		self.process = subproc.Subprocess(executable+' -c')
 
-	def initialize(self, envdict):
+	def initialize(self, envdict, stdout=None):
 
 		"""Initialization: Copy environment variables to process"""
 
+		if stdout is None: stdout = sys.stdout
+		if stdout.isatty():
+			# if stdout is a terminal, set the lines & columns sizes
+			# this ensures that they are up-to-date at the start of the task
+			# (which is better than the CL does)
+			nlines,ncols = wutil.getTermWindowSize()
+			envdict['ttyncols'] = str(ncols)
+			envdict['ttynlines'] = str(nlines)
 		outenvstr = []
 		for key, value in envdict.items():
 			outenvstr.append("set " + key + "=" + str(value) + "\n")
