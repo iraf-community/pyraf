@@ -2133,6 +2133,9 @@ def printf(format, *args, **kw):
 			_sys.stdout.softspace = 0
 		except ValueError, e:
 			raise IrafError(str(e))
+		except TypeError, e:
+			raise IrafError('%s\nFormat/datatype mismatch in printf '
+				'(format is %s)' % (str(e), `format`))
 	finally:
 		rv = redirReset(resetList, closeFHList)
 	return rv
