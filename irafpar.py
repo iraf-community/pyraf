@@ -6,7 +6,7 @@ $Id$
 R. White, 1999 Jan 5
 """
 
-import os, sys, string, re
+import os, sys, string, re, irafgcur
 from types import *
 
 # -----------------------------------------------------
@@ -14,7 +14,7 @@ from types import *
 # -----------------------------------------------------
 
 _string_types = [ 's', 'f', 'struct', 'pset',
-	'*gcur', '*imcur', '*struct', '*s', '*i', '*ukey' ]
+	'*imcur', '*struct', '*s', '*i', '*ukey' ]
 _real_types = [ 'r', 'd' ]
 
 def IrafParFactory(fields,strict=0):
@@ -29,6 +29,8 @@ def IrafParFactory(fields,strict=0):
 	type = fields[1]
 	if type in _string_types:
 		return IrafParS(fields,strict)
+	elif type == "*gcur":
+		return IrafParGCur(fields,strict)
 	elif type in _real_types:
 		return IrafParR(fields,strict)
 	elif type == "i":
@@ -98,6 +100,7 @@ class IrafPar:
 				print e
 			print pstring,
 			value = string.strip(sys.stdin.readline())
+
 	def get(self, field=None, index=None, prompt=1):
 		"""Return value of this parameter as a string"""
 		# prompt for query parameters unless prompt is set to zero
@@ -379,6 +382,27 @@ def _stripQuote(value):
 			value = value[:-1]
 	return value
 
+# -----------------------------------------------------
+# IRAF gcur (graphics cursor) parameter class
+# -----------------------------------------------------
+
+# XXX Need to upgrade this to handle file list inputs too.
+# That is a bit tricky because we need to initialize the
+# input list every time we start a new task.  Will need
+# to add an initialization step for all list parameters.
+# Probably should handle all list parameters at the same time.
+
+class IrafParGCur(IrafParS):
+	"""IRAF graphics cursor parameter class"""
+	def __init__(self,fields,strict=0):
+		IrafParS.__init__(self,fields,strict)
+	def get(self, field=None, index=None, prompt=1):
+		"""Return graphics cursor value"""
+		if index or (prompt != 1):
+			raise SyntaxError("Parameter " + self.name +
+				" is graphics cursor, cannot use index or prompt")
+		if field: return self.getField(field)
+		return irafgcur.gcur()
 
 # -----------------------------------------------------
 # IRAF boolean parameter class
