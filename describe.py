@@ -151,10 +151,10 @@ if __name__ == "__main__":
 	bar = lambda a: 0
 
 	# from Duncan Booth
-	def baz(a, (b, c) = ('foo','bar'), (d, e, f), g):
-		pass
+	# def baz(a, (b, c) = ('foo','bar'), (d, e, f), g):
+	#	pass
 
 	print describe(foo)
 	print describe(bar)
-	print describe(baz)
+	# print describe(baz)
 
