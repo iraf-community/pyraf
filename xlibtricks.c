@@ -20,14 +20,15 @@
 
 jmp_buf ErrorEnv;
 int xstatus;
-int (* oldErrorHandler)(Display *);
+int (* oldErrorHandler)(Display *, XErrorEvent *);
 int (* oldIOErrorHandler)(Display *);
 char XErrorMsg[80];
 char ErrorPrefix[] = "XWindows Error!\n";
 char ErrorMsg[120];
+char IOError[] = "XWindows IO exception.";
 
 #define TrapXlibErrors \
-  oldIOErrorHandler = XSetIOErrorHandler(&MyXlibErrorHandler); \
+  oldIOErrorHandler = XSetIOErrorHandler(&MyXlibIOErrorHandler); \
   oldErrorHandler = XSetErrorHandler(&MyXlibErrorHandler); \
   xstatus = setjmp(ErrorEnv); \
   if ( xstatus != 0) { \
@@ -43,11 +44,15 @@ char ErrorMsg[120];
 	XSetIOErrorHandler(oldIOErrorHandler); \
 	XSetErrorHandler(oldErrorHandler); 
 
-/* Exception handler for Xwindows I/O errors */
-
 int MyXlibErrorHandler(Display *d, XErrorEvent *myerror) {
 	XGetErrorText(d, myerror->error_code, XErrorMsg, 80);
 	longjmp(ErrorEnv, 1);
+}
+
+int MyXlibIOErrorHandler(Display *d) {
+  /* just put a constant string in the error message */
+  strncat(XErrorMsg,IOError,80);
+  longjmp(ErrorEnv, 1);
 }
 
 void moveCursorTo(int win, int x, int y) {
@@ -57,7 +62,7 @@ void moveCursorTo(int win, int x, int y) {
   int s;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    /* printf("could not open XWindow display\n"); */
+    printf("could not open XWindow display\n");
     return; 
   }
   w = (Window) win;
@@ -86,7 +91,7 @@ int getWindowID() {
    /*  Display *XOpenDisplay(char *); */
    d = XOpenDisplay(NULL);
    if (d == NULL) {
-     /* printf("could not open XWindow display\n"); */
+     printf("could not open XWindow display\n");
      return -1;
 	}
    XGetInputFocus(d,&w,&revert);
@@ -110,6 +115,10 @@ int getDeepestVisual() {
   int i, visualsMatched, maxDepth;
   maxDepth = 1;
   d = XOpenDisplay(NULL);
+  if (d == NULL) {
+    printf("could not open XWindow display\n");
+    return -1; 
+  }
   visualList = XGetVisualInfo (d, VisualNoMask, NULL, &visualsMatched);
   for (i=0;i<visualsMatched;i++) {
     if (visualList[i].depth > maxDepth) {
@@ -137,7 +146,7 @@ void setFocusTo(int win) {
   w = (Window) win;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    /* printf("could not open XWindow display\n"); */
+    printf("could not open XWindow display\n");
     return;
   }
   XSetInputFocus(d,w,0,CurrentTime);
@@ -167,7 +176,7 @@ void setBackingStore(int win) {
   w = (Window) win;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    /* printf("could not open XWindow display\n"); */
+    printf("could not open XWindow display\n");
     return;
   }
   XGetWindowAttributes(d, w, &wa);
@@ -208,7 +217,7 @@ void getWindowAttributes(int win, XWindowAttributes *winAttr, char **visual) {
   w = (Window) win;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    /* printf("could not open XWindow display\n"); */
+    printf("could not open XWindow display\n");
     return;
   }
   XGetWindowAttributes(d, w, winAttr);
@@ -328,7 +337,7 @@ long getColorCell(long red, long green, long blue) {
   d = XOpenDisplay(NULL);
 
   if (d == NULL) {
-    /* printf("could not open XWindow display\n"); */
+    printf("could not open XWindow display\n");
     return; 
   }
   screen_num = DefaultScreen(d);
@@ -373,7 +382,7 @@ void getColor(long colorindex, long *red, long *green, long *blue) {
 
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    /* printf("could not open XWindow display\n"); */
+    printf("could not open XWindow display\n");
     return; 
   }
   screen_num = DefaultScreen(d);
@@ -412,7 +421,7 @@ void freeColor(long colorindex) {
 
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    /* printf("could not open XWindow display\n"); */
+    printf("could not open XWindow display\n");
     return; 
   }
   colorindicies[0] = (unsigned long) colorindex;
