@@ -21,6 +21,7 @@ tk=Tkinter.Tk()
 tk.withdraw()
 tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
 tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
+tk_lib = os.path.join((tk.getvar('tk_library')), '../')
 tkv = str(Tkinter.TkVersion)[:3]
 if sys.platform == 'darwin':
     x_lib_dirs = '/usr/X11R6/lib'
@@ -28,7 +29,7 @@ if sys.platform == 'darwin':
 else:
     suffix = '.so'
     tklib='libtk'+tkv+suffix
-    command = "ldd %s" % (os.path.join(tcl_lib, tklib))
+    command = "ldd %s" % (os.path.join(tk_lib, tklib))
     lib_list = string.split(commands.getoutput(command))
     for lib in lib_list:
         if string.find(lib, 'libX11') == 0:
@@ -36,7 +37,7 @@ else:
             x_lib_dirs = os.path.dirname(lib_list[ind + 2])
             break
     x_inc_dirs = os.path.join(x_lib_dirs, '../include')
-local_libs = parse_makefile(get_makefile_filename())['LOCALMODLIBS']
+#local_libs = parse_makefile(get_makefile_filename())['LOCALMODLIBS']
 py_includes = get_python_inc(plat_specific=1)
 py_libs =  get_python_lib(plat_specific=1, standard_lib = 1)
 py_bin = parse_makefile(get_makefile_filename())['BINDIR']
@@ -67,23 +68,10 @@ def getExtensions(args, x_inc_dirs, x_lib_dirs):
                   Extension('pyraf/toglcolorsmodule', ['src/toglcolors.c'],
                            include_dirs=[py_includes, x_inc_dirs, 'src', opengl_inc, tcl_inc],
                            library_dirs=[x_lib_dirs, tcl_lib],
-                           extra_objects = [tcl_lib+"/Togl.so"])]
+                           extra_objects = [os.path.join(tcl_lib, "Togl.so")])]
 
     return e1
 
-def get_x_libraries(localmodlibs):
-    for x in string.split(localmodlibs, '-L'):
-        if string.find(x, '-lX11') != -1:
-            for y in string.split(x, ' '):
-                if os.path.isdir(y):
-                    return y
-
-def get_x_libraries(localmodlibs):
-    for x in string.split(localmodlibs, '-L'):
-        if string.find(x, '-lX11') != -1:
-            for y in string.split(x, ' '):
-                if os.path.isdir(y):
-                    return y
 
 def getDataDir(args):
     for a in args:
@@ -93,14 +81,30 @@ def getDataDir(args):
         elif string.find(a, '--prefix=') == 0:
             dir = string.split(a, '=')[1]
             data_dir = os.path.join(dir, 'lib', python_exec, 'site-packages/pyraf')
-        elif string.find(a, '--install-data=') == 0:
+        elif a.startswith('--install-data='):
             dir = string.split(a, '=')[1]
             data_dir = dir
         else:
             data_dir = os.path.join(sys.prefix, 'lib', python_exec, 'site-packages/pyraf')
     return data_dir
 
-
+def dolocal():
+    """Adds a command line parameter --local=<dir> which is an abbreviation for
+    'put all of pyraf in <install-dir>/pyraf'."""
+    if "--help" in sys.argv:
+        print >>sys.stderr
+        print >>sys.stderr, " options:"
+        print >>sys.stderr, "--local=<install-dir>    same as --install-lib=<install-dir> --install-headers=<install-dir>/pyraf --install-scripts=<install-dir>/pyraf --install-data=<install-dir>/pyraf"
+    for a in sys.argv:
+        if a.startswith("--local="):
+            dir = a.split("=")[1]
+            sys.argv.extend([
+                "--install-lib="+dir,
+                "--install-headers="+os.path.join(dir,"pyraf"),
+                "--install-scripts="+os.path.join(dir,"pyraf"),
+                "--install-data="+os.path.join(dir,"pyraf")
+                ])
+            sys.argv.remove(a)
 
 
 def dosetup(x_lib_dirs, x_inc_dirs, data_dir, ext):
@@ -118,13 +122,18 @@ def dosetup(x_lib_dirs, x_inc_dirs, data_dir, ext):
 
     return r
 
+def copy_clcache(data_dir, args):
+    if 'install' in args:
+        shutil.copytree('data/clcache/', os.path.join(data_dir,'clcache'))
+
 
 def main():
     args = sys.argv
+    dolocal()
     data_dir = getDataDir(args)
     ext = getExtensions(args, x_inc_dirs, x_lib_dirs)
     dosetup(x_lib_dirs, x_inc_dirs, data_dir, ext)
-    shutil.copytree('data/clcache/', os.path.join(data_dir,'clcache'))
+    copy_clcache(data_dir, args)
 
 
 if __name__ == "__main__":
