@@ -1,0 +1,78 @@
+##############################################################
+#
+# PyRAF Makefile.in for the source distribution
+# 18 April 2001
+#
+##############################################################
+#@configure_input@
+
+PYTHON_LIB_DIR = @PYTHON_LIB_DIR@
+CDLPath            = @CDLPath@
+PythonIncludePath  = @PythonIncludePath@
+TclIncludePath    = @TclIncludePath@
+OpenGLIncludePath = @OpenGLIncludePath@
+srcdir          = @srcdir@
+SHLIB_CFLAGS = @SHLIB_CFLAGS@
+x_includes = @x_includes@
+x_libraries = @x_libraries@
+TclLibPath         = @TclLibPath@
+#toglplatform=        = @toglplatform@
+#ToglLibPath = $PYTHON_LIB_DIR/site-packages/OpenGL/Tk/$toglplatform*/Togl.so
+ToglLib = @ToglLib@
+
+CFLAGS = @CFLAGS@
+EXTRA_LFLAGS =@EXTRA_LFLAGS@
+LDFLAG =@LDFLAG@
+CC = @CC@
+RM = rm
+LD = ld
+
+all:    xutilmodule.so toglcolorsmodule.so cdlmodule.so sscanfmodule.so install
+
+clean:
+    $(RM) -f *.o *.so *.a Makefile config.cache *~
+    cd ../; $(RM) -f *.so pyraf *~
+
+links:
+    cp $(CDLPath)/libcdl.a $(srcdir)
+    cd $(TclLibPath); cp $(ToglLib)/* .
+
+dist:
+    $(RM) -f *.o *.so *.a Makefile config.cache config.log config.status *~
+    cd ../; $(RM) -r clcache; $(RM) -f *.pyc *.so pyraf *~
+    cd ../../; tar -cvf pyraf_@VERSION@_src.tar pyraf
+#
+# Dependent on Python and X11 Windows
+#
+xutilmodule.so: xutil.c
+    $(CC) $(CFLAGS) $(SHLIB_CFLAGS) -I$(PythonIncludePath) -I$(x_includes) xutil.c
+    $(LD) $(LDFLAG) xutil.o -o xutilmodule.so -L$(x_libraries) -lX11 \
+            $(EXTRA_LFLAGS)
+#
+# Dependent on Python
+# The Togl directory should be located in the same directory
+# as the Tcl/Tk libraries; the togl.so is in the Togl directory.
+#
+toglcolorsmodule.so: toglcolors.c
+    $(CC) $(CFLAGS) $(SHLIB_CFLAGS) -I$(PythonIncludePath) -I$(x_includes) \
+            -I$(TclIncludePath) -I$(OpenGLIncludePath) toglcolors.c
+    $(LD) $(LDFLAG) toglcolors.o -o toglcolorsmodule.so \
+            $(ToglLib)/Togl.so \
+            $(EXTRA_LFLAGS)
+#
+# Dependent on Python and Numeric and a static build of CDL
+#
+cdlmodule.so: cdl_wrap.c
+    $(CC) $(CFLAGS) $(SHLIB_CFLAGS) -I$(PythonIncludePath) cdl_wrap.c
+    $(LD) $(LDFLAG) cdl_wrap.o -o cdlmodule.so libcdl.a -lm \
+            $(EXTRA_LFLAGS)
+#
+# Dependent on Python
+#
+sscanfmodule.so: sscanfmodule.c
+    $(CC) $(CFLAGS) $(SHLIB_CFLAGS) -I$(PythonIncludePath) sscanfmodule.c
+    $(LD) $(LDFLAG) sscanfmodule.o -o sscanfmodule.so \
+            $(EXTRA_LFLAGS)
+
+install:
+    cp *.so ../; chmod +x ../pyraf

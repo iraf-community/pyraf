@@ -1,0 +1,22 @@
+#This file provides site specific information needed for PyRAF to compile
+#THERE SHOULDN'T BE ANY SPACES BETWEEN THE NAME AND THE PATH!
+#ALL UNCOMMENTED LINES SHOULD BE FILLED IN
+#We provide an example file - config.site.example
+#
+
+#path to Mesa or OpenGL include dir
+OpenGLIncludePath=
+
+#path to Tcl/Tk header files
+TclIncludePath=
+
+#path to Tcl/Tk lib files
+TclLibPath=
+
+#path to CDL
+CDLPath=
+
+#path to X11 libraries and header files (uncomment and provide a path
+#only in case theconfigure script cannot find them)
+#x_libraries=
+#x_includes=
