@@ -136,7 +136,7 @@ class IrafTask:
 	def getAllMatches(self,param):
 		"""Return list of names of all parameters that may match param"""
 		self.initTask(force=1)
-		if self._currentParList:
+		if self._currentParList is not None:
 			return self._currentParList.getAllMatches(param)
 		else:
 			return []
@@ -220,10 +220,10 @@ class IrafTask:
 		"""
 		if parList is not None:
 			mode = parList.getValue('mode',prompt=0)
-		elif self._runningParList:
+		elif self._runningParList is not None:
 			pdict = self._runningParList.getParDict()
 			mode = pdict['mode'].get(prompt=0)
-		elif self._currentParList:
+		elif self._currentParList is not None:
 			pdict = self._currentParList.getParDict()
 			mode = pdict['mode'].get(prompt=0)
 		else:
@@ -325,9 +325,9 @@ class IrafTask:
 		# no task specified, just search the standard dictionaries
 		# most of the time it will be in the active task dictionary
 
-		if self._runningParList:
+		if self._runningParList is not None:
 			paramdict = self._runningParList.getParDict()
-		elif self._currentParList:
+		elif self._currentParList is not None:
 			paramdict = self._currentParList.getParDict()
 		else:
 			paramdict = {}
@@ -361,48 +361,43 @@ class IrafTask:
 
 		package, task, paramname, pindex, field = _splitName(qualifiedName)
 
+		if (not task) or (task == self._name):
+			# no task specified, just search the standard dictionaries
+			return self._getParValue(paramname, pindex, field, native, mode)
+
 		# special syntax for package parameters
 		if task == "_": task = self._pkgname
 
-		# get mode (used for prompting behavior)
-		#XXX Is this necessary now?
-
-		if mode is None:
-			mode = self.getMode()
-
-		if task and (not package):
+		if not package:
 			# maybe this task is the name of one of the dictionaries?
 			if self._parDictList is None: self._setParDictList()
 			for dictname, paramdict in self._parDictList:
 				if dictname == task:
 					if paramdict.has_key(paramname):
 						return self._getParFromDict(paramdict, paramname,
-								pindex, field, native, mode)
+								pindex, field, native, mode="h")
 					else:
 						raise iraf.IrafError("Unknown parameter requested: " +
 							qualifiedName)
 
-		if package or task:
-			# Not one of our dictionaries, so must find the relevant task
-			if package: task = package + '.' + task
-			try:
-				tobj = iraf.getTask(task)
-				return tobj._getParValue(paramname, pindex, field, native, mode)
-			except KeyError:
-				raise iraf.IrafError("Could not find task " + task +
-					" to get parameter " + qualifiedName)
-			except iraf.IrafError, e:
-				raise iraf.IrafError(str(e) + "\nFailed to get parameter " +
-					qualifiedName)
-		# no task specified, just search the standard dictionaries
-		return self._getParValue(paramname, pindex, field, native, mode)
+		# Not one of our dictionaries, so must find the relevant task
+		if package: task = package + '.' + task
+		try:
+			tobj = iraf.getTask(task)
+			return tobj._getParValue(paramname, pindex, field, native, mode="h")
+		except KeyError:
+			raise iraf.IrafError("Could not find task " + task +
+				" to get parameter " + qualifiedName)
+		except iraf.IrafError, e:
+			raise iraf.IrafError(str(e) + "\nFailed to get parameter " +
+				qualifiedName)
 
 	def _getParValue(self, paramname, pindex, field, native, mode):
 		# search the standard dictionaries for the parameter
 		# most of the time it will be in the active task dictionary
-		if self._runningParList:
+		if self._runningParList is not None:
 			paramdict = self._runningParList.getParDict()
-		elif self._currentParList:
+		elif self._currentParList is not None:
 			paramdict = self._currentParList.getParDict()
 		else:
 			paramdict = None
@@ -417,7 +412,7 @@ class IrafTask:
 		for dictname, paramdict in self._parDictList:
 			if paramdict.has_key(paramname):
 				return self._getParFromDict(paramdict, paramname, pindex,
-								field, native, mode)
+								field, native, mode="h")
 		else:
 			raise iraf.IrafError("Unknown parameter requested: " +
 				paramname)
@@ -480,7 +475,7 @@ class IrafTask:
 		"""Reset task parameters to their default values"""
 		self.initTask(force=1)
 		if self._hasparfile:
-			if self._defaultParList:
+			if self._defaultParList is not None:
 				if self._scrunchParpath and \
 				  (self._scrunchParpath == self._currentParpath):
 					try:
@@ -601,10 +596,10 @@ class IrafTask:
 		"""
 
 		self.initTask()
-		if self._runningParList:
+		if self._runningParList is not None:
 			# use the dictionary for the currently running task if exists
 			parDictList = [(self._name,self._runningParList.getParDict())]
-		elif self._currentParList:
+		elif self._currentParList is not None:
 			# else use current task parameter values
 			parDictList = [(self._name,self._currentParList.getParDict())]
 		else:
@@ -630,8 +625,12 @@ class IrafTask:
 			native, mode):
 		# helper method for getting parameter value (with indirection)
 		# once we find a dictionary that contains it
-		v = paramdict[paramname].get(index=pindex,field=field,
-				native=native,mode=mode)
+		par = paramdict[paramname]
+		pmode = par.mode[:1]
+		if pmode == "a":
+			pmode = mode or self.getMode()
+		v = par.get(index=pindex,field=field,
+				native=native,mode=pmode)
 		if type(v) is types.StringType and v[:1] == ")":
 
 			# parameter indirection: call getParam recursively
@@ -643,7 +642,7 @@ class IrafTask:
 			# ')task.param.p_min' refers to the min or
 			# choice string, etc.
 
-			return self.getParam(v[1:],native=native,mode=mode)
+			return self.getParam(v[1:],native=native,mode="h")
 		else:
 			return v
 
@@ -904,7 +903,7 @@ class ParDictListSearch:
 		if paramname[:1] == '_':
 			raise AttributeError(paramname)
 		try:
-			return self._taskObj.getParam(paramname,native=1)
+			return self._taskObj.getParam(paramname,native=1,mode="h")
 		except SyntaxError, e:
 			raise AttributeError(str(e))
 
@@ -1163,7 +1162,7 @@ class IrafPkg(IrafCLTask):
 	def getAllMatches(self, name, triedpkgs=None):
 		"""Return list of names of all parameters/tasks that may match name"""
 		self.initTask(force=1)
-		if self._currentParList:
+		if self._currentParList is not None:
 			matches = self._currentParList.getAllMatches(name)
 		else:
 			matches = []

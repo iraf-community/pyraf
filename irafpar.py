@@ -408,9 +408,10 @@ class IrafPar:
 			raise SyntaxError("Parameter "+self.name+" is not an array")
 
 		if native:
-			return self.value
+			rv = self.value
 		else:
-			return self.toString(self.value)
+			rv = self.toString(self.value)
+		return rv
 
 	def set(self, value, field=None, index=None, check=1):
 		"""Set value of this parameter from a string or other value.
@@ -1182,7 +1183,7 @@ class IrafParPset(IrafParS):
 		if field: return self._getField(field)
 		if lpar: return str(self.value)
 
-		# assume there are no query pset parameters
+		# assume there are no query or indirection pset parameters
 
 		# if parameter value has .par extension, it is a file name
 		f = string.split(self.value,'\.')
@@ -1256,7 +1257,7 @@ class IrafParL(_StringMixin, IrafPar):
 			else:
 				return self.value
 
-		# assume there are no query list parameters
+		# assume there are no query or indirection list parameters
 
 		if index is not None:
 			raise SyntaxError("Parameter "+self.name+" is not an array")
@@ -1829,7 +1830,8 @@ class IrafParList:
 	# parameters are accessible as attributes
 
 	def __getattr__(self,name):
-		if name[:1] == '_': raise AttributeError(name)
+		if name[:1] == '_':
+			raise AttributeError(name)
 		try:
 			return self.getValue(name,native=1)
 		except SyntaxError, e:
@@ -1883,8 +1885,17 @@ class IrafParList:
 		If prompt is zero, does not prompt for parameter.  Default is to
 		prompt for query parameters.
 		"""
-		return self.getParObject(param).get(native=native, mode=mode,
-						prompt=prompt)
+		par = self.getParObject(param)
+		value = par.get(native=native, mode=mode, prompt=prompt)
+		if type(value) is types.StringType and value[:1] == ")":
+			# parameter indirection: ')task.param'
+			try:
+				task = iraf.getTask(self.__name)
+				value = task.getParam(value[1:],native=native,mode="h")
+			except KeyError:
+				# if task is not known, use generic function to get param
+				value = iraf.clParGet(value[1:],native=native,mode="h")
+		return value
 
 	def setValue(self,param,value):
 		"""Set task parameter 'param' to value (with minimum-matching)"""

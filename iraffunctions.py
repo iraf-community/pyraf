@@ -731,7 +731,7 @@ def listVars(prefix="", equals="\t= ", **kw):
 # these do not have extra keywords because they should not
 # be called as tasks
 
-def clParGet(paramname,pkg=None,native=1):
+def clParGet(paramname,pkg=None,native=1,mode=None):
 	"""Return value of IRAF parameter
 	
 	Parameter can be a cl task parameter, a package parameter for
@@ -739,7 +739,10 @@ def clParGet(paramname,pkg=None,native=1):
 	from any known task.
 	"""
 	if pkg is None: pkg = loadedPath[-1]
-	return pkg.getParam(paramname,native=native)
+	# if taskname is '_', use current package as task
+	if paramname[:2] == "_.":
+		paramname = pkg.getName() + paramname[1:]
+	return pkg.getParam(paramname,native=native,mode=mode)
 
 def envget(var,default=""):
 	"""Get value of IRAF or OS environment variable"""
