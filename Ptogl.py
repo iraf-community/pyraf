@@ -36,10 +36,8 @@ else:
 
 # This code is needed to avoid faults on sys.exit()
 # [DAA, Jan 1998]
-import sys
-oldexitfunc = None
-if hasattr(sys, 'exitfunc'):
-    oldexitfunc = sys.exitfunc
+# [Modified by RLW to use new atexit module, Dec 2001]
+
 def cleanup():
     from Tkinter import _default_root, TclError
     import Tkinter
@@ -48,9 +46,10 @@ def cleanup():
     except TclError:
         pass
     Tkinter._default_root = None
-    if oldexitfunc: oldexitfunc()
-sys.exitfunc = cleanup
+import atexit
+atexit.register(cleanup)
 # [end DAA]
+
 toglcolors.init() # posts the togl widget create callback function
 
 # visuals that use true colors

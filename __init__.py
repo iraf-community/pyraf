@@ -7,7 +7,7 @@ $Id$
 
 R. White, 2000 February 18
 """
-__version__ = "v0.9.2 (2001Dec12)"
+__version__ = "v0.9.3 (2001Dec18)"
 
 import os, sys, __main__
 
@@ -30,26 +30,35 @@ import irafimport
 # this gives more useful tracebacks for CL scripts
 import cllinecache
 
-# Set clean name strategy
 import irafnames
-irafnames.setCleanStrategy()
+
+# initialization is silent unless program name is 'pyraf'
+# (I'd like to find a better way to trigger this behavior.)
+_silent = os.path.split(sys.argv[0])[1] != 'pyraf'
+
+# If graphics is available, use splash window
+if _silent:
+    _splash = None
+else:
+    import splash
+    _splash = splash.splash('PyRAF '+__version__)
+
+import irafexecute, clcache
 
 # set up exit handler to close caches
-import irafexecute, clcache
-_oldexitfunc = getattr(sys, 'exitfunc', None)
-def _cleanup(last_exit = _oldexitfunc):
+def _cleanup():
     iraf.gflush()
     del irafexecute.processCache
     del clcache.codeCache
-    if last_exit: last_exit()
-sys.exitfunc = _cleanup
+import atexit
+atexit.register(_cleanup)
+del atexit
 
 # now get ready to do the serious IRAF initialization
 
 import iraf
 
-_pname = os.path.split(sys.argv[0])[1]
-if _pname != "pyraf":
+if _silent:
     # if not executing as pyraf main, just initialize iraf module
     # quietly load initial iraf symbols and packages
     iraf.Init(doprint=0, hush=1)
@@ -93,3 +102,7 @@ else:
     del args
 
 help = iraf.help
+
+if _splash:
+    _splash.Destroy()
+del _splash

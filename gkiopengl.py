@@ -13,8 +13,6 @@ from irafglobals import IrafError, pyrafDir, userWorkingHome
 import tkMessageBox, tkSimpleDialog
 import filedlg
 
-import gwm # needed only for delete function
-
 nIrafColors = 16
 
 #-----------------------------------------------
@@ -166,13 +164,14 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
     # maximum number of error messages for a plot
     MAX_ERROR_COUNT = 3
 
-    def __init__(self, windowName):
+    def __init__(self, windowName, manager):
 
         gki.GkiKernel.__init__(self)
         self.name = 'OpenGL'
         self._errorMessageCount = 0
         self.irafGkiConfig = _irafGkiConfig
         self.windowName = windowName
+        self.manager = manager
 
         # redraw table ignores control functions
         self.redrawFunctionTable = self.functionTable[:]
@@ -540,9 +539,8 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
     def windowMenuInit(self):
 
         menu = self.windowMenu.menu
-        wm = gwm.getGraphicsWindowManager()
-        winVar = wm.getWindowVar()
-        winList = wm.windowNames()
+        winVar = self.manager.getWindowVar()
+        winList = self.manager.windowNames()
         winList.sort()
         # Delete everything past the separator
         menu.delete(1,10000)
@@ -555,9 +553,10 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
     def createNewWindow(self):
 
         newname = tkSimpleDialog.askstring("New Graphics Window",
-                "Name of new graphics window (blank OK)", initialvalue="")
+                "Name of new graphics window",
+                initialvalue=self.manager.getNewWindowName())
         if newname is not None:
-            gwm.window(newname)
+            self.manager.window(newname)
 
     def makeHelpMenu(self, menubar):
 
@@ -645,12 +644,12 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 
     def gwdestroy(self):
 
-        """Delete this object from the gwm window list"""
+        """Delete this object from the manager window list"""
 
         # if gcur is active, terminate it
         self.gcurTerminate()
         self.gwidget = None
-        self.top.after_idle(gwm.delete,self.windowName)
+        self.top.after_idle(self.manager.delete, self.windowName)
 
     # -----------------------------------------------
     # the following methods implement the FocusEntity interface
