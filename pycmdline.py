@@ -197,26 +197,24 @@ class PyCmdLine(CmdConsole):
 		"""Print help on executive commands"""
 		if self.debug: self.write('do_help: %s\n' % line[i:])
 		self.write("""Executive commands (commands can be abbreviated):
-.logfile [filename [append|overwrite]]
-    If filename is specified, start logging commands to the file.  If filename
-    is omitted, turns off logging.  The optional append/overwrite argument
-    determines whether output is appended to (default) or overwrites an
-    existing file.
-.complete [0|1]
-    Turn command-completion on or off.  When on, the tab character acts as the
-    completion character, attempting to complete a partially specified task
-    name, variable name, filename, etc.  Hit tab twice to get a list of the
-    possibilities if the result is ambiguous.  Use ^V+tab to insert a tab
-	other than at the line beginning.  If the argument is omitted, default
-    is 1 (turn on completion.)
-.clemulate [0|1]
-    Set the CL emulation flag, which determines whether lines starting with a
-    CL task name are interpreted in CL mode rather than Python mode.  If
-    argument is omitted, default is 1 (turn on CL emulation.)
 .exit
     Exit from Pyraf.
 .help
     Print this help message.
+.logfile [filename [append|overwrite]]
+    If filename is specified, start logging commands to the file.  If filename
+    is omitted, turns off logging.  The optional append/overwrite argument
+    determines action for existing file (default is to append.)
+.complete [0|1]
+    Turn command-completion on (default) or off.  When on, the tab character
+    acts as the completion character, attempting to complete a partially
+    specified task name, variable name, filename, etc.  If the result is
+    ambiguous, a list of the possibilities is printed.  Use ^V+tab to insert
+    a tab other than at the line beginning.
+.clemulate [0|1]
+    Turn CL emulation on (default) or off, which determines whether lines
+    starting with a CL task name are interpreted in CL mode rather than Python
+    mode.
 .debug [1|0]
     Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
 """)
