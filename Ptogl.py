@@ -46,7 +46,7 @@ if hasattr(sys, 'exitfunc'):
 def cleanup():
 	from Tkinter import _default_root, TclError
 	import Tkinter
-	try: 
+	try:
 		if _default_root: _default_root.destroy()
 	except TclError:
 		pass
@@ -185,21 +185,21 @@ class RawOpengl(Widget, Misc):
 		# age by then.
 		self.cursorEventCount = self.cursorEventCount + 1
 		self.after(CURSOR_DELAY, self.SWCursorDelayedWake, self.cursorEventCount)
-		
+
 	def SWCursorImmediateWake(self):
 		self.cursorEventCount = 0 # reset
 		self.__isSWCursorSleeping = 0
 		if self.__isSWCursorActive:
 			self.activate()
 			self.__SWCursor.draw()
-		
-		
+
+
 	def SWCursorDelayedWake(self, cursorEventNumber):
 		if cursorEventNumber == self.cursorEventCount:
 			# No cursor Wake calls since the last one that generated this
 			# delayed call, restore the cursor.
 			self.SWCursorImmediateWake()
-					
+
 	def moveCursor(self, event):
 		"""Call back for mouse motion events"""
 		x = event.x
@@ -210,7 +210,7 @@ class RawOpengl(Widget, Misc):
 		ndcY = float(winSizeY - y)/winSizeY
 		self.activate()
 		self.__SWCursor.moveTo(ndcX,ndcY,self.__isSWCursorSleeping)
-	
+
 #	def tkMap(self, *dummy):
 #		print "tkMap called"
 #		self.tkExpose()
@@ -227,7 +227,7 @@ class Ptogl(RawOpengl):
 		"""Create an opengl widget.
 		Arrange for redraws when the window is exposed or when
 		it changes size."""
-		
+
 		if cnf is None: cnf = {}
 		apply(RawOpengl.__init__, (self, master, cnf), kw)
 		self.initialised = 0
@@ -274,7 +274,7 @@ class Ptogl(RawOpengl):
 
 		while 1:
 			err_value = glGetError()
-			if not err_value: break     
+			if not err_value: break
 			print message, gluErrorString(err_value)
 
 	def set_background(self, r, g, b):
@@ -325,7 +325,7 @@ class FullWindowCursor:
 
 		self.lastx = x
 		self.lasty = y
-		
+
 	def xorDraw(self):
 
 		if self.rgbamode:
@@ -369,6 +369,6 @@ class FullWindowCursor:
 				self.draw() # draw new position
 
 
-	
-		
+
+
 

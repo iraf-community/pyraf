@@ -43,6 +43,9 @@ except ImportError:
 def getScreenDepth():
 	return getDeepestVisual()
 
+# maintain a dictionary of top level IDs to avoid repeated effort here
+topIDmap = {}
+
 def getTopID(WindowID):
 
 	"""Find top level X windows ID parent of given window.
@@ -51,12 +54,16 @@ def getTopID(WindowID):
 	return itself"""
 	# Assuming root window has id 1 (should eliminate this dependency)
 	wid = WindowID
+	if wid <= 0:
+		return wid
+	if topIDmap.has_key(wid):
+		return topIDmap[wid]
 	try:
-		if wid <= 0:
-			return wid
+		oid = wid
 		while 1:
 			pid = getParentID(wid)
 			if not pid:
+				topIDmap[oid] = wid
 				return wid
 			else:
 				wid = pid
