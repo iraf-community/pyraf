@@ -1,4 +1,4 @@
-"""  Contains python routines to do special Window manipulations not
+""" Contains python routines to do special Window manipulations not
 possible in Tkinter.
 These are python stubs that are overloaded by a c version implementations.
 If the c versions do not exist, then these routines will do nothing
