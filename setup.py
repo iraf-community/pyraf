@@ -114,6 +114,8 @@ def dosetup(x_lib_dirs, x_inc_dirs, data_dir, ext):
      author = "Rick White, Perry Greenfield",
      maintainer_email = "help@stsci.edu",
      url = "http://www.stsci.edu/resources/software_hardware/pyraf",
+     license = "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
+     platforms = ["unix"],
      packages = ['pyraf'],
      package_dir = {'pyraf':'lib'},
      data_files = [(data_dir,['data/blankcursor.xbm']), (data_dir, ['data/epar.optionDB']), (data_dir,['data/pyraflogo_rgb_web.gif']), (data_dir,['lib/LICENSE.txt'])],
