@@ -108,7 +108,7 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
 
 	# first pass -- get variables
 
-	vars = VarList(tree,mode,local_vars_list,local_vars_dict)
+	vars = VarList(tree,mode,local_vars_list,local_vars_dict,parlist)
 
 	# check variable list for consistency with the given parlist
 	# this may change the vars list
@@ -487,7 +487,8 @@ class VarList(GenericASTTraversal):
 
 	"""Scan tree and get info on procedure, parameters, and local variables"""
 
-	def __init__(self, ast, mode="proc", local_vars_list=None, local_vars_dict=None):
+	def __init__(self, ast, mode="proc", local_vars_list=None,
+			local_vars_dict=None, parlist=None):
 		GenericASTTraversal.__init__(self, ast)
 		self.mode = mode
 		self.proc_name = ""
@@ -508,7 +509,9 @@ class VarList(GenericASTTraversal):
 			self.filename = ast.filename
 		else:
 			self.filename = ''
+		self.input_parlist = parlist
 		self.preorder()
+		del self.input_parlist
 
 		# If in "proc" mode, add default procedure name for
 		# non-procedure scripts
@@ -532,7 +535,8 @@ class VarList(GenericASTTraversal):
 		p = []
 		for var in self.proc_args_list:
 			if not _SpecialArgs.has_key(var):
-				p.append(self.proc_args_dict[var].toPar(filename=self.filename))
+				arg = self.proc_args_dict[var].toPar(filename=self.filename)
+				p.append(arg)
 		self.parList = irafpar.IrafParList(self.getProcName(),
 					filename=self.filename, parlist=p)
 
@@ -631,9 +635,18 @@ class VarList(GenericASTTraversal):
 		d = self.proc_args_dict
 		for arg in d.keys():
 			if not d[arg]:
-				errmsg = "Procedure argument `%s' is not declared" % (arg,)
-				raise SyntaxError(errmsg)
+				# try substituting from parlist parameter list
+				d[arg] = self.getFromInputList(arg)
+				if not d[arg]:
+					errmsg = "Procedure argument `%s' is not declared" % (arg,)
+					raise SyntaxError(errmsg)
 		self.prune()
+
+	def getFromInputList(self, param):
+		# look up missing parameter in input_parlist
+		if self.input_parlist and self.input_parlist.hasPar(param):
+			return Variable(irafParObject=
+				self.input_parlist.getParObject(param))
 
 	def n_statement_block(self, node):
 		# declarations in executable section are local variables
@@ -1831,13 +1844,18 @@ if __name__ == "__main__":
 	# first pass -- get variables
 
 	vars = VarList(tree)
-	t3 = time.time()
 
-	# second pass -- generate python code
+	# second pass -- check all expression types
+	# type info is added to tree
+
+	TypeCheck(tree, vars, '')
+
+	# third pass -- generate python code
 
 	pycode = Tree2Python(tree, vars)
-	t4 = time.time()
+
+	t3 = time.time()
 
 	print "Scan:", t1-t0, "sec,   Parse:", t2-t1, "sec"
-	print "Vars:", t3-t2, "sec, CodeGen:", t4-t3, "sec"
+	print "CodeGen:", t3-t2, "sec"
 

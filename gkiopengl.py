@@ -5,7 +5,6 @@ $Id$
 """
 
 from OpenGL.GL import *
-#from gki import *
 import gki
 from irafglobals import IrafError
 import Numeric
@@ -15,7 +14,6 @@ import irafgwcs
 import wutil
 import sys
 import string
-# from  opengltext import *
 import opengltext
 
 # open /dev/null for general availability
@@ -74,6 +72,7 @@ class GkiOpenGlKernel(gki.GkiKernel):
 		self.controlFunctionTable[gki.GKI_CLEARWS] = self.clearWS
 		self.controlFunctionTable[gki.GKI_SETWCS] = self.setWCS
 		self.controlFunctionTable[gki.GKI_GETWCS] = self.getWCS
+		self.stdin = None
 		self.stdout = None
 		self.stderr = None
 		self.gcursor = openglgcur.Gcursor()
@@ -82,9 +81,9 @@ class GkiOpenGlKernel(gki.GkiKernel):
 
 	def getBuffer(self):
 
-   		if gwm.getActiveWindow():
-   			win = gwm.getActiveWindow()
-	   		return win.iplot.gkiBuffer
+		if gwm.getActiveWindow():
+			win = gwm.getActiveWindow()
+			return win.iplot.gkiBuffer
 		else:
 			print "ERROR: no IRAF plot window active"
 			raise IrafError
@@ -120,7 +119,6 @@ class GkiOpenGlKernel(gki.GkiKernel):
 		global _errorMessageCount
 		_errorMessageCount = 0
 		mode = arg[0]
-		wutil.focusController.saveCursorPos()
 		# first see if there are any graphics windows, if not, create one 
 		win = gwm.getActiveWindow()
 		if win == None:
@@ -132,10 +130,11 @@ class GkiOpenGlKernel(gki.GkiKernel):
 		ta = win.iplot.textAttributes
 		ta.setFontSize()
 		gwm.raiseActiveWindow()
-		# redirect stdout to status line
+		# redirect stdin & stdout to status line
 		self.stdout = StatusLine()
+		self.stdin = self.stdout
 		# disable stderr while graphics is active (to supress xgterm gui
-		# messages
+		# messages)
 		self.stderr = DevNullError()
 		if mode == 5:
 			# clear the display
@@ -169,6 +168,7 @@ class GkiOpenGlKernel(gki.GkiKernel):
 		if not self.stdout:
 			# redirect stdout if not already
 			self.stdout = StatusLine()  
+			self.stdin = self.stdout
 		if not self.stderr:
 			self.stderr = DevNullError()
 		
@@ -176,6 +176,7 @@ class GkiOpenGlKernel(gki.GkiKernel):
 		if self.stdout:
 			self.stdout.close()
 			self.stdout = None
+			self.stdin = None
 		if self.stderr:
 			self.stderr.close()
 			self.stderr = None
@@ -199,16 +200,17 @@ class GkiOpenGlKernel(gki.GkiKernel):
 
 	def closeWS(self, dummy, arg):
 
-		wutil.focusController.saveCursorPos()
 		win = gwm.getActiveWindow()
 		win.deactivateSWCursor()  # turn off software cursor
 		if self.stdout:
 			self.stdout.close()
 			self.stdout = None
+			self.stdin = None
 		if self.stderr:
 			self.stderr.close()
 			self.stderr = None
-			
+		wutil.focusController.restoreLast()
+
 	def redraw(self, o):
 
 		ta = o.iplot.textAttributes
@@ -258,17 +260,21 @@ class DevNullError:
 class StatusLine:
 	
 	def __init__(self):
-
 		self.graphicsWindow = gwm.getActiveWindow()
+		self.windowName = gwm.getActiveWindowName()
 	def readline(self):
-   		return self.graphicsWindow.status.readline()
+		"""Shift focus to graphics, read line from status, restore focus"""
+		wutil.focusController.setFocusTo(self.windowName)
+		rv = self.graphicsWindow.status.readline()
+		wutil.focusController.restoreLast()
+		return rv
 	def write(self, text):
-   		self.graphicsWindow.status.updateIO(text=string.strip(text))
+		self.graphicsWindow.status.updateIO(text=string.strip(text))
 	def flush(self):
 		self.graphicsWindow.update_idletasks()
 	def close(self):
 		# clear status line
-   		self.graphicsWindow.status.updateIO(text="")
+		self.graphicsWindow.status.updateIO(text="")
 
 		
 #***********************************************************

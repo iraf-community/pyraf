@@ -63,6 +63,12 @@ class CLStrictParser(GenericASTBuilder):
 			'bool_expr': 1,
 			}
 
+	def typestring(self, token):
+		if token == self._EOF:
+			return self._EOF
+		else:
+			return token.type
+
 	def error(self, token, value=None):
 		if hasattr(token, 'lineno'):
 			errmsg = "Syntax error at `%s' (line %d)" % (token, token.lineno)

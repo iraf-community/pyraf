@@ -32,8 +32,9 @@ class GkiIrafKernel(gki.GkiKernel):
 		self.executable = executable
 		self.device = device
 		self.taskname = taskname
-		self.stdout = sys.__stdout__
-		self.stderr = sys.__stderr__
+		self.stdin = None
+		self.stdout = None
+		self.stderr = None
 		self.wcs = None
 		self.returnData = None
 		

@@ -35,7 +35,10 @@ def ukey():
 
 	"""Returns the string expected for the IRAF ukey parameter"""
 
+	# set focus to terminal if it is not already there
+	wutil.focusController.setFocusTo('terminal')
 	char = getSingleTTYChar()
+
 	if not char:
 		# on control-C, raise KeyboardInterrupt
 		raise KeyboardInterrupt
@@ -64,8 +67,6 @@ def ukey():
 				colonString = colonString+char
 				sys.stdout.write(char)
 				sys.stdout.flush()
-			elif char in ['q']: # other possibilities?
-				wutil.focusController.restoreLast()
 			else:
 				# ignore all other characters
 				pass

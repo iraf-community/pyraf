@@ -27,6 +27,7 @@ R. White, 2000 February 20
 
 import string, re, os, sys, code, types, keyword, traceback
 import minmatch, iraf, irafcompleter
+import wutil
 from irafglobals import pyrafDir
 
 class CmdConsole(code.InteractiveConsole):
@@ -88,6 +89,8 @@ class CmdConsole(code.InteractiveConsole):
 					prompt = self.ps2
 				else:
 					prompt = self.ps1
+				# reset the focus to terminal if necessary
+				wutil.focusController.resetFocusHistory()
 				line = self.raw_input(prompt)
 				neofs = 0
 				# add non-null lines to history

@@ -236,7 +236,7 @@ class IrafTask:
 
 		# set parameters
 		kw['_setMode'] = 1
-		self._runningParList = apply(self.setParList,args,kw)
+		apply(self.setParList,args,kw)
 
 		if iraf.Verbose>1:
 			print "run %s (%s: %s)" % (self._name,
@@ -251,14 +251,11 @@ class IrafTask:
 		resetList = self._applyRedir(redirKW)
 		try:
 			self._run(redirKW, specialKW)
-			changed = self._updateParList(self._runningParList, save)
-			if changed:
-				rv = self.save()
-				if iraf.Verbose>1: print rv
+			self._updateParList(save)
 			if iraf.Verbose>1: print 'Successful task termination'
 		finally:
 			rv = self._resetRedir(resetList, closeFHList)
-			self._runningParList = None
+			self._deleteRunningParList()
 			if self._parDictList:
 				self._parDictList[0] = (self._name, self.getParDict())
 		return rv
@@ -299,12 +296,11 @@ class IrafTask:
 			return mode
 
 	def setParList(self,*args,**kw):
-		"""Set arguments to task
+		"""Set arguments to task in _runningParList copy of par list
 
-		Creates a copy of the task parameter list and returns the
-		copy with parameters set.  It is up to subsequent code (in
-		the run method) to propagate these changes to the persistent
-		parameter list.
+		Creates a copy of the task parameter list and sets the
+		parameters.  It is up to subsequent code (in the run method)
+		to propagate these changes to the persistent parameter list.
 
 		Special arguments: _setMode=1 to set modes of automatic parameters
 		"""
@@ -317,13 +313,18 @@ class IrafTask:
 			del kw['_setMode']
 		else:
 			_setMode = 0
+		# create parlist copies for pset tasks too
+		for p in newParList.getParList():
+			if isinstance(p, irafpar.IrafParPset):
+				p.get().setParList()
+		# set the parameters
 		apply(newParList.setParList, args, kw)
 		if _setMode:
 			# set mode of automatic parameters
 			mode = self.getMode(newParList)
 			for p in newParList.getParList():
 				p.mode = string.replace(p.mode,"a",mode)
-		return newParList
+		self._runningParList = newParList
 
 	#---------------------------------------------------------
 	# task parameter access
@@ -635,15 +636,17 @@ class IrafTask:
 			raise iraf.IrafError("Error running IRAF task " + self._name +
 				"\n" + str(value))
 
-	def _updateParList(self, newParList, save=0):
+	def _updateParList(self, save=0):
 		"""Update parameter list after successful task completion
 
-		Returns true if any parameters change.  If save flag is
-		set, all changes are saved; if save flag is false, only
+		Updates parameter save file if any parameters change.  If save
+		flag is set, all changes are saved; if save flag is false, only
 		explicit parameter changes requested by the task are saved.
 		"""
-		if not self._currentParList:
-			return 0
+		if not (self._currentParList and self._runningParList):
+			return
+		newParList = self._runningParList
+		self._runningParList = None
 		mode = self.getMode(newParList)
 		changed = 0
 		for par in newParList.getParList():
@@ -663,7 +666,21 @@ class IrafTask:
 				tpar.choice = par.choice
 				tpar.prompt = par.prompt
 				tpar.setChanged()
-		return changed
+			if isinstance(par, irafpar.IrafParPset):
+				par.get()._updateParList(save)
+		# save to disk if there were changes
+		if changed:
+			rv = self.save()
+			if iraf.Verbose>1: print rv
+
+	def _deleteRunningParList(self):
+		"""Delete the _runningParList parameter list for this and psets"""
+		if self._currentParList and self._runningParList:
+			newParList = self._runningParList
+			self._runningParList = None
+			for par in newParList.getParList():
+				if isinstance(par, irafpar.IrafParPset):
+					par.get()._deleteRunningParList()
 
 	def _setParDictList(self):
 		"""Set the list of parameter dictionaries for task execution.

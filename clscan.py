@@ -10,7 +10,7 @@ R. White, 1999 September 10
 from cgeneric import ContextSensitiveScanner
 from generic import GenericScanner
 from cltoken import Token
-import string, re
+import string
 import irafutils
 
 # contexts for scanner

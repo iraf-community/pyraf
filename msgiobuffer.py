@@ -174,6 +174,8 @@ class MsgIOBuffer(Frame):
         # Disable the entry
         self.msgIO.canvas.f.iomb.entry.configure(state = DISABLED)
         self.waitFlag.set(FALSE)
+        if self.lastFocus:
+            self.lastFocus.focus_set()
  
 
     def __enableEntry(self):
@@ -181,6 +183,11 @@ class MsgIOBuffer(Frame):
         """Private method to put the Entry into a normal state for input."""
 
         # Input is requested, so enable the entry box
+        f = self.focus_displayof()
+        if f:
+            self.lastFocus = f.focus_lastfor()
+        else:
+            self.lastFocus = None
         self.msgIO.canvas.f.iomb.entry.configure(state = NORMAL)
         self.msgIO.canvas.f.iomb.entry.focus_set()
         

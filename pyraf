@@ -66,7 +66,7 @@ R. White, 2000 January 21
 __version__ = "v0.7.1 (2000Aug16)"
 
 
-import sys, os
+import sys, os, string
 
 # set search path to include directory above this script and current directory
 # ... but do not want the pyraf package directory itself in the path, since
@@ -97,7 +97,8 @@ from pyraf.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
 
 print "Pyraf, Python front end to IRAF,", __version__, "(copyright AURA 2000)"
-print "Python: " + sys.copyright
+# just print first line of Python copyright (long in v2.0)
+print "Python: " + string.split(sys.copyright,'\n')[0]
 
 if doCmdline:
 	del doCmdline

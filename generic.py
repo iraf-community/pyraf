@@ -3,7 +3,7 @@
 $Id$
 """
 
-#  Copyright (c) 1998-1999 John Aycock
+#  Copyright (c) 1998-2000 John Aycock
 #  
 #  Permission is hereby granted, free of charge, to any person obtaining
 #  a copy of this software and associated documentation files (the
@@ -25,40 +25,17 @@ $Id$
 #  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Modifications by R. White:
-#
-# - Fixed a change in scanner behavior from v0.4.  Previous version
-#   guaranteed that scanned patterns would be in inheritance order,
-#   i.e. all patterns from first this class, then its parents, etc.
-#   The new version of _namelist() did not preserve that.  I modified
-#   _namelist() to restore it.
-#
-# - Fixed bug in buildState (in predictor section, for case where a rule
-#   is entirely completed within a single step.)
-#
 # - Allow named groups in scanner patterns (other than the ones
 #   inserted by the class constructor.)
-#
-# - Speed up GenericScanner.tokenize().  This version is about 2x faster
-#   than the original version.
+# - Speed up GenericScanner.tokenize().
 #   + Keep a list (indexlist) of the group numbers to check.
 #   + Break out of loop after finding a match, since more than
 #     one of the primary patterns cannot match (by construction of
 #     the pattern.)
-#   + Move some code from re module (function groups) directly into
-#     the loop to avoid multiple passes through groups.
-#
-# - Add optional value parameter to GenericParser.error
-#
-# - Various speedups in parser
-#   + Add FIRST sets.  For this to work, tokens must have a __hash__ method
-#     (which is just def __hash__(self): return hash(self.type) for the
-#     usual token definitions.)
-#   + Use preallocated list instead of dictionary for states
-#   + Use direct comparisons to token.type rather than relying on (slow)
-#     __cmp__ method.  This also removes the need for the __hash__ method
-#     in the token class.
-#
-# - Add check for assertion error in ambiguity resolution (see RLW comments)
+# - Add optional value parameter to GenericParser.error.
+# - Add check for assertion error in ambiguity resolution.
+
+__version__ = 'SPARK-0.6.1rlw'
 
 import re
 import sys
@@ -116,12 +93,10 @@ class GenericScanner:
 			if m is None:
 				self.error(s, pos)
 
+			groups = m.groups()
 			for i in self.indexlist:
-				# code to check for group i match lifted from re
-				a, b = m.regs[i]
-				if a != -1 and b != -1:
-					grp = s[a:b]
-					self.index2func[i](grp)
+				if groups[i]:
+					self.index2func[i](groups[i])
 					# assume there is only a single match
 					break
 			pos = m.end()
@@ -132,15 +107,63 @@ class GenericScanner:
 
 class GenericParser:
 	def __init__(self, start):
-		self.rules, self.rule2func, self.rule2name = self.collectRules()
+		self.rules = {}
+		self.rule2func = {}
+		self.rule2name = {}
+		self.collectRules()
 		self.startRule = self.augment(start)
-		# make the FIRST sets
-		self.FIRST = self.makeFIRST()
-		# make the rule/token lists
-		self.tokenRules = self.makeTokenRules()
+		self.ruleschanged = 1
 
 	_START = 'START'
 	_EOF = 'EOF'
+
+	#
+	#  A hook for GenericASTBuilder and GenericASTMatcher.
+	#
+	def preprocess(self, rule, func):	return rule, func
+
+	def addRule(self, doc, func):
+		rules = string.split(doc)
+
+		index = []
+		for i in range(len(rules)):
+			if rules[i] == '::=':
+				index.append(i-1)
+		index.append(len(rules))
+
+		for i in range(len(index)-1):
+			lhs = rules[index[i]]
+			rhs = rules[index[i]+2:index[i+1]]
+			rule = (lhs, tuple(rhs))
+
+			rule, fn = self.preprocess(rule, func)
+
+			if self.rules.has_key(lhs):
+				self.rules[lhs].append(rule)
+			else:
+				self.rules[lhs] = [ rule ]
+			self.rule2func[rule] = fn
+			self.rule2name[rule] = func.__name__[2:]
+		self.ruleschanged = 1
+
+	def collectRules(self):
+		for name in _namelist(self):
+			if name[:2] == 'p_':
+				func = getattr(self, name)
+				doc = func.__doc__
+				self.addRule(doc, func)
+
+	def augment(self, start):
+		#
+		#  Tempting though it is, this isn't made into a call
+		#  to self.addRule() because the start rule shouldn't
+		#  be subject to preprocessing.
+		#
+		startRule = (self._START, ( start, self._EOF ))
+		self.rule2func[startRule] = lambda args: args[0]
+		self.rules[self._START] = [ startRule ]
+		self.rule2name[startRule] = ''
+		return startRule
 
 	def makeFIRST(self):
 		# make the FIRST sets
@@ -178,9 +201,13 @@ class GenericParser:
 						if not this.has_key(""):
 							this[""] = 1
 							changed = changed+1
-		return first
+		# make the rule/token lists
+		self.makeTokenRules(first)
 
-	def makeAllTokens(self):
+	def makeTokenRules(self,first):
+		# make dictionary indexed by (nextSymbol, nextToken) with
+		# list of all rules for nextSymbol that could produce nextToken
+		tokenRules = {}
 		# make a list of all terminal tokens
 		allTokens = {}
 		for key, rule in self.rules.items():
@@ -189,15 +216,7 @@ class GenericParser:
 					if not self.rules.has_key(token):
 						# this is a terminal
 						allTokens[token] = 1
-		return allTokens
-
-	def makeTokenRules(self):
-		# make dictionary indexed by (nextSymbol, nextToken) with
-		# list of all rules for nextSymbol that could produce nextToken
-		tokenRules = {}
-		# merged list of all tokens
-		allTokens = self.makeAllTokens()
-		for nextSymbol, flist in self.FIRST.items():
+		for nextSymbol, flist in first.items():
 			for nextToken in flist.keys():
 				tokenRules[(nextSymbol, nextToken)] = []
 			if flist.has_key(""):
@@ -207,7 +226,7 @@ class GenericParser:
 				prhs = prule[1]
 				done = {}
 				for element in prhs:
-					pflist = self.FIRST.get(element)
+					pflist = first.get(element)
 					if pflist is not None:
 						if not done.has_key(element):
 							done[element] = 1
@@ -231,54 +250,17 @@ class GenericParser:
 						if not done.has_key(nextToken):
 							done[nextToken] = 1
 							tokenRules[(nextSymbol, nextToken)].append(prule)
-		return tokenRules
-
-	#
-	#  A hook for GenericASTBuilder and GenericASTMatcher.
-	#
-	def preprocess(self, rule, func):	return rule, func
-
-	def collectRules(self):
-		rv = {}
-		r2f, r2n = {}, {}
-		for name in _namelist(self):
-			if name[:2] == 'p_':
-				func = getattr(self, name)
-				doc = func.__doc__
-				rules = string.split(doc)
-
-				index = []
-				for i in range(len(rules)):
-					if rules[i] == '::=':
-						index.append(i-1)
-				index.append(len(rules))
-
-				for i in range(len(index)-1):
-					lhs = rules[index[i]]
-					rhs = rules[index[i]+2:index[i+1]]
-					rule = (lhs, tuple(rhs))
-
-					rule, fn = self.preprocess(rule, func)
-
-					if rv.has_key(lhs):
-						rv[lhs].append(rule)
-					else:
-						rv[lhs] = [ rule ]
-					r2f[rule] = fn
-					r2n[rule] = name[2:]
-		return rv, r2f, r2n
-
-	def augment(self, start):
-		startRule = (self._START, ( start, self._EOF ))
-		self.rule2func[startRule] = lambda args: args[0]
-		self.rules[self._START] = [ startRule ]
-		self.rule2name[startRule] = ''
-		return startRule
+		self.tokenRules = tokenRules
 
 	#
 	#  An Earley parser, as per J. Earley, "An Efficient Context-Free
-	#  Parsing Algorithm", CACM 13(2), pp. 94-102.
+	#  Parsing Algorithm", CACM 13(2), pp. 94-102.  Also J. C. Earley,
+	#  "An Efficient Context-Free Parsing Algorithm", Ph.D. thesis,
+	#  Carnegie-Mellon University, August 1968, p. 27.
 	#
+	
+	def typestring(self, token):
+		return None
 
 	def error(self, token, value=None):
 		print "Syntax error at or near `%s' token" % token
@@ -292,6 +274,10 @@ class GenericParser:
 		tokens.append(token.Token(self._EOF))
 		states = (len(tokens)+1)*[None]
 		states[0] = [ (self.startRule, 0, 0) ]
+
+		if self.ruleschanged:
+			self.makeFIRST()
+			self.ruleschanged = 0
 
 		for i in xrange(len(tokens)):
 			states[i+1] = []
@@ -312,6 +298,13 @@ class GenericParser:
 		predicted = {}
 		completed = {}
 
+		# optimize inner loops
+		state_append = state.append
+		tree_has_key = tree.has_key
+		completed_has_key = completed.has_key
+		predicted_has_key = predicted.has_key
+		rules_has_key = self.rules.has_key
+		tokenRules_get = self.tokenRules.get
 		for item in state:
 			rule, pos, parent = item
 			lhs, rhs = rule
@@ -322,24 +315,22 @@ class GenericParser:
 			if pos == len(rhs):
 				# track items completed within this rule
 				if parent == i:
-					if completed.has_key(lhs):
+					if completed_has_key(lhs):
 						completed[lhs].append((item,i))
 					else:
 						completed[lhs] = [(item,i)]
+
 				lhstuple = (lhs,)
-				for (prule, ppos, pparent) in states[parent]:
+				for prule, ppos, pparent in states[parent]:
 					plhs, prhs = prule
 					if prhs[ppos:ppos+1] == lhstuple:
-						new = (prule,
-						       ppos+1,
-						       pparent)
+						new = (prule, ppos+1, pparent)
 						key = (new, i)
-						if tree.has_key(key):
+						if tree_has_key(key):
 							tree[key].append((item, i))
 						else:
-							state.append(new)
+							state_append(new)
 							tree[key] = [(item, i)]
-
 				continue
 
 			nextSym = rhs[pos]
@@ -347,31 +338,29 @@ class GenericParser:
 			#
 			#  A -> a . B (predictor)
 			#
-			if self.rules.has_key(nextSym):
-				if predicted.has_key(nextSym):
+			if rules_has_key(nextSym):
+				if predicted_has_key(nextSym):
 					#
 					# this was already predicted -- but if it was
 					# also completed entirely within this step, then
 					# need to add completed version here too
 					#
-					if completed.has_key(nextSym):
-						new = (rule,
-						       pos+1,
-						       parent)
+					if completed_has_key(nextSym):
+						new = (rule, pos+1, parent)
 						key = (new, i)
-						if tree.has_key(key):
-							tree[key] = tree[key] + completed[nextSym]
+						if tree_has_key(key):
+							tree[key].extend(completed[nextSym])
 						else:
-							state.append(new)
+							state_append(new)
 							tree[key] = completed[nextSym]
 				else:
 					predicted[nextSym] = 1
 					#
-					# predictor using FIRST sets
-					# use cached list for this (nextSym, token) combo
+					# Predictor using FIRST sets
+					# Use cached list for this (nextSym, token) combo
 					#
-					for prule in self.tokenRules.get((nextSym, token.type),[]):
-						state.append((prule, 0, i))
+					for prule in tokenRules_get((nextSym, token.type),[]):
+						state_append((prule, 0, i))
 
 			#
 			#  A -> a . c (scanner)
@@ -382,15 +371,11 @@ class GenericParser:
 
 	def buildTree(self, tokens, tree, root):
 		stack = []
-		self.buildTree_r(stack,
-				 tokens, -1,
-				 tree, root)
+		self.buildTree_r(stack, tokens, -1, tree, root)
 		return stack[0]
 
 	def buildTree_r(self, stack, tokens, tokpos, tree, root):
-		item, state = root
-		rule, pos, parent = item
-		lhs, rhs = rule
+		(rule, pos, parent), state = root
 
 		while pos > 0:
 			want = ((rule, pos, parent), state)
@@ -435,10 +420,10 @@ class GenericParser:
 							  tokens, tokpos,
 							  tree, child)
 				pos = pos - 1
-				citem, cstate = child
-				crule, cpos, cparent = citem
+				(crule, cpos, cparent), cstate = child
 				state = cparent
 
+		lhs, rhs = rule
 		result = self.rule2func[rule](stack[:len(rhs)])
 		stack[:len(rhs)] = [result]
 		return tokpos

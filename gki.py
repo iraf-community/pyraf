@@ -529,7 +529,29 @@ class GkiController(GkiKernel):
 		if not self.stdgraph: self.openKernel()
 		return self.stdgraph.gcur()
 
-	# some special routines for getting and setting stdout/err attributes
+	def reactivateWS(self,dummy,arg):
+		if not self.stdgraph: self.openKernel()
+		return self.stdgraph.reactivateWS(dummy,arg)
+
+	def deactivateWS(self,dummy,arg):
+		if self.stdgraph:
+			self.stdgraph.deactivateWS(dummy,arg)
+
+	def closeWS(self,dummy,arg):
+		if self.stdgraph:
+			return self.stdgraph.closeWS(dummy,arg)
+
+	# some special routines for getting and setting stdin/out/err attributes
+
+	def clrStdio(self):
+		if self.stdgraph:
+			self.stdgraph.stdin = None
+			self.stdgraph.stdout = None
+			self.stdgraph.stderr = None
+
+	def setStdin(self, arg):
+		if self.stdgraph:
+			self.stdgraph.stdin = arg
 
 	def setStdout(self, arg):
 		if self.stdgraph:
@@ -539,27 +561,46 @@ class GkiController(GkiKernel):
 		if self.stdgraph:
 			self.stdgraph.stderr = arg
 
-	def getStdout(self):
-		if self.stdgraph:
-			return self.stdgraph.stdout
-		else:
-			return None
+	def getStdin(self, default=None):
+		# if default is a file, don't redirect it
+		# otherwise if graphics is active, redirect to status line
+		try:
+			if (not self.stdgraph) or (not self.stdgraph.stdin) or \
+			  (default and not default.isatty()):
+				return default
+		except AttributeError:
+			pass
+		return self.stdgraph.stdin
 
-	def getStderr(self):
-		if self.stdgraph:
-			return self.stdgraph.stderr
+	def getStdout(self, default=None):
+		# if default is a file, don't redirect it
+		# otherwise if graphics is active, redirect to status line
+		try:
+			if (not self.stdgraph) or (not self.stdgraph.stdout) or \
+			  (default and not default.isatty()):
+				return default
+		except AttributeError:
+			# OK if isatty is missing
+			pass
+		return self.stdgraph.stdout
+
+	def getStderr(self, default=None):
+		# stderr always redirected in graphics mode because IRAF
+		# uses it for GUI code (go figure)
+		if not self.stdgraph:
+			return default
 		else:
-			return None
+			return self.stdgraph.stderr or default
 
 	# these methods do special processing before calling stdgraph
 
-	def append(self, arg):
+	def append(self, arg, isUndoable=0):
 
 		self.gcount = self.gcount + 1     # used by self.flush()
 		if self.gcount >= 30000000:
 			self.gcount = 0
 		if self.stdgraph:
-			self.stdgraph.append(arg)
+			self.stdgraph.append(arg,isUndoable)
 
 	def control(self, gkiMetacode):
 
@@ -644,7 +685,7 @@ class GkiNull(GkiKernel):
 	def __init__(self):
 
 		print "No graphics display available for this session " + \
-			  "(Xwindow unavailable)"
+			  "(X Window unavailable)"
 		print "Graphics tasks that attempt to plot to an interactive " + \
 			  "screen will fail"
 		GkiKernel.__init__(self)

@@ -4,9 +4,8 @@ implement IRAF gcur functionality
 $Id$
 """
 
-import string, os
+import string, os, sys, Numeric
 import gwm, wutil, iraf, openglcmd, gki
-import tkSimpleDialog
 
 # The following class attempts to emulate the standard IRAF gcursor
 # mode of operation. That is to say, it is basically a keyboard driven
@@ -36,11 +35,10 @@ class Gcursor:
 		#  from it.
 		self.top = gwm.getActiveWindowTop()
 		if not self.top:
-			# if graphics hasn't been started yet xxx depends implicitly on
-			# opengl kernel. This may become optional
-			gki.kopen()
-			gki.stdgraph.openWS(irafexecute.Numeric.array([5,0]))
-			gki.stdgraph.closeWS(None)
+			# initialize if graphics hasn't been started yet
+			gwm.window()
+			gki.kernel.stdgraph.openWS(None,Numeric.array([5,0]))
+			gki.kernel.stdgraph.closeWS(None,None)
 			self.top = gwm.getActiveWindowTop()
 		self.win = gwm.getActiveWindow()
 		gwm.raiseActiveWindow()
@@ -55,9 +53,14 @@ class Gcursor:
 			self.win.activateSWCursor()
 		self.bind()
 		self.win.ignoreNextRedraw = 1
+		activate = gki.kernel.getStdout() is None
+		if activate:
+			gki.kernel.reactivateWS(None,None)
 		self.top.mainloop()
 		self.unbind()
 		self.win.deactivateSWCursor()
+		if activate:
+			gki.kernel.deactivateWS(None,None)
 		return self.retString
 
 	def bind(self):
@@ -136,6 +139,14 @@ class Gcursor:
 	def moveRightBig(self, event): self.moveCursorRelative(event, 5, 0)
 	def moveLeftBig(self, event): self.moveCursorRelative(event, -5, 0)
 
+	def readString(self, prompt=""):
+		"""Prompt and read a string"""
+		stdout = gki.kernel.getStdout(default=sys.stdout)
+		stdin = gki.kernel.getStdin(default=sys.stdin)
+		stdout.write(prompt)
+		stdout.flush()
+		return stdin.readline()[:-1]
+
 	def getKey(self, event):
 
 		# The main character handling routine where no special keys
@@ -148,24 +159,8 @@ class Gcursor:
    		if self.markcur and key not in 'q?:=UR':
 		   	metacode = openglcmd.markCross(x,y)
 			openglcmd.appendMetacode(metacode)
-		if key == 'q': # Expecting the graphics task to end. Possibly false,
-		               # but no big deal if it is. The vast majority of the
-					   # time it is true.
-			wutil.focusController.restoreLast()
-		if key == '?': # Expecting irafukey to be called, may not be the case
-			           # but no big deal if it isn't. The vast majority of the
-					   # time it is.
-			wutil.focusController.setFocusTo('terminal')
 		if key == ':':
-			# pop up text entry dialog
-			wutil.focusController.saveCursorPos()
-			colonString = tkSimpleDialog.askstring("Gcur colon command","")
-			# This is needed for openwindows which doesn't automatically
-			# return focus to the graphics window.
-			wutil.focusController.setCurrent()
-			# Explicitly return focus to graphics window since some
-			# window managers apparently don't do this automatically
-			# (e.g. openwindows)
+			colonString = self.readString(prompt=": ")
 			if colonString[0] == '.':
 				if colonString[1:] == 'markcur+':
 					self.markcur = 1
@@ -186,12 +181,8 @@ class Gcursor:
 			if   key == 'R':
 				openglcmd.redrawOriginal()
 			elif key == 'T':
-				wutil.focusController.saveCursorPos()
-				textstring = tkSimpleDialog.askstring("Annotation string","")
-				# This is needed for openwindows which doesn't automatically
-				# return focus to the graphics window.
-				wutil.focusController.setCurrent()
-				metacode = openglcmd.text(textstring,x,y)
+				textString = self.readString(prompt="Annotation string: ")
+				metacode = openglcmd.text(textString,x,y)
 				openglcmd.appendMetacode(metacode)
 			elif key == 'U':
 				openglcmd.undo()
@@ -220,8 +211,6 @@ class Gcursor:
 		self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
 		if cstring:
 			self.retString = self.retString +' '+cstring
-#		gwm.saveGraphicsCursorPosition()
-#		wutil.focusController.restoreLast()
 		self.top.quit() # time to go!
 
 def printPlot():

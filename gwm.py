@@ -29,6 +29,8 @@ def redraw(o):
 	# is assigned.
 
 	# At the very least, clear the window.
+	if not _g:
+		raise GWMError("No graphics window manager is available")
 	if _g.colorManager.rgbamode:
 		glClearColor(0.5, 0.5, 0.5, 0)
 	else:
@@ -98,7 +100,7 @@ class GraphicsWindowManager:
 				self.activeWindow =self.windows[self.windows.keys()[0]]
 			wutil.focusController.removeFocusEntity(windowName)
 
-class GraphicsWindow:
+class GraphicsWindow(wutil.FocusEntity):
 
 	def __init__(self, windowName, colormode):
 
@@ -136,6 +138,11 @@ class GraphicsWindow:
 	def flush(self):
 		self.gwidget.update_idletasks()
 
+	def hasFocus(self):
+		"""Returns true if this window currently has focus"""
+		return  wutil.getTopID(wutil.getWindowID()) == \
+			wutil.getTopID(self.getWindowID())
+
 	# the following methods implement the FocusEntity interface
 	# used by wutil.FocusController
 
@@ -143,12 +150,12 @@ class GraphicsWindow:
 
 		"""save current position if window has focus and cursor is
 		in window, otherwise do nothing"""
-		gwin = self.gwidget
 
 		# first see if window has focus
-		if wutil.getTopID(wutil.getWindowID()) != \
-		   wutil.getTopID(self.gwidget.winfo_id()):
+		if not self.hasFocus():
 			return
+
+		gwin = self.gwidget
 		posdict = wutil.getPointerPosition(gwin.winfo_id())
 		if posdict:
 			x = posdict['win_x']
@@ -164,17 +171,17 @@ class GraphicsWindow:
 
 	def forceFocus(self):
 
-		gwin = self.gwidget
 		# only force focus if window is viewable
 		if not wutil.isViewable(self.top.winfo_id()):
 			return
 		# warp cursor
 		# if no previous position, move to center
+		gwin = self.gwidget
 		if not gwin.lastX:
 			gwin.lastX = gwin.winfo_width()/2
 			gwin.lastY = gwin.winfo_height()/2
 		wutil.moveCursorTo(gwin.winfo_id(),gwin.lastX,gwin.lastY)
-		self.gwidget.focus_force()
+		gwin.focus_force()
 
 	def getWindowID(self):
 
@@ -261,11 +268,14 @@ else:
 
 def getGraphicsWindowManager():
 
-	"""return window manager object"""
+	"""Return window manager object (None if none defined)"""
 	return _g
 
 def getColorManager():
 
+	"""Return color manager object"""
+	if not _g:
+		raise GWMError("No graphics window manager is available")
 	return _g.colorManager
 
 def window(windowName=None):
@@ -273,70 +283,82 @@ def window(windowName=None):
 	"""Create a new graphics window if the named one doesn't exist or
 	make it the active one if it does. If no argument is given a new
 	name is constructed."""
+	if not _g:
+		raise GWMError("No graphics window manager is available")
 	_g.window(windowName)
 
-def delete(windowName):
 
-	"""delete the named window"""
-	_g.delete(windowName)
+def delete(windowName=None):
+
+	"""delete the named window (or active window if none specified)"""
+	if not _g:
+		raise GWMError("No graphics window manager is available")
+	if windowName is None:
+		windowName = getActiveWindowName()
+	if windowName is not None:
+		_g.delete(windowName)
 
 def getActiveWindowName():
 
-	return _g.activeWindow.windowName
+	"""Return name of active window (None if none defined)"""
+	if _g and _g.activeWindow:
+		return _g.activeWindow.windowName
 
 def getActiveWindow():
 
-	"""Get the active Ptogl window"""
-	if _g.activeWindow:
+	"""Get the active Ptogl window (None if none defined)"""
+	#XXX Ptogl reference is implementation-specific (RLW)
+	if _g and _g.activeWindow:
 		return _g.activeWindow.gwidget
-	else:
-		return None
 
 def getActiveGraphicsWindow():
 	
-	"""Get the active Graphics window object"""
-	if _g.activeWindow:
+	"""Get the active Graphics window object (None if none defined)"""
+	if _g and _g.activeWindow:
 		return _g.activeWindow
 
 def getActiveWindowTop():
 
-	"""Get the top window"""
-	if _g.activeWindow:
+	"""Get the top window (None if none defined)"""
+	if _g and _g.activeWindow:
 		return _g.activeWindow.top
-	else:
-		return None
 
 def raiseActiveWindow():
 
 	"""deiconify if not mapped, and raise to top"""
+	#XXX references to top and tkraise look very implementation-specific (RLW)
 	top = getActiveWindowTop()
-	if not top: raise GWMError("No plot has been created yet")
+	if not top:
+		raise GWMError("No plot has been created yet")
 	if top.state() != 'normal':
 		top.deiconify()
 	top.tkraise()
 
 def getIrafGkiConfig():
 
-	"""return configuration object"""
+	"""Return configuration object"""
+	if not _g:
+		raise GWMError("No graphics window manager is available")
 	return _g.irafGkiConfig
 
 def setGraphicsDrawingColor(irafColorIndex):
 
+	if not _g:
+		raise GWMError("No graphics window manager is available")
 	_g.colorManager.setDrawingColor(irafColorIndex)
 
-
-def restoreLastFocus():
-	"""Restore focus to terminal window after first Tk plot"""
+def taskDoneCleanup():
+	"""Hack to prevent the double redraw after first Tk plot"""
+	#XXX this is surely specific to the opengl gki kernel
+	#XXX and should be done there instead of here? RLW
 	gwin = getActiveWindow()
-	if gwin:
-		if (not gwin.firstPlotDone) and wutil.hasGraphics:
-			# this is a hack to prevent the double redraw on first plots
-			# (when they are not interactive plots). This should be done
-			# better, but it appears to work.
-			if not gwin.interactive:
-				gwin.ignoreNextNRedraws = 2
-			wutil.focusController.restoreLast()
-			gwin.firstPlotDone = 1
+	if gwin and (not gwin.firstPlotDone) and wutil.hasGraphics:
+		# this is a hack to prevent the double redraw on first plots
+		# (when they are not interactive plots). This should be done
+		# better, but it appears to work.
+		if not gwin.interactive:
+			gwin.ignoreNextNRedraws = 2
+		gwin.firstPlotDone = 1
 
 def resetFocusHistory():
 	"""Reset focus history after an error occurs"""

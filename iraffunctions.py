@@ -1697,7 +1697,7 @@ def clDummy(*args, **kw):
 	# just ignore keywords and arguments
 	pass
 
-bye = keep = logout = clbye = gflush = cache = clDummy
+bye = keep = logout = clbye = gflush = cache = language = clDummy
 
 # unimplemented but no exception raised (and no message
 # printed if not in verbose mode)

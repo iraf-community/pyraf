@@ -5,7 +5,6 @@ $Id$
 
 import os, re, signal, string, struct, sys, time, types, Numeric, cStringIO
 import subproc, iraf, gki, gwm, wutil, irafutils, iraftask
-import gkiopengl
 
 #stdgraph = None
 
@@ -201,19 +200,18 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 
 	# Run it
 	try:
-		irafprocess.run(task, stdin=stdin,stdout=stdout,stderr=stderr)
-		if wutil.hasGraphics:
-			gwm.restoreLastFocus()
-		gki.kernel.setStdout(None)
-		gki.kernel.setStderr(None)
-	except KeyboardInterrupt:
+		focusMark = wutil.focusController.getCurrentMark()
+		try:
+			irafprocess.run(task, stdin=stdin,stdout=stdout,stderr=stderr)
+		finally:
+			wutil.focusController.restoreToMark(focusMark)
+			gki.kernel.clrStdio()
+		# do any cleanup needed on task completion
+		gwm.taskDoneCleanup()
+	except KeyboardInterrupt, exc:
 		# On keyboard interrupt (^C), kill the subprocess
 		processCache.kill(irafprocess)
-		if wutil.hasGraphics:
-			gwm.resetFocusHistory()
-		gki.kernel.setStdout(None)
-		gki.kernel.setStderr(None)
-		raise KeyboardInterrupt
+		raise exc
 	except (iraf.IrafError, IrafProcessError), exc:
 		# on error, kill the subprocess, then re-raise the original exception
 		try:
@@ -310,7 +308,7 @@ class IrafProcess:
 		self.stdin = stdin
 		self.stdout = stdout
 		self.stderr = stderr
-                self.default_stdin  = stdin
+		self.default_stdin  = stdin
 		self.default_stdout = stdout
 		self.default_stderr = stderr
 		try:
@@ -477,14 +475,34 @@ class IrafProcess:
 					raise RuntimeError("Program bug: uninterpreted message `%s'"
 							% (msg,))
 
+	def setStdio(self):
+		"""Set self.stdin/stdout based on current state
+
+		If in graphics mode, I/O is done through status line.
+		Else I/O is done through normal streams.
+		"""
+		self.stdout = gki.kernel.getStdout(default=self.default_stdout)
+		self.stderr = gki.kernel.getStderr(default=self.default_stderr)
+		self.stdin = gki.kernel.getStdin(default=self.default_stdin)
+
 	def par_get(self, mcmd):
 		# parameter get request
-		paramname = mcmd.group('gname')
 		# list parameters can generate EOF exception
+		paramname = mcmd.group('gname')
+		# interactive parameter prompts may be redirected to the graphics
+		# status line, but do not get redirected to a file
+		c_stdin = sys.stdin
+		c_stdout = sys.stdout
+		sys.stdin = gki.kernel.getStdin(default=sys.__stdin__)
+		sys.stdout = gki.kernel.getStdout(default=sys.__stdout__)
 		try:
-			pmsg = self.task.getParam(paramname) + '\n'
-		except EOFError:
-			pmsg = 'EOF\n'
+			try:
+				pmsg = self.task.getParam(paramname) + '\n'
+			except EOFError:
+				pmsg = 'EOF\n'
+		finally:
+			sys.stdin = c_stdin
+			sys.stdout = c_stdout
 		self.writeString(pmsg)
 		self.msg = self.msg[mcmd.end():]
 
@@ -559,8 +577,7 @@ class IrafProcess:
 					# STDGRAPH I/O channel.
 					self.write(wcs)
 					gki.kernel.clearReturnData()
-				self.stdout = gki.kernel.getStdout() or self.default_stdout
-				self.stderr = gki.kernel.getStderr() or self.default_stderr
+				self.setStdio()
 			else:
 				self.stdout.write("GRAPHICS control data for channel %d\n" % (forChan,))
 				
@@ -583,11 +600,7 @@ class IrafProcess:
 			line = self.xferline
 			if not line:
 				if self.isatty:
-				        if gki.kernel.stdgraph and gki.kernel.stdgraph.stdout:
-					        self.stdin = gkiopengl.StatusLine()
-				        else:
-					        self.stdin = self.default_stdin
-
+					self.setStdio()
 					# tty input, read a single line
 					line = self.stdin.readline()
 				else:
