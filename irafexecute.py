@@ -23,10 +23,11 @@ stdgraph = None
 class IrafProcessError(Exception):
 	pass
 
-def IrafExecute(task, executable, envdict, paramdict):
+def IrafExecute(task, executable, envdict, paramDictList):
 
 	"""Execute IRAF task in the given executable (full path included)
-	using the provided envionmental variables and parameters."""
+	using the provided envionmental variables and parameters.
+	paramDictList is a list of parameter dictionaries."""
 
 	# Start'er up
 	try:
@@ -44,7 +45,7 @@ def IrafExecute(task, executable, envdict, paramdict):
 		# start IRAF logical task
 		WriteStringToIrafProc(process,task+'\n')
 		# begin slave mode
-		IrafIO(process,paramdict)
+		IrafIO(process,paramDictList)
 		# kill the damn thing, process caches are for weenies
 		IrafTerminate(process)
 	except KeyboardInterrupt:
@@ -67,7 +68,7 @@ def IrafExecute(task, executable, envdict, paramdict):
 _re_chan_len = re.compile(r'\((\d+),(\d+)\)$')
 _re_parmset = re.compile(r'([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*)\n')
 
-def IrafIO(process,paramdict):
+def IrafIO(process,paramDictList):
 
 	"""Talk to the IRAF process in slave mode. Raises an IrafProcessError
 	if an error occurs."""
@@ -150,10 +151,9 @@ def IrafIO(process,paramdict):
 			# param get request
 			# XXX is this correct?  Can this command be stacked?
 			# If so, need to match to end of line
-			print msg,
 			value = msg[1:-1]
 			msg = ''
-			WriteStringToIrafProc(process, _getParam(paramdict,value) + '\n')
+			WriteStringToIrafProc(process, _getParam(paramDictList,value) + '\n')
 		else:
 			# last possibility: set value of parameter
 			# XXX need to add capability to set field (e.g. x1.p_maximum
@@ -161,17 +161,23 @@ def IrafIO(process,paramdict):
 			mo = _re_parmset.match(msg)
 			if mo:
 				msg = msg[mo.end():]
-				paramname, value = mo.groups()
-				if paramdict.has_key(paramname):
-					paramdict[paramname].set(value)
-				else:
-					raise IrafProcessError(
-						"Task attempts to set unknown parameter " + paramname)
+				paramname, newvalue = mo.groups()
+				_setParam(paramDictList,paramname,newvalue)
 			else:
 				print "Warning, unrecognized IRAF pipe protocol"
 				print msg
 
-def _getParam(paramdict,value):
+def _setParam(paramDictList,paramname,newvalue):
+	"""Set parameter specified by paramname to newvalue."""
+	for paramdict in paramDictList:
+		if paramdict.has_key(paramname):
+			paramdict[paramname].set(newvalue)
+			return
+	else:
+		raise IrafProcessError(
+			"Task attempts to set unknown parameter " + paramname)
+
+def _getParam(paramDictList,value):
 
 	"""Return parameter specified by value, which can be a simple parameter
 	name or can be [[package.]task.]paramname[.field]"""
@@ -203,8 +209,9 @@ def _getParam(paramdict,value):
 
 	pstart = string.find(paramname,'[')
 	if pstart<0:
-		if paramdict.has_key(paramname):
-			return paramdict[paramname].get(field=field)
+		for paramdict in paramDictList:
+			if paramdict.has_key(paramname):
+				return paramdict[paramname].get(field=field)
 		else:
 			raise IrafProcessError(
 				"IRAF task asking for parameter not in list: " +
@@ -219,8 +226,9 @@ def _getParam(paramdict,value):
 		raise IrafProcessError(
 			"IRAF task asking for illegal array parameter: " +
 			paramname)
-	if paramdict.has_key(paramname):
-		return paramdict[paramname].get(index=pindex-1,field=field)
+	for paramdict in paramDictList:
+		if paramdict.has_key(paramname):
+			return paramdict[paramname].get(index=pindex-1,field=field)
 	else:
 		raise IrafProcessError(
 			"IRAF task asking for parameter not in list: " +

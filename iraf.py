@@ -118,6 +118,7 @@ class IrafTask:
 		self.__fullpath = None
 		self.__parpath = None
 		self.__pars = None
+		self.__pardict = None
 		if filename[0] == '$':
 			# this is a foreign task
 			self.__cl = 0
@@ -166,6 +167,9 @@ class IrafTask:
 	def getPars(self):
 		if self.__fullpath == None: self.initTask()
 		return self.__pars
+	def getParDict(self):
+		if self.__fullpath == None: self.initTask()
+		return self.__pardict
 
 	# public access to set hidden attribute, which is specified
 	# in a separate 'hide' statement
@@ -216,8 +220,15 @@ class IrafTask:
 					"("+self.__fullpath+")"
 				self.lpar()
 			try:
+				# parameter dictionaries for execution consist of this
+				# task's parameters, any psets referenced, and all the parameters
+				# for packages that have been loaded
+				parDictList = [self.__pardict]
+				# XXX psets not done yet
+				for i in xrange(len(_loadedPath)):
+					parDictList.append(_loadedPath[-1-i].getParDict())
 				irafexecute.IrafExecute(self.__name, self.__fullpath,
-					vars, self.__pardict)
+					vars, parDictList)
 				if _verbose: print 'Successful task termination'
 			except irafexecute.IrafProcessError, value:
 				raise IrafError("Error running IRAF task " + self.__name +
@@ -378,7 +389,7 @@ class IrafPkg(IrafTask):
 		if self.getFullpath() == None: self.initTask()
 		# if already loaded, just add to _loadedPath
 		global _loadedPath
-		_loadedPath.append(self.getName())
+		_loadedPath.append(self)
 		if not self.__loaded:
 			self.__loaded = 1
 			loaded[self.getName()] = len(loaded)
@@ -429,9 +440,8 @@ def getTask(taskname):
 		return task
 
 	# Search loaded packages in reverse order
-	plist = _loadedPath[:]
-	plist.reverse()
-	for pkg in plist:
+	for i in xrange(len(_loadedPath)):
+		pkg = _loadedPath[-1-i].getName()
 		task = tasks.get(pkg + '.' + taskname)
 		if task:
 			if _verbose: print 'found',pkg+'.'+taskname,'in tasks'
@@ -923,9 +933,13 @@ def listcurrent(n=1):
 	primary package. Fix that eventually.)
 	
 	If parameter n is specified, lists n most recent packages."""
+
 	if len(_loadedPath):
 		if n > len(_loadedPath): n = len(_loadedPath)
-		listtasks(_loadedPath[-n:])
+		plist = n*[None]
+		for i in xrange(n):
+			plist[i] = _loadedPath[-1-i].getName()
+		listtasks(plist)
 	else:
 		print 'No IRAF tasks defined'
 
