@@ -193,7 +193,7 @@ class IrafTask:
 							closeFHList.append(fh)
 						else:
 							# input file
-							fh = open(value,'w')
+							fh = open(value,'r')
 							closeFHList.append(fh)
 					else:
 						if outputRedir.has_key(key):
