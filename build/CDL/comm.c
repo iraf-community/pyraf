@@ -226,7 +226,7 @@ char	*key;				/* keystroke hit		*/
 	*key = NULL;
     	status = sscanf (buf, "%f %f %d %c", x, y, wcs, key);
 	if (*key == '\\') {		/* fixup octal char read */
-    	    status = sscanf (buf, "%f %f %d \\%d", x, y, wcs, &octal);
+    	    status = sscanf (buf, "%f %f %d \\%o", x, y, wcs, &octal);
 	    *key = octal;
 	}
 
