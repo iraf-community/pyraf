@@ -7,9 +7,13 @@ Brief help:
 	To load a package:
 		iraf.load("images")
 		iraf.run("images")
-	The .run version does not list the tasks after loading.
+		pkg = iraf.getPkg("images")
+		pkg()
 	You can also do iraf.load("images",doprint=0) or just
-	iraf.load("images",0) to skip printing.
+	iraf.load("images",0) to skip printing.  pkg(_doprint=0)
+	has the same effect (note the '_' in front of the keyword,
+	which is necessary because you can also include package
+	parameters as arguments.)
 
 	To get short-hand task or package object:
 		imstat = iraf.getTask("imstat")
@@ -60,6 +64,8 @@ R. White, 1999 March 4
 
 import os, sys, iraf
 
+__version__ = "$Revision$"
+
 def usage():
 	print "Usage: %s [options]" % sys.argv[0]
 	print """ where options are one or more of:
@@ -77,9 +83,9 @@ if __name__ == "__main__":
 
 	# read the user's startup file (if there is one)
 
-	if os.environ.has_key('PYTHONSTARTUP') and \
-			os.path.isfile(os.environ['PYTHONSTARTUP']):
-		execfile(os.environ['PYTHONSTARTUP'])
+	if os.environ.has_key("PYTHONSTARTUP") and \
+			os.path.isfile(os.environ["PYTHONSTARTUP"]):
+		execfile(os.environ["PYTHONSTARTUP"])
 
 	# use command-line options to define behavior for iraf namespaces
 	# -n  Don't add anything to namespace (default)
@@ -126,7 +132,7 @@ dirname = os.path.dirname(sys.argv[0])
 if not dirname: dirname = os.getcwd()
 if dirname not in sys.path:
 	sys.path.insert(0, dirname)
-	sys.path.insert(0, '.')
+	sys.path.insert(0, ".")
 del dirname
 
 if __name__ == "__main__":
@@ -134,8 +140,8 @@ if __name__ == "__main__":
 	# start up monty keeping definitions in local name space
 	#
 	import monty
-	print 'Pyraf, Python front end to IRAF (copyright AURA 1999)'
-	print 'Python: ' + sys.copyright
+	print "Pyraf, Python front end to IRAF, version", __version__, "(copyright AURA 1999)"
+	print "Python: " + sys.copyright
 	m = monty.monty(locals=locals())
 	m.start()
 
