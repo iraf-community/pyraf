@@ -93,8 +93,10 @@ class RawOpengl(Widget, Misc):
 
 	def activateSWCursor(self, x=0.5, y=0.5, type=None):
 		# Load a blank cursor from a file (isn't there a better way
-		# to disable a cursor in Tk?)
-		self['cursor'] = '@blankcursor.xbm black'
+		# to disable a cursor in Tk?).
+		# Currently has absolute path in the filename specification.
+		# THIS SHOULD BE CHANGED!
+		self['cursor'] = '@/usr/ra/pyraf/blankcursor.xbm black'
 		# ignore type for now since only one type of software cursor
 		# is implemented
 #		self.update_idletasks()
