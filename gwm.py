@@ -109,7 +109,7 @@ class GraphicsWindow:
 		return self.windowName
 			
 	def gwdestroy(self):
-	
+
 		self.windowManager.delete(self.windowName)
 
 # Create a module instance of the GWM object that can be referred

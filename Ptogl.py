@@ -67,7 +67,8 @@ class RawOpengl(Widget, Misc):
 		self.redraw(self)
 		# If software cursor exists, render it.
 		if self.__isSWCursorActive:
-			self.__SWCursor.draw()
+			self.__SWCursor.isVisible = 0 # after all, it's just been erased!
+#			self.__SWCursor.draw()
 		glFlush()
 		glPopMatrix()
 #		self.update_idletasks()
@@ -95,27 +96,27 @@ class RawOpengl(Widget, Misc):
 		# Load a blank cursor from a file (isn't there a better way
 		# to disable a cursor in Tk?).
 		# Currently has absolute path in the filename specification.
-		# THIS SHOULD BE CHANGED!
+		# XXXX THIS SHOULD BE CHANGED!
 		self['cursor'] = '@/usr/ra/pyraf/blankcursor.xbm black'
 		# ignore type for now since only one type of software cursor
 		# is implemented
-#		self.update_idletasks()
-		self.__SWCursor = FullWindowCursor(x,y)
-		self.__isSWCursorActive = 1
-		self.bind("<Motion>",self.moveCursor)
-#		self.__SWCursor.setPosition(x,y)
-#		self.__SWCursor.draw()
-
+		if not self.__isSWCursorActive:
+			if not self.__SWCursor:
+				self.__SWCursor = FullWindowCursor(x,y)
+			self.__isSWCursorActive = 1
+			self.bind("<Motion>",self.moveCursor)
+		else:
+			if not self.__SWCursor.isVisible:
+				self.__SWCursor.draw()
+				self.update_idletasks()
 
 	def deactivateSWCursor(self):
 		if self.__isSWCursorActive:
 			self.__SWCursor.erase()
 			self.unbind("<Motion>")
 			self.__isSWCursorActive = 0
-			self.__SWCursor = None
 			self['cursor'] = 'arrow'
-			self.update_idletasks()
-			
+#			self.update_idletasks()			
 
 	def moveCursor(self, event):
 		"""Call back for mouse motion events"""
@@ -233,6 +234,7 @@ class FullWindowCursor:
 
 		self.lastx = x
 		self.lasty = y
+		self.isVisible = 0
  		self.draw()
 
 	def setPosition(self, x, y):
@@ -240,7 +242,7 @@ class FullWindowCursor:
 		self.lastx = x
 		self.lasty = y
 		
-	def draw(self):
+	def xorDraw(self):
 
 		glEnable(GL_COLOR_LOGIC_OP)
 		glLogicOp(GL_INVERT)
@@ -256,27 +258,25 @@ class FullWindowCursor:
 
 	def erase(self):
 
-		self.draw()
+		if self.isVisible:
+			self.xorDraw()
+			self.isVisible = 0
+
+	def draw(self):
+
+		if not self.isVisible:
+			self.xorDraw()
+			self.isVisible = 1
 
 	def moveTo(self,x,y):
 
-		self.draw() # erase previous cursor
-		self.lastx = x
-		self.lasty = y
-		self.draw() # draw new position
+		if (self.lastx != x) or (self.lasty != y):
+			self.erase() # erase previous cursor
+			self.lastx = x
+			self.lasty = y
+			self.draw() # draw new position
 
-	def drawx(self):
 
-		glEnable(GL_COLOR_LOGIC_OP)
-		glLogicOp(GL_INVERT)
-		glBegin(GL_LINES)
-		glColor3f(1,1,1)
-		glVertex2f(0,self.lasty)
-		glVertex2f(1,self.lasty+0.3)
-		glVertex2f(self.lastx,0)
-		glVertex2f(self.lastx+0.4,1)
-		glEnd()
-		glDisable(GL_COLOR_LOGIC_OP)
-		glFlush()
 	
 		
+

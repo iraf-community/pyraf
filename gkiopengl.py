@@ -123,6 +123,10 @@ class GkiOpenGlKernel(GkiKernel):
 
 	def reactivateWS(self, arg):
 		gwm.raiseActiveWindow()
+# for the time being it seems that the right thing to do is to leave
+# the sw cursor displayed during a deactivate/activate cycle
+#		win = gwm.getActiveWindow()
+#		win.activateSWCursor() # turn on software cursor
 		
 	def deactivateWS(self, arg):
 
@@ -131,9 +135,10 @@ class GkiOpenGlKernel(GkiKernel):
 		# opened from an interactive session with an image display
 		# window, in which case we should try to move focus back to it.
 		self.restorePreviousFocus()
-		win = gwm.getActiveWindow()
-		win.deactivateSWCursor() # turn off software cursor
-		
+# see above comments for reactivate
+#		win = gwm.getActiveWindow()
+#		win.deactivateSWCursor() # turn off software cursor
+
 	def setWCS(self, arg):
 
 		__main__.wcs = arg # pass it up to play with
@@ -156,7 +161,7 @@ class GkiOpenGlKernel(GkiKernel):
 		self.restorePreviousFocus()
 		win = gwm.getActiveWindow()
 		win.deactivateSWCursor()  # turn off software cursor
-		
+
 	def redraw(self, o):
 
 		ta = o.iplot.textAttributes
