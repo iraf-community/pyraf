@@ -28,7 +28,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 	try:
 		irafprocess.initialize(envdict)
 		irafprocess.run(stdin=stdin,stdout=stdout,stderr=stderr)
-		# just kill the damn thing, process caches are for weenies
+		# just kill the damn thing
 		irafprocess.terminate()
 	except KeyboardInterrupt:
 		# On keyboard interrupt (^C), kill the subprocess

@@ -61,6 +61,8 @@ def ukey():
 				colonString = colonString+char
 				sys.stdout.write(char)
 				sys.stdout.flush()
+			elif char in ['q']: # other possibilities?
+				wutil.focusController.restoreLast()
 			else:
 				# ignore all other characters
 				pass

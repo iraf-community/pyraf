@@ -95,6 +95,14 @@ class Gcursor:
 			# ignore keypresses of non printable characters
 			return
 		x,y = self.getNDCCursorPos()
+		if key == 'q': # Expecting the graphics task to end. Possibly false,
+		               # but no big deal if it is. The vast majority of the
+					   # time it is true.
+			wutil.focusController.restoreLast()
+		if key == '?': # Expecting irafukey to be called, may not be the case
+			           # but no big deal if it isn't. The vast majority of the
+					   # time it is.
+			wutil.focusController.setFocusTo('terminal')
 		if key == ':':
 			# pop up text entry dialog
 			colonString = tkSimpleDialog.askstring("Gcur colon command","")
@@ -131,7 +139,7 @@ class Gcursor:
 		if cstring:
 			self.retString = self.retString +' '+cstring
 #		gwm.saveGraphicsCursorPosition()
-		wutil.focusController.restoreLast()
+#		wutil.focusController.restoreLast()
 		self.top.quit() # time to go!
 
 def printPlot():

@@ -49,6 +49,7 @@ class GraphicsWindowManager:
 					self.windows[trialName] = GraphicsWindow(trialName)
 					self.activeWindow = self.windows[trialName]
 					done = 1
+					windowName = trialName
 				number = number +1
 		else:
 			if not self.windows.has_key(windowName):
@@ -68,7 +69,7 @@ class GraphicsWindowManager:
 		return len(self.windows)
 
 	def delete(self, windowName):
-		
+
 		changeActiveWindow = 0
 		if self.windows.has_key(windowName):
 			if self.activeWindow.getWindowName() == windowName:
@@ -81,6 +82,7 @@ class GraphicsWindowManager:
 					self.activeWindow = self.windows.keys()[0]
 				else:
 					self.activeWindow = None
+			wutil.focusController.removeFocusEntity(windowName)
 		else:
 			print "error: specified graphics window doesn't exist"
 				

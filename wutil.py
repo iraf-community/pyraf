@@ -213,6 +213,7 @@ class FocusController:
 		self.focusEntities[name] = focusEntity
 			
 	def removeFocusEntity(self, focusEntityName):
+
 		if self.focusEntities.has_key(focusEntityName):
 			del self.focusEntities[focusEntityName]
 			

@@ -68,6 +68,11 @@ def _imcur(readCursor=_readCursor):
 			imageDisplay.setWindowID()
 		frame = cdl.cdl_getFrame(displayHandle)
 		# don't close the display!
+		# Heuristc approach to focus return. Assumes that one of the following
+		# characters is intended by the task to change focus. It is not
+		# guaranteed that is true, but it almost always is.
+		if key in ('q','?','\\','\000'):
+			wutil.focusController.restoreLast()
 		if key in ['\\', '\000']:
 			# This is what cdl returns for any control key. (It seems
 			# to return '\\' for everything except ^D and ^Z, which return a
@@ -81,17 +86,6 @@ def _imcur(readCursor=_readCursor):
 			wutil.focusController.restoreLast()
 		else:
 			colonString = ""
-		# The following is a bit of a kludge, but appears to be the only
-		# way of preventing focus flashing between the image window and
-		# terminal window on each imcur loop. We will assume that a convention
-		# is being followed by the application in that the key strokes
-		# 'q' or '?' means quit imcur mode or help respectively and will
-		# result in a focus change back to the terminal window. If that
-		# isn't true, it isn't the end of the world.
-#		if key in ('q','?'):
-#			wutil.imcurActive = 0
-#			returnFocusToTermWindow()
-
 		wcs = 100*frame + 1
 	except:
 		# Above all, make sure the imcur flag doesn't stay on in case
@@ -99,5 +93,5 @@ def _imcur(readCursor=_readCursor):
 		wutil.focusController.resetFocusHistory()
 		wutil.focusController.restoreLast()
 		raise
-	wutil.focusController.restoreLast()
+#	wutil.focusController.restoreLast()
 	return "%f %f %d %s %s" % (xpos, ypos, wcs, key, colonString)
