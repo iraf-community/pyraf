@@ -187,7 +187,7 @@ class Subprocess:
 			self.toChild.flush()
 		else:
 			# XXX Can write-buffer full be handled better??
-			raise IOError, "write to %s blocked" % self					# ===>
+			raise SubprocessError, "write to %s blocked" % self					# ===>
 
 	def writeline(self, line=''):
 		"""Write STRING, with added newline termination, to subprocess."""
