@@ -923,7 +923,13 @@ def real(x):
         return float(x)
     except ValueError:
         #...handle the special a:b:c case here...
-        return clSexagesimal(*map(float,x.split(":")))
+        f = map(float,x.split(":"))
+        if x.find('-') >= 0:
+            sign = -1
+            f = map(abs, f)
+        else:
+            sign = 1
+        return sign*clSexagesimal(*f)
 
 def mod(a, b):
     """Return a modulo b"""
@@ -2760,7 +2766,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
     return newtask
 
 def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
-        redefine=redefine):
+        redefine=0):
 
     """Returns a new or existing IrafPset object
 
@@ -2795,7 +2801,7 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
     return newtask
 
 def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
-        redefine=redefine):
+        redefine=0):
 
     """Returns a new or existing IrafPkg object
 
