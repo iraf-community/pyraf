@@ -62,6 +62,7 @@ truevis = {
 # crosshair cursor color (only has an effect in indexed color mode)
 # this is global so that it applies to all Ptogl widgets
 cursorColor = 1
+cursorTrueColor = (1.0, 0.0, 0.0)
 
 class RawOpengl(Widget, Misc):
     """Widget without any sophisticated bindings by Tom Schwaller
@@ -291,7 +292,8 @@ class FullWindowCursor:
 
         if self.rgbamode:
             glEnable(GL_COLOR_LOGIC_OP)
-            glLogicOp(GL_INVERT)
+            glLogicOp(GL_XOR)
+            glColor3f(cursorTrue[0], cursorTrue[1], cursorTrue[2])
         else:
             glEnable(GL_INDEX_LOGIC_OP)
             glLogicOp(GL_XOR)

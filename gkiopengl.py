@@ -1270,7 +1270,10 @@ class glColorManager:
         import Ptogl
         if irafColorIndex is not None:
             self.config.setCursorColor(irafColorIndex)
-        Ptogl.cursorColor = self.indexmap[self.config.cursorColor]
+        if self.rgbamode:
+            Ptogl.cursorTrue = self.config.defaultColors[self.config.cursorColor]
+        else:
+            Ptogl.cursorColor = self.indexmap[self.config.cursorColor]
 
     def setDrawingColor(self, irafColorIndex):
 
