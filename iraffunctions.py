@@ -2041,10 +2041,13 @@ def _wConv(w, d, c, args, i):
 	"""Handle %w format, which is supposed to generate spaces"""
 	if i<len(args) and not w:
 		# number of spaces comes from argument
-		try:
-			w = int(args[i])
-		except ValueError:
+		if args[i] == INDEF:
 			w = 0
+		else:
+			try:
+				w = int(args[i])
+			except ValueError:
+				w = 0
 	args[i] = ""
 	return "%%%ss" % w
 
@@ -2095,8 +2098,8 @@ def printf(format, *args, **kw):
 			newformat.append(format[oend:istart])
 			c = mm.group('c')
 			# special handling for INDEF arguments
-			if args[i] == INDEF:
-				# INDEF always gets printed as string
+			if args[i] == INDEF and c != 'w':
+				# INDEF always gets printed as string except for '%w' format
 				f = _quietConv
 			else:
 				# dispatch function for this format type
