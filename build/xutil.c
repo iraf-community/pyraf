@@ -29,6 +29,7 @@ char IOError[] = "XWindows IO exception.";
 
 static GC cursorGC;
 static GC graphGC;
+static Display *d;
 
 #define TrapXlibErrors \
     oldIOErrorHandler = XSetIOErrorHandler(&MyXlibIOErrorHandler); \
@@ -63,11 +64,9 @@ int MyXlibIOErrorHandler(Display *d) {
 }
 
 void moveCursorTo(int win, int x, int y) {
-  Display *d;
   Window w;
   /*  Display *XOpenDisplay(char *); */
   int s;
-  d = XOpenDisplay(NULL);
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return;
@@ -78,7 +77,6 @@ void moveCursorTo(int win, int x, int y) {
   XWarpPointer(d,None,w,0,0,0,0,x,y);
   XUngrabPointer(d,CurrentTime);
   XFlush(d);
-  XCloseDisplay(d);
 }
 
 PyObject *wrap_moveCursorTo(PyObject *self, PyObject *args) {
@@ -93,27 +91,22 @@ PyObject *wrap_moveCursorTo(PyObject *self, PyObject *args) {
 }
 
 int getWindowID(void) {
-   Display *d;
    Window w;
    int revert;
    /*  Display *XOpenDisplay(char *); */
-   d = XOpenDisplay(NULL);
    if (d == NULL) {
      printf("could not open XWindow display\n");
      return -1;
         }
    XGetInputFocus(d,&w,&revert);
    XFlush(d);
-   XCloseDisplay(d);
    return (int) w;
 }
 
 int getDeepestVisual(void) {
-  Display *d;
   XVisualInfo *visualList;
   int i, visualsMatched, maxDepth;
   maxDepth = 1;
-  d = XOpenDisplay(NULL);
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return -1;
@@ -126,7 +119,6 @@ int getDeepestVisual(void) {
   }
   XFree(visualList);
   XFlush(d);
-  XCloseDisplay(d);
   return maxDepth;
 }
 
@@ -148,17 +140,14 @@ PyObject *wrap_getWindowID(PyObject *self, PyObject *args) {
 
 void setFocusTo(int win) {
   Window w;
-  Display *d;
   /* Display *XOpenDisplay(char *); */
   w = (Window) win;
-  d = XOpenDisplay(NULL);
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return;
   }
   XSetInputFocus(d,w,0,CurrentTime);
   XFlush(d);
-  XCloseDisplay(d);
 }
 
 PyObject *wrap_setFocusTo(PyObject *self, PyObject *args) {
@@ -176,13 +165,10 @@ void setBackingStore(int win) {
   Window w;
   XWindowAttributes wa;
   XSetWindowAttributes  NewWinAttributes;
-  Display *d;
-  /*  Display *XOpenDisplay(char *); */
   Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
   int XChangeWindowAttributes(Display *, Window, unsigned long,
                                XSetWindowAttributes *);
   w = (Window) win;
-  d = XOpenDisplay(NULL);
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return;
@@ -193,7 +179,6 @@ void setBackingStore(int win) {
     XChangeWindowAttributes(d, w, CWBackingStore, &NewWinAttributes);
   }
   XFlush(d);
-  XCloseDisplay(d);
 }
 
 PyObject *wrap_setBackingStore(PyObject *self, PyObject *args) {
@@ -201,7 +186,7 @@ PyObject *wrap_setBackingStore(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args,"i", &win))
     return NULL;
   TrapXlibErrors /* macro code to handle xlib exceptions */
-  setBackingStore(win);
+    setBackingStore(win);
   RestoreOldXlibErrorHandlers /* macro */
   Py_INCREF(Py_None);
   return Py_None;
@@ -209,7 +194,6 @@ PyObject *wrap_setBackingStore(PyObject *self, PyObject *args) {
 
 void getWindowAttributes(int win, XWindowAttributes *winAttr, char **visual) {
   Window w;
-  Display *d;
   XVisualInfo visual_info;
   static char *visual_class[] = {
           "StaticGray",
@@ -224,7 +208,6 @@ void getWindowAttributes(int win, XWindowAttributes *winAttr, char **visual) {
   Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
   i = 5;
   w = (Window) win;
-  d = XOpenDisplay(NULL);
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return;
@@ -234,7 +217,6 @@ void getWindowAttributes(int win, XWindowAttributes *winAttr, char **visual) {
   while (!XMatchVisualInfo(d, screen_num, DefaultDepth(d, screen_num),
                  i--, &visual_info));
   *visual = visual_class[++i];
-  XCloseDisplay(d);
 }
 
 PyObject *wrap_getWindowAttributes(PyObject *self, PyObject *args) {
@@ -270,15 +252,12 @@ PyObject *wrap_getPointerPosition(PyObject *self, PyObject *args) {
         Window root, child;
         int root_x, root_y, win_x, win_y;
         unsigned int mask;
-        Display *d;
-        /* Display *XOpenDisplay(char *); */
         Bool XQueryPointer(Display *, Window, Window *, Window *,
                 int *, int *, int *, int *, unsigned int *);
         if (!PyArg_ParseTuple(args,"i", &win))
                 return NULL;
         w = (Window) win;
         TrapXlibErrors /* macro code to handle xlib exceptions */
-        d = XOpenDisplay(NULL);
         if (d == NULL) {
                 printf("could not open XWindow display\n");
                 RestoreOldXlibErrorHandlers /* macro */
@@ -286,7 +265,6 @@ PyObject *wrap_getPointerPosition(PyObject *self, PyObject *args) {
         }
         inScreen = XQueryPointer(d, w, &root, &child, &root_x, &root_y,
                 &win_x, &win_y, &mask);
-        XCloseDisplay(d);
         RestoreOldXlibErrorHandlers /* macro */
         return Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
                 "inScreen", (int) inScreen,
@@ -304,7 +282,6 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
         Window w;
         Window root, parent, *children;
         unsigned int nchildren;
-        Display *d;
         /*      Display *XOpenDisplay(char *); */
         Status XQueryTree(Display *, Window, Window *, Window *,
                 Window **, unsigned int *);
@@ -315,7 +292,6 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
           return Py_BuildValue("i", (int) w);
         }
         TrapXlibErrors /* macro code to handle xlib exceptions */
-        d = XOpenDisplay(NULL);
         if (d == NULL) {
                 printf("could not open XWindow display\n");
                 RestoreOldXlibErrorHandlers /* macro */
@@ -323,7 +299,6 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
         }
         XQueryTree(d, w, &root, &parent, &children, &nchildren);
         XFree(children);
-        XCloseDisplay(d);
         RestoreOldXlibErrorHandlers /* macro */
         if (root == parent) {
           Py_INCREF(Py_None);
@@ -335,18 +310,11 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
 
 void initXGraphics(void) {
 
-  Display *d;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return;
   }
-  cursorGC = XCreateGC(d, RootWindow(d, 0), 0, NULL);
-  XSetForeground(d, cursorGC, WhitePixel(d, 0));
-  graphGC  = XCreateGC(d, RootWindow(d, 0), 0, NULL);
-  XSetForeground(d, graphGC, WhitePixel(d, 0));
-  XCloseDisplay(d);
-  RestoreOldXlibErrorHandlers /* macro */
 }
 
 PyObject *wrap_initXGraphics(PyObject *self, PyObject *args) {
@@ -358,10 +326,23 @@ PyObject *wrap_initXGraphics(PyObject *self, PyObject *args) {
   return Py_None;
 }
 
+void closeXGraphics(void) {
+
+  XCloseDisplay(d);
+}
+
+PyObject *wrap_closeXGraphics(PyObject *self, PyObject *args) {
+
+  TrapXlibErrors /* macro code to handle xlib exceptions */
+  closeXGraphics();
+  RestoreOldXlibErrorHandlers /* macro */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 void drawCursor(int win, double x, double y) {
   /* plot cursor at x and y where x,y are normalized (range from 0 to 1) */
   Window w;
-  Display *d;
   GC gc;
   XWindowAttributes wa;
   XColor colorfg, colorbg, color;
@@ -372,7 +353,6 @@ void drawCursor(int win, double x, double y) {
   unsigned int width, height, border, depth;
 
   w = (Drawable) win;
-  d = XOpenDisplay(NULL);
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return;
@@ -407,7 +387,6 @@ void drawCursor(int win, double x, double y) {
   XDrawLine(d, w, gc, (int) (x*width), 0, (int) (x*width),  height);
   XDrawLine(d, w, gc, 0, (int) ((1.-y)*height),  width, (int) ((1.-y)*height));
   XFlush(d); 
-  XCloseDisplay(d);
 }
 
 PyObject *wrap_drawCursor(PyObject *self, PyObject *args) {
@@ -434,6 +413,7 @@ static PyMethodDef xutilMethods[] = {
   { "getParentID",wrap_getParentID, 1},
   { "getDeepestVisual", wrap_getDeepestVisual, 1},
   { "initXGraphics",wrap_initXGraphics, 1},
+  { "closeXGraphics",wrap_closeXGraphics, 1},
   { "drawCursor",wrap_drawCursor, 1},
   {NULL, NULL}
 };

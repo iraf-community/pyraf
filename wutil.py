@@ -17,9 +17,14 @@ def getPointerPostion(WindowID): pass
 def getWindowAttributes(WindowID): pass
 def getParentID(WindowID): pass
 def getDeepestVisual(): return 24
+def initGraphics(): pass
+def closeGraphics(): pass
 
 try:
     from xutil import *
+    initGraphics = initXGraphics
+    closeGraphics = closeXGraphics
+    initGraphics() # call here for lack of a better place for n
 except ImportError:
     pass
 
