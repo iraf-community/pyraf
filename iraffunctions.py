@@ -25,7 +25,7 @@ from irafglobals import *
 
 def setVerbose(value=1, **kw):
 	"""Set verbosity level when running tasks
-	
+
 	Level 0 (default) prints almost nothing.
 	Level 1 prints warnings.
 	Level 2 prints info on progress.
@@ -733,7 +733,7 @@ def listVars(prefix="", equals="\t= ", **kw):
 
 def clParGet(paramname,pkg=None,native=1,mode=None):
 	"""Return value of IRAF parameter
-	
+
 	Parameter can be a cl task parameter, a package parameter for
 	any loaded package, or a fully qualified (task.param) parameter
 	from any known task.
@@ -810,21 +810,24 @@ def mod(a, b):
 
 _radixDigits = list(_string.digits+_string.uppercase)
 
-def radix(value, base=10):
-	"""Convert integer value to string expressed using given base"""
+def radix(value, base=10, length=0):
+	"""Convert integer value to string expressed using given base
+	
+	If length is given, field is padded with leading zeros to reach length
+	"""
 	ivalue = int(value)
 	if base == 10:
-		return str(ivalue)
+		return "%0*d" % (length, ivalue)
 	elif base == 16:
-		return '%X' % (ivalue,)
+		return "%0*X" % (length, ivalue)
 	elif base == 8:
-		return '%o' % (ivalue,)
+		return "%0*o" % (length, ivalue)
 	elif ivalue == 0:
 		# handle specially so don't have to worry about it below
-		return '0'
+		return "%0*d" % (length, ivalue)
 
 	# arbitrary base
-	if not ( 2 <= base <= 36):
+	if not (2 <= base <= 36):
 		raise ValueError("base must be between 2 and 36 (inclusive)")
 	outdigits = []
 	if ivalue < 0:
@@ -836,6 +839,9 @@ def radix(value, base=10):
 		ivalue, digit = divmod(ivalue, base)
 		outdigits.append(digit)
 	outdigits = map(lambda index: _radixDigits[index], outdigits)
+	# zero-padding
+	if length>len(outdigits)+len(sign):
+		outdigits.extend((length-len(outdigits)-len(sign))*["0"])
 	outdigits.reverse()
 	return sign+_string.join(outdigits,'')
 
@@ -853,6 +859,39 @@ def osfn(filename):
 def clSexagesimal(d, m, s=0):
 	"""Convert d:m:s value to float"""
 	return (d+(m+s/60.0)/60.0)
+
+def clDms(x,digits=1,deg=1):
+	"""Convert float to d:m:s.s
+	
+	Number of decimal places on seconds is set by digits.
+	If deg is false, prints just m:s.s (omits degrees).
+	"""
+	if x<0:
+		sign = '-'
+		x = -x
+	else:
+		sign = ''
+	if deg:
+		d = int(x)
+		x = 60*(x-d)
+	m = int(x)
+	s = 60*(x-m)
+	# round to avoid printing (e.g.) 60.0 seconds
+	digits = max(digits, 0)
+	if s+0.5/10**digits >= 60:
+		s = 0.0
+		m = m+1
+		if deg and m==60:
+			m = 0
+			d = d+1
+	if digits==0:
+		secform = "%02d"
+	else:
+		secform = "%%0%d.%df" % (digits+3, digits)
+	if deg:
+		return ("%s%02d:%02d:"+secform) % (sign, d, m, s)
+	else:
+		return ("%s%02d:"+secform) % (sign, m, s)
 
 def defpar(paramname):
 	"""Returns true if parameter is defined"""
@@ -927,7 +966,7 @@ def bool2str(value):
 
 def boolean(value):
 	"""Convert Python native types (string, int, float) to IRAF boolean
-	
+
 	Accepts integer/float values 0,1 or string 'yes','no'
 	Also allows INDEF as value
 	"""
@@ -965,7 +1004,7 @@ _nscan = 0
 
 def fscan(locals, line, *namelist, **kw):
 	"""fscan function sets parameters from a string or list parameter
-	
+
 	Uses local dictionary (passed as first argument) to set variables
 	specified by list of following names.  (This is a bit
 	messy, but it is by far the cleanest approach I've thought of.
@@ -1051,7 +1090,7 @@ def _weirdEOF(locals, namelist):
 
 def _isStruct(locals, name, checklegal=0):
 	"""Returns true if the variable `name' is of type struct
-	
+
 	If checklegal is true, returns true only if variable is struct and
 	does not currently have a legal value.
 	"""
@@ -1451,7 +1490,7 @@ def prcache(*args, **kw):
 
 def history(n=20, *args, **kw):
 	"""Print history
-	
+
 	Does not replicate the IRAF behavior of changing default number of
 	lines to print.  (That seems fairly useless to me.)
 	"""
@@ -1734,7 +1773,7 @@ def redefine(*args, **kw):
 
 def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
 	"""Define IRAF package, returning tuple with new package name and binary
-	
+
 	PkgName, PkgBinary are old default values.  If Stdout=1 is specified,
 	returns output as string array (normal task behavior) instead of
 	returning PkgName, PkgBinary.  This inconsistency is necessary
@@ -1817,8 +1856,79 @@ def clPrint(*args, **kw):
 		rv = redirReset(resetList, closeFHList)
 	return rv
 
-_badFormats = ["%h", "%m", "%b", "%r", "%t", "%u", "%w", "%z"]
-		
+# printf format conversion utilities
+
+def _quietConv(w, d, c, args, i):
+	"""Format codes that are quietly converted to %s"""
+	return "%%%ss" % w
+
+def _badConv(w, d, c, args, i):
+	"""Format codes that are converted to %s with warning"""
+	_writeError("Warning: printf cannot handle format '%%%s', "
+			"using '%%%ss' instead\n" % (w+d+c, w))
+	return "%%%ss" % w
+
+def _hConv(w, d, c, args, i):
+	"""Handle %h and %m dd:mm:ss.s formats"""
+	if i<len(args):
+		try:
+			if d[1:]:
+				digits = int(d[1:])
+			else:
+				digits = 1
+			args[i] = clDms(args[i], digits=digits, deg=c!="m")
+		except ValueError:
+			pass
+	return "%%%ss" % w
+
+def _rConv(w, d, c, args, i):
+	"""Handle W.DrN general radix format"""
+	if i<len(args):
+		try:
+			base = int(c[-1])
+		except ValueError:
+			base = 10
+		if w[:1] == "0":
+			# add leading zeros
+			args[i] = radix(args[i], base, length=int(w))
+		else:
+			args[i] = radix(args[i], base)
+	return "%%%ss" % w
+
+def _wConv(w, d, c, args, i):
+	"""Handle %w format, which is supposed to generate spaces"""
+	if i<len(args) and not w:
+		# number of spaces comes from argument
+		try:
+			w = int(args[i])
+		except ValueError:
+			w = 0
+	args[i] = ""
+	return "%%%ss" % w
+
+# pattern matching %w.dc where c is single letter format code
+_reFormat = _re.compile(r"%(?P<w>-?\d*)(?P<d>(?:\.\d*)?)(?P<c>[a-z])")
+
+# dispatch table for format conversions
+_fDispatch = {}
+for b in _string.lowercase: _fDispatch[b] = None
+
+# formats that get quietly translated to %s
+badList = ["b"]
+for b in badList: _fDispatch[b] = _quietConv
+
+# formats that get translated to %s with warning
+badList = ["t", "z"]
+for b in badList: _fDispatch[b] = _badConv
+
+# other cases
+_fDispatch["r"] = _rConv
+_fDispatch["w"] = _wConv
+_fDispatch["h"] = _hConv
+_fDispatch["m"] = _hConv
+
+del badList, b
+
 def printf(format, *args, **kw):
 	"""Formatted print function"""
 	# handle redirection and save keywords
@@ -1828,15 +1938,41 @@ def printf(format, *args, **kw):
 		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
 	resetList = redirApply(redirKW)
 	try:
-		for bad in _badFormats:
-			i = _string.find(format, bad)
-			while i >= 0:
-				_writeError("Warning: printf cannot handle %s format, "
-						"using %%s instead\n" % bad)
-				format = format[:i] + "%s" + format[i+2:]
-				i = _string.find(format, bad, i)
+		# make argument list mutable
+		args = list(args)
+		newformat = []
+		# find all format strings and translate them (and arg) if needed
+		iend = 0
+		mm = _reFormat.search(format, iend)
+		i = 0
+		while mm:
+			oend = iend
+			istart = mm.start()
+			iend = mm.end()
+			# append the stuff preceding the format
+			newformat.append(format[oend:istart])
+			c = mm.group('c')
+			# dispatch function for this format type
+			f = _fDispatch[c]
+			if f is None:
+				# append the format
+				newformat.append(mm.group())
+			else:
+				w = mm.group('w')
+				d = mm.group('d')
+				# ugly special case for 'r' format
+				if c == 'r':
+					c = format[iend-1:iend+1]
+					iend = iend+1
+				# append the modified format
+				newformat.append(f(w, d, c, args, i))
+			mm = _reFormat.search(format, iend)
+			i = i+1
+		newformat.append(format[iend:])
+		format = _string.join(newformat,'')
+		# finally ready to print
 		try:
-			print format % args,
+			print format % tuple(args),
 			_sys.stdout.softspace = 0
 		except ValueError, e:
 			raise IrafError(str(e))
@@ -2110,7 +2246,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
 		pkgname=None, pkgbinary=None, redefine=0, function=None):
 
 	"""Returns a new or existing IrafTask, IrafPset, or IrafPkg object
-	
+
 	Type of returned object depends on value of suffix and value.
 
 	Returns a new object unless this task or package is already
@@ -2197,7 +2333,7 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 	redefine=redefine):
 
 	"""Returns a new or existing IrafPset object
-	
+
 	Returns a new object unless this task is already
 	defined. In that case if the old task appears consistent with
 	the new task, a reference to the old task is returned.
@@ -2232,7 +2368,7 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 	redefine=redefine):
 
 	"""Returns a new or existing IrafPkg object
-	
+
 	Returns a new object unless this package is already defined, in which case
 	a warning is printed and a reference to the existing task is returned.
 	Redefine parameter currently ignored.
@@ -2286,7 +2422,7 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 def redirProcess(kw):
 
 	"""Process Stdout, Stdin, Stderr keywords used for redirection
-	
+
 	Removes the redirection keywords from kw
 	Returns (redirKW, closeFHList) which are a dictionary of
 	the filehandles for stdin, stdout, stderr and a list of
