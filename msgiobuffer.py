@@ -14,13 +14,13 @@ class MsgIOBuffer(Frame):
 
     """MsgIOBuffer class"""
 
-    def __init__(self, parent, width = 100, viewHeight = None, 
+    def __init__(self, parent, width = 100, viewHeight = None,
                  text = ""):
 
         """Constructor for the MsgIOBuffer class"""
 
         Frame.__init__(self)
- 
+
         # Initialize class attributes
         self.messageText  = ""
         self.currentText  = text
@@ -32,22 +32,22 @@ class MsgIOBuffer(Frame):
 
         self.waitFlag     = BooleanVar()
         self.waitFlag.set(TRUE)
- 
+
         # Set up the frame to hold the message and the I/O
         self.parent = parent
-        self.msgIO  = Frame(self.parent, bd = 2, relief = FLAT, 
+        self.msgIO  = Frame(self.parent, bd = 2, relief = FLAT,
                             takefocus = FALSE)
 
         # Overlay a canvas on the frame
-        self.msgIO.canvas = Canvas(self.msgIO, 
+        self.msgIO.canvas = Canvas(self.msgIO,
                                    takefocus = FALSE,
                                    highlightthickness = 0)
 
         # Attach a vertical scrollbar to the canvas
-        self.msgIO.vscroll = Scrollbar(self.msgIO, 
-                                       orient       = VERTICAL, 
-                                       width        = 11, 
-                                       relief       = SUNKEN, 
+        self.msgIO.vscroll = Scrollbar(self.msgIO,
+                                       orient       = VERTICAL,
+                                       width        = 11,
+                                       relief       = SUNKEN,
                                        activerelief = RAISED,
                                        takefocus    = FALSE)
         self.msgIO.canvas['yscrollcommand']  = self.msgIO.vscroll.set
@@ -66,7 +66,7 @@ class MsgIOBuffer(Frame):
         self.msgIO.canvas.f.pack(fill = X, expand = TRUE)
 
         # Generate the window for the canvas
-        self.msgIO.canvas.create_window(0, 0, 
+        self.msgIO.canvas.create_window(0, 0,
                                         anchor = NW,
                                         window = self.msgIO.canvas.f)
 
@@ -76,17 +76,17 @@ class MsgIOBuffer(Frame):
                                          bd     = 0)
 
         # Frame may contain message and a label, or message, label and entry.
-        self.msgIO.canvas.f.iomb.label = Label(self.msgIO.canvas.f.iomb, 
+        self.msgIO.canvas.f.iomb.label = Label(self.msgIO.canvas.f.iomb,
                                                text = self.currentText,
                                                bd   = 5,
                                                takefocus = FALSE)
 
-        self.msgIO.canvas.f.iomb.entry = Entry(self.msgIO.canvas.f.iomb, 
+        self.msgIO.canvas.f.iomb.entry = Entry(self.msgIO.canvas.f.iomb,
                                                highlightthickness = 0,
                                                bg           = "#d9d9d9",
                                                relief       = FLAT,
                                                textvariable = self.entrySetting,
-                                               state        = DISABLED, 
+                                               state        = DISABLED,
                                                insertwidth  = 2,
                                                takefocus    = FALSE)
 
@@ -103,15 +103,15 @@ class MsgIOBuffer(Frame):
                                                takefocus = FALSE)
 
         # Pack the widgets in the frame
-        self.msgIO.canvas.f.iomb.msg.pack(side = TOP,  
-                                          fill = X, 
+        self.msgIO.canvas.f.iomb.msg.pack(side = TOP,
+                                          fill = X,
                                           expand = TRUE)
         self.msgIO.canvas.f.iomb.label.pack(side = LEFT)
         self.msgIO.canvas.f.iomb.entry.pack(side = LEFT,
-                                            fill = X, 
+                                            fill = X,
                                             expand = TRUE)
-        self.msgIO.canvas.f.iomb.pack(side = TOP, 
-                                      fill = X, 
+        self.msgIO.canvas.f.iomb.pack(side = TOP,
+                                      fill = X,
                                       expand = TRUE)
 
         # The full scrolling region is the width of the parent and
@@ -137,15 +137,14 @@ class MsgIOBuffer(Frame):
 
         """Method to update the I/O portion of the scrolling canvas"""
 
-        if (text != ""):
-            # Move the current contents of the I/O frame to the message box
-            self.__updateMsg(self.currentText)
+        # Move the current contents of the I/O frame to the message box
+        self.__updateMsg(self.currentText)
 
-            # Update the class variable with the latest text
-            self.currentText = text
+        # Update the class variable with the latest text
+        self.currentText = text
 
-            # Now reconfigure the I/O frame
-            self.msgIO.canvas.f.iomb.label.configure(text = text)
+        # Now reconfigure the I/O frame
+        self.msgIO.canvas.f.iomb.label.configure(text = text)
 
 
     def readline(self):
@@ -155,7 +154,7 @@ class MsgIOBuffer(Frame):
         self.__enableEntry()
         self.msgIO.canvas.f.iomb.entry.wait_variable(self.waitFlag)
         self.waitFlag.set(TRUE)
- 
+
         # Important to have the "\n" on the returned value
         return (self.entryValue + "\n")
 
@@ -176,7 +175,7 @@ class MsgIOBuffer(Frame):
         self.waitFlag.set(FALSE)
         if self.lastFocus:
             self.lastFocus.focus_set()
- 
+
 
     def __enableEntry(self):
 
@@ -190,7 +189,7 @@ class MsgIOBuffer(Frame):
             self.lastFocus = None
         self.msgIO.canvas.f.iomb.entry.configure(state = NORMAL)
         self.msgIO.canvas.f.iomb.entry.focus_set()
-        
+
 
     def __updateMsg(self, text = ""):
 
@@ -232,6 +231,6 @@ if __name__ == '__main__':
         m.updateIO("The quick brown fox jumps over the lazy dog with ease.")
         m.updateIO("What is your quest?")
         #inputValue = m.readline()
-        #print "inputValue = ", inputValue 
+        #print "inputValue = ", inputValue
 
         top.mainloop()

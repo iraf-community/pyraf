@@ -6,18 +6,10 @@ import Numeric
 
 def gkiCoord(ndcCoord):
 	"""Convert Normalized Device Coordinates to GKI coordinates"""
-	return Numeric.array(ndcCoord * gki.GKI_MAX,Numeric.Int16)
-
-def appendMetacode(metacode):
-	gki.kernel.append(metacode,1)
-
-def undo():
-	gki.kernel.undoN(1)
-
-def redrawOriginal():
-	gki.kernel.redrawOriginal()
+	return Numeric.array(ndcCoord * (gki.GKI_MAX + 1), Numeric.Int16)
 
 def text(textstring, x, y):
+	"""Return metacode for text string written at x,y"""
 	gkiX = gkiCoord(x)
 	gkiY = gkiCoord(y)
 	data = Numeric.fromstring(textstring,Numeric.Int8)
@@ -33,9 +25,14 @@ def text(textstring, x, y):
 	metacode[6:] = data
 	return metacode
 
-def markCross(x, y, size=1., xflag=0, yflag=0):
-	"""plot a cross at the given position. Size =1 => 10 pixels x 10 pixels.
-	flags = 0 means normal, = 1 full screen"""
+def markCross(x, y, size=1., xflag=0, yflag=0,
+	linetype=1, linewidth=100, color=1):
+
+	"""Return metacode to plot a cross at the given position.
+
+	Size = 1 => 10 pixels x 10 pixels.
+	flags = 0 means normal, = 1 full screen.
+	"""
 
 	gkiX = gkiCoord(x)
 	gkiY = gkiCoord(y)
@@ -44,33 +41,43 @@ def markCross(x, y, size=1., xflag=0, yflag=0):
 	height = gwidget.winfo_height()
 	xsize = 5./width
 	ysize = 5./height
+	limit = gki.NDC_MAX
 	if not xflag:
 		gkiXmin = gkiCoord(max(x - xsize*size, 0.))
-		gkiXmax = gkiCoord(min(x + xsize*size, 1.))
+		gkiXmax = gkiCoord(min(x + xsize*size, limit))
 	else:
 		gkiXmin = gkiCoord(0.)
-		gkiXmax = gkiCoord(1.)
+		gkiXmax = gkiCoord(limit)
 	if not yflag:
 		gkiYmin = gkiCoord(max(y - ysize*size, 0.))
-		gkiYmax = gkiCoord(min(y + ysize*size, 1.))
+		gkiYmax = gkiCoord(min(y + ysize*size, limit))
 	else:
 		gkiYmin = gkiCoord(0.)
-		gkiYmax = gkiCoord(1.)
-	metacode = Numeric.zeros(16,Numeric.Int16)
-	metacode[0] = gki.BOI
-	metacode[8] = gki.BOI
-	metacode[1] = gki.GKI_POLYLINE
-	metacode[9] = gki.GKI_POLYLINE
-	metacode[2] = 8
-	metacode[10]= 8
-	metacode[3] = 2
-	metacode[11]= 2
-	metacode[4] = gkiX[0]
-	metacode[5] = gkiYmin[0]
-	metacode[6] = gkiX[0]
-	metacode[7] = gkiYmax[0]
-	metacode[12]= gkiXmin[0]
-	metacode[13]= gkiY[0]
-	metacode[14]= gkiXmax[0]
-	metacode[15]= gkiY[0]
+		gkiYmax = gkiCoord(limit)
+	metacode = Numeric.zeros(22,Numeric.Int16)
+	i = 0
+	metacode[i  ] = gki.BOI
+	metacode[i+1] = gki.GKI_PLSET
+	metacode[i+2] = 6
+	metacode[i+3] = linetype
+	metacode[i+4] = linewidth
+	metacode[i+5] = color
+	i = i+6
+	metacode[i  ] = gki.BOI
+	metacode[i+1] = gki.GKI_POLYLINE
+	metacode[i+2] = 8
+	metacode[i+3] = 2
+	metacode[i+4] = gkiX[0]
+	metacode[i+5] = gkiYmin[0]
+	metacode[i+6] = gkiX[0]
+	metacode[i+7] = gkiYmax[0]
+	i = i+8
+	metacode[i  ] = gki.BOI
+	metacode[i+1] = gki.GKI_POLYLINE
+	metacode[i+2]= 8
+	metacode[i+3]= 2
+	metacode[i+4]= gkiXmin[0]
+	metacode[i+5]= gkiY[0]
+	metacode[i+6]= gkiXmax[0]
+	metacode[i+7]= gkiY[0]
 	return metacode

@@ -24,9 +24,6 @@ else:
 	_blankcursor = os.path.join(os.getcwd(), dirname, _blankcursor)
 del dirname
 
-REDRAW_DELAY = 100 # in milliseconds
-CURSOR_DELAY = 100 # in milliseconds
-
 if _default_root is None:
 	# create the initial Tk window and immediately withdraw it
 	import Tkinter
@@ -71,7 +68,6 @@ class RawOpengl(Widget, Misc):
 	"""
 
 	def __init__(self, master=None, cnf=None, **kw):
-		if cnf is None: cnf = {}
 		# choose rgb mode that is compatible with master widget
 		top = master or _default_root
 		visual = top.winfo_visual()
@@ -79,32 +75,30 @@ class RawOpengl(Widget, Misc):
 			kw['rgba'] = 1
 		else:
 			kw['rgba'] = 0
+		if cnf is None: cnf = {}
 		Widget.__init__(self, master, 'togl', cnf, kw)
 		self.rgbamode = kw['rgba']
-		self.eventCount = 0
-		self.cursorEventCount = 0
-		# self.bind('<Map>', self.tkMap)
-		self.bind('<Expose>', self.tkExpose)
-		self.bind('<Configure>', self.tkExpose)
-		self.ignoreNextRedraw = 1
-		self.ignoreNextNRedraws = 0
-		self.status = None
+		self.doIdleRedraw = 0
+		self.doIdleSWCursor = 0
+		self.ignoreNextRedraw = 0
 		self.toglStruct = toglcolors.getToglStruct()
 		# Add a placeholder software cursor attribute. If it is None,
 		# that means no software cursor is in effect. If it is not None,
 		# then it will be used to render the cursor.
 		self.__isSWCursorActive = 0
-		self.__isSWCursorSleeping = 0
 		self.__SWCursor = None
+
+	def flush(self):
+		glFlush()
+		self.doIdleRedraw = 0
 
 	def immediateRedraw(self):
 		self.tk.call(self._w, 'makecurrent')
 		glPushMatrix()
-		self.update_idletasks()
 		# need to indicate cursor is not visible before redraw, since
 		# cursor sleeps are now issued by redraw. The presumption is that
 		# redraw will wipe out cursor visibility, so we set it first
-		if self.__isSWCursorActive: # and not self.__isSWCursorSleeping:
+		if self.__isSWCursorActive:
 			# deactivate cursor for duration of redraw
 			# otherwise it slows the redraw to a glacial pace
 			cursorActivate = 1
@@ -120,27 +114,15 @@ class RawOpengl(Widget, Misc):
 		glPopMatrix()
 		self.tk.call(self._w, 'swapbuffers')
 
-	def delayedRedraw(self, eventNumber):
-		if self.ignoreNextRedraw:
-			self.ignoreNextRedraw = 0
-			if self.ignoreNextNRedraws > 0:
-				self.ignoreNextNRedraws = self.ignoreNextNRedraws - 1
-			return
-		if self.ignoreNextNRedraws > 0:
-			self.ignoreNextNRedraws = self.ignoreNextNRedraws - 1
-			return
-		if eventNumber == self.eventCount:
-			# No events since the event that generated this delayed call;
-			# perform the redraw
-			self.immediateRedraw()
-		else:
-			# New events, do nothing
-			return
-
 	def tkRedraw(self, *dummy):
-		self.eventCount = self.eventCount + 1
-		if self.eventCount > 2000000000: self.eventCount = 0 # yes, unlikely
-		self.after(REDRAW_DELAY, self.delayedRedraw, self.eventCount)
+		self.doIdleRedraw = 1
+		self.after_idle(self.idleRedraw)
+
+	def idleRedraw(self):
+		"""Do a redraw, then set buffer so no more happen on this idle cycle"""
+		if self.doIdleRedraw:
+			self.doIdleRedraw = 0
+			self.immediateRedraw()
 
 	def isSWCursorActive(self):
 		return self.__isSWCursorActive
@@ -153,7 +135,6 @@ class RawOpengl(Widget, Misc):
 		self['cursor'] = '@' + _blankcursor + ' black'
 		# ignore type for now since only one type of software cursor
 		# is implemented
-		self.__isSWCursorSleeping = 0
 		self.activate()
 		if not self.__isSWCursorActive:
 			if not self.__SWCursor:
@@ -165,7 +146,6 @@ class RawOpengl(Widget, Misc):
 			self.update_idletasks()
 
 	def deactivateSWCursor(self):
-		self.__isSWCursorSleeping = 0
 		if self.__isSWCursorActive:
 			self.activate()
 			self.__SWCursor.erase()
@@ -173,32 +153,20 @@ class RawOpengl(Widget, Misc):
 			self.__isSWCursorActive = 0
 			self['cursor'] = 'arrow'
 
-	def SWCursorSleep(self):
-		self.__isSWCursorSleeping = 1
-		self.activate()
-		self.__SWCursor.erase()
-
-
 	def SWCursorWake(self):
-		# Assumes that we don't have > 2**31 drawing operations
-		# before reset, should be ok since user will die of old
-		# age by then.
-		self.cursorEventCount = self.cursorEventCount + 1
-		self.after(CURSOR_DELAY, self.SWCursorDelayedWake, self.cursorEventCount)
+		self.doIdleSWCursor = 1
+		self.after_idle(self.idleSWCursorWake)
+
+	def idleSWCursorWake(self):
+		"""Do cursor redraw, then reset so no more happen on this idle cycle"""
+		if self.doIdleSWCursor:
+			self.doIdleSWCursor = 0
+			self.SWCursorImmediateWake()
 
 	def SWCursorImmediateWake(self):
-		self.cursorEventCount = 0 # reset
-		self.__isSWCursorSleeping = 0
 		if self.__isSWCursorActive:
 			self.activate()
 			self.__SWCursor.draw()
-
-
-	def SWCursorDelayedWake(self, cursorEventNumber):
-		if cursorEventNumber == self.cursorEventCount:
-			# No cursor Wake calls since the last one that generated this
-			# delayed call, restore the cursor.
-			self.SWCursorImmediateWake()
 
 	def moveCursor(self, event):
 		"""Call back for mouse motion events"""
@@ -206,18 +174,10 @@ class RawOpengl(Widget, Misc):
 		y = event.y
 		winSizeX = self.winfo_width()
 		winSizeY = self.winfo_height()
-		ndcX = float(x)/winSizeX
-		ndcY = float(winSizeY - y)/winSizeY
+		ndcX = (x+0.5)/winSizeX
+		ndcY = (winSizeY-0.5-y)/winSizeY
 		self.activate()
-		self.__SWCursor.moveTo(ndcX,ndcY,self.__isSWCursorSleeping)
-
-#	def tkMap(self, *dummy):
-#		print "tkMap called"
-#		self.tkExpose()
-
-#	def tkExpose(self, *dummy):
-#		print "tkExpose called"
-#		self.tkRedraw()
+		self.__SWCursor.moveTo(ndcX,ndcY)
 
 class Ptogl(RawOpengl):
 
@@ -228,7 +188,6 @@ class Ptogl(RawOpengl):
 		Arrange for redraws when the window is exposed or when
 		it changes size."""
 
-		if cnf is None: cnf = {}
 		apply(RawOpengl.__init__, (self, master, cnf), kw)
 		self.initialised = 0
 
@@ -242,7 +201,6 @@ class Ptogl(RawOpengl):
 		self.lastY = None
 
 		# Basic bindings for the virtual trackball
-#self.bind('<Map>', self.tkMap)
 		self.bind('<Expose>', self.tkExpose)
 		self.bind('<Configure>', self.tkExpose)
 
@@ -269,7 +227,7 @@ class Ptogl(RawOpengl):
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity()
 
-	def report_opengl_errors(message = "OpenGL error:"):
+	def report_opengl_errors(self, message = "OpenGL error:"):
 		"""Report any opengl errors that occured while drawing."""
 
 		while 1:
@@ -286,22 +244,19 @@ class Ptogl(RawOpengl):
 
 		self.tkRedraw()
 
-	def tkMap(self, *dummy):
-		"""Cause the opengl widget to redraw itself."""
-
-		self.tkExpose()
-
 	def tkExpose(self, *dummy):
 		"""Redraw the widget.
 		Make it active, update tk events, call redraw procedure and
 		swap the buffers.  Note: swapbuffers is clever enough to
 		only swap double buffered visuals."""
-
-		self.activate()
-		if not self.initialised:
-			self.basic_lighting()
-			self.initialised = 1
-		self.tkRedraw()
+		if self.ignoreNextRedraw:
+			self.ignoreNextRedraw = 0
+		else:
+			self.activate()
+			if not self.initialised:
+				self.basic_lighting()
+				self.initialised = 1
+			self.tkRedraw()
 
 class FullWindowCursor:
 
@@ -359,14 +314,13 @@ class FullWindowCursor:
 			self.xorDraw()
 			self.isVisible = 1
 
-	def moveTo(self,x,y,hide=0):
+	def moveTo(self,x,y):
 
 		if (self.lastx != x) or (self.lasty != y):
 			self.erase() # erase previous cursor
 			self.lastx = x
 			self.lasty = y
-			if not hide:
-				self.draw() # draw new position
+			self.draw() # draw new position
 
 
 

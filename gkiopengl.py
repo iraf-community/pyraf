@@ -4,86 +4,204 @@ OpenGL implementation of the gki kernel class
 $Id$
 """
 
-import Numeric, sys, string, wutil
+import Numeric, os, sys, string, wutil
 import Tkinter, msgiobuffer
 from OpenGL.GL import *
 import toglcolors
 import gki, openglgcur, opengltext, irafgwcs
-from irafglobals import IrafError
+from irafglobals import IrafError, pyrafDir, userWorkingHome
+import tkMessageBox, tkSimpleDialog
+import filedlg
 
 import gwm # needed only for delete function
 
 nIrafColors = 16
 
-_errorMessageCount = 0
-MAX_ERROR_COUNT = 3
-
-def errorMessage(text):
-	"""a way of truncating the number of error messages produced
-	in a plot. This really should be done at the gki level, but would
-	require folding the function table members into the class itself,
-	so this less than ideal approach is being taken for now"""
-	global _errorMessageCount
-	if _errorMessageCount < MAX_ERROR_COUNT:
-		print text
-		_errorMessageCount = _errorMessageCount + 1
-	elif _errorMessageCount == MAX_ERROR_COUNT:
-		print "\nAdditional graphics error messages suppressed"
-		_errorMessageCount = _errorMessageCount + 1
-
-
-#*****************************************************************
+#-----------------------------------------------
 
 standardWarning = """
-The graphics kernel for IRAF tasks has just recieved a metacode
-instruction it never expected to see. Please inform the STSDAS
-group of this occurance"""
+The graphics kernel for IRAF tasks has just received a metacode
+instruction (%s) it never expected to see.  Please inform the
+STSDAS group of this occurrence."""
 
-standardNotImplemented = """
-You have tried to run an IRAF task which requires graphics kernel
-facility not implemented in the Python graphics kernel for IRAF tasks"""
+standardNotImplemented = \
+"""This IRAF task requires a graphics kernel facility not implemented
+in the Pyraf graphics kernel (%s)."""
 
-#**********************************************************************
+helpString = """\
+PyRAF graphics windows provide the capability to recall previous plots, print
+the current plot, save metacode to a file, undo/redo edits to plots, and create
+new graphics windows.  The windows are active at all times (not just in
+interactive cursor mode) and can be resized.
+
+The status bar at the bottom of the window displays messages from the task and
+is used for input.  Note that it has a scroll bar so that old messages can be
+recalled.
+
+File menu:
+    Print
+             Print the current plot to the IRAF stdplot device.
+    Save...
+             Save metacode for the current plot to a user-specified file.
+    Close Window
+             Close (iconify) the window.
+    Quit Window
+             Destroy this window.  Note that if the window is destroyed while
+             a graphics task is running, the results are unpredictable.
+
+Edit menu:
+    Undo
+             Undo the last editable change to the plot.  Most changes added by
+             the task (e.g., overplotted lines) cannot currently be undone, but
+             user changes (text annotations, marks) can be undone.  You can make
+             overplots undoable by inserting blank annotations.
+    Redo
+             Redo the last change.
+    Undo All
+             Remove all undoable changes.
+    Refresh
+             Redraw the plot.
+    Delete Plot
+             Delete this plot.  (This is not undoable.)  Note that plots are
+             renumbered in the Page listing.
+    Delete All Plots
+             Delete all plots.  User is prompted to be sure.
+
+Page menu:
+    (tearoff)
+             Selecting the dotted tearoff line at the top of the menu creates a
+             separate page-selector window.
+    Next
+             Go to the next page in the list of plots.
+    Back
+             Go to the previous page in the list of plots.
+    First
+             Go to the first page in the list of plots.
+    Last
+             Go to the last page in the list of plots.
+    (page list)
+             Go directly to the selected page.  Pages are labelled with the name
+             of the task that created them.  If there are many pages, a subset
+             around the currently active page is shown; selecting a page (or
+             using First, Last, etc.) changes the displayed subset.
+
+Window menu:
+    New...
+             Create a new graphics window.  Prompts for a name; if no name is
+             given, the new name will be 'graphics<N>' where <N> is a unique
+             number.  If a window with the given name already exists, it simply
+             switches the graphics focus to the new window.
+    (window list)
+             Switch graphics focus to the selected window.  Subsequent plots
+             will appear in that window.  The results are unpredictable if the
+             window is changed while an interactive graphics task is running.
+
+Help menu:
+    Help...
+             Display this help.
+"""
+
+#-----------------------------------------------
 
 
-class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
+class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 
-	"""OpenGL graphics kernel implementation"""
+	"""Base class for interactive graphics kernel implementation
+
+	This class implements the supporting functionality for the
+	interactive graphics kernel: menu bar, status line, page
+	caching, etc.
+
+	The actual graphics pane is implemented in a separate class,
+	which extends this class and must have the attributes:
+
+	makeGWidget()		Create the gwidget Tk object and colorManager object
+	redraw()			Redraw method (don't call this directly, used by
+						the gwidget class)
+	gRedraw()			Redraw that defers to gwidget
+	gcursor()			Wait for key to be typed and return cursor value
+	incrPlot()			Plot the stuff added to buffer since last draw
+	prepareToRedraw()	Prepare for complete redraw from metacode
+	getHistory()		Get information that needs to be saved in page history
+	setHistory()		Restore page using getHistory info
+	clearPage()			Clear page (for initialization)
+	startNewPage()		Setup for new page
+	isPageBlank()		Returns true if current page is blank
+	gki_*()				Implement various GKI metacode commands
+
+	The gwidget object (created by makeGWidget) should have these
+	attributes (in addition to the usual Tk methods):
+
+	lastX, lastY		Last cursor position, initially None
+	rgbamode			Flag indicating RGB (if true) or indexed color mode
+	activate()			Make this the focus of plots
+
+	activateSWCursor()	Various methods for handling the crosshair cursor
+	deactivateSWCursor()	(Should rename and clean these up)
+	isSWCursorActive()
+
+	#XXX
+	Still need to work on the ColorManager class, which has a bunch
+	of OpenGL specific stuff embedded in it.  Could also probably
+	integrate the gl_ functions into a class and use introspection
+	to create the dispatch table, just like for the gki functions.
+	#XXX
+	"""
+
+	# GKI control functions that are ignored on redraw
+	_controlOps = [
+		gki.GKI_OPENWS,
+		gki.GKI_CLOSEWS,
+		gki.GKI_REACTIVATEWS,
+		gki.GKI_DEACTIVATEWS,
+		gki.GKI_MFTITLE,
+		gki.GKI_CLEARWS,
+		gki.GKI_CANCEL,
+		gki.GKI_FLUSH,
+		]
+
+	# maximum number of error messages for a plot
+	MAX_ERROR_COUNT = 3
 
 	def __init__(self, windowName):
 
 		gki.GkiKernel.__init__(self)
-		self.stdin = None
-		self.stdout = None
-		self.stderr = None
 		self.name = 'OpenGL'
-
-		import Ptogl # local substitute for OpenGL.Tk
-					 # (to remove goofy 3d cursor effects)
-					 # import is placed here since it has the side effect
-					 # of creating a tk window, so delay import to
-					 # a time that a window is really needed. Subsequent
-					 # imports will be ignored
-
+		self._errorMessageCount = 0
 		self.irafGkiConfig = IrafGkiConfig()
 		self.windowName = windowName
 
-		self.top = Tkinter.Toplevel(visual='best')
-		self.gwidget = Ptogl.Ptogl(self.top,width=600,height=420)
-		self.colorManager = glColorManager(self.irafGkiConfig.defaultColors,
-				self.gwidget.rgbamode)
-		self.gwidget.status = msgiobuffer.MsgIOBuffer(self.top, width=600)
-		self.gwidget.redraw = self.redraw
+		# redraw table ignores control functions
+		self.redrawFunctionTable = self.functionTable[:]
+		for opcode in self._controlOps:
+			self.redrawFunctionTable[opcode] = None
+
+		# Create the root window as required, but hide it
+		if Tkinter._default_root is None:
+			root = Tkinter.Tk()
+			root.withdraw()
+		# note size is just an estimate that helps window manager place window
+		self.top = Tkinter.Toplevel(visual='best',width=600,height=485)
+		# Read the epar options database file
+		optfile = "epar.optionDB"
+		try:
+			self.top.option_readfile(os.path.join(os.curdir,optfile))
+		except Tkinter.TclError:
+			try:
+				self.top.option_readfile(os.path.join(userWorkingHome,optfile))
+			except Tkinter.TclError:
+				self.top.option_readfile(os.path.join(pyrafDir,optfile))
 		self.top.title(windowName)
-		self.gwidget.status.msgIO.pack(side=Tkinter.BOTTOM, fill = Tkinter.X)
-		self.gwidget.pack(side = 'top', expand=1, fill='both')
+		self.top.iconname(windowName)
 		self.top.protocol("WM_DELETE_WINDOW", self.gwdestroy)
-		self.gwidget.firstPlotDone = 0
-		self.gwidget.interactive = 0
+		self.makeMenuBar()
+		self.makeGWidget()
+		self.makeStatus()
+		self.gwidget.redraw = self.redraw
+		self.gwidget.pack(side=Tkinter.TOP, expand=1, fill=Tkinter.BOTH)
 
 		self.colorManager.setColors(self.gwidget)
-		self.glBuffer = GLBuffer()
-		self.wcs = None
+		self.wcs = irafgwcs.IrafGWcs()
 		self.colors = IrafColors(self)
 		self.linestyles = IrafLineStyles()
 		self.hatchfills = IrafHatchFills()
@@ -92,39 +210,417 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 		self.fillAttributes = FillAttributes()
 		self.markerAttributes = MarkerAttributes()
 
+		self.StatusLine = StatusLine(self.top.status, self.windowName)
+		self.history = [(self.gkibuffer, self.wcs, "", self.getHistory())]
+		self.historyMarker = 0
+		self._historyVar = Tkinter.IntVar()
+		self._historyVar.set(self.historyMarker)
+		# _setHistoryMarker is callback for changes to _historyVar
+		self._historyVar.trace('w', self._setHistoryMarker)
 		windowID = self.gwidget.winfo_id()
 		wutil.setBackingStore(windowID)
-		self.gcursor = openglgcur.Gcursor(self)
+		self.flush()
+
+	# -----------------------------------------------
+
+	def makeStatus(self):
+
+		"""Make status display at bottom of window"""
+
+		self.top.status = msgiobuffer.MsgIOBuffer(self.top, width=600)
+		self.top.status.msgIO.pack(side=Tkinter.BOTTOM, fill = Tkinter.X)
+
+	# -----------------------------------------------
+	# Menu bar definitions
+
+	def makeMenuBar(self):
+
+		"""Make menu bar at top of window"""
+
+		self.menubar = Tkinter.Frame(self.top, bd=1, relief=Tkinter.FLAT)
+		self.fileMenu = self.makeFileMenu(self.menubar)
+		self.editMenu = self.makeEditMenu(self.menubar)
+		self.pageMenu = self.makePageMenu(self.menubar)
+		self.windowMenu = self.makeWindowMenu(self.menubar)
+		self.helpMenu = self.makeHelpMenu(self.menubar)
+		self.menubar.pack(side=Tkinter.TOP, fill=Tkinter.X)
+
+	def makeFileMenu(self, menubar):
+
+		button = Tkinter.Menubutton(menubar, text='File')
+		button.pack(side=Tkinter.LEFT, padx=2)
+		button.menu = Tkinter.Menu(button, tearoff=0)
+		button.menu.add_command(label="Print", command=self.doprint)
+		button.menu.add_command(label="Save...", command=self.save)
+		button.menu.add_command(label="Close Window", command=self.iconify)
+		button.menu.add_command(label="Quit Window", command=self.gwdestroy)
+		button["menu"] = button.menu
+		return button
+
+	def doprint(self):
+
+		stdout = sys.stdout
+		sys.stdout = self.StatusLine
+		try:
+			gki.printPlot(self)
+		finally:
+			sys.stdout = stdout
+
+	def save(self):
+
+		"""Save metacode in a file"""
+
+		fd = filedlg.PersistSaveFileDialog(self.top, "Save Metacode", "*")
+		if fd.Show() != 1:
+			fd.DialogCleanup()
+			return
+		fname = fd.GetFileName()
+		fd.DialogCleanup()
+		fh = open(fname, 'w')
+		fh.write(self.gkibuffer.get().tostring())
+		fh.close()
+
+	def iconify(self):
+
+		self.top.iconify()
+
+	def makeEditMenu(self, menubar):
+
+		button = Tkinter.Menubutton(menubar, text='Edit')
+		button.pack(side=Tkinter.LEFT, padx=2)
+		button.menu = Tkinter.Menu(button, tearoff=0,
+			postcommand=self.editMenuInit)
+		num = 0
+		button.menu.add_command(label="Undo", command=self.undoN)
+		button.undoNum = num
+
+		button.menu.add_command(label="Redo", command=self.redoN)
+		num = num+1
+		button.redoNum = num
+
+		button.menu.add_command(label="Undo All", command=self.redrawOriginal)
+		num = num+1
+		button.redrawOriginalNum = num
+
+		button.menu.add_command(label="Refresh", command=self.gRedraw)
+		num = num+1
+		button.redrawNum = num
+
+		button.menu.add_separator()
+		num = num+1
+
+		button.menu.add_command(label="Delete Plot",
+			command=self.deletePlot)
+		num = num+1
+		button.deleteNum = num
+
+		button.menu.add_command(label="Delete All Plots",
+			command=self.deleteAllPlots)
+		num = num+1
+		button.deleteAllNum = num
+
+		button["menu"] = button.menu
+		return button
+
+		#XXX additional items:
+		# annotate (add annotation to plot using gcur -- need
+		#   to migrate annotation code to this module?)
+		# zoom, etc (other IRAF capital letter equivalents)
+		#XXX
+
+	def editMenuInit(self):
+
+		button = self.editMenu
+		# disable Undo item if not undoable
+		buffer = self.getBuffer()
+		if buffer.isUndoable():
+			self.editMenu.menu.entryconfigure(button.undoNum,
+				state=Tkinter.NORMAL)
+			self.editMenu.menu.entryconfigure(button.redrawOriginalNum,
+				state=Tkinter.NORMAL)
+		else:
+			self.editMenu.menu.entryconfigure(button.undoNum,
+				state=Tkinter.DISABLED)
+			self.editMenu.menu.entryconfigure(button.redrawOriginalNum,
+				state=Tkinter.DISABLED)
+		# disable Redo item if not redoable
+		if buffer.isRedoable():
+			self.editMenu.menu.entryconfigure(button.redoNum,
+				state=Tkinter.NORMAL)
+		else:
+			self.editMenu.menu.entryconfigure(button.redoNum,
+				state=Tkinter.DISABLED)
+		# disable Delete items if no plots
+		if len(self.history)==1 and self.isPageBlank():
+			self.editMenu.menu.entryconfigure(button.deleteNum,
+				state=Tkinter.DISABLED)
+			self.editMenu.menu.entryconfigure(button.deleteAllNum,
+				state=Tkinter.DISABLED)
+		else:
+			self.editMenu.menu.entryconfigure(button.deleteNum,
+				state=Tkinter.NORMAL)
+			self.editMenu.menu.entryconfigure(button.deleteAllNum,
+				state=Tkinter.NORMAL)
+
+	def deletePlot(self):
+
+		# delete current plot
+		del self.history[self.historyMarker]
+		if len(self.history)==0:
+			# that was the last plot
+			# clear all buffers and put them back on the history
+			self.gkibuffer.reset()
+			self.clearPage()
+			self.wcs.set()
+			self.history = [(self.gkibuffer, self.wcs, "", self.getHistory())]
+		n = max(0, min(self.historyMarker, len(self.history)-1))
+		# ensure that redraw happens
+		self.historyMarker = -1
+		self._historyVar.set(n)
+
+	def deleteAllPlots(self):
+
+		if tkMessageBox.askokcancel("", "Delete all plots?"):
+			del self.history[:]
+			# clear all buffers and put them back on the history
+			self.gkibuffer.reset()
+			self.clearPage()
+			self.wcs.set()
+			self.history = [(self.gkibuffer, self.wcs, "", self.getHistory())]
+			# ensure that redraw happens
+			self.historyMarker = -1
+			self._historyVar.set(0)
+
+	def makePageMenu(self, menubar):
+
+		button = Tkinter.Menubutton(menubar, text='Page')
+		button.pack(side=Tkinter.LEFT, padx=2)
+		button.menu = Tkinter.Menu(button, tearoff=1,
+			postcommand=self.pageMenuInit)
+		num = 1 # tearoff is entry 0 on menu
+		button.nextNum = num
+		num = num+1
+		button.menu.add_command(label="Next", command=self.nextPage)
+		button.backNum = num
+		num = num+1
+		button.menu.add_command(label="Back", command=self.backPage)
+		button.firstNum = num
+		num = num+1
+		button.menu.add_command(label="First", command=self.firstPage)
+		button.lastNum = num
+		num = num+1
+		button.menu.add_command(label="Last", command=self.lastPage)
+		# need to add separator here because menu.delete always
+		# deletes at least one item
+		button.sepNum = num
+		num = num+1
+		button.menu.add_separator()
+		button["menu"] = button.menu
+		return button
+
+	def pageMenuInit(self):
+
+		button = self.pageMenu
+		menu = button.menu
+		page = self.historyMarker
+		# Next
+		if page < len(self.history)-1:
+			menu.entryconfigure(button.nextNum, state=Tkinter.NORMAL)
+		else:
+			menu.entryconfigure(button.nextNum, state=Tkinter.DISABLED)
+		# Back
+		if page>0:
+			menu.entryconfigure(button.backNum, state=Tkinter.NORMAL)
+		else:
+			menu.entryconfigure(button.backNum, state=Tkinter.DISABLED)
+		# First
+		if page>0:
+			menu.entryconfigure(button.firstNum, state=Tkinter.NORMAL)
+		else:
+			menu.entryconfigure(button.firstNum, state=Tkinter.DISABLED)
+		# Last
+		if page < len(self.history)-1:
+			menu.entryconfigure(button.lastNum, state=Tkinter.NORMAL)
+		else:
+			menu.entryconfigure(button.lastNum, state=Tkinter.DISABLED)
+		# Delete everything past the separator
+		menu.delete(button.sepNum,10000)
+		menu.add_separator()
+		# Add radio buttons for pages
+		# Only show limited window around active page
+		halfsize = 10
+		pmin = self.historyMarker-halfsize
+		pmax = self.historyMarker+halfsize+1
+		lhis = len(self.history)
+		if pmin<0:
+			pmax = pmax-pmin
+			pmin = 0
+		elif pmax>lhis:
+			pmin = pmin-(pmax-lhis)
+			pmax = lhis
+		pmax = min(pmax, lhis)
+		pmin = max(0, pmin)
+		h = self.history
+		for i in range(pmin,pmax):
+			menu.add_radiobutton(label="%d %s" % (i+1,h[i][2]), value=i,
+				variable=self._historyVar)
+		# Make sure historyVar matches the real index value
+		self._historyVar.set(self.historyMarker)
+
+	def _setHistoryMarker(self, *args):
+
+		"""Called when historyVar is changed (by .set() or by Page menu)"""
+
+		n = self._historyVar.get()
+		n = max(0, min(n, len(self.history)-1))
+		if self.historyMarker != n:
+			self.historyMarker = n
+			self.gkibuffer, self.wcs, name, otherHistory = \
+					self.history[self.historyMarker]
+			self.setHistory(otherHistory)
+			self.gRedraw()
+			self.pageMenuInit()
+
+	def backPage(self):
+
+		self._historyVar.set(max(0,self.historyMarker-1))
+
+	def nextPage(self):
+
+		self._historyVar.set(
+			max(0,min(self.historyMarker+1, len(self.history)-1)))
+
+	def firstPage(self):
+
+		self._historyVar.set(0)
+
+	def lastPage(self):
+
+		self._historyVar.set(len(self.history)-1)
+
+	def makeWindowMenu(self, menubar):
+
+		button = Tkinter.Menubutton(menubar, text='Window')
+		button.pack(side=Tkinter.LEFT, padx=2)
+		button.menu = Tkinter.Menu(button, tearoff=0,
+			postcommand=self.windowMenuInit)
+		button.menu.add_command(label="New...", command=self.createNewWindow)
+		# need to add separator here because menu.delete always
+		# deletes at least one item
+		button.menu.add_separator()
+		button["menu"] = button.menu
+		return button
+
+	def windowMenuInit(self):
+
+		menu = self.windowMenu.menu
+		wm = gwm.getGraphicsWindowManager()
+		winVar = wm.getWindowVar()
+		winList = wm.windowNames()
+		winList.sort()
+		# Delete everything past the separator
+		menu.delete(1,10000)
+		menu.add_separator()
+		# Add radio buttons for windows
+		for i in range(len(winList)):
+			menu.add_radiobutton(label=winList[i], value=winList[i],
+				variable=winVar)
+
+	def createNewWindow(self):
+
+		newname = tkSimpleDialog.askstring("New Graphics Window",
+			"Name of new graphics window (blank OK)", initialvalue="")
+		if newname is not None:
+			gwm.window(newname)
+
+	def makeHelpMenu(self, menubar):
+
+		button = Tkinter.Menubutton(menubar, text='Help')
+		button.pack(side=Tkinter.RIGHT, padx=2)
+		button.menu = Tkinter.Menu(button, tearoff=0)
+		button.menu.add_command(label="Help...", command=self.getHelp)
+		button["menu"] = button.menu
+		return button
+
+	def getHelp(self):
+
+		"""Display window with help on graphics"""
+
+		hb = Tkinter.Toplevel(self.top, visual='best')
+		hb.title("PyRAF Graphics Help")
+		hb.iconname("PyRAF Graphics Help")
+		# Define the Listbox and setup the Scrollbar
+		hb.list = Tkinter.Listbox(hb, 
+								relief = Tkinter.FLAT,
+								height = 25,
+								width = 70,
+								selectmode = Tkinter.SINGLE,
+								selectborderwidth = 0)
+
+		scroll = Tkinter.Scrollbar(hb, command=hb.list.yview)
+		hb.list.configure(yscrollcommand=scroll.set)
+		hb.list.pack(side=Tkinter.LEFT)
+		scroll.pack(side=Tkinter.RIGHT, fill=Tkinter.Y)
+
+		# Insert each line of the helpString into the box
+		listing = string.split(helpString, '\n')
+		for line in listing:
+			hb.list.insert(Tkinter.END, line)
+
+	# -----------------------------------------------
+	# start general functionality (independent of graphics panel
+	#   implementation)
 
 	def activate(self):
+
 		"""Make this the active window"""
+
 		self.gwidget.activate()
 
+	def errorMessage(self,text):
+
+		"""Truncate number of error messages produced in a plot."""
+
+		if self._errorMessageCount < self.MAX_ERROR_COUNT:
+			print text
+			self._errorMessageCount = self._errorMessageCount + 1
+		elif self._errorMessageCount == self.MAX_ERROR_COUNT:
+			print "\nAdditional graphics error messages suppressed"
+			self._errorMessageCount = self._errorMessageCount + 1
+
 	def flush(self):
+
+		"""Flush any pending graphics requests"""
+
 		try:
 			self.gwidget.update_idletasks()
 		except Tkinter.TclError:
 			pass
 
-	def taskDone(self):
-		"""Hack to prevent the double redraw after first Tk plot"""
-		gwin = self.gwidget
-		if gwin and (not gwin.firstPlotDone) and wutil.hasGraphics:
-			# this is a hack to prevent the double redraw on first plots
-			# (when they are not interactive plots). This should be done
-			# better, but it appears to work most of the time.
-			if not gwin.interactive:
-				gwin.ignoreNextNRedraws = 2
-			gwin.firstPlotDone = 1
-
 	def hasFocus(self):
+
 		"""Returns true if this window currently has focus"""
+
 		return  wutil.getTopID(wutil.getWindowID()) == \
 			wutil.getTopID(self.getWindowID())
 
 	def setDrawingColor(self, irafColorIndex):
+
 		self.colorManager.setDrawingColor(irafColorIndex)
 
+	def getWindowName(self):
+
+		return self.windowName
+
+	def gwdestroy(self):
+
+		"""Delete this object from the gwm window list"""
+
+		gwm.delete(self.windowName)
+		# protect against bugs that try to access deleted object
+		self.gwidget = None
+
+	# -----------------------------------------------
 	# the following methods implement the FocusEntity interface
 	# used by wutil.FocusController
 
@@ -133,23 +629,18 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 		"""save current position if window has focus and cursor is
 		in window, otherwise do nothing"""
 
-		# first see if window has focus
 		if not self.hasFocus():
+			# window does not have focus
 			return
-
-		gwin = self.gwidget
-		posdict = wutil.getPointerPosition(gwin.winfo_id())
-		if posdict:
-			x = posdict['win_x']
-			y = posdict['win_y']
-		else:
-			return
-		maxX = gwin.winfo_width()
-		maxY = gwin.winfo_height()
+		gwidget = self.gwidget
+		x = gwidget.winfo_pointerx()-gwidget.winfo_rootx()
+		y = gwidget.winfo_pointery()-gwidget.winfo_rooty()
+		maxX = gwidget.winfo_width()
+		maxY = gwidget.winfo_height()
 		if x < 0 or y < 0 or x >= maxX or y >= maxY:
 			return
-		gwin.lastX = x
-		gwin.lastY = y
+		gwidget.lastX = x
+		gwidget.lastY = y
 
 	def forceFocus(self):
 
@@ -158,85 +649,71 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 			return
 		# warp cursor
 		# if no previous position, move to center
-		gwin = self.gwidget
-		if not gwin.lastX:
-			gwin.lastX = gwin.winfo_width()/2
-			gwin.lastY = gwin.winfo_height()/2
-		wutil.moveCursorTo(gwin.winfo_id(),gwin.lastX,gwin.lastY)
-		gwin.focus_force()
+		gwidget = self.gwidget
+		if gwidget.lastX is None:
+			gwidget.lastX = gwidget.winfo_width()/2
+			gwidget.lastY = gwidget.winfo_height()/2
+		wutil.moveCursorTo(gwidget.winfo_id(),gwidget.lastX,gwidget.lastY)
+		gwidget.focus_force()
 
 	def getWindowID(self):
 
 		return self.gwidget.winfo_id()
 
-	# end of FocusEntity methods
+	# -----------------------------------------------
+	# GkiKernel methods
 
-	def getWindowName(self):
+	def clear(self):
+		
+		"""Clear the plot and start a new page"""
 
-		return self.windowName
+		# don't create new plot if current plot is empty
+		if not self.isPageBlank():
+			# ignore any pending WCS changes
+			self.wcs.clearPending()
+			self.gkibuffer = self.gkibuffer.split()
+			self.wcs = irafgwcs.IrafGWcs()
+			self.startNewPage()
+			if gki.tasknameStack:
+				name = gki.tasknameStack[-1]
+			else:
+				name = ""
+			self.history.append(
+				(self.gkibuffer, self.wcs, name, self.getHistory()) )
+			self._historyVar.set(len(self.history)-1)
+			self.StatusLine.write(text=" ")
+			self.flush()
+		elif (self.history[-1][2] == "") and gki.tasknameStack:
+			# plot is empty but so is name -- set name
+			h = self.history[-1]
+			self.history[-1] = h[0:2] + (gki.tasknameStack[-1],) + h[3:]
 
-	def gwdestroy(self):
+	def translate(self, gkiMetacode, redraw=0):
 
-		# delete self-references to allow this to be reclaimed
-		del self.gcursor
-		gwm.delete(self.windowName)
-		# protect against bugs that try to access deleted object
-		self.gwidget = None
-
-	# here's where GkiKernel methods start
-
-	def _glAppend(self, opcode, *args):
-
-		"""append a 2-tuple (gl_function, args) to the glBuffer"""
-		if opcode == gki.GKI_CLEARWS:
-			self.clear()
-		glfunc = glFunctionTable[opcode]
-		if glfunc is not None:
-			# add the window to the args
-			self.glBuffer.append((glfunc,(self,) + args))
-
-	def clear(self, win=None):
-		if not win:
-			win = self.gwidget
-		self.gkibuffer.reset()
-		self.glBuffer.reset()
-		self.wcs = None
-		win.immediateRedraw()
-		win.status.updateIO(text=" ")
-
-	def translate(self, gkiMetacode):
-
-		gki.gkiTranslate(gkiMetacode, self.functionTable)
-		win = self.gwidget
-		glbuf = self.glBuffer
+		if redraw:
+			table = self.redrawFunctionTable
+		else:
+			table = self.functionTable
+		gki.gkiTranslate(gkiMetacode, table)
 		# render new stuff immediately
-		function, args = glbuf.getNextCall()
-		while function:
-			apply(function, args)
-			function, args = glbuf.getNextCall()
-		glFlush()
+		self.incrPlot()
 
 	def control_openws(self, arg):
 
-		global _errorMessageCount
-		_errorMessageCount = 0
+		self._errorMessageCount = 0
 		mode = arg[0]
-		win = self.gwidget
 		ta = self.textAttributes
 		ta.setFontSize(self)
 		self.raiseWindow()
 		# redirect stdin & stdout to status line
-		self.stdout = StatusLine(self.gwidget, self.windowName)
+		self.stdout = self.StatusLine
 		self.stdin = self.stdout
 		# disable stderr while graphics is active (to supress xgterm gui
 		# messages)
 		self.stderr = DevNullError()
 		if mode == 5:
 			# clear the display
-			self.gkibuffer.reset()
-			self.glBuffer.reset()
-			self.wcs = None
-			win.immediateRedraw()
+			self.clear()
 		elif mode == 4:
 			# append, i.e., do nothing!
 			pass
@@ -245,28 +722,29 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 			pass
 
 	def raiseWindow(self):
-		if self.top.state() != 'normal':
+
+		if self.top.state() != Tkinter.NORMAL:
 			self.top.deiconify()
 		self.top.tkraise()
 
 	def control_clearws(self, arg):
-		# apparently this control routine is not used???
+
+		# apparently this control routine is not used?
 		self.clear()
 
 	def control_reactivatews(self, arg):
 
-		global _errorMessageCount
-		_errorMessageCount = 0
+		self._errorMessageCount = 0
 		self.raiseWindow()
-
 		if not self.stdout:
 			# redirect stdout if not already
-			self.stdout = StatusLine(self.gwidget, self.windowName)
+			self.stdout = self.StatusLine
 			self.stdin = self.stdout
 		if not self.stderr:
 			self.stderr = DevNullError()
 
 	def control_deactivatews(self, arg):
+
 		if self.stdout:
 			self.stdout.close()
 			self.stdout = None
@@ -277,12 +755,10 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 
 	def control_setwcs(self, arg):
 
-		win = self.gwidget
-		self.wcs = irafgwcs.IrafGWcs(arg)
+		self.wcs.set(arg)
 
 	def control_getwcs(self, arg):
 
-		win = self.gwidget
 		if not self.wcs:
 			self.errorMessage("Error: can't append to a nonexistent plot!")
 			raise IrafError
@@ -293,8 +769,8 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 
 	def control_closews(self, arg):
 
-		win = self.gwidget
-		win.deactivateSWCursor()  # turn off software cursor
+		gwidget = self.gwidget
+		gwidget.deactivateSWCursor()  # turn off software cursor
 		if self.stdout:
 			self.stdout.close()
 			self.stdout = None
@@ -304,58 +780,201 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 			self.stderr = None
 		wutil.focusController.restoreLast()
 
+	def gcur(self):
+
+		return self.gcursor()
+
+#-----------------------------------------------
+
+class GkiOpenGlKernel(GkiInteractiveBase):
+
+	"""OpenGL graphics kernel implementation"""
+
+	def makeGWidget(self, width=600, height=420):
+
+		"""Make the graphics widget"""
+
+		# Ptogl is local substitute for OpenGL.Tk
+		# (to remove goofy 3d cursor effects)
+		# Import is placed here since it can be slow, so delay import to
+		# a time that a window is really needed. Subsequent imports will
+		# be fast.
+		import Ptogl
+		self.gwidget = Ptogl.Ptogl(self.top,width=width,height=height)
+		self.gwidget.firstPlotDone = 0
+		self.colorManager = glColorManager(self.irafGkiConfig.defaultColors,
+				self.gwidget.rgbamode)
+		self.startNewPage()
+		self._gcursorObject = openglgcur.Gcursor(self)
+		self.gRedraw()
+
+	def gcursor(self):
+
+		"""Return cursor value after key is typed"""
+
+		return self._gcursorObject()
+
+	def taskDone(self, name):
+
+		"""Called when a task is finished"""
+
+		# Hack to prevent the double redraw after first Tk plot
+		self.doubleRedrawHack()
+
+	def update(self):
+
+		"""Update for all Tk events
+		
+		This should not be called unless necessary since it can
+		cause double redraws.  It is used in the imcur task to
+		allow window resize (configure) events to be caught
+		while a task is running.  Possibly it should be called
+		during long-running tasks too, but that will probably
+		lead to more extra redraws"""
+
+		# Hack to prevent the double redraw after first Tk plot
+		self.doubleRedrawHack()
+		self.top.update()
+
+	def doubleRedrawHack(self):
+
+		# This is a hack to prevent the double redraw on first plots.
+		# There is a mysterious Expose event that appears on the
+		# idle list, but not until the Tk loop actually becomes idle.
+		# The only approach that seems to work is to set this flag
+		# and to ignore the event.
+		# This is ugly but appears to work as far as I can tell.
+		gwidget = self.gwidget
+		if not gwidget.firstPlotDone:
+			gwidget.ignoreNextRedraw = 1
+			gwidget.firstPlotDone = 1
+
+	def prepareToRedraw(self):
+
+		"""Clear glBuffer in preparation for complete redraw from metacode"""
+
+		self.glBuffer.reset()
+
+	def getHistory(self):
+
+		"""Additional information for page history"""
+
+		return self.glBuffer
+
+	def setHistory(self, info):
+
+		"""Restore using additional information from page history"""
+
+		self.glBuffer = info
+
+	def startNewPage(self):
+
+		"""Setup for new page"""
+
+		self.glBuffer = GLBuffer()
+
+	def clearPage(self):
+
+		"""Clear buffer for new page"""
+
+		self.glBuffer.reset()
+	
+	def isPageBlank(self):
+
+		"""Returns true if this page is blank"""
+
+		return len(self.glBuffer) == 0
+
+	# -----------------------------------------------
+	# GkiKernel implementation
+
+	def incrPlot(self):
+
+		"""Plot any new commands in the buffer"""
+
+		active = self.gwidget.isSWCursorActive()
+		if active:
+			self.gwidget.deactivateSWCursor()
+		# render new contents of glBuffer
+		for (function, args) in self.glBuffer.getNewCalls():
+			apply(function, args)
+		self.gwidget.flush()
+		if active:
+			self.gwidget.activateSWCursor()
+
 	# special methods that go into the function tables
 
+	def _glAppend(self, gl_function, *args):
+
+		"""append a 2-tuple (gl_function, args) to the glBuffer"""
+
+		self.glBuffer.append((gl_function,args))
+
 	def gki_clearws(self, arg):
-		self._glAppend(gki.GKI_CLEARWS,0)
+
+		# don't put clearws command in the gl buffer, just clear the display
+		self.clear()
 
 	def gki_cancel(self, arg):
+
 		self.gki_clearws(arg)
 
 	def gki_flush(self, arg):
-		self._glAppend(gki.GKI_FLUSH,arg)
+
+		# don't put flush command in gl buffer
+		# render current plot immediately on flush
+		self.incrPlot()
 
 	def gki_polyline(self, arg):
-		self._glAppend(gki.GKI_POLYLINE, gki.ndc(arg[1:]))
+
+		# commit pending WCS changes when draw is found
+		self.wcs.commit()
+		self._glAppend(self.gl_polyline, gki.ndc(arg[1:]))
 
 	def gki_polymarker(self, arg):
-		self._glAppend(gki.GKI_POLYMARKER, gki.ndc(arg[1:]))
+
+		self.wcs.commit()
+		self._glAppend(self.gl_polymarker, gki.ndc(arg[1:]))
 
 	def gki_text(self, arg):
 
+		self.wcs.commit()
 		x = gki.ndc(arg[0])
 		y = gki.ndc(arg[1])
 		text = arg[3:].astype(Numeric.Int8).tostring()
-		self._glAppend(gki.GKI_TEXT, x, y, text)
+		self._glAppend(self.gl_text, x, y, text)
 
-	def gki_fillarea(self, arg): 
+	def gki_fillarea(self, arg):
 
-		self._glAppend(gki.GKI_FILLAREA, gki.ndc(arg[1:]))
+		self.wcs.commit()
+		self._glAppend(self.gl_fillarea, gki.ndc(arg[1:]))
 
-	def gki_putcellarray(self, arg): 
+	def gki_putcellarray(self, arg):
 
-		errorMessage(standardNotImplemented)
+		self.wcs.commit()
+		self.errorMessage(standardNotImplemented % "GKI_PUTCELLARRAY")
 
 	def gki_setcursor(self, arg):
 
 		cursorNumber = arg[0]
-		x = arg[1]/gki.GKI_MAX
-		y = arg[2]/gki.GKI_MAX
-		self._glAppend(gki.GKI_SETCURSOR, cursorNumber, x, y)
+		x = gki.ndc(arg[1])
+		y = gki.ndc(arg[2])
+		self._glAppend(self.gl_setcursor, cursorNumber, x, y)
 
 	def gki_plset(self, arg):
 
 		linetype = arg[0]
 		linewidth = arg[1]/gki.GKI_FLOAT_FACTOR
 		color = arg[2]
-		self._glAppend(gki.GKI_PLSET, linetype, linewidth, color)
+		self._glAppend(self.gl_plset, linetype, linewidth, color)
 
 	def gki_pmset(self, arg):
 
 		marktype = arg[0]
-		marksize = arg[1]/gki.GKI_MAX
+		#XXX Is this scaling for marksize correct?
+		marksize = gki.ndc(arg[1])
 		color = arg[2]
-		self._glAppend(gki.GKI_PMSET, marktype, marksize, color)
+		self._glAppend(self.gl_pmset, marktype, marksize, color)
 
 	def gki_txset(self, arg):
 
@@ -368,7 +987,7 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 		textFont = arg[6]
 		textQuality = arg[7]
 		textColor = arg[8]
-		self._glAppend(gki.GKI_TXSET, charUp, charSize, charSpace, textPath,
+		self._glAppend(self.gl_txset, charUp, charSize, charSpace, textPath,
 			textHorizontalJust, textVerticalJust, textFont,
 			textQuality, textColor)
 
@@ -376,35 +995,34 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 
 		fillstyle = arg[0]
 		color = arg[1]
-		self._glAppend(gki.GKI_FASET, fillstyle, color)
+		self._glAppend(self.gl_faset, fillstyle, color)
 
 	def gki_getcursor(self, arg):
 
-		print "GKI_GETCURSOR"
-		raise standardNotImplemented
-		 
+		raise RuntimeError(standardNotImplemented %  "GKI_GETCURSOR")
+
 	def gki_getcellarray(self, arg):
 
-		print "GKI_GETCELLARRAY"
-		raise standardNotImplemented
+		raise RuntimeError(standardNotImplemented % "GKI_GETCELLARRAY")
 
-	def gki_unknown(self, arg): 
+	def gki_unknown(self, arg):
 
-		errorMessage("GKI_UNKNOWN:\n"+standardWarning)
+		self.errorMessage(standardWarning % "GKI_UNKNOWN")
 
-	def gki_escape(self, arg):
-		print "GKI_ESCAPE"
+	def gRedraw(self):
 
-	def gki_setwcs(self, arg):
-		pass #print "GKI_SETWCS"
-
-	def gki_getwcs(self, arg):
-		print "GKI_GETWCS"
-
+		self.gwidget.tkRedraw()
 
 	def redraw(self, o=None):
 
-		# Note argument is not needed because we only get redraw
+		"""Redraw for expose or resize events
+
+		This method generally should not be called directly -- call
+		gwidget.gkRedraw() instead since it does some other
+		preparations.
+		"""
+
+		# Note argument o is not needed because we only get redraw
 		# events for our own gwidget
 		ta = self.textAttributes
 		ta.setFontSize(self)
@@ -421,46 +1039,133 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 		glDisable(GL_DITHER)
 		glShadeModel(GL_FLAT)
 
+		# finally ready to do the drawing
 		for (function, args) in self.glBuffer.get():
 			apply(function, args)
-		glFlush()
+		self.gwidget.flush()
 
-	def gcur(self): return self.gcursor()
+	#-----------------------------------------------
+	# These are the routines for the innermost loop in the redraw
+	# function.  They are supposed to be stripped down to make
+	# redraws as fast as possible.  (Still could be improved.)
+
+	def gl_flush(self, arg):
+
+		self.gwidget.flush()
+
+	def gl_polyline(self, vertices):
+
+		# First, set all relevant attributes
+		la = self.lineAttributes
+		glPointSize(1.0)
+		glDisable(GL_LINE_SMOOTH)
+		glLineWidth(la.linewidth)
+		stipple = 0
+		clear = 0
+		if la.linestyle == 0:
+			clear = 1 # "clear" linestyle, don't draw!
+		elif la.linestyle == 1:
+			pass # solid line
+		elif 2 <= la.linestyle < len(self.linestyles.patterns):
+			glEnable(GL_LINE_STIPPLE)
+			stipple = 1
+			glLineStipple(1,self.linestyles.patterns[la.linestyle])
+		glBegin(GL_LINE_STRIP)
+		if not clear:
+			self.colorManager.setDrawingColor(la.color)
+		else:
+			self.colorManager.setDrawingColor(0)
+		glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
+		glEnd()
+		if stipple:
+			glDisable(GL_LINE_STIPPLE)
+
+	def gl_polymarker(self, vertices):
+
+		# IRAF only implements points for poly marker, that makes it simple
+		ma = self.markerAttributes
+		clear = 0
+		glPointSize(1)
+		if not clear:
+			self.colorManager.setDrawingColor(ma.color)
+		else:
+			self.colorManager.setDrawingColor(0)
+		glBegin(GL_POINTS)
+		glVertex(Numeric.reshape(vertices, (len(vertices)/2,2)))
+		glEnd()
+
+	def gl_text(self, x, y, text):
+
+		opengltext.softText(self,x,y,text)
+
+	def gl_fillarea(self, vertices):
+
+		fa = self.fillAttributes
+		clear = 0
+		polystipple = 0
+		if fa.fillstyle == 0: # clear region
+			clear = 1
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+		elif fa.fillstyle == 1: # hollow
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+		elif fa.fillstyle >= 2: # solid
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+	#	elif fa.fillstyle > 2: # hatched
+	# This is commented out since PyOpenGL does not currently support
+	# glPolygonStipple!
+	#		if fa.fillstyle > 6: fa.fillstyle = 6
+	#		t = self.hatchfills
+	#		print t
+	#		tp = t.patterns
+	#		print tp, "patterns"
+	#		fill = self.hatchfills.patterns[fa.fillstyle]
+	#		print fill, "fill"
+	#		polystipple = 1
+	#		glEnable(GL_POLYGON_STIPPLE)
+	#		glPolygonStipple(fill)
+		if not clear:
+			self.colorManager.setDrawingColor(fa.color)
+		else:
+			self.colorManager.setDrawingColor(0)
+			# glColor3f(0.,0.,0.)
+		# not a simple rectangle
+		glBegin(GL_POLYGON)
+		glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
+		glEnd()
+		if polystipple:
+			glDisable(GL_POLYGON_STIPPLE)
+
+	def gl_setcursor(self, cursornumber, x, y):
+
+		gwidget = self.gwidget
+		# wutil.MoveCursorTo uses 0,0 <--> upper left, need to convert
+		sx = int(  x   * gwidget.winfo_width())
+		sy = int((1-y) * gwidget.winfo_height())
+		wutil.moveCursorTo(gwidget.winfo_id(), sx, sy)
+
+	def gl_plset(self, linestyle, linewidth, color):
+
+		self.lineAttributes.set(linestyle, linewidth, color)
+
+	def gl_pmset(self, marktype, marksize, color):
+
+		self.markerAttributes.set(marktype, marksize, color)
+
+	def gl_txset(self, charUp, charSize, charSpace, textPath,
+			textHorizontalJust, textVerticalJust,
+			textFont, textQuality, textColor):
+
+		self.textAttributes.set(charUp, charSize, charSpace,
+			textPath, textHorizontalJust, textVerticalJust, textFont,
+			textQuality, textColor)
+
+	def gl_faset(self, fillstyle, color):
+
+		self.fillAttributes.set(fillstyle, color)
 
 
-class DevNullError:
+#-----------------------------------------------
 
-	def __init__(self):
-		pass
-	def write(self, text):
-		pass
-	def flush(self):
-		pass
-	def close(self):
-		pass
-
-class StatusLine:
-
-	def __init__(self, window, name):
-		self.graphicsWindow = window
-		self.windowName = name
-	def readline(self):
-		"""Shift focus to graphics, read line from status, restore focus"""
-		wutil.focusController.setFocusTo(self.windowName,always=1)
-		rv = self.graphicsWindow.status.readline()
-		wutil.focusController.restoreLast()
-		return rv
-	def write(self, text):
-		self.graphicsWindow.status.updateIO(text=string.strip(text))
-	def flush(self):
-		self.graphicsWindow.update_idletasks()
-	def close(self):
-		# clear status line
-		self.graphicsWindow.status.updateIO(text="")
-	def isatty(self):
-		return 1
-	def fileno(self):
-		return sys.__stdout__.fileno()
 
 class glColorManager:
 
@@ -491,13 +1196,17 @@ class glColorManager:
 		# call setColors to allocate colors after widget is created
 
 	def defineColor(self, colorindex, red, green, blue):
+
 		"""Color list consists of color triples. This method only
 		sets up the desired color set, it doesn't allocate any colors
 		from the colormap in color index mode."""
+
 		self.colorset[colorindex] = (red, green, blue)
 
 	def setColors(self, widget):
+
 		"""Does nothing in rgba mode, allocates colors in index mode"""
+
 		if self.rgbamode:
 			return
 		for i in xrange(len(self.indexmap)):
@@ -507,7 +1216,9 @@ class glColorManager:
 							   self.colorset[i][2])
 
 	def setDrawingColor(self, irafColorIndex):
+
 		"""Apply the specified iraf color to the current OpenGL drawing
+
 		state using the appropriate mode."""
 		if self.rgbamode:
 			color = self.colorset[irafColorIndex]
@@ -515,160 +1226,7 @@ class glColorManager:
 		else:
 			glIndex(self.indexmap[irafColorIndex])
 
-
-#***********************************************************
-# These are the routines for the innermost loop in the redraw
-# function.  They are supposed to be stripped down to make
-# redraws as fast as possible.  (Still could be improved.)
-
-def gl_flush(win, arg):
-	glFlush()
-
-def gl_polyline(win, vertices):
-
-	gwidget = win.gwidget
-	# First, set all relevant attributes
-	cursorActive =  gwidget.isSWCursorActive()
-	if cursorActive:
-		gwidget.SWCursorSleep()
-	la = win.lineAttributes
-	glPointSize(1.0)
-	glDisable(GL_LINE_SMOOTH)
-	glLineWidth(la.linewidth)
-	stipple = 0
-	clear = 0
-	if la.linestyle == 0: clear = 1 # "clear" linestyle, don't draw!
-	elif la.linestyle == 1: pass # solid line
-	elif 2 <= la.linestyle < len(win.linestyles.patterns):
-		glEnable(GL_LINE_STIPPLE)
-		stipple = 1
-		glLineStipple(1,win.linestyles.patterns[la.linestyle])
-	glBegin(GL_LINE_STRIP)
-	if not clear:
-		win.colorManager.setDrawingColor(la.color)
-	else:
-		win.colorManager.setDrawingColor(0)
-	glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
-	glEnd()
-	if stipple:
-		glDisable(GL_LINE_STIPPLE)
-	if cursorActive:
-		gwidget.SWCursorWake()
-
-def gl_polymarker(win, vertices):
-
-	gwidget = win.gwidget
-	# IRAF only implements points for poly marker, that makes it real simple
-	cursorActive = gwidget.isSWCursorActive()
-	ma = win.markerAttributes
-	clear = 0
-	glPointSize(1)
-	if not clear:
-		win.colorManager.setDrawingColor(ma.color)
-	else:
-		win.colorManager.setDrawingColor(0)
-	if cursorActive:
-		gwidget.SWCursorSleep()
-	glBegin(GL_POINTS)
-	glVertex(Numeric.reshape(vertices, (len(vertices)/2,2)))
-	glEnd()
-	if cursorActive:
-		gwidget.SWCursorWake()
-
-def gl_text(win, x, y, text):
-
-	gwidget = win.gwidget
-	cursorActive =  gwidget.isSWCursorActive()
-	if cursorActive:
-		gwidget.SWCursorSleep()
-	opengltext.softText(win,x,y,text)
-	if cursorActive:
-		gwidget.SWCursorWake()
-
-def gl_fillarea(win, vertices):
-
-	gwidget = win.gwidget
-	cursorActive =  gwidget.isSWCursorActive()
-	if cursorActive:
-		gwidget.SWCursorSleep()
-	fa = win.fillAttributes
-	clear = 0
-	polystipple = 0
-	if fa.fillstyle == 0: # clear region
-		clear = 1
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-	elif fa.fillstyle == 1: # hollow
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-	elif fa.fillstyle >= 2: # solid
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-#	elif fa.fillstyle > 2: # hatched
-# This is commented out since PyOpenGL does not currently support
-# glPolygonStipple!
-#		if fa.fillstyle > 6: fa.fillstyle = 6
-#		t = win.hatchfills
-#		print t
-#		tp = t.patterns
-#		print tp, "patterns"
-#		fill = win.hatchfills.patterns[fa.fillstyle]
-#		print fill, "fill"
-#		polystipple = 1
-#		glEnable(GL_POLYGON_STIPPLE)
-#		glPolygonStipple(fill)
-	if not clear:
-		win.colorManager.setDrawingColor(fa.color)
-	else:
-		win.colorManager.setDrawingColor(0)
-#		glColor3f(0.,0.,0.)
-	# not a simple rectangle
-	glBegin(GL_POLYGON)
-	glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
-	glEnd()
-	if polystipple:
-		glDisable(GL_POLYGON_STIPPLE)
-	if cursorActive:
-		gwidget.SWCursorWake()
-
-def gl_setcursor(win, cursornumber, x, y):
-
-	gwidget = win.gwidget
-	# wutil.MoveCursorTo uses 0,0 <--> upper left, need to convert
-	sy = gwidget.winfo_height() - y
-	sx = x
-	wutil.moveCursorTo(gwidget.winfo_id(), sx, sy)
-
-def gl_plset(win, linestyle, linewidth, color):
-
-	win.lineAttributes.set(linestyle, linewidth, color)
-
-def gl_pmset(win, marktype, marksize, color):
-
-	win.markerAttributes.set(marktype, marksize, color)
-
-def gl_txset(win, charUp, charSize, charSpace, textPath, textHorizontalJust,
-			 textVerticalJust, textFont, textQuality, textColor):
-
-	win.textAttributes.set(charUp, charSize, charSpace,
-		textPath, textHorizontalJust, textVerticalJust, textFont,
-		textQuality, textColor)
-
-def gl_faset(win, fillstyle, color):
-
-	win.fillAttributes.set(fillstyle, color)
-
-glFunctionTable = (gki.GKI_MAX_OP_CODE+1)*[None]
-glFunctionTable[gki.GKI_FLUSH] = gl_flush
-glFunctionTable[gki.GKI_POLYLINE] = gl_polyline
-glFunctionTable[gki.GKI_POLYMARKER] = gl_polymarker
-glFunctionTable[gki.GKI_TEXT] = gl_text
-glFunctionTable[gki.GKI_FILLAREA] = gl_fillarea
-glFunctionTable[gki.GKI_SETCURSOR] = gl_setcursor
-glFunctionTable[gki.GKI_PLSET] = gl_plset
-glFunctionTable[gki.GKI_PMSET] = gl_pmset
-glFunctionTable[gki.GKI_TXSET] = gl_txset
-glFunctionTable[gki.GKI_FASET] = gl_faset
-
-
-#********************************************
+#-----------------------------------------------
 
 class GLBuffer:
 
@@ -682,12 +1240,16 @@ class GLBuffer:
 
 		self.buffer = None
 		self.bufferSize = 0
-		self.bufferEnd = 0 
+		self.bufferEnd = 0
 		self.nextTranslate = 0
+
+	def __len__(self):
+
+		return self.bufferEnd
 
 	def reset(self):
 
-		# discard everything up to nextTranslate pointer
+		"""Discard everything up to nextTranslate pointer"""
 
 		newEnd = self.bufferEnd - self.nextTranslate
 		if newEnd > 0:
@@ -701,7 +1263,7 @@ class GLBuffer:
 
 	def append(self, funcargs):
 
-		# append a single (function,args) tuple to the list
+		"""Append a single (function,args) tuple to the list"""
 
 		if self.bufferSize < self.bufferEnd + 1:
 			# increment buffer size and copy into new array
@@ -715,21 +1277,70 @@ class GLBuffer:
 
 	def get(self):
 
+		"""Get current contents of buffer
+
+		Note that this returns a view into the Numeric array,
+		so if the return value is modified the buffer will change too.
+		"""
+
 		if self.buffer:
 			return self.buffer[0:self.bufferEnd]
 		else:
 			return []
 
-	def getNextCall(self):
-		"""Return a tuple with (function, args) for next call in buffer.
-		Returns (None,None) on end-of-buffer."""
+	def getNewCalls(self):
+
+		"""Return tuples (function, args) with all new calls in buffer"""
+
 		ip = self.nextTranslate
 		if ip < self.bufferEnd:
-			retval = self.buffer[ip]
-			self.nextTranslate = ip + 1
-			return retval
+			self.nextTranslate = self.bufferEnd
+			return self.buffer[ip:self.bufferEnd]
 		else:
-			return (None, None)
+			return []
+
+#-----------------------------------------------
+
+class DevNullError:
+
+	def __init__(self):
+		pass
+	def write(self, text):
+		pass
+	def flush(self):
+		pass
+	def close(self):
+		pass
+
+
+class StatusLine:
+
+	def __init__(self, status, name):
+		self.status = status
+		self.windowName = name
+
+	def readline(self):
+		"""Shift focus to graphics, read line from status, restore focus"""
+		wutil.focusController.setFocusTo(self.windowName)
+		rv = self.status.readline()
+		return rv
+
+	def write(self, text):
+		self.status.updateIO(text=string.strip(text))
+
+	def flush(self):
+		self.status.update_idletasks()
+
+	def close(self):
+		# clear status line
+		self.status.updateIO(text="")
+
+	def isatty(self):
+		return 1
+
+	def fileno(self):
+		return sys.__stdout__.fileno()
+
 
 class IrafGkiConfig:
 
@@ -934,3 +1545,4 @@ class MarkerAttributes:
 	def set(self, markertype, size, color):
 
 		self.color = color
+

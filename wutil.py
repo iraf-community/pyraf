@@ -86,7 +86,7 @@ def getTermWindowSize():
 	if magicConstant is None:
 		raise Exception("platform isn't supported: "+platform)
 
-	# define string to serve as memory area to recieve copy of structure
+	# define string to serve as memory area to receive copy of structure
 	# created by IOCTL call
 	tstruct = ' '*20 # that should be more than enough memory
 	# xxx exception handling needed (but what exception to catch?)
@@ -285,7 +285,7 @@ class TerminalFocusEntity(FocusEntity):
 		if magicConstant is None:
 			raise Exception("platform isn't supported: "+platform)
 
-		# define string to serve as memory area to recieve copy of structure
+		# define string to serve as memory area to receive copy of structure
 		# created by IOCTL call
 		tstruct = ' '*20 # that should be more than enough memory
 		# xxx exception handling needed (but what exception to catch?)

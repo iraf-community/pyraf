@@ -1,9 +1,9 @@
 // cdl interface bindings for python 
 %module cdl
 %{
-#include "cdl.h"
 #include "Python.h"
 #include "arrayobject.h"
+#include "cdl.h"
 %}
 
 %init %{
@@ -93,10 +93,5 @@
 
 %}
 #define SWIGSTUFF
-%include "/data/eclipse2/perry/scdl/cdl.h"
-
-
-
-
-
+%include "cdl.h"
 

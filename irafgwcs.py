@@ -1,5 +1,10 @@
 """irafgwcs.py: WCS handling for graphics
 
+This contains some peculiar code to work around bugs in splot (and
+possibly other tasks) where the WCS for an existing plot gets changed
+before the plot is cleared.  I save the changed wcs in self.pending and
+only commit the change when it appears to really be applicable.
+
 $Id$
 """
 
@@ -20,26 +25,49 @@ class IrafGWcs:
 	"""Class to handle the IRAF Graphics World Coordinate System
 	Structure"""
 
-	def __init__(self, arg):
+	def __init__(self, arg=None):
+		self.wcs = None
+		self.pending = None
+		self.set(arg)
 
+	def commit(self):
+		if self.pending:
+			self.wcs = self.pending
+			self.pending = None
+
+	def clearPending(self):
+		self.pending = None
+
+	def __nonzero__(self):
+		self.commit()
+		return self.wcs is not None
+
+	def set(self, arg=None):
+		"""Set wcs from metacode stream"""
+		if arg is None:
+			# commit immediately if arg=None
+			self.wcs = None
+			self.pending = None
+			return
 		wcsStruct = arg[1:]
 		if arg[0] != len(wcsStruct):
-			print "Error: inconsistency in length of WCS graphics structure"
-			raise IrafError
-		self.wcs = [None]*WCS_SLOTS
+			raise IrafError("Inconsistency in length of WCS graphics structure")
+		self.pending = [None]*WCS_SLOTS
 		for i in xrange(WCS_SLOTS):
 			record = wcsStruct[WCS_RECORD_SIZE*i:WCS_RECORD_SIZE*(i+1)]
 			# read 8 4 byte floats from beginning of record
 			fvals = Numeric.fromstring(record[:8*2].tostring(),Numeric.Float32)
 			# read 3 4 byte ints after that
 			ivals = Numeric.fromstring(record[8*2:].tostring(),Numeric.Int32)
-			self.wcs[i] = tuple(fvals) + tuple(ivals)
+			self.pending[i] = tuple(fvals) + tuple(ivals)
+		if self.wcs is None:
+			self.commit()
 
 	def pack(self):
 
 		"""Return the WCS in the original IRAF format"""
 
-
+		self.commit()
 		wcsStruct = Numeric.zeros(WCS_RECORD_SIZE * WCS_SLOTS, Numeric.Int16)
 		for i in xrange(WCS_SLOTS):
 			x = self.wcs[i]
@@ -57,6 +85,7 @@ class IrafGWcs:
 		"""Transform x,y to wcs coordinates for the given
 		wcs (integer 0-16) and return as a 2-tuple"""
 
+		self.commit()
 		if wcsID == 0: return x, y
 
 		# Since transformation is defined by a direct linear (or log) mapping
@@ -80,7 +109,7 @@ class IrafGWcs:
 		elif dimension == 'y':
 			w1,w2,s1,s2,type = wy1,wy2,sy1,sy2,yt
 		if (s2-s1) == 0.:
-			raise "Error, IRAF graphics WCS is singular!"
+			raise IrafError("IRAF graphics WCS is singular!")
 		fract = (coord-s1)/(s2-s1)
 		if type == LINEAR:
 			val = (w2-w1)*fract + w1
@@ -89,7 +118,7 @@ class IrafGWcs:
 			lval = (lw2-lw1)*fract + lw1
 			val = 10**lval
 		else:
-			raise "Error, Unknown or unsupported axis plotting type"
+			raise IrafError("Unknown or unsupported axis plotting type")
 		return val
 	
 	def _isWcsDefined(self, i):
@@ -121,6 +150,7 @@ class IrafGWcs:
 		#   of the viewport border, the one that is closest is chosen
 		# 5 in case of ties, the higher number wcs is chosen.
 		
+		self.commit()
 		index = []
 		newindex = []
 		dist = []
@@ -159,4 +189,4 @@ class IrafGWcs:
 		# now return transform of minimum distance viewport
 		#  reverse is used to give priority to highest value 
 		return self.transform(x,y,dist.reverse.index(minDist)+1)
-			
+

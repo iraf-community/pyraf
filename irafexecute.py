@@ -11,6 +11,11 @@ import iraf, gki, irafutils, iraftask
 
 IPC_PREFIX = Numeric.array([01120],Numeric.Int16).tostring()
 
+# weirdo protocol to get output from task back to subprocess
+# definitions from cl/task.h and lib/clio.h
+IPCOUT = "IPC$IPCIO-OUT"
+IPCDONEMSG = "# IPC$IPCIO-FINISHED\n"
+
 class IrafProcessError(Exception):
 	pass
 
@@ -268,6 +273,9 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 
 	# Run it
 	try:
+		taskname = task.getName()
+		# do graphics task initialization
+		gki.kernel.taskStart(taskname)
 		focusMark = wutil.focusController.getCurrentMark()
 		gki.kernel.pushStdio(None,None,None)
 		try:
@@ -276,7 +284,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 			wutil.focusController.restoreToMark(focusMark)
 			gki.kernel.popStdio()
 		# do any cleanup needed on task completion
-		gki.kernel.taskDone()
+		gki.kernel.taskDone(taskname)
 	except KeyboardInterrupt, exc:
 		# On keyboard interrupt (^C), kill the subprocess
 		processCache.kill(irafprocess)
@@ -746,7 +754,36 @@ class IrafProcess:
 			else:
 				cmd = self.msg
 				self.msg = ""
-			iraf.clExecute(cmd)
+			if not (string.find(cmd, IPCOUT) >= 0):
+				# normal case -- execute the CL script code
+				iraf.clExecute(cmd)
+			else:
+				#
+				# Bizzaro protocol -- redirection to file with special
+				# name given by IPCOUT causes output to be written back
+				# to subprocess instead of to stdout.
+				#
+				# I think this only occurs one place in the entire system
+				# (in clio/clepset.x) so I'm not trying to handle it robustly.
+				# Just raise an exception if it does not fit my preconceptions.
+				#
+				ll = -(len(IPCOUT)+3)
+				if cmd[ll:] != "> %s\n" % IPCOUT:
+					raise IrafProcessError(
+						"Error: cannot understand IPCOUT syntax in `%s'"
+						% (cmd,))
+				sys.stdout.flush()
+				# strip the redirection off and capture output of command
+				saveout = sys.stdout
+				try:
+					sys.stdout = cStringIO.StringIO()
+					iraf.clExecute(cmd[:ll]+"\n")
+					# send it off to the task with special flag line at end
+					sys.stdout.write(IPCDONEMSG)
+					self.writeString(sys.stdout.getvalue())
+					sys.stdout.close()
+				finally:
+					sys.stdout = saveout
 		elif mcmd.group('stty'):
 			# terminal window size
 			if self.stdoutIsatty:

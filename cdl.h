@@ -212,7 +212,22 @@ struct Marker {
 
 
 CDLPtr cdl_open(char *imtdev);
+
+#ifdef SWIGSTUFF
+/* except is used to wrap function with threading enable and disable */
+%except(python) {
+Py_BEGIN_ALLOW_THREADS
+$function
+Py_END_ALLOW_THREADS
+}
 char cdl_readCursor(CDLPtr cdl, int sample, float *x_out, float *y_out, int *wcs_out, char *key_out_1char);
+%except(python); /* disable special processing */
+#endif
+
+#ifndef SWIGSTUFF
+char cdl_readCursor(CDLPtr cdl, int sample, float *x_out, float *y_out, int *wcs_out, char *key_out_1char);
+#endif
+
 int cdl_setCursor(CDLPtr cdl, int x, int y, int wcs);
 int cdl_setWCS(CDLPtr cdl, char *imname, char *imtitle, float a, float b, float c, float d, float tx, float ty, float z1, float z2, int zt);
 int cdl_getWCS(CDLPtr cdl, char *name_out, char *title_out, float *a_out, float *b_out, float *c_out, float  *d_out, float *tx_out, float *ty_out, float *z1_out, float *z2_out, int *zt_out);

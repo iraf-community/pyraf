@@ -105,6 +105,7 @@ class IrafCompleter(Completer):
 			# insert 4 spaces for tabs
 			# Note that readline adds an additional blank
 			#XXX is converting to blanks really a good idea?
+			#XXX ought to allow user to change this mapping
 			return ["   "]
 		# if this is not the first token on the line, use a different
 		# completion strategy
@@ -155,8 +156,14 @@ class IrafCompleter(Completer):
 		"""Compute matches for tokens when not at start of line"""
 		# Check first character following initial alphabetic string.
 		# If next char is alphabetic (or null) use filename matches.
+		# Also use filename matches if line starts with '!'.
 		# Otherwise use matches from Python dictionaries.
 		lt = len(line)-len(text)
+		if line[:1] == "!":
+			# Matching filename for OS escapes
+			# Ideally would use tcsh-style matching of commands
+			# as first argument, but that looks unreasonably hard
+			return self.filename_matches(text, line[:lt])
 		m = self.taskpat.match(line)
 		if m is None or keyword.iskeyword(m.group(1)):
 			if line[lt-1:lt] in ['"', "'"]:

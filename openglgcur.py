@@ -4,7 +4,7 @@ implement IRAF gcur functionality
 $Id$
 """
 
-import string, os, sys, Numeric
+import string, os, sys, Numeric, Tkinter
 import gwm, wutil, iraf, openglcmd, gki
 
 # The following class attempts to emulate the standard IRAF gcursor
@@ -35,28 +35,39 @@ class Gcursor:
 		
 		# bind event handling from this graphics window
 		self.window.raiseWindow()
-		self.gwidget.interactive = 1
-		self.top.update()
+		self.window.update()
 		wutil.focusController.setFocusTo(self.window)
-		if self.gwidget.lastX is not None:
-			self.gwidget.activateSWCursor(
-				float(self.gwidget.lastX)/self.gwidget.winfo_width(),
-				float(self.gwidget.lastY)/self.gwidget.winfo_height())
-		else:
-			self.gwidget.activateSWCursor()
+		self.cursorOn()
 		self.bind()
-		self.gwidget.ignoreNextRedraw = 1
 		activate = self.window.getStdout() is None
 		if activate:
 			self.window.control_reactivatews(None)
-		self.top.mainloop()
-		self.unbind()
-		self.gwidget.deactivateSWCursor()
+		try:
+			self.top.mainloop()
+		finally:
+			try:
+				self.unbind()
+				self.cursorOff()
+			except Tkinter.TclError:
+				pass
 		if activate:
 			self.window.control_deactivatews(None)
+		return self.retString
+
+	def cursorOn(self):
+		"""Turn cross-hair cursor on"""
+		if self.gwidget.lastX is not None:
+			self.gwidget.activateSWCursor(
+				(self.gwidget.lastX+0.5)/self.gwidget.winfo_width(),
+				(self.gwidget.lastY+0.5)/self.gwidget.winfo_height())
+		else:
+			self.gwidget.activateSWCursor()
+
+	def cursorOff(self):
+		"""Turn cross-hair cursor off"""
+		self.gwidget.deactivateSWCursor()
 		self.gwidget.lastX = self.x
 		self.gwidget.lastY = self.y
-		return self.retString
 
 	def bind(self):
 	
@@ -89,16 +100,16 @@ class Gcursor:
 		"""Do an immediate cursor read and return coordinates in
 		NDC coordinates"""
 
-		win = self.gwidget
-		sx = win.winfo_pointerx() - win.winfo_rootx()
-		sy = win.winfo_pointery() - win.winfo_rooty()
+		gwidget = self.gwidget
+		sx = gwidget.winfo_pointerx() - gwidget.winfo_rootx()
+		sy = gwidget.winfo_pointery() - gwidget.winfo_rooty()
 		self.x = sx
 		self.y = sy
 		# get current window size
-		winSizeX = self.gwidget.winfo_width()
-		winSizeY = self.gwidget.winfo_height()
-		ndcX = float(sx)/winSizeX
-		ndcY = float(winSizeY - sy)/winSizeY
+		winSizeX = gwidget.winfo_width()
+		winSizeY = gwidget.winfo_height()
+		ndcX = (sx+0.5)/winSizeX
+		ndcY = (winSizeY-0.5-sy)/winSizeY
 		return ndcX, ndcY
 
 	def getMousePosition(self, event):
@@ -108,22 +119,22 @@ class Gcursor:
 
 	def moveCursorRelative(self, event, deltaX, deltaY):
 		
-		gwin = self.gwidget
+		gwidget = self.gwidget
 		# only force focus if window is viewable
 		if not wutil.isViewable(self.top.winfo_id()):
 			return
 		# if no previous position, ignore
 		newX = event.x + deltaX
 		newY = event.y + deltaY
-		if (newX < 0):
+		if newX < 0:
 			newX = 0
-		if (newY < 0):
+		if newY < 0:
 			newY = 0
-		if (newX >= gwin.winfo_width()):
-			newX = gwin.winfo_width() - 1
-		if (newY >= gwin.winfo_height()):
-			newY = gwin.winfo_height() - 1
-		wutil.moveCursorTo(gwin.winfo_id(),newX,newY)
+		if newX >= gwidget.winfo_width():
+			newX = gwidget.winfo_width() - 1
+		if newY >= gwidget.winfo_height():
+			newY = gwidget.winfo_height() - 1
+		wutil.moveCursorTo(gwidget.winfo_id(),newX,newY)
 
 	def moveUp(self, event): self.moveCursorRelative(event, 0, -1)
 	def moveDown(self, event): self.moveCursorRelative(event, 0, 1)
@@ -153,39 +164,44 @@ class Gcursor:
 		x,y = self.getNDCCursorPos()
    		if self.markcur and key not in 'q?:=UR':
 		   	metacode = openglcmd.markCross(x,y)
-			openglcmd.appendMetacode(metacode)
+			self.appendMetacode(metacode)
 		if key == ':':
 			colonString = self.readString(prompt=": ")
-			if colonString[0] == '.':
-				if colonString[1:] == 'markcur+':
-					self.markcur = 1
-				elif colonString[1:] == 'markcur-':
-					self.markcur = 0
-				elif colonString[1:] == 'markcur':
-					self.markcur = not self.markcur
+			if colonString:
+				if colonString[0] == '.':
+					if colonString[1:] == 'markcur+':
+						self.markcur = 1
+					elif colonString[1:] == 'markcur-':
+						self.markcur = 0
+					elif colonString[1:] == 'markcur':
+						self.markcur = not self.markcur
+					else:
+						print "Don't handle this CL level gcur :. commands."
+						print "Please check back later."
 				else:
-					print "Don't handle this CL level gcur :. commands."
-					print "Please check back later."
-			else:
-				self._setRetString(key,x,y,colonString)
+					self._setRetString(key,x,y,colonString)
 		elif key == '=':
 			# snap command - print the plot
 			gki.printPlot(self.window)
 		elif key in string.uppercase:
 			if   key == 'R':
-				openglcmd.redrawOriginal()
+				self.window.redrawOriginal()
 			elif key == 'T':
 				textString = self.readString(prompt="Annotation string: ")
 				metacode = openglcmd.text(textString,x,y)
-				openglcmd.appendMetacode(metacode)
+				self.appendMetacode(metacode)
 			elif key == 'U':
-				openglcmd.undo()
+				self.window.undoN()
 			else:
 				print "Not quite ready to handle this particular" + \
 					  "CL level gcur command."
 				print "Please check back later."
 		else:
 			self._setRetString(key,x,y,"")
+
+	def appendMetacode(self, metacode):
+		# appended code is undoable
+		self.window.append(metacode, 1)
 
 	def getShiftKey(self, event):
 

@@ -33,9 +33,48 @@
  * and things like that.
  *
  * $Log$
- * Revision 1.2  2000/04/18 14:18:30  perry
- * Updated to reflect the changed interface to the readCursor
- * routine
+ * Revision 1.3  2000/11/03 22:19:06  rlw
+ * Changes in pyraf version 0.8.5 (2000Nov03)
+ *
+ * Changes visible to users:
+ *
+ * - Added menu bar to graphics window.  Allows print, undo/redo, access to previous plots, creation of new windows, changing window focus.
+ * - Fixed bugs in the multiple-redraw handling.  The approach being used is fairly straightforward and clean.  The only remaining bug I know of is a double redraw if imexam is the first task run.
+ * - Improved accuracy of graphics coordinate conversions.  E.g., previously if :.markcur was set, the marks did not line up with the cursor position.  Now the cursor, marks, text, etc. are accurately placed in the window.
+ *
+ * Module changes:
+ *
+ * - gki: Improve mapping between pixel, NDC, and GL coordinates so that cursor and plot positions are now accurate.  Fixed a bug in undo.  Add redo to put undone items back on plot.  Added functionality to support splitting metacode buffers at page boundaries.  Add hooks to allow different behavior on initial draw and redraws (needed for page splitting.)  Eliminated some (now) unused code.  Added kernel that prints metacode (GkiNoisy) to aid in debugging.  Added tasknameStack to track active IRAF task (for labelling pages) to GkiController.
+ *
+ * - gkiopengl: Major modifications to add menu bar and clean up the redraw-ignore stuff.  Split OpenGL kernel into two classes, one with the menu bar & status line (which should be reusable, perhaps with a bit of work) and one that actually implements the graphics panel using OpenGL-specific code.  Did further cleanup on separating functionality cleanly for multiple windows.  Integrated various help functions into the class.  Still needs some work on ColorManager class, which mixes GL and generic functionality.
+ *
+ * - Ptogl: Eliminate use of delays & event counting to handle multiple redraws -- now uses after_idle list.  That presumably speeded things up a bit and more importantly allowed the ignored-redraw problem to be solved more cleanly.  This fixed some bugs where occasionally redraws were ignored when they should not have been ignored.  Added flush method.  Removed cursor sleep stuff (still need to clean this up more -- can eliminate all the wake code? -- and try using after_idle for cursor draws too.) Improved internal/pixel coordinate conversions.  Removed some dead code (probably there is still more.)
+ *
+ * - irafgwcs: Modified to allow wcs to be None and to allow it to be changed.  (This was needed to permit the wcs to be cached for different pages.) Also improved some exception raising statements. Handles case where splot attempts to change wcs before going to next page.
+ *
+ * - openglgcur: Cleaned up tracking formerly required for ignoring redraws. Made some modifications that allow gcur to work better with multiple windows. Now cleans up if task dies. Handles null colon string (does not exit.)
+ *
+ * - openglcmd: Modified coordinate conversions so that marks and text really do line up with cursor position.  Removed some functions that are not needed with new organization of graphics windows as separate objects. Uses color, linetype for marks.
+ *
+ * - irafimcur: Convert non-printable chars to \0xx form.  Call win.update() method instead of top.update to handle more double redraw cases.
+ *
+ * - irafcompleter: Do filename matches for OS escape lines (!).
+ *
+ * - irafexecute: Now calls kernel.taskStart and .taskDone with taskname as argument before & after running the task. Handles bizarre IPCOUT protocol used by clepset, which allows tasks to run epar on psets.
+ *
+ * - iraftask: Executing psets now silently does nothing.
+ *
+ * - msgiobuffer: Updates panel even when passed string is null.
+ *
+ * - filedlg: Added PersistSaveFileDialog (modeled after PersistLoadFileDialog.) Slightly modified directories searched for user 'epar.optionDB' file.
+ *
+ * - epar: Added visual="best" to Toplevel widget creation so it uses 24-bit color if available.
+ *
+ * - gwm: Use a Tkinter variable to track active window.
+ *
+ * - wutil: trivial edits of comments
+ *
+ * - cdl.i, cdl.h, cdl_wrap.c: Put Perry's modifications that allow threads to run back in (somehow they got lost.)  Removed a spurious reference to Perry's private version of cdl.h
  *
  ************************************************************************/
 
@@ -557,9 +596,9 @@ char *SWIG_GetPtr(char *_c, void **ptr, char *_t)
 
 #define SWIG_name    "cdl"
 
-#include "cdl.h"
 #include "Python.h"
 #include "arrayobject.h"
+#include "cdl.h"
 
 static PyObject* l_output_helper(PyObject* target, PyObject* o) {
     PyObject*   o2;
@@ -674,8 +713,12 @@ static PyObject *_wrap_cdl_readCursor(PyObject *self, PyObject *args) {
         return NULL;
         }
     }
+{
+Py_BEGIN_ALLOW_THREADS
     _result = (char )cdl_readCursor(_arg0,_arg1,_arg2,_arg3,_arg4,_arg5);
-    _resultobj = Py_BuildValue("c",_result);
+
+Py_END_ALLOW_THREADS
+}    _resultobj = Py_BuildValue("c",_result);
 {
     PyObject *o;
     o = PyFloat_FromDouble((double) (*_arg2));

@@ -5,7 +5,7 @@ use by python plotting
 $Id$
 """
 
-import string, wutil, toglcolors
+import string, wutil, toglcolors, Tkinter
 from OpenGL.GL import *
 import gki, gkiopengl
 
@@ -39,9 +39,9 @@ class GraphicsWindowManager(gki.GkiProxy):
 		gki.GkiProxy.__init__(self)
 		self.GkiKernelClass = GkiKernelClass
 		self.windows = {}
-		self.windowName = None
 		# save list of window names in order of creation
 		self.createList = []
+		self.windowVar = None
 
 	def window(self, windowName=None):
 
@@ -55,28 +55,45 @@ class GraphicsWindowManager(gki.GkiProxy):
 		if not self.windows.has_key(windowName):
 			self.windows[windowName] = self.GkiKernelClass(windowName)
 			self.createList.append(windowName)
-		self.windowName = windowName
-		self.stdgraph = self.windows[windowName]
-		self.stdgraph.activate()
-		# register with focus manager
-		wutil.focusController.addFocusEntity(windowName,self.stdgraph)
+		if self.windowVar is None:
+			# create Tk string variable with active window name
+			self.windowVar = Tkinter.StringVar()
+			self.windowVar.trace('w', self._setWindowVar)
+		self.windowVar.set(windowName)
+
+	def _setWindowVar(self, *args):
+		windowName = self.windowVar.get()
+		if not windowName:
+			self.stdgraph = None
+		else:
+			self.stdgraph = self.windows[windowName]
+			self.stdgraph.activate()
+			# register with focus manager
+			wutil.focusController.addFocusEntity(windowName,self.stdgraph)
 
 	def windowNames(self):
 		"""Return list of all window names"""
 		return self.windows.keys()
 
+	def getWindowVar(self):
+		"""Return Tk variable associated with selected window"""
+		return self.windowVar
+
 	def delete(self, windowName):
 
 		window = self.windows.get(windowName)
 		if window is None:
-			print "error: specified graphics window doesn't exist"
+			print "error: graphics window `%s' doesn't exist" % (windowName,)
 		else:
 			changeActiveWindow = (self.stdgraph == window)
 			window.top.destroy()
 			del self.windows[windowName]
+			try:
+				self.createList.remove(windowName)
+			except ValueError:
+				pass
 			if len(self.windows) == 0:
-				self.windowName = None
-				self.stdgraph = None
+				self.windowVar.set('')
 			elif changeActiveWindow:
 				# change to most recently created window
 				while self.createList:
@@ -88,8 +105,7 @@ class GraphicsWindowManager(gki.GkiProxy):
 					# something's messed up
 					# change to randomly selected active window
 					wname = self.windows.keys()[0]
-				self.windowName = wname
-				self.stdgraph =self.windows[wname]
+				self.windowVar.set(wname)
 			wutil.focusController.removeFocusEntity(windowName)
 
 	def flush(self):
@@ -147,15 +163,14 @@ def getActiveWindowName():
 
 	"""Return name of active window (None if none defined)"""
 
-	if _g and _g.windowName:
-		return _g.windowName
+	if _g and _g.windowVar:
+		return _g.windowVar.get() or None
 
 def getActiveWindow():
 
 	"""Get the active window widget (None if none defined)"""
 
 	if _g and _g.stdgraph:
-		#XXX gwidget looks implementation-specific
 		return _g.stdgraph.gwidget
 
 def getActiveGraphicsWindow():

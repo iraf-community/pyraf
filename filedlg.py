@@ -377,3 +377,32 @@ class PersistLoadFileDialog(PersistFileDialog):
 			errorDlg.DialogCleanup()
 			return
 		PersistFileDialog.OkPressed(self)
+
+
+#############################################################################
+#
+# Class:   PersistSaveFileDialog
+# Purpose: Essentially the same as SaveFileDialog, except this class invokes
+#          PersistFileDialog instead of FileDialog.
+#
+#############################################################################
+
+class PersistSaveFileDialog(PersistFileDialog):
+
+	def __init__(self, master, title, filter):
+		PersistFileDialog.__init__(self, master, title, filter)
+		self.top.title(title)
+
+	def OkPressed(self):
+		from utils import file_exists
+		from alert import WarningDialog
+		fileName = self.GetFileName()
+		if file_exists(fileName) == 1:
+			str = 'File ' + fileName + ' exists.\nDo you wish to overwrite it?'
+			warningDlg = WarningDialog(self.top, str)
+			if warningDlg.Show() == 0:
+				warningDlg.DialogCleanup()
+				return
+			warningDlg.DialogCleanup()
+		PersistFileDialog.OkPressed(self)
+

@@ -16,6 +16,8 @@ import os, sys, string
 # startup. (rlw)
 # import iraf, irafpar, iraftask, irafhelp, cStringIO
 import iraf, irafpar, iraftask, irafhelp, openglgcur, cStringIO
+from irafglobals import pyrafDir, userWorkingHome
+
 from eparoption import *
 
 # Constants 
@@ -69,17 +71,22 @@ class EparDialog:
         self.bkgColor = None
 
         # Generate the top epar window
-        self.top = Toplevel(self.parent, bg = self.bkgColor) 
+        self.top = Toplevel(self.parent, bg = self.bkgColor, visual="best") 
         self.top.title(title)
         self.top.iconname(self.iconLabel)
 
         # Read in the epar options database file
+        optfile = "epar.optionDB"
         try:
-             # User's file
-             self.top.option_readfile("./epar.optionDB")
+             # User's current directory
+             self.top.option_readfile(os.path.join(os.curdir,optfile))
         except TclError:
-             # PyRAF file
-             self.top.option_readfile(os.path.dirname(sys.argv[0]) + "/epar.optionDB")
+            try:
+                 # User's startup directory
+                 self.top.option_readfile(os.path.join(userWorkingHome,optfile))
+            except TclError:
+                 # PyRAF default
+                 self.top.option_readfile(os.path.join(pyrafDir,optfile))
 
         # Disable interactive resizing
         self.top.resizable(width = FALSE, height = FALSE)

@@ -8,7 +8,7 @@ GkiKernel is the base class for graphics kernel implementations.  Methods:
 	control() append()
 		Called by irafexecute to plot IRAF GKI metacode.
 	pushStdio() popStdio() getStdin/out/err()
- 		Hooks to allow text I/O to special graphics devices, e.g. the
+		Hooks to allow text I/O to special graphics devices, e.g. the
 		status line.
 	flush()
 		Flush graphics.  May print or write a file for hardcopy devices.
@@ -45,7 +45,8 @@ import os, sys, string, wutil, graphcap, iraf
 BOI = -1  # beginning of instruction sentinel
 NOP = 0	  # no op value
 GKI_MAX = 32767
-GKI_MAX_FLOAT = Numeric.array(GKI_MAX,Numeric.Float32)
+GKI_MAX_FLOAT = float(GKI_MAX)
+NDC_MAX = GKI_MAX_FLOAT/(GKI_MAX_FLOAT+1)
 GKI_MAX_OP_CODE = 27
 GKI_FLOAT_FACTOR = 100.
 MAX_ERROR_COUNT = 7
@@ -148,10 +149,45 @@ class EditHistory:
 	def popLastSize(self):
 		tsize = 0
 		while len(self.editinfo) > 0:
-			marker, size = self.pop()
+			marker, size = self.editinfo.pop()
 			tsize = tsize + size
 			if marker: break
 		return tsize
+
+	def split(self,n):
+		"""Split edit buffer at metacode length n.  Modifies this buffer
+		to stop at n and returns a new EditHistory object with any
+		edits beyond n."""
+		newEditHistory = EditHistory()
+		tsize = 0
+		for i in xrange(len(self.editinfo)):
+			marker, size = self.editinfo[i]
+			tsize = tsize + size
+			if tsize >= n:
+				break
+		else:
+			# looks like all edits stay here
+			return newEditHistory
+		newEditHistory.editinfo = self.editinfo[i+1:]
+		self.editinfo = self.editinfo[:i+1]
+		if tsize != n:
+			# split last edit
+			newEditHistory.editinfo.insert(0, (marker, tsize-n))
+			self.editinfo[i] = (marker, n-(tsize-size))
+		return newEditHistory
+
+def acopy(a):
+	"""Return copy of Numeric array a"""
+	return Numeric.array(a, copy=1)
+
+# GKI opcodes that clear the buffer
+_clearCodes = [
+		GKI_EOF,
+		GKI_OPENWS,
+		GKI_REACTIVATEWS,
+		GKI_CLEARWS,
+		GKI_CANCEL,
+		]
 
 class GkiBuffer:
 
@@ -162,31 +198,41 @@ class GkiBuffer:
 
 	def __init__(self, metacode=None):
 
+		self.init(metacode)
+		self.redoBuffer = []
+
+	def init(self, metacode=None):
+
+		"""Initialize to empty buffer or to metacode"""
+
 		if metacode:
-			self.editHistory = EditHistory()
-			self.undoable = 0
 			self.buffer = metacode
 			self.bufferSize = len(metacode)
 			self.bufferEnd = len(metacode)
-			# nextTranslate is pointer to next element in buffer to be
-			# translated.  It is needed because we may get truncated
-			# messages, leaving some metacode to be prepended to next
-			# message.
-			self.nextTranslate = 0
 		else:
-			self.init()
-
-	def init(self):
-		self.buffer = Numeric.zeros(0, Numeric.Int16)
-		self.bufferSize = 0
-		self.bufferEnd = 0
+			self.buffer = Numeric.zeros(0, Numeric.Int16)
+			self.bufferSize = 0
+			self.bufferEnd = 0
 		self.editHistory = EditHistory()
-		self.undoable = 0
+		self.prepareToRedraw()
+
+	def prepareToRedraw(self):
+
+		"""Reset pointers in preparation for redraw"""
+
+		# nextTranslate is pointer to next element in buffer to be
+		# translated.  It is needed because we may get truncated
+		# messages, leaving some metacode to be prepended to next
+		# message.
 		self.nextTranslate = 0
+		# lastTranslate points to beginning of last metacode translated,
+		# which may need to be removed if buffer is split
+		self.lastTranslate = 0
+		self.lastOpcode = None
 
 	def reset(self):
 
-		# discard everything up to nextTranslate pointer
+		"""Discard everything up to nextTranslate pointer"""
 
 		newEnd = self.bufferEnd - self.nextTranslate
 		if newEnd > 0:
@@ -195,12 +241,34 @@ class GkiBuffer:
 		else:
 			# complete reset so buffer can shrink sometimes
 			self.init()
-		self.nextTranslate = 0
+		self.prepareToRedraw()
+
+	def split(self):
+
+		"""Split this buffer at nextTranslate and return a new buffer
+		object with the rest of the metacode.  lastOpcode may be
+		removed if it triggered the buffer split (so we can append
+		more metacode later if desired.)
+		"""
+
+		tail = acopy(self.buffer[self.nextTranslate:self.bufferEnd])
+		if self.lastTranslate < self.nextTranslate and \
+		   self.lastOpcode in _clearCodes:
+			# discard last opcode, it cleared the page
+			self.bufferEnd = self.lastTranslate
+			self.nextTranslate = self.lastTranslate
+		else:
+			# retain last opcode
+			self.bufferEnd = self.nextTranslate
+		# return object of same class as this
+		newbuffer = self.__class__(tail)
+		newbuffer.editHistory = self.editHistory.split(self.bufferEnd)
+		return newbuffer
 
 	def append(self, metacode, isUndoable=0):
 
-		if isUndoable:
-			self.undoable = 1
+		"""Append metacode to buffer"""
+
 		if self.bufferSize < (self.bufferEnd + len(metacode)):
 			# increment buffer size and copy into new array
 			diff = self.bufferEnd + len(metacode) - self.bufferSize
@@ -212,29 +280,68 @@ class GkiBuffer:
 			self.buffer = newbuffer
 		self.buffer[self.bufferEnd:self.bufferEnd+len(metacode)] = metacode
 		self.bufferEnd = self.bufferEnd + len(metacode)
-		if self.undoable:
-			self.editHistory.add(len(metacode), isUndoable)
+		self.editHistory.add(len(metacode), isUndoable)
+
+	def isUndoable(self):
+
+		"""Returns true if there is anything to undo on this plot"""
+
+		return (self.editHistory.NEdits() > 0)
 
 	def undoN(self, nUndo=1):
 
-		for i in xrange(nUndo):
+		"""Undo last nUndo edits and replot.  Returns true if plot changed."""
+
+		changed = 0
+		while nUndo>0:
 			size = self.editHistory.popLastSize()
-			self.bufferEnd = self.bufferEnd - size
 			if size == 0: break
-		if self.bufferEnd <= 0:
-			self.init()
-		# reset translation pointer to beginning so plot gets redone
-		# entirely
-		self.nextTranslate = 0
+			self.bufferEnd = self.bufferEnd - size
+			# add this chunk to end of buffer (use copy, not view)
+			self.redoBuffer.append(
+				acopy(self.buffer[self.bufferEnd:self.bufferEnd+size])
+				)
+			nUndo = nUndo-1
+			changed = 1
+		if changed:
+			if self.bufferEnd <= 0:
+				self.init()
+			# reset translation pointer to beginning so plot gets redone
+			# entirely
+			self.nextTranslate = 0
+			self.lastTranslate = 0
+		return changed
+
+	def isRedoable(self):
+
+		"""Returns true if there is anything to redo on this plot"""
+
+		return len(self.redoBuffer)>0
+
+	def redoN(self, nRedo=1):
+
+		"""Redo last nRedo edits and replot.  Returns true if plot changed."""
+
+		changed = 0
+		while self.redoBuffer and nRedo>0:
+			code = self.redoBuffer.pop()
+			self.append(code, isUndoable=1)
+			nRedo = nRedo-1
+			changed = 1
+		return changed
 
 	def get(self):
+
 		"""Return buffer contents (as Numeric array, even if empty)"""
+
 		return self.buffer[0:self.bufferEnd]
 
 	def getNextCode(self):
+
 		"""Read next opcode and argument from buffer, returning a tuple
 		with (opcode, arg).  Skips no-op codes and illegal codes.
 		Returns (None,None) on end of buffer or when opcode is truncated."""
+
 		ip = self.nextTranslate
 		lenMC = self.bufferEnd
 		buffer = self.buffer
@@ -257,6 +364,8 @@ class GkiBuffer:
 				opcode = buffer[ip+1]
 				arglen = buffer[ip+2]
 				if (ip+arglen) > lenMC: break
+				self.lastTranslate = ip
+				self.lastOpcode = opcode
 				arg = buffer[ip+3:ip+arglen]
 				ip = ip + arglen
 				if ((opcode < 0) or 
@@ -310,6 +419,9 @@ class GkiReturnBuffer:
 			raise Exception("Attempted read on empty gki input buffer")
 
 
+# stack of active IRAF tasks, used to identify source of plot
+tasknameStack = []
+
 class GkiKernel:
 
 	"""Abstract class intended to be subclassed by implementations of GKI
@@ -325,7 +437,7 @@ class GkiKernel:
 		self.stderr = None
 		self._stdioStack = []
 		self.gkibuffer = GkiBuffer() # no harm in allocating, doesn't
-		                             # actually allocate space unless
+									 # actually allocate space unless
 									 # appended to.
 
 	def createFunctionTables(self):
@@ -373,11 +485,11 @@ class GkiKernel:
 
 		# append metacode to the buffer
 		buffer = self.getBuffer()
-   		buffer.append(gkiMetacode, isUndoable)
+		buffer.append(gkiMetacode, isUndoable)
 		# translate and display the metacode
-		self.translate(buffer)
+		self.translate(buffer,0)
 
-	def translate(self, gkiMetacode):
+	def translate(self, gkiMetacode, redraw=0):
 		gkiTranslate(gkiMetacode, self.functionTable)
 
 	def errorMessage(self, text):
@@ -401,7 +513,11 @@ class GkiKernel:
 	def clear(self):
 		self.gkibuffer.reset()
 
-	def taskDone(self):
+	def taskStart(self, name):
+		"""Hook for stuff that needs to be done at start of task"""
+		pass
+
+	def taskDone(self, name):
 		"""Hook for stuff that needs to be done at completion of task"""
 		pass
 
@@ -409,14 +525,32 @@ class GkiKernel:
 
 		# Remove the last nUndo interactive appends to the metacode buffer
 		buffer = self.getBuffer()
-		buffer.undoN(nUndo)
-		self.translate(buffer)
+		if buffer.undoN(nUndo):
+			self.prepareToRedraw()
+			self.translate(buffer,1)
+
+	def redoN(self, nRedo=1):
+
+		# Redo the last nRedo edits to the metacode buffer
+		buffer = self.getBuffer()
+		if buffer.redoN(nRedo):
+			self.translate(buffer,1)
+
+	def prepareToRedraw(self):
+		"""Hook for things that need to be done before redraw from metacode"""
+		pass
 
 	def redrawOriginal(self):
 
 		buffer = self.getBuffer()
 		nUndo =  buffer.editHistory.NEdits()
-		self.undoN(nUndo)
+		if nUndo:
+			self.undoN(nUndo)
+		else:
+			# just redraw it
+			buffer.prepareToRedraw()
+			self.prepareToRedraw()
+			self.translate(buffer,1)
 
 	def clearReturnData(self):
 
@@ -471,18 +605,6 @@ class GkiKernel:
 		# stderr always redirected in graphics mode because IRAF
 		# uses it for GUI code (go figure)
 		return self.stderr or default
-
-
-#*****************************************************************
-
-standardWarning = """
-The graphics kernel for IRAF tasks has just recieved a metacode
-instruction it never expected to see. Please inform the STSDAS
-group of this occurance"""
-
-standardNotImplemented = """
-You have tried to run an IRAF task which requires graphics kernel
-facility not implemented in the Python graphics kernel for IRAF tasks"""
 
 #**********************************************************************
 
@@ -544,13 +666,17 @@ class GkiProxy(GkiKernel):
 		if not self.stdgraph: self.openKernel()
 		return self.stdgraph.undoN(nUndo)
 
+	def prepareToRedraw(self):
+		if self.stdgraph:
+			return self.stdgraph.prepareToRedraw()
+
 	def redrawOriginal(self):
 		if not self.stdgraph: self.openKernel()
 		return self.stdgraph.redrawOriginal()
 
-	def translate(self, gkiMetacode):
+	def translate(self, gkiMetacode, redraw=0):
 		if not self.stdgraph: self.openKernel()
-		return self.stdgraph.translate(gkiMetacode)
+		return self.stdgraph.translate(gkiMetacode,redraw)
 
 	def clearReturnData(self):
 		if not self.stdgraph: self.openKernel()
@@ -616,9 +742,13 @@ class GkiProxy(GkiKernel):
 		if self.stdgraph:
 			self.stdgraph.clear()
 
-	def taskDone(self):
+	def taskStart(self, name):
 		if self.stdgraph:
-			self.stdgraph.taskDone()
+			self.stdgraph.taskStart(name)
+
+	def taskDone(self, name):
+		if self.stdgraph:
+			self.stdgraph.taskDone(name)
 
 class GkiController(GkiProxy):
 
@@ -641,6 +771,20 @@ class GkiController(GkiProxy):
 		self.lastDevName = None
 		self.gcount = 0 # an activity counter
 		self.lastFlushCount = 0
+
+	def taskStart(self, name):
+		# GkiController manages the tasknameStack
+		tasknameStack.append(name)
+		if self.stdgraph:
+			self.stdgraph.taskStart(name)
+
+	def taskDone(self, name):
+		# delete name from stack; pop until we find it if necessary
+		while tasknameStack:
+			lastname = tasknameStack.pop()
+			if lastname == name: break
+		if self.stdgraph:
+			self.stdgraph.taskDone(name)
 
 	def append(self, arg, isUndoable=0):
 
@@ -678,7 +822,7 @@ class GkiController(GkiProxy):
 			device = self.getDevice()
 		devices = getGraphcap()
 		kernel = devices[device]['kf']
-  		if kernel == 'cl':
+		if kernel == 'cl':
 			self.openInteractiveKernel()
 		else:
 			task = devices[device]['tn']
@@ -778,10 +922,6 @@ class GkiNull(GkiKernel):
 		GkiKernel.__init__(self)
 		self.name = 'Null'
 
-	def control(self, gkiMetacode):
-		gkiTranslate(gkiMetacode, self.controlFunctionTable)
-		return self.returnData
-
 	def control_openws(self, arg):
 		raise iraf.IrafError("Unable to plot graphics to screen")
 
@@ -793,8 +933,51 @@ class GkiNull(GkiKernel):
 		raise iraf.IrafError("Attempt to access graphics when "
 			"it isn't available")
 
-	def translate(self, gkiMetacode):
+	def translate(self, gkiMetacode, redraw=0):
 		pass
+
+class GkiNoisy(GkiKernel):
+
+	"""Print metacode stream information"""
+
+	def __init__(self):
+
+		GkiKernel.__init__(self)
+		self.name = 'Noisy'
+
+	def control_openws(self, arg): print 'control_openws'
+	def control_closews(self, arg): print 'control_closews'
+	def control_reactivatews(self, arg): print 'control_reactivatews'
+	def control_deactivatews(self, arg): print 'control_deactivatews'
+	def control_clearws(self, arg): print 'control_clearws'
+	def control_setwcs(self, arg): print 'control_setwcs'
+	def control_getwcs(self, arg): print 'control_getwcs'
+
+	def gki_eof(self, arg): print 'gki_eof'
+	def gki_openws(self, arg): print 'gki_openws'
+	def gki_closews(self, arg): print 'gki_closews'
+	def gki_reactivatews(self, arg): print 'gki_reactivatews'
+	def gki_deactivatews(self, arg): print 'gki_deactivatews'
+	def gki_mftitle(self, arg): print 'gki_mftitle'
+	def gki_clearws(self, arg): print 'gki_clearws'
+	def gki_cancel(self, arg): print 'gki_cancel'
+	def gki_flush(self, arg): print 'gki_flush'
+	def gki_polyline(self, arg): print 'gki_polyline'
+	def gki_polymarker(self, arg): print 'gki_polymarker'
+	def gki_text(self, arg): print 'gki_text'
+	def gki_fillarea(self, arg): print 'gki_fillarea'
+	def gki_putcellarray(self, arg): print 'gki_putcellarray'
+	def gki_setcursor(self, arg): print 'gki_setcursor'
+	def gki_plset(self, arg): print 'gki_plset'
+	def gki_pmset(self, arg): print 'gki_pmset'
+	def gki_txset(self, arg): print 'gki_txset'
+	def gki_faset(self, arg): print 'gki_faset'
+	def gki_getcursor(self, arg): print 'gki_getcursor'
+	def gki_getcellarray(self, arg): print 'gki_getcellarray'
+	def gki_unknown(self, arg): print 'gki_unknown'
+	def gki_escape(self, arg): print 'gki_escape'
+	def gki_setwcs(self, arg): print 'gki_setwcs'
+	def gki_getwcs(self, arg): print 'gki_getwcs'
 
 # Dictionary of all graphcap files known so far
 
@@ -852,7 +1035,7 @@ def printPlot(window=None):
 #********************************
 
 def ndc(intarr):
-	return intarr/GKI_MAX_FLOAT
+	return intarr/(GKI_MAX_FLOAT+1)
 
 def ndcpairs(intarr):
 	f = ndc(intarr)

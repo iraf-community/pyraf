@@ -901,9 +901,10 @@ class IrafPset(IrafTask):
 		if not self.hasParfile():
 			raise KeyError("Pset "+self.getName()+" has no parameter file")
 
-	def run(self,*args,**kw):
+	def _run(self, redirKW, specialKW):
 		# should executing a pset run epar?
-		raise iraf.IrafError("Cannot execute Pset " + self.getName())
+		# currently we silently do nothing
+		pass
 
 # -----------------------------------------------------
 # IRAF Python task class
