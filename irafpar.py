@@ -76,14 +76,16 @@ def IrafParFactory(fields,filename=None,strict=0):
 # Set up minmatch dictionaries for parameter fields
 # -----------------------------------------------------
 
-_getFieldList = ("p_name", "p_xtype", "p_mode", "p_prompt",
+flist = ("p_name", "p_xtype", "p_mode", "p_prompt",
 			"p_value", "p_filename", "p_maximum", "p_minimum")
 _getFieldDict = minmatch.MinMatchDict()
-for _field in _getFieldList: _getFieldDict[_field] = _field
+for field in flist: _getFieldDict.add(field, field)
 
-_setFieldList = ("p_prompt", "p_value", "p_filename", "p_maximum", "p_minimum")
+flist = ("p_prompt", "p_value", "p_filename", "p_maximum", "p_minimum")
 _setFieldDict = minmatch.MinMatchDict()
-for _field in _setFieldList: _setFieldDict[_field] = _field
+for field in flist: _setFieldDict.add(field, field)
+
+del flist, field
 
 # -----------------------------------------------------
 # IRAF parameter base class
@@ -198,17 +200,12 @@ class IrafPar:
 			return str(value)
 
 	def getField(self, field, native=0):
-		ffield = _getFieldDict.get(field)
-		if not ffield:
-			raise SyntaxError(
-				"Unrecognized or unimplemented parameter field " +
-				field + " for parameter " + self.name)
-		elif len(ffield) > 1:
-			raise SyntaxError(
-				"Ambiguous parameter field " +
-				field + " for parameter " + self.name +
-				"\nCould be any of " + `ffield`)
-		field = ffield[0]
+		try:
+			field = _getFieldDict[field]
+		except KeyError, e:
+			# re-raise the exception with a bit more info
+			raise SyntaxError("Cannot get field " + field +
+				" for parameter " + self.name + "\n" + str(e))
 		if field == "p_name": return self.name
 		elif field == "p_xtype": return self.type
 		elif field == "p_mode": return self.mode
@@ -263,15 +260,11 @@ class IrafPar:
 			return
 
 	def setField(self, value, field, check=1):
-		ffield = _setFieldDict.get(field)
-		if not ffield:
+		try:
+			field = _setFieldDict[field]
+		except KeyError, e:
 			raise SyntaxError("Cannot set field " + field +
-				" for parameter " + self.name)
-		elif len(ffield) > 1:
-			raise SyntaxError("Ambiguous field " + field +
-				" for parameter " + self.name +
-				"\nCould be any of " + `ffield`)
-		field = ffield[0]
+				" for parameter " + self.name + "\n" + str(e))
 		if field == "p_prompt":
 			self.prompt = _removeEscapes(_stripQuote(value))
 		elif field == "p_value":
@@ -433,8 +426,9 @@ class IrafParS(IrafPar):
 		# set choice parameter and min-match dictionary from string
 		self.choice = _getChoice(self,s,strict)
 		# minimum-match dictionary for choice list
+		# value is full name of choice parameter
 		self.mmchoice = minmatch.MinMatchDict()
-		for c in self.choice: self.mmchoice[c] = c
+		for c in self.choice: self.mmchoice.add(c, c)
 	def coerceOneValue(self,value,strict=0):
 		if value == None:
 			return ""
@@ -451,25 +445,20 @@ class IrafParS(IrafPar):
 				((type(v) is StringType) and (v[0] == ")")):
 			return v
 		elif self.choice != None:
-			vchoice = self.mmchoice.get(v)
-			if vchoice == None:
-				s = self.choice[0]
-				for i in xrange(len(self.choice)-1):
-					s = s + "|" + str(self.choice[i+1])
-				raise ValueError("Value '" + str(v) +
-					"' is not in choice list for " + self.name +
-					"\nChoices are " + s)
-			elif len(vchoice) > 1:
-				s = self.choice[0]
-				for i in xrange(len(self.choice)-1):
-					s = s + "|" + str(self.choice[i+1])
+			try:
+				v = self.mmchoice[v]
+			except minmatch.AmbiguousKeyError, e:
 				raise ValueError("Ambiguous value '" + str(v) +
 					"' from choice list for " + self.name +
-					"\nChoices are " + s)
+					"\n" + str(e))
+			except KeyError, e:
+				raise ValueError("Value '" + str(v) +
+					"' is not in choice list for " + self.name +
+					"\nChoices are " + string.join(self.choice,"|"))
 		elif (self.min != None and v < self.min) or \
 			 (self.max != None and v > self.max):
-			raise ValueError("Value '" + str(v) + "' is out of min-max range for " +
-				self.name)
+			raise ValueError("Value '" + str(v) +
+				"' is out of min-max range for " + self.name)
 		return v
 
 

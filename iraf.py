@@ -21,19 +21,18 @@ class IrafError(Exception):
 # _vars: all IRAF cl variables (defined with set name=value)
 #
 # _mmtasks: minimum-match dictionary for tasks
-# _mmpkgs: minimum-match dictionary for packages
+# _pkgs: minimum-match dictionary for packages
 # -----------------------------------------------------
 
 # Will want to enhance this to allow a "bye" function that unloads packages.
 # That might be done using a stack of definitions for each task.
 
 _tasks = {}
-_pkgs = {}
 _loaded = {}
 _vars = {}
+_pkgs = minmatch.MinMatchDict()
 
 _mmtasks = minmatch.MinMatchDict()
-_mmpkgs = minmatch.MinMatchDict()
 
 # _loadedPath: loaded packages in order of loading
 # Used as search path to find fully qualified task name
@@ -152,10 +151,9 @@ def init(doprint=1):
 # -----------------------------------------------------
 
 def addPkg(pkg):
-	global _pkgs, _mmpkgs
+	global _pkgs
 	name = pkg.getName()
-	_pkgs[name] = pkg
-	_mmpkgs[name] = name
+	_pkgs.add(name,pkg)
 	addTask(pkg)
 
 # -----------------------------------------------------
@@ -167,7 +165,7 @@ def addTask(task):
 	name = task.getName()
 	fullname = task.getPkgname() + '.' + name
 	_tasks[fullname] = task
-	_mmtasks[name] = fullname
+	_mmtasks.add(name,fullname)
 
 # -----------------------------------------------------
 # load: Load an IRAF package by name
@@ -201,16 +199,11 @@ def run(taskname,args=(),kw={}):
 def getPkg(pkgname):
 	"""Find an IRAF package by name using minimum match.
 	Returns an IrafPkg object."""
-	fullname = _mmpkgs.get(pkgname)
-	if not fullname:
-		raise KeyError("Package "+pkgname+" is not defined")
-	if len(fullname) == 1:
-		return _pkgs[fullname[0]]
-	# ambiguous match is OK only if pkgname is the full name
-	if pkgname not in fullname:
-		raise KeyError("Package '" + pkgname + "' is ambiguous, " +
-			"could be " + `fullname`)
-	return _pkgs[pkgname]
+	try:
+		return _pkgs[pkgname]
+	except KeyError, e:
+		# re-raise the error with a bit more info
+		raise e.__class__("Package "+pkgname+": "+str(e))
 
 # -----------------------------------------------------
 # getTask: Find an IRAF task by name
@@ -229,8 +222,9 @@ def getTask(taskname):
 		return task
 
 	# Look it up in the minimum-match dictionary
+	# Note _mmtasks.getall returns list of full names of all matching tasks
 
-	fullname = _mmtasks.get(taskname)
+	fullname = _mmtasks.getall(taskname)
 	if not fullname:
 		raise KeyError("Task "+taskname+" is not defined")
 	if len(fullname) == 1:

@@ -44,8 +44,6 @@ class IrafTask:
 		self.__parpath = None
 		self.__pars = None
 		self.__pardict = None
-		# __mmpardict is minimum-match parameter dictionary
-		self.__mmpardict = None
 		self.__parDictList = None
 		if filename[0] == '$':
 			# this is a foreign task
@@ -72,6 +70,20 @@ class IrafTask:
 			else:
 				self.__cl = 0
 				self.__pset = 0
+
+	# parameters are accessible as attributes
+
+	def __getattr__(self,name):
+		if name[:1] == '_': raise AttributeError(name)
+		return self.get(name)
+
+	def __setattr__(self,name,value):
+		# hidden Python parameters go into the standard dictionary
+		# (hope there are none of these in IRAF tasks)
+		if name[:1] == '_':
+			self.__dict__[name] = value
+		else:
+			self.set(name,value)
 
 	# public accessor functions for attributes
 
@@ -104,32 +116,26 @@ class IrafTask:
 
 	def setHidden(self,value):     self.__hidden = value
 
-	# Check that parameter exists using minimum-matching for name.
-	# Returns full name.
-	def getParName(self,param):
+	# Get the IrafPar object for a parameter
+	def getPar(self,param):
 		if self.__fullpath == None: self.initTask()
 		if not self.__hasparfile:
 			raise KeyError("Task "+self.__name+" has no parameter file")
-		parlist = self.__mmpardict.get(param)
-		if not parlist:
-			raise KeyError("No such parameter '" +
-				param + "' for task " + self.__name)
-		if len(parlist) > 1:
-			raise KeyError("Ambiguous parameter '" +
-				param + "' for task " + self.__name + "\n" +
-				"Could be " + `parlist`)
-		return parlist[0]
+		try:
+			return self.__pardict[param]
+		except KeyError, e:
+			raise KeyError("Error in parameter '" +
+				param + "' for task " + self.__name +
+				"\n" + str(e))
 
 	# get value for parameter 'param' with minimum-matching
 	# returns a string
 	def get(self,param):
-		param = self.getParName(param)
-		return self.__pardict[param].get()
+		return self.getPar(param).get()
 
 	# set task parameter 'param' to value with minimum-matching
 	def set(self,param,value):
-		param = self.getParName(param)
-		self.__pardict[param].set(value)
+		self.getPar(param).set(value)
 
 	# allow running task using taskname() or with
 	# parameters as arguments, including keyword=value form.
@@ -164,7 +170,7 @@ class IrafTask:
 		# first expand all keywords to their full names
 		fullkw = {}
 		for key in kw.keys():
-			param = self.getParName(key)
+			param = self.getPar(key).name
 			if fullkw.has_key(param):
 				raise SyntaxError("Multiple values given for parameter " + 
 					param + " in task " + self.__name)
@@ -187,9 +193,11 @@ class IrafTask:
 					param + " in task " + self.__name)
 			fullkw[param] = value
 			ipar = ipar+1
+
 		# now set all keyword parameters
 		# XXX Need to add ability to set pset parameters using keywords too
 		for param in fullkw.keys(): self.set(param,fullkw[param])
+
 		# Number of arguments on command line, $nargs, is used by some IRAF
 		# tasks (e.g. imheader).
 		if self.__hasparfile: self.set('$nargs',len(args))
@@ -439,12 +447,10 @@ class IrafTask:
 						raise iraf.IrafError("Cannot find .par file for task " +
 							self.__name)
 				if self.__parpath: self.__pars = irafpar.readpar(self.__parpath)
-				self.__pardict = {}
-				self.__mmpardict = minmatch.MinMatchDict()
+				self.__pardict = minmatch.MinMatchDict()
 				for i in xrange(len(self.__pars)):
 					p = self.__pars[i]
-					self.__pardict[p.name] = p
-					self.__mmpardict[p.name] = p.name
+					self.__pardict.add(p.name, p)
 	def unlearn(self):
 		if self.__fullpath == None: self.initTask()
 		if self.__hasparfile:
@@ -456,12 +462,10 @@ class IrafTask:
 			else:
 				raise iraf.IrafError("Cannot find .par file for task " + self.__name)
 			self.__pars = irafpar.readpar(self.__parpath)
-			self.__pardict = {}
-			self.__mmpardict = minmatch.MinMatchDict()
+			self.__pardict = minmatch.MinMatchDict()
 			for i in xrange(len(self.__pars)):
 				p = self.__pars[i]
-				self.__pardict[p.name] = p
-				self.__mmpardict[p.name] = p.name
+				self.__pardict.add(p.name, p)
 	def scrunchName(self):
 		# scrunched version of filename is chars 1,2,last from package
 		# name and chars 1-5,last from task name
