@@ -9,6 +9,7 @@ R. White, 1999 Jan 25
 import sys, os, string, re, types, time
 import irafpar, irafexecute, minmatch
 from iraftask import IrafTask, IrafPkg
+import irafnames
 
 class IrafError(Exception):
 	pass
@@ -124,7 +125,7 @@ def init(doprint=1):
 
 		# load clpackage
 
-		clpkg.run()
+		clpkg.run(_doprint=0)
 
 		if access('login.cl'):
 			fname = 'login.cl'
@@ -138,7 +139,7 @@ def init(doprint=1):
 			# XXX userpkg = IrafPkg('', 'user', '.pkg', fname, 'user', 'bin$')
 			userpkg = IrafPkg('', 'user', '.pkg', fname, 'clpackage', 'bin$')
 			addPkg(userpkg)
-			userpkg.run()
+			userpkg.run(_doprint=0)
 		else:
 			print "Warning: no login.cl found"
 
@@ -155,6 +156,9 @@ def addPkg(pkg):
 	name = pkg.getName()
 	_pkgs.add(name,pkg)
 	addTask(pkg)
+	# add package to global namespace if desired
+	irafnames.strategy.addPkg(pkg)
+	irafnames.strategy.addTask(pkg)
 
 # -----------------------------------------------------
 # addTask: Add an IRAF task to the tasks list
@@ -163,9 +167,14 @@ def addPkg(pkg):
 def addTask(task):
 	global _tasks, _mmtasks
 	name = task.getName()
-	fullname = task.getPkgname() + '.' + name
+	pkgname = task.getPkgname()
+	fullname = pkgname + '.' + name
 	_tasks[fullname] = task
 	_mmtasks.add(name,fullname)
+	# add task to global namespace if desired
+	irafnames.strategy.addTask(task)
+	# add task to list for its package
+	_pkgs[pkgname].addTask(task)
 
 # -----------------------------------------------------
 # load: Load an IRAF package by name
@@ -177,8 +186,8 @@ def load(pkgname,args=(),kw={},doprint=1):
 		p = pkgname
 	else:
 		p = getPkg(pkgname)
+	kw['_doprint'] = doprint
 	apply(p.run, tuple(args), kw)
-	if doprint: listtasks(p.getName())
 
 # -----------------------------------------------------
 # run: Run an IRAF task by name
@@ -198,8 +207,11 @@ def run(taskname,args=(),kw={}):
 
 def getPkg(pkgname):
 	"""Find an IRAF package by name using minimum match.
-	Returns an IrafPkg object."""
+	Returns an IrafPkg object.  pkgname is also allowed
+	to be an IrafPkg object, in which case it is simply
+	returned."""
 	try:
+		if isinstance(pkgname,IrafPkg): return pkgname
 		return _pkgs[pkgname]
 	except KeyError, e:
 		# re-raise the error with a bit more info
@@ -318,7 +330,8 @@ def listloaded():
 		_printcols(keylist)
 
 def listtasks(pkglist=None,hidden=0):
-	"""List IRAF tasks, optionally specifying a list of packages to include."""
+	"""List IRAF tasks, optionally specifying a list of packages to include.
+	Package(s) may be specified by name or by IrafPkg objects."""
 	keylist = _tasks.keys()
 	if len(keylist) == 0:
 		print 'No IRAF tasks defined'
@@ -326,7 +339,9 @@ def listtasks(pkglist=None,hidden=0):
 		# make a dictionary of pkgs to list
 		if pkglist:
 			pkgdict = {}
-			if type(pkglist) is types.StringType: pkglist = [ pkglist ]
+			if type(pkglist) is types.StringType or \
+					isinstance(pkglist,IrafPkg):
+				pkglist = [ pkglist ]
 			for p in pkglist:
 				try:
 					pthis = getPkg(p)

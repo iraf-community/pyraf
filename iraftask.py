@@ -501,9 +501,39 @@ class IrafPkg(IrafTask):
 			raise iraf.IrafError("Bad filename for package " +
 				pkgname + ": " + filename)
 		self.__loaded = 0
+		self.__tasks = minmatch.MinMatchDict()
+		self.__pkgs = minmatch.MinMatchDict()
 	def getLoaded(self): return self.__loaded
+	def __getattr__(self, name):
+		"""Return the task identified by name (if it exists).  Also searches
+		subpackages for the task."""
+		if name[:1] == '_': raise AttributeError(name)
+		t = self.__tasks.get(name)
+		if t: return t
+		# try subpackages
+		for p in self.__pkgs.values():
+			t = p.__tasks.get(name)
+			if t: return t
+		raise AttributeError(name)
+	def addTask(self, task):
+		"""Add a task to the task list for this package"""
+		self.__tasks.add(task.getName(), task)
+		# sub-packages get added to a separate list
+		if isinstance(task, IrafPkg): self.__pkgs.add(task.getName(), task)
 	def run(self,*args,**kw):
 		if self.getFullpath() == None: self.initTask()
+
+		# Special _doprint keyword is used to control whether tasks are listed
+		# after package has been loaded.  Default is to list them.
+		if kw.has_key('_doprint'):
+			if kw['_doprint']:
+				doprint = 1
+			else:
+				doprint = 0
+			del kw['_doprint']
+		else:
+			doprint = 1
+
 		# set parameters
 		apply(self.setParList,args,kw)
 		# if already loaded, just add to iraf._loadedPath
@@ -524,6 +554,7 @@ class IrafPkg(IrafTask):
 			# _loadedPath list one more time
 			if iraf._loadedPath[-1] != self:
 				iraf._loadedPath.append(self)
+		if doprint: iraf.listtasks(self)
 	def __str__(self):
 		s = '<IrafPkg ' + self.getName() + ' (' + self.getFilename() + ')' + \
 			' Pkg: ' + self.getPkgname()
