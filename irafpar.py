@@ -41,7 +41,8 @@ def warning(msg, strict=0, exception=SyntaxError,
 # IRAF parameter factory
 # -----------------------------------------------------
 
-_string_types = [ 's', 'f', 'struct', '*struct', '*s', '*i']
+_string_types = [ 's', 'f', 'struct' ]
+_string_list_types = [ '*struct', '*s', '*i' ]
 _real_types = [ 'r', 'd' ]
 
 def IrafParFactory(fields,filename=None,strict=0):
@@ -57,6 +58,8 @@ def IrafParFactory(fields,filename=None,strict=0):
 	type = fields[1]
 	if type in _string_types:
 		return IrafParS(fields,filename,strict)
+	elif type in _string_list_types:
+		return IrafParLS(fields,filename,strict)
 	elif type == "*gcur":
 		return IrafParGCur(fields,filename,strict)
 	elif type == "*imcur":
@@ -84,8 +87,8 @@ def IrafParFactory(fields,filename=None,strict=0):
 # Set up minmatch dictionaries for parameter fields
 # -----------------------------------------------------
 
-flist = ("p_name", "p_xtype", "p_mode", "p_prompt",
-			"p_value", "p_filename", "p_maximum", "p_minimum")
+flist = ("p_name", "p_xtype", "p_type", "p_mode", "p_prompt",
+			"p_value", "p_default", "p_filename", "p_maximum", "p_minimum")
 _getFieldDict = minmatch.MinMatchDict()
 for field in flist: _getFieldDict.add(field, field)
 
@@ -245,10 +248,14 @@ class IrafPar:
 				" for parameter " + self.name + "\n" + str(e))
 		if field == "p_name": return self.name
 		elif field == "p_xtype": return self.type
+		elif field == "p_type": return self.getPType()
 		elif field == "p_mode": return self.mode
 		elif field == "p_prompt": return self.prompt
-		elif field == "p_value": return self.get(native=native,prompt=prompt)
-		elif field == "p_filename": return str(self.value)
+		elif field == "p_value" or field == "p_default" or field == "p_filename":
+			# these all appear to be equivalent -- they just return the
+			# current PValue of the parameter (which is the same as the value
+			# for non-list parameters, and is the filename for list parameters)
+			return self.getPValue(native,prompt)
 		elif field == "p_maximum":
 			if native:
 				return self.max
@@ -271,12 +278,17 @@ class IrafPar:
 					return self.toString(self.min)
 		else:
 			# XXX unimplemented fields:
-			# p_type: different than p_xtype?
-			# p_length: length in bytes? IRAF words? something else?
-			# p_default: from task parameter file (as opposed to current
-			#    .par file)?
+			# p_length: maximum string length in bytes -- what to do with it?
 			raise RuntimeError("Program bug in IrafPar.getField()\n" +
 				"Requested field " + field + " for parameter " + self.name)
+
+	def getPValue(self,native,prompt):
+		"""Get p_value field for this parameter (same as get for non-list params)"""
+		return self.get(native=native,prompt=prompt)
+
+	def getPType(self):
+		"""Get underlying datatype for this parameter (just self.type for normal params)"""
+		return self.type
 
 	def set(self, value, field=None, index=None, check=1):
 		"""Set value of this parameter from a string or other value.
@@ -295,7 +307,6 @@ class IrafPar:
 				self.value = self.checkValue(value)
 			else:
 				self.value = self.coerceValue(value)
-			return
 
 	def setField(self, value, field, check=1):
 		"""Set a parameter field value"""
@@ -311,7 +322,7 @@ class IrafPar:
 			self.set(value,check=check)
 		elif field == "p_filename":
 			# this is only relevant for list parameters (*imcur, *gcur, etc.)
-			self.value = irafutils.stripQuotes(value)
+			self.set(value,check=check)
 		elif field == "p_maximum":
 			self.max = self.coerceOneValue(value)
 		elif field == "p_minimum":
@@ -403,7 +414,7 @@ class IrafPar:
 
 	def __str__(self):
 		"""Return readable description of parameter"""
-		s = "<IrafPar " + self.name + " " + self.type
+		s = "<" + self.__class__.__name__ + " " + self.name + " " + self.type
 		s = s + " " + self.mode + " " + `self.value`
 		if self.choice != None:
 			s = s + " |"
@@ -420,7 +431,7 @@ class IrafPar:
 
 class IrafArrayPar(IrafPar):
 
-	"""IRAF integer array parameter class"""
+	"""IRAF array parameter class"""
 
 	def __init__(self,fields,filename,strict=0):
 		orig_len = len(fields)
@@ -523,6 +534,10 @@ class IrafArrayPar(IrafPar):
 				sval[i] = self.toString(self.value[i])
 			return string.join(sval,' ')
 
+	def getPType(self):
+		"""Get underlying datatype for this parameter (strip off 'a' array params)"""
+		return self.type[1:]
+
 	def set(self, value, field=None, index=None, check=1):
 		"""Set value of this parameter from a string or other value.
 		Field is optional parameter field (p_prompt, p_minimum, etc.)
@@ -567,7 +582,7 @@ class IrafArrayPar(IrafPar):
 		"""
 		if (type(value) not in [ListType,TupleType]) or len(value) != self.dim:
 			raise ValueError("Value must be a " + `self.dim` + \
-				"-element integer array for "+self.name)
+				"-element array for "+self.name)
 		v = self.dim*[0]
 		for i in xrange(self.dim):
 			v[i] = self.coerceOneValue(value[i],strict)
@@ -575,7 +590,8 @@ class IrafArrayPar(IrafPar):
 
 	def __str__(self):
 		"""Return readable description of parameter"""
-		s = "<IrafPar " + self.name + " " + self.type + "[" + str(self.dim) + "]"
+		s = "<" + self.__class__.__name__ + " " + self.name + " " + \
+			self.type + "[" + str(self.dim) + "]"
 		s = s + " " + self.mode + " " + `self.value`
 		if self.choice != None:
 			s = s + " |"
@@ -703,60 +719,148 @@ class IrafParPset(IrafParS):
 			" cannot be assigned a value")
 
 # -----------------------------------------------------
+# IRAF list parameter base class
+# -----------------------------------------------------
+
+class IrafParL(_StringMixin, IrafPar):
+
+	"""IRAF list parameter base class"""
+
+	def __init__(self,fields,filename,strict=0):
+		IrafPar.__init__(self,fields,filename,strict)
+		# filehandle for input file
+		self.fh = None
+
+	# Use getNextValue() method to implement a particular type
+
+	def getNextValue(self):
+		"""Return a string with next value"""
+		raise RuntimeError("Bug: base class IrafParL cannot be used directly")
+
+	def set(self, value, field=None, index=None, check=1):
+		"""Set value of this parameter from a string or other value.
+		Field is optional parameter field (p_prompt, p_minimum, etc.)
+		Index is optional array index (zero-based).  Set check=0 to
+		assign the value without checking to see if it is within
+		the min-max range or in the choice list."""
+
+		if index != None:
+			raise SyntaxError("Parameter "+self.name+" is not an array")
+
+		if field:
+			self.setField(value,field,check=check)
+		else:
+			if check:
+				self.value = self.checkValue(value)
+			else:
+				self.value = self.coerceValue(value)
+			# close file if it is open
+			if self.fh:
+				self.fh.close()
+				self.fh = None
+
+	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
+		"""Return value of this parameter as a string (or in native format
+		if native is non-zero.)"""
+
+		if field: return self.getField(field,native=native,prompt=prompt)
+		if lpar: return self.value
+
+		# prompt for query parameters unless prompt is set to zero
+		# (I hope there are no query list parameters!)
+		if prompt and self.mode == "q": self.getPrompt()
+
+		if index != None:
+			raise SyntaxError("Parameter "+self.name+" is not an array")
+
+		if self.value:
+			# non-null value means we're reading from a file
+			if not self.fh:
+				self.fh = open(iraf.expand(self.value), "r")
+			value = self.fh.readline()
+			if not value:
+				# EOF -- return string 'EOF'
+				# XXX if native format, raise an exception?
+				return "EOF"
+			if value[-1:] == "\n": value = value[:-1]
+		else:
+			# if self.value is null, use the special getNextValue method (which should
+			# always return a string)
+			value = self.getNextValue()
+		if native:
+			return self.coerceValue(value)
+		else:
+			return value
+
+	def getPValue(self,native,prompt):
+		"""Get p_value field for this parameter (returns filename)"""
+		return self.value
+
+	def getPType(self):
+		"""Get underlying datatype for this parameter (strip off '*' from list params)"""
+		return self.type[1:]
+
+# -----------------------------------------------------
+# IRAF string list parameter class
+# -----------------------------------------------------
+
+class IrafParLS(IrafParL):
+
+	"""IRAF string list parameter class"""
+
+	def __init__(self,fields,filename,strict=0):
+		IrafParL.__init__(self,fields,filename,strict)
+
+	def getNextValue(self):
+		"""Return next string value"""
+		self.getPrompt()
+		retval = self.value
+		self.value = ""
+		return retval
+
+# -----------------------------------------------------
 # IRAF gcur (graphics cursor) parameter class
 # -----------------------------------------------------
 
-# XXX Need to upgrade this to handle file list inputs too.
-# That is a bit tricky because we need to initialize the
-# input list every time we start a new task.  Will need
-# to add an initialization step for all list parameters.
-# Probably should handle all list parameters at the same time.
+class IrafParGCur(IrafParL):
 
-class IrafParGCur(IrafParS):
 	"""IRAF graphics cursor parameter class"""
+
 	def __init__(self,fields,filename,strict=0):
-		IrafParS.__init__(self,fields,filename,strict)
-	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
-		"""Return graphics cursor value"""
-		if index:
-			raise SyntaxError("Parameter " + self.name +
-				" is graphics cursor, cannot use index")
-		if field: return self.getField(field)
-		if lpar: return str(self.value)
+		IrafParL.__init__(self,fields,filename,strict)
+
+	def getNextValue(self):
+		"""Return next graphics cursor value"""
 		return irafgcur.gcur()
 
 # -----------------------------------------------------
 # IRAF imcur (image display cursor) parameter class
 # -----------------------------------------------------
 
-class IrafParImCur(IrafParS):
+class IrafParImCur(IrafParL):
+
 	"""IRAF image display cursor parameter class"""
+
 	def __init__(self,fields,filename,strict=0):
-		IrafParS.__init__(self,fields,filename,strict)
-	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
-		"""Return image display cursor value"""
-		if index:
-			raise SyntaxError("Parameter " + self.name +
-				" is image cursor, cannot use index")
-		if field: return self.getField(field)
-		if lpar: return str(self.value)
+		IrafParL.__init__(self,fields,filename,strict)
+
+	def getNextValue(self):
+		"""Return next image display cursor value"""
 		return irafimcur.imcur()
 
 # -----------------------------------------------------
 # IRAF ukey (user typed key) parameter class
 # -----------------------------------------------------
 
-class IrafParUKey(IrafParS):
+class IrafParUKey(IrafParL):
+
 	"""IRAF user typed key parameter class"""
+
 	def __init__(self,fields,filename,strict=0):
-		IrafParS.__init__(self,fields,filename,strict)
-	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
-		"""Return typed character"""
-		if index:
-			raise SyntaxError("Parameter " + self.name +
-				" is ukey parameter, cannot use index")
-		if field: return self.getField(field)
-		if lpar: return str(self.value)
+		IrafParL.__init__(self,fields,filename,strict)
+
+	def getNextValue(self):
+		"""Return next typed character"""
 		return irafukey.ukey()
 
 # -----------------------------------------------------
