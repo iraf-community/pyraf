@@ -10,7 +10,7 @@ from types import *
 from tkMessageBox import askokcancel
 import os, sys, string
 
-# PYRAF modules
+# PyRAF modules
 # For some reason I do not understand, it is necessary to import
 # openglgcur here even though it is not used.  If omitted it dies during
 # startup. (rlw)
@@ -20,11 +20,11 @@ from irafglobals import pyrafDir, userWorkingHome
 
 from eparoption import *
 
-# Constants 
+# Constants
 MINVIEW     = 500
 MINPARAMS   = 25
 INPUTWIDTH  = 10
-VALUEWIDTH  = 21 
+VALUEWIDTH  = 21
 PROMPTWIDTH = 55
 
 # Use these values for startup geometry ***for now***
@@ -32,25 +32,43 @@ PROMPTWIDTH = 55
 PARENTX = 50
 PARENTY = 50
 
+# DCHILD[XY] are amounts each successive child shifts
+DCHILDX = 50
+DCHILDY = 50
+
 # CHILD[XY] is a PSET window
-CHILDX  = 600
-CHILDY  = 0
+CHILDX = PARENTX
+CHILDY = PARENTY
 
 # HELP[XY] is for the help as displayed in a window
 HELPX   = 300
 HELPY   = 0
 
-def epar(taskName, parent = None, isChild = "no"):
+def epar(taskName, parent = None, isChild = 0):
 
-    EparDialog(taskName, parent, isChild) 
+    EparDialog(taskName, parent, isChild)
 
 class EparDialog:
-    def __init__(self, taskName, parent = None, isChild = "no", 
-                 title = "PYRAF Parameter Editor"):
+    def __init__(self, taskName, parent = None, isChild = 0,
+                 title = "PyRAF Parameter Editor", childList = None):
 
-        # Declare the global variables so they can be updated
-        global CHILDX
-        global CHILDY
+        # Get the Iraftask object to determine the package name
+        if isinstance(taskName, iraftask.IrafTask):
+            self.taskObject = taskName
+        else:
+            self.taskName   = string.lower(taskName)
+            self.taskObject = iraf.getTask(taskName)
+
+        # Now go back and ensure we have the full taskname
+        self.taskName   = self.taskObject.getName()
+        self.pkgName    = self.taskObject.getPkgname()
+        self.paramList  = self.taskObject.getParList(docopy=1)
+
+        # Ignore the last parameter which is $nargs
+        self.numParams  = len(self.paramList) - 1
+
+        # Get default parameter values for unlearn
+        self.getDefaultParamList()
 
         # Create the root window as required, but hide it
         self.parent = parent
@@ -62,7 +80,7 @@ class EparDialog:
         self.isChild = isChild
 
         # Set up a color for the background to differeniate parent and child
-        if (self.isChild == "yes"):
+        if self.isChild:
         #    self.bkgColor  = "LightSteelBlue"
             self.iconLabel = "EPAR Child"
         else:
@@ -71,7 +89,7 @@ class EparDialog:
         self.bkgColor = None
 
         # Generate the top epar window
-        self.top = Toplevel(self.parent, bg = self.bkgColor, visual="best") 
+        self.top = Toplevel(self.parent, bg = self.bkgColor, visual="best")
         self.top.title(title)
         self.top.iconname(self.iconLabel)
 
@@ -96,44 +114,29 @@ class EparDialog:
         # Also, build the parent menu bar
         if (self.parent == None):
             self.top.childList = []
+        elif childList is not None:
+            # all children share a list
+            self.top.childList = childList
 
         # Build the EPAR menu bar
-        self.makeMenuBar(self.top, self.isChild)
+        self.makeMenuBar(self.top)
 
-        # Get the Iraftask object to determine the package name
-        if isinstance(taskName, iraftask.IrafTask):
-            self.taskObject = taskName
-        else:
-            self.taskName   = string.lower(taskName)
-            self.taskObject = iraf.getTask(taskName)
-
-        # Now go back and ensure we have the full taskname
-        self.taskName   = self.taskObject.getName()
-        self.pkgName    = self.taskObject.getPkgname()
-        self.paramList  = self.taskObject.getParList()
-
-        # Obtain the default parameter list - THIS IS NOT A GOOD WAY. OK NOW
-        self.defaultParamList = self.taskObject._defaultParList.getParList()
-
-        # Ignore the last parameter which is $nargs
-        self.numParams  = len(self.paramList) - 1
-
-        # Create a spacer 
-        Frame(self.top, bg = self.bkgColor, height = 10).pack(side = TOP, 
+        # Create a spacer
+        Frame(self.top, bg = self.bkgColor, height = 10).pack(side = TOP,
               fill = X)
 
         # Print the package and task names
         self.printNames(self.top, self.taskName, self.pkgName)
 
         # Insert a spacer between the static text and the buttons
-        Frame(self.top, bg = self.bkgColor, height = 15).pack(side = TOP, 
+        Frame(self.top, bg = self.bkgColor, height = 15).pack(side = TOP,
               fill = X)
 
         # Set control buttons at the top of the frame
         self.buttonBox(self.top)
 
         # Insert a spacer between the static text and the buttons
-        Frame(self.top, bg = self.bkgColor, height = 15).pack(side = TOP, 
+        Frame(self.top, bg = self.bkgColor, height = 15).pack(side = TOP,
               fill = X)
 
         # Set up an information Frame at the bottom of the EPAR window
@@ -143,7 +146,7 @@ class EparDialog:
         self.top.status = Label(self.top, text = "", relief = SUNKEN,
                            borderwidth = 1, anchor = W)
         self.top.status.pack(side = BOTTOM, fill = X, padx = 0, pady = 3,
-                             ipady = 3) 
+                             ipady = 3)
 
         # Set up a Frame to hold a scrollable Canvas
         self.top.f = Frame(self.top, relief = RIDGE, borderwidth = 1)
@@ -156,7 +159,7 @@ class EparDialog:
         if (self.numParams > MINPARAMS):
 
             # Attach a vertical Scrollbar to the Frame/Canvas
-            self.top.f.vscroll = Scrollbar(self.top.f, orient = VERTICAL, 
+            self.top.f.vscroll = Scrollbar(self.top.f, orient = VERTICAL,
                  width = 11, relief = SUNKEN, activerelief = RAISED,
                  takefocus = FALSE)
             self.top.f.canvas['yscrollcommand']  = self.top.f.vscroll.set
@@ -176,12 +179,12 @@ class EparDialog:
         self.top.f.canvas.entries = Frame(self.top.f.canvas)
 
         # Generate the window to hold the Frame which sits on the Canvas
-        cWindow = self.top.f.canvas.create_window(0, 0, 
-                           anchor = NW, 
+        cWindow = self.top.f.canvas.create_window(0, 0,
+                           anchor = NW,
                            window = self.top.f.canvas.entries)
 
         # Insert a spacer between the Canvas and the information frame
-        Frame(self.top, bg = self.bkgColor, height = 4).pack(side = TOP, 
+        Frame(self.top, bg = self.bkgColor, height = 4).pack(side = TOP,
               fill = X)
 
         # The parent has the control, unless there are children
@@ -195,10 +198,13 @@ class EparDialog:
             #self.parent.grab_release()
             #self.top.grab_set()
 
-            CHILDX = CHILDX - 100
-            CHILDY = CHILDY + 150
+            # Declare the global variables so they can be updated
+            global CHILDX
+            global CHILDY
 
             # Position this dialog relative to the parent
+            CHILDX = CHILDX + DCHILDX
+            CHILDY = CHILDY + DCHILDY
             self.top.geometry("+%d+%d" % (CHILDX, CHILDY))
 
 
@@ -216,7 +222,7 @@ class EparDialog:
         width  = self.top.f.canvas.entries.winfo_width()
         height = self.top.f.canvas.entries.winfo_height()
 
-        # Reconfigure the Canvas size based on the Frame.  
+        # Reconfigure the Canvas size based on the Frame.
         if (self.numParams <= MINPARAMS):
             viewHeight = height
         else:
@@ -227,7 +233,7 @@ class EparDialog:
             # Scrollregion is based upon the full size of the entry Frame
             self.top.f.canvas.config(scrollregion = (0, 0, width, height))
 
-            # Smooth scroll 
+            # Smooth scroll
             self.top.f.canvas.config(yscrollincrement = 50)
 
         # Set the actual viewable region for the Canvas
@@ -240,9 +246,30 @@ class EparDialog:
         self.top.protocol("WM_DELETE_WINDOW", self.abort)
 
         # run the mainloop
-        if (self.isChild == "no"):
+        if not self.isChild:
             self.top.mainloop()
 
+    def getDefaultParamList(self):
+
+        # Obtain the default parameter list
+        dlist = self.taskObject.getDefaultParList()
+        if len(dlist) != len(self.paramList):
+            # whoops, lengths don't match
+            raise ValueError("Mismatch between default, current par lists"
+                " for task %s (try unlearn)" % self.taskName)
+        dict = {}
+        for par in dlist:
+            dict[par.name] = par
+
+        # Build default list sorted into same order as current list
+        try:
+            dsort = []
+            for par in self.paramList:
+                dsort.append(dict[par.name])
+        except KeyError:
+            raise ValueError("Mismatch between default, current par lists"
+                " for task %s (try unlearn)" % self.taskName)
+        self.defaultParamList = dsort
 
     # Method to create the parameter entries
     def makeEntries(self, master, statusBar):
@@ -250,13 +277,12 @@ class EparDialog:
         # Determine the size of the longest input string
         inputLength = INPUTWIDTH
         for i in range(self.numParams):
-            inputString = self.paramList[i].get(field = "p_name", 
-                          native = 0, prompt = 0)
+            inputString = self.paramList[i].name
             if (len(inputString) > inputLength):
                 inputLength = len(inputString)
 
         # Set up the field widths
-        # Allow extra spaces for buffer and in case the longest parameter 
+        # Allow extra spaces for buffer and in case the longest parameter
         # has the hidden parameter indicator
         self.fieldWidths = {}
         self.fieldWidths['inputWidth']  = inputLength + 4
@@ -277,31 +303,31 @@ class EparDialog:
             # PSET
             elif (self.paramList[i].type == "pset"):
                  self.entryNo[i] = PsetEparOption(master, statusBar,
-                                   self.paramList[i],
+                                   self.paramList[i], self.defaultParamList[i],
                                    self.isScrollable, self.fieldWidths)
 
-            # *GCUR 
+            # *GCUR
             #elif (self.paramList[i].type == "*gcur"):
             #    self.entryNo[i] = GcurEparOption(master, statusBar,
-            #                      self.paramList[i],
+            #                      self.paramList[i], self.defaultParamList[i],
             #                      self.isScrollable, self.fieldWidths)
 
             # *UKEY
             #elif (self.paramList[i].type == "*ukey"):
             #    self.entryNo[i] = UkeyEparOption(master, statusBar,
-            #                      self.paramList[i],
+            #                      self.paramList[i], self.defaultParamList[i],
             #                      self.isScrollable, self.fieldWidths)
 
             # BOOLEAN
             elif (self.paramList[i].type == 'b'):
                 self.entryNo[i] = BooleanEparOption(master, statusBar,
-                                  self.paramList[i],
+                                  self.paramList[i], self.defaultParamList[i],
                                   self.isScrollable, self.fieldWidths)
 
-            # STRING (s, f, struct, *imcur, *struct, *s, *i) 
+            # STRING (s, f, struct, *imcur, *struct, *s, *i)
             elif (self.paramList[i].type in irafpar._string_types):
                 self.entryNo[i] = StringEparOption(master, statusBar,
-                                  self.paramList[i], self.defaultParamList[i], 
+                                  self.paramList[i], self.defaultParamList[i],
                                   self.isScrollable, self.fieldWidths)
 
             # REAL
@@ -311,9 +337,9 @@ class EparDialog:
                                   self.isScrollable, self.fieldWidths)
 
             # INT
-            elif (self.paramList[i].type == 'i'): 
+            elif (self.paramList[i].type == 'i'):
                 self.entryNo[i] = IntEparOption(master, statusBar,
-                                  self.paramList[i], self.defaultParamList[i], 
+                                  self.paramList[i], self.defaultParamList[i],
                                   self.isScrollable, self.fieldWidths)
 
             else:
@@ -331,29 +357,29 @@ class EparDialog:
         topbox  = Frame(top, bg = self.bkgColor)
         textbox = Frame(topbox, bg = self.bkgColor)
         helpbox = Frame(topbox, bg = self.bkgColor)
-    
+
         # Set up the information strings
         packString = "  Package = " + string.upper(pkgName)
-        Label(textbox, text = packString, bg = self.bkgColor).pack(side = TOP, 
+        Label(textbox, text = packString, bg = self.bkgColor).pack(side = TOP,
               anchor = W)
 
         taskString = "       Task = " + string.upper(taskName)
-        Label(textbox, text = taskString, bg = self.bkgColor).pack(side = TOP, 
+        Label(textbox, text = taskString, bg = self.bkgColor).pack(side = TOP,
               anchor = W)
         textbox.pack(side = LEFT, anchor = W)
 
         topbox.pack(side = TOP, expand = TRUE, fill = X)
 
     # Method to set up the parent menu bar
-    def makeMenuBar(self, top, isChild):
+    def makeMenuBar(self, top):
 
         menubar = Frame(top, bd = 1, relief = GROOVE)
 
         # Generate the menus
-        fileMenu = self.makeFileMenu(menubar, isChild)
+        fileMenu = self.makeFileMenu(menubar)
 
         # When redesigned, optionsMenu should only be on the parent
-        #if (isChild == "no"):
+        #if not self.isChild:
         #    optionsMenu = self.makeOptionsMenu(menubar)
         optionsMenu = self.makeOptionsMenu(menubar)
 
@@ -361,14 +387,14 @@ class EparDialog:
 
 
     # Method to generate a "File" menu
-    def makeFileMenu(self, menubar, isChild):
+    def makeFileMenu(self, menubar):
 
         fileButton = Menubutton(menubar, text = 'File')
         fileButton.pack(side = LEFT, padx = 2)
-        
+
         fileButton.menu = Menu(fileButton, tearoff = 0)
 
-        if (isChild == "no"):
+        if not self.isChild:
             fileButton.menu.add_command(label = "Execute", command=self.execute)
 
         fileButton.menu.add_command(label = "Save",    command=self.quit)
@@ -419,15 +445,15 @@ class EparDialog:
         top.bind("<Leave>", self.clearInfo)
 
         # Determine if the EXECUTE button should be present
-        if (self.isChild == "no"):
+        if not self.isChild:
             # Execute the task
-            buttonExecute = Button(box, text = "EXECUTE", 
+            buttonExecute = Button(box, text = "EXECUTE",
                                    relief = RAISED, command = self.execute)
             buttonExecute.pack(side = LEFT, padx = 5, pady = 7)
             buttonExecute.bind("<Enter>", self.printExecuteInfo)
 
         # Save the parameter settings and exit from epar
-        buttonQuit = Button(box, text = "SAVE", 
+        buttonQuit = Button(box, text = "SAVE",
                             relief = RAISED, command = self.quit)
         buttonQuit.pack(side = LEFT, padx = 5, pady = 7)
         buttonQuit.bind("<Enter>", self.printQuitInfo)
@@ -441,7 +467,7 @@ class EparDialog:
         # Abort this edit session.  Currently, if an UNLEARN has already
         # been done, the UNLEARN is kept.
         buttonAbort = Button(box, text = "ABORT",
-                              relief = RAISED, command = self.abort) 
+                              relief = RAISED, command = self.abort)
         buttonAbort.pack(side = LEFT, padx = 5, pady = 7)
         buttonAbort.bind("<Enter>", self.printAbortInfo)
 
@@ -456,7 +482,7 @@ class EparDialog:
 
     # Determine which method of displaying the IRAF help pages was
     # chosen by the user.  WINDOW displays in a task generated scrollable
-    # window.  BROWSER invokes the STSDAS HTML help pages and displays 
+    # window.  BROWSER invokes the STSDAS HTML help pages and displays
     # in a browser.
     def setHelpViewer(self, event = None):
 
@@ -475,26 +501,26 @@ class EparDialog:
         self.top.status.config(text = "")
 
     def printHelpViewInfo(self, event):
-        self.top.status.config(text = 
+        self.top.status.config(text =
              " Choice of display for the IRAF help page: a window or a browser")
 
     def printHelpInfo(self, event):
-        self.top.status.config(text = 
+        self.top.status.config(text =
              " Display the IRAF help page")
 
     def printUnlearnInfo(self, event):
-        self.top.status.config(text = 
+        self.top.status.config(text =
              " Set all parameter values to system default settings")
 
     def printQuitInfo(self, event):
-        self.top.status.config(text = 
+        self.top.status.config(text =
              " Save the current entries and exit this edit session")
 
     def printAbortInfo(self, event):
         self.top.status.config(text = " Abort this edit session")
 
     def printExecuteInfo(self, event):
-        self.top.status.config(text = 
+        self.top.status.config(text =
              " Execute the task and exit this edit session")
 
 
@@ -512,110 +538,96 @@ class EparDialog:
 
         badEntriesString = badEntriesString + "\nOK to continue using"\
             " the reset\nvalues or cancel to re-enter\nvalues?\n"
- 
+
         # Invoke the modal message dialog
         return (askokcancel("Notice", badEntriesString))
 
- 
+
     # QUIT: save the parameter settings and exit epar
     def quit(self, event = None):
 
-        # Declare the global variables so they can be updated
-        global CHILDX
-        global CHILDY
+        # first save the child parameters, aborting save if
+        # invalid entries were encountered
+        if self.saveChildren():
+            return
 
         # Save all the entries and verify them, keeping track of the
         # invalid entries which have been reset to their original input values
         self.badEntriesList = self.saveEntries()
 
         # If there were invalid entries, prepare the message dialog
-        ansOKCANCEL = FALSE
         if (self.badEntriesList):
-            ansOKCANCEL = self.processBadEntries(self.badEntriesList, 
+            ansOKCANCEL = self.processBadEntries(self.badEntriesList,
                           self.taskName)
+            if not ansOKCANCEL:
+                return
 
         # If there were no invalid entries or the user says OK
-        if ((not self.badEntriesList) or ansOKCANCEL):
 
-            # Remove the main epar window
-            self.top.focus_set()
-            self.top.withdraw()
+        # Remove the main epar window
+        self.top.focus_set()
+        self.top.withdraw()
 
-            # Do not destroy the window, just hide it for now.
-            # This is so EXECUTE will not get an error - properly use Mediator.
-            #self.top.destroy()
+        # Do not destroy the window, just hide it for now.
+        # This is so EXECUTE will not get an error - properly use Mediator.
+        #self.top.destroy()
 
-            # If not a child window, quit the entire session
-            if (self.isChild == "no"):
-                self.top.destroy()
-                self.top.quit()
-
-            # Reset to the start location
-            CHILDX = 600
-            CHILDY = 0
-
-
-    # EXECUTE: save the parameter settings and run the task
-    def execute(self, event=None):
+        # If not a child window, quit the entire session
+        if not self.isChild:
+            self.top.destroy()
+            self.top.quit()
 
         # Declare the global variables so they can be updated
         global CHILDX
         global CHILDY
 
-        # Need to get all the entries and verify them 
-        # First save the parameter values of the children, but save the
-        # children in backwards order to coincide with the display of the
-        # dialogs (LIFO)
-        continueFlag = TRUE
-        for n in range (len(self.top.childList)-1, -1, -1):
-            self.badEntriesList = self.top.childList[n].saveEntries()
-            ansOKCANCEL = FALSE
-            if (self.badEntriesList):
-                ansOKCANCEL = self.processBadEntries(self.badEntriesList, 
-                              self.top.childList[n].taskName)
+        # Reset to the start location
+        CHILDX = PARENTX
+        CHILDY = PARENTY
 
-            # If there were no invalid entries or the user says OK,
-            # close down the child and increment to the next child
-            if ((not self.badEntriesList) or ansOKCANCEL):
-                self.top.childList[n].top.focus_set()
-                self.top.childList[n].top.withdraw()
-                n = n + 1
 
-            if (self.badEntriesList and (not ansOKCANCEL)):
-                continueFlag = FALSE
-                break
+    # EXECUTE: save the parameter settings and run the task
+    def execute(self, event=None):
 
-        if (continueFlag):
+        # first save the child parameters, aborting save if
+        # invalid entries were encountered
+        if self.saveChildren():
+            return
 
-            # Now save the parameter values of the parent
-            self.badEntriesList = self.saveEntries()
+        # Now save the parameter values of the parent
+        self.badEntriesList = self.saveEntries()
 
-            # If there were invalid entries in the parent epar dialog, prepare 
-            # the message dialog
-            ansOKCANCEL = FALSE
-            if (self.badEntriesList):
-                ansOKCANCEL = self.processBadEntries(self.badEntriesList,
-                              self.taskName)
+        # If there were invalid entries in the parent epar dialog, prepare
+        # the message dialog
+        ansOKCANCEL = FALSE
+        if (self.badEntriesList):
+            ansOKCANCEL = self.processBadEntries(self.badEntriesList,
+                          self.taskName)
+            if not ansOKCANCEL:
+                return
 
-            # If there were no invalid entries or the user says OK
-            if ((not self.badEntriesList) or ansOKCANCEL):
+        # If there were no invalid entries or the user says OK
 
-                # Remove the main epar window
-                self.top.focus_set()
-                self.top.withdraw()
-                self.top.destroy()
- 
-                print "\nTask %s is running...\n" % self.taskName
+        # Remove the main epar window
+        self.top.focus_set()
+        self.top.withdraw()
+        self.top.destroy()
 
-                # Run the task
-                try:
-                    self.runTask()
-                finally:
-                    self.top.quit()
+        print "\nTask %s is running...\n" % self.taskName
 
-                # Reset to the start location
-                CHILDX = 600
-                CHILDY = 0
+        # Run the task
+        try:
+            self.runTask()
+        finally:
+            self.top.quit()
+
+        # Declare the global variables so they can be updated
+        global CHILDX
+        global CHILDY
+
+        # Reset to the start location
+        CHILDX = PARENTX
+        CHILDY = PARENTY
 
 
     # ABORT: abort this epar session
@@ -626,8 +638,8 @@ class EparDialog:
         global CHILDY
 
         # Reset to the start location
-        CHILDX = 600
-        CHILDY = 0
+        CHILDX = PARENTX
+        CHILDY = PARENTY
 
         # Give focus back to parent window and abort
         self.top.focus_set()
@@ -637,7 +649,7 @@ class EparDialog:
         # This is so EXECUTE will not get an error - properly use Mediator.
         #self.top.destroy()
 
-        if (self.isChild == "no"):
+        if not self.isChild:
             self.top.destroy()
             self.top.quit()
 
@@ -648,7 +660,7 @@ class EparDialog:
 
         ## This sets the memory objects back to the defaults
         #self.taskObject.unlearn()
-      
+
         # Reset the view of the parameters
         self.unlearnAllEntries(self.top.f.canvas.entries)
 
@@ -689,7 +701,7 @@ class EparDialog:
         self.menubar = Frame(self.hb, relief = RIDGE, borderwidth = 0)
         self.menubar.button = Button(self.menubar, text = "QUIT",
                                      relief  = RAISED,
-                                     command = self.hbQuit) 
+                                     command = self.hbQuit)
         self.menubar.button.pack(side = LEFT)
         self.menubar.pack(side = TOP, anchor = W, padx = 5, pady = 5)
 
@@ -700,9 +712,9 @@ class EparDialog:
         self.hb.frame.vscroll = Scrollbar(self.hb.frame, orient = VERTICAL,
                  width = 11, relief = SUNKEN, activerelief = RAISED,
                  takefocus = FALSE)
- 
+
         # Define the Listbox and setup the Scrollbar
-        self.hb.frame.list = Listbox(self.hb.frame, 
+        self.hb.frame.list = Listbox(self.hb.frame,
                                      relief            = FLAT,
                                      height            = 25,
                                      width             = 80,
@@ -732,7 +744,7 @@ class EparDialog:
         self.hb.frame.list.yview(int(y))
 
         # Position this dialog relative to the parent
-        self.hb.geometry("+%d+%d" % (self.top.winfo_rootx() + HELPX, 
+        self.hb.geometry("+%d+%d" % (self.top.winfo_rootx() + HELPX,
                                      self.top.winfo_rooty() + HELPY))
 
     # QUIT: Quit the help browser window
@@ -750,14 +762,8 @@ class EparDialog:
     # Method to "unlearn" all the parameter entry values in the GUI
     # and set the parameter back to the default value
     def unlearnAllEntries(self, master):
-
-        # Obtain the parameter list anew
-        #self.newParamList = self.taskObject.getParList()
-
-        # Loop over the parameters to reset the values
-        for i in range(self.numParams):
-            self.entryNo[i].unlearnOption(self.defaultParamList[i])
-            #self.entryNo[i].unlearnOption(self.newParamList[i])
+        for entry in self.entryNo:
+            entry.unlearnValue()
 
 
     # Read, save, and validate the entries
@@ -768,40 +774,68 @@ class EparDialog:
         # Loop over the parameters to obtain the modified information
         for i in range(self.numParams):
 
-            # Verify the value is valid. If it is numeric and invalid,
-            # the value will be converted to its original valid value.
-            # Maintain a list of the reset values for user notification.
-            resetValue = self.entryNo[i].entryCheck(event = None)
-            if (resetValue != None):
-               self.badEntries.append(resetValue)
-
+            par = self.paramList[i]
+            entry = self.entryNo[i]
             # Cannot change an entry if it is a PSET, just skip
-            if (self.paramList[i].type != "pset"):
+            if par.type == "pset":
+                continue
+
+            value = entry.choice.get()
+
+            # Set new values for changed parameters - a bit tricky,
+            # since changes that weren't followed by a return or
+            # tab have not yet been checked.  If we eventually
+            # use a widget that can check all changes, we will
+            # only need to check the isChanged flag.
+            if par.isChanged() or value != entry.previousValue:
+                # Verify the value is valid. If it is invalid,
+                # the value will be converted to its original valid value.
+                # Maintain a list of the reset values for user notification.
+                resetValue = entry.entryCheck(event = None)
+                if (resetValue != None):
+                   self.badEntries.append(resetValue)
 
                 # Determine the type of entry variable
-                classType = self.entryNo[i].choiceClass
+                classType = entry.choiceClass
 
-                # Acquire the value for update of the parameter entry
-                # The BooleanVar might be a null string which is VALID, 
-                # so catch the exception.  If not a boolean, rethrow 
-                # the exception.
-                try:
-                    value = self.entryNo[i].choice.get()
-                except TclError, exceptionInfo:
-                    if (classType == BooleanVar):
-                        value = ""
-                    else:
-                        raise TclError, exceptionInfo
+                # get value again in case it changed
+                value = entry.choice.get()
 
-                # If the parameter is not a native type of string, it
-                # must be converted.
-                self.taskObject.setParam(self.paramList[i].get(field = "p_name",
-                                    native = 1, prompt = 0), value)
+                # Update the task parameter (also does the conversion
+                # from string)
+                self.taskObject.setParam(par.name, value)
 
         # save results to the uparm directory
         self.taskObject.save()
 
         return self.badEntries
+
+    def saveChildren(self):
+        """Save the parameter settings for all child (pset) windows.
+
+        Prompts if any problems are found.  Returns None
+        on success, list of bad entries on failure.
+        """
+        if self.isChild:
+            return
+
+        # Need to get all the entries and verify them.
+        # Save the children in backwards order to coincide with the
+        # display of the dialogs (LIFO)
+        for n in range (len(self.top.childList)-1, -1, -1):
+            self.badEntriesList = self.top.childList[n].saveEntries()
+            if (self.badEntriesList):
+                ansOKCANCEL = self.processBadEntries(self.badEntriesList,
+                              self.top.childList[n].taskName)
+                if not ansOKCANCEL:
+                    return self.badEntriesList
+            # If there were no invalid entries or the user says OK,
+            # close down the child and increment to the next child
+            self.top.childList[n].top.focus_set()
+            self.top.childList[n].top.withdraw()
+            del self.top.childList[n]
+        # all windows saved successfully
+        return
 
     # Run the task
     def runTask(self):

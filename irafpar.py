@@ -402,7 +402,8 @@ class IrafPar:
 				print "Error: specify a value for the parameter"
 			except ValueError, e:
 				print str(e)
-			print pstring,
+			sys.stdout.write(pstring)
+			sys.stdout.flush()
 			ovalue = sys.stdin.readline()
 			value = string.strip(ovalue)
 
@@ -469,14 +470,19 @@ class IrafPar:
 			# most parameters treat null string as omitted value
 			return None
 		elif self.choice is not None and not self.choiceDict.has_key(v):
-			raise ValueError("Value '" + str(v) +
-				"' is not in choice list for " + self.name)
+			schoice = map(self.toString, self.choice)
+			schoice = string.join(schoice,"|")
+			raise ValueError("Parameter %s: "
+				"value %s is not in choice list (%s)" %
+				(self.name, str(v), schoice))
 		elif (self.min not in [None, INDEF] and v<self.min):
-			raise ValueError("Value `%s' for %s is less than minimum %s" %
-				(str(v), self.name, str(self.min)))
+			raise ValueError("Parameter %s: "
+				"value `%s' is less than minimum `%s'" %
+				(self.name, str(v), str(self.min)))
 		elif (self.max not in [None, INDEF] and v>self.max):
-			raise ValueError("Value `%s' for %s is greater than maximum %s" %
-				(str(v), self.name, str(self.max)))
+			raise ValueError("Parameter %s: "
+				"value `%s' is greater than maximum `%s'" %
+				(self.name, str(v), str(self.max)))
 		return v
 
 	def dpar(self):
@@ -1084,19 +1090,22 @@ class _StringMixin:
 			try:
 				v = self.choiceDict[v]
 			except minmatch.AmbiguousKeyError, e:
-				raise ValueError("Ambiguous value '" + str(v) +
-					"' from choice list for " + self.name +
-					"\n" + str(e))
+				clist = self.choiceDict.getall(v)
+				raise ValueError("Parameter %s: "
+					"ambiguous value `%s', could be %s" %
+					(self.name, str(v), string.join(clist,"|")))
 			except KeyError, e:
-				raise ValueError("Value '" + str(v) +
-					"' is not in choice list for " + self.name +
-					"\nChoices are " + string.join(self.choice,"|"))
+				raise ValueError("Parameter %s: "
+					"value `%s' is not in choice list (%s)" %
+					(self.name, str(v), string.join(self.choice,"|")))
 		elif (self.min is not None and v<self.min):
-			raise ValueError("Value `%s' for %s is less than minimum %s" %
-				(str(v), self.name, str(self.min)))
+			raise ValueError("Parameter %s: "
+				"value `%s' is less than minimum `%s'" %
+				(self.name, str(v), str(self.min)))
 		elif (self.max is not None and v>self.max):
-			raise ValueError("Value `%s' for %s is greater than maximum %s" %
-				(str(v), self.name, str(self.max)))
+			raise ValueError("Parameter %s: "
+				"value `%s' is greater than maximum `%s'" %
+				(self.name, str(v), str(self.max)))
 		return v
 
 	#--------------------------------------------
@@ -1481,8 +1490,8 @@ class _BooleanMixin:
 			elif v2[0:1] == ")":
 				# assume this is indirection -- just save it as a string
 				return v2
-		raise ValueError("Illegal boolean value "+`value` +
-			" for parameter " + self.name)
+		raise ValueError("Parameter %s: illegal boolean value %s" %
+			(self.name, `value`))
 
 # -----------------------------------------------------
 # IRAF boolean parameter class
@@ -1561,8 +1570,8 @@ class _IntMixin:
 				return int(value)
 			except ValueError:
 				pass
-		raise ValueError("Illegal integer value %s for parameter %s" % 
-			(`value`, self.name))
+		raise ValueError("Parameter %s: illegal integer value %s" %
+			(self.name, `value`))
 
 
 # -----------------------------------------------------
@@ -1670,8 +1679,8 @@ class _RealMixin:
 				return float(value)
 			except ValueError:
 				pass
-		raise ValueError("Illegal float value %s for parameter %s" % 
-			(`value`, self.name))
+		raise ValueError("Parameter %s: illegal float value %s" %
+			(self.name, `value`))
 
 # -----------------------------------------------------
 # IRAF real parameter class
@@ -1898,8 +1907,19 @@ class IrafParList:
 		param = irafutils.untranslateName(param)
 		return self.__pardict.has_key(param)
 
-	def getFilename(self): return self.__filename
-	def getParList(self): return self.__pars
+	def getFilename(self):
+		return self.__filename
+
+	def getParList(self, docopy=0):
+		if docopy:
+			# return copy of the list if docopy flag set
+			pars = copy.deepcopy(self.__pars)
+			for p in pars: p.setFlags(0)
+			return pars
+		else:
+			# by default return the list itself
+			return self.__pars
+
 	def getParDict(self):
 		if self.__psetlist: self.__addPsetParams()
 		return self.__pardict

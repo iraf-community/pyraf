@@ -118,10 +118,19 @@ class IrafTask:
 		self.initTask()
 		return self._currentParpath
 
-	def getParList(self):
+	def getParList(self, docopy=0):
 		"""Return list of all parameter objects"""
 		self.initTask(force=1)
 		plist = self._runningParList or self._currentParList
+		if plist:
+			return plist.getParList(docopy=docopy)
+		else:
+			return []
+
+	def getDefaultParList(self):
+		"""Return default list of all parameter objects"""
+		self.initTask(force=1)
+		plist = self._defaultParList
 		if plist:
 			return plist.getParList()
 		else:

@@ -46,7 +46,7 @@ class EparOption:
     # Chosen option 
     choiceClass = StringVar
 
-    def __init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths):
+    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, isScrollable, fieldWidths):
 
         # Connect to the information/status Label
         self.status = statusBar
@@ -55,6 +55,7 @@ class EparOption:
         self.master       = master
         self.master.frame = Frame(self.master)
         self.paramInfo    = paramInfo
+        self.defaultParamInfo = defaultParamInfo
         self.isScrollable = isScrollable
         self.inputWidth   = fieldWidths.get('inputWidth')
         self.valueWidth   = fieldWidths.get('valueWidth')
@@ -62,10 +63,10 @@ class EparOption:
 
         self.choice = self.choiceClass(self.master.frame)
 
-        self.name  = self.paramInfo.get(field = "p_name", native = 0, 
-                     prompt = 0) 
+        self.name  = self.paramInfo.name
         self.value = self.paramInfo.get(field = "p_filename", native = 0, 
                      prompt = 0) 
+        self.previousValue = self.value
 
         # Generate the input label
         if (self.paramInfo.get(field = "p_mode") == "h"):
@@ -136,9 +137,9 @@ class EparOption:
     # popup menu.  Used to unlearn a single parameter value.
     def unlearnValue(self):
  
-        self.defaultValue = self.defaultParamInfo.get(field = "p_filename", 
+        defaultValue = self.defaultParamInfo.get(field = "p_filename", 
                             native = 0, prompt = 0) 
-        self.choice.set(self.defaultValue)
+        self.choice.set(defaultValue)
 
 
     # If using the Tab key to move down the parameter panel, scroll the panel
@@ -153,9 +154,24 @@ class EparOption:
 
 
     # Check the validity of the entry
+    # If valid, changes the value of the parameter (note that this
+    # is a copy, so change is not permanent until save)
+    # Parameter change also sets the isChanged flag.
     def entryCheck(self, event = None):
-        return None
-        #pass
+
+        value = self.choice.get()
+        try:
+            if value != self.previousValue:
+                self.paramInfo.set(value)
+            return None
+        except ValueError, exceptionInfo:
+            # Reset the entry to the previous (presumably valid) value
+            self.choice.set(self.previousValue)
+            errorMsg = str(exceptionInfo)
+            self.status.bell()
+            if (event != None):
+                self.status.config(text = errorMsg)
+            return [self.name, value, self.previousValue]
 
 
     # Generate the the input widget as appropriate to the parameter datatype
@@ -163,26 +179,7 @@ class EparOption:
         pass
 
 
-    # Method called when the UNLEARN action button is invoked to
-    # unlearn the values of all the task parameters.
-    def unlearnOption(self, newParamInfo):
-
-        self.newParamInfo = newParamInfo
-
-        # Clear the Entry widget and obtain the default value
-        #self.entry.delete(0, END)
-
-        self.newValue = self.newParamInfo.get(field = "p_filename", native = 0, 
-                                              prompt = 0) 
-        self.choice.set(self.newValue)
-
-
 class EnumEparOption(EparOption):
-
-    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, isScrollable, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
-
-        self.defaultParamInfo = defaultParamInfo
 
     def makeInputWidget(self):
 
@@ -249,12 +246,6 @@ class EnumEparOption(EparOption):
 
 class BooleanEparOption(EparOption):
 
-    # Override base close option 
-    choiceClass = BooleanVar
-
-    def __init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
-
     def makeInputWidget(self):
 
         # Need to buffer the value width so the radio buttons and
@@ -262,8 +253,9 @@ class BooleanEparOption(EparOption):
         self.valueWidth = self.valueWidth + 10
         self.padWidth   = self.valueWidth / 2
 
-        # If no default value, self.value == ""
-        # That's OK, just leave it with no choice
+        # boolean parameters have 3 values: yes, no & undefined
+        # Just display two choices (but variable may initially be
+        # undefined)
         self.choice.set(self.value)
 
         self.frame = Frame(self.master.frame, 
@@ -290,28 +282,8 @@ class BooleanEparOption(EparOption):
             # Piggyback additional functionality to the Tab key
             self.frame.bind('<Tab>', self.scrollDown, "+")
 
-    # Method called with the "unlearn" menu option is chosen from the 
-    # popup menu.  Used to unlearn a single parameter value.
-    def unlearnValue(self):
-        pass
-
-
-
-#XXX For string parameters, we currently lose the information that
-#XXX a parameter is undefined.  The initialization gets the string
-#XXX value of the parameter, which is "" for an undefined value.
-#XXX But "" is also a legal string.  Somehow need to preserve the
-#XXX info that a value was None going in.
-#XXX Possible approaches -- store values in native format instead of
-#XXX as strings; do a special test when initializing strings to
-#XXX see if old value was None.
 
 class StringEparOption(EparOption):
-
-    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, isScrollable, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
-
-        self.defaultParamInfo = defaultParamInfo
 
     def makeInputWidget(self):
 
@@ -322,6 +294,10 @@ class StringEparOption(EparOption):
 
         # Bind the entry to a popup menu of choices
         self.entry.bind('<Button-3>', self.popupChoices)
+
+        # Set up key bindings
+        self.entry.bind('<Return>', self.entryCheck)
+        self.entry.bind('<Tab>', self.entryCheck, "+")
 
         if (self.isScrollable == "yes"):
             # Piggyback additional functionality to the Tab key
@@ -338,7 +314,6 @@ class StringEparOption(EparOption):
                               command = self.clearEntry)
         self.menu.add_command(label   = "Unlearn",
                               command = self.unlearnValue)
-
 
         # Get the current y-coordinate of the Entry 
         ycoord = self.entry.winfo_rooty()
@@ -371,34 +346,13 @@ class StringEparOption(EparOption):
 
 class IntEparOption(EparOption):
 
-    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, isScrollable, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
-
-        self.defaultParamInfo = defaultParamInfo
-
     def notNull(self, value):
         return value not in ["", "INDEF"]
-        #XXX could also check for value[:1] == ')' here, which
-        #XXX indicates parameter indirection?  That check
-        #XXX should be done somewhere, at any rate
 
     def makeInputWidget(self):
 
         # Retain the original parameter value in case of bad entry
         self.previousValue = self.value
-
-        self.min = self.paramInfo.get(field  = "p_minimum", 
-                                      native = 0, 
-                                      prompt = 0)
-        self.max = self.paramInfo.get(field  = "p_maximum", 
-                                      native = 0, 
-                                      prompt = 0)
-
-        # If not INDEF, convert to an integer.
-        if self.notNull(self.min):
-            self.min = int(self.min)
-        if self.notNull(self.max):
-            self.max = int(self.max)
 
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
@@ -443,13 +397,12 @@ class IntEparOption(EparOption):
         self.entry.delete(0, END)
 
 
-
     # Check the validity of the entry
-    def entryCheck(self, event = None):
+    # Note that doing this using the parameter set method
+    # automatically checks max, min, special value (INDEF,
+    # parameter indirection), etc.
 
-        #XXX better approach here would be to use the checkValue or
-        #XXX checkOneValue methods of the paramInfo object
-        #XXX I should clean up my error messages to match these first
+    def entryCheck(self, event = None, *args):
 
         # Ensure any INDEF entry is uppercase
         if (self.choice.get() == "indef"):
@@ -457,97 +410,28 @@ class IntEparOption(EparOption):
 
         # Make sure the input is legal
         value = self.choice.get()
-        if not self.notNull(value):
+        try:
+            if value != self.previousValue:
+                self.paramInfo.set(value)
             return None
-        else:
-            try:
-                value = int(value)
-            except ValueError:
-                # Reset the entry to the previous (presumably valid) value
-                self.choice.set(self.previousValue)
-                errorMsg = "Parameter " + `self.name` + \
-                      ": Input value is the wrong data type."
-                self.status.bell()
-                if (event != None):
-                    self.status.config(text = errorMsg)
-                return [self.name, value, self.previousValue]
-
-        # Check the range if min and/or max are defined
-        if self.notNull(self.min) or self.notNull(self.max):
-            if self.notNull(self.min) and (value < self.min):
-
-                # Reset the entry to the previous (presumably valid) value
-                self.choice.set(self.previousValue)
-
-                # Set up the error message
-                errorMsg = "Parameter " + `self.name` + ":" 
-
-                if self.notNull(self.max):
-                    errorMsg = errorMsg + \
-                               " Value is out of range.  Minimum: " + \
-                               `self.min` + " Maximum: " + `self.max`
-                else:
-                    errorMsg = errorMsg + \
-                               " Value is out of range.  Minimum: " + \
-                               `self.min` + " Maximum: -"
-                self.status.bell()
-                if (event != None):
-                    self.status.config(text = errorMsg)
-                return [self.name, value, self.previousValue]
-
-            if self.notNull(self.max) and (value > self.max):
-
-                # Reset the entry to the previous (presumably valid) value
-                self.choice.set(self.previousValue)
-
-                # Set up the error message
-                errorMsg = "Parameter " + `self.name` + ":" 
-
-                if self.notNull(self.min):
-                    errorMsg = errorMsg + \
-                               " Value is out of range.  Minimum: " + \
-                               `self.min` + " Maximum: " + `self.max`
-                else:
-                    errorMsg = errorMsg + \
-                               " Value is out of range.  Minimum: - " + \
-                               " Maximum: " + `self.max`
-                self.status.bell()
-                if (event != None):
-                    self.status.config(text = errorMsg)
-                return [self.name, value, self.previousValue]
-
-        return None
+        except ValueError, e:
+            # Reset the entry to the previous (presumably valid) value
+            self.choice.set(self.previousValue)
+            errorMsg = str(e)
+            self.status.bell()
+            if (event != None):
+                self.status.config(text = errorMsg)
+            return [self.name, value, self.previousValue]
 
 class RealEparOption(EparOption):
 
-    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, isScrollable, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
-
-        self.defaultParamInfo = defaultParamInfo
-
     def notNull(self, value):
         return value not in ["", "INDEF"]
-        #XXX could also check for value[:1] == ')' here, which
-        #XXX indicates parameter indirection?  That check
-        #XXX should be done somewhere, at any rate
 
     def makeInputWidget(self):
 
         # Retain the original parameter value in case of bad entry
         self.previousValue = self.value
-
-        self.min = self.paramInfo.get(field  = "p_minimum", 
-                                      native = 0, 
-                                      prompt = 0)
-        self.max = self.paramInfo.get(field  = "p_maximum", 
-                                      native = 0, 
-                                      prompt = 0)
-
-        # If not INDEF, convert to a real.
-        if self.notNull(self.min):
-            self.min = float(self.min)
-        if self.notNull(self.max):
-            self.max = float(self.max)
 
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
@@ -593,12 +477,7 @@ class RealEparOption(EparOption):
 
 
     # Check the validity of the entry
-    def entryCheck(self, event = None):
-
-        #XXX better approach here would be to use the checkValue or
-        #XXX checkOneValue methods of the paramInfo object
-        #XXX It handles some other formats too (e.g. sexagesimal hh:mm:ss)
-        #XXX I should clean up my error messages to match these first
+    def entryCheck(self, event = None, *args):
 
         # Ensure any INDEF entry is uppercase
         if (self.choice.get() == "indef"):
@@ -606,88 +485,27 @@ class RealEparOption(EparOption):
 
         # Make sure the input is legal
         value = self.choice.get()
-        if not self.notNull(value):
+        try:
+            if value != self.previousValue:
+                self.paramInfo.set(value)
             return None
-        else:
-            try:
-                value = float(value)
-            except ValueError:
-                # Reset the entry to the previous (presumably valid) value
-                self.choice.set(self.previousValue)
-                errorMsg = "Parameter " + `self.name` + \
-                      ": Input value is the wrong data type."
-                self.status.bell()
-                if (event != None):
-                    self.status.config(text = errorMsg)
-                return [self.name, value, self.previousValue]
-
-        # Check the range if min and/or max are defined
-        if self.notNull(self.min) or self.notNull(self.max):
-            if self.notNull(self.min) and (value < self.min):
-
-                # Reset the entry to the previous (presumably valid) value
-                self.choice.set(self.previousValue)
-
-                # Set up the error message
-                errorMsg = "Parameter " + `self.name` + ":" 
-
-                if self.notNull(self.max):
-                    errorMsg = errorMsg + \
-                               " Value is out of range.  Minimum: " + \
-                               `self.min` + " Maximum: " + `self.max`
-                else:
-                    errorMsg = errorMsg + \
-                               " Value is out of range.  Minimum: " + \
-                               `self.min` + " Maximum: -"
-                self.status.bell()
-                if (event != None):
-                    self.status.config(text = errorMsg)
-                return [self.name, value, self.previousValue]
-
-            if self.notNull(self.max) and (value > self.max):
-
-                # Reset the entry to the previous (presumably valid) value
-                self.choice.set(self.previousValue)
-
-                # Set up the error message
-                errorMsg = "Parameter " + `self.name` + ":" 
-
-                if self.notNull(self.min):
-                    errorMsg = errorMsg + \
-                               " Value is out of range.  Minimum: " + \
-                               `self.min` + " Maximum: " + `self.max`
-                else:
-                    errorMsg = errorMsg + \
-                               " Value is out of range.  Minimum: - " + \
-                               " Maximum: " + `self.max`
-                self.status.bell()
-                if (event != None):
-                    self.status.config(text = errorMsg)
-                return [self.name, value, self.previousValue]
-
-        return None
+        except ValueError, e:
+            # Reset the entry to the previous (presumably valid) value
+            self.choice.set(self.previousValue)
+            errorMsg = str(e)
+            self.status.bell()
+            if (event != None):
+                self.status.config(text = errorMsg)
+            return [self.name, value, self.previousValue]
 
 
 class PsetEparOption(EparOption):
 
-    def __init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths):
-        EparOption.__init__(self, master, statusBar, paramInfo, isScrollable, fieldWidths)
-
     def makeInputWidget(self):
 
         # For a PSET self.value is actually an IrafTask object
-        # Need to get the filename to label the button
-        #XXX No -- just use name to label button here too?
-        fileName = self.value.getFilename()
-
-        # Strip of any leading environment variable indicator and
-        # any trailing file extension
-        splitfileName  = string.split(fileName, ".")
-        splitfileName2 = string.split(splitfileName[0], "$")
-        if len(splitfileName2) > 1:
-           self.buttonText = splitfileName2[len(splitfileName2) - 1]
-        else:
-           self.buttonText = splitfileName2[0]
+        # Use task name to label button
+        self.buttonText = self.value.getName()
 
         # Need to adjust the value width so the button is aligned properly
         self.valueWidth = self.valueWidth - 3
@@ -708,9 +526,17 @@ class PsetEparOption(EparOption):
         
         # Get a reference to the parent TopLevel
         parentToplevel  = self.master.winfo_toplevel()
+
+        # Don't create multiple windows for the same task
+        name = self.value.getName()
+        for child in parentToplevel.childList:
+            if child.taskName == name:
+                child.top.tkraise()
+                return
         childPsetHandle = epar.EparDialog(self.buttonText, 
                                           parent  = self.master.frame, 
-                                          isChild = "yes", 
+                                          isChild = 1, 
+                                          childList = parentToplevel.childList,
                                           title   = "PSET Parameter Editor") 
         parentToplevel.childList.append(childPsetHandle)
 
