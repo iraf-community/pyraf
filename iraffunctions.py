@@ -848,14 +848,29 @@ def radix(value, base=10, length=0):
 	return sign+_string.join(outdigits,'')
 
 def osfn(filename):
-	"""Convert IRAF virtual path name to absolute OS pathname"""
+	"""Convert IRAF virtual path name to OS pathname"""
+
+	# Try to emulate the CL version closely:
+	#
+	# - expands IRAF virtual file names
+	# - strips blanks around path components
+	# - if no slashes or relative paths, return relative pathname
+	# - otherwise return absolute pathname
+
 	ename = Expand(filename)
-	if _os.path.isabs(ename):
-		return ename
-	fname = _os.path.abspath(ename)
-	# append '/' for directories (but only for relative paths)
-	if _os.path.isdir(fname):
-		fname = _os.path.join(fname,'')
+	dlist = _string.split(filename,_os.sep)
+	dlist = map(_string.strip, dlist)
+	if len(dlist)==1 and dlist[0] not in [_os.curdir,_os.pardir]:
+		return dlist[0]
+
+	# I use string.join instead of os.path.join here because
+	# os.path.join("","") returns "" instead of "/"
+
+	epath = _string.join(dlist, _os.sep)
+	fname = _os.path.abspath(epath)
+	# append '/' if relative directory was at end or filename ends with '/'
+	if fname[-1] != _os.sep and dlist[-1] in ['', _os.curdir,_os.pardir]:
+		fname = fname + _os.sep
 	return fname
 
 def clSexagesimal(d, m, s=0):
