@@ -1443,9 +1443,36 @@ def prcache(*args, **kw):
 		rv = redirReset(resetList, closeFHList)
 	return rv
 
-# dummy routines
+# history routines
 
-def clNoHistory(*args, **kw):
+def history(n=20, *args, **kw):
+	"""Print history
+	
+	Does not replicate the IRAF behavior of changing default number of
+	lines to print.  (That seems fairly useless to me.)
+	"""
+
+	# Seems like there ought to be a way to do this using readline, but I have
+	# not been able to figure out any readline command that lists the history
+
+	# handle redirection and save keywords
+	redirKW, closeFHList = redirProcess(kw)
+	if kw.has_key('_save'): del kw['_save']
+	if len(kw):
+		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+	resetList = redirApply(redirKW)
+	try:
+		import __main__
+		try:
+			n = abs(int(n))
+			__main__._pycmdline.printHistory(n)
+		except NameError:
+			pass
+	finally:
+		rv = redirReset(resetList, closeFHList)
+	return rv
+
+def ehistory(*args, **kw):
 	"""Dummy history function"""
 	# handle redirection and save keywords
 	redirKW, closeFHList = redirProcess(kw)
@@ -1454,13 +1481,13 @@ def clNoHistory(*args, **kw):
 		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
 	resetList = redirApply(redirKW)
 	try:
-		print 'History commands not required: Use arrow keys to recall commands'
+		print 'ehistory command not required: Use arrow keys to recall commands'
 		print 'or ctrl-R to search for a string in the command history.'
 	finally:
 		rv = redirReset(resetList, closeFHList)
 	return rv
 
-history = ehistory = clNoHistory
+# dummy routines
 
 def clNoBackground(*args, **kw):
 	"""Dummy background function"""
@@ -1704,7 +1731,12 @@ def redefine(*args, **kw):
 def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
 	"""Define IRAF package, returning tuple with new package name and binary
 	
-	PkgName, PkgBinary are old default values"""
+	PkgName, PkgBinary are old default values.  If Stdout=1 is specified,
+	returns output as string array (normal task behavior) instead of
+	returning PkgName, PkgBinary.  This inconsistency is necessary
+	to replicate the inconsistent behavior of the package command
+	in IRAF.
+	"""
 	# handle redirection and save keywords
 	redirKW, closeFHList = redirProcess(kw)
 	if kw.has_key('_save'): del kw['_save']
@@ -1722,7 +1754,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
 				if not printed.has_key(pkgname):
 					printed[pkgname] = 1
 					print '    %s' % pkgname
-			return (PkgName, PkgBinary)
+			rv1 = (PkgName, PkgBinary)
 		else:
 			spkgname = _string.replace(pkgname, '.', '_')
 			# remove trailing comma
@@ -1757,10 +1789,11 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
 				if Verbose>0: _writeError("Warning: CL task `%s' apparently is "
 					"a package" % pkgname)
 
-			return (pkgname, bin or PkgBinary)
+			rv1 = (pkgname, bin or PkgBinary)
 	finally:
-		# note return value not used
 		rv = redirReset(resetList, closeFHList)
+	# return output as array of strings if not None, else return name,bin
+	return rv or rv1
 
 def clPrint(*args, **kw):
 	"""CL print command -- emulates CL spacing and uses redirection keywords"""
@@ -2390,4 +2423,7 @@ def redirReset(resetList, closeFHList):
 		# rv = PipeOut.readlines()
 		rv = _string.split(PipeOut.getvalue(),'\n')
 		PipeOut.close()
+		# delete trailing null value
+		if len(rv)>1 and rv[-1] == '':
+			del rv[-1]
 		return rv

@@ -49,6 +49,21 @@ class CmdConsole(code.InteractiveConsole):
 		self.recmd = re.compile( "[ \t]*(?P<cmd>" +
 			"[" + cmdchars[0] + "][" + cmdchars[0] + cmdchars[1] + "]*" +
 			")[ \t]*")
+		# history is a list of lines entered by user (allocated in blocks)
+		self.history = 100*[None]
+		self.nhistory = 0
+
+	def addHistory(self, line):
+		"""Append a line to history"""
+		if self.nhistory >= len(self.history):
+			self.history.extend(100*[None])
+		self.history[self.nhistory] = line
+		self.nhistory = self.nhistory + 1
+
+	def printHistory(self, n=20):
+		"""Print last n lines of history"""
+		for i in range(-min(n, self.nhistory),0):
+			print self.history[self.nhistory+i]
 
 	def interact(self, banner=None):
 		"""Emulate the interactive Python console, with extra commands.
@@ -73,6 +88,8 @@ class CmdConsole(code.InteractiveConsole):
 					prompt = self.ps1
 				line = self.raw_input(prompt)
 				neofs = 0
+				# add non-null lines to history
+				if string.strip(line): self.addHistory(line)
 				# note that this forbids combination of python & CL
 				# code -- e.g. a for loop that runs CL tasks.
 				if not more:

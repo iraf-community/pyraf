@@ -1655,7 +1655,8 @@ class Tree2Python(GenericASTTraversal):
 			self.additionalArguments.append("PkgName=PkgName")
 			self.additionalArguments.append("PkgBinary=PkgBinary")
 			# package is a function returning new values for PkgName etc.
-			self.write("PkgName, PkgBinary = ")
+			# except when pipe is specified
+			if not self.pipeOut: self.write("PkgName, PkgBinary = ")
 		# add extra argument to save parameters if in "single" mode
 		if self.vars.mode == "single":
 			self.additionalArguments.append("_save=1")

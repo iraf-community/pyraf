@@ -88,23 +88,21 @@ if os.environ.has_key("PYTHONSTARTUP") and \
 		os.path.isfile(os.environ["PYTHONSTARTUP"]):
 	execfile(os.environ["PYTHONSTARTUP"])
 
-from pyraf import doCmdline, help, iraf
+from pyraf import doCmdline, iraf
 from pyraf.irafpar import makeIrafPar
 from pyraf.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
-
-def _startCmdline():
-	"""Start up command line wrapper keeping definitions in main name space"""
-	import pyraf.pycmdline
-	_pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
-	_pycmdline.start()
 
 print "Pyraf, Python front end to IRAF,", __version__, "(copyright AURA 2000)"
 print "Python: " + sys.copyright
 
 if doCmdline:
 	del doCmdline
-	_startCmdline()
+	# Start up command line wrapper keeping definitions in main name space
+	# Keep the command-line object in namespace too for access to history
+	import pyraf.pycmdline
+	_pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
+	_pycmdline.start()
 else:
 	del doCmdline
 
