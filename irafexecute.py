@@ -244,7 +244,12 @@ class IrafProcess:
 			elif mcmd.group('par_get'):
 				# parameter get request
 				paramname = mcmd.group('gname')
-				self.writeString(self.task.getParam(paramname) + '\n')
+				# list parameters can generate EOF exception
+				try:
+					pmsg = self.task.getParam(paramname) + '\n'
+				except EOFError:
+					pmsg = 'EOF\n'
+				self.writeString(pmsg)
 				self.msg = self.msg[mcmd.end():]
 			elif mcmd.group('par_set'):
 				# set value of parameter
