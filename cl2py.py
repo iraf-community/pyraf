@@ -131,6 +131,8 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
 	# add to cache
 	if index is not None: codeCache.add(index, pycode)
 	pycode.index = index
+	if Verbose>1:
+		print "File `%s' compiled by cl2py" % efilename
 	return pycode
 
 def checkCache(filename, pycode):
@@ -882,6 +884,9 @@ _functionList = {
 			"int":		"int",
 			"real":		"float",
 			"str":		"str",
+			"abs":		"abs",
+			"min":		"min",
+			"max":		"max",
 			"sin":		"math.sin",
 			"cos":		"math.cos",
 			"tan":		"math.tan",
@@ -890,10 +895,7 @@ _functionList = {
 			"log":		"math.log",
 			"log10":	"math.log10",
 			"sqrt":		"math.sqrt",
-			"frac":		"math.frac",
-			"abs":		"math.abs",
-			"min":		"math.min",
-			"max":		"math.max",
+			"frac":		"iraf.frac",
 			}
 
 # return types of IRAF built-in functions
@@ -1396,16 +1398,19 @@ class Tree2Python(GenericASTTraversal):
 
 	def modify_scan_args(self, functionname, sargs):
 		# modify argument list for scan statement
-		# pass in locals dictionary and names of variables to set
-		sargs.insert(0, "locals()")
-		# if fscan, first argument is the string to read from
-		if functionname == 'fscan':
-			i = 2
-		else:
-			i = 1
+
+		# If fscan, first argument is the string to read from.
+		# But we still want to pass it by name because if the
+		# first argument is a list parameter, we want to postpone
+		# its evaluation until we get into the fscan function so
+		# we can catch EOF exceptions.
+
 		# Add quotes to names (we're literally passing the names, not
 		# the values)
-		sargs[i:] = map(lambda x: `x`, sargs[i:])
+		sargs = map(lambda x: `x`, sargs)
+
+		# pass in locals dictionary so we can get names of variables to set
+		sargs.insert(0, "locals()")
 		return sargs
 
 	def default(self, node):
@@ -1994,7 +1999,13 @@ class _CodeCache:
 
 	def remove(self, filename):
 
-		"""Remove pycode from cache for this file or IrafTask object."""
+		"""Remove pycode from cache for this file or IrafTask object.
+		
+		This deletes the entry from the shelve persistent database, under
+		the assumption that this routine may be called to fix a bug in
+		the code generation (so we don't want to keep the old version of
+		the Python code around.)
+		"""
 
 		if type(filename) is not types.StringType:
 			try:

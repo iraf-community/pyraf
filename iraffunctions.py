@@ -15,7 +15,7 @@ $Id$
 R. White, 1999 December 20
 """
 
-# define INDEF, yes, no, Verbose, IrafError, userIrafHome
+# define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
 
 from irafglobals import *
 
@@ -48,7 +48,7 @@ def _writeError(msg):
 # now it is safe to import other iraf modules
 # -----------------------------------------------------
 
-import sys, os, string, re, types, time
+import sys, os, string, re, math, types, time
 import minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, cl2py
 
@@ -64,6 +64,7 @@ _sys = sys
 _os = os
 _string = string
 _re = re
+_math = math
 _types = types
 _time = time
 _StringIO = StringIO
@@ -78,7 +79,7 @@ _iraftask = iraftask
 _irafpar = irafpar
 _cl2py = cl2py
 
-del sys, os, string, re, types, time, StringIO
+del sys, os, string, re, math, types, time, StringIO
 del minmatch, subproc, wutil
 del irafnames, irafutils, iraftask, irafpar, cl2py
 
@@ -654,6 +655,11 @@ def strlen(s):
 	"""Return length of string"""
 	return len(s)
 
+def frac(x):
+	"""Return fractional part of x"""
+	frac_part, int_part = _math.modf(x)
+	return frac_part
+
 _radixDigits = list(_string.digits+_string.uppercase)
 
 def radix(value, base=10):
@@ -802,7 +808,7 @@ def boolean(value):
 _nscan = 0
 
 def fscan(locals, line, *namelist, **kw):
-	"""Scan function sets parameters from line read from stdin
+	"""fscan function sets parameters from a string or list parameter
 	
 	Uses local dictionary (passed as first argument) to set variables
 	specified by list of following names.  (This is a bit
@@ -814,8 +820,14 @@ def fscan(locals, line, *namelist, **kw):
 
 	Returns number of arguments set to new values.  If there are
 	too few space-delimited arguments on the input line, it does
-	not set all the arguments.
+	not set all the arguments.  Returns EOF on end-of-file.
 	"""
+	# get the value of the line (which may be a variable, string literal,
+	# expression, or an IRAF list parameter)
+	try:
+		line = eval(line, locals)
+	except EOFError:
+		return EOF
 	f = _string.split(line)
 	n = min(len(f),len(namelist))
 	if kw.has_key('strconv'):
@@ -848,8 +860,8 @@ def scan(locals, *namelist, **kw):
 	resetList = redirApply(redirKW)
 	try:
 		line = _sys.stdin.readline()
-		if line == "": return 'EOF'
-		return apply(fscan, (locals, line) + namelist, kw)
+		if line == "": return EOF
+		return apply(fscan, (locals, `line`) + namelist, kw)
 	finally:
 		redirReset(resetList, closeFHList)
 
@@ -1832,10 +1844,12 @@ def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 			if not redefine:
 				_writeError("Warning: `%s' is a task redefinition" %
 					fullname)
-		elif task.getPkgbinary() != newtask.getPkgbinary():
-			# only package binary differs -- add it to search path
-			if Verbose>1: print 'Adding',pkgbinary,'to',task,'path'
-			task.addPkgbinary(pkgbinary)
+		else:
+			# new task is consistent with old task, so return old task
+			if task.getPkgbinary() != newtask.getPkgbinary():
+				# package binary differs -- add it to search path
+				if Verbose>1: print 'Adding',pkgbinary,'to',task,'path'
+				task.addPkgbinary(pkgbinary)
 			return task
 	# add it to the task list
 	_addTask(newtask)

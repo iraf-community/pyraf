@@ -1214,9 +1214,8 @@ class IrafParL(_StringMixin, IrafPar):
 					self.fh = open(iraf.Expand(self.value), "r")
 				value = self.fh.readline()
 				if not value:
-					# EOF -- return string 'EOF'
-					# XXX if native format, raise an exception?
-					return "EOF"
+					# EOF -- raise exception
+					raise EOFError("EOF from list parameter `%s'" % self.name)
 				if value[-1:] == "\n": value = value[:-1]
 			except IOError, e:
 				if not self.errMsg:
