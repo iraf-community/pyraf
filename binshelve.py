@@ -1,5 +1,7 @@
 """Version of shelve that uses binary pickle format
 
+$Id$
+
 R. White, 2000 January 19
 """
 
