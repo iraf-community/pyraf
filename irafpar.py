@@ -1450,13 +1450,14 @@ class IrafParImCur(IrafParL):
                 sys.stdout.flush()
                 sys.stdout.write("Do you really want to quit? (yes or no) ")
                 sys.stdout.flush()
-                key = key + ' ' + irafutils.tkreadline()[:-1]
+                _key = irafutils.tkreadline()[:-1]
+                #key = key + ' ' + irafutils.tkreadline()[:-1]
 
                 # See if user really wants to quit...
-                if string.find(string.lower(key),'y') > -1:
+                if string.find(string.lower(_key),'y') > -1:
                     # User confirmed they want to quit.
                     print 'Quitting imcur mode...'
-                    raise EOFError
+                    return result
             else:
                 break
         # User wants to continue working, so return imcur values...
