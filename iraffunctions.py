@@ -750,15 +750,40 @@ def isNullFile(s):
 	else:
 		return 0
 
-def stty(terminal=None, baud=9600, ncols=80, nlines=24, show=no, all=no,
-		reset=no, resize=no, clear=no, ucasein=no, ucaseout=no,
-		login=None, logio=None, logout=None,
-		playback=None, verify=no, delay=500):
+_sttyArgs = _minmatch.MinMatchDict({
+			'terminal': None,
+			'baud': 9600,
+			'ncols': 80,
+			'nlines': 24,
+			'show': no,
+			'all': no,
+			'reset': no,
+			'resize': no,
+			'clear': no,
+			'ucasein': no,
+			'ucaseout': no,
+			'login': None,
+			'logio': None,
+			'logout': None,
+			'playback': None,
+			'verify': no,
+			'delay': 500,
+			})
+
+def stty(terminal=None, **kw):
 	"""IRAF stty command (not really implemented, just a shell)"""
-	if playback is not None:
+	import copy
+	expkw = _sttyArgs.copy()
+	if terminal is not None: expkw['terminal'] = terminal
+	for key, item in kw.items():
+		if _sttyArgs.has_key(key):
+			expkw[key] = item
+		else:
+			raise TypeError('unexpected keyword argument: '+key)
+	if expkw['playback'] is not None:
 		print "stty playback not implemented"
 		return
-	if resize or terminal == "resize":
+	if expkw['resize'] or expkw['terminal'] == "resize":
 		# returns a string with size of display
 		# also sets CL environmental CL parameters
 		if _sys.stdout != _sys.__stdout__:
