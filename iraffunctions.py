@@ -156,15 +156,16 @@ def Init(doprint=1,hush=0,savefile=None):
             arch = _os.environ['IRAFARCH']
         except KeyError:
             # iraf or IRAFARCH environment variable not defined
-            # try to them cl startup file
-            d = _getIrafEnv()
-            for key, value in d.items():
-                if not _os.environ.has_key(key):
-                    _os.environ[key] = value
-            iraf = _os.environ['iraf']
-            arch = _os.environ['IRAFARCH']
-        except IOError:
-            raise SystemExit("""
+            # try to get them from cl startup file
+            try:
+                d = _getIrafEnv()
+                for key, value in d.items():
+                    if not _os.environ.has_key(key):
+                        _os.environ[key] = value
+                iraf = _os.environ['iraf']
+                arch = _os.environ['IRAFARCH']
+            except IOError:
+                raise SystemExit("""
 Your iraf and IRAFARCH environment variables are not defined and could not
 be determined from /usr/local/bin/cl.  Before starting pyraf, define them
 by doing (for example)
@@ -226,9 +227,9 @@ at the Unix command line.  The values will depend on your IRAF installation.
         if doprint: listTasks('clpackage')
 
 def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
-    """Returns dictionary environment vars defined in cl startup file"""
+    """Returns dictionary of environment vars defined in cl startup file"""
     if not _os.path.exists(file):
-        raise IOError("CL startup file %s does not exist")
+        raise IOError("CL startup file %s does not exist" % file)
     lines = open(file,'r').readlines()
     # replace commands that exec cl with commands to print environment vars
     pat = _re.compile(r'^\s*exec\s+')
@@ -245,14 +246,16 @@ def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
     if nfound == 0:
         raise IOError("No exec statement found in script %s" % file)
     # write new script to temporary file
-    newfile = _os.tmpnam()
+    import tempfile
+    newfile = tempfile.mktemp()
     open(newfile,'w').writelines(newlines)
     _os.chmod(newfile,0700)
     # run new script and capture output
     fh = _StringIO.StringIO()
     status = clOscmd(newfile,Stdout=fh)
     if status:
-        raise IOError("Execution error in script %s" % newfile)
+        raise IOError("Execution error in script %s (derived from %s)" %
+            (newfile, file))
     _os.remove(newfile)
     result = fh.getvalue().split('\n')
     fh.close()
@@ -263,6 +266,7 @@ def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
             key, value = entry.split('=',1)
             d[key] = value
     return d
+
 # module variables that don't get saved (they get
 # initialized when this module is imported)
 
