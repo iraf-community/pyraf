@@ -1424,44 +1424,7 @@ class IrafParImCur(IrafParL):
 
     def _getNextValue(self):
         """Return next image display cursor value"""
-        _done = no
-        # Return to get next value from imcur after 'q'
-        # until quitting is confirmed. If not confirmed,
-        # it must return to get next value which may or may
-        # not be another 'q' (to quit).
-        #
-        while _done == no:
-
-            result = irafimcur.imcur()
-
-            # Capture 'q' separately to allow both confirmation of
-            # quitting as well as the ability to return to imcur mode
-            # if they didn't really want to quit...  WJH 06Jan2003
-            #
-            # Parse out key value from imcur result
-            key = result.split()[3]
-            # See if key was 'q'...
-            if key == 'q':
-                # Reproduce IRAF behavior by confirming whether
-                # the user really intended on quitting. This prevents
-                # accidentally hitting 'q' in the middle of a big
-                # process and having to restart.
-                sys.stdout.write("\n")
-                sys.stdout.flush()
-                sys.stdout.write("Do you really want to quit? (yes or no) ")
-                sys.stdout.flush()
-                _key = irafutils.tkreadline()[:-1]
-                #key = key + ' ' + irafutils.tkreadline()[:-1]
-
-                # See if user really wants to quit...
-                if string.find(string.lower(_key),'y') > -1:
-                    # User confirmed they want to quit.
-                    print 'Quitting imcur mode...'
-                    return result
-            else:
-                break
-        # User wants to continue working, so return imcur values...
-        return result
+        return irafimcur.imcur()
 
 # -----------------------------------------------------
 # IRAF ukey (user typed key) parameter class
