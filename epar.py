@@ -2,7 +2,7 @@
 
 $Id$
 
-M.D. De La Pena, 2000 January 11
+M.D. De La Pena, 2000 January 17
 """
 # System level modules
 from Tkinter import *
@@ -419,6 +419,9 @@ class EparDialog:
         #    self.top.initial_focus.focus_set()
         #    return
 
+        # Remove the main epar window
+        self.top.withdraw()
+
         self.top.focus_set()
         self.top.destroy()
 
@@ -470,6 +473,7 @@ class EparDialog:
         CHILDY = 0
 
         # Give focus back to parent window and abort
+        self.top.withdraw()
         self.top.focus_set()
         self.top.destroy()
         self.top.quit()
