@@ -945,6 +945,11 @@ def fscan(locals, line, *namelist, **kw):
 		return EOF
 	f = _string.split(line)
 	n = min(len(f),len(namelist))
+	# a tricky thing -- null input is OK if the first variable is
+	# a struct
+	if n==0 and namelist and _isStruct(locals, namelist[0]):
+		f = ['']
+		n = 1
 	if kw.has_key('strconv'):
 		strconv = kw['strconv']
 		del kw['strconv']
@@ -956,10 +961,10 @@ def fscan(locals, line, *namelist, **kw):
 		# even messier: special handling for struct type variables, which
 		# consume the entire remaining string
 		if _isStruct(locals, namelist[i]):
-			if i < n-1:
+			if i < len(namelist)-1:
 				raise TypeError("Struct type param `%s' must be the final"
 					" argument to scan" % namelist[i])
-			# messy -- struct needs rest of line with embedded whitespace
+			# ultramessy -- struct needs rest of line with embedded whitespace
 			if i==0:
 				iend = 0
 			else:
@@ -988,8 +993,12 @@ def fscan(locals, line, *namelist, **kw):
 	_nscan = n
 	return n
 
-def _isStruct(locals, name):
-	"""Returns true if the variable `name' is of type struct"""
+def _isStruct(locals, name, checklegal=0):
+	"""Returns true if the variable `name' is of type struct
+	
+	If checklegal is true, returns true only if variable is struct and
+	does not currently have a legal value.
+	"""
 	c = _string.split(name,'.')
 	if len(c)>1:
 		# must get the parameter object, not the value
@@ -1000,7 +1009,13 @@ def _isStruct(locals, name):
 	except:
 		# assume all failures mean this is not an IrafPar
 		return 0
-	return (isinstance(par, _irafpar.IrafPar) and par.type == 'struct')
+	if (isinstance(par, _irafpar.IrafPar) and par.type == 'struct'):
+		if checklegal:
+			return (not par.isLegal())
+		else:
+			return 1
+	else:
+		return 0
 
 def scan(locals, *namelist, **kw):
 	"""Scan function sets parameters from line read from stdin
@@ -1015,7 +1030,22 @@ def scan(locals, *namelist, **kw):
 	resetList = redirApply(redirKW)
 	try:
 		line = _sys.stdin.readline()
-		if line == "": return EOF
+		# null line means EOF
+		if line == "":
+			# Replicate a weird IRAF behavior -- if the argument list
+			# consists of a single struct-type variable, and it does not
+			# currently have a defined value, set it to the null string.
+			# (I warned you to abandon hope!)
+			if namelist and _isStruct(locals, namelist[0], checklegal=1):
+				if len(namelist) > 1:
+					raise TypeError("Struct type param `%s' must be the final"
+						" argument to scan" % namelist[0])
+				# it is an undefined struct, so set it to null string
+				cmd = namelist[0] + ' = ""'
+				exec cmd in locals
+			global _nscan
+			_nscan = 0
+			return EOF
 		return apply(fscan, (locals, `line`) + namelist, kw)
 	finally:
 		redirReset(resetList, closeFHList)
