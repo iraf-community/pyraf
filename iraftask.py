@@ -527,7 +527,7 @@ class IrafTask(irafglobals.IrafTask):
     # task parameter utility methods
     #---------------------------------------------------------
 
-    def lpar(self,verbose=0):
+    def lParam(self,verbose=0):
         """List the task parameters"""
         self.initTask(force=1)
         plist = self._runningParList or self._currentParList
@@ -537,7 +537,7 @@ class IrafTask(irafglobals.IrafTask):
             sys.stderr.write("Task %s has no parameter file\n" % self._name)
             sys.stderr.flush()
 
-    def epar(self):
+    def eParam(self):
         """Edit the task parameters"""
         self.initTask(force=1)
         #XXX always runs on current par list, not running par list?
@@ -547,7 +547,7 @@ class IrafTask(irafglobals.IrafTask):
             sys.stderr.write("Task %s has no parameter file\n" % self._name)
             sys.stderr.flush()
 
-    def dpar(self, cl=1):
+    def dParam(self, cl=1):
         """Dump the task parameters
 
         Default is to write CL version of code; if cl parameter is
@@ -584,10 +584,6 @@ class IrafTask(irafglobals.IrafTask):
                 if iraf.Verbose>0: print status
                 return status
         rv = self._currentParList.saveParList(filename)
-        if type(filename) is types.StringType:
-            self._currentParpath = filename
-        elif hasattr(filename,'name'):
-            self._currentParpath = filename.name
         return rv
 
     def unlearn(self):

@@ -1583,14 +1583,12 @@ def eparam(*args, **kw):
     resetList = redirApply(redirKW)
     try:
         for taskname in args:
-            if isinstance(taskname, _iraftask.IrafTask):
-                taskname.epar()
-            elif isinstance(taskname, _irafpar.IrafParList):
+            try:
                 taskname.eParam()
-            else:
+            except AttributeError:
                 try:
-                    getTask(taskname).epar()
-                except KeyError, e:
+                    getTask(taskname).eParam()
+                except (KeyError, TypeError):
                     _writeError("Warning: Could not find task %s for epar\n" %
                             taskname)
     finally:
@@ -1608,10 +1606,13 @@ def lparam(*args, **kw):
     try:
         for taskname in args:
             try:
-                getTask(taskname).lpar()
-            except KeyError, e:
-                _writeError("Warning: Could not find task %s for lpar\n" %
-                        taskname)
+                taskname.lParam()
+            except AttributeError:
+                try:
+                    getTask(taskname).lParam()
+                except (KeyError, TypeError):
+                    _writeError("Warning: Could not find task %s for lpar\n" %
+                            taskname)
     finally:
         rv = redirReset(resetList, closeFHList)
     return rv
@@ -1633,10 +1634,13 @@ def dparam(*args, **kw):
     try:
         for taskname in args:
             try:
-                getTask(taskname).dpar(cl=cl)
-            except KeyError, e:
-                _writeError("Warning: Could not find task %s for dpar\n" %
-                        taskname)
+                taskname.dParam(cl=cl)
+            except AttributeError:
+                try:
+                    getTask(taskname).dParam(cl=cl)
+                except (KeyError, TypeError):
+                    _writeError("Warning: Could not find task %s for dpar\n" %
+                            taskname)
     finally:
         rv = redirReset(resetList, closeFHList)
     return rv

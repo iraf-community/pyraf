@@ -965,8 +965,15 @@ class EparDialog:
                 # from string)
                 self.taskObject.setParam(par.name, value)
 
-        # save results to the uparm directory
-        self.taskObject.saveParList()
+        # Save results to the uparm directory
+        # Skip the save if the thing being edited is an IrafParList without
+        # an associated file (in which case the changes are just being
+        # made in memory.)
+
+        taskObject = self.taskObject
+        if (not isinstance(taskObject, irafpar.IrafParList)) or \
+          taskObject.getFilename():
+            taskObject.saveParList()
 
         return self.badEntries
 
