@@ -92,11 +92,6 @@ class GraphicsWindowManager:
 				changeActiveWindow = 1
 			window = self.windows[windowName]
 			window.top.destroy()
-			# before deleting window, see if it is the last one, we need
-			# its togl reference to free the colors before getting
-			# rid of it
-			if len(self.windows) <= 1:
-				self.colorManager.freeColors()
 			del self.windows[windowName]
 			if changeActiveWindow:
 				if len(self.windows):
@@ -125,15 +120,15 @@ class GraphicsWindow:
 		self.top = Tkinter.Toplevel()
 		self.gwidget = Ptogl.Ptogl(self.top,width=600,height=420,
 								   rgba=colormode)
+		self.gwidget.status = Tkinter.Label(self.top, text="",
+											relief = Tkinter.SUNKEN,
+											borderwidth=1,
+											anchor=Tkinter.W,height=1)
 		self.gwidget.redraw = redraw
 		self.top.title(windowName)
-		self.gwidget.pack(side = 'top', expand=1, fill='both')
-		self.gwidget.status = Tkinter.Label(self.top, text="",
-									relief = Tkinter.SUNKEN,
-									borderwidth=1,
-									anchor=Tkinter.W,height=1)
 		self.gwidget.status.pack(side=Tkinter.BOTTOM,
-						 fill=Tkinter.X, padx=2, pady=1, ipady=1)
+					 fill=Tkinter.X, padx=2, pady=1, ipady=1)
+		self.gwidget.pack(side = 'top', expand=1, fill='both')
 		self.top.protocol("WM_DELETE_WINDOW", self.gwdestroy)
 		windowID = self.gwidget.winfo_id()
 		wutil.setBackingStore(windowID)
@@ -368,10 +363,18 @@ def getGraphicsWindowManager():
 	"""return window manager object"""
 	return _g
 
+def getColorManager():
+
+	return _g.colorManager
+
 def createWindow():
 
 	"""Create a new graphics window and make it the active one"""
 	_g.window()
+
+def deleteWindow(windowName):
+
+	_g.delete(windowName)
 
 def getActiveWindow():
 

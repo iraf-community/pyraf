@@ -95,6 +95,33 @@ int getWindowID() {
    return (int) w;
 }
 
+PyObject *wrap_getDeepestVisual(PyObject *self, PyObject *args) {
+  int depth;
+  TrapXlibErrors /* macro code to handle xlib exceptions */
+  depth = getDeepestVisual();
+  RestoreOldXlibErrorHandlers /* macro */
+  return Py_BuildValue("i",depth);
+}
+
+int getDeepestVisual() {
+  Display *d;   
+  XVisualInfo vTemplate;
+  XVisualInfo *visualList;
+  int i, visualsMatched, maxDepth;
+  maxDepth = 1;
+  d = XOpenDisplay(NULL);
+  visualList = XGetVisualInfo (d, VisualNoMask, NULL, &visualsMatched);
+  for (i=0;i<visualsMatched;i++) {
+    if (visualList[i].depth > maxDepth) {
+      maxDepth = visualList[i].depth;
+    }
+  }
+  XFree(visualList);
+  XFlush(d);
+  XCloseDisplay(d);
+  return maxDepth;
+}
+
 PyObject *wrap_getWindowID(PyObject *self, PyObject *args) {
   int result;
   TrapXlibErrors /* macro code to handle xlib exceptions */
@@ -420,6 +447,7 @@ static PyMethodDef xlibtricksMethods[] = {
   { "getColorCell",wrap_getColorCell, 1},
   { "getColor",wrap_getColor, 1},
   { "freeColor",wrap_freeColor, 1},
+  { "getDeepestVisual", wrap_getDeepestVisual, 1},
   {NULL, NULL}
 };
 

@@ -200,8 +200,11 @@ class GkiOpenGlKernel(GkiKernel):
 		ta = o.iplot.textAttributes
 		ta.setFontSize()
 		# xxx fix this (should use Color interface)!!
-		glClearColor(0,0,0,0)
-		glClearIndex(gwm._g.colorManager.indexmap[0])
+		cm = gwm.getColorManager()
+		if cm.rgbamode:
+			glClearColor(0,0,0,0)
+		else:
+			glClearIndex(gwm._g.colorManager.indexmap[0])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
@@ -236,7 +239,7 @@ class StatusLine:
 
 		self.graphicsWindow = gwm.getActiveWindow()
 	def write(self, text):
-   		self.graphicsWindow.status.config(text=string.rstrip(text))
+   		self.graphicsWindow.status.config(text=string.strip(text))
 	def flush(self):
 		pass
 	def close(self):

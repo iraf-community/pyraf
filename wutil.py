@@ -364,8 +364,9 @@ class TerminalFocusEntity:
 
 def getScreenDepth():
 
-	win_attr = getWindowAttributes(terminal.getWindowID())
-	return win_attr['depth']
+	return getDeepestVisual()
+	#win_attr = getWindowAttributes(terminal.getWindowID())
+	#return win_attr['depth']
 
 terminal = TerminalFocusEntity()
 terminalWindowID = terminal.getWindowID()
