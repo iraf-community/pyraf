@@ -137,13 +137,8 @@ class MsgIOBuffer(Frame):
 
         """Method to update the I/O portion of the scrolling canvas"""
 
-        if string.find(self.currentText[-2:],'\n') == -1:
-            # No newline at end of line, so
-            # do NOT move to message box and append new text
-            text = self.currentText + text
-        else:
-            # Move the current contents of the I/O frame to the message box
-            self.__updateMsg(self.currentText)
+        # Move the current contents of the I/O frame to the message box
+        self.__updateMsg(self.currentText)
 
         # Update the class variable with the latest text
         self.currentText = text
@@ -201,7 +196,7 @@ class MsgIOBuffer(Frame):
         """Private method to update the message box of the scrolling canvas."""
 
         # Ensure there is a new line
-        #text = "\n" + text
+        text = "\n" + text
 
         # Append the new text to the previous message text
         self.messageText = self.messageText + text

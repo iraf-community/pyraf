@@ -852,6 +852,12 @@ def envget(var,default=None):
         except KeyError:
             if default is not None:
                 return default
+            elif var == 'TERM':
+                # Return a default value for TERM
+                # TERM gets caught as it is found in the default
+                # login.cl file setup by IRAF.
+                print "Using default TERM value for session."
+                return 'xterm'
             else:
                 raise KeyError("Undefined environment variable `%s'" % var)
 
@@ -917,6 +923,10 @@ def real(x):
 def mod(a, b):
     """Return a modulo b"""
     return (a % b)
+
+def nint(x):
+    """Return nearest integer of x"""
+    return int(round(x))
 
 _radixDigits = list(_string.digits+_string.uppercase)
 

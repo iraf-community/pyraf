@@ -575,13 +575,22 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
         hb = Tkinter.Toplevel(self.top, visual='best')
         hb.title("PyRAF Graphics Help")
         hb.iconname("PyRAF Graphics Help")
+
+        # Set up the Menu Bar with 'Close' button
+        hb.menubar = Tkinter.Frame(hb, relief=Tkinter.RIDGE, borderwidth=0)
+        hb.menubar.button = Tkinter.Button(hb.menubar, text="Close",
+                                     relief=Tkinter.RAISED,
+                                     command=hb.destroy)
+        hb.menubar.button.pack()
+        hb.menubar.pack(side=Tkinter.BOTTOM, padx=5, pady=5)
+
         # Define the Listbox and setup the Scrollbar
         hb.list = Tkinter.Listbox(hb,
-                                                        relief = Tkinter.FLAT,
-                                                        height = 25,
-                                                        width = 70,
-                                                        selectmode = Tkinter.SINGLE,
-                                                        selectborderwidth = 0)
+                                    height = 25,
+                                    width = 80,
+                                    relief = Tkinter.FLAT,
+                                    selectmode = Tkinter.SINGLE,
+                                    selectborderwidth = 0)
 
         scroll = Tkinter.Scrollbar(hb, command=hb.list.yview)
         hb.list.configure(yscrollcommand=scroll.set)
@@ -589,7 +598,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
         scroll.pack(side=Tkinter.RIGHT, fill=Tkinter.Y)
 
         # Insert each line of the helpString into the box
-        listing = string.split(helpString, '\n')
+        listing = helpString.split('\n')
         for line in listing:
             hb.list.insert(Tkinter.END, line)
 
@@ -854,7 +863,6 @@ class GkiOpenGlKernel(GkiInteractiveBase):
     def gcur(self):
 
         """Return cursor value after key is typed"""
-
         return self._gcursorObject()
 
     def gcurTerminate(self, msg='Window destroyed by user'):
