@@ -5,7 +5,7 @@ $Id$
 """
 
 import string
-import gwm
+import gwm, wutil
 import irafgwcs
 import tkSimpleDialog
 
@@ -36,7 +36,26 @@ class Gcursor:
 		#  from it.
 		self.top = gwm.getActiveWindowTop()
 		self.win = gwm.getActiveWindow()
+		gwm.raiseActiveWindow()
+		self.top.update()
+		if not gwm.isFocusElsewhere():
+			curWinID = wutil.getWindowID()
+			if curWinID == gwm.getTerminalWindowID():
+				# save terminal cursor position if in that window
+				gwm.saveTerminalCursorPosition()
+			if ((wutil.getTopID(self.win.winfo_id()) !=
+				   wutil.getTopID(curWinID))        and
+				wutil.isViewable(self.win.winfo_id())):
+				# if focus not in graphics window already
+				if not self.win.lastX:
+					self.win.lastX = self.win.winfo_width()/2
+					self.win.lastY = self.win.winfo_height()/2
+				wutil.moveCursorTo(self.win.winfo_id(),
+								   self.win.lastX, self.win.lastY)
+				self.top.focus_force()
+		self.win.focus_set()
 		self.bind()
+		self.win.ignoreNextRedraw = 1
 		self.top.mainloop()
 		self.unbind()
 		return self.retString
@@ -45,13 +64,8 @@ class Gcursor:
 	
 		self.win.bind("<Button-1>",self.getMousePosition)
 		self.win.bind("<Key>",self.getKey)
-		self.win.bind("q",self.getKey)
-		self.win.focus_force()
-	
-	def test(self, event):
-
-		print "Woo woo baby!"
-		
+		# self.win.bind("q",self.getKey)
+			
 	def unbind(self):
 	
 		self.win.unbind("<Button-1>")

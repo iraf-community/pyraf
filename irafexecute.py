@@ -5,7 +5,7 @@ $Id$
 """
 
 import os, re, signal, string, struct, sys, time
-import subproc, iraf, gki, gkiopengl, gwm
+import subproc, iraf, gki, gkiopengl, gwm, wutil
 
 stdgraph = None
 
@@ -141,7 +141,7 @@ def IrafIO(process,task):
 							length = sdata[4]
 							device = sdata[5:length+2].astype('b').tostring()
 							# but of course, for the time being (until
-							# we manage another graphics kernel, we ignore
+							# we manage another graphics kernel) we ignore
 							# device!
 							if stdgraph == None:
 								stdgraph = gkiopengl.GkiOpenGlKernel()
@@ -224,8 +224,10 @@ def IrafIO(process,task):
 				mo = _re_stty_command.match(msg)
 				if mo:
 					msg = msg[mo.end():]
+					nlines,ncols = wutil.getTermWindowSize()
 					WriteStringToIrafProc(process,
-						"set ttyncols=80\n"+"set ttynlines=24\n")
+						"set ttyncols="+str(ncols)+"\n" + 
+						"set ttynlines="+str(nlines)+"\n")
 				else:
 					raise IrafProcessError(
 						"Unsupported CL command called by IRAF task: "+msg)

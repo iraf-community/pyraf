@@ -47,8 +47,8 @@ class GkiOpenGlKernel(GkiKernel):
 		self.controlFunctionTable = [self.controlDefault]*(GKI_MAX_OP_CODE+1)
 		self.controlFunctionTable[GKI_OPENWS] = self.openWS
 		self.controlFunctionTable[GKI_CLOSEWS] = self.closeWS
-		self.controlFunctionTable[GKI_REACTIVATEWS] = self.controlDoNothing
-		self.controlFunctionTable[GKI_DEACTIVATEWS] = self.controlDoNothing
+		self.controlFunctionTable[GKI_REACTIVATEWS] = self.reactivateWS
+		self.controlFunctionTable[GKI_DEACTIVATEWS] = self.deactivateWS
 		self.controlFunctionTable[GKI_CLEARWS] = self.clearWS
 		self.controlFunctionTable[GKI_SETWCS] = self.setWCS
 		self.controlFunctionTable[GKI_GETWCS] = self.getWCS
@@ -70,7 +70,6 @@ class GkiOpenGlKernel(GkiKernel):
 			function, args = glbuf.getNextCall()
 		glFlush()
 
-
 	def controlDefault(self, arg):
 
 		# This function should never be called.
@@ -84,6 +83,9 @@ class GkiOpenGlKernel(GkiKernel):
 
 		mode = arg[0]
 		device = arg[1:].tostring() # but will be ignored
+		if gwm.getTerminalWindowID() == wutil.getWindowID():
+			# save current cursor position
+			gwm.saveTerminalCursorPosition()
 		# first see if there are any graphics windows, if not, create one 
 		win = gwm.getActiveWindow()
 		if win == None:
@@ -94,6 +96,7 @@ class GkiOpenGlKernel(GkiKernel):
 			win.iplot = IrafPlot()
 		ta = win.iplot.textAttributes
 		ta.setFontSize()
+		gwm.raiseActiveWindow()
 		if mode == 5:
 			# clear the display
 			win.iplot.gkiBuffer.reset()
@@ -106,7 +109,7 @@ class GkiOpenGlKernel(GkiKernel):
 		elif mode == 6:
 			# Tee mode (?), ignore for now
 			pass
-
+		
 	def clearWS(self, arg):
 
 		# apparently this control routine is not used???
@@ -116,10 +119,23 @@ class GkiOpenGlKernel(GkiKernel):
 		win.iplot.glBuffer.reset()
 		win.iplot.wcs = None
 		win.immediateRedraw()
+
+	def reactivateWS(self, arg): gwm.raiseActiveWindow()
+
+	def deactivateWS(self, arg):
+
+		# Move focus and cursor to terminal window if focus is currently
+		# within Pyraf family of windows
+		gwm.saveGraphicsCursorPosition()
+		if not gwm.isFocusElsewhere():
+			x, y = gwm.getLastTermPos()
+			termWinID = gwm.getTerminalWindowID()
+			if wutil.isViewable(termWinID):
+				wutil.setFocusTo(termWinID)
+				wutil.moveCursorTo(termWinID,x,y)
 		
 	def setWCS(self, arg):
 
-#		print 'setwcs'
 		__main__.wcs = arg # pass it up to play with
 		win = gwm.getActiveWindow()
 		win.iplot.wcs = irafgwcs.IrafGWcs(arg)
@@ -137,8 +153,12 @@ class GkiOpenGlKernel(GkiKernel):
 
 	def closeWS(self, arg):
 
-		wutil.setFocusTo(gwm.getTerminalWindowID())
-
+		termWinID = gwm.getTerminalWindowID()
+		if wutil.isViewable(termWinID):
+			wutil.setFocusTo(termWinID)
+			x, y = gwm.getLastTermPos()
+			wutil.moveCursorTo(termWinID,x,y)
+		
 	def redraw(self, o):
 
 		ta = o.iplot.textAttributes
@@ -154,6 +174,7 @@ class GkiOpenGlKernel(GkiKernel):
 		for (function, args) in o.iplot.glBuffer.get():
 			apply(function, args)
 		glFlush()
+
 
 def _glAppend(arg):
 
@@ -211,7 +232,7 @@ def gki_fillarea(arg):
 
 def gki_putcellarray(arg): 
 	
-	print standardNotImplented
+	print standardNotImplemented
 	# throw exception here xxxx
 	
 def gki_setcursor(arg):

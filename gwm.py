@@ -30,7 +30,8 @@ class GraphicsWindowManager:
 	def __init__(self):
 	
 		self.windows = {}
-		self.terminalWindow = wutil.getWindowID()
+		self.terminalWindowID = wutil.terminalWindowID
+		self.lastTermPos = (0, 0)
 		self.activeWindow = None
 		self.irafGkiConfig = gkiopengl.IrafGkiConfig()
 		
@@ -88,12 +89,9 @@ class GraphicsWindow:
 		self.top.title(windowName)
 		self.gwidget.pack(side = 'top', expand=1, fill='both')
 		self.top.protocol("WM_DELETE_WINDOW", self.callback)
+		windowID = self.gwidget.winfo_id()
+		wutil.setBackingStore(windowID)
 		
-		# try this hack to reset focus back to command line window
-		
-#		self.top.after_idle(self.callback,())
-#		self.top.mainloop()
-
 	def callback(dummyarg):
 	
 		pass # completely ignore attempts to close the window
@@ -130,6 +128,14 @@ def getActiveWindowTop():
 	else:
 		return None
 
+def raiseActiveWindow():
+
+	"""deiconify if not mapped, and raise to top"""
+	top = getActiveWindowTop()
+	if top.state() != 'normal':
+		top.deiconify()
+	top.tkraise()
+
 def getIrafGkiConfig():
 
 	"""return configuration object"""
@@ -138,4 +144,53 @@ def getIrafGkiConfig():
 def getTerminalWindowID():
 
 	"""return ID of python terminal window manager was started from"""
-	return _g.terminalWindow
+	return _g.terminalWindowID
+
+def getLastTermPos():	return _g.lastTermPos
+def setLastTermPos(x, y): _g.lastTermPos = (x, y)
+
+def saveTerminalCursorPosition():
+
+	# save current position unless (0,0), then save center position
+	termWinID = getTerminalWindowID()
+	posdict = wutil.getPointerPosition(termWinID)
+	x = posdict['win_x']
+	y = posdict['win_y']
+	#if x == 0 and y == 0:
+	windict = wutil.getWindowAttributes(termWinID)
+	#	x = windict['width']/2
+	#	y = windict['height']/2
+	maxX = windict['width']
+	maxY = windict['height']
+	x = min(max(x,0),maxX)
+	y = min(max(y,0),maxY)
+	setLastTermPos(x,y)
+
+def saveGraphicsCursorPosition():
+
+	# save current position unless (0,0), then save center position
+	graphicsWin = getActiveWindow()
+	posdict = wutil.getPointerPosition(graphicsWin.winfo_id())
+	x = posdict['win_x']
+	y = posdict['win_y']
+	maxX = graphicsWin.winfo_width()
+	maxY = graphicsWin.winfo_height()
+	if x == 0 and y == 0:
+		x = maxX/2
+		y = maxY/2
+	graphicsWin.lastX = min(max(x,0),maxX)
+	graphicsWin.lastY = min(max(y,0),maxY)
+
+def isFocusElsewhere():
+
+	# Determine if focus lies outside of terminal/graphics window set.
+	currentFocusWinID = wutil.getWindowID()
+	currentTopID = wutil.getTopID(currentFocusWinID)
+	terminalWindowTopID = wutil.getTopID(getTerminalWindowID())
+	pyrafFamily = [terminalWindowTopID]
+	for win in _g.windows.values():
+		pyrafFamily.append(wutil.getTopID(win.top.winfo_id()))
+	if currentTopID in pyrafFamily:
+		return 0
+	else:
+		return 1
