@@ -35,7 +35,7 @@ import iraftask, epar
 # Constants 
 MAXLIST  =  15
 MAXLINES = 100
-XSHIFT   = 100
+XSHIFT   = 110
 
 # This value is dependent upon the yscroll increment.  This is a test
 # implementation.
@@ -239,13 +239,11 @@ class EnumEparOption(EparOption):
         self.menu.add_command(label   = "Unlearn",
                              command = self.unlearnValue)
 
-        # Get the current coordinates of the Entry 
-        xcoord = self.button.winfo_rootx()
+        # Get the current y-coordinate of the Entry 
         ycoord = self.button.winfo_rooty()
 
-        # Shift the popup menu to smaller X coordinates so the cursor is 
-        # not sitting right on the menu.
-        xcoord = xcoord - XSHIFT
+        # Get the current x-coordinate of the cursor
+        xcoord = self.button.winfo_pointerx() - XSHIFT
 
         # Display the Menu as a popup as it is not associated with a Button
         self.menu.tk_popup(xcoord, ycoord)
@@ -349,13 +347,11 @@ class StringEparOption(EparOption):
                               command = self.unlearnValue)
 
 
-        # Get the current coordinates of the Entry 
-        xcoord = self.entry.winfo_rootx()
+        # Get the current y-coordinate of the Entry 
         ycoord = self.entry.winfo_rooty()
 
-        # Shift the popup menu to smaller X coordinates so the cursor is 
-        # not sitting right on the menu.
-        xcoord = xcoord - XSHIFT
+        # Get the current x-coordinate of the cursor
+        xcoord = self.entry.winfo_pointerx() - XSHIFT
 
         # Display the Menu as a popup as it is not associated with a Button
         self.menu.tk_popup(xcoord, ycoord)
@@ -441,13 +437,11 @@ class IntEparOption(EparOption):
         self.menu.add_command(label   = "Unlearn",
                              command = self.unlearnValue)
 
-        # Get the current coordinates of the Entry 
-        xcoord = self.entry.winfo_rootx()
+        # Get the current y-coordinate of the Entry 
         ycoord = self.entry.winfo_rooty()
 
-        # Shift the popup menu to smaller X coordinates so the cursor is 
-        # not sitting right on the menu.
-        xcoord = xcoord - XSHIFT
+        # Get the current x-coordinate of the cursor
+        xcoord = self.entry.winfo_pointerx() - XSHIFT
 
         # Display the Menu as a popup as it is not associated with a Button
         self.menu.tk_popup(xcoord, ycoord)
@@ -589,13 +583,11 @@ class RealEparOption(EparOption):
         self.menu.add_command(label   = "Unlearn",
                              command = self.unlearnValue)
 
-        # Get the current coordinates of the Entry 
-        xcoord = self.entry.winfo_rootx()
+        # Get the current y-coordinate of the Entry 
         ycoord = self.entry.winfo_rooty()
 
-        # Shift the popup menu to smaller X coordinates so the cursor is 
-        # not sitting right on the menu.
-        xcoord = xcoord - XSHIFT
+        # Get the current x-coordinate of the cursor
+        xcoord = self.entry.winfo_pointerx() - XSHIFT
 
         # Display the Menu as a popup as it is not associated with a Button
         self.menu.tk_popup(xcoord, ycoord)
