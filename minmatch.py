@@ -60,7 +60,7 @@ class MinMatchDict(UserDict):
 			for i in xrange(len(key)):
 				s = key[0:i+1]
 				value = self.mmkeys.get(s)
-				if value == None:
+				if value is None:
 					self.mmkeys[s] = [key]
 				else:
 					value.append(key)

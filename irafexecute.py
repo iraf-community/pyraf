@@ -158,7 +158,7 @@ def IrafIO(process,task):
 							# but of course, for the time being (until
 							# we manage another graphics kernel) we ignore
 							# device!
-							if stdgraph == None:
+							if stdgraph is None:
 								stdgraph = gkiopengl.GkiOpenGlKernel()
 						
 						# Pass it to the kernel to deal with

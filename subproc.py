@@ -245,7 +245,7 @@ class Subprocess:
 
 	def read(self, n=None):
 		"""Read N chars (blocking), or all pending if no N specified."""
-		if n == None:
+		if n is None:
 			return self.readPendingChars()
 		else:
 			return self.readbuf.read(n)
@@ -253,7 +253,7 @@ class Subprocess:
 	def readErr(self, n=None):
 		"""Read N chars from stderr (blocking), or all pending if no N specified."""
 		if self.control_stderr:
-			if n == None:
+			if n is None:
 				return self.readPendingErrChars()
 			else:
 				return self.errbuf.read(n)
@@ -485,7 +485,7 @@ class ReadBuf:
 		"""Consume uncomsumed output from FILE, or empty string if nothing
 		pending."""
 
-		if (max != None) and (max <= 0): return ''						# ===>
+		if (max is not None) and (max <= 0): return ''					# ===>
 
 		if self.buf:
 			if max and (len(self.buf) > max):
