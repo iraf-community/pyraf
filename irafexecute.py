@@ -425,7 +425,7 @@ class IrafProcess:
 			# OS escape
 			tmsg = mcmd.group('sys_cmd')
 			# use my version of system command so redirection works
-			sysstatus = iraffunctions.clOscmd(tmsg, Stdin=self.stdin,
+			sysstatus = iraf.clOscmd(tmsg, Stdin=self.stdin,
 				Stdout=self.stdout, Stderr=self.stderr)
 			self.writeString(str(sysstatus)+"\n")
 			self.msg = self.msg[mcmd.end():]
