@@ -935,10 +935,8 @@ def defpar(paramname):
         value = clParGet(paramname,prompt=0)
         return 1
     except IrafError, e:
-        # ambiguous name is an error, not found is OK
-        value = str(e)
-        if _string.find(value, "ambiguous") >= 0:
-            raise e
+        # treat all errors (including ambiguous task and parameter names)
+        # as a missing parameter
         return 0
 
 def access(filename):
@@ -1019,10 +1017,7 @@ def deftask(taskname):
         t = getattr(iraf, taskname)
         return 1
     except AttributeError, e:
-        # ambiguous name is an error, not found is OK
-        value = str(e)
-        if _string.find(value, "ambiguous") >= 0:
-            raise e
+        # treat all errors (including ambiguous task names) as a missing task
         return 0
 
 def defpac(pkgname):
@@ -1031,10 +1026,7 @@ def defpac(pkgname):
         t = getPkg(pkgname)
         return t.isLoaded()
     except KeyError, e:
-        # ambiguous name is an error, not found is OK
-        value = str(e)
-        if _string.find(value, "ambiguous") >= 0:
-            raise e
+        # treat all errors (including ambiguous package names) as a missing pkg
         return 0
 
 def curpack():
