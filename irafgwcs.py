@@ -1,4 +1,4 @@
-import struct, Numeric, math
+import struct, Numeric, math, iraf
 
 WCS_SLOTS = 16
 WCS_RECORD_SIZE = 22  # (in 2 byte integers)
@@ -18,7 +18,8 @@ class IrafGWcs:
 
 		wcsStruct = arg[1:]
 		if arg[0] != len(wcsStruct):
-			raise "Error: inconsistency in length of WCS graphics structure"
+			print "Error: inconsistency in length of WCS graphics structure"
+			raise iraf.IrafError
 		self.wcs = [None]*WCS_SLOTS
 		for i in xrange(WCS_SLOTS):
 			self.wcs[i] = struct.unpack('fffffffflll',
@@ -29,15 +30,17 @@ class IrafGWcs:
 
 		"""Return the WCS in the original IRAF format"""
 
+
 		wcsStruct = Numeric.zeros(WCS_RECORD_SIZE * WCS_SLOTS, Numeric.Int16)
 		for i in xrange(WCS_SLOTS):
 			x = list(self.wcs[i])
 			x.insert(0,'fffffffflll')
 			wcsStruct[WCS_RECORD_SIZE*i:
-					  WCS_RECORD_SIZE*(i+1)] = \
-					  Numeric.fromstring(apply(struct.pack, tuple(x)),
-										 Numeric.Int16)
+				  WCS_RECORD_SIZE*(i+1)] = \
+				  Numeric.fromstring(apply(struct.pack, tuple(x)),
+									 Numeric.Int16)
 		return wcsStruct.tostring()
+
 	
 	def transform(self, x, y, wcsID):
 
