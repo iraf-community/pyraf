@@ -147,7 +147,7 @@ _cmdDict = minmatch.MinMatchDict({
 				'.clemulate': 'do_clemulate',
 				'.logfile': 'do_logfile',
 				'.exit': 'do_exit',
-				'.fulltrace': 'do_fulltrace',
+				'.fulltraceback': 'do_fulltraceback',
 				'.complete': 'do_complete',
 				'.debug': 'do_debug',
 				})
@@ -324,9 +324,9 @@ class PyCmdLine(CmdConsole):
 				pass
 		return ""
 
-	def do_fulltrace(self, line='', i=0):
+	def do_fulltraceback(self, line='', i=0):
 		"""Print full version of last traceback"""
-		if self.debug>1: self.write('do_fulltrace: %s\n' % line[i:])
+		if self.debug>1: self.write('do_fulltraceback: %s\n' % line[i:])
 		self.showtraceback(reprint=1)
 		return ""
 
