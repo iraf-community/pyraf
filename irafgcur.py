@@ -7,6 +7,7 @@ $Id$
 import string
 import gwm
 import irafgwcs
+import tkSimpleDialog
 
 # The following class attempts to emulate the standard IRAF gcursor
 # mode of operation. That is to say, it is basically a keyboard driven
@@ -46,7 +47,11 @@ class Gcursor:
 		self.win.bind("<Key>",self.getKey)
 		self.win.bind("q",self.getKey)
 		self.win.focus_force()
-				
+
+	def test(self, event):
+
+		print "Woo woo baby!"
+		
 	def unbind(self):
 	
 		self.win.unbind("<Button-1>")
@@ -79,15 +84,36 @@ class Gcursor:
 	def getKey(self, event):
 		# The main character handling routine (to be filled out)
 		key = event.char
+		if not key:
+			# ignore keypresses of non printable characters
+			return
 		x,y = self.getNDCCursorPos()
-		if key in string.lowercase:
-			wx,wy,gwcs = gwm.getActiveWindow().iplot.wcs.get(x,y)
-			self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
-			print "getKey:", self.retString
-			self.top.quit() # time to go!
+		if key == ':':
+			# pop up text entry dialog
+			colonString = tkSimpleDialog.askstring("Gcur colon command","")
+			if colonString[0] == '.':
+				print "Not quite ready to handle CL level gcur :. commands."
+				print "Please check back later."
+			else:
+				self._setRetString(key,colonString)
+		if key in string.lowercase+'?':
+			self._setRetString(key,"")
+		if key in string.uppercase:
+			print "Not quite ready to handle CL level gcur commands."
+			print "Please check back later."
 		else:
 			# ignore for the time being
 			pass
+
+	def _setRetString(self, key, cstring):
+
+		x,y = self.getNDCCursorPos()
+		wx,wy,gwcs = gwm.getActiveWindow().iplot.wcs.get(x,y)
+		self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
+		if cstring:
+			self.retString = self.retString +' '+cstring
+		print "getKey:", self.retString
+		self.top.quit() # time to go!
 		
 # Eventually there may be multiple Gcursor classes that return a string
 # that satisfies clgcur. In that case we will use a factory function
