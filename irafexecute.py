@@ -169,7 +169,7 @@ def _setParam(paramDictList,paramname,newvalue):
 	"""Set parameter specified by paramname to newvalue."""
 	# XXX need to add capability to set field (e.g. x1.p_maximum
 	# is set in iraf/pkg/plot/t_pvector.x)
-	for paramdict in paramDictList:
+	for dictname, paramdict in paramDictList:
 		if paramdict.has_key(paramname):
 			paramdict[paramname].set(newvalue)
 			return
