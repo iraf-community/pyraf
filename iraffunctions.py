@@ -1409,13 +1409,14 @@ __re_var_paren = _re.compile(r'\((?P<varname>[^$]*)\)')
 def Expand(instring):
 	"""Expand a string with embedded IRAF variables (IRAF virtual filename)
 
-	Allows comma-separated lists
+	Allows comma-separated lists.  Also uses os.path.expanduser to
+	replace '~' symbols.
 	"""
 	# call _expand1 for each entry in comma-separated list
 	wordlist = _string.split(instring,",")
 	outlist = []
 	for word in wordlist:
-		outlist.append(_expand1(word))
+		outlist.append(_os.path.expanduser(_expand1(word)))
 	return _string.join(outlist,",")
 
 def _expand1(instring):
