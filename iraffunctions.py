@@ -399,6 +399,10 @@ def getTaskList():
 	"""Returns list of names of all defined IRAF tasks"""
 	return _tasks.keys()
 
+def getTaskObjects():
+	"""Returns list of all defined IrafTask objects"""
+	return _tasks.values()
+
 def getPkgList():
 	"""Returns list of names of all defined IRAF packages"""
 	return _pkgs.keys()

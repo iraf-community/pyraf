@@ -1134,13 +1134,16 @@ class IrafParPset(IrafParS):
 		if field: return self._getField(field)
 		if lpar: return str(self.value)
 
-		# assume there are not query pset parameters
+		# assume there are no query pset parameters
 
-		return iraf.getTask(self.value or self.name)
-
-	def set(self, value, field=None, index=None, check=1):
-		raise ValueError("Pset parameter " + self.name +
-			" cannot be assigned a value")
+		# if parameter value has .par extension, it is a file name
+		f = string.split(self.value,'\.')
+		if len(f) <= 1 or f[-1] != 'par':
+			# must be a task name
+			return iraf.getTask(self.value or self.name)
+		else:
+			raise ValueError("Pset parameter `%s' is a .par file -- "
+				" Pyraf cannot handle this yet" % self.name)
 
 # -----------------------------------------------------
 # IRAF list parameter base class
