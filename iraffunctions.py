@@ -1266,7 +1266,7 @@ def envSet(**kw):
 		varDict[keyword] = str(value)
 
 def envget(var):
-	"""Get value of IRAF or OS environment"""
+	"""Get value of IRAF or OS environment variable"""
 	if varDict.has_key(var):
 		return varDict[var]
 	elif _os.environ.has_key(var):
@@ -1317,6 +1317,28 @@ def clHidetask(*args):
 			print "WARNING: Could not find task", taskname, "to hide"
 
 def clTask(*args, **kw):
+	"""Define IRAF tasks"""
+
+	# get package info
+	if loadedPath:
+		pkg = loadedPath[-1]
+		defaultPkgname = pkg.getName()
+		defaultPkgbinary = pkg.getPkgbinary()
+	else:
+		defaultPkgname = ''
+		defaultPkgbinary = ''
+	# override package using special keywords
+	pkgname = kw.get('PkgName')
+	if pkgname is None:
+		pkgname = defaultPkgname
+	else:
+		del kw['PkgName']
+	pkgbinary = kw.get('PkgBinary')
+	if pkgbinary is None:
+		pkgbinary = defaultPkgbinary
+	else:
+		del kw['PkgBinary']
+
 	if len(kw) > 1:
 		raise SyntaxError("More than one `=' in task definition")
 	elif len(kw) < 1:
@@ -1325,20 +1347,12 @@ def clTask(*args, **kw):
 	value = kw[s]
 	# translate 'DOLLAR' embedded in name to '$' (because cannot use $ in Python vars)
 	start = 0
-	i = string.find(s, 'DOLLAR', start)
+	i = _string.find(s, 'DOLLAR', start)
 	while (i>=0):
 		s = s[:i] + '$' + s[i+6:]
 		start = i+1
-		i = string.find(s, 'DOLLAR', start)
-	args.append(s)
-	# get package info
-	if loadedPath:
-		pkg = loadedPath[-1]
-		pkgname = pkg.getName()
-		pkgbinary = pkg.getPkgbinary()
-	else:
-		pkgname = ''
-		pkgbinary = ''
+		i = _string.find(s, 'DOLLAR', start)
+	args = args + (s,)
 
 	# assign value to each task in the list
 	global _re_taskname
@@ -1352,39 +1366,23 @@ def clTask(*args, **kw):
 		newtask = IrafTaskFactory(prefix,name,suffix,value,
 				pkgname,pkgbinary)
 
-def clPackage(*args, **kw):
-	if len(kw) > 1:
-		raise SyntaxError("More than one `=' in task definition")
-	elif len(kw) < 1:
-		raise SyntaxError("Must be at least one `=' in task definition")
-	args = args + kw.keys()
-	value = kw[args[-1]]
-	# get package info
-	if loadedPath:
-		pkg = loadedPath[-1]
-		pkgname = pkg.getName()
-		pkgbinary = pkg.getPkgbinary()
-	else:
-		pkgname = ''
-		pkgbinary = ''
+def clPackage(pkgname, bin=None, PkgName='', PkgBinary=''):
+	"""Returns tuple with new package name and binary
+	
+	PkgName, PkgBinary are old default values"""
 
-	# assign value to each task in the list
-	global _re_taskname
-	for tlist in args:
-		mtl = _re_taskname.match(tlist)
-		if not mtl:
-			raise SyntaxError("Illegal task name `%s'" % (tlist,)) 
-		name = mtl.group('taskname')
-		prefix = mtl.group('taskprefix')
-		suffix = mtl.group('tasksuffix')
-		newtask = IrafTaskFactory(prefix,name,suffix,value,
-				pkgname,pkgbinary)
+	return (pkgname or PkgName, bin or PkgBinary)
+
 
 def clPrint(*args):
 	# don't try to emulate cl spacing at moment
 	for arg in args:
 		print arg,
 	print
+
+def clSexagesimal(d, m, s=0):
+	"""Convert d:m:s value to float"""
+	return (d+(m+s/60.0)/60.0)
 
 def defpar(paramname):
 	try:
@@ -1428,6 +1426,12 @@ def defpac(pkgname):
 def curpack():
 	if loadedPath:
 		return loadedPath[-1].getName()
+	else:
+		return ""
+
+def curPkgbinary():
+	if loadedPath:
+		return loadedPath[-1].getPkgbinary()
 	else:
 		return ""
 
