@@ -8,7 +8,7 @@ Provides this functionality:
 	.help
 	.clemulate
 	.debug
-- Shell escapes (!cmd, !!)
+- Shell escapes (!cmd, !!cmd to run in /bin/sh)
 - CL command-mode execution, triggered by a line that starts with a
   CL task token and is not followed by other characters indicating
   it is some other kind of Python statement
@@ -159,7 +159,6 @@ class PyCmdLine(CmdConsole):
 		CmdConsole.__init__(self, locals=locals,
 			cmddict=_cmdDict, prompt1="--> ", prompt2="... ")
 		self.debug = debug
-		self.subshell = "/bin/sh"
 		self.clemulate = clemulate
 		self.logfile = None
 		if logfile is not None:
@@ -288,11 +287,7 @@ Commands can be abbreviated.
 		"""
 		if self.debug: self.write('default: %s - %s\n' % (cmd,line[i:]))
 		if len(cmd)==0:
-			if line[i:i+2] == '!!':
-				# '!!' spawns a sub-shell
-				os.system(self.subshell)
-				return ''
-			elif line[i:i+1] == '!':
+			if line[i:i+1] == '!':
 				# '!' is shell escape
 				# handle it here only if cl emulation is turned off
 				if not self.clemulate:

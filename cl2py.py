@@ -506,8 +506,10 @@ class VarList(CleanupASTTraversal):
 		self.has_proc_stmt = 0
 		if local_vars_list is None:
 			self.local_vars_list = []
+			self.local_vars_count = 0
 		else:
 			self.local_vars_list = local_vars_list
+			self.local_vars_count = len(local_vars_list)
 		if local_vars_dict is None:
 			self.local_vars_dict = {}
 		else:
@@ -644,9 +646,9 @@ class VarList(CleanupASTTraversal):
 # conversion between parameter types and data types
 
 _typeDict = {
-			'int':    'number',
-			'real':   'number',
-			'double': 'number',
+			'int':    'int',
+			'real':   'float',
+			'double': 'float',
 			'bool':   'bool',
 			'string': 'string',
 			'char':   'string',
@@ -657,6 +659,79 @@ _typeDict = {
 			'ukey':   'string',
 			'pset':   'indef',
 			}
+
+# nested dictionary mapping required data type (primary key) and
+# expression type (secondary key) to the name of the function used to
+# convert to the required type
+
+_rfuncDict = {
+  'int':   {'int':    None,
+  			'float':  'int',
+			'string': 'int',
+			'bool':   None,
+			'indef':  'int'},
+  'float': {'int':    'float',
+  			'float':  None,
+			'string': 'float',
+			'bool':   'float',
+			'indef':  'float'},
+  'string':{'int':    'str',
+  			'float':  'str',
+			'string': None,
+			'bool':   'iraf.bool2str',
+			'indef':  'str'},
+  'bool':  {'int':    'iraf.boolean',
+  			'float':  'iraf.boolean',
+			'string': 'iraf.boolean',
+			'bool':   None,
+			'indef':  'iraf.boolean'},
+  'indef': {'int':    None,
+  			'float':  None,
+			'string': None,
+			'bool':   None,
+			'indef':  None},
+  }
+
+def _funcName(requireType, exprType):
+	return _rfuncDict[requireType][exprType]
+
+# given two nodes with defined types in an arithmetic expression,
+# set their required times and return the result type
+# (using standard promotion rules)
+
+_numberTypes = ['float', 'int']
+
+def _arithType(node1, node2):
+	if node1.exprType in _numberTypes:
+		if node2.exprType not in _numberTypes:
+			rv = node1.exprType
+			node2.requireType = rv
+		else:
+			# both numbers -- don't change required types, but
+			# determine result type
+			if 'float' in [node1.exprType, node1.exprType]:
+				rv = 'float'
+			else:
+				rv = node1.exprType
+	else:
+		if node2.exprType in _numberTypes:
+			rv = node2.exprType
+			node1.requireType = rv
+		else:
+			rv = 'float'
+			node1.requireType = rv
+			node2.requireType = rv
+	return rv
+
+# force node to be a number type and return the type
+
+def _numberType(node):
+	if node.exprType in _numberTypes:
+		return node.exprType
+	else:
+		node.requireType = 'float'
+		return node.requireType
+
 
 
 class TypeCheck(CleanupASTTraversal):
@@ -672,13 +747,13 @@ class TypeCheck(CleanupASTTraversal):
 	# atoms
 
 	def n_FLOAT(self, node):
-		node.exprType = 'number'
+		node.exprType = 'float'
 		node.requireType = node.exprType
 	def n_INTEGER(self, node):
-		node.exprType = 'number'
+		node.exprType = 'int'
 		node.requireType = node.exprType
 	def n_SEXAGESIMAL(self, node):
-		node.exprType = 'number'
+		node.exprType = 'float'
 		node.requireType = node.exprType
 	def n_INDEF(self, node):
 		node.exprType = 'indef'
@@ -716,7 +791,10 @@ class TypeCheck(CleanupASTTraversal):
 		node.requireType = node.exprType
 
 	def n_function_call(self, node):
-		node.exprType = 'indef'
+		functionname = node[0].attr
+		ftype = _functionType.get(functionname)
+		if ftype is None: ftype = 'indef'
+		node.exprType = ftype
 		node.requireType = node.exprType
 
 	def n_atom(self, node):
@@ -726,23 +804,18 @@ class TypeCheck(CleanupASTTraversal):
 
 	def n_power(self, node):
 		assert len(node)==3
-		node.exprType = 'number'
+		node.exprType = _arithType(node[0], node[2])
 		node.requireType = node.exprType
-		node[0].requireType = 'number'
-		node[2].requireType = 'number'
 
 	def n_factor(self, node):
 		assert len(node)==2
-		node.exprType = 'number'
+		node.exprType = _numberType(node[1])
 		node.requireType = node.exprType
-		node[1].requireType = 'number'
 
 	def n_term(self, node):
 		assert len(node)==3
-		node.exprType = 'number'
+		node.exprType = _arithType(node[0], node[2])
 		node.requireType = node.exprType
-		node[0].requireType = 'number'
-		node[2].requireType = 'number'
 
 	def n_concat_expr(self, node):
 		assert len(node)==3
@@ -754,10 +827,8 @@ class TypeCheck(CleanupASTTraversal):
 	def n_arith_expr(self, node):
 		assert len(node)==3
 		if node[1].type == '-':
-			node.exprType = 'number'
+			node.exprType = _arithType(node[0], node[2])
 			node.requireType = node.exprType
-			node[0].requireType = 'number'
-			node[2].requireType = 'number'
 		else:
 			# plus -- could mean add or concatenate
 			if node[0].exprType == 'string' or node[2].exprType == 'string':
@@ -766,10 +837,8 @@ class TypeCheck(CleanupASTTraversal):
 				node[0].requireType = 'string'
 				node[2].requireType = 'string'
 			else:
-				node.exprType = 'number'
+				node.exprType = _arithType(node[0], node[2])
 				node.requireType = node.exprType
-				node[0].requireType = 'number'
-				node[2].requireType = 'number'
 
 	def n_comp_expr(self, node):
 		assert len(node) == 3
@@ -788,6 +857,10 @@ class TypeCheck(CleanupASTTraversal):
 		node.requireType = node.exprType
 		node[0].requireType = 'bool'
 		node[2].requireType = 'bool'
+	
+	def n_assignment_stmt(self, node):
+		assert len(node) == 3
+		node[2].requireType = node[0].exprType
 
 
 # tokens that are translated or skipped outright
@@ -810,13 +883,6 @@ _taskList = {
 			"_devstatus"	: "clDevstatus",
 			}
 
-# built-in task-like objects not done yet:
-
-# putlog
-# _allocate
-# _deallocate
-# _devstatus
-
 # builtin functions that are translated
 # other functions just have 'iraf.' prepended
 
@@ -838,13 +904,42 @@ _functionList = {
 			"max":		"math.max",
 			}
 
-# built-in functions not done yet:
+# return types of IRAF built-in functions
 
-# scan
-# fscan
-# nscan
-# imaccess
-
+_functionType = {
+			"int":		"int",
+			"real":		"float",
+			"sin":		"float",
+			"cos":		"float",
+			"tan":		"float",
+			"atan2":	"float",
+			"exp":		"float",
+			"log":		"float",
+			"log10":	"float",
+			"sqrt":		"float",
+			"frac":		"float",
+			"abs":		"float",
+			"min":		"indef",
+			"max":		"indef",
+			"fscan":	"int",
+			"scan":		"int",
+			"nscan":	"int",
+			"stridx":	"int",
+			"strlen":	"int",
+			"str":		"string",
+			"substr":	"string",
+			"envget":	"string",
+			"mktemp":	"string",
+			"radix":	"string",
+			"osfn":		"string",
+			"_curpack":	"string",
+			"defpar":	"bool",
+			"access":	"bool",
+			"defvar":	"bool",
+			"deftask":	"bool",
+			"defpac":	"bool",
+			"imaccess":	"bool",
+			}
 
 # logical operator conversion
 _LogOpDict = {
@@ -948,19 +1043,6 @@ def _convFunc(var, value):
 	raise ValueError("unimplemented type `%s'" % (var.type,))
 
 
-_rfuncDict = {
-			'number': {'number': None, 'string': 'float', 'bool': None, 'indef': None},
-			'indef':  None,
-			'string': {'number': 'str', 'string': None, 'bool': 'str', 'indef': 'str'},
-			'bool':   None,
-			}
-
-def _funcName(requireType, exprType):
-	cf = _rfuncDict[requireType]
-	if cf is None: return cf
-	return cf[exprType]
-	
-
 class Tree2Python(CleanupASTTraversal):
 	def __init__(self, ast, vars, filename=''):
 		CleanupASTTraversal.__init__(self, ast)
@@ -969,8 +1051,11 @@ class Tree2Python(CleanupASTTraversal):
 		self.vars = vars
 		self.inSwitch = 0
 		self.caseCount = []
-		# start with a reasonable size for printPass array
-		# it gets extended if necessary
+		# printPass is an array of flags indicating whether the
+		# corresponding indentation level is empty.  If empty when
+		# the block is terminated, a 'pass' statement is generated.
+		# Start with a reasonable size for printPass array.
+		# (It gets extended if necessary.)
 		self.printPass = [1]*10
 		self.code_buffer = cStringIO.StringIO()
 		self.errlist = []
@@ -1146,8 +1231,8 @@ class Tree2Python(CleanupASTTraversal):
 					self.write(")")
 			self.write("\n")
 
-		# initialize local variables
-		for v in self.vars.local_vars_list:
+		# initialize new local variables
+		for v in self.vars.local_vars_list[self.vars.local_vars_count:]:
 			lvar = self.vars.local_vars_dict[v]
 			if lvar.array_size is not None:
 				self.writeIndent(lvar.name + " = " +
@@ -1274,14 +1359,18 @@ class Tree2Python(CleanupASTTraversal):
 	def n_array_ref(self, node):
 		# in array reference, do not add .p_value to parameter identifier
 		# because we can index the parameter directly
+		# wrap in a conversion function if necessary
+		cf = _funcName(node.requireType, node.exprType)
+		if cf: self.write(cf + "(")
 		self.n_IDENT(node[0], array_ref=1)
-		self.write('[')
+		self.write("[")
 		# subtract one from IRAF subscripts to get Python subscripts
 		if node[2].type == "INTEGER":
-			self.write(str(int(node[2])-1) + ']')
+			self.write(str(int(node[2])-1) + "]")
 		else:
 			self.preorder(node[2])
-			self.write('-1]')
+			self.write("-1]")
+		if cf: self.write(")")
 		self.prune()
 
 	def n_param_name(self, node):
@@ -1294,20 +1383,24 @@ class Tree2Python(CleanupASTTraversal):
 
 	def n_function_call(self, node):
 		# all functions are built-in (since CL does not allow new definitions)
+		# wrap in a conversion function if necessary
+		cf = _funcName(node.requireType, node.exprType)
+		if cf: self.write(cf + "(")
 		functionname = node[0].attr
 		newname = _functionList.get(functionname)
 		if newname is None:
-			# just add 'iraf.' prefix
+			# just add "iraf." prefix
 			newname = "iraf." + functionname
 		self.write(newname + "(")
 		# argument list for scan statement
 		sargs = self.captureArgs(node[2])
-		if functionname in ['scan', 'fscan']:
+		if functionname in ["scan", "fscan"]:
 			# scan is weird -- effectively uses call-by-name
-			# call special code-generation routine
+			# call special routine to change the args
 			sargs = self.modify_scan_args(functionname, sargs)
 		self.writeChunks(sargs)
 		self.write(")")
+		if cf: self.write(")")
 		self.prune()
 
 	def modify_scan_args(self, functionname, sargs):
@@ -1319,9 +1412,30 @@ class Tree2Python(CleanupASTTraversal):
 			i = 2
 		else:
 			i = 1
+		# if there are non-string local variables in the list, we have to
+		# coerce the types in the scan function
+		# non-local (parameter) type coercion happens automatically
+		nlocal = 0
+		localType = []
+		for varname in sargs[i:]:
+			ventry = self.vars.local_vars_dict.get(varname)
+			if ventry is None:
+				localType.append(None)
+			else:
+				vtype = _typeDict[ventry.type]
+				# this will be used as the name of the conversion function
+				# in the scan procedure
+				localType.append(_funcName(vtype,"string"))
+				if localType[-1] is not None:
+					nlocal = nlocal + 1
 		# add quotes to names (we're literally passing the names, not
 		# the values)
 		sargs[i:] = map(lambda x: `x`, sargs[i:])
+		# append the types list if it is not all zeros
+		if nlocal>0:
+			localType = map(repr, localType)
+			sargs.append("strconv=(" + string.join(localType,",") + ",)")
+			print 'sargs', sargs
 		return sargs
 
 	def default(self, node):
@@ -1532,6 +1646,7 @@ class Tree2Python(CleanupASTTraversal):
 
 	def n_task_call_stmt(self, node):
 		taskname = node[0].attr
+		self.currentTaskname = taskname
 		# '$' prefix means print time required for task (just ignore it for now)
 		if taskname[:1] == '$': taskname = taskname[1:]
 		# translate some special task names and add "iraf." to all names
@@ -1597,9 +1712,11 @@ class Tree2Python(CleanupASTTraversal):
 			# (these are parsed in sloppy mode)
 			if node[0].type == "(":
 				# missing close parenthesis
+				self.warning("Missing closing parenthesis", node[0])
 				i = 1
 			elif node[1].type == ")":
 				# missing open parenthesis
+				self.warning("Missing opening parenthesis", node[1])
 				i = 0
 
 		# get the list of arguments
@@ -1614,6 +1731,11 @@ class Tree2Python(CleanupASTTraversal):
 		if len(sargs) == 1:
 			s = sargs[0]
 			if s[:1] == "(" and s[-1:] == ")": sargs[0] = s[1:-1]
+
+		if self.currentTaskname in ["scan", "fscan"]:
+			# scan is weird -- effectively uses call-by-name
+			# call special routine to change the args
+			sargs = self.modify_scan_args(self.currentTaskname, sargs)
 
 		# combine CL arguments with additional (redirection) arguments
 		sargs = sargs + self.additionalArguments
@@ -1641,16 +1763,20 @@ class Tree2Python(CleanupASTTraversal):
 		# add a special character after commas to make it easy
 		# to break up argument list for long lines
 		global _translateList
+		# save current translation for comma to handle nested lists
 		curComma = _translateList.get(',')
 		_translateList[','] = ',\255'
+
 		self.preorder(node)
+
+		# restore original comma translation and buffer pointers
 		if curComma is None:
 			del _translateList[',']
 		else:
 			_translateList[','] = curComma
-
 		self.code_buffer = saveBuffer
 		self.column = saveColumn
+
 		args = arg_buffer.getvalue()
 		arg_buffer.close()
 

@@ -797,7 +797,10 @@ class Ph:
 # filehandles.
 
 def systemRedir(cmd):
-	"""Run the command as a subprocess with Python I/O redirection in effect"""
+	"""Run the command as a subprocess with Python I/O redirection in effect
+	
+	cmd can be a string or a list of strings.
+	"""
 	#XXX should trap errors and return status?
 	process = RedirProcess(cmd)
 	try:
@@ -807,6 +810,18 @@ def systemRedir(cmd):
 		sys.stderr.write("\nKilled process `%s'\n" % process.cmd)
 		sys.stderr.flush()
 	return process.return_code
+
+# run subprocess with Python I/O redirection in a subshell
+
+def subshellRedir(cmd, shell=None):
+	"""Run the command in a subshell with Python I/O redirection in effect
+	
+	cmd should be a simple string with the command and its arguments.
+	shell is the shell to use -- default is value of SHELL environment
+	variable or /bin/sh if SHELL is not defined.
+	"""
+	shell = shell or os.environ.get('SHELL') or '/bin/sh'
+	return systemRedir((shell, "-c", cmd))
 
 class RedirProcess(Subprocess):
 		

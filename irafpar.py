@@ -1445,6 +1445,7 @@ class _RealMixin:
 				return s2
 			else:
 				# allow +dd:mm:ss.s sexagesimal format for floats
+				original_value = s2
 				value = 0.0
 				vscale = 1.0
 				vsign = 1
@@ -1464,11 +1465,16 @@ class _RealMixin:
 						mm = _re_colon.search(s2,i1)
 				# special handling for d exponential notation
 				mm = _re_d.search(s2,i1)
-				if mm is None:
-					return vsign*(value + float(s2[i1:])/vscale)
-				else:
-					return vsign*(value + \
-						float(s2[i1:mm.start()]+"E"+s2[mm.end():])/vscale)
+				try:
+					if mm is None:
+						return vsign*(value + float(s2[i1:])/vscale)
+					else:
+						return vsign*(value + \
+							float(s2[i1:mm.start()]+"E"+s2[mm.end():])/vscale)
+				except ValueError:
+					raise ValueError(
+						"string cannot be converted to float: `%s'" %
+						original_value)
 
 # -----------------------------------------------------
 # IRAF real parameter class

@@ -862,13 +862,56 @@ def curPkgbinary():
 	else:
 		return ""
 
+# utility functions for boolean conversions
+
+def bool2str(value):
+	"""Convert IRAF boolean value to a string"""
+	if value in [None, INDEF]:
+		return "INDEF"
+	elif value:
+		return "yes"
+	else:
+		return "no"
+
+
+def boolean(value):
+	"""Convert Python native types (string, int, float) to IRAF boolean
+	
+	Accepts integer/float values 0,1 or string 'yes','no'
+	Also allows INDEF as value
+	"""
+	if value in [INDEF,0,1]:
+		return value
+	elif value in ["", None]:
+		return INDEF
+	tval = type(value)
+	if tval is _types.StringType:
+		v2 = _irafutils.stripQuotes(_string.strip(value))
+		if v2 == "INDEF":
+			return INDEF
+		ff = _string.lower(v2)
+		if ff == "no":
+			return 0
+		elif ff == "yes":
+			return 1
+	elif tval is _types.FloatType:
+		# try converting to integer
+		try:
+			ival = int(value)
+			if (ival == value) and (ival == 0 or ival == 1):
+				return ival
+		except (ValueError, OverflowError):
+			pass
+	raise ValueError("Illegal boolean value %s" % `value`)
+
+
 # -----------------------------------------------------
 # unimplemented IRAF functions (raise exception)
 # -----------------------------------------------------
 
 _nscan = 0
 
-def fscan(locals, line, *namelist):
+def fscan(locals, line, *namelist, **kw):
 	"""Scan function sets parameters from line read from stdin
 	
 	Uses local dictionary (passed as first argument) to set variables
@@ -876,28 +919,49 @@ def fscan(locals, line, *namelist):
 	messy, but it is by far the cleanest approach I've thought of.
 	I'm literally using call-by-name for these variables.)
 
+	Accepts an additional keyword argument strconv with names of
+	conversion functions for each argument in namelist.
+
 	Returns number of arguments set to new values.  If there are
 	too few space-delimited arguments on the input line, it does
 	not set all the arguments.
-
-	XXX This version does not do any type-checking or conversion.
-	XXX That will be done automatically on assignment to parameters,
-	XXX but will screw up for local variables.  Need to fix that.
 	"""
 	f = _string.split(line)
 	n = min(len(f),len(namelist))
+	if kw.has_key('strconv'):
+		strconv = kw['strconv']
+		del kw['strconv']
+	else:
+		strconv = n*[None]
+	if len(kw):
+		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
 	for i in range(n):
-		cmd = namelist[i] + ' = ' + `f[i]`
+		if strconv[i]:
+			cmd = namelist[i] + ' = ' + strconv[i] + '(' + `f[i]` + ')'
+		else:
+			cmd = namelist[i] + ' = ' + `f[i]`
 		exec cmd in locals
 	global _nscan
 	_nscan = n
 	return n
 
-def scan(locals, *namelist):
-	"""Scan function sets parameters from line read from stdin"""
-	line = _sys.stdin.readline()
-	if line == "": return 'EOF'
-	return apply(fscan, (locals, line) + namelist)
+def scan(locals, *namelist, **kw):
+	"""Scan function sets parameters from line read from stdin
+
+	This can be used either as a function or as a task (it accepts
+	redirection and the _save keyword.)
+	"""
+	# handle redirection and save keywords
+	# other keywords are passed on to fscan
+	redirKW, closeFHList = redirProcess(kw)
+	if kw.has_key('_save'): del kw['_save']
+	resetList = redirApply(redirKW)
+	try:
+		line = _sys.stdin.readline()
+		if line == "": return 'EOF'
+		return apply(fscan, (locals, line) + namelist, kw)
+	finally:
+		redirReset(resetList, closeFHList)
 
 def nscan():
 	"""Return number of items read in last scan function"""
@@ -1008,14 +1072,18 @@ def clOscmd(s, **kw):
 	resetList = redirApply(redirKW)
 	try:
 		# if first character of s is '!' then force to Bourne shell
-		# just strip it off, we're always using Bourne shell anyway
-		if s[:1] == '!': s = s[1:]
+		if s[:1] == '!':
+			shell = "/bin/sh"
+			s = s[1:]
+		else:
+			# otherwise use default shell
+			shell=None
 
 		# ignore null commands
 		if not s: return 0
 
-		# use shell to execute command so wildcards, etc. are handled
-		status = _subproc.systemRedir(("/bin/sh", "-c", s))
+		# use subshell to execute command so wildcards, etc. are handled
+		status = _subproc.subshellRedir(s, shell=shell)
 		return status
 
 	finally:
@@ -1601,8 +1669,8 @@ def error(errnum=0, errmsg=''):
 	raise IrafError("ERROR: %s\n" % (errmsg,))
 
 # -----------------------------------------------------
-# clCompatibilityMode: full CL emulation (with no access
-# to Python syntax)
+# clCompatibilityMode: full CL emulation (with Python
+# syntax accessible only through !P escape)
 # -----------------------------------------------------
 
 _exitCommands = {
@@ -1612,7 +1680,7 @@ _exitCommands = {
 				".exit": 1,
 				}
 
-def clCompatibilityMode(verbose=0):
+def clCompatibilityMode(verbose=0, _save=0):
 
 	"""Start up full CL-compatibility mode"""
 
@@ -1650,6 +1718,9 @@ def clCompatibilityMode(verbose=0):
 			line = _string.strip(line)
 			if _exitCommands.has_key(line):
 				break
+			elif line[:2] == '!P':
+				# Python escape -- execute Python code
+				exec _string.strip(line[2:]) in locals
 			elif line and (line[0] != '#'):
 				code = clExecute(line, locals=locals, mode='single',
 					local_vars_dict=local_vars_dict,

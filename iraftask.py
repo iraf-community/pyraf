@@ -1109,7 +1109,7 @@ class IrafForeignTask(IrafTask):
 			# redirect the I/O
 			resetList = iraf.redirApply(redirKW)
 			# create and run the subprocess
-			subproc.systemRedir(("/bin/sh","-c",cmdline))
+			subproc.subshellRedir(cmdline)
 		finally:
 			iraf.redirReset(resetList, closeFHList)
 		if iraf.Verbose>1: print 'Successful task termination'
