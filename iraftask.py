@@ -13,6 +13,7 @@ import irafglobals, iraf, irafpar, irafexecute, epar, cl2py, irafutils
 # function gets called for every task execution
 executionMonitor = None
 
+
 # -----------------------------------------------------
 # IRAF task class
 # -----------------------------------------------------
@@ -1588,7 +1589,9 @@ class IrafForeignTask(IrafTask):
         # Insure that all arguments passed to ForeignTasks are
         # converted to strings, including objects which are not
         # naturally converted to strings.
-        self._args = map(re.escape,map(str,args))
+
+        fixwildcards = lambda s: s.replace('\\*','*')
+        self._args = map(fixwildcards,map(re.escape,map(str,args)))
 
     #=========================================================
     # private methods
