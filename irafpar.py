@@ -23,19 +23,11 @@ from types import *
 
 import iraf
 
-def warning(msg, strict=0, exception=SyntaxError,
-		filename=None, irafparam=None):
-	# prepend filename to message if known
-	if irafparam and irafparam.filename:
-		prefix = irafparam.filename + ":\n"
-	elif filename:
-		prefix = filename + ":\n"
-	else:
-		prefix = "<no filename>:\n"
+def warning(msg, strict=0, exception=SyntaxError):
 	if strict:
-		raise exception(prefix + msg)
+		raise exception(msg)
 	elif iraf.Verbose>0:
-		print prefix + msg
+		print msg
 
 # -----------------------------------------------------
 # IRAF parameter factory
@@ -136,13 +128,13 @@ class IrafPar:
 					warning("Max value illegal when choice list given" +
 							" for parameter " + self.name +
 							" (probably missing comma)",
-							strict, irafparam=self)
+							strict)
 					# try to recover by assuming max string is prompt
 					fields[6] = fields[5]
 					fields[5] = ""
 				else:
 					warning("Max value illegal when choice list given" +
-						" for parameter " + self.name, strict, irafparam=self)
+						" for parameter " + self.name, strict)
 		else:
 			# XXX should catch ValueError exceptions here and set to null
 			# XXX could also check for missing comma (null prompt, prompt in max field)
@@ -151,7 +143,7 @@ class IrafPar:
 		if self.min is not None and self.max is not None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
-				strict, irafparam=self)
+				strict)
 			self.min, self.max = self.max, self.min
 		self.prompt = irafutils.removeEscapes(fields[6])
 		#
@@ -167,7 +159,7 @@ class IrafPar:
 			self.checkValue(self.value,strict)
 		except ValueError, e:
 			warning("Illegal initial value for parameter\n" + str(e),
-				strict, irafparam=self, exception=ValueError)
+				strict, exception=ValueError)
 			# Set illegal values to null string, just like IRAF
 			self.value = ""
 
@@ -477,13 +469,13 @@ class IrafArrayPar(IrafPar):
 					warning("Max value illegal when choice list given" +
 							" for parameter " + self.name +
 							" (probably missing comma)",
-							strict, irafparam=self)
+							strict)
 					# try to recover by assuming max string is prompt
 					fields[8] = fields[7]
 					fields[7] = ""
 				else:
 					warning("Max value illegal when choice list given" +
-						" for parameter " + self.name, strict, irafparam=self)
+						" for parameter " + self.name, strict)
 		else:
 			self.min = self.coerceOneValue(fields[6],strict)
 			self.max = self.coerceOneValue(fields[7],strict)
@@ -491,7 +483,7 @@ class IrafArrayPar(IrafPar):
 		if self.min is not None and self.max is not None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
-				strict, irafparam=self)
+				strict)
 			self.min, self.max = self.max, self.min
 		#
 		# check attributes to make sure they are appropriate for
@@ -506,7 +498,7 @@ class IrafArrayPar(IrafPar):
 			self.checkValue(self.value,strict)
 		except ValueError, e:
 			warning("Illegal initial value for parameter\n" + str(e),
-				strict, irafparam=self, exception=ValueError)
+				strict, exception=ValueError)
 			# Set illegal values to null string, just like IRAF
 			self.value = ""
 
@@ -618,25 +610,25 @@ class _StringMixin:
 		"""Check initial attributes to make sure they are legal"""
 		if self.min:
 			warning("Minimum value not allowed for string-type parameter " +
-				self.name, strict, irafparam=self)
+				self.name, strict)
 			self.min = None
 		if self.max:
 			if not self.prompt:
 				warning("Maximum value not allowed for string-type parameter " +
 						self.name + " (probably missing comma)",
-						strict, irafparam=self)
+						strict)
 				# try to recover by assuming max string is prompt
 				self.prompt = self.max
 			else:
 				warning("Maximum value not allowed for string-type parameter " +
-					self.name, strict, irafparam=self)
+					self.name, strict)
 			self.max = None
 		# If not in strict mode, allow file (f) to act just like string (s).
 		# Otherwise choice is also forbidden for file type
 		if strict and self.type == "f" and self.choice:
 			warning("Illegal choice value for type '" +
 				self.type + "' for parameter " + self.name,
-				strict, irafparam=self)
+				strict)
 			self.choice = None
 
 	def setChoice(self,s,strict=0):
@@ -879,22 +871,22 @@ class _BooleanMixin:
 		"""Check initial attributes to make sure they are legal"""
 		if self.min:
 			warning("Minimum value not allowed for boolean-type parameter " +
-				self.name, strict, irafparam=self)
+				self.name, strict)
 			self.min = None
 		if self.max:
 			if not self.prompt:
 				warning("Maximum value not allowed for boolean-type parameter " +
 						self.name + " (probably missing comma)",
-						strict, irafparam=self)
+						strict)
 				# try to recover by assuming max string is prompt
 				self.prompt = self.max
 			else:
 				warning("Maximum value not allowed for boolean-type parameter " +
-					self.name, strict, irafparam=self)
+					self.name, strict)
 			self.max = None
 		if self.choice:
 			warning("Choice values not allowed for boolean-type parameter " +
-				self.name, strict, irafparam=self)
+				self.name, strict)
 			self.choice = None
 
 	def toString(self, value):
@@ -1027,7 +1019,7 @@ class _RealMixin:
 		"""Check initial attributes to make sure they are legal"""
 		if self.choice:
 			warning("Choice values not allowed for real-type parameter " +
-				self.name, strict, irafparam=self)
+				self.name, strict)
 			self.choice = None
 
 	def toString(self, value):
@@ -1342,17 +1334,20 @@ def _readpar(filename,strict=0):
 					g = mm.group('comma')
 					# check for trailing quote in unquoted string
 					if g[-1:] == '"' or g[-1:] == "'":
-						warning("Unquoted string has trailing quote\n" +
-								line, strict, filename=filename)
+						warning(filename + "\n" + line + "\n" +
+								"Unquoted string has trailing quote",
+								strict)
 				elif mm.group('double') is not None:
 					if mm.group('djunk'):
-						warning("Non-blank follows quoted string\n" + \
-								line, strict, filename=filename)
+						warning(filename + "\n" + line + "\n" +
+								"Non-blank follows quoted string",
+								strict)
 					g = mm.group('double')
 				elif mm.group('single') is not None:
 					if mm.group('sjunk'):
-						warning("Non-blank follows quoted string\n" + \
-								line, strict, filename=filename)
+						warning(filename + "\n" + line + "\n" +
+							"Non-blank follows quoted string",
+							strict)
 					g = mm.group('single')
 				else:
 					raise SyntaxError(filename + "\n" + line + "\n" + \
@@ -1367,8 +1362,9 @@ def _readpar(filename,strict=0):
 				raise SyntaxError(filename + "\n" + line + "\n" + \
 					str(flist) + "\n" + str(exc))
 			if param_dict.has_key(par.name):
-				warning("Duplicate parameter " + \
-						par.name + "\n" + line, strict, filename=filename)
+				warning(filename + "\n" + line + "\n" +
+						"Duplicate parameter " + par.name,
+						strict)
 			else:
 				param_dict[par.name] = par
 				param_list.append(par)
@@ -1382,21 +1378,10 @@ def _readpar(filename,strict=0):
 _re_choice = re.compile(r'\|')
 
 def _getChoice(self, s, strict):
-	if (s[0] != "|") or (s[-1] != "|"):
-		warning("Choice string does not start and end with '|'" +
-			" for parameter " + self.name, strict, irafparam=self)
-	if s[0] == "|":
-		i1 = 1
-	else:
-		i1 = 0
-	clist = []
-	mm = _re_choice.search(s,i1)
-	while mm is not None:
-		i2 = mm.start()
-		clist.append(s[i1:i2])
-		i1 = mm.end()
-		mm = _re_choice.search(s,i1)
-	if i1 < len(s):
-		clist.append(s[i1:])
+	clist = string.split(s, "|")
+	# string is allowed to start and end with "|", so ignore initial
+	# and final empty strings
+	if not clist[0]: del clist[0]
+	if len(clist)>1 and not clist[-1]: del clist[-1]
 	return clist
 
