@@ -6,17 +6,19 @@ $Id$
 R. White, 1999 Jan 25
 """
 
-import os, string, re, irafpar, irafexecute, minmatch, types
+import sys, os, string, re, types, time
+import irafpar, irafexecute, minmatch
+from iraftask import IrafTask, IrafPkg
 
 class IrafError(Exception):
 	pass
  
 # -----------------------------------------------------
 # dictionaries:
-# _vars: all IRAF cl variables (defined with set name=value)
 # _tasks: all IRAF tasks (defined with task name=value)
 # _pkgs: all packages (defined with task name.pkg=value)
 # _loaded: loaded packages
+# _vars: all IRAF cl variables (defined with set name=value)
 #
 # _mmtasks: minimum-match dictionary for tasks
 # _mmpkgs: minimum-match dictionary for packages
@@ -25,36 +27,56 @@ class IrafError(Exception):
 # Will want to enhance this to allow a "bye" function that unloads packages.
 # That might be done using a stack of definitions for each task.
 
-_vars = {'iraf': os.environ['iraf'],
-	'host': os.environ['host'],
-	'hlib': os.environ['hlib'],
-	'arch': '.'+os.environ['IRAFARCH'],
-	'home': os.path.join(os.environ['HOME'],'iraf') }
 _tasks = {}
 _pkgs = {}
 _loaded = {}
+_vars = {}
 
 _mmtasks = minmatch.MinMatchDict()
 _mmpkgs = minmatch.MinMatchDict()
-
-_verbose = 0
 
 # _loadedPath: loaded packages in order of loading
 # Used as search path to find fully qualified task name
 
 _loadedPath = []
 
+# _cl is the cl task pointer (frequently used because cl parameters
+# are always available)
+
+_cl = None
 
 # -----------------------------------------------------
-# HTML help
+# setVerbose, getVerbose: turn on and check verbose printing
+# -----------------------------------------------------
+
+_verbose = 0
+
+def setVerbose(verbose=1):
+	"""Set verbosity level when running tasks.  Level 0 (default)
+	prints almost nothing.  Level 1 prints parsing warnings.
+	Level 2 prints info on progress.  Level 2 prints cl code
+	itself."""
+	global _verbose
+	_verbose = verbose
+
+def getVerbose():
+	"""Return verbosity level"""
+	return _verbose
+
+
+# -----------------------------------------------------
+# help: HTML help
 # -----------------------------------------------------
 
 _HelpURL = "http://ra.stsci.edu/cgi-bin/gethelp.cgi?task="
 
 def help(taskname):
 	"""Display HTML help for given IRAF task in Netscape.
+	Task can be either a name or an IrafTask object.
 	Tries using 'netscape -remote' command to load the page in
 	a running Netscape.  If that fails, starts a new netscape."""
+
+	if isinstance(taskname,IrafTask): taskname = taskname.getName()
 	pid = os.fork()
 	if pid == 0:
 		url = _HelpURL + taskname
@@ -66,558 +88,113 @@ def help(taskname):
 		os._exit(0)
 
 # -----------------------------------------------------
-# basic initialization
+# init: basic initialization
 # -----------------------------------------------------
 
 # Should these just be executed statements rather than a function?
 # Then simply importing the package would initialize them -- but
 # perhaps that is better done in some other module.
 
-def init():
+def init(doprint=1):
 	"""Basic initialization of IRAF environment"""
-	global _pkgs
+	global _vars, _pkgs, _cl
 	if len(_pkgs) == 0:
+		_vars['iraf'] = os.environ['iraf']
+		_vars['host'] = os.environ['host']
+		_vars['hlib'] = os.environ['hlib']
+		_vars['arch'] = '.'+os.environ['IRAFARCH']
+		# XXX Note that this setting of home may not be correct -- should
+		# XXX do something more sophisticated like making current directory
+		# XXX home if it contains a login.cl and uparm?
+		_vars['home'] = os.path.join(os.environ['HOME'],'iraf','')
+
 		readcl('hlib$zzsetenv.def', 'clpackage', 'bin$')
-		# define and load clpackage
-		p = IrafPkg('$', 'clpackage', '.pkg', 'hlib$clpackage.cl', 'clpackage', 'bin$')
-		_pkgs['clpackage'] = p
-		_mmpkgs['clpackage'] = 'clpackage'
-		p.run()
-		if os.path.exists('login.cl'):
-			readcl('login.cl','clpackage','bin$')
+
+		# define clpackage
+
+		clpkg = IrafPkg('', 'clpackage', '.pkg', 'hlib$clpackage.cl',
+			'clpackage', 'bin$')
+		addPkg(clpkg)
+
+		# add the cl as a task, because its parameters are sometimes needed,
+		# but make it a hidden task
+
+		_cl = IrafTask('','cl','','cl$cl.e','clpackage','bin$')
+		_cl.setHidden(1)
+		addTask(_cl)
+
+		# load clpackage
+
+		clpkg.run()
+
+		if access('login.cl'):
+			fname = 'login.cl'
+		elif access('home$login.cl'):
+			fname = 'home$login.cl'
 		else:
-			print "Warning: no login.cl found in login directory"
-		listtasks('clpackage')
+			fname = None
 
-def setVerbose(verbose=1):
-	"""Set verbosity level when running tasks"""
-	global _verbose
-	_verbose = verbose
+		if fname:
+			# define and load user package
+			# XXX userpkg = IrafPkg('', 'user', '.pkg', fname, 'user', 'bin$')
+			userpkg = IrafPkg('', 'user', '.pkg', fname, 'clpackage', 'bin$')
+			addPkg(userpkg)
+			userpkg.run()
+		else:
+			print "Warning: no login.cl found"
 
-def getVerbose():
-	"""Return verbosity level"""
-	global _verbose
-	return _verbose
+		# make clpackage the current package
+		_loadedPath.append(clpkg)
+		if doprint: listtasks('clpackage')
 
 # -----------------------------------------------------
-# IRAF task class
+# addPkg: Add an IRAF package to the pkgs list
 # -----------------------------------------------------
 
-class IrafTask:
-	"""IRAF task class"""
-	def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
-		self.__name = name
-		self.__pkgname = pkgname
-		self.__pkgbinary = pkgbinary
-		self.__hidden = 0
-		if prefix == '$':
-			self.__hasparfile = 0
-		else:
-			self.__hasparfile = 1
-		if suffix == '.tb':
-			self.__tbflag = 1
-		else:
-			self.__tbflag = 0
-		# full path names and parameter list get filled in on demand
-		self.__fullpath = None
-		self.__parpath = None
-		self.__pars = None
-		self.__pardict = None
-		# _mmpardict is minimum-match parameter dictionary
-		self.__mmpardict = None
-		self.__parDictList = None
-		if filename[0] == '$':
-			# this is a foreign task
-			self.__cl = 0
-			self.__pset = 0
-			self.__foreign = 1
-			self.__filename = filename[1:]
-			# handle weird syntax for names
-			if self.__filename == 'foreign':
-				self.__filename = name
-			elif filename[0:2] == '$0':
-				self.__filename = name + self.__filename[2:]
-		else:
-			self.__foreign = 0
-			self.__filename = filename
-			# flag .cl scripts and psets
-			root, ext = os.path.splitext(filename)
-			if ext == ".cl":
-				self.__cl = 1
-				self.__pset = 0
-			elif ext == ".par":
-				self.__pset = 1
-				self.__cl = 0
-			else:
-				self.__cl = 0
-				self.__pset = 0
-
-	# public accessor functions for attributes
-
-	def getName(self):       return self.__name
-	def getPkgname(self):    return self.__pkgname
-	def getPkgbinary(self):  return self.__pkgbinary
-	def getHidden(self):     return self.__hidden
-	def getHasparfile(self): return self.__hasparfile
-	def getTbflag(self):     return self.__tbflag
-	def getCl(self):         return self.__cl
-	def getPset(self):       return self.__pset
-	def getForeign(self):    return self.__foreign
-	def getFilename(self):   return self.__filename
-
-	def getFullpath(self):
-		if self.__fullpath == None: self.initTask()
-		return self.__fullpath
-	def getParpath(self):
-		if self.__fullpath == None: self.initTask()
-		return self.__parpath
-	def getPars(self):
-		if self.__fullpath == None: self.initTask()
-		return self.__pars
-	def getParDict(self):
-		if self.__fullpath == None: self.initTask()
-		return self.__pardict
-
-	# public access to set hidden attribute, which is specified
-	# in a separate 'hide' statement
-
-	def setHidden(self,value):     self.__hidden = value
-
-	# Check that parameter exists using minimum-matching for name.
-	# Returns full name.
-	def getParName(self,param):
-		if self.__fullpath == None: self.initTask()
-		if not self.__hasparfile:
-			raise SyntaxError("Task "+self.__name+" has no parameter file")
-		parlist = self.__mmpardict.get(param)
-		if not parlist:
-			raise SyntaxError("No such parameter '" +
-				param + "' for task " + self.__name)
-		if len(parlist) > 1:
-			raise SyntaxError("Ambiguous parameter '" +
-				param + "' for task " + self.__name + "\n" +
-				"Could be " + `parlist`)
-		return parlist[0]
-
-	# get value for parameter 'param' with minimum-matching
-	def get(self,param):
-		param = self.getParName(param)
-		return self.__pardict[param].get()
-
-	# set task parameter 'param' to value with minimum-matching
-	def set(self,param,value):
-		param = self.getParName(param)
-		self.__pardict[param].set(value)
-
-	# allow running task using taskname() or with
-	# parameters as arguments, including keyword=value form.
-
-	def __call__(self,*args,**kw):
-		apply(self.run,args,kw)
-	def run(self,*args,**kw):
-		if self.__fullpath == None: self.initTask()
-		if self.__foreign:
-			print "No run yet for foreign task",self.__name
-		elif self.__cl:
-			print "No run yet for cl task", self.__name, \
-				"("+self.__fullpath+")"
-		else:
-			# set parameters
-			apply(self.setParList,args,kw)
-			if _verbose:
-				print "Connected subproc run ", self.__name, \
-					"("+self.__fullpath+")"
-				self.lpar()
-			try:
-				# create the list of parameter dictionaries to use
-				self.setParDictList()
-				# run the task
-				irafexecute.IrafExecute(self, _vars)
-				if _verbose: print 'Successful task termination'
-			except irafexecute.IrafProcessError, value:
-				raise IrafError("Error running IRAF task " + self.__name +
-					"\n" + str(value))
-
-	def setParList(self,*args,**kw):
-		# first expand all keywords to their full names
-		fullkw = {}
-		for key in kw.keys():
-			param = self.getParName(key)
-			if fullkw.has_key(param):
-				raise SyntaxError("Multiple values given for parameter " + 
-					param + " in task " + self.__name)
-			fullkw[param] = kw[key]
-
-		# add positional parameters to the keyword list, checking
-		# for duplicates
-		ipar = 0
-		for value in args:
-			while ipar < len(self.__pars):
-				if self.__pars[ipar].mode != "h": break
-				ipar = ipar+1
-			else:
-				# executed if we run out of non-hidden parameters
-				raise SyntaxError("Too many positional parameters for task " +
-					self.__name)
-			param = self.__pars[ipar].name
-			if fullkw.has_key(param):
-				raise SyntaxError("Multiple values given for parameter " + 
-					param + " in task " + self.__name)
-			fullkw[param] = value
-			ipar = ipar+1
-		# now set all keyword parameters
-		# XXX Need to add ability to set pset parameters using keywords too
-		for param in fullkw.keys(): self.set(param,fullkw[param])
-		# Number of arguments on command line, $nargs, is used by some IRAF
-		# tasks (e.g. imheader).
-		self.set('$nargs',len(args))
-
-	def setParDictList(self):
-		"""Parameter dictionaries for execution consist of this
-		task's parameters, any psets referenced, and all the
-		parameters for packages that have been loaded.  Each
-		dictionary has an associated name (because parameters
-		could be asked for as task.parname as well as just parname).
-
-		Create this list anew for each execution in case the
-		list of loaded packages has changed.  It is stored as
-		an attribute of this object so it can be accessed by
-		the getParam() and setParam() methods."""
-
-		if self.__fullpath == None: self.initTask()
-		parDictList = [(self.__name,self.__pardict)]
-		# look for any psets
-		for param in self.__pars:
-			if param.type == "pset":
-				# pset name is from either parameter value (if not null)
-				# or from parameter name (XXX I'm just guessing at this)
-				try:
-					psetname = param.get() or param.name
-					pset = getTask(psetname)
-					parDictList.append( (param.name,pset.getParDict()) )
-				except KeyError:
-					raise IrafError("Cannot get pset " +
-						param.name + " for task " + self.__name)
-		# package parameters
-		for i in xrange(len(_loadedPath)):
-			pkg = _loadedPath[-1-i]
-			parDictList.append( (pkg.getName(),pkg.getParDict()) )
-		self.__parDictList = parDictList
-
-	def setParam(self,qualifiedName,newvalue,check=1):
-		"""Set parameter specified by qualifiedName to newvalue.
-		If check is set to zero, does not check value to make sure it
-		satisfies min-max range or choice list."""
-
-		if self.__parDictList == None: self.setParDictList()
-
-		package, task, paramname, pindex, field = _splitName(qualifiedName)
-
-		# special syntax for package parameters
-		if task == "_": task = self.__pkgname
-				
-		if task or package:
-			if not package:
-				# maybe this task is the name of one of the dictionaries?
-				for dictname, paramdict in self.__parDictList:
-					if dictname == task:
-						if paramdict.has_key(paramname):
-							paramdict[paramname].set(newvalue,index=pindex,
-								field=field,check=check)
-							return
-						else:
-							raise IrafError("Attempt to set unknown parameter " +
-								qualifiedName)
-			# Not one of our dictionaries, so must find the relevant task
-			if package: task = package + '.' + task
-			try:
-				tobj = getTask(task)
-				# reattach the index and/or field
-				if pindex: paramname = paramname + '[' + `pindex+1` + ']'
-				if field: paramname = paramname + '.' + field
-				tobj.setParam(paramname,newvalue,check=check)
-				return
-			except KeyError:
-				raise IrafError("Could not find task " + task +
-					" to get parameter " + qualifiedName)
-			except IrafError, e:
-				raise IrafError(e + "\nFailed to set parameter " +
-					qualifiedName)
-
-		# no task specified, just search the standard dictionaries
-		for dictname, paramdict in self.__parDictList:
-			if paramdict.has_key(paramname):
-				paramdict[paramname].set(newvalue,index=pindex,
-					field=field,check=check)
-				return
-		else:
-			raise IrafError("Attempt to set unknown parameter " +
-				qualifiedName)
-
-	def getParam(self,qualifiedName):
-		"""Return parameter specified by qualifiedName, which can be a simple
-		parameter name or can be [[package.]task.]paramname[.field].
-		Paramname can also have an optional subscript, "param[1]".
-		"""
-
-		if self.__parDictList == None: self.setParDictList()
-		package, task, paramname, pindex, field = _splitName(qualifiedName)
-
-		# special syntax for package parameters
-		if task == "_": task = self.__pkgname
-				
-		if task and (not package):
-			# maybe this task is the name of one of the dictionaries?
-			for dictname, paramdict in self.__parDictList:
-				if dictname == task:
-					if paramdict.has_key(paramname):
-						v = paramdict[paramname].get(index=pindex,field=field)
-						if v[:1] == ")":
-							# parameter indirection: call getParam recursively
-							return self.getParam(v[1:])
-						else:
-							return v
-					else:
-						raise IrafError("Unknown parameter requested: " +
-							qualifiedName)
-
-		if package or task:
-			# Not one of our dictionaries, so must find the relevant task
-			if package: task = package + '.' + task
-			try:
-				tobj = getTask(task)
-				return tobj.getParam(paramname)
-			except KeyError:
-				raise IrafError("Could not find task " + task +
-					" to get parameter " + qualifiedName)
-			except IrafError, e:
-				raise IrafError(e + "\nFailed to get parameter " +
-					qualifiedName)
-
-		for dictname, paramdict in self.__parDictList:
-			if paramdict.has_key(paramname):
-				v = paramdict[paramname].get(index=pindex,field=field)
-				if v[:1] == ")":
-					# parameter indirection: call getParam recursively
-					return self.getParam(v[1:])
-				else:
-					return v
-		else:
-			raise IrafError("Unknown parameter requested: " +
-				qualifiedName)
-
-	def lpar(self,verbose=0):
-		if self.__fullpath == None: self.initTask()
-		if not self.__hasparfile:
-			print "Task",self.__name," has no parameter file"
-		else:
-			for i in xrange(len(self.__pars)):
-				p = self.__pars[i]
-				if _verbose or p.name != '$nargs':
-					print p.pretty(verbose=verbose or _verbose)
-
-	# fill in full pathnames of files and read parameter file (if it exists)
-	# if names are None then need to run this
-	# if names are "" then already tried and failed
-	# if names are strings then already did it
-	def initTask(self):
-		if self.__fullpath == "":
-			raise IrafError("Cannot find executable for task " + self.__name)
-		if (self.__hasparfile and self.__parpath == ""):
-			raise IrafError("Cannot find .par file for task " + self.__name)
-		if self.__fullpath == None:
-			# This follows the search strategy used by findexe in
-			# cl/exec.c: first it checks in the BIN directory for the
-			# "installed" version of the executable, and if that is not
-			# found it tries the pathname given in the TASK declaration.
-			#
-			# expand iraf variables
-			exename1 = expand(self.__filename)
-			# get name of executable file without path
-			basedir, basename = os.path.split(exename1)
-			if basename == "":
-				self.__fullpath = ""
-				raise IrafError("No filename in task " + self.__name + \
-					" definition: '" + self.__filename + "'")
-			# for foreign tasks, just set path to filename (XXX will
-			# want to improve this by checking os path for existence)
-			if self.__foreign:
-				self.__fullpath = self.__filename
-			else:
-				# first look in the task binary directory
-				exename2 = expand(self.__pkgbinary + basename)
-				if os.path.exists(exename2):
-					self.__fullpath = exename2
-				elif os.path.exists(exename1):
-					self.__fullpath = exename1
-				else:
-					self.__fullpath = ""
-					raise IrafError("Cannot find executable for task " + self.__name)
-			if self.__hasparfile:
-				pfile = os.path.join(basedir,self.__name + ".par")
-				# check uparm first for scrunched version of par filename
-				# with saved parameters
-				if _vars.has_key("uparm"):
-					upfile = expand("uparm$" + self.scrunchName() + ".par")
-				else:
-					upfile = None
-				if upfile and os.path.exists(upfile):
-					# probably should do some sort of comparison with pfile
-					# here to make sure this file is an up-to-date version?
-					self.__parpath = upfile
-				elif os.path.exists(pfile):
-					self.__parpath = pfile
-				else:
-					# XXX need to parse header of cl tasks to get parameters
-					# XXX if package has no par file, create a par list with just
-					# mode parameter
-					if isinstance(self,IrafPkg):
-						self.__parpath = None
-						self.__pars = [ irafpar.IrafParFactory(['mode','s','h','al']) ]
-					else:
-						self.__parpath = ""
-						raise IrafError("Cannot find .par file for task " + self.__name)
-				if self.__parpath: self.__pars = irafpar.readpar(self.__parpath)
-				self.__pardict = {}
-				self.__mmpardict = minmatch.MinMatchDict()
-				for i in xrange(len(self.__pars)):
-					p = self.__pars[i]
-					self.__pardict[p.name] = p
-					self.__mmpardict[p.name] = p.name
-	def unlearn(self):
-		if self.__fullpath == None: self.initTask()
-		if self.__hasparfile:
-			exename1 = expand(self.__filename)
-			basedir, basename = os.path.split(exename1)
-			pfile = os.path.join(basedir,self.__name + ".par")
-			if os.path.exists(pfile):
-				self.__parpath = pfile
-			else:
-				raise IrafError("Cannot find .par file for task " + self.__name)
-			self.__pars = irafpar.readpar(self.__parpath)
-			self.__pardict = {}
-			self.__mmpardict = minmatch.MinMatchDict()
-			for i in xrange(len(self.__pars)):
-				p = self.__pars[i]
-				self.__pardict[p.name] = p
-				self.__mmpardict[p.name] = p.name
-	def scrunchName(self):
-		# scrunched version of filename is chars 1,2,last from package
-		# name and chars 1-5,last from task name
-		s = self.__pkgname[0:2]
-		if len(self.__pkgname) > 2:
-			s = s + self.__pkgname[-1:]
-		s = s + self.__name[0:5]
-		if len(self.__name) > 6:
-			s = s + self.__name[-1:]
-		return s
-	def __str__(self):
-		s = '<IrafTask ' + self.__name + ' (' + self.__filename + ')' + \
-			' Pkg: ' + self.__pkgname + ' Bin: ' + self.__pkgbinary
-		if self.__cl: s = s + ' Cl'
-		if self.__pset: s = s + ' Pset'
-		if self.__foreign: s = s + ' Foreign'
-		if self.__hidden: s = s + ' Hidden'
-		if self.__hasparfile == 0: s = s + ' No parfile'
-		if self.__tbflag: s = s + ' .tb'
-		return s + '>'
+def addPkg(pkg):
+	global _pkgs, _mmpkgs
+	name = pkg.getName()
+	_pkgs[name] = pkg
+	_mmpkgs[name] = name
+	addTask(pkg)
 
 # -----------------------------------------------------
-# Utility function to split qualified names into components
+# addTask: Add an IRAF task to the tasks list
 # -----------------------------------------------------
 
-def _splitName(qualifiedName):
-	"""qualifiedName looks like [[package.]task.]paramname[subscript][.field],
-	where subscript is an index in brackets.  Returns a tuple with
-	(package, task, paramname, subscript, field). IRAF one-based subscript
-	is changed to Python zero-based subscript.
-	"""
-	slist = string.split(qualifiedName,'.')
-	package = None
-	task = None
-	pindex = None
-	field = None
-	ip = len(slist)-1
-	if ip>0 and slist[ip][:2] == "p_":
-		field = slist[ip]
-		ip = ip-1
-	paramname = slist[ip]
-	if ip > 0:
-		ip = ip-1
-		task = slist[ip]
-		if ip > 0:
-			ip = ip-1
-			package = slist[ip]
-			if ip > 0:
-				raise IrafError("Illegal syntax for parameter: " +
-					qualifiedName)
-
-	# parse possible subscript
-
-	pstart = string.find(paramname,'[')
-	if pstart >= 0:
-		try:
-			pend = string.rindex(paramname,']')
-			pindex = int(paramname[pstart+1:pend])-1
-			paramname = paramname[:pstart]
-		except:
-			raise IrafError("Illegal syntax for array parameter: " +
-				qualifiedName)
-	return (package, task, paramname, pindex, field)
+def addTask(task):
+	global _tasks, _mmtasks
+	name = task.getName()
+	fullname = task.getPkgname() + '.' + name
+	_tasks[fullname] = task
+	_mmtasks[name] = fullname
 
 # -----------------------------------------------------
-# IRAF package class
+# load: Load an IRAF package by name
 # -----------------------------------------------------
 
-class IrafPkg(IrafTask):
-	"""IRAF package class (special case of IRAF task)"""
-	def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
-		IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
-		# a package cannot be a foreign task or be a pset (both of which get
-		# specified through the filename)
-		if self.getForeign() or self.getPset():
-			raise IrafError("Bad filename for package " +
-				pkgname + ": " + filename)
-		self.__loaded = 0
-	def getLoaded(self): return self.__loaded
-	def run(self):
-		if self.getFullpath() == None: self.initTask()
-		# if already loaded, just add to _loadedPath
-		global _loadedPath
-		_loadedPath.append(self)
-		if not self.__loaded:
-			self.__loaded = 1
-			_loaded[self.getName()] = len(_loaded)
-			if _verbose:
-				print "Loading pkg ",self.getName(), "("+self.getFullpath()+")",
-				if self.getHasparfile():
-					print "par", self.getParpath(), \
-						"["+`len(self.getPars())`+"] parameters",
-				print
-			readcl(self.getFullpath(), self.getPkgname(), self.getPkgbinary())
-	def __str__(self):
-		s = '<IrafPkg ' + self.getName() + ' (' + self.getFilename() + ')' + \
-			' Pkg: ' + self.getPkgname()
-		if self.getHidden(): s = s + ' Hidden'
-		if self.getHasparfile() == 0: s = s + ' No parfile'
-		return s + '>'
-
-# -----------------------------------------------------
-# Load an IRAF package by name
-# -----------------------------------------------------
-
-def load(pkgname,doprint=1):
+def load(pkgname,args=(),kw={},doprint=1):
 	"""Load an IRAF package by name."""
 	p = getPkg(pkgname)
-	p.run()
+	apply(p.run, tuple(args), kw)
 	if doprint: listtasks(p.getName())
 
 # -----------------------------------------------------
-# Find an IRAF package by name
+# run: Run an IRAF task by name
+# -----------------------------------------------------
+
+def run(taskname,args=(),kw={}):
+	"""Run an IRAF task by name."""
+	t = getTask(taskname)
+	apply(t.run, tuple(args), kw)
+
+# -----------------------------------------------------
+# getPkg: Find an IRAF package by name
 # -----------------------------------------------------
 
 def getPkg(pkgname):
-	"""Find an IRAF package by name using minimum match."""
+	"""Find an IRAF package by name using minimum match.
+	Returns an IrafPkg object."""
 	fullname = _mmpkgs.get(pkgname)
 	if not fullname:
 		raise KeyError("Package "+pkgname+" is not defined")
@@ -629,7 +206,7 @@ def getPkg(pkgname):
 	return _pkgs[fullname[0]]
 
 # -----------------------------------------------------
-# Find an IRAF task by name
+# getTask: Find an IRAF task by name
 # -----------------------------------------------------
 
 def getTask(taskname):
@@ -641,7 +218,7 @@ def getTask(taskname):
 
 	task = _tasks.get(taskname)
 	if task:
-		if _verbose: print 'found',taskname,'in task list'
+		if _verbose>1: print 'found',taskname,'in task list'
 		return task
 
 	# Look it up in the minimum-match dictionary
@@ -652,7 +229,7 @@ def getTask(taskname):
 	if len(fullname) == 1:
 		# unambiguous match
 		task = _tasks[fullname[0]]
-		if _verbose: print 'found',task.getName(),'in task list'
+		if _verbose>1: print 'found',task.getName(),'in task list'
 		return task
 
 	# Ambiguous match is OK only if taskname is the full name
@@ -687,7 +264,8 @@ def getTask(taskname):
 					"could be " + `fullname`)
 			pkglist.append(sp[0])
 		trylist = fullname
-	# OK, now trylist has a list of several candidate tasks that differ
+
+	# trylist has a list of several candidate tasks that differ
 	# only in package.  Search loaded packages in reverse to find
 	# which one was loaded most recently.
 	for i in xrange(len(_loadedPath)):
@@ -697,33 +275,143 @@ def getTask(taskname):
 			j = pkglist.index(pkg)
 			return _tasks[trylist[j]]
 	# None of the packages are loaded?  This presumably cannot happen
-	# now, but could happen once package unloading is implemented.
+	# now, but could happen if package unloading is implemented.
 	raise KeyError("Task "+taskname+" is not in a loaded package")
 
 # -----------------------------------------------------
-# Run an IRAF task by name
+# listall, listpkg, listloaded, listtasks, listcurrent, listvars:
+# list contents of the dictionaries
 # -----------------------------------------------------
 
-def run(taskname):
-	"""Run an IRAF task by name"""
-	getTask(taskname).run()
+def listall(hidden=0):
+	"""List IRAF packages, tasks, and variables"""
+	print 'Packages:'
+	listpkgs()
+	print 'Loaded Packages:'
+	listloaded()
+	print 'Tasks:'
+	listtasks(hidden=hidden)
+	print 'Variables:'
+	listvars()
 
-# -----------------------------------------------------
-# Read an IRAF .cl file and add symbols to dictionaries
-# -----------------------------------------------------
-
-def readcl(filename,pkgname,pkgbinary):
-	"""Read an IRAF .cl file and add symbols to dictionaries"""
-
-	# expand any IRAF variables in filename
-	expfile = expand(filename)
-
-	# if it exists, open it; otherwise return with warning
-	if os.path.exists(expfile):
-		fh = open(os.path.expanduser(expfile),'r')
+def listpkgs():
+	"""List IRAF packages"""
+	keylist = _pkgs.keys()
+	if len(keylist) == 0:
+		print 'No IRAF packages defined'
 	else:
-		print 'WARNING: no such file', filename,'('+expfile+')'
-		return
+		keylist.sort()
+		# append '/' to identify packages
+		for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
+		_printcols(keylist)
+
+def listloaded():
+	"""List loaded IRAF packages"""
+	keylist = _loaded.keys()
+	if len(keylist) == 0:
+		print 'No IRAF packages loaded'
+	else:
+		keylist.sort()
+		# append '/' to identify packages
+		for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
+		_printcols(keylist)
+
+def listtasks(pkglist=None,hidden=0):
+	"""List IRAF tasks, optionally specifying a list of packages to include."""
+	keylist = _tasks.keys()
+	if len(keylist) == 0:
+		print 'No IRAF tasks defined'
+	else:
+		# make a dictionary of pkgs to list
+		if pkglist:
+			pkgdict = {}
+			if type(pkglist) is types.StringType: pkglist = [ pkglist ]
+			for p in pkglist:
+				try:
+					pthis = getPkg(p)
+					if pthis.getLoaded():
+						pkgdict[pthis.getName()] = 1
+					else:
+						print 'Package',pthis.getName(),'has not been loaded'
+				except KeyError, e:
+					print e
+			if not len(pkgdict):
+				print 'No packages to list'
+				return
+		else:
+			pkgdict = _pkgs
+
+		# print each package separately
+		keylist.sort()
+		lastpkg = ''
+		tlist = []
+		for tname in keylist:
+			pkg, task = string.split(tname,'.')
+			tobj = _tasks[tname]
+			if hidden or not tobj.getHidden():
+				if isinstance(tobj,IrafPkg):
+					task = task + '/'
+				elif tobj.getPset():
+					task = task + '@'
+				if pkg == lastpkg:
+					tlist.append(task)
+				else:
+					if len(tlist) and pkgdict.has_key(lastpkg):
+						print lastpkg + '/:'
+						_printcols(tlist)
+					tlist = [task]
+					lastpkg = pkg
+		if len(tlist) and pkgdict.has_key(lastpkg):
+			print lastpkg + '/:'
+			_printcols(tlist)
+
+def listcurrent(n=1,hidden=0):
+	"""List IRAF tasks in current package (equivalent to '?' in the cl.)
+	If parameter n is specified, lists n most recent packages."""
+
+	if len(_loadedPath):
+		if n > len(_loadedPath): n = len(_loadedPath)
+		plist = n*[None]
+		for i in xrange(n):
+			plist[i] = _loadedPath[-1-i].getName()
+		listtasks(plist,hidden=hidden)
+	else:
+		print 'No IRAF tasks defined'
+
+def listvars():
+	"""List IRAF variables"""
+	keylist = _vars.keys()
+	if len(keylist) == 0:
+		print 'No IRAF variables defined'
+	else:
+		keylist.sort()
+		for word in keylist:
+			print word + '	= ' + _vars[word]
+
+# -----------------------------------------------------
+# _regexp_init: Initialize regular expressions for
+#				cl file parsing
+# -----------------------------------------------------
+
+_quoteMarker = '\377'
+_blockMarker = '\376'
+
+_re_double = None
+_re_quote = None
+_re_block = None
+_re_ComSngDbl = None
+_re_word = None
+_re_rest = None
+_re_bstrail = None
+_re_taskname = None
+_re_continuation = None
+_re_combined_stmt = None
+
+def _regexp_init():
+
+	global _re_double, _re_quote, _re_block, \
+		_re_ComSngDbl, _re_word, _re_rest, _re_bstrail, _re_taskname, \
+		_re_continuation, _re_combined_stmt
 
 	# Pattern that matches a quoted string with embedded \"
 	# From Freidl, Mastering Regular Expressions, p. 176.
@@ -735,11 +423,36 @@ def readcl(filename,pkgname,pkgbinary):
 
 	required_whitespace = r'[ \t]+'
 	optional_whitespace = r'[ \t]*'
-	double = r'"(?P<double>[^"\\]*(?:\\.[^"\\]*)*)"' + optional_whitespace
-	re_double = re.compile(double)
+	double = r'"(?P<value>[^"\\]*(?:\\.[^"\\]*)*)"' + optional_whitespace
+	_re_double = re.compile(double)
+
+	# a version without the optional whitespace
+	sdouble = r'"(?P<double>[^"\\]*(?:\\.[^"\\]*)*)"'
+
+	# single quotes without the optional whitespace
+	ssingle = r"'(?P<single>[^'\\]*(?:\\.[^'\\]*)*)'"
+
+	# match first example of either single or double quotes
+	_re_quote = re.compile( r'(?:' + sdouble + r')|' +
+							r'(?:' + ssingle + r')',
+							re.DOTALL)
+
+	# comment (without worrying about quotes)
+	comment = r'(?P<comment>#[^\n]*$)'
+
+	# a pattern that matches first example of comment, sdouble, or ssingle
+	_re_ComSngDbl = re.compile( r'(?:' + comment + r')|' +
+								r'(?:' + sdouble + r')|' +
+								r'(?:' + ssingle + r')',
+								re.MULTILINE | re.DOTALL)
+
+	# bracket-enclosed block
+	# matches over lines, with no embedded blocks
+	block = r'{(?P<block>[^{}]*)}'
+	_re_block = re.compile(block)
 
 	# pattern that matches whitespace- or comma-terminated word
-	re_word = re.compile(r'(?P<word>[^ \t,]+),?' + optional_whitespace)
+	_re_word = re.compile(r'(?P<word>[^ \t,]+),?' + optional_whitespace)
 
 	# Pattern that matches to end-of-line or semicolon;
 	# also picks off first (whitespace-delimited) word.
@@ -748,20 +461,30 @@ def readcl(filename,pkgname,pkgbinary):
 	# trailing whitespace is not included in the 'value'
 	# string.
 	#
-	# This pattern cannot fail to match.
+	# _re_rest pattern cannot fail to match.
 
-	re_rest = re.compile(optional_whitespace + r'(?P<value>' + \
+	rest_stmt = r'(?P<value>' + \
 		r'(?P<firstword>[^ \t;]*)' + r'(?P<tail>[^;]*?))' + \
-		optional_whitespace + r'(?=$|[;])')
+		optional_whitespace + r'(?=$|[;])'
+	_re_rest = re.compile(optional_whitespace + rest_stmt)
 
 	# Pattern that matches trailing backslashes at end of line
-	re_bstrail = re.compile(r'\\*$')
+	_re_bstrail = re.compile(r'\\*$')
+
+	# Pattern that matches either backslash-newline, comma-newline,
+	# or //-newline as continuation
+	# We also match (for deletion) any leading whitespace on the next line
+	_re_continuation = re.compile(r'(?:' +
+			r'(?P<backslash>\\\n)|' +
+			r'(?P<comma>,' + optional_whitespace + r'\n)|' +
+			r'(?P<concat>//' + optional_whitespace + r'\n)' +
+			r')' + optional_whitespace)
 
 	# alphanumeric variable name
 	variable_name = r'[a-zA-Z_][a-zA-Z0-9_]*'
 	# alphanumeric variable name with embedded dots
 	variable_name_dot = r'[a-zA-Z_][a-zA-Z0-9_\.]*'
-	
+
 	# pattern matching single task name, possibly with $ prefix and/or
 	# .pkg or .tb suffix
 	# also matches optional trailing comma and whitespace
@@ -769,11 +492,15 @@ def readcl(filename,pkgname,pkgbinary):
 		r'(?P<taskname>[a-zA-Z_][a-zA-Z0-9_]*)' + \
 		r'(?P<tasksuffix>\.(?:pkg|tb))?' + \
 		r',?' + optional_whitespace + r')'
-	re_taskname = re.compile(taskname)
+	_re_taskname = re.compile(taskname)
 
-	# pattern matching space or comma separated list of one or more task names
-	# note this will also match a list with a comma after the last item.  tough.
+	# Pattern matching space or comma separated list of one or more task names.
+	# Note this will also match a list with a comma after the last item.  Tough.
 	tasklist = taskname + '+'
+
+	# empty statement (must be terminated by semi-colon, empty line is
+	# not the same as an empty statement)
+	empty_stmt = r'(?P<empty>;)'
 
 	# set var = expression
 	# also reset var = expression
@@ -808,10 +535,21 @@ def readcl(filename,pkgname,pkgbinary):
 	# hide statement (takes a list of task/package names)
 	hide_stmt = '(?P<hidestmt>hide|hidetask)' + required_whitespace
 
-	# print statement takes a simple string (don't handle more complex versions)
-	print_stmt = r'print' + optional_whitespace + r'\(' + \
-		r'"(?P<printval>[^"\\]*(?:\\.[^"\\]*)*)"' + \
-		optional_whitespace + r'\)' + optional_whitespace
+	# matches balanced parenthesized expressions up to 7 deep (ugly
+	# but the only way to get reg-exps to match them)
+	notpar = r'[^()]*'
+	balpar = notpar
+	for i in xrange(6):
+		balpar = notpar + r'(?:\(' + balpar + r'\)' + notpar + r')*'
+	balpar = r'\(' + balpar + r'\)'
+
+	# print statement takes a simple string or a parenthesized
+	# list of strings & variables (don't handle more complex versions)
+	print_stmt = r'print' + required_whitespace + \
+		r'"(?P<printval>[^"\\]*(?:\\.[^"\\]*)*)"' + optional_whitespace
+
+	printexp_stmt = r'print' + optional_whitespace + \
+		r'(?P<printexpr>' + balpar + ')' + optional_whitespace
 
 	# equals print statement '= "string"'
 	eqprint_stmt = r'=' + optional_whitespace + \
@@ -821,105 +559,392 @@ def readcl(filename,pkgname,pkgbinary):
 	type_stmt = r'type' + required_whitespace + \
 		r'(?P<typefilename>[^ \t;]+)' + optional_whitespace
 
+	# beep statement
+	beep_stmt = r'(?P<beepstmt>beep)' + optional_whitespace
+
+	# sleep statement
+	sleep_stmt = r'sleep' + optional_whitespace + \
+		r'\(' + optional_whitespace + '(?P<sleeptime>[0-9.]+)' + \
+		optional_whitespace + '\)' + optional_whitespace
+
+	# block statement (after initial parsing and substitution
+	block_stmt = _blockMarker + r'(?P<block>[^' + _blockMarker + r']*)' +  \
+		_blockMarker + optional_whitespace
+
+	# if statement
+	if_stmt = 'if' + optional_whitespace + \
+		r'(?P<ifcondition>' + balpar + ')' + optional_whitespace
+
+	# else statement
+	else_stmt = r'(?P<else>else)' + optional_whitespace
+
+	# assignment statement
+	assign_stmt = r'(?P<assign_var>' + variable_name_dot + r')' + \
+		optional_whitespace + '=' + optional_whitespace
+
 	# miscellaneous statements to parse and ignore quietly
-	# keep, clbye, clbye()
-	misc_stmt = r'(?P<miscstmt>' + \
-		r'keep|' + \
-		r'clbye(?:' + optional_whitespace + \
-			r'\(' + optional_whitespace + r'\))?' + \
-		')' + optional_whitespace
+	# some of these we may eventually want to interpret
+	misc_stmt = r'(?P<miscstmt>(?:' + \
+			r'keep' + \
+		')|(?:' + r'clear' + \
+		')|(?:' + r'begin' + \
+		')|(?:' + r'string' + required_whitespace + 'mode' + optional_whitespace + \
+					'=' + optional_whitespace + '"(al|h)"' + \
+		')|(?:' + r'procedure' + required_whitespace + variable_name + \
+					optional_whitespace + r'\(' + optional_whitespace + r'\)' + \
+		')|(?:' + r'end' + \
+		')|(?:' + r'cache' + required_whitespace + tasklist + \
+		')|(?:' + r'prcache' + required_whitespace + tasklist + \
+		')|(?:' + r'stty' + required_whitespace + variable_name + \
+		')|(?:' + r'clbye(?:' + \
+					optional_whitespace + r'\(' + optional_whitespace + r'\))?' + \
+		')|(?:' + r'cl' + \
+					optional_whitespace + r'\(' + optional_whitespace + r'\)' + \
+		'))' + optional_whitespace
 
 	# combined statement
+	# Note rest_stmt, which cannot fail to match, is last so
+	# that all the other options are tried first
 	combined_stmt = r'(?:' + set_stmt      + r')|' + \
+					r'(?:' + empty_stmt    + r')|' + \
 					r'(?:' + set_file_stmt + r')|' + \
 					r'(?:' + cl_redir_stmt + r')|' + \
 					r'(?:' + package_stmt  + r')|' + \
 					r'(?:' + task_stmt     + r')|' + \
 					r'(?:' + hide_stmt     + r')|' + \
 					r'(?:' + print_stmt    + r')|' + \
+					r'(?:' + printexp_stmt + r')|' + \
 					r'(?:' + eqprint_stmt  + r')|' + \
 					r'(?:' + type_stmt     + r')|' + \
-					r'(?:' + misc_stmt     + r')'
+					r'(?:' + beep_stmt     + r')|' + \
+					r'(?:' + sleep_stmt    + r')|' + \
+					r'(?:' + block_stmt    + r')|' + \
+					r'(?:' + if_stmt       + r')|' + \
+					r'(?:' + else_stmt     + r')|' + \
+					r'(?:' + assign_stmt   + r')|' + \
+					r'(?:' + misc_stmt     + r')|' + \
+					r'(?:' + rest_stmt     + r')'
 
-	re_combined_stmt = re.compile(combined_stmt,re.DOTALL)
+	_re_combined_stmt = re.compile(combined_stmt)
 
-	line = fh.readline()
-	nread = 1
-	while line != '':
-		# strip whitespace (including newline) off both ends and remove
-		# any trailing comment
-		line = _stripcomment(line)
+# -----------------------------------------------------
+# readcl: Read and execute an IRAF .cl file
+# -----------------------------------------------------
 
-		# skip blank lines (full-line comments look like blank lines after
-		# _stripcomment)
-		if len(line) == 0:
-			i2 = len(line)
-		elif line[0] == ';':
-			i2 = 1
+def readcl(filename,pkgname,pkgbinary):
+	"""Read and execute an IRAF .cl file"""
+
+	global _re_ComSngDbl, _re_block
+
+	# initialize regular expressions
+
+	if not _re_ComSngDbl: _regexp_init()
+
+	# expand any IRAF variables in filename
+	expfile = expand(filename)
+
+	# if file exists, read it; otherwise return with warning
+	if os.path.exists(expfile):
+		fh = open(os.path.expanduser(expfile),"r")
+	else:
+		if filename == expfile:
+			print "WARNING: no such file", filename
 		else:
-			# Append next line if this line ends with continuation character
-			# or if it has a trailing comma.
-			# Odd number of trailing backslashes means this is continuation.
-			# (This is ugly -- can it be cleaned up?)
-			while (line[-1:] == ",") or (line[-1:] == "\\"):
-				if (line[-1:] == ","):
-					pass
-				elif (len(re_bstrail.search(line).group()) % 2 == 1):
-					line = line[:-1]
+			print "WARNING: no such file", filename,"("+expfile+")"
+		return
+	all = fh.read()
+	fh.close()
+
+	# delete comments and replace quoted strings with marker+pointer
+	# into list of extracted strings
+	if _verbose>2: print '%%%%%% before ComSngDbl substitution:\n', all
+	qlist = []
+	mm = _re_ComSngDbl.search(all)
+	while mm:
+		if mm.group("comment"):
+			# just delete comments
+			all = all[0:mm.start()] + all[mm.end():]
+		else:
+			# extract quoted strings (including quotes)
+			s = mm.group()
+			this = _quoteMarker + `len(qlist)` + _quoteMarker
+			qlist.append(_joinContinuation(s))
+			all = all[0:mm.start()] + this + all[mm.end():]
+		mm = _re_ComSngDbl.search(all,mm.start())
+
+	if _verbose>2: print '%%%%%% after ComSngDbl substitution:\n', all
+	# join continuation lines
+	all = _joinContinuation(all)
+	if _verbose>2: print '%%%%%% after joinContinuation:\n', all
+
+	# Break code up into blocks delimited by {} and
+	# replace blocks with marker+pointer.
+	# The block pattern matches only interior blocks (with no
+	# embedded blocks), so this replaces from the inside out.
+	blist = []
+	mm = _re_block.search(all)
+	while mm:
+		this = _blockMarker + `len(blist)` + _blockMarker
+		# note blocks get split into lines here
+		blist.append(string.split(mm.group("block"),'\n'))
+		all = all[0:mm.start()] + this + all[mm.end():]
+		mm = _re_block.search(all)
+		# print filename+': Found block'
+		# print blist[-1]
+
+	if _verbose>2: print '%%%%%% after block substitution:\n', all
+
+	# Split the remaining lines
+	lines = string.split(all,'\n')
+
+	# Execute the cleaned-up lines
+	_execCl(filename,lines,qlist,blist,pkgname,pkgbinary)
+
+# -----------------------------------------------------
+# _joinContinuation: Join up all the continuation lines
+# in the string
+# -----------------------------------------------------
+
+def _joinContinuation(s):
+	"""Delete line continuation sequences from string.  A trailing
+	backslash, trailing comma, or trailing // indicates continuation."""
+	global _re_continuation
+	mm = _re_continuation.search(s)
+	while mm:
+		if mm.group('comma'):
+			# delete whitespace-newline from comma-whitespace-newline
+			s = s[:mm.start()+1] + s[mm.end():]
+			iend = mm.start()
+		elif mm.group('concat'):
+			# delete whitespace-newline from //-whitespace-newline
+			s = s[:mm.start()+2] + s[mm.end():]
+			iend = mm.start()
+		else:
+			# delete backslash-newline unless the backslash itself
+			# is escaped
+			i = mm.start()-1
+			while i>=0:
+				if s[i] != "\\": break
+				i = i-1
+			if ((mm.start()-i) % 2) == 1:
+				s = s[:mm.start()] + s[mm.end():]
+				iend = mm.start()
+			else:
+				iend = mm.end()
+		mm = _re_continuation.search(s,iend)
+	return s
+
+# -----------------------------------------------------
+# _markQuotes: substitute markers in place of quoted
+# strings.  Returns the new string and  a list of the
+# extracted quotes.
+# -----------------------------------------------------
+
+def _markQuotes(s):
+	"""Extract any quoted strings (that match the _re_quote regular
+	expression) and replace with markers.  Returns a tuple with the
+	modified string and a list of the extracted strings (which can
+	be used with _subMarkedQuotes to restore the strings.)"""
+	global _re_quote
+	mm = _re_quote.search(s)
+	qlist = []
+	while mm:
+		this = _quoteMarker + `len(qlist)` + _quoteMarker
+		qlist.append(mm.group())
+		s = s[0:mm.start()] + this + s[mm.end():]
+		mm = _re_quote.search(s,mm.start()+len(this))
+	return s, qlist
+
+# -----------------------------------------------------
+# _subMarkedQuotes: substitute quoted strings back in
+# place of markers
+# -----------------------------------------------------
+
+def _subMarkedQuotes(s, qlist):
+	"""Search string s for marked quotes and plug them back in."""
+	global _re_quote
+	re_mq = re.compile(_quoteMarker + r'(?P<value>[^' + _quoteMarker + ']*)' +
+		_quoteMarker)
+	mm = re_mq.search(s)
+	while mm:
+		i = int(mm.group('value'))
+		s = s[:mm.start()] + qlist[i] + s[mm.end():]
+		mm = re_mq.search(s,mm.start()+len(qlist[i]))
+	return s
+
+# -----------------------------------------------------
+# _execCl: Execute a list of IRAF cl commands
+# Define tasks and packages, load packages, add symbols
+# to dictionaries, etc.
+# -----------------------------------------------------
+
+def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
+	"""Execute lines from an IRAF .cl file.  Assumes block statements,
+	strings, comments, and continuation lines have already been
+	handled.
+	qlist and blist are list of quoted strings replaced by
+	marker/pointer combination.  Offset is value to add to line
+	number to get original line number in file."""
+
+	global _re_double, _re_quote, _re_block, \
+		_re_ComSngDbl, _re_word, _re_rest, _re_bstrail, _re_taskname, \
+		_re_continuation, _re_combined_stmt
+
+	# state is a stack used to determine how to handle if/else statements.
+	# All states are active for only a single statement (because blocks
+	# have been turned into one statement.)  But that "single" statement
+	# can be another if-else (which itself may contain if-elses), which is
+	# why we need the stack.
+
+	state = []
+	S_EXECUTE = 0
+	S_SKIP = 1
+	S_SKIP_ELSE = 2
+	S_DO_ELSE = 3
+
+	nlines = len(lines)
+	line = string.strip(lines[0])
+	next = 1
+	while line or (next < nlines):
+		# remove leading whitespace
+		line = string.lstrip(line)
+		if line == '':
+			line = string.strip(lines[next])
+			next = next+1
+
+		# skip blank lines
+		if line == '': continue
+
+		# put back the quotes
+		# XXX should change this later, it will simplify other
+		# XXX parsing to have quotes as markers
+
+		line = _subMarkedQuotes(line,qlist)
+
+		# parse the line
+
+		try:
+			mmlist = _parseLine(line)
+		except IrafError, e:
+			raise IrafError(filename + ": " + str(e) + "\n'" + line + "'\n" +
+						"(line " + `next+offset` + ")")
+
+		i2 = mmlist[-1].end()
+		mm = mmlist[0]
+		if len(mmlist)>1:
+			mmvalue = mmlist[1]
+		else:
+			mmvalue = None
+
+
+		# state determines what to do with this statement
+		# always go to next state on list after executing this one
+		if state:
+			thisState = state[-1]
+			state = state[:-1]
+		else:
+			thisState = S_EXECUTE
+
+		if thisState == S_SKIP:
+			if mm.group('ifcondition'):
+				# if we're skipping, must skip both parts of this if
+				state.append(S_SKIP_ELSE)
+				state.append(S_SKIP)
+		elif thisState == S_DO_ELSE:
+			if mm.group('else'):
+				# do this else clause
+				state.append(S_EXECUTE)
+			else:
+				# no else, so just continue with execution
+				thisState = S_EXECUTE
+		elif thisState == S_SKIP_ELSE:
+			if mm.group('else'):
+				# skip this else clause
+				state.append(S_SKIP)
+			else:
+				# no else, so just continue with execution
+				thisState = S_EXECUTE
+
+		if thisState == S_EXECUTE:
+			if mm.group('block') != None:
+				# call _execCl recursively to execute this block
+				b = int(mm.group('block'))
+				offset = _execCl(filename, blist[b], qlist, blist, pkgname,
+							pkgbinary, offset=offset+next-1) - next
+			elif mm.group('ifcondition') != None:
+				if _evalCondition(mm.group('ifcondition'),pkgname):
+					state.append(S_SKIP_ELSE)
+					state.append(S_EXECUTE)
 				else:
-					break
-				line = line + _stripcomment(fh.readline())
-				nread = nread+1
-
-			# this regular expression match does most of the work
-
-			mm = re_combined_stmt.match(line)
-
-			if mm == None:
-				mrest = re_rest.match(line,0)
-				i2 = mrest.end()
-				# If this is package name, load it.  Otherwise print warning.
-				# XXX Ignore trailing parameters on packages
-				value = mrest.group('firstword')
+					state.append(S_DO_ELSE)
+					state.append(S_SKIP)
+			elif mm.group('else') != None:
+				# error to encounter else in S_EXECUTE state
+				if _verbose:
+					print filename + ": Unexpected 'else' statement\n" + \
+						"'" + line + "'\n" + \
+						"(line " + `next+offset` + ")"
+			elif mm.group('empty') != None:
+				# ignore empty statements (but note they do get used
+				# for state changes)
+				pass
+			elif mm.group('value') != None:
+				# If this is a package name, load it.  Otherwise print warning.
+				value = mm.group('firstword')
 				try:
 					p = getPkg(value)
 					value = p.getName()
 					if value == pkgname:
-						if _verbose:
+						if _verbose>1:
 							print "Skipping recursive load of package",value
 					else:
-						if _verbose:
+						if _verbose>1:
 							print "Loading package",value
-						tail = string.strip(mrest.group('tail'))
-						if _verbose and tail != '':
-							print "(Ignoring package parameters '" + tail + "')"
-						load(value,doprint=0)
+						# Parse parameters to package
+						tail = string.strip(mm.group('tail'))
+						args, kw = parseArgs(tail)
+						load(value,args,kw,doprint=0)
 				except KeyError:
 					if _verbose:
-						print filename + ":	Ignoring '" + line[:i2] + \
-							"' (line " + `nread` + ")"
+						print filename + ": Ignoring '" + line[:i2] + \
+							"' (line " + `next+offset` + ")"
 			elif mm.group('setfilename') != None:
 				# This peculiar syntax 'set @filename' only gets used in the
 				# zzsetenv.def file, where it reads extern.pkg.  That file
 				# also gets read (in full cl mode) by clpackage.cl.  I get
 				# errors if I read this during zzsetenv.def, so just ignore
 				# it here...
-				i2 = mm.end()
+				pass
 			elif mm.group('printval') != None:
 				# print statement
 				print mm.group('printval')
-				i2 = mm.end()
+			elif mm.group('printexpr') != None:
+				# print statement
+				_evalPrint(mm.group('printexpr'),pkgname)
 			elif mm.group('eqprintval') != None:
 				# equals print statement
 				print mm.group('eqprintval')
-				i2 = mm.end()
+			elif mm.group('beepstmt') != None:
+				# beep statement
+				sys.stdout.write("")
+				sys.stdout.flush()
+			elif mm.group('sleeptime') != None:
+				# sleep statement
+				try:
+					time.sleep(float(mm.group('sleeptime')))
+				except:
+					if _verbose:
+						print filename + ": Error in sleep(" + \
+							mm.group("sleeptime") + ")" + \
+							" (line " + `next+offset` + ")"
+					pass
 			elif mm.group('typefilename') != None:
 				# copy file to stdout if it exists
 				# Is there a standard library procedure to do this?
 				typefile = mm.group('typefilename')
 				# strip quotes
-				mdq = re_double.match(typefile)
-				if mdq != None: typefile = mdq.group('double')
+				mdq = _re_double.match(typefile)
+				if mdq != None: typefile = mdq.group('value')
 				try:
 					typefile = expand(typefile)
 					if os.path.exists(typefile):
@@ -931,90 +956,391 @@ def readcl(filename,pkgname,pkgbinary):
 						fh_type.close()
 				except SyntaxError:
 					print filename + ":	WARNING: Could not expand", \
-						typefile, "(line " + `nread` + ")"
-				i2 = mm.end()
+						typefile, "(line " + `next+offset` + ")"
 			elif mm.group('packagename') != None:
 				pkgname = mm.group('packagename')
 				if mm.group('packagebin') != None:
 					pkgbinary = mm.group('packagebin')
-				i2 = mm.end()
 			elif mm.group('miscstmt') != None:
 				# Miscellaneous: parsed but quietly ignored
-				i2 = mm.end()
+				pass
 			else:
+
 				# other statements take a value
-				i1 = mm.end()
-				if line[i1] == '"':
-					# strip off double quotes
-					mdq = re_double.match(line,i1)
-					if mdq == None:
-						raise IrafError(filename + ": Unmatched quotes\n" + \
-							"'" + line + "'")
-					value = mdq.group('double')
-					i2 = mdq.end()
-				else:
-					# no quotes, take everything to eol or semicolon
-					mrest = re_rest.match(line,i1)
-					value = mrest.group('value')
-					i2 = mrest.end()
+				if not mmvalue:
+					raise IrafError(filename + ": Expected a value???\n" +
+						"'" + line + "'\n" +
+						"(line " + `next+offset` + ")")
+
+				value = mmvalue.group('value')
 
 				if mm.group('clredir') != None:
 					# open and read this file too
+					if _verbose>1: print "Reading",value
 					readcl(value,pkgname,pkgbinary)
 				elif mm.group('varname') != None:
 					name = mm.group('varname')
 					_vars[name] = value
+				elif mm.group('assign_var') != None:
+					name = mm.group('assign_var')
+					try:
+						clset(name,value,pkg=getPkg(pkgname))
+					except IrafError:
+						if _verbose:
+							print filename + ": Ignoring '" + line[:i2] + \
+								"' (line " + `next+offset` + ")"
 				elif mm.group('hidestmt') != None:
 					# hide can take multiple task names
-					mw = re_word.match(value,0)
+					mw = _re_word.match(value,0)
 					while mw != None:
 						word = mw.group('word')
 						try:
 							getTask(word).setHidden(1)
 						except KeyError, e:
 							print filename + ":	WARNING: Could not find task", \
-								word, "to hide (line " + `nread` + ")"
+								word, "to hide (line " + `next+offset` + ")"
 							print e
-						mw = re_word.match(value,mw.end())
+						mw = _re_word.match(value,mw.end())
 				elif mm.group('tasklist') != None:
 					# assign value to each task in the list
 					tlist = mm.group('tasklist')
-					mtl = re_taskname.match(tlist)
+					mtl = _re_taskname.match(tlist)
 					while mtl != None:
 						name = mtl.group('taskname')
 						prefix = mtl.group('taskprefix')
 						suffix = mtl.group('tasksuffix')
 						if suffix == '.pkg':
-							newtask = IrafPkg(prefix,name,suffix,value,pkgname,pkgbinary)
-							_pkgs[name] = newtask
-							_mmpkgs[name] = name
-							_tasks[pkgname+'.'+name] = newtask
-							_mmtasks[name] = pkgname+'.'+name
+							newtask = IrafPkg(prefix,name,suffix,value,
+								pkgname,pkgbinary)
+							addPkg(newtask)
 						else:
-							newtask = IrafTask(prefix,name,suffix,value,pkgname,pkgbinary)
-							_tasks[pkgname+'.'+name] = newtask
-							_mmtasks[name] = pkgname+'.'+name
-						mtl = re_taskname.match(tlist,mtl.end())
+							newtask = IrafTask(prefix,name,suffix,value,
+								pkgname,pkgbinary)
+							addTask(newtask)
+						mtl = _re_taskname.match(tlist,mtl.end())
 				else:
 					if _verbose:
-						print "Parsed but ignored line " + `nread` + \
+						print "Parsed but ignored line " + `next+offset` + \
 							" '" + line + "'"
 
+		# error if characters follow command except for if, else, block, empty
 		if i2 < len(line):
 			if line[i2] == ';':
 				i2 = i2+1
-			else:
-				raise IrafError(filename + \
-					": Non-blank characters after end of command\n" + \
-					"'" + line + "'")
+			elif not (mm.group('ifcondition') or
+						mm.group('else') or
+						mm.group('block') or
+						mm.group('empty')):
+				# probably a parsing error
+				if _verbose:
+					print 'Error:', filename
+					print "Non-blank characters after end of command\n" + \
+						"'" + line + "' (line " + `next+offset` + ")"
 		line = line[i2:]
-		if line == '':
-			line = fh.readline()
-			nread = nread+1
-	fh.close()
+	return offset+nlines
 
 # -----------------------------------------------------
-# Expand a string with embedded IRAF variables (IRAF virtual filename)
+# _parseLine: Parse a single cl line
+# Returns a list of match objects for line.  Most lines
+# return only a single object; lines with a separate
+# argument return 2 objects.
+# -----------------------------------------------------
+
+def _parseLine(line):
+	"""Parse a single line from an IRAF .cl file.  Returns a
+	list of match objects."""
+
+	global _re_double, _re_quote, _re_block, \
+		_re_ComSngDbl, _re_word, _re_rest, _re_bstrail, _re_taskname, \
+		_re_continuation, _re_combined_stmt
+
+	# this regular expression match does most of the work
+
+	mm = _re_combined_stmt.match(line)
+	mmlist = [mm]
+
+	# see if an argument is required
+
+	if (mm.group('clredir') or
+		mm.group('varname') or
+		mm.group('assign_var') or
+		mm.group('hidestmt') or
+		mm.group('tasklist') ) :
+
+		i1 = mm.end()
+
+		if line[i1] == '"':
+			# strip off double quotes
+			mdq = _re_double.match(line,i1)
+			if mdq == None:
+				raise IrafError("Unmatched quotes")
+			mmlist.append(mdq)
+		else:
+			# no quotes, take everything to eol or semicolon
+			mmlist.append(_re_rest.match(line,i1))
+
+	return mmlist
+
+# -----------------------------------------------------
+# IRAF utility procedures (used to evaluate if statements)
+# -----------------------------------------------------
+
+def clget(paramname,pkg=None,native=1):
+	"""Return value of parameter, which can be a cl task parameter,
+	a package parameter for any loaded package, or a fully qualified
+	(task.param) parameter from any known task."""
+	if pkg==None: pkg = _loadedPath[-1]
+	return pkg.getParam(paramname,native=native)
+
+def clset(paramname,value,pkg=None):
+	"""Set value of parameter, which can be a cl task parameter,
+	a package parameter for any loaded package, or a fully qualified
+	(task.param) parameter from any known task."""
+	if pkg==None: pkg = _loadedPath[-1]
+
+	# XXX improve this by evaluating possible parameter expression
+	# XXX (but that requires leaving quotes on string arguments)
+
+	if value[:1] == "(" and value[-1:] == ")":
+		# try evaluating expressions in parantheses
+		result = cleval(value[1:-1],[],pkg,native=0)
+		if result == None: result = value
+	else:
+		result = value
+	if _verbose>1:
+		print "clset name", paramname, "value", `value`, "eval", result
+	pkg.setParam(paramname,result)
+
+def envget(var):
+	if _vars.has_key(var):
+		return _vars[var]
+	elif os.environ.has_key(var):
+		return os.environ[var]
+	else:
+		raise KeyError("No IRAF or environment variable '" + var + "'")
+
+def defpar(paramname):
+	try:
+		value = clget(paramname)
+		return 1
+	except IrafError, e:
+		# ambiguous name is an error, not found is OK
+		value = str(e)
+		if string.find(value, "ambiguous") >= 0:
+			raise e
+		return 0
+
+def access(filename):
+	return os.path.exists(expand(filename))
+
+def defvar(varname):
+	return _vars.has_key(varname)
+
+def deftask(taskname):
+	try:
+		t = getTask(taskname)
+		return 1
+	except KeyError, e:
+		# ambiguous name is an error, not found is OK
+		value = str(e)
+		if string.find(value, "ambiguous") >= 0:
+			raise e
+		return 0
+
+def defpac(pkgname):
+	try:
+		t = getPkg(pkgname)
+		return (t in _loadedPath)
+	except KeyError, e:
+		# ambiguous name is an error, not found is OK
+		value = str(e)
+		if string.find(value, "ambiguous") >= 0:
+			raise e
+		return 0
+
+# -----------------------------------------------------
+# _evalCondition: evaluate the condition from a cl if
+# statement
+# -----------------------------------------------------
+
+_re_varname = re.compile(r'(?P<var>[a-zA-Z_][a-zA-Z_0-9.]*)' +
+	r'[ \t]*(?![a-zA-Z_0-9. \t(])')
+
+def _evalCondition(s,pkgname):
+	# evaluate the condition s from a cl if statement
+	# return 1 or 0 for true or false
+	# raise an Exception on error
+
+	s_in = s
+
+	# extract any quoted strings and replace with marker
+	s, qlist = _markQuotes(s)
+
+	# replace variable names with calls to clget()
+	s = _re_varname.sub(_convertVar,s)
+
+	# replace '!' by not, except for '!='
+	s = re.sub(r'![ \t]*(?![= \t])', ' not ', s)
+
+	# put quoted strings back into expression
+	s = _subMarkedQuotes(s,qlist)
+
+	# pkg gets used in the clget call
+	pkg = getPkg(pkgname)
+	# use native values, not strings
+	native = 1
+	try:
+		result = eval(s)
+	except Exception, e:
+		if _verbose: print 'error in condition: '+str(e)
+		result = 0
+
+	if _verbose>1:
+		print "condition:", s_in, "=",
+		if s != s_in: print s, "=",
+		print result
+	return result
+
+# -----------------------------------------------------
+# _evalPrint: evaluate and print a list of expressions
+# from a cl print statement
+# -----------------------------------------------------
+
+def _evalPrint(s,pkgname):
+	# evaluate parenthesized list of expressions and print them
+
+	# trim off the parentheses
+	if s[0] == '(':
+		i1 = 1
+	else:
+		i1 = 0
+	if s[-1] == ')':
+		i2 = -1
+	else:
+		i2 = len(s)
+	s = s[i1:i2]
+
+	# extract any quoted strings and replace with markers
+	s, qlist = _markQuotes(s)
+
+	# split on commas
+	v = string.split(s,',')
+
+	# evaluate and print each field
+	pkg = getPkg(pkgname)
+	for field in v:
+		if field:
+			# convert from cl to Python form
+			# returns null on error
+			result = cleval(field,qlist,pkg,native=0)
+			if result: print result,
+	print
+	return
+
+# -----------------------------------------------------
+# cleval: evaluate a cl expression
+# Currently pretty limited in its capabilities
+# -----------------------------------------------------
+
+def cleval(s,qlist,pkg,native=1):
+	"""Evaluate expression and return value"""
+	# replace variable names with calls to clget()
+	s = _re_varname.sub(_convertVar,s)
+
+	# replace '!' by not, except for '!='
+	s = re.sub(r'![ \t]*(?![= \t])', ' not ', s)
+
+	# replace '//' by '+'
+	s = re.sub(r'//', '+', s)
+
+	# put the quotes back
+	s = _subMarkedQuotes(s,qlist)
+
+	try:
+		return eval(s)
+	except Exception, e:
+		if _verbose:
+			print 'error evaluating: '+s
+			print str(e)
+		return None
+
+def _convertVar(mm):
+	# convert the matched variable name to a call to clget
+	return 'clget("' + mm.group('var') + '",pkg=pkg,native=native)'
+
+# -----------------------------------------------------
+# parseArgs: Parse IRAF command-mode arguments
+# Returns a list of positional parameters and a dictionary
+# of keyword parameters
+# -----------------------------------------------------
+
+def parseArgs(s):
+	args = []
+	kw = {}
+	smod = string.strip(s)
+	if not smod: return (args, kw)
+
+	if _verbose>1:
+		print "(Parsing package parameters '" + smod + "')"
+
+	# extract any double-quoted strings and replace with marker
+	smod, qlist = _markQuotes(smod)
+	words = string.split(smod)
+
+	# build list of positional arguments
+	for i in xrange(len(words)):
+		word = words[i]
+		if (word[-1] == '-') or (word[-1] == '+') or ('=' in word):
+			break
+		word = _subMarkedQuotes(word,qlist)
+		args.append(word)
+	else:
+		if _verbose>1:
+			print "(args", args, "kw", kw, ")"
+		return (args, kw)
+
+	# now build list of keyword arguments
+	while i < len(words):
+		word = words[i]
+		if word[-1] == '-':
+			word = word[:-1]
+			word = _subMarkedQuotes(word,qlist)
+			if kw.has_key(word):
+				raise SyntaxError("Multiple values given for parameter " + 
+					word + "\nFull parameter list: '" + s + "'")
+			kw[word] = "no"
+		elif word[-1] == '+':
+			word = word[:-1]
+			word = _subMarkedQuotes(word,qlist)
+			if kw.has_key(word):
+				raise SyntaxError("Multiple values given for parameter " + 
+					word + "\nFull parameter list: '" + s + "'")
+			kw[word] = "yes"
+		else:
+			f = string.split(word,'=')
+			if len(f) < 2:
+				raise SyntaxError(
+					"Positional parameter cannot follow keyword: '" +
+					s + "'")
+			elif len(f) > 2:
+				raise SyntaxError("Illegal keyword syntax: '" + 
+					s + "'")
+			key = f[0]
+			value = f[1]
+			key = _subMarkedQuotes(key,qlist)
+			value = _subMarkedQuotes(value,qlist)
+			if kw.has_key(key):
+				raise SyntaxError("Multiple values given for parameter " + 
+					key + "\nFull parameter list: '" + s + "'")
+			kw[key] = value
+		i = i+1
+	if _verbose>1:
+		print "(args", args, "kw", kw, ")"
+	return (args, kw)
+
+# -----------------------------------------------------
+# expand: Expand a string with embedded IRAF variables
+# (IRAF virtual filename)
 # -----------------------------------------------------
 
 # Input string is in format 'name$rest' or 'name$str(name2)' where
@@ -1060,7 +1386,8 @@ def _expand1(instring):
 			" in string " + instring)
 
 # -----------------------------------------------------
-# Utility function: print elements of list in ncols columns
+# _printcols: Utility function to print elements of list
+# in cols columns
 # -----------------------------------------------------
 
 # This probably exists somewhere in the Python standard libraries?
@@ -1068,149 +1395,15 @@ def _expand1(instring):
 # somewhere else (and rewrite it too, this is crude...)
 
 def _printcols(strlist,cols=5,width=80):
-	ncol = 0
-	nwid = 0
-	for word in strlist:
-		print word,
-		ncol = ncol+1
-		nwid = nwid + len(word) + 1
-		if ncol >= cols:
-			print "\n",
-			ncol = 0
-			nwid = 0
-		elif nwid < width/cols*ncol:
-			print (width/cols*ncol - nwid) * ' ',
-			nwid = width/cols*ncol
-	if ncol > 0: print "\n",
-
-# -----------------------------------------------------
-# Utility function: strip both blanks and trailing comments from string
-# -----------------------------------------------------
-
-# A bit tricky -- don't strip comment symbols inside quotes, and don't
-# strip off unmatched quotes either.
-# The stripcom pattern matches everything up to the first comment symbol (#),
-# ignoring symbols inside matched quotes.
-
-__double = r'"(?:[^"\\]*(?:\\.[^"\\]*)*)"'
-__unpaired_double = r'"(?:[^"\\]*(?:\\.[^"\\]*)*(?:$|\\$))'
-__re_stripcom = re.compile(r'(?:(?:[^#"]+)|' + __double + '|' + \
-	__unpaired_double + ')*')
-
-def _stripcomment(str):
-	mm = __re_stripcom.match(str)
-	return string.strip(mm.group())
-
-# -----------------------------------------------------
-# list contents of the dictionaries
-# -----------------------------------------------------
-
-# need ability to print/not print hidden tasks and packages
-
-def listall():
-	"""List IRAF packages, tasks, and variables"""
-	print 'Packages:'
-	listpkgs()
-	print 'Loaded Packages:'
-	listloaded()
-	print 'Tasks:'
-	listtasks()
-	print 'Variables:'
-	listvars()
-
-def listpkgs():
-	"""List IRAF packages"""
-	keylist = _pkgs.keys()
-	if len(keylist) == 0:
-		print 'No IRAF packages defined'
-	else:
-		keylist.sort()
-		# append '/' to identify packages
-		for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
-		_printcols(keylist)
-
-def listloaded():
-	"""List loaded IRAF packages"""
-	keylist = _loaded.keys()
-	if len(keylist) == 0:
-		print 'No IRAF packages loaded'
-	else:
-		keylist.sort()
-		# append '/' to identify packages
-		for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
-		_printcols(keylist)
-
-def listtasks(pkglist=None):
-	"""List IRAF tasks, optionally specifying a list of packages to include."""
-	keylist = _tasks.keys()
-	if len(keylist) == 0:
-		print 'No IRAF tasks defined'
-	else:
-		# make a dictionary of pkgs to list
-		if pkglist:
-			pkgdict = {}
-			if type(pkglist) is types.StringType: pkglist = [ pkglist ]
-			for p in pkglist:
-				try:
-					pthis = getPkg(p)
-					if pthis.getLoaded():
-						pkgdict[pthis.getName()] = 1
-					else:
-						print 'Package',pthis.getName(),'has not been loaded'
-				except KeyError, e:
-					print e
-			if not len(pkgdict):
-				print 'No packages to list'
-				return
+	nlines = (len(strlist)+cols-1)/cols
+	line = nlines*[""]
+	for i in xrange(len(strlist)):
+		c, r = divmod(i,nlines)
+		nwid = c*width/cols - len(line[r])
+		if nwid>0:
+			line[r] = line[r] + nwid*" " + strlist[i]
 		else:
-			pkgdict = _pkgs
-
-		# print each package separately
-		keylist.sort()
-		lastpkg = ''
-		tlist = []
-		for tname in keylist:
-			pkg, task = string.split(tname,'.')
-			tobj = _tasks[tname]
-			if isinstance(tobj,IrafPkg):
-				task = task + '/'
-			elif tobj.getPset():
-				task = task + '@'
-			if pkg == lastpkg:
-				tlist.append(task)
-			else:
-				if len(tlist) and pkgdict.has_key(lastpkg):
-					print lastpkg + '/:'
-					_printcols(tlist)
-				tlist = [task]
-				lastpkg = pkg
-		if len(tlist) and pkgdict.has_key(lastpkg):
-			print lastpkg + '/:'
-			_printcols(tlist)
-
-def listcurrent(n=1):
-	"""List IRAF tasks in current package (equivalent to '?' in the cl.)
-	(Actually this will list a secondary package instead of the last
-	primary package. Fix that eventually.)
-	
-	If parameter n is specified, lists n most recent packages."""
-
-	if len(_loadedPath):
-		if n > len(_loadedPath): n = len(_loadedPath)
-		plist = n*[None]
-		for i in xrange(n):
-			plist[i] = _loadedPath[-1-i].getName()
-		listtasks(plist)
-	else:
-		print 'No IRAF tasks defined'
-
-def listvars():
-	"""List IRAF variables"""
-	keylist = _vars.keys()
-	if len(keylist) == 0:
-		print 'No IRAF variables defined'
-	else:
-		keylist.sort()
-		for word in keylist:
-			print word + '	= ' + _vars[word]
+			line[r] = line[r] + " " + strlist[i]
+	for s in line:
+		print s
 
