@@ -30,14 +30,12 @@ try:
 except ImportError:
     platform = sys.platform
     if platform == 'sunos5':
-        magicConstant = ord('T')*256 + 104 # at least on Solaris!
+        magicConstant = ord('T')*256 + 104
     elif platform == 'linux2':
         magicConstant = 0x5413
     elif platform == 'linux-i386':
         magicConstant = 0x5413
-    elif platform == 'osf1V4':
-        magicConstant = 0x40087468 # temp fix for Tru64 ejmc 3/9/00
-    elif platform == 'osf1V5':
+    elif platform[:4] == 'osf1':
         magicConstant = 0x40087468
     else:
         raise ImportError(
