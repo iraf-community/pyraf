@@ -7,7 +7,7 @@ $Id$
 
 R. White, 2000 February 18
 """
-__version__ = "1.0beta (2002May30)"
+__version__ = "1.0 (2002Aug3)"
 
 import os, sys, __main__
 
