@@ -35,7 +35,7 @@ def warning(msg, strict=0, exception=SyntaxError):
 # -----------------------------------------------------
 
 _string_types = [ 's', 'f', 'struct' ]
-_string_list_types = [ '*struct', '*s', '*i' ]
+_string_list_types = [ '*struct', '*s', '*f', '*i' ]
 _real_types = [ 'r', 'd' ]
 
 def IrafParFactory(fields,filename=None,strict=0):
