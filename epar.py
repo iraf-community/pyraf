@@ -38,7 +38,7 @@ CHILDY = PARENTY
 
 # HELP[XY] is for the help as displayed in a window
 HELPX   = 300
-HELPY   = 0
+HELPY   = 25
 
 eparHelpString = """\
 The PyRAF parameter editor window is used to edit IRAF parameter sets.  It
@@ -61,14 +61,15 @@ type (e.g., the file browser cannot be used for numeric parameters.)
 
 The mouse-editing behavior should be familiar, so the notes below focus on
 keyboard-editing.  When the editor starts, the first parameter is selected.  To
-select another parameter, use the Tab key (Shift-Tab to go backwards) to move
-the focus from item to item. The toolbar buttons can also be selected with
-Tab.  Use the space bar to "push" buttons or activate menus.
+select another parameter, use the Tab key (Shift-Tab to go backwards) or Return
+to move the focus from item to item. The Up and Down arrow keys also move
+between fields.  The toolbar buttons can also be selected with Tab.  Use the
+space bar to "push" buttons or activate menus.
 
 Enumerated Parameters
         Parameters that have a list of choices use a drop-down menu.  The space
-        bar causes the menu to appear; the up/down arrow keys also activate the
-        menu and can be used to select different items.  Items in the list have
+        bar causes the menu to appear; once it is present, the up/down arrow
+        keys can be used to select different items.  Items in the list have
         accelerators (underlined, generally the first letter) that can be typed
         to jump directly to that item.  When editing is complete, hit Return or
         Tab to accept the changes, or type Escape to close the menu without
@@ -147,7 +148,6 @@ and Shift-Tab keys.  They are located in sequence before the first parameter.
 If the first parameter is selected, Shift-Tab backs up to the "Task Help"
 button, and if the last parameter is selected then Tab wraps around and selects
 the "Execute" button.
-
 """
 
 def epar(taskName, parent=None, isChild=0):
@@ -257,7 +257,8 @@ class EparDialog:
         self.top.f = frame = Frame(self.top, relief=RIDGE, borderwidth=1)
 
         # Overlay a Canvas which will hold a Frame
-        self.top.f.canvas = canvas = Canvas(self.top.f, width=100, height=100)
+        self.top.f.canvas = canvas = Canvas(self.top.f, width=100, height=100,
+            takefocus=FALSE)
 
         # Always build the scrollbar, even if number of parameters is small,
         # to allow window to be resized.
@@ -276,6 +277,12 @@ class EparDialog:
         scroll = canvas.yview_scroll
         top.bind('<Next>', lambda event, fs=scroll: fs(1, "pages"))
         top.bind('<Prior>', lambda event, fs=scroll: fs(-1, "pages"))
+
+        # make up, down arrows and return/shift-return do same as Tab, Shift-Tab
+        top.bind('<Up>', self.focusPrev)
+        top.bind('<Down>', self.focusNext)
+        top.bind('<Shift-Return>', self.focusPrev)
+        top.bind('<Return>', self.focusNext)
 
         # Pack the Frame and Canvas
         canvas.pack(side=TOP, expand=TRUE, fill=BOTH)
@@ -364,11 +371,16 @@ class EparDialog:
         if not self.isChild:
             self.top.mainloop()
 
-    def doScroll(self, event):
-        """Scroll the panel down to ensure widget with focus to be visible
+    def focusNext(self, event):
+        """Set focus to next item in sequence"""
+        event.widget.tk_focusNext().focus_set()
 
-        Triggered by Tab or Shift-Tab key.
-        """
+    def focusPrev(self, event):
+        """Set focus to previous item in sequence"""
+        event.widget.tk_focusPrev().focus_set()
+
+    def doScroll(self, event):
+        """Scroll the panel down to ensure widget with focus to be visible"""
         canvas = self.top.f.canvas
         widgetWithFocus = canvas.entries.focus_get()
         # determine distance of widget from top & bottom edges of canvas
@@ -816,12 +828,12 @@ class EparDialog:
         hb.iconLabel = title
 
         # Set up the Menu Bar
-        self.menubar = Frame(hb, relief=RIDGE, borderwidth=0)
-        self.menubar.button = Button(self.menubar, text="Close",
+        hb.menubar = Frame(hb, relief=RIDGE, borderwidth=0)
+        hb.menubar.button = Button(hb.menubar, text="Close",
                                      relief=RAISED,
                                      command=hb.destroy)
-        self.menubar.button.pack()
-        self.menubar.pack(side=BOTTOM, padx=5, pady=5)
+        hb.menubar.button.pack()
+        hb.menubar.pack(side=BOTTOM, padx=5, pady=5)
 
         # Define the Frame for the scrolling Listbox
         hb.frame = Frame(hb, relief=RIDGE, borderwidth=1)
@@ -833,11 +845,12 @@ class EparDialog:
 
         # Define the Listbox and setup the Scrollbar
         hb.frame.list = Listbox(hb.frame,
-                                     relief=FLAT,
-                                     height=25,
-                                     width=80,
-                                     selectmode=SINGLE,
-                                     selectborderwidth=0)
+                                relief=FLAT,
+                                height=25,
+                                width=80,
+                                takefocus=FALSE,
+                                selectmode=SINGLE,
+                                selectborderwidth=0)
         hb.frame.list['yscrollcommand'] = hb.frame.vscroll.set
 
         hb.frame.vscroll['command'] = hb.frame.list.yview
@@ -870,7 +883,6 @@ class EparDialog:
         hb.geometry("+%d+%d" % (self.top.winfo_rootx() + HELPX,
                                      self.top.winfo_rooty() + HELPY))
         return hb
-
 
     def validate(self):
 
@@ -909,9 +921,9 @@ class EparDialog:
                 # Verify the value is valid. If it is invalid,
                 # the value will be converted to its original valid value.
                 # Maintain a list of the reset values for user notification.
-                resetValue = entry.entryCheck(event=None)
-                if (resetValue != None):
-                    self.badEntries.append(resetValue)
+                if entry.entryCheck():
+                    self.badEntries.append([entry.name, value,
+                                        entry.choice.get()])
 
                 # Determine the type of entry variable
                 classType = entry.choiceClass

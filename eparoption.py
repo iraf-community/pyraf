@@ -118,6 +118,14 @@ class EparOption:
         self.entry.bind('<FocusOut>', self.focusOut, "+")
         self.entry.bind('<FocusIn>', self.focusIn, "+")
 
+        # Trap keys that leave field and validate entry
+        self.entry.bind('<Return>', self.entryCheck, "+")
+        self.entry.bind('<Shift-Return>', self.entryCheck, "+")
+        self.entry.bind('<Tab>', self.entryCheck, "+")
+        self.entry.bind('<Shift-Tab>', self.entryCheck, "+")
+        self.entry.bind('<Up>', self.entryCheck, "+")
+        self.entry.bind('<Down>', self.entryCheck, "+")
+
         # Pack the parameter entry Frame
         self.master.frame.pack(side = TOP, ipady = 1)
 
@@ -148,7 +156,6 @@ class EparOption:
         if self.entryCheck(event) is None:
             self.entry.selection_clear()
         else:
-            self.focusIn(event)
             return "break"
 
     def focusIn(self, event=None):
@@ -187,7 +194,10 @@ class EparOption:
             self.status.bell()
             if (event != None):
                 self.status.config(text = errorMsg)
-            return [self.name, value, self.previousValue]
+            # highlight the text again and terminate processing so
+            # focus stays in this widget
+            self.focusIn(event)
+            return "break"
 
     def focus_set(self, event=None):
         """Set focus to input widget"""
@@ -259,13 +269,9 @@ class EnumEparOption(EparOption):
 
         self.entry.pack(side = LEFT)
 
-        # up and down arrows navigate on menu
-        self.entry.bind('<KeyPress-Up>', self.keypress)
-        self.entry.bind('<KeyPress-Down>', self.keypress)
-
         # shortcut keys jump to items
         for letter in self.shortcuts.keys():
-            self.entry.bind('<KeyPress-%s>' % letter, self.keypress)
+            self.entry.bind('<%s>' % letter, self.keypress)
 
         # Left button sets focus (as well as popping up menu)
         self.entry.bind('<Button-1>', self.focus_set)
@@ -274,27 +280,9 @@ class EnumEparOption(EparOption):
 
     def keypress(self, event):
         """Allow keys typed in widget to select items"""
-        key = event.keysym
-        choices = self.paramInfo.choice
-        value = self.choice.get()
-        if key == 'Down':
-            try:
-                index = min(choices.index(value)+1, len(choices)-1)
-            except ValueError:
-                # initial null value may not be in list
-                index = 0
-            self.choice.set(choices[index])
-            self.post()
-        elif key == 'Up':
-            try:
-                index = max(choices.index(value)-1, 0)
-            except ValueError:
-                index = 0
-            self.choice.set(choices[index])
-            self.post()
-        elif self.shortcuts.has_key(key):
-            self.choice.set(self.shortcuts[key])
-        else:
+        try:
+            self.choice.set(self.shortcuts[event.keysym])
+        except KeyError:
             # key not found (probably a bug, since we intend to catch
             # only events from shortcut keys, but ignore it anyway)
             pass
@@ -408,11 +396,6 @@ class StringEparOption(EparOption):
         # Bind the entry to a popup menu of choices
         self.entry.bind('<Button-3>', self.popupChoices)
 
-        # Set up key bindings
-        self.entry.bind('<Return>', self.focusOut, "+")
-        self.entry.bind('<Tab>', self.focusOut, "+")
-        self.entry.bind('<Shift-Tab>', self.focusOut, "+")
-
     def popupChoices(self, event):
 
         self.menu = Menu(self.entry, tearoff = 0)
@@ -468,11 +451,6 @@ class IntEparOption(EparOption):
                      textvariable = self.choice)
         self.entry.pack(side = LEFT)
 
-        # Set up key bindings
-        self.entry.bind('<Return>', self.focusOut, "+")
-        self.entry.bind('<Tab>', self.focusOut, "+")
-        self.entry.bind('<Shift-Tab>', self.focusOut, "+")
-
         # Bind the button to a popup menu of choices
         self.entry.bind('<Button-3>', self.popupChoices)
 
@@ -507,7 +485,7 @@ class IntEparOption(EparOption):
     # automatically checks max, min, special value (INDEF,
     # parameter indirection), etc.
 
-    def entryCheck(self, event = None, *args):
+    def entryCheck(self, event = None):
 
         # Ensure any INDEF entry is uppercase
         if (self.choice.get() == "indef"):
@@ -526,7 +504,10 @@ class IntEparOption(EparOption):
             self.status.bell()
             if (event != None):
                 self.status.config(text = errorMsg)
-            return [self.name, value, self.previousValue]
+            # highlight the text again and terminate processing so
+            # focus stays in this widget
+            self.focusIn(event)
+            return "break"
 
 class RealEparOption(EparOption):
 
@@ -542,11 +523,6 @@ class RealEparOption(EparOption):
         self.entry = Entry(self.master.frame, width = self.valueWidth,
                      textvariable = self.choice)
         self.entry.pack(side = LEFT)
-
-        # Set up key bindings
-        self.entry.bind('<Return>', self.focusOut, "+")
-        self.entry.bind('<Tab>', self.focusOut, "+")
-        self.entry.bind('<Shift-Tab>', self.focusOut, "+")
 
         # Bind the button to a popup menu of choices
         self.entry.bind('<Button-3>', self.popupChoices)
@@ -578,7 +554,7 @@ class RealEparOption(EparOption):
 
 
     # Check the validity of the entry
-    def entryCheck(self, event = None, *args):
+    def entryCheck(self, event = None):
 
         # Ensure any INDEF entry is uppercase
         if (self.choice.get() == "indef"):
@@ -597,8 +573,10 @@ class RealEparOption(EparOption):
             self.status.bell()
             if (event != None):
                 self.status.config(text = errorMsg)
-            return [self.name, value, self.previousValue]
-
+            # highlight the text again and terminate processing so
+            # focus stays in this widget
+            self.focusIn(event)
+            return "break"
 
 class PsetEparOption(EparOption):
 
