@@ -1928,7 +1928,7 @@ class IrafParList:
 		fullkw = {}
 		for key in kw.keys():
 			try:
-				param = (self.getParObject(key).name, None)
+				param = (self.getParObject(key).name, '')
 			except KeyError, e:
 				# maybe it is pset.param
 				i = string.find(key, '.')
@@ -1936,8 +1936,12 @@ class IrafParList:
 					raise e
 				param = (self.getParObject(key[:i]).name, key[i+1:])
 			if fullkw.has_key(param):
+				if param[1]:
+					pname = string.join(param,'.')
+				else:
+					pname = param[0]
 				raise SyntaxError("Multiple values given for parameter " +
-					string.join(param,'.') + " in task " + self.__name)
+					pname + " in task " + self.__name)
 			fullkw[param] = kw[key]
 
 		# add positional parameters to the keyword list, checking
@@ -1951,7 +1955,7 @@ class IrafParList:
 				# executed if we run out of non-hidden parameters
 				raise SyntaxError("Too many positional parameters for task " +
 					self.__name)
-			param = (self.__pars[ipar].name, None)
+			param = (self.__pars[ipar].name, '')
 			if fullkw.has_key(param):
 				raise SyntaxError("Multiple values given for parameter " +
 					param[0] + " in task " + self.__name)
@@ -1964,7 +1968,7 @@ class IrafParList:
 		for key, value in fullkw.items():
 			param, tail = key
 			p = self.getParObject(param)
-			if tail is not None:
+			if tail:
 				# pset parameter - get parameter object from task
 				p = p.get().getParObject(tail)
 			p.set(value)
