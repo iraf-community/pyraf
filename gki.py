@@ -65,13 +65,16 @@ class GkiBuffer:
 		if self.bufferSize < (self.bufferEnd + len(metacode)):
 			# increment buffer size and copy into new array
 			print "growing metacode buffer"
-			self.bufferSize = self.bufferSize + self.INCREMENT
+			diff = self.bufferEnd + len(metacode) - self.bufferSize
+			nblocks = diff/self.INCREMENT + 1
+			self.bufferSize = self.bufferSize + nblocks * self.INCREMENT
 			newbuffer = Numeric.zeros(self.bufferSize, Numeric.Int16)
 			if self.bufferEnd > 0:
 				newbuffer[0:self.bufferEnd] = self.buffer[0:self.bufferEnd]
 			self.buffer = newbuffer
 		self.buffer[self.bufferEnd:self.bufferEnd+len(metacode)] = metacode
 		self.bufferEnd = self.bufferEnd + len(metacode)
+#		print 'gkibuffersize:',self.bufferSize,'gkibufconsize:',self.bufferEnd
 		
 	def get(self):
 	
