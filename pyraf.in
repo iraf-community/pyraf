@@ -62,19 +62,12 @@ $Id$
 R. White, 2000 January 21
 """
 
-__version__ = "v0.9 (2001Nov30)"
-
-
 import sys, os, string
-
-
 
 # set search path to include directory above this script and current directory
 # ... but do not want the pyraf package directory itself in the path, since
 # that messes things up by allowing direct imports of pyraf submodules
 # (bypassing the __init__ mechanism.)
-
-
 
 pyrafDir = os.path.dirname(sys.argv[0])
 try:
@@ -94,7 +87,7 @@ if os.environ.has_key("PYTHONSTARTUP") and \
                 os.path.isfile(os.environ["PYTHONSTARTUP"]):
     execfile(os.environ["PYTHONSTARTUP"])
 
-from pyraf import doCmdline, iraf
+from pyraf import doCmdline, iraf, __version__
 from pyraf.irafpar import makeIrafPar
 from pyraf.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
