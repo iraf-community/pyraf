@@ -2,12 +2,12 @@
 
 $Id$
 
-R. White, 1999 December 15
+R. White, 1999 December 20
 """
 
 import os, sys, string, types, copy, re
 import minmatch, subproc
-import iraf, irafpar, irafexecute, epar, cl2py
+import iraf, irafpar, irafexecute, epar, cl2py, irafutils
 
 
 # -----------------------------------------------------
@@ -157,15 +157,18 @@ class IrafTask:
 		if self._foreign:
 			print "No run yet for foreign task '" + self._name + "'"
 		else:
-			# special _nosave keyword turns off saving of parameters
-			if kw.has_key('_nosave'):
-				nosave = kw['_nosave']
-				del kw['_nosave']
+			# special _save keyword turns on parameter-saving
+			# default is *not* to save parameters (so it is necessary
+			# to use _save=1 to get parameter changes to be persistent.)
+			if kw.has_key('_save'):
+				save = kw['_save']
+				del kw['_save']
 			else:
-				nosave = 0
+				save = 0
 			# Special Stdout, Stdin, Stderr keywords are used to redirect IO
 			redirKW, closeFHList = iraf.redirProcess(kw)
 			# set parameters
+			kw['_setMode'] = 1
 			self._runningParList = apply(self.setParList,args,kw)
 			if iraf.Verbose>1:
 				print "Connected subproc run ", self._name, \
@@ -177,11 +180,12 @@ class IrafTask:
 				self._parDictList = None
 				try:
 					apply(irafexecute.IrafExecute,
-						(self, iraf.varDict), redirKW)
-					changed = self.updateParList(self._runningParList)
-					if changed and (nosave==0):
-						rv = self.save()
-						if iraf.Verbose>1: print rv
+						(self, iraf.getVarDict()), redirKW)
+					if save==1:
+						changed = self.updateParList(self._runningParList)
+						if changed:
+							rv = self.save()
+							if iraf.Verbose>1: print rv
 					if iraf.Verbose>1: print 'Successful task termination'
 				finally:
 					iraf.redirReset([], closeFHList)
@@ -236,14 +240,22 @@ class IrafTask:
 		copy with parameters set.  It is up to subsequent code (in
 		the run method) to propagate these changes to the persistent
 		parameter list.
+		
+		Special arguments: _setMode=1 to set modes of automatic parameters
 		"""
 		self.initTask()
 		newParList = copy.deepcopy(self._currentParList)
+		if kw.has_key('_setMode'):
+			_setMode = kw['_setMode']
+			del kw['_setMode']
+		else:
+			_setMode = 0
 		apply(newParList.setParList, args, kw)
-		# set mode of automatic parameters
-		mode = self.getMode(newParList)
-		for p in newParList.getParList():
-			p.mode = string.replace(p.mode,"a",mode)
+		if _setMode:
+			# set mode of automatic parameters
+			mode = self.getMode(newParList)
+			for p in newParList.getParList():
+				p.mode = string.replace(p.mode,"a",mode)
 		return newParList
 
 	def updateParList(self, newParList):
@@ -610,6 +622,7 @@ class IrafTask:
 		try:
 			exename1 = iraf.Expand(self._filename)
 			basedir, basename = os.path.split(exename1)
+			if basedir=="": basedir = "."
 		except iraf.IrafError, e:
 			if iraf.Verbose>0:
 				print "Error expanding executable name for task " + \
@@ -625,7 +638,7 @@ class IrafTask:
 			self._defaultParpath = ""
 
 		# uparm has scrunched version of par filename with saved parameters
-		if iraf.varDict.has_key("uparm"):
+		if iraf.defvar("uparm"):
 			self._scrunchParpath = iraf.Expand("uparm$" +
 						self.scrunchName() + ".par")
 		else:
@@ -800,14 +813,15 @@ class IrafCLTask(IrafTask):
 		"""Execute this task with the specified arguments"""
 		# force check to make sure source code is up-to-date
 		self.initTask(force=1)
-		if kw.has_key('_nosave'):
-			nosave = kw['_nosave']
-			del kw['_nosave']
+		if kw.has_key('_save'):
+			save = kw['_save']
+			del kw['_save']
 		else:
-			nosave = 0
+			save = 0
 		# Special Stdout, Stdin, Stderr keywords are used to redirect IO
 		redirKW, closeFHList = iraf.redirProcess(kw)
 		# set parameters
+		kw['_setMode'] = 1
 		self._runningParList = apply(self.setParList,args,kw)
 		if iraf.Verbose>1:
 			print "CL task run ", self.getName(), "("+self.getFullpath()+")"
@@ -815,15 +829,16 @@ class IrafCLTask(IrafTask):
 		# delete list of param dictionaries so it will be
 		# recreated in up-to-date version if needed
 		self._parDictList = None
+		# redirect the I/O
+		resetList = iraf.redirApply(redirKW)
 		try:
-			# redirect the I/O
-			resetList = iraf.redirApply(redirKW)
 			# run the task
 			self.runCode(self._runningParList.getParList())
-			changed = self.updateParList(self._runningParList)
-			if changed and (nosave==0):
-				rv = self.save()
-				if iraf.Verbose>1: print rv
+			if save==1:
+				changed = self.updateParList(self._runningParList)
+				if changed:
+					rv = self.save()
+					if iraf.Verbose>1: print rv
 		finally:
 			# restore I/O
 			iraf.redirReset(resetList, closeFHList)
@@ -841,7 +856,7 @@ class IrafCLTask(IrafTask):
 
 	def getCode(self):
 		"""Return a string with the Python code for this task"""
-		self.initTask()
+		self.initTask(force=1)
 		return self._pycode.code
 
 	def initTask(self,filehandle=None,force=0):
@@ -967,11 +982,11 @@ class IrafPkg(IrafCLTask):
 		"""Load this package with the specified parameters"""
 		self.initTask(force=1)
 
-		if kw.has_key('_nosave'):
-			nosave = kw['_nosave']
-			del kw['_nosave']
+		if kw.has_key('_save'):
+			save = kw['_save']
+			del kw['_save']
 		else:
-			nosave = 0
+			save = 0
 
 		# Special _doprint keyword is used to control whether tasks are listed
 		# after package has been loaded.  Default is to list them if cl.menus
@@ -1005,6 +1020,7 @@ class IrafPkg(IrafCLTask):
 						"["+`len(self.getParList())`+"] parameters",
 				print
 			# set parameters
+			kw['_setMode'] = 1
 			self._runningParList = apply(self.setParList,args,kw)
 			#XXX more args to add?
 			#XXX redirKW['PkgName'] = self.getPkgname()
@@ -1014,14 +1030,15 @@ class IrafPkg(IrafCLTask):
 			# delete list of param dictionaries so it will be
 			# recreated in up-to-date version if needed
 			self._parDictList = None
+			# redirect the I/O
+			resetList = iraf.redirApply(redirKW)
 			try:
-				# redirect the I/O
-				resetList = iraf.redirApply(redirKW)
 				self.runCode(self._runningParList.getParList())
-				changed = self.updateParList(self._runningParList)
-				if changed and (nosave==0):
-					rv = self.save()
-					if iraf.Verbose>1: print rv
+				if save==1:
+					changed = self.updateParList(self._runningParList)
+					if changed:
+						rv = self.save()
+						if iraf.Verbose>1: print rv
 			finally:
 				iraf.cl.menus = menus
 				iraf.redirReset(resetList, closeFHList)
@@ -1070,6 +1087,12 @@ class IrafForeignTask(IrafTask):
 		"""Run the task"""
 		# Special Stdout, Stdin, Stderr keywords are used to redirect IO
 		redirKW, closeFHList = iraf.redirProcess(kw)
+		# save key does not get used for foreign tasks, but keep it anyway
+		if kw.has_key('_save'):
+			save = kw['_save']
+			del kw['_save']
+		else:
+			save = 0
 		if len(kw)>0:
 			raise ValueError('Illegal keyword parameters %s for task %s' %
 				(kw.keys(), self._name,))
@@ -1138,7 +1161,8 @@ def _splitName(qualifiedName):
 	(package, task, paramname, subscript, field). IRAF one-based subscript
 	is changed to Python zero-based subscript.
 	"""
-	slist = string.split(qualifiedName,'.')
+	# name components may have had 'PY' appended if they match Python keywords
+	slist = map(irafutils.untranslateName, string.split(qualifiedName,'.'))
 	package = None
 	task = None
 	pindex = None

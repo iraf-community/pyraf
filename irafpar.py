@@ -259,7 +259,7 @@ class IrafPar:
 			self.prompt = irafutils.removeEscapes(
 							irafutils.stripQuotes(fields[6]))
 		else:
-			self.prompt = self.name
+			self.prompt = ''
 		#
 		# check attributes to make sure they are appropriate for
 		# this parameter type (e.g. some do not allow choice list
@@ -366,7 +366,10 @@ class IrafPar:
 
 	def getPrompt(self):
 		"""Interactively prompt for parameter value"""
-		pstring = string.strip( string.split(self.prompt,"\n")[0] )
+		if self.prompt:
+			pstring = string.strip( string.split(self.prompt,"\n")[0] )
+		else:
+			pstring = self.name
 		if self.choice:
 			schoice = [None]*len(self.choice)
 			for i in xrange(len(self.choice)):
@@ -761,7 +764,7 @@ class IrafArrayPar(IrafPar):
 			self.prompt = irafutils.removeEscapes(
 							irafutils.stripQuotes(fields[8]))
 		else:
-			self.prompt = self.name
+			self.prompt = ''
 		if self.min not in [None, INDEF] and \
 		   self.max not in [None, INDEF] and self.max < self.min:
 			warning("Maximum " + str(self.max) + " is less than minimum " + \
@@ -1625,7 +1628,7 @@ class IrafParList:
 		# first undo translations that were applied to keyword names
 		for key in kw.keys():
 			okey = key
-			key = irafutils.unreplaceReserved(key)
+			key = irafutils.untranslateName(key)
 			if okey != key:
 				value = kw[okey]
 				del kw[okey]

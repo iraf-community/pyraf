@@ -202,6 +202,9 @@ class EparDialog:
         #self.initial_focus = self.top
         #self.initial_focus.focus_set()
 
+        # run the mainloop
+        self.top.mainloop()
+
 
     # Method to create the parameter entries
     def makeEntries(self, master, statusBar):
@@ -416,11 +419,14 @@ class EparDialog:
         #    self.top.initial_focus.focus_set()
         #    return
 
-        # Need to save all the entries and verify them 
-        self.saveEntries()
-
         self.top.focus_set()
         self.top.destroy()
+
+        # save all the entries and verify them 
+        try:
+            self.saveEntries()
+        finally:
+            self.top.quit()
 
 
     # EXECUTE: save the parameter settings and run the task
@@ -436,17 +442,20 @@ class EparDialog:
         # Remove the main epar window
         self.top.withdraw()
  
-        print "\nTask %s is running...\n" % self.taskName
-
         # Reset to the start location
         CHILDX = 600
         CHILDY = 0
 
-        # Run the task
-        self.runTask()
-
         self.top.focus_set()
         self.top.destroy()
+
+        print "\nTask %s is running...\n" % self.taskName
+
+        # Run the task
+        try:
+            self.runTask()
+        finally:
+            self.top.quit()
 
 
     # ABORT: abort this epar session
@@ -463,6 +472,7 @@ class EparDialog:
         # Give focus back to parent window and abort
         self.top.focus_set()
         self.top.destroy()
+        self.top.quit()
 
 
     # UNLEARN: unlearn all the parameters by setting their values
@@ -636,4 +646,5 @@ class EparDialog:
 
         # Use the run method of the IrafTask class
         # Set mode='h' so it does not prompt for parameters (like IRAF epar)
-        self.taskObject.run(mode='h')
+        # Also turn on parameter saving
+        self.taskObject.run(mode='h', _save=1)

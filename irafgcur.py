@@ -130,7 +130,7 @@ class Gcursor:
 		x,y = self.getNDCCursorPos()
 		wx,wy,gwcs = gwm.getActiveWindow().iplot.wcs.get(x,y)
 		if key <= ' ' or ord(key) >= 127:
-			key = '\\%03o' % (ord(key),)
+			key = '\\%03o' % ord(key)
 		self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
 		if cstring:
 			self.retString = self.retString +' '+cstring

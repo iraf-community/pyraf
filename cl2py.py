@@ -2,7 +2,7 @@
 
 $Id$
 
-R. White, 1999 December 9
+R. White, 1999 December 20
 """
 
 import string, cStringIO, os, sys, types
@@ -48,6 +48,11 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
 		code simply gets executed directly.  This is used in the
 		CL compatibility mode and other places where a single line of
 		CL must be executed.
+		Mode also determines whether parameter sets are saved in calls
+		to CL tasks.  In "single" mode parameters do get saved; in
+		"proc" mode they do not get saved.  This is intended to be
+		consistent with the behavior of the IRAF CL, where parameter
+		changes in scripts are not preserved.
 	local_vars_dict, local_vars_list: Initial definitions of local variables.
 		May be modified by declarations in the CL code.  This is used only for
 		"single" mode to allow definitions to persist across statements.
@@ -184,7 +189,7 @@ def _checkVars(vars, parlist, parfile):
 		if iraffunctions.Verbose>0:
 			sys.stdout.flush()
 			sys.stderr.write("Parameters from CL code inconsistent "
-				"with .par file for task %s\n" % (vars.proc_name,))
+				"with .par file for task %s\n" % vars.getProcName())
 			sys.stderr.flush()
 
 	# create copies of the list and dictionary
@@ -228,14 +233,14 @@ class ExtractProcInfo(CleanupASTTraversal):
 
 	def n_proc_stmt(self, node):
 		# get procedure name and list of argument names
-		self.proc_name = irafutils.replaceReserved(node[1].attr)
+		self.proc_name = node[1].attr
 		self.proc_args_list = []
 		if len(node[2]):
 			self.preorder(node[2])
 		self.prune()
 
 	def n_IDENT(self, node):
-		self.proc_args_list.append(irafutils.replaceReserved(node.attr))
+		self.proc_args_list.append(irafutils.translateName(node.attr))
 
 _longTypeName = {
 			"s": "string",
@@ -295,11 +300,15 @@ class Variable:
 							"length": None, })
 			self.init_value = init_value
 
+	def getName(self):
+		"""Get name without translations"""
+		return irafutils.untranslateName(self.name)
+
 	def toPar(self, strict=0, filename=''):
 		"""Convert this variable to an IrafPar object"""
 		return irafpar.makeIrafPar(self.init_value,
 				datatype=self.type,
-				name=self.name,
+				name=self.getName(),
 				array_size=self.array_size,
 				list_flag=self.list_flag,
 				mode=self.options["mode"],
@@ -314,15 +323,14 @@ class Variable:
 		"""Return a string usable as parameter declaration with
 		default value in the function definition statement"""
 
-		rname = irafutils.replaceReserved(self.name)
 		if self.array_size is None:
 			if self.init_value is None:
-				return rname + "=None"
+				return self.name + "=None"
 			else:
-				return rname + "=" + `self.init_value`
+				return self.name + "=" + `self.init_value`
 		else:
 			# array
-			arg = rname + "=["
+			arg = self.name + "=["
 			arglist = []
 			for iv in self.init_value:
 				arglist.append(`iv`)
@@ -331,9 +339,9 @@ class Variable:
 	def parDefLine(self, filename=None, strict=0):
 		"""Return a list of string arguments for makeIrafPar"""
 
-		arglist = [irafutils.replaceReserved(self.name),
+		arglist = [self.name,
 			"datatype=" + `self.type`,
-			"name=" + `self.name` ]
+			"name=" + `self.getName()` ]
 		if self.array_size is not None:
 			arglist.append("array_size=" + `self.array_size`)
 		if self.list_flag:
@@ -385,7 +393,7 @@ class ExtractDeclInfo(CleanupASTTraversal):
 
 	def n_decl_spec(self, node):
 		var_name = node[1]
-		name = irafutils.replaceReserved(var_name[0].attr)
+		name = irafutils.translateName(var_name[0].attr)
 		if len(var_name) > 1:
 			# array declaration
 			array_size = int(var_name[2])
@@ -520,8 +528,7 @@ class VarList(CleanupASTTraversal):
 			else:
 				path, fname = os.path.split(self.filename)
 				root, ext = os.path.splitext(fname)
-				#XXX need to check this for illegal chars!
-				self.proc_name = root
+				self.setProcName(root)
 
 		# add mode, $nargs, other special parameters to all tasks
 		self.addSpecialArgs()
@@ -534,8 +541,18 @@ class VarList(CleanupASTTraversal):
 		for var in self.proc_args_list:
 			if not _SpecialArgs.has_key(var):
 				p.append(self.proc_args_dict[var].toPar(filename=self.filename))
-		self.parList = irafpar.IrafParList(self.proc_name,
+		self.parList = irafpar.IrafParList(self.getProcName(),
 					filename=self.filename, parlist=p)
+
+	def setProcName(self, proc_name):
+		"""Set procedure name"""
+		# Procedure name is stored in translated form ('PY' added
+		# to Python keywords, etc.)
+		self.proc_name = irafutils.translateName(proc_name)
+
+	def getProcName(self):
+		"""Get procedure name, undoing translations"""
+		return irafutils.untranslateName(self.proc_name)
 
 	def addSpecialArgs(self):
 		"""Add mode, $nargs, other special parameters to all tasks"""
@@ -545,16 +562,15 @@ class VarList(CleanupASTTraversal):
 			self.proc_args_dict['mode'] = Variable('mode','string',
 				init_value='al')
 
-		if not self.proc_args_dict.has_key('$nargs'):
-			self.proc_args_list.append('$nargs')
-			self.proc_args_dict['$nargs'] = Variable('$nargs','int',
-				init_value=0)
+		# just delete $nargs and add it back if it is already present
+		if self.proc_args_dict.has_key('$nargs'):
+			self.proc_args_list.remove('$nargs')
+			del self.proc_args_dict['$nargs']
 
-		# also add an entry (pointing to the same Variable) for
-		# translated version of $nargs
-		targ = irafutils.replaceReserved('$nargs')
+		targ = irafutils.translateName('$nargs')
 		if not self.proc_args_dict.has_key(targ):
-			self.proc_args_dict[targ] = self.proc_args_dict['$nargs']
+			self.proc_args_list.append(targ)
+			self.proc_args_dict[targ] = Variable(targ, 'int', init_value=0)
 
 		for parg, ivalue in _SpecialArgs.items():
 			if not self.proc_args_dict.has_key(parg):
@@ -564,7 +580,7 @@ class VarList(CleanupASTTraversal):
 	def checkLocalConflict(self):
 		"""Check for local variables that conflict with parameters"""
 
-		errlist = ["Error in procedure `%s'" % (self.proc_name,)]
+		errlist = ["Error in procedure `%s'" % self.getProcName()]
 		for v in self.local_vars_list:
 			if self.proc_args_dict.has_key(v):
 				errlist.append(
@@ -578,12 +594,12 @@ class VarList(CleanupASTTraversal):
 		self.has_proc_stmt = 1
 		# get procedure name and list of argument names
 		p = ExtractProcInfo(node)
-		self.proc_name = p.proc_name
+		self.setProcName(p.proc_name)
 		self.proc_args_list = p.proc_args_list
 		for arg in self.proc_args_list:
 			if self.proc_args_dict.has_key(arg):
 				errmsg = "Argument `%s' repeated in procedure statement %s" % \
-					(arg,self.proc_name)
+					(arg,self.getProcName())
 				raise SyntaxError(errmsg)
 			else:
 				self.proc_args_dict[arg] = None
@@ -681,7 +697,7 @@ class TypeCheck(CleanupASTTraversal):
 		node.requireType = node.exprType
 
 	def n_IDENT(self, node):
-		s = irafutils.replaceReserved(node.attr)
+		s = irafutils.translateName(node.attr)
 		if self.vars.proc_args_dict.has_key(s):
 			a = self.vars.proc_args_dict[s]
 			node.exprType = _typeDict[a.type]
@@ -787,7 +803,6 @@ _translateList = {
 
 _taskList = {
 			"cl"			: "clProcedure",
-			"package"		: "package",
 			"print"			: "clPrint",
 			"_curpack"		: "curpack",
 			"_allocate"		: "clAllocate",
@@ -816,6 +831,7 @@ _functionList = {
 			"exp":		"math.exp",
 			"log":		"math.log",
 			"log10":	"math.log10",
+			"sqrt":		"math.sqrt",
 			"frac":		"math.frac",
 			"abs":		"math.abs",
 			"min":		"math.min",
@@ -1083,7 +1099,7 @@ class Tree2Python(CleanupASTTraversal):
 			for i in range(n):
 				p = self.vars.proc_args_list[i]
 				v = self.vars.proc_args_dict[p]
-				namelist[i] = irafutils.replaceReserved(p)
+				namelist[i] = irafutils.translateName(p)
 				if _SpecialArgs.has_key(p):
 					# special arguments are Python types
 					proclist[i] = p + '=' + str(v)
@@ -1220,7 +1236,7 @@ class Tree2Python(CleanupASTTraversal):
 		self.write(s, node.requireType, node.exprType)
 
 	def n_IDENT(self, node, array_ref=0):
-		s = irafutils.replaceReserved(node.attr)
+		s = irafutils.translateName(node.attr)
 		if self.vars.proc_args_dict.has_key(s):
 			if not _SpecialArgs.has_key(s) and not array_ref:
 				# If this is a procedure parameter, append '.p_value' so sets
@@ -1242,10 +1258,6 @@ class Tree2Python(CleanupASTTraversal):
 				# just write it directly
 				self.write(s, node.requireType, node.exprType)
 			else:
-				#if self.vars.mode == "single":
-				#	prefix = 'iraf.cl.'
-				#else:
-				#	prefix = 'taskObj.'
 				prefix = 'iraf.'
 				if attribs[-1][:2] == 'p_':
 					attribs[-2] = 'getParObject(' + `attribs[-2]` +  ')'
@@ -1273,7 +1285,7 @@ class Tree2Python(CleanupASTTraversal):
 		self.prune()
 
 	def n_param_name(self, node):
-		s = irafutils.replaceReserved(node[0].attr,dot=1)
+		s = irafutils.translateName(node[0].attr,dot=1)
 		self.write(s)
 		self.prune()
 
@@ -1288,9 +1300,29 @@ class Tree2Python(CleanupASTTraversal):
 			# just add 'iraf.' prefix
 			newname = "iraf." + functionname
 		self.write(newname + "(")
-		self.preorder(node[2])
+		# argument list for scan statement
+		sargs = self.captureArgs(node[2])
+		if functionname in ['scan', 'fscan']:
+			# scan is weird -- effectively uses call-by-name
+			# call special code-generation routine
+			sargs = self.modify_scan_args(functionname, sargs)
+		self.writeChunks(sargs)
 		self.write(")")
 		self.prune()
+
+	def modify_scan_args(self, functionname, sargs):
+		# modify argument list for scan statement
+		# pass in locals dictionary and names of variables to set
+		sargs.insert(0, "locals()")
+		# if fscan, first argument is the string to read from
+		if functionname == 'fscan':
+			i = 2
+		else:
+			i = 1
+		# add quotes to names (we're literally passing the names, not
+		# the values)
+		sargs[i:] = map(lambda x: `x`, sargs[i:])
+		return sargs
 
 	def default(self, node):
 
@@ -1519,7 +1551,7 @@ class Tree2Python(CleanupASTTraversal):
 			self.additionalArguments.append("Stdin=" + self.pipeIn[-1])
 		# add extra arguments for task, package commands
 		newname = _taskList.get(taskname, taskname)
-		newname = "iraf." + irafutils.replaceReserved(newname)
+		newname = "iraf." + irafutils.translateName(newname)
 		if taskname == 'task':
 			# task needs additional package, bin arguments
 			self.specialDict['PkgName'] = 1
@@ -1532,6 +1564,9 @@ class Tree2Python(CleanupASTTraversal):
 			self.additionalArguments.append("PkgBinary=PkgBinary")
 			# package is a function returning new values for PkgName etc.
 			self.write("PkgName, PkgBinary = ")
+		# add extra argument to save parameters if in "single" mode
+		if self.vars.mode == "single":
+			self.additionalArguments.append("_save=1")
 		self.write(newname)
 		self.preorder(node[1])
 
@@ -1567,30 +1602,9 @@ class Tree2Python(CleanupASTTraversal):
 				# missing open parenthesis
 				i = 0
 
-		# arguments get written to a separate string so we can
-		# decide whether extra parens are really needed or not
-		# Also add special character after arguments to make it
-		# easier to break up long lines
+		# get the list of arguments
 
-		arg_buffer = cStringIO.StringIO()
-		saveColumn = self.column
-		saveBuffer = self.code_buffer
-		self.code_buffer = arg_buffer
-
-		# add a special character after commas to make it easy
-		# to break up argument list for long lines
-		_translateList[','] = ',\255'
-		self.preorder(node[i])
-		del _translateList[',']
-
-		self.code_buffer = saveBuffer
-		self.column = saveColumn
-		args = arg_buffer.getvalue()
-		arg_buffer.close()
-
-		# split arguments into list
-		sargs = string.split(args, ',\255')
-		if sargs[0] == '': del sargs[0]
+		sargs = self.captureArgs(node[i])
 
 		# Delete the extra parentheses on a single argument that already
 		# has parentheses.  This is fixing a parsing ambiguity created by
@@ -1610,6 +1624,40 @@ class Tree2Python(CleanupASTTraversal):
 		self.writeChunks(sargs)
 		self.write(")")
 		self.prune()
+
+	def captureArgs(self, node):
+		"""Process the arguments list and return a list of the args"""
+
+		# arguments get written to a separate string so we can
+		# decide whether extra parens are really needed or not
+		# Also add special character after arguments to make it
+		# easier to break up long lines
+
+		arg_buffer = cStringIO.StringIO()
+		saveColumn = self.column
+		saveBuffer = self.code_buffer
+		self.code_buffer = arg_buffer
+
+		# add a special character after commas to make it easy
+		# to break up argument list for long lines
+		global _translateList
+		curComma = _translateList.get(',')
+		_translateList[','] = ',\255'
+		self.preorder(node)
+		if curComma is None:
+			del _translateList[',']
+		else:
+			_translateList[','] = curComma
+
+		self.code_buffer = saveBuffer
+		self.column = saveColumn
+		args = arg_buffer.getvalue()
+		arg_buffer.close()
+
+		# split arguments into list
+		sargs = string.split(args, ',\255')
+		if sargs[0] == '': del sargs[0]
+		return sargs
 
 	def writeChunks(self, arglist, linelength=78):
 		# break up arg list into line-sized chunks

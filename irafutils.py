@@ -86,7 +86,7 @@ def removeEscapes(value):
 # beginning of Python keywords (and some other illegal Python identifiers).
 # It will be stripped off where appropriate.
 
-def replaceReserved(s, dot=0):
+def translateName(s, dot=0):
 
 	"""Convert CL parameter or variable name to Python-acceptable name
 
@@ -96,10 +96,7 @@ def replaceReserved(s, dot=0):
 	If dot != 0, also replaces '.' with 'DOT'
 	"""
 
-	i = string.find(s, '$')
-	while (i >= 0):
-		s = s[:i] + 'DOLLAR' + s[i+1:]
-		i = string.find(s, '$', i+6)
+	s = string.replace(s, '$', 'DOLLAR')
 	sparts = string.split(s,'.')
 	for i in range(len(sparts)):
 		if sparts[i] == "" or sparts[i][0] in string.digits or \
@@ -110,24 +107,14 @@ def replaceReserved(s, dot=0):
 	else:
 		return string.join(sparts,'.')
 
-def unreplaceReserved(s, dot=0):
+def untranslateName(s):
 
 	"""Undo Python conversion of CL parameter or variable name"""
 
-	# translate 'DOT' embedded in name to '.'
-	i = string.find(s, 'DOT')
-	while (i>=0):
-		s = s[:i] + '.' + s[i+3:]
-		i = string.find(s, 'DOT', i+1)
-	# translate 'DOLLAR' embedded in name to '$'
-	i = string.find(s, 'DOLLAR')
-	while (i>=0):
-		s = s[:i] + '$' + s[i+6:]
-		i = string.find(s, 'DOLLAR', i+1)
-	# delete 'PY' embedded in name
-	i = string.find(s, 'PY')
-	while (i>=0):
-		s = s[:i] + s[i+2:]
-		i = string.find(s, 'PY', i)
+	s = string.replace(s, 'DOT', '.')
+	s = string.replace(s, 'DOLLAR', '$')
+	# delete 'PY' at start of name components
+	if s[:2] == 'PY': s = s[2:]
+	s = string.replace(s, '.PY', '.')
 	return s
 

@@ -95,6 +95,7 @@ def help(object=__main__, variables=1, functions=1, modules=1,
 
 	# handle I/O redirection keywords
 	redirKW, closeFHList = iraf.redirProcess(kw)
+	if kw.has_key('_save'): del kw['_save']
 
 	# get the keywords using minimum-match
 	for key in kw.keys():

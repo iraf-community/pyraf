@@ -39,7 +39,7 @@ class CmdConsole(code.InteractiveConsole):
 
 	def __init__(self, locals=None, filename="<console>",
 			cmddict=None, prompt1=">>> ", prompt2="... ",
-			cmdchars=("a-zA-Z.","0-9_")):
+			cmdchars=("a-zA-Z_.","0-9_")):
 		code.InteractiveConsole.__init__(self, locals=locals, filename=filename)
 		self.ps1 = prompt1
 		self.ps2 = prompt2
