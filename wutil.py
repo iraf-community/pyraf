@@ -38,8 +38,11 @@ def getTopID(WindowID):
 def isViewable(WindowID):
 
 	attrdict = getWindowAttributes(WindowID)
-	return attrdict['viewable']
-
+	if attrdict:
+		return attrdict['viewable']
+	else:
+		return 1
+	
 def getTermWindowSize():
 
 	"""return a tuple containing the x,y size of the terminal window
@@ -49,7 +52,13 @@ def getTermWindowSize():
 		import IOCTL
 		magicConstant = IOCTL.TIOCGWINSZ
 	except ImportError:
-		magicConstant = ord('T')*256 + 104 # at least on Solaris!
+		platform = sys.platform
+		if platform == 'sunos5':
+			magicConstant = ord('T')*256 + 104 # at least on Solaris!
+		elif platform == 'linux2':
+			magicConstant = 0x5413
+		else:
+			raise Exception("platform isn't supported: "+platform)
 	# define string to serve as memory area to recieve copy of structure
 	# created by IOCTL call
 	tstruct = ' '*20 # that should be more than enough memory
