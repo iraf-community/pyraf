@@ -79,7 +79,8 @@ libcdl.a:
 
 install:
 	cp *.so ../; chmod +x ../pyraf ../../Bin/pyraf
-
+	set LD_LIBRARY_PATH=@PYTHON_LIB_DIR@/../; export LD_LIBRARY_PATH; \
+        @PythonBin@ @PYTHON_LIB_DIR@/compileall.py ../../
 
 
 
