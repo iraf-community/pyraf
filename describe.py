@@ -21,6 +21,7 @@
 #
 
 import string
+from dis import opname, HAVE_ARGUMENT
 
 # --------------------------------------------------------------------
 # code object attributes
@@ -64,7 +65,6 @@ def describeParams(func, name = None):
 	p = 0
 	for i in range(n):
 		# anonymous arguments
-		from dis import opname, HAVE_ARGUMENT
 		c = code.co_code
 		if not a[i] or a[i][0] == ".":
 			vars = []
