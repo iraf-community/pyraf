@@ -407,7 +407,7 @@ class IrafProcess:
 
 		redir_info = ''
 		if pstdin: redir_info = '<'
-		if pstdout or pstderr: redir_info = '>'
+		if pstdout or pstderr: redir_info = redir_info+'>'
 
 		# update IRAF environment variables if necessary
 		if self.envVarList:
