@@ -1600,7 +1600,7 @@ class Tree2Python(GenericASTTraversal):
 			self.prune()
 
 	#------------------------------
-	# pipes implemented using redirection
+	# pipes implemented using redirection + task return values
 	#------------------------------
 
 	def n_task_pipe_stmt(self, node):
@@ -1608,11 +1608,11 @@ class Tree2Python(GenericASTTraversal):
 		pipename = 'Pipe' + str(self.pipeCount)
 		self.pipeOut.append(pipename)
 		self.preorder(node[0])
-		self.pipeOut = self.pipeOut[:-1]
+		self.pipeOut.pop()
 		self.pipeIn.append(pipename)
 		self.writeIndent()
 		self.preorder(node[2])
-		self.pipeIn = self.pipeIn[:-1]
+		self.pipeIn.pop()
 		self.pipeCount = self.pipeCount-1
 		self.prune()
 
@@ -1631,15 +1631,12 @@ class Tree2Python(GenericASTTraversal):
 		self.additionalArguments = []
 		addsep = ""
 		# add plumbing for pipes if necessary
-		if self.pipeOut:
-			# create new output pipe
-			self.write(self.pipeOut[-1] + " = cStringIO.StringIO()")
-			self.writeIndent()
-			self.importDict["cStringIO"] = 1
-			self.additionalArguments.append("Stdout=" + self.pipeOut[-1])
 		if self.pipeIn:
-			# read from existing input pipe
+			# read from existing input line list
 			self.additionalArguments.append("Stdin=" + self.pipeIn[-1])
+		if self.pipeOut:
+			self.write(self.pipeOut[-1] + " = ")
+			self.additionalArguments.append("Stdout=1")
 		# add extra arguments for task, package commands
 		newname = _taskList.get(taskname, taskname)
 		newname = "iraf." + irafutils.translateName(newname)
@@ -1663,10 +1660,7 @@ class Tree2Python(GenericASTTraversal):
 
 		if self.pipeIn:
 			# done with this input pipe
-			self.writeIndent(self.pipeIn[-1] + ".close()")
-		if self.pipeOut:
-			# rewind the output pipe
-			self.writeIndent(self.pipeOut[-1] + ".seek(0)")
+			self.writeIndent("del " + self.pipeIn[-1])
 
 		if taskname == "clbye" or taskname == "bye":
 			# must do a return after clbye() or bye() if not in 'single' mode

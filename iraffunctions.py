@@ -241,6 +241,10 @@ del unsavedVars, v
 
 def saveToFile(savefile, **kw):
 	"""Save IRAF environment to pickle file"""
+	# if clobber is not set, do not overwrite file
+	savefile = Expand(savefile)
+	if envget("clobber") != yes and _os.path.exists(savefile):
+		raise IOError("Output file `%s' already exists" % savefile)
 	# make a shallow copy of the dictionary and edit out
 	# functions, modules, and objects named in _unsavedVarsDict
 	dict = globals().copy()
@@ -261,6 +265,7 @@ def saveToFile(savefile, **kw):
 
 def restoreFromFile(savefile, doprint=1, **kw):
 	"""Initialize IRAF environment from pickled save file"""
+	savefile = Expand(savefile)
 	fh = open(savefile, 'rb')
 	u = _pickle.Unpickler(fh)
 	dict = u.load()
@@ -282,8 +287,8 @@ def restoreFromFile(savefile, doprint=1, **kw):
 	# replace INDEF everywhere we can find it
 	# this does not replace references in parameters, unfortunately
 	INDEF = dict['INDEF']
-	import irafpar, iraf, irafglobals, pyraf, cltoken
-	for module in (irafpar, iraf, irafglobals, pyraf, cltoken):
+	import __main__, pyraf, iraf, irafpar, irafglobals, cltoken
+	for module in (__main__, pyraf, iraf, irafpar, irafglobals, cltoken):
 		if hasattr(module,'INDEF'): module.INDEF = INDEF
 
 	# replace cl in the iraf module (and possibly other locations)
@@ -751,15 +756,17 @@ def mktemp(root):
 		if not _os.path.exists(Expand(file)):
 			return file
 
-_NullFile = "dev$null"
+_NullFileList = ["dev$null", "/dev/null"]
 _NullPath = None
 
 def isNullFile(s):
 	"""Returns true if this is the CL null file"""
-	global _NullFile, _NullPath
-	if s == _NullFile: return 1
+	global _NullFileList, _NullPath
+	if s in _NullFileList: return 1
 	sPath = Expand(s)
-	if _NullPath is None: _NullPath = Expand(_NullFile)
+	if _NullPath is None:
+		_NullPath = Expand(_NullFileList[0])
+		_NullFileList.append(_NullPath)
 	if sPath == _NullPath:
 		return 1
 	else:
@@ -2016,8 +2023,8 @@ def _expand1(instring):
 		raise IrafError("Undefined variable " + varname + \
 			" in string " + instring)
 
-def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
-		redefine=0):
+def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
+		pkgname=None, pkgbinary=None, redefine=0):
 
 	"""Returns a new or existing IrafTask, IrafPset, or IrafPkg object
 	
@@ -2033,6 +2040,12 @@ def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 	a warning is printed if it does *not* exist.
 	"""
 
+	if pkgname is None:
+		pkgname = curpack()
+		if pkgbinary is None:
+			pkgbinary = curPkgbinary()
+	elif pkgbinary is None:
+		pkgbinary = ''
 	# fix illegal names
 	spkgname = _string.replace(pkgname, '.', '_')
 	if spkgname != pkgname:
@@ -2221,7 +2234,11 @@ def redirProcess(kw):
 				if outputFlag:
 					# output file
 					# check to see if it is dev$null
-					if isNullFile(value): value = '/dev/null'
+					if isNullFile(value):
+						value = '/dev/null'
+					elif envget("clobber") != yes and _os.path.exists(value):
+						# don't overwrite unless clobber is set
+						raise IOError("Output file `%s' already exists" % value)
 				fh = open(value,openArgs)
 				# close this when we're done
 				closeFHList.append(fh)
