@@ -1,4 +1,5 @@
-#! /usr/bin/env python -i
+#! /usr/local/bin/python -i
+#  #! /usr/bin/env python -i
 """
 pyraf: Python IRAF front end
 
