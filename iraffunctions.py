@@ -2413,7 +2413,11 @@ def back(**kw):
         global _backDir
         if _backDir is None:
             raise IrafError("no previous directory for back()")
-        _newBack = _os.getcwd()
+        try:
+            _newBack = _os.getcwd()
+        except OSError:
+            # OSError for getcwd() means current directory does not exist
+            _newBack = _backDir
         _os.chdir(_backDir)
         print _backDir
         _irafexecute.processCache.setenv('chdir %s\n' % _backDir)
