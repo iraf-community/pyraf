@@ -12,10 +12,11 @@
 
 /* $Id$ */
 
+
 void moveCursorTo(int win, int x, int y) {
   Display *d;
   Window w;
-  Display *XOpenDisplay(char *);
+  /*  Display *XOpenDisplay(char *); */
   int s;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
@@ -43,7 +44,7 @@ int getWindowID() {
    Display *d;
    Window w;
    int revert;
-   Display *XOpenDisplay(char *);
+   /*  Display *XOpenDisplay(char *); */
    d = XOpenDisplay(NULL);
    if (d == NULL) {
      printf("could not open display!\n");
@@ -64,7 +65,7 @@ PyObject *wrap_getWindowID(PyObject *self, PyObject *args) {
 void setFocusTo(int win) {
   Window w;
   Display *d;   
-  Display *XOpenDisplay(char *);
+  /* Display *XOpenDisplay(char *); */
   w = (Window) win;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
@@ -89,7 +90,7 @@ void setBackingStore(int win) {
   XWindowAttributes wa;
   XSetWindowAttributes  NewWinAttributes;
   Display *d;
-  Display *XOpenDisplay(char *);
+  /*  Display *XOpenDisplay(char *); */
   Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
   int XChangeWindowAttributes(Display *, Window, unsigned long, 
 			       XSetWindowAttributes *);
@@ -119,7 +120,7 @@ PyObject *wrap_setBackingStore(PyObject *self, PyObject *args) {
 void getWindowAttributes(int win, XWindowAttributes *winAttr) {
   Window w;
   Display *d;
-  Display *XOpenDisplay(char *);
+  /*  Display *XOpenDisplay(char *); */
   Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
   w = (Window) win;
   d = XOpenDisplay(NULL);
@@ -160,7 +161,7 @@ PyObject *wrap_getPointerPosition(PyObject *self, PyObject *args) {
 	int root_x, root_y, win_x, win_y;
 	unsigned int mask;
 	Display *d;
-	Display *XOpenDisplay(char *);
+	/* Display *XOpenDisplay(char *); */
 	Bool XQueryPointer(Display *, Window, Window *, Window *,
 		int *, int *, int *, int *, unsigned int *);	
 	if (!PyArg_ParseTuple(args,"i", &win))
@@ -191,7 +192,7 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
 	Window root, parent, *children;
 	unsigned int nchildren;
 	Display *d;
-	Display *XOpenDisplay(char *);
+	/*	Display *XOpenDisplay(char *); */
 	Status XQueryTree(Display *, Window, Window *, Window *,
 		Window **, unsigned int *);
 	if (!PyArg_ParseTuple(args,"i", &win))
