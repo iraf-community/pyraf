@@ -70,16 +70,64 @@ class IrafPar:
 		self.choice = None
 		self.prompt = None
 
-	def get(self, index=None):
+	def get(self, field=None, index=None):
 		if index != None:
-			raise SyntaxError("Parameter "+self.name+" is not an array")
-		if self.value == None:
+			if self.dim < 2:
+				raise SyntaxError("Parameter "+self.name+" is not an array")
+			try:
+				return self.toString(self.value[index])
+			except IndexError:
+				raise SyntaxError("Illegal index [" + `index` +
+					"] for array parameter " + self.name)
+
+		if field: return self.getField(field)
+
+		if self.dim == 1:
+			return self.toString(self.value)
+		else:
+			# return blank-separated string of values for array
+			sval = self.dim*[None]
+			for i in xrange(self.dim):
+				sval[i] = self.toString(self.value[i])
+			return string.join(sval,' ')
+
+	def toString(self, value):
+		# convert a single (non-array) value of the appropriate type for this
+		# parameter to a string
+		if value == None:
 			return ""
 		else:
-			return str(self.value)
+			return str(value)
+
+	def getField(self, field):
+		if field == "p_name": return self.name
+		if field == "p_xtype": return self.type
+		if field == "p_mode": return self.mode
+		if field == "p_prompt": return self.prompt
+		if field == "p_value": return self.get()
+		if field == "p_maximum": return self.toString(self.maximum)
+		if field == "p_minimum":
+			if self.choice != None:
+				schoice = [None]*len(self.choice)
+				for i in xrange(len(self.choice)):
+					schoice[i] = self.toString(self.choice[i])
+				schoice = "|" + string.join(schoice,"|") + "|"
+				return schoice
+			else:
+				return self.toString(self.minimum)
+
+		# XXX unimplemented fields
+		# p_filename: used only for *imcur parameter type, may return filename?
+		# p_type: different than p_xtype?
+		# p_length: length in bytes? IRAF words? something else?
+		# p_default: from task parameter file (as opposed to current .par file)?
+
+		raise RuntimeError("Unrecognized or unimplemented parameter field " +
+			field + " for parameter " + self.name)
 
 	def set(self,value):
 		self.value = self.checkValue(value)
+		# XXX need to add field here too
 
 	# raises exception if value is not permitted for this parameter
 	# otherwise returns the value (converted to right type)
@@ -219,17 +267,15 @@ class IrafParB(IrafPar):
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
-	def get(self, index=None):
-		if index != None:
-			raise SyntaxError("Parameter "+self.name+" is not an array")
-		if self.value == None:
+	def toString(self, value):
+		if value == None:
 			return ""
-		elif type(self.value) == StringType:
+		elif type(value) == StringType:
 			# presumably an indirection value ')task.name'
-			return self.value
+			return value
 		else:
 			strval = ["no", "yes"]
-			return strval[self.value]
+			return strval[value]
 
 	# accepts integer values 0,1 or string 'yes','no' and variants
 	def coerceValue(self,value,strict=0):
@@ -257,7 +303,6 @@ class IrafParB(IrafPar):
 			except Exception:
 				pass
 		raise SyntaxError("Illegal boolean value "+`value`)
-
 
 # -----------------------------------------------------
 # IRAF integer parameter class
@@ -294,13 +339,11 @@ class IrafParI(IrafPar):
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
-	def get(self, index=None):
-		if index != None:
-			raise SyntaxError("Parameter "+self.name+" is not an array")
-		if self.value == None:
+	def toString(self, value):
+		if value == None:
 			return "INDEF"
 		else:
-			return str(self.value)
+			return str(value)
 
 	# coerce value to integer
 	def coerceValue(self,value,strict=0):
@@ -374,20 +417,6 @@ class IrafParAI(IrafParI):
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
-	def get(self, index=None):
-		if index==None:
-			# if no index, return blank-separated string of values
-			sval = len(self.value)*["INDEF"]
-			for i in xrange(len(self.value)):
-				if self.value[i] != None: sval[i] = str(self.value[i])
-			return string.join(sval,' ')
-		else:
-			# with index defined, return just the one string
-			if self.value[index] == None:
-				return "INDEF"
-			else:
-				return str(self.value[index])
-
 	def coerceValue(self,value,strict=0):
 		if (not type(value) in [ListType,TupleType]) or len(value) != self.dim:
 			raise SyntaxError("Value must be a " + `self.dim` + \
@@ -426,13 +455,11 @@ class IrafParR(IrafPar):
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
-	def get(self, index=None):
-		if index != None:
-			raise SyntaxError("Parameter "+self.name+" is not an array")
-		if self.value == None:
+	def toString(self, value):
+		if value == None:
 			return "INDEF"
 		else:
-			return str(self.value)
+			return str(value)
 
 	# coerce value to real
 	def coerceValue(self,value,strict=0):
@@ -512,20 +539,6 @@ class IrafParAR(IrafParR):
 				str(self.min))
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
-
-	def get(self, index=None):
-		if index==None:
-			# if no index, return blank-separated string of values
-			sval = len(self.value)*["INDEF"]
-			for i in xrange(len(self.value)):
-				if self.value[i] != None: sval[i] = str(self.value[i])
-			return string.join(sval,' ')
-		else:
-			# with index defined, return just the one string
-			if self.value[index] == None:
-				return "INDEF"
-			else:
-				return str(self.value[index])
 
 	def coerceValue(self,value,strict=0):
 		if (not type(value) in [ListType,TupleType]) or len(value) != self.dim:
