@@ -583,7 +583,7 @@ class string_group(pgroup):
 		
 	def gcontinue(self, line, pos):
 	
-		start = pos + len(self.terminating_str)
+		start = pos
 		while 1:
 			posnext, fstring = find_next_in_set(line, start,
 				self.search_set + [self.terminating_str])
