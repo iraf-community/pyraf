@@ -1439,26 +1439,29 @@ class IrafGkiConfig:
         # ratio of font height to width
         self.fontAspect = 42./27.
         self.fontMax2MinSizeRatio = 4.
-        # Empirical constants for font sizes; try xterm fractions for now
-        self.UnitFontHWindowFraction = 1./100
-        self.UnitFontVWindowFraction = 1./35
-        # minimum unit font size in pixels
-        self.minUnitHFontSize = 7.
+
+        # Empirical constants for font sizes
+        self.UnitFontHWindowFraction = 1./80
+        self.UnitFontVWindowFraction = 1./45
+
+        # minimum unit font size in pixels (set to None if not relevant)
+        self.minUnitHFontSize = 5.
         self.minUnitVFontSize = self.minUnitHFontSize * self.fontAspect
-        # maximum unit font size in pixels
+
+        # maximum unit font size in pixels (set to None if not relevant)
         self.maxUnitHFontSize = \
                 self.minUnitHFontSize * self.fontMax2MinSizeRatio
         self.maxUnitVFontSize = self.maxUnitHFontSize * self.fontAspect
+
         # offset constants to match iraf's notion of where 0,0 is relative
         # to the coordinates of a character
         self.vFontOffset = 0.0
         self.hFontOffset = 0.0
-        # font sizing switches
+
+        # font sizing switch
         self.isFixedAspectFont = 1
-        self.hasMinPixSizeUnitFont = 1
-        self.hasMaxPixSizeUnitFont = 1
-        # The following is a list of rgb tuples (0.0-1.0 range) for the
-        # default IRAF set of colors
+
+        # List of rgb tuples (0.0-1.0 range) for the default IRAF set of colors
         self.defaultColors = [
                 (0.,0.,0.),  # black
                 (1.,1.,1.),  # white
@@ -1513,27 +1516,25 @@ class IrafGkiConfig:
         wide and vertical size for the converse.
         """
 
-        hWin = gwidget.winfo_width()
-        vWin = gwidget.winfo_height()
-        hSize = hWin * self.UnitFontHWindowFraction
-        vSize = vWin * self.UnitFontVWindowFraction*self.fontAspect
+        hwinsize = gwidget.winfo_width()
+        vwinsize = gwidget.winfo_height()
+        hsize = hwinsize * self.UnitFontHWindowFraction
+        vsize = vwinsize * self.UnitFontVWindowFraction
+        if self.minUnitHFontSize is not None:
+            hsize = max(hsize,self.minUnitHFontSize)
+        if self.minUnitVFontSize is not None:
+            vsize = max(vsize,self.minUnitVFontSize)
+        if self.maxUnitHFontSize is not None:
+            hsize = min(hsize,self.maxUnitHFontSize)
+        if self.maxUnitVFontSize is not None:
+            vsize = min(vsize,self.maxUnitVFontSize)
         if not self.isFixedAspectFont:
-            if self.hasMinPixSizeUnitFont:
-                hSize = max(hSize,self.minUnitHFontSize)
-                vSize = max(vSize,self.minUnitVFontSize)
-            if self.config.hasMaxPixSizeUnitFont:
-                hSize = min(hSize,self.maxUnitHFontSize)
-                vSize = min(hSize,self.maxUnitVFontSize)
-            fontAspect = vSize/hSize
+            fontAspect = vsize/hsize
         else:
-            hSize = min(hSize,vSize/self.fontAspect)
-            if self.hasMinPixSizeUnitFont:
-                hSize = max(hSize,self.minUnitHFontSize)
-            if self.hasMaxPixSizeUnitFont:
-                hSize = min(hSize,self.maxUnitHFontSize)
-            vSize = hSize * self.fontAspect
+            hsize = min(hsize, vsize/self.fontAspect)
+            vsize = hsize * self.fontAspect
             fontAspect = self.fontAspect
-        return (hSize, fontAspect)
+        return (hsize, fontAspect)
 
     def getIrafColors(self):
 
