@@ -70,8 +70,9 @@ def IrafExecute(task, envdict):
 		raise exc
 	return
 
-_re_chan_len = re.compile(r'\((\d+),(\d+)\)$')
-_re_parmset = re.compile(r'([a-zA-Z_][a-zA-Z0-9_.]*)\s*=\s*(.*)\n')
+_re_chan_len = re.compile(r'\((\d+),(\d+)\)\n')
+_re_paramset = re.compile(r'([a-zA-Z_][a-zA-Z0-9_.]*)\s*=\s*(.*)\n')
+_re_paramrequest = re.compile(r'=([a-zA-Z_$][a-zA-Z0-9_.]*)\n')
 
 def IrafIO(process,task):
 
@@ -80,6 +81,7 @@ def IrafIO(process,task):
 
 	global stdgraph
 	msg = ''
+	xferline = ''
 	while 1:
 		# each read may return multiple lines; only
 		# read new data when old has been used up
@@ -96,8 +98,10 @@ def IrafIO(process,task):
 				raise IrafProcessError("Illegal xmit command format\n" + msg)
 			chan = int(mo.group(1))
 			nbytes = int(mo.group(2))
-			# this is always the last command in a message
-			msg = ''
+			# this must always be the last command in a message
+			msg = msg[mo.end():]
+			if msg: raise IrafProcessError("Bad xmit: " +
+					`len(msg)` + " bytes follow request")
 			xdata = ReadFromIrafProc(process)
 			if len(xdata) != 2*nbytes:
 				raise IrafProcessError("Error, wrong number of bytes read\n" +
@@ -156,36 +160,45 @@ def IrafIO(process,task):
 			chan = int(mo.group(1))
 			nbytes = int(mo.group(2))
 			if chan == 3:
-				# read a line from stdin
-				# flush output to make sure prompts without newlines appear
+				# Flush output to make sure prompts without newlines appear
 				sys.stdout.flush()
-				# send two messages, the first with the number of characters
-				# in the line and the second with the line itself
-				line = sys.stdin.readline()
-				WriteStringToIrafProc(process, str(len(line)))
-				# for very long lines, may need multiple messages
-				# XXX not really tested yet -- e.g. is message
-				# limit in bytes or characters?  I'm assuming bytes
+
+				# Read a line from stdin unless xferline already has
+				# some untransmitted data from a previous read
+
+				if not xferline: xferline = sys.stdin.readline()
+
+				# Send two messages, the first with the number of characters
+				# in the line and the second with the line itself.
+				# For very long lines, may need multiple messages.  Task
+				# will keep sending xfer requests until it gets the
+				# newline.
+
 				nchars = nbytes/2
-				i = 0
-				while i<len(line):
-					WriteStringToIrafProc(process, line[i:i+nchars])
-					i = i + nchars
+				lsection = xferline[:nchars]
+				WriteStringToIrafProc(process, str(len(lsection)))
+				WriteStringToIrafProc(process, lsection)
+				xferline = xferline[nchars:]
 			else:
 				raise IrafProcessError("xfer request for unknown channel " +
 					msg)
-			# this is always the last command in a message
-			msg = ''
+			# this must always be the last command in a message
+			msg = msg[mo.end():]
+			if msg: raise IrafProcessError("Bad xfer: " +
+					`len(msg)` + " bytes follow request")
 		elif msg[0] == '=':
-			# param get request
-			# XXX is this correct?  Can this command be stacked?
-			# If so, need to match to end of line
-			value = msg[1:-1]
-			msg = ''
-			WriteStringToIrafProc(process, task.getParam(value) + '\n')
+			# parameter get request
+			mo = _re_paramrequest.match(msg)
+			if mo:
+				paramname = mo.group(1)
+				WriteStringToIrafProc(process, task.getParam(paramname) + '\n')
+				msg = msg[mo.end():]
+			else:
+				raise IrafProcessError("Bad parameter request from task: " +
+					msg)
 		else:
 			# last possibility: set value of parameter
-			mo = _re_parmset.match(msg)
+			mo = _re_paramset.match(msg)
 			if mo:
 				msg = msg[mo.end():]
 				paramname, newvalue = mo.groups()
