@@ -364,12 +364,16 @@ class FocusController:
 			if focusEntity:
 				focusEntity.saveCursorPos()
 
-	def setFocusTo(self,focusTarget):
+	def setFocusTo(self,focusTarget,always=0):
 
 		"""focusTarget can be a string or a FocusEntity. It is possible to
 		give a FocusEntity that is not in focusEntities (so it isn't
 		considered part of the focus family, but is part of the restore
-		chain.)"""
+		chain.)
+		
+		If always is true, target is added to stack even if it is already
+		the focus (useful for pairs of setFocusTo/restoreLast calls.)
+		"""
 		if not self.hasGraphics:
 			return
 		current = self.focusStack[-1]
@@ -378,7 +382,7 @@ class FocusController:
 		else:
 			next = focusTarget
 		# only append if focus stack last entry different from new
-		if next != self.focusStack[-1]:
+		if next != self.focusStack[-1] or always:
 			self.focusStack.append(next)
 		if self.focusInFamily():
 			current.saveCursorPos()

@@ -264,7 +264,7 @@ class StatusLine:
 		self.windowName = gwm.getActiveWindowName()
 	def readline(self):
 		"""Shift focus to graphics, read line from status, restore focus"""
-		wutil.focusController.setFocusTo(self.windowName)
+		wutil.focusController.setFocusTo(self.windowName,always=1)
 		rv = self.graphicsWindow.status.readline()
 		wutil.focusController.restoreLast()
 		return rv
