@@ -1,16 +1,16 @@
 """module irafglobals.py -- widely used IRAF constants and objects
 
-yes, no                 Boolean values
-IrafError               Standard IRAF exception
-Verbose                 Flag indicating verbosity level
-pyrafDir                Directory with these Pyraf programs
+yes, no         Boolean values
+IrafError       Standard IRAF exception
+Verbose         Flag indicating verbosity level
+pyrafDir        Directory with these Pyraf programs
 userIrafHome    User's IRAF home directory (./ or ~/iraf/)
 userWorkingHome User's working home directory (the directory
-                                when this module gets imported.)
-EOF                             End-of-file indicator object
-INDEF                   Undefined object
-IrafTask                "Tag" class for IrafTask type.
-IrafPkg                 "Tag" class for IrafPkg type
+                when this module gets imported.)
+EOF             End-of-file indicator object
+INDEF           Undefined object
+IrafTask        "Tag" class for IrafTask type.
+IrafPkg         "Tag" class for IrafPkg type
 
 This is defined so it is safe to say 'from irafglobals import *'
 
