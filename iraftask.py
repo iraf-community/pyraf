@@ -5,7 +5,7 @@ $Id$
 R. White, 1999 March 2
 """
 
-import sys, os, string, re, minmatch, types, time
+import sys, os, string, re, types, time
 import iraf, irafpar, irafexecute, minmatch
 
 # -----------------------------------------------------
