@@ -93,9 +93,6 @@ class GkiIrafKernel(gki.GkiKernel):
 				#XXX irafexecute
 				#XXX task(Stdin=tmpfn,device=device,generic="yes")
 
-				# Set stdin/out to defaults because if they have been
-				# redirected the task will try to read from them.
-				self.task(tmpfn,device=device,generic="yes",
-					Stdin=sys.__stdin__, Stdout=sys.__stdout__)
+				self.task(tmpfn,device=device,generic="yes")
 			finally:
 				os.remove(tmpfn)
