@@ -5,7 +5,7 @@
 #
 
 #Python version (e.g.2.0, 2.1, 2.2)
-PYTHONVERSION=2.2
+PYTHONVERSION=2.3
 
 
 #path to Mesa or OpenGL include dir
