@@ -1327,16 +1327,19 @@ class Tree2Python(GenericASTTraversal):
 		elif '.' in s:
 
 			# Looks like a task.parameter or field reference
-			# Add 'Vars.' or 'iraf.' prefix to name.
+			# Add 'Vars.' or 'iraf.' or 'taskObj.' prefix to name.
 			# Also look for special p_ extensions -- need to use parameter
 			# objects instead of parameter values if they are specified.
 
 			attribs = string.split(s,'.')
-			if len(attribs)==2 and self.vars.has_key(attribs[0]):
+			ipf = irafpar.isParField(attribs[-1])
+			if self.vars.has_key(attribs[0]):
 				attribs.insert(0, 'Vars')
+			elif ipf and (len(attribs)==2):
+				attribs.insert(0, 'taskObj')
 			else:
 				attribs.insert(0, 'iraf')
-			if irafpar.isParField(attribs[-1]):
+			if ipf:
 				attribs[-2] = 'getParObject(' + `attribs[-2]` +  ')'
 			self.write(string.join(attribs,'.'),
 					node.requireType, node.exprType)

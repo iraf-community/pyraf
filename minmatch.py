@@ -135,13 +135,14 @@ class MinMatchDict(UserDict):
 		key = self.getfullkey(key)
 		return self.data[key]
 
-	def get(self, key, failobj=None):
+	def get(self, key, failobj=None, exact=0):
 		"""Raises exception if key is ambiguous"""
-		key = self.getfullkey(key,new=1)
+		if not exact:
+			key = self.getfullkey(key,new=1)
 		return self.data.get(key,failobj)
 
 	def get_exact_key(self, key, failobj=None):
-		"""Raises exception if key does not match exactly"""
+		"""Returns failobj if key does not match exactly"""
 		return self.data.get(key,failobj)
 
 	def __delitem__(self, key):
@@ -161,9 +162,10 @@ class MinMatchDict(UserDict):
 		self.mmkeys = None
 		self.data.clear()
 
-	def has_key(self, key):
+	def has_key(self, key, exact=0):
 		"""Raises an exception if key is ambiguous"""
-		key = self.getfullkey(key,new=1)
+		if not exact:
+			key = self.getfullkey(key,new=1)
 		return self.data.has_key(key)
 
 	def has_exact_key(self, key):

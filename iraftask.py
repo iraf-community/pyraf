@@ -128,10 +128,41 @@ class IrafTask:
 		self.initTask(force=1)
 		return self._currentParList.getParDict()
 
-	def getParObject(self,param):
-		"""Get the IrafPar object for a parameter"""
+	def getParObject(self,paramname,exact=0,alldict=0):
+		"""Get the IrafPar object for a parameter
+		
+		If exact is set, param name must match exactly.
+		If alldict is set, look in all dictionaries (default is
+		just this task's dictionaries.)
+		"""
 		self.initTask()
-		return self._currentParList.getParObject(param)
+
+		# search the standard dictionaries for the parameter
+		# most of the time it will be in the active task dictionary
+		if self._runningParList is not None:
+			paramdict = self._runningParList.getParDict()
+		elif self._currentParList is not None:
+			paramdict = self._currentParList.getParDict()
+		else:
+			paramdict = None
+		try:
+			if paramdict and paramdict.has_key(paramname,exact=exact):
+				return paramdict[paramname]
+		except minmatch.AmbiguousKeyError, e:
+			# re-raise the error with a bit more info
+			raise iraf.IrafError("Cannot get parameter `%s'\n%s" %
+				(paramname, str(e)))
+
+		if alldict:
+			# OK, the easy case didn't work -- now initialize the
+			# complete parDictList (if necessary) and search them all
+
+			if self._parDictList is None: self._setParDictList()
+			for dictname, paramdict in self._parDictList:
+				if paramdict.has_key(paramname,exact=exact):
+					return paramdict[paramname]
+
+		raise iraf.IrafError("Unknown parameter requested: " + paramname)
 
 	def getAllMatches(self,param):
 		"""Return list of names of all parameters that may match param"""
@@ -279,7 +310,7 @@ class IrafTask:
 	# task parameter access
 	#---------------------------------------------------------
 
-	def setParam(self,qualifiedName,newvalue,check=1):
+	def setParam(self,qualifiedName,newvalue,check=1,exact=0):
 		"""Set parameter specified by qualifiedName to newvalue.
 
 		qualifiedName can be a simple parameter name or can be
@@ -331,7 +362,7 @@ class IrafTask:
 			paramdict = self._currentParList.getParDict()
 		else:
 			paramdict = {}
-		if paramdict.has_key(paramname):
+		if paramdict.has_key(paramname,exact=exact):
 			paramdict[paramname].set(newvalue,index=pindex,
 				field=field,check=check)
 			return
@@ -341,7 +372,7 @@ class IrafTask:
 
 		if self._parDictList is None: self._setParDictList()
 		for dictname, paramdict in self._parDictList:
-			if paramdict.has_key(paramname):
+			if paramdict.has_key(paramname,exact=exact):
 				paramdict[paramname].set(newvalue,index=pindex,
 					field=field,check=check)
 				return
@@ -349,7 +380,7 @@ class IrafTask:
 			raise iraf.IrafError("Attempt to set unknown parameter " +
 				qualifiedName)
 
-	def getParam(self,qualifiedName,native=0,mode=None):
+	def getParam(self,qualifiedName,native=0,mode=None,exact=0):
 		"""Return parameter specified by qualifiedName.
 
 		qualifiedName can be a simple parameter name or can be
@@ -357,13 +388,18 @@ class IrafTask:
 		Paramname can also have an optional subscript, "param[1]".
 		If native is non-zero, returns native format (e.g. float for
 		floating point parameter.)  Default is return string value.
+		If exact is set, parameter name must match exactly.  Default
+		is to do minimum match.
 		"""
 
 		package, task, paramname, pindex, field = _splitName(qualifiedName)
 
 		if (not task) or (task == self._name):
 			# no task specified, just search the standard dictionaries
-			return self._getParValue(paramname, pindex, field, native, mode)
+			return self._getParValue(paramname, pindex, field, native, mode,
+				exact=exact)
+
+		# when task is specified, ignore exact flag -- always do minmatch
 
 		# special syntax for package parameters
 		if task == "_": task = self._pkgname
@@ -392,7 +428,7 @@ class IrafTask:
 			raise iraf.IrafError(str(e) + "\nFailed to get parameter " +
 				qualifiedName)
 
-	def _getParValue(self, paramname, pindex, field, native, mode):
+	def _getParValue(self, paramname, pindex, field, native, mode, exact=0):
 		# search the standard dictionaries for the parameter
 		# most of the time it will be in the active task dictionary
 		if self._runningParList is not None:
@@ -402,7 +438,7 @@ class IrafTask:
 		else:
 			paramdict = None
 		try:
-			if paramdict and paramdict.has_key(paramname):
+			if paramdict and paramdict.has_key(paramname,exact=exact):
 				return self._getParFromDict(paramdict, paramname, pindex,
 								field, native, mode)
 		except minmatch.AmbiguousKeyError, e:
@@ -415,7 +451,7 @@ class IrafTask:
 
 		if self._parDictList is None: self._setParDictList()
 		for dictname, paramdict in self._parDictList:
-			if paramdict.has_key(paramname):
+			if paramdict.has_key(paramname,exact=exact):
 				return self._getParFromDict(paramdict, paramname, pindex,
 								field, native, mode="h")
 		else:
@@ -635,7 +671,7 @@ class IrafTask:
 		if pmode == "a":
 			pmode = mode or self.getMode()
 		v = par.get(index=pindex,field=field,
-				native=native,mode=pmode)
+					native=native,mode=pmode)
 		if type(v) is types.StringType and v[:1] == ")":
 
 			# parameter indirection: call getParam recursively
@@ -907,14 +943,60 @@ class ParDictListSearch:
 	def __getattr__(self, paramname):
 		if paramname[:1] == '_':
 			raise AttributeError(paramname)
+		# try exact match
 		try:
-			return self._taskObj.getParam(paramname,native=1,mode="h")
-		except SyntaxError, e:
+			return self._taskObj.getParam(paramname,native=1,mode="h",exact=1)
+		except iraf.IrafError, e:
+			pass
+		# try minimum match
+		try:
+			p = self._taskObj.getParObject(paramname,alldict=1)
+		except iraf.IrafError, e:
+			# not found at all
 			raise AttributeError(str(e))
+		# it was found, but we don't allow min-match in CL scripts
+		# print a more useful message
+		raise AttributeError(
+			"Unknown parameter `%s' (possibly intended `%s'?)" %
+			(paramname, p.name))
+
+	def getParObject(self, paramname):
+		# try exact match
+		try:
+			return self._taskObj.getParObject(paramname,exact=1,alldict=1)
+		except iraf.IrafError, e:
+			pass
+		# try minimum match
+		try:
+			p = self._taskObj.getParObject(paramname,alldict=1)
+		except iraf.IrafError, e:
+			# not found at all
+			raise AttributeError(str(e))
+		# it was found, but we don't allow min-match in CL scripts
+		# print a more useful message
+		raise AttributeError(
+			"Unknown parameter `%s' (possibly intended `%s'?)" %
+			(paramname, p.name))
 
 	def __setattr__(self, paramname, value):
 		if paramname[:1] == '_': raise AttributeError(paramname)
-		self._taskObj.setParam(paramname, value)
+		# try exact match
+		try:
+			return self._taskObj.setParam(paramname,value,exact=1)
+		except iraf.IrafError, e:
+			pass
+		# try minimum match
+		try:
+			p = self._taskObj.getParObject(paramname,alldict=1)
+		except iraf.IrafError, e:
+			# not found at all
+			raise AttributeError(str(e))
+		# it was found, but we don't allow min-match in CL scripts
+		# print a more useful message
+		raise AttributeError(
+			"Unknown parameter `%s' (possibly intended `%s'?)" %
+			(paramname, p.name))
+
 
 # -----------------------------------------------------
 # IRAF CL task class

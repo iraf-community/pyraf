@@ -185,7 +185,7 @@ del flist, field
 def isParField(s):
 	"""Returns true if string s appears to be a parameter field"""
 	try:
-		return (s[:2] == "p_") and _setFieldDict.has_key(s)
+		return (s[:2] == "p_") and _getFieldDict.has_key(s)
 	except minmatch.AmbiguousKeyError, e:
 		# If ambiguous match, assume it is a parameter field.
 		# An exception will doubtless be raised later, but
