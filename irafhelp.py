@@ -114,7 +114,7 @@ def help(object=__main__, variables=1, functions=1, modules=1,
 		vlist = vars(object)
 	except Exception:
 		# just print info on the object itself
-		vstr = _valueString(object)
+		vstr = _valueString(object,verbose=1)
 		try:
 			name = object.__name__
 		except AttributeError:
@@ -198,7 +198,7 @@ def _sortOrder(type):
 		v = _OTHER
 	return v
 
-def _valueString(value):
+def _valueString(value,verbose=0):
 	"""Returns name and, for some types, value of the variable as a string."""
 
 	t = type(value)
@@ -222,6 +222,11 @@ def _valueString(value):
 		# try using Fredrik Lundh's describe on functions
 		try:
 			vstr = vstr + ' ' + describe.describe(value)
+			try:
+				if verbose and value.__doc__:
+					vstr = vstr + "\n" + value.__doc__
+			except:
+				pass
 		except:
 			# oh well, just have to live with type string alone
 			pass

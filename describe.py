@@ -114,7 +114,9 @@ def describe(func, name = None):
 
 	# function name
 	if not name:
-		name = func.func_name
+		# func_name is considered obsolete, use __name__ instead
+		# name = func.func_name
+		name = func.__name__
 		if name == "<lambda>":
 			return "lambda %s" % args
 	return "%s(%s)" % (name, args)
