@@ -11,6 +11,7 @@ import string
 import gkiopengl
 import wutil
 import toglcolors
+import msgiobuffer
 
 nIrafColors = 16
 
@@ -115,14 +116,10 @@ class GraphicsWindow:
 		self.top = Tkinter.Toplevel()
 		self.gwidget = Ptogl.Ptogl(self.top,width=600,height=420,
 								   rgba=colormode)
-		self.gwidget.status = Tkinter.Label(self.top, text="",
-											relief = Tkinter.SUNKEN,
-											borderwidth=1,
-											anchor=Tkinter.W,height=1)
+		self.gwidget.status = msgiobuffer.MsgIOBuffer(self.top, width=600)
 		self.gwidget.redraw = redraw
 		self.top.title(windowName)
-		self.gwidget.status.pack(side=Tkinter.BOTTOM,
-					 fill=Tkinter.X, padx=2, pady=1, ipady=1)
+		self.gwidget.status.msgIO.pack(side=Tkinter.BOTTOM, fill = Tkinter.X)
 		self.gwidget.pack(side = 'top', expand=1, fill='both')
 		self.top.protocol("WM_DELETE_WINDOW", self.gwdestroy)
 		self.gwidget.firstPlotDone = 0
@@ -134,7 +131,7 @@ class GraphicsWindow:
 		"""a write method so that this can be used to capture stdout to
 		status"""
 		
-		self.gwidget.status.config(text=string.rstrip(text))
+		self.gwidget.status.updateIO(text=string.rstrip(text))
 
 	def flush(self):
 		self.gwidget.update_idletasks()

@@ -240,7 +240,7 @@ def _glAppend(opcode, arg):
 		win.iplot.glBuffer.reset()
 		win.iplot.wcs = None
 		win.immediateRedraw()
-		win.status.config(text=" ")
+		win.status.updateIO(text=" ")
 	glarg = (glFunctionTable[opcode],arg)
 	win.iplot.glBuffer.append(glarg)
 
@@ -260,13 +260,16 @@ class StatusLine:
 	def __init__(self):
 
 		self.graphicsWindow = gwm.getActiveWindow()
+	def readline(self):
+   		return self.graphicsWindow.status.readline()
 	def write(self, text):
-   		self.graphicsWindow.status.config(text=string.strip(text))
+   		self.graphicsWindow.status.updateIO(text=string.strip(text))
 	def flush(self):
 		self.graphicsWindow.update_idletasks()
 	def close(self):
 		# clear status line
-		self.graphicsWindow.status.config(text="")
+   		self.graphicsWindow.status.updateIO(text="")
+
 		
 #***********************************************************
 

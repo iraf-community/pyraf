@@ -5,6 +5,7 @@ $Id$
 
 import os, re, signal, string, struct, sys, time, types, Numeric, cStringIO
 import subproc, iraf, gki, gwm, wutil, irafutils, iraftask
+import gkiopengl
 
 #stdgraph = None
 
@@ -309,6 +310,7 @@ class IrafProcess:
 		self.stdin = stdin
 		self.stdout = stdout
 		self.stderr = stderr
+                self.default_stdin  = stdin
 		self.default_stdout = stdout
 		self.default_stderr = stderr
 		try:
@@ -581,6 +583,11 @@ class IrafProcess:
 			line = self.xferline
 			if not line:
 				if self.isatty:
+				        if gki.kernel.stdgraph and gki.kernel.stdgraph.stdout:
+					        self.stdin = gkiopengl.StatusLine()
+				        else:
+					        self.stdin = self.default_stdin
+
 					# tty input, read a single line
 					line = self.stdin.readline()
 				else:
