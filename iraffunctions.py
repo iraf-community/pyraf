@@ -757,7 +757,7 @@ def eparam(*args):
 		try:
 			getTask(taskname).epar()
 		except KeyError, e:
-			_sys.stderr.write("WARNING: Could not find task %s for epar" %
+			_sys.stderr.write("WARNING: Could not find task %s for epar\n" %
 				taskname)
 
 def lparam(*args,**kw):
@@ -771,7 +771,7 @@ def lparam(*args,**kw):
 			try:
 				getTask(taskname).lpar()
 			except KeyError, e:
-				_sys.stderr.write("WARNING: Could not find task %s for lpar" %
+				_sys.stderr.write("WARNING: Could not find task %s for lpar\n" %
 					taskname)
 	finally:
 		redirReset(resetList, closeFHList)
@@ -787,7 +787,7 @@ def dparam(*args,**kw):
 			try:
 				getTask(taskname).dpar()
 			except KeyError, e:
-				_sys.stderr.write("WARNING: Could not find task %s for dpar" %
+				_sys.stderr.write("WARNING: Could not find task %s for dpar\n" %
 					taskname)
 	finally:
 		redirReset(resetList, closeFHList)
