@@ -6,33 +6,36 @@ $Id$
 R. White, 1999 Jan 25
 """
 
-import os, string, re, irafpar, irafexecute, types
+import os, string, re, irafpar, irafexecute, minmatch, types
 
 class IrafError(Exception):
 	pass
  
 # -----------------------------------------------------
 # dictionaries:
-# vars: all IRAF cl variables (defined with set name=value)
-# tasks: all IRAF tasks (defined with task name=value)
-# pkgs: all packages (defined with task name.pkg=value)
-# loaded: loaded packages
+# _vars: all IRAF cl variables (defined with set name=value)
+# _tasks: all IRAF tasks (defined with task name=value)
+# _pkgs: all packages (defined with task name.pkg=value)
+# _loaded: loaded packages
+#
+# _mmtasks: minimum-match dictionary for tasks
+# _mmpkgs: minimum-match dictionary for packages
 # -----------------------------------------------------
 
 # Will want to enhance this to allow a "bye" function that unloads packages.
 # That might be done using a stack of definitions for each task.
 
-# May want to reorganize this so that the tasks and packages
-# are in a single dictionary?
-
-vars = {'iraf': os.environ['iraf'],
+_vars = {'iraf': os.environ['iraf'],
 	'host': os.environ['host'],
 	'hlib': os.environ['hlib'],
 	'arch': '.'+os.environ['IRAFARCH'],
 	'home': os.path.join(os.environ['HOME'],'iraf') }
-tasks = {}
-pkgs = {}
-loaded = {}
+_tasks = {}
+_pkgs = {}
+_loaded = {}
+
+_mmtasks = minmatch.MinMatchDict()
+_mmpkgs = minmatch.MinMatchDict()
 
 _verbose = 0
 
@@ -72,12 +75,13 @@ def help(taskname):
 
 def init():
 	"""Basic initialization of IRAF environment"""
-	global pkgs
-	if len(pkgs) == 0:
+	global _pkgs
+	if len(_pkgs) == 0:
 		readcl('hlib$zzsetenv.def', 'clpackage', 'bin$')
 		# define and load clpackage
 		p = IrafPkg('$', 'clpackage', '.pkg', 'hlib$clpackage.cl', 'clpackage', 'bin$')
-		pkgs['clpackage'] = p
+		_pkgs['clpackage'] = p
+		_mmpkgs['clpackage'] = 'clpackage'
 		p.run()
 		if os.path.exists('login.cl'):
 			readcl('login.cl','clpackage','bin$')
@@ -119,6 +123,8 @@ class IrafTask:
 		self.__parpath = None
 		self.__pars = None
 		self.__pardict = None
+		# _mmpardict is minimum-match parameter dictionary
+		self.__mmpardict = None
 		self.__parDictList = None
 		if filename[0] == '$':
 			# this is a foreign task
@@ -177,29 +183,31 @@ class IrafTask:
 
 	def setHidden(self,value):     self.__hidden = value
 
-	# get value for parameter 'param'
-	def get(self,param):
+	# Check that parameter exists using minimum-matching for name.
+	# Returns full name.
+	def getParName(self,param):
 		if self.__fullpath == None: self.initTask()
 		if not self.__hasparfile:
 			raise SyntaxError("Task "+self.__name+" has no parameter file")
-		else:
-			if self.__pardict.has_key(param):
-				return self.__pardict[param].get()
-			else:
-				raise SyntaxError("No such parameter '" +
-					param + "' for task " + self.__name)
+		parlist = self.__mmpardict.get(param)
+		if not parlist:
+			raise SyntaxError("No such parameter '" +
+				param + "' for task " + self.__name)
+		if len(parlist) > 1:
+			raise SyntaxError("Ambiguous parameter '" +
+				param + "' for task " + self.__name + "\n" +
+				"Could be " + `parlist`)
+		return parlist[0]
 
-	# set task parameter 'param' to value
+	# get value for parameter 'param' with minimum-matching
+	def get(self,param):
+		param = self.getParName(param)
+		return self.__pardict[param].get()
+
+	# set task parameter 'param' to value with minimum-matching
 	def set(self,param,value):
-		if self.__fullpath == None: self.initTask()
-		if not self.__hasparfile:
-			raise SyntaxError("Task "+self.__name+" has no parameter file")
-		else:
-			if self.__pardict.has_key(param):
-				self.__pardict[param].set(value)
-			else:
-				raise SyntaxError("No such parameter '" +
-					param + "' for task " + self.__name)
+		param = self.getParName(param)
+		self.__pardict[param].set(value)
 
 	# allow running task using taskname() or with
 	# parameters as arguments, including keyword=value form.
@@ -224,13 +232,22 @@ class IrafTask:
 				# create the list of parameter dictionaries to use
 				self.setParDictList()
 				# run the task
-				irafexecute.IrafExecute(self, vars)
+				irafexecute.IrafExecute(self, _vars)
 				if _verbose: print 'Successful task termination'
 			except irafexecute.IrafProcessError, value:
 				raise IrafError("Error running IRAF task " + self.__name +
 					"\n" + str(value))
 
 	def setParList(self,*args,**kw):
+		# first expand all keywords to their full names
+		fullkw = {}
+		for key in kw.keys():
+			param = self.getParName(key)
+			if fullkw.has_key(param):
+				raise SyntaxError("Multiple values given for parameter " + 
+					param + " in task " + self.__name)
+			fullkw[param] = kw[key]
+
 		# add positional parameters to the keyword list, checking
 		# for duplicates
 		ipar = 0
@@ -243,15 +260,14 @@ class IrafTask:
 				raise SyntaxError("Too many positional parameters for task " +
 					self.__name)
 			param = self.__pars[ipar].name
-			if kw.has_key(param):
+			if fullkw.has_key(param):
 				raise SyntaxError("Multiple values given for parameter " + 
 					param + " in task " + self.__name)
-			kw[param] = value
+			fullkw[param] = value
 			ipar = ipar+1
 		# now set all keyword parameters
 		# XXX Need to add ability to set pset parameters using keywords too
-		keys = kw.keys()
-		for param in keys: self.set(param,kw[param])
+		for param in fullkw.keys(): self.set(param,fullkw[param])
 		# Number of arguments on command line, $nargs, is used by some IRAF
 		# tasks (e.g. imheader).
 		self.set('$nargs',len(args))
@@ -441,7 +457,7 @@ class IrafTask:
 				pfile = os.path.join(basedir,self.__name + ".par")
 				# check uparm first for scrunched version of par filename
 				# with saved parameters
-				if vars.has_key("uparm"):
+				if _vars.has_key("uparm"):
 					upfile = expand("uparm$" + self.scrunchName() + ".par")
 				else:
 					upfile = None
@@ -463,9 +479,11 @@ class IrafTask:
 						raise IrafError("Cannot find .par file for task " + self.__name)
 				if self.__parpath: self.__pars = irafpar.readpar(self.__parpath)
 				self.__pardict = {}
+				self.__mmpardict = minmatch.MinMatchDict()
 				for i in xrange(len(self.__pars)):
 					p = self.__pars[i]
 					self.__pardict[p.name] = p
+					self.__mmpardict[p.name] = p.name
 	def unlearn(self):
 		if self.__fullpath == None: self.initTask()
 		if self.__hasparfile:
@@ -478,9 +496,11 @@ class IrafTask:
 				raise IrafError("Cannot find .par file for task " + self.__name)
 			self.__pars = irafpar.readpar(self.__parpath)
 			self.__pardict = {}
+			self.__mmpardict = minmatch.MinMatchDict()
 			for i in xrange(len(self.__pars)):
 				p = self.__pars[i]
 				self.__pardict[p.name] = p
+				self.__mmpardict[p.name] = p.name
 	def scrunchName(self):
 		# scrunched version of filename is chars 1,2,last from package
 		# name and chars 1-5,last from task name
@@ -567,12 +587,12 @@ class IrafPkg(IrafTask):
 		_loadedPath.append(self)
 		if not self.__loaded:
 			self.__loaded = 1
-			loaded[self.getName()] = len(loaded)
+			_loaded[self.getName()] = len(_loaded)
 			if _verbose:
 				print "Loading pkg ",self.getName(), "("+self.getFullpath()+")",
 				if self.getHasparfile():
 					print "par", self.getParpath(), \
-						"["+`len(self.getPars())`+"] parameters"
+						"["+`len(self.getPars())`+"] parameters",
 				print
 			readcl(self.getFullpath(), self.getPkgname(), self.getPkgbinary())
 	def __str__(self):
@@ -587,13 +607,26 @@ class IrafPkg(IrafTask):
 # -----------------------------------------------------
 
 def load(pkgname,doprint=1):
-	"""Load an IRAF package by name.
-	Set reload=0 to skip loading if package is already loaded (default
-	is to reload anyway.)"""
-	if not pkgs.has_key(pkgname):
+	"""Load an IRAF package by name."""
+	p = getPkg(pkgname)
+	p.run()
+	if doprint: listtasks(p.getName())
+
+# -----------------------------------------------------
+# Find an IRAF package by name
+# -----------------------------------------------------
+
+def getPkg(pkgname):
+	"""Find an IRAF package by name using minimum match."""
+	fullname = _mmpkgs.get(pkgname)
+	if not fullname:
 		raise KeyError("Package "+pkgname+" is not defined")
-	pkgs[pkgname].run()
-	if doprint: listtasks(pkgname)
+	if len(fullname) > 1:
+		# ambiguous match is OK only if pkgname is the full name
+		if pkgname not in fullname:
+			raise KeyError("Package '" + pkgname + "' is ambiguous, " +
+				"could be " + `fullname`)
+	return _pkgs[fullname[0]]
 
 # -----------------------------------------------------
 # Find an IRAF task by name
@@ -601,27 +634,71 @@ def load(pkgname,doprint=1):
 
 def getTask(taskname):
 	"""Find an IRAF task by name.  Name may be either fully qualified
-	(package.taskname) or just the taskname."""
+	(package.taskname) or just the taskname.  Does minimum match to
+	allow abbreviated names.  Returns an IrafTask object."""
 
 	# Try assuming fully qualified name first
-	task = tasks.get(taskname)
+
+	task = _tasks.get(taskname)
 	if task:
-		if _verbose: print 'found',taskname,'in tasks'
-		return task
-	# Maybe it is a package?  We assume packages have unique names.
-	task = pkgs.get(taskname)
-	if task:
-		if _verbose: print 'found',taskname,'in pkgs'
+		if _verbose: print 'found',taskname,'in task list'
 		return task
 
-	# Search loaded packages in reverse order
+	# Look it up in the minimum-match dictionary
+
+	fullname = _mmtasks.get(taskname)
+	if not fullname:
+		raise KeyError("Task "+taskname+" is not defined")
+	if len(fullname) == 1:
+		# unambiguous match
+		task = _tasks[fullname[0]]
+		if _verbose: print 'found',task.getName(),'in task list'
+		return task
+
+	# Ambiguous match is OK only if taskname is the full name
+	# or if all matched tasks have the same task name.  For example,
+	# (1) 'mem' matches package 'mem0' and task 'restore.mem' -- return
+	#     'restore.mem'.
+	# (2) 'imcal' matches tasks named 'imcalc' in several different
+	#     packages -- return the most recently loaded version.
+	# (3) 'imcal' matches several 'imcalc's and also 'imcalculate'.
+	#     That is an error.
+
+	# look for exact matches, <pkg>.<taskname>
+	trylist = []
+	pkglist = []
+	for name in fullname:
+		sp = string.split(name,'.')
+		if sp[-1] == taskname:
+			trylist.append(name)
+			pkglist.append(sp[0])
+	# return a single exact match
+	if len(trylist) == 1: return _tasks[trylist[0]]
+
+	if not trylist:
+		# no exact matches, see if all tasks have same name
+		sp = string.split(fullname[0],'.')
+		name = sp[-1]
+		pkglist = [ sp[0] ]
+		for i in xrange(len(fullname)-1):
+			sp = string.split(fullname[i+1],'.')
+			if name != sp[-1]:
+				raise KeyError("Task '" + taskname + "' is ambiguous, " +
+					"could be " + `fullname`)
+			pkglist.append(sp[0])
+		trylist = fullname
+	# OK, now trylist has a list of several candidate tasks that differ
+	# only in package.  Search loaded packages in reverse to find
+	# which one was loaded most recently.
 	for i in xrange(len(_loadedPath)):
 		pkg = _loadedPath[-1-i].getName()
-		task = tasks.get(pkg + '.' + taskname)
-		if task:
-			if _verbose: print 'found',pkg+'.'+taskname,'in tasks'
-			return task
-	raise KeyError("Task "+taskname+" is not defined")
+		if pkg in pkglist:
+			# Got it at last
+			j = pkglist.index(pkg)
+			return _tasks[trylist[j]]
+	# None of the packages are loaded?  This presumably cannot happen
+	# now, but could happen once package unloading is implemented.
+	raise KeyError("Task "+taskname+" is not in a loaded package")
 
 # -----------------------------------------------------
 # Run an IRAF task by name
@@ -802,9 +879,11 @@ def readcl(filename,pkgname,pkgbinary):
 				mrest = re_rest.match(line,0)
 				i2 = mrest.end()
 				# If this is package name, load it.  Otherwise print warning.
-				# Ignore trailing parameters on packages
+				# XXX Ignore trailing parameters on packages
 				value = mrest.group('firstword')
-				if pkgs.has_key(value):
+				try:
+					p = getPkg(value)
+					value = p.getName()
 					if value == pkgname:
 						if _verbose:
 							print "Skipping recursive load of package",value
@@ -815,7 +894,7 @@ def readcl(filename,pkgname,pkgbinary):
 						if _verbose and tail != '':
 							print "(Ignoring package parameters '" + tail + "')"
 						load(value,doprint=0)
-				else:
+				except KeyError:
 					if _verbose:
 						print filename + ":	Ignoring '" + line[:i2] + \
 							"' (line " + `nread` + ")"
@@ -884,7 +963,7 @@ def readcl(filename,pkgname,pkgbinary):
 					readcl(value,pkgname,pkgbinary)
 				elif mm.group('varname') != None:
 					name = mm.group('varname')
-					vars[name] = value
+					_vars[name] = value
 				elif mm.group('hidestmt') != None:
 					# hide can take multiple task names
 					mw = re_word.match(value,0)
@@ -907,11 +986,14 @@ def readcl(filename,pkgname,pkgbinary):
 						suffix = mtl.group('tasksuffix')
 						if suffix == '.pkg':
 							newtask = IrafPkg(prefix,name,suffix,value,pkgname,pkgbinary)
-							pkgs[name] = newtask
-							tasks[pkgname+'.'+name] = newtask
+							_pkgs[name] = newtask
+							_mmpkgs[name] = name
+							_tasks[pkgname+'.'+name] = newtask
+							_mmtasks[name] = pkgname+'.'+name
 						else:
 							newtask = IrafTask(prefix,name,suffix,value,pkgname,pkgbinary)
-							tasks[pkgname+'.'+name] = newtask
+							_tasks[pkgname+'.'+name] = newtask
+							_mmtasks[name] = pkgname+'.'+name
 						mtl = re_taskname.match(tlist,mtl.end())
 				else:
 					if _verbose:
@@ -936,7 +1018,7 @@ def readcl(filename,pkgname,pkgbinary):
 # -----------------------------------------------------
 
 # Input string is in format 'name$rest' or 'name$str(name2)' where
-# name and name2 are defined in the vars dictionary.
+# name and name2 are defined in the _vars dictionary.
 # Returns string with IRAF variable name expanded to full host name.
 # Input may also be a comma-separated list of strings to expand,
 # in which case an expanded comma-separated list is returned.
@@ -965,14 +1047,14 @@ def _expand1(instring):
 	if mm == None:
 		mm = __re_var_paren.search(instring)
 		if mm == None: return instring
-		if vars.has_key(mm.group('varname')):
+		if _vars.has_key(mm.group('varname')):
 			return instring[:mm.start()] + \
 				_expand1(mm.group('varname')+'$') + \
 				instring[mm.end():]
 	varname = mm.group('varname')
-	if vars.has_key(varname):
+	if _vars.has_key(varname):
 		# recursively expand string after substitution
-		return _expand1(vars[varname] + instring[mm.end():])
+		return _expand1(_vars[varname] + instring[mm.end():])
 	else:
 		raise IrafError("Undefined variable " + varname + \
 			" in string " + instring)
@@ -1038,7 +1120,7 @@ def listall():
 
 def listpkgs():
 	"""List IRAF packages"""
-	keylist = pkgs.keys()
+	keylist = _pkgs.keys()
 	if len(keylist) == 0:
 		print 'No IRAF packages defined'
 	else:
@@ -1049,7 +1131,7 @@ def listpkgs():
 
 def listloaded():
 	"""List loaded IRAF packages"""
-	keylist = loaded.keys()
+	keylist = _loaded.keys()
 	if len(keylist) == 0:
 		print 'No IRAF packages loaded'
 	else:
@@ -1060,7 +1142,7 @@ def listloaded():
 
 def listtasks(pkglist=None):
 	"""List IRAF tasks, optionally specifying a list of packages to include."""
-	keylist = tasks.keys()
+	keylist = _tasks.keys()
 	if len(keylist) == 0:
 		print 'No IRAF tasks defined'
 	else:
@@ -1069,19 +1151,19 @@ def listtasks(pkglist=None):
 			pkgdict = {}
 			if type(pkglist) is types.StringType: pkglist = [ pkglist ]
 			for p in pkglist:
-				pthis = pkgs.get(p)
-				if pthis:
+				try:
+					pthis = getPkg(p)
 					if pthis.getLoaded():
-						pkgdict[p] = 1
+						pkgdict[pthis.getName()] = 1
 					else:
-						print 'Package',p,'has not been loaded'
-				else:
-					print 'Package',p,'is not defined'
+						print 'Package',pthis.getName(),'has not been loaded'
+				except KeyError, e:
+					print e
 			if not len(pkgdict):
 				print 'No packages to list'
 				return
 		else:
-			pkgdict = pkgs
+			pkgdict = _pkgs
 
 		# print each package separately
 		keylist.sort()
@@ -1089,7 +1171,7 @@ def listtasks(pkglist=None):
 		tlist = []
 		for tname in keylist:
 			pkg, task = string.split(tname,'.')
-			tobj = tasks[tname]
+			tobj = _tasks[tname]
 			if isinstance(tobj,IrafPkg):
 				task = task + '/'
 			elif tobj.getPset():
@@ -1124,11 +1206,11 @@ def listcurrent(n=1):
 
 def listvars():
 	"""List IRAF variables"""
-	keylist = vars.keys()
+	keylist = _vars.keys()
 	if len(keylist) == 0:
 		print 'No IRAF variables defined'
 	else:
 		keylist.sort()
 		for word in keylist:
-			print word + '	= ' + vars[word]
+			print word + '	= ' + _vars[word]
 

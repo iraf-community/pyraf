@@ -6,7 +6,7 @@ $Id$
 R. White, 1999 Jan 5
 """
 
-import os, sys, string, re, irafgcur
+import os, sys, string, re, irafgcur, minmatch
 from types import *
 
 # -----------------------------------------------------
@@ -47,12 +47,21 @@ def IrafParFactory(fields,strict=0):
 		raise SyntaxError("Cannot handle parameter type "+type)
 
 # -----------------------------------------------------
-# IRAF parameter base class
+# Set up minmatch dictionaries for parameter fields
 # -----------------------------------------------------
 
 _getFieldList = ("p_name", "p_xtype", "p_mode", "p_prompt",
 			"p_value", "p_filename", "p_maximum", "p_minimum")
+_getFieldDict = minmatch.MinMatchDict()
+for _field in _getFieldList: _getFieldDict[_field] = _field
+
 _setFieldList = ("p_prompt", "p_value", "p_filename", "p_maximum", "p_minimum")
+_setFieldDict = minmatch.MinMatchDict()
+for _field in _setFieldList: _setFieldDict[_field] = _field
+
+# -----------------------------------------------------
+# IRAF parameter base class
+# -----------------------------------------------------
 
 class IrafPar:
 	"""IRAF parameter base class"""
@@ -74,9 +83,17 @@ class IrafPar:
 		self.choice = None
 		self.prompt = None
 
+	def setChoice(self,s,strict=0):
+		# set choice parameter from string s
+		clist = _getChoice(s,strict)
+		newchoice = len(clist)*[0]
+		for i in xrange(len(clist)):
+			newchoice[i] = self.coerceOneValue(clist[i])
+		self.choice = newchoice
+
 	def getPrompt(self):
 		"""Interactively prompt for parameter value"""
-		pstring = string.split(self.prompt,"\n")[0]
+		pstring = string.strip( string.split(self.prompt,"\n")[0] )
 		if self.choice:
 			schoice = [None]*len(self.choice)
 			for i in xrange(len(self.choice)):
@@ -88,14 +105,24 @@ class IrafPar:
 			pstring = pstring + ":"
 			if self.max != None: pstring = pstring + self.toString(self.max)
 			pstring = pstring + ")"
+		# add current value as default
+		if self.value: pstring = pstring + " (" + self.toString(self.value) + ")"
 		pstring = pstring + ": "
 		print pstring,
 		value = string.strip(sys.stdin.readline())
 		# loop until we get an acceptable value
 		while (1):
 			try:
-				self.set(value)
-				return
+				if value == "":
+					# null input means use current value as default
+					# null default is acceptable only if no min, max or choice
+					if (self.value or self.value == 0) or \
+							(self.choice == None and self.min == None and \
+							self.max == None):
+						return
+				else:
+					self.set(value)
+					return
 			except ValueError, e:
 				print e
 			print pstring,
@@ -134,7 +161,7 @@ class IrafPar:
 			return str(value)
 
 	def getField(self, field):
-		ffield = minMatch(field,_getFieldList)
+		ffield = _getFieldDict.get(field)
 		if not ffield:
 			raise SyntaxError(
 				"Unrecognized or unimplemented parameter field " +
@@ -198,7 +225,7 @@ class IrafPar:
 			return
 
 	def setField(self, value, field, check=1):
-		ffield = minMatch(field,_setFieldList)
+		ffield = _setFieldDict.get(field)
 		if not ffield:
 			raise SyntaxError("Cannot set field " + field +
 				" for parameter " + self.name)
@@ -218,13 +245,7 @@ class IrafPar:
 			self.maximum = self.coerceOneValue(value)
 		elif field == "p_minimum":
 			if type(value) == StringType and '|' in value:
-				value = _stripQuote(value)
-				# new choice list
-				clist = _getChoice(value)
-				newchoice = len(clist)*[0]
-				for i in xrange(len(clist)):
-					newchoice[i] = self.coerceOneValue(clist[i])
-				self.choice = newchoice
+				self.setChoice(_stripQuote(value))
 			else:
 				self.minimum = self.coerceOneValue(value)
 		else:
@@ -250,8 +271,8 @@ class IrafPar:
 				((type(v) is StringType) and (v[0] == ")")):
 			return v
 		elif self.choice != None and not (v in self.choice):
-			raise ValueError("Value '" + str(v) + "' is not in choice list for " +
-				self.name)
+			raise ValueError("Value '" + str(v) +
+				"' is not in choice list for " + self.name)
 		elif (self.min != None and v < self.min) or (self.max != None and v > self.max):
 			raise ValueError("Value '" + str(v) + "' is out of min-max range for " +
 				self.name)
@@ -339,8 +360,7 @@ class IrafParS(IrafPar):
 		if self.type == "s" or ((not strict) and (self.type == "f")):
 			# only min can be defined and it must have choices
 			if fields[4] != "":
-				s = string.strip(fields[4])
-				self.choice = _getChoice(s,strict)
+				self.setChoice(string.strip(fields[4]),strict)
 			if fields[5] != "":
 				if orig_len < 7:
 					raise SyntaxError(
@@ -362,6 +382,12 @@ class IrafParS(IrafPar):
 		self.prompt = fields[6]
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
+	def setChoice(self,s,strict=0):
+		# set choice parameter and min-match dictionary from string
+		self.choice = _getChoice(s,strict)
+		# minimum-match dictionary for choice list
+		self.mmchoice = minmatch.MinMatchDict()
+		for c in self.choice: self.mmchoice[c] = c
 	def coerceOneValue(self,value,strict=0):
 		if value == None:
 			return ""
@@ -370,6 +396,28 @@ class IrafParS(IrafPar):
 			return _stripQuote(value)
 		else:
 			return str(value)
+
+	# slightly modified checkOneValue allows minimum match for
+	# choice strings
+	def checkOneValue(self,v,strict=0):
+		if v == None or v == "" or \
+				((type(v) is StringType) and (v[0] == ")")):
+			return v
+		elif self.choice != None:
+			vchoice = self.mmchoice.get(v)
+			if vchoice == None:
+				raise ValueError("Value '" + str(v) +
+					"' is not in choice list for " + self.name)
+			elif len(vchoice) > 1:
+				raise ValueError("Ambiguous value '" + str(v) +
+					"' from choice list for " + self.name)
+			else:
+				v = vchoice[0]
+		elif (self.min != None and v < self.min) or (self.max != None and v > self.max):
+			raise ValueError("Value '" + str(v) + "' is out of min-max range for " +
+				self.name)
+		return v
+
 
 # -----------------------------------------------------
 # Utility function to strip double quotes off string
@@ -484,10 +532,7 @@ class IrafParI(IrafPar):
 		self.value = self.coerceValue(fields[3],strict)
 		s = string.strip(fields[4])
 		if '|' in s:
-			clist = _getChoice(s,strict)
-			self.choice = len(clist)*[0]
-			for i in xrange(len(clist)):
-				self.choice[i] = self.coerceOneValue(clist[i],strict)
+			self.setChoice(s,strict)
 			if fields[5] != "":
 				if orig_len < 7:
 					raise SyntaxError(
@@ -568,10 +613,7 @@ class IrafParAI(IrafParI):
 		self.value = self.coerceValue(fields[9:9+self.dim],strict)
 		s = string.strip(fields[6])
 		if '|' in s:
-			clist = _getChoice(s,strict)
-			self.choice = len(clist)*[0]
-			for i in xrange(len(clist)):
-				self.choice[i] = self.coerceOneValue(clist[i],strict)
+			self.setChoice(s,strict)
 			if fields[7] != "":
 				if orig_len < 9:
 					raise SyntaxError("Max value illegal when choice list given" +
@@ -730,26 +772,6 @@ def _getChoice(s,strict=0):
 	if i1 < len(s):
 		clist.append(s[i1:])
 	return clist
-
-# -----------------------------------------------------
-# utility routine for minimum match from list of strings
-# -----------------------------------------------------
-
-# this is generally useful and ought to be moved somewhere else...
-
-def minMatch(svalue,slist):
-	"""Search for string svalue in list of strings slist, allowing
-	minimum match so that svalue may match the beginning of the
-	list entries.  Returns a list with all the matching values from
-	slist (empty if none.)"""
-
-	slen = len(svalue)
-	n = len(slist)
-	retlist = []
-	for i in xrange(len(slist)):
-		if svalue == slist[i][:slen]:
-			retlist.append(slist[i])
-	return retlist
 
 # -----------------------------------------------------
 # Read IRAF .par file and return list of parameters
