@@ -1758,10 +1758,6 @@ def gflush(*args, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
-# list of namespaces that were created in pyexecute calls
-# need to keep these around to retain global variables
-_namespacelist = []
-
 def pyexecute(filename, **kw):
     """Execute python code in filename (which may include IRAF path).
 
@@ -1801,7 +1797,6 @@ def pyexecute(filename, **kw):
         namespace = {'PkgName': pkgname, 'PkgBinary': pkgbinary,
             '__file__': efilename}
         execfile(efilename, namespace)
-        _namespacelist.append(namespace)
     finally:
         rv = redirReset(resetList, closeFHList)
     return rv
