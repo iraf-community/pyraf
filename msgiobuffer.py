@@ -83,6 +83,7 @@ class MsgIOBuffer(Frame):
 
         self.msgIO.canvas.f.iomb.entry = Entry(self.msgIO.canvas.f.iomb, 
                                                highlightthickness = 0,
+                                               bg           = "#d9d9d9",
                                                relief       = FLAT,
                                                textvariable = self.entrySetting,
                                                state        = DISABLED, 
