@@ -326,6 +326,7 @@ class EnumEparOption(EparOption):
         self.shortcuts = {}
         trylist = self.paramInfo.choice
         underline = {}
+        charset = string.lowercase + string.digits
         i = 0
         while trylist:
             trylist2 = []
@@ -336,9 +337,14 @@ class EnumEparOption(EparOption):
                     # will try again with next letter
                     trylist2.append(option)
                 elif letter:
-                    self.shortcuts[letter] = option
-                    self.shortcuts[letter.upper()] = option
-                    underline[option] = i
+                    if letter in charset:
+                        self.shortcuts[letter] = option
+                        self.shortcuts[letter.upper()] = option
+                        underline[option] = i
+                    else:
+                        # only allow letters, numbers to be shortcuts
+                        # keep going in case this is an embedded blank (e.g.)
+                        trylist2.append(option)
                 else:
                     # no letters left, so no shortcut for this item
                     underline[option] = -1
