@@ -1,7 +1,7 @@
 """module iraf.py -- parse IRAF package definition files and
 create IRAF task and package lists
 
-@(#)iraf.py v1.39 99/01/28
+$Id$
 
 R. White, 1999 Jan 25
 """

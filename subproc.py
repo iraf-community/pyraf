@@ -15,7 +15,7 @@ Subprocess class features:
 
  - RecordFile class provides record-oriented IO for file-like stream objects.
 
-@(#)subproc.py v1.8 99/01/26
+$Id$
 """
 
 __version__ = "Revision: 1.7r "

@@ -1,3 +1,10 @@
+"""
+Graphics window manager, creates multple toplevel togl widgets for
+use by python plotting
+
+$Id$
+"""
+
 from OpenGL.GL import *
 import Tkinter
 

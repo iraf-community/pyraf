@@ -1,4 +1,7 @@
-"""IRAF GKI interpreter"""
+"""
+IRAF GKI interpreter -- abstract implementation
+$Id$
+"""
 
 import Numeric
 from types import *

@@ -1,7 +1,8 @@
 """Module contains functions to allow the execution of IRAF connected
 subprocesses
 
-@(#)irafexecute.py v1.13 99/01/26"""
+$Id$
+"""
 
 import os, re, signal, string, struct, sys, time
 import subproc

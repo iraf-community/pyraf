@@ -1,7 +1,7 @@
 """module 'irafpar.py' -- parse IRAF .par files and create lists of
 IrafPar objects
 
-@(#)irafpar.py v1.18 99/01/26
+$Id$
 
 R. White, 1999 Jan 5
 """

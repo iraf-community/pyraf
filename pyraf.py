@@ -27,7 +27,7 @@ Brief help:
 
 Other forms will be added later.
 
-@(#)pyraf.py v1.6 99/01/26
+$Id$
 
 R. White, 1999 Jan 25
 """

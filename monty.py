@@ -11,7 +11,7 @@
 """Code for front end interpeter supplying block braces, system escapes,
 and logging
 
-$Id$ $Revision$ $Date$
+$Id$ 
 """
 
 import string, re, sys, os, traceback

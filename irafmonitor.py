@@ -1,3 +1,11 @@
+"""
+Simple scrolling window to log text to. (a throwaway basically)
+
+$Id$
+
+Perry Greenfield
+"""
+
 from Tkinter import *
 from ScrolledText import ScrolledText
 

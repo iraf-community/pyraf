@@ -1,9 +1,9 @@
-# module 'irafload.py' -- parse IRAF package definition files
-#
-# %Z%%M% v%I% %E%
-#
-# R. White, 1998 Dec 16
+"""
+module 'irafload.py' -- parse IRAF package definition files
 
+$Id$
+R. White, 1998 Dec 16
+"""
 import os, string, re, irafpar
 
 # -----------------------------------------------------

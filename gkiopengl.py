@@ -1,3 +1,9 @@
+"""
+OpenGL implementation of the gki kernel class
+
+$Id$
+"""
+
 from OpenGL.GL import *
 from gki import *
 import Numeric
