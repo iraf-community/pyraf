@@ -46,7 +46,7 @@ _loadedPath = []
 # HTML help
 # -----------------------------------------------------
 
-_HelpURL = "http://ra.stsci.edu/cgi-bin/bps/gethelp.cgi?task="
+_HelpURL = "http://ra.stsci.edu/cgi-bin/gethelp.cgi?task="
 
 def help(taskname):
 	"""Display HTML help for given IRAF task in Netscape.
