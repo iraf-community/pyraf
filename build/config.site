@@ -19,5 +19,6 @@ TclLibPath=/opt/X11R5/lib
 
 #path to X11 libraries and header files (uncomment and provide a path
 #only  in  case the configure script cannot find them)
+
 #x_libraries=
 #x_includes=
