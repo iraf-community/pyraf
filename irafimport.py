@@ -21,7 +21,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[]):
 		if fromlist:
 			for task in fromlist:
 				pkg = iraf.getPkg(task,found=1)
-				if pkg and not pkg.getLoaded():
+				if pkg and not pkg.isLoaded():
 					pkg.run(_doprint=0, _hush=1)
 			# must return a module for 'from' import
 			return _irafModuleProxy.module
