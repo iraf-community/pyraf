@@ -720,8 +720,6 @@ class IrafProcess:
             gki.kernel.append(Numeric.fromstring(xdata,'s'))
         elif chan == 7:
             stdimagekernel.append(Numeric.fromstring(xdata,'s'))
-            self.stdout.write("data for STDIMAGE\n")
-            self.stdout.flush()
         elif chan == 8:
             self.stdout.write("data for STDPLOT\n")
             self.stdout.flush()
