@@ -1504,10 +1504,10 @@ class _BooleanMixin:
             return value
         elif value == "":
             return None
-        elif value==yes:
+        elif value==yes or value==True:
             # this handles 1, 1.0, yes, "yes", "YES", "y", "Y"
             return yes
-        elif value==no:
+        elif value==no or value==False:
             # this handles 0, 0.0, no, "no", "NO", "n", "N"
             return no
         if type(value) is types.StringType:
