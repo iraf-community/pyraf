@@ -154,14 +154,18 @@ def saveTerminalCursorPosition():
 	# save current position unless (0,0), then save center position
 	termWinID = getTerminalWindowID()
 	posdict = wutil.getPointerPosition(termWinID)
-	x = posdict['win_x']
-	y = posdict['win_y']
+	if posdict:
+		x = posdict['win_x']
+		y = posdict['win_y']
+	else:
+		x, y = 0, 0
 	#if x == 0 and y == 0:
 	windict = wutil.getWindowAttributes(termWinID)
-	#	x = windict['width']/2
-	#	y = windict['height']/2
-	maxX = windict['width']
-	maxY = windict['height']
+	if windict:
+		maxX = windict['width']
+		maxY = windict['height']
+	else:
+		maxX, maxY = 20,20
 	x = min(max(x,0),maxX)
 	y = min(max(y,0),maxY)
 	setLastTermPos(x,y)
@@ -171,8 +175,11 @@ def saveGraphicsCursorPosition():
 	# save current position unless (0,0), then save center position
 	graphicsWin = getActiveWindow()
 	posdict = wutil.getPointerPosition(graphicsWin.winfo_id())
-	x = posdict['win_x']
-	y = posdict['win_y']
+	if posdict:
+		x = posdict['win_x']
+		y = posdict['win_y']
+	else:
+		x, y = 0, 0
 	maxX = graphicsWin.winfo_width()
 	maxY = graphicsWin.winfo_height()
 	if x == 0 and y == 0:
@@ -194,3 +201,4 @@ def isFocusElsewhere():
 		return 0
 	else:
 		return 1
+
