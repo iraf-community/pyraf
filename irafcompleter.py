@@ -222,9 +222,9 @@ class IrafCompleter(Completer):
 			dir = iraf.Expand(m.group())
 		elif line[-1] == os.sep:
 			# filename is preceded by path separator
-			# match filenames with letters, numbers, '~', '.', and directory
+			# match filenames with letters, numbers, $, ~, . and directory
 			# separator
-			m = re.search(r'[\w.~%s]*$' % os.sep, line)
+			m = re.search(r'[\w.~$%s]*$' % os.sep, line)
 			dir = iraf.Expand(m.group())
 		else:
 			dir = ''

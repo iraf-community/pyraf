@@ -531,6 +531,7 @@ class PsetEparOption(EparOption):
         name = self.value.getName()
         for child in parentToplevel.childList:
             if child.taskName == name:
+                child.top.deiconify()
                 child.top.tkraise()
                 return
         childPsetHandle = epar.EparDialog(self.buttonText, 
