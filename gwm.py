@@ -5,8 +5,7 @@ use by python plotting
 $Id$
 """
 
-import string, wutil, toglcolors, Tkinter
-from OpenGL.GL import *
+import string, wutil, Tkinter
 import gki, gkiopengl
 
 class GWMError(Exception):

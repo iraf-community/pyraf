@@ -302,8 +302,10 @@ def _getContents(vlist, regexp, object):
     return tasklist, pkglist, functionlist, methodlist, modulelist, otherlist
 
 def _printValueList(varlist, hidden, padchars):
+    # special hidden methods to keep (because they are widely useful)
+    _specialHidden = ['__init__', '__call__']
     for vname, value in varlist:
-        if (hidden or vname[0:1] != '_'):
+        if (hidden or vname[0:1] != '_' or vname in _specialHidden):
             vstr = _valueString(value)
             # pad name to padchars chars if shorter
             if len(vname) < padchars:
