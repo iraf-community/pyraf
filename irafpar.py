@@ -1923,13 +1923,21 @@ class IrafParList:
 				value = kw[okey]
 				del kw[okey]
 				kw[key] = value
+
 		# then expand all keywords to their full names
 		fullkw = {}
 		for key in kw.keys():
-			param = self.getParObject(key).name
+			try:
+				param = (self.getParObject(key).name, None)
+			except KeyError, e:
+				# maybe it is pset.param
+				i = string.find(key, '.')
+				if i<=0:
+					raise e
+				param = (self.getParObject(key[:i]).name, key[i+1:])
 			if fullkw.has_key(param):
 				raise SyntaxError("Multiple values given for parameter " +
-					param + " in task " + self.__name)
+					string.join(param,'.') + " in task " + self.__name)
 			fullkw[param] = kw[key]
 
 		# add positional parameters to the keyword list, checking
@@ -1943,19 +1951,23 @@ class IrafParList:
 				# executed if we run out of non-hidden parameters
 				raise SyntaxError("Too many positional parameters for task " +
 					self.__name)
-			param = self.__pars[ipar].name
+			param = (self.__pars[ipar].name, None)
 			if fullkw.has_key(param):
 				raise SyntaxError("Multiple values given for parameter " +
-					param + " in task " + self.__name)
+					param[0] + " in task " + self.__name)
 			fullkw[param] = value
 			ipar = ipar+1
 
 		# now set all keyword parameters
 		# clear changed flags and set cmdline flags for arguments
 		self.clearFlags()
-		for param in fullkw.keys():
+		for key, value in fullkw.items():
+			param, tail = key
 			p = self.getParObject(param)
-			p.set(fullkw[param])
+			if tail is not None:
+				# pset parameter - get parameter object from task
+				p = p.get().getParObject(tail)
+			p.set(value)
 			p.setFlags(_cmdlineFlag)
 
 		# Number of arguments on command line, $nargs, is used by some IRAF
