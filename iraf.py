@@ -144,10 +144,10 @@ def addPkg(pkg):
 # addTask: Add an IRAF task to the tasks list
 # -----------------------------------------------------
 
-def addTask(task):
+def addTask(task, pkgname=None):
 	global _tasks, _mmtasks
 	name = task.getName()
-	pkgname = task.getPkgname()
+	if not pkgname: pkgname = task.getPkgname()
 	fullname = pkgname + '.' + name
 	_tasks[fullname] = task
 	_mmtasks.add(name,fullname)
@@ -1119,7 +1119,8 @@ def envget(var):
 	elif os.environ.has_key(var):
 		return os.environ[var]
 	else:
-		raise KeyError("No IRAF or environment variable '" + var + "'")
+		return ""
+		# raise KeyError("No IRAF or environment variable '" + var + "'")
 
 def defpar(paramname):
 	try:
@@ -1455,6 +1456,9 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 		   pkg.getHasparfile() != newpkg.getHasparfile() or \
 		   pkg.getPkgbinary()  != newpkg.getPkgbinary():
 			print 'Warning: ignoring attempt to redefine package',taskname
+		if pkgname != pkg.getPkgname():
+			# add existing task as an item in the new package
+			addTask(pkg,pkgname=pkgname)
 		return pkg
 	addPkg(newpkg)
 	return newpkg
