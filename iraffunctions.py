@@ -113,14 +113,16 @@ def Init(doprint=1,hush=0):
 	"""Basic initialization of IRAF environment"""
 	global varDict, _pkgs, cl
 	if len(_pkgs) == 0:
-		varDict['iraf'] = _os.environ['iraf']
-		varDict['host'] = _os.environ['host']
-		varDict['hlib'] = _os.environ['hlib']
-		varDict['arch'] = '.'+_os.environ['IRAFARCH']
+		envSet(iraf = _os.environ['iraf'])
+		envSet(host = _os.environ['host'])
+		envSet(hlib = _os.environ['hlib'])
+		envSet(arch = '.'+_os.environ['IRAFARCH'])
+		if _os.environ.has_key('tmp'):
+			envSet(tmp = _os.environ['tmp'])
 		# XXX Note that this setting of home may not be correct -- should
 		# XXX do something more sophisticated like making current directory
 		# XXX home if it contains a login.cl and uparm?
-		varDict['home'] = _os.path.join(_os.environ['HOME'],'iraf','')
+		envSet(home = _os.path.join(_os.environ['HOME'],'iraf',''))
 
 		readCl('hlib$zzsetenv.def', 'clpackage', 'bin$', hush=hush)
 
@@ -133,7 +135,7 @@ def Init(doprint=1,hush=0):
 		# but make it a hidden task
 
 		cl = IrafTaskFactory('','cl','','cl$cl.e','clpackage','bin$')
-		cl.setHidden(1)
+		cl.setHidden()
 
 		# load clpackage
 
@@ -206,7 +208,7 @@ def load(pkgname,args=(),kw=None,doprint=1,hush=0):
 		p = pkgname
 	else:
 		p = getPkg(pkgname)
-	if kw == None: kw = {}
+	if kw is None: kw = {}
 	kw['_doprint'] = doprint
 	kw['_hush'] = hush
 	apply(p.run, tuple(args), kw)
@@ -221,7 +223,7 @@ def run(taskname,args=(),kw=None):
 		t = taskname
 	else:
 		t = getTask(taskname)
-	if kw == None: kw = {}
+	if kw is None: kw = {}
 	apply(t.run, tuple(args), kw)
 
 # -----------------------------------------------------
@@ -978,29 +980,29 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,hush,offset=0):
 				thisState = S_EXECUTE
 
 		if thisState == S_EXECUTE:
-			if mm.group('block') != None:
+			if mm.group('block') is not None:
 				# call _execCl recursively to execute this block
 				b = int(mm.group('block'))
 				offset = _execCl(filename, blist[b], qlist, blist, pkgname,
 							pkgbinary, hush, offset=offset+next-1) - next
-			elif mm.group('ifcondition') != None:
+			elif mm.group('ifcondition') is not None:
 				if _evalCondition(mm.group('ifcondition'),pkgname):
 					state.append(S_SKIP_ELSE)
 					state.append(S_EXECUTE)
 				else:
 					state.append(S_DO_ELSE)
 					state.append(S_SKIP)
-			elif mm.group('else') != None:
+			elif mm.group('else') is not None:
 				# error to encounter else in S_EXECUTE state
 				if Verbose>0:
 					print "Unexpected 'else' statement\n" + \
 						"'" + line + "'\n" + \
 						"(line " + `next+offset` + ", " + filename + ")"
-			elif mm.group('empty') != None:
+			elif mm.group('empty') is not None:
 				# ignore empty statements (but note they do get used
 				# for state changes)
 				pass
-			elif mm.group('value') != None:
+			elif mm.group('value') is not None:
 				# Load packages and execute tasks
 				value = mm.group('firstword')
 				try:
@@ -1029,23 +1031,23 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,hush,offset=0):
 					raise e.__class__("Error at '" + line[:i2] + \
 						"' (line " + `next+offset` + ", " + filename + ")\n" + \
 						str(e))
-			elif mm.group('setfilename') != None:
+			elif mm.group('setfilename') is not None:
 				# This peculiar syntax 'set @filename' only gets used in the
 				# zzsetenv.def file, where it reads extern.pkg.  That file
 				# also gets read (in full cl mode) by clpackage.cl.  I get
 				# errors if I read this during zzsetenv.def, so just ignore
 				# it here...
 				pass
-			elif mm.group('printval') != None:
+			elif mm.group('printval') is not None:
 				# print statement
 				if not hush: print mm.group('printval')
-			elif mm.group('printexpr') != None:
+			elif mm.group('printexpr') is not None:
 				# print statement
 				if not hush: _evalPrint(mm.group('printexpr'),pkgname)
-			elif mm.group('eqprintval') != None:
+			elif mm.group('eqprintval') is not None:
 				# equals print statement
 				if not hush: print mm.group('eqprintval')
-			elif mm.group('errornum') != None:
+			elif mm.group('errornum') is not None:
 				# error(errornum, errormsg)
 				try:
 					errormsg = mm.group('errormsg')
@@ -1055,14 +1057,14 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,hush,offset=0):
 				# try to print something sensible if msg=None
 				if not msg: msg = errormsg
 				raise IrafError('ERROR: ' + msg)
-			elif mm.group('beepstmt') != None:
+			elif mm.group('beepstmt') is not None:
 				# beep statement
 				_sys.stdout.write("")
 				_sys.stdout.flush()
-			elif mm.group('sleeptime') != None:
+			elif mm.group('sleeptime') is not None:
 				# sleep statement
 				try:
-					_time.sleep(float(mm.group('sleeptime')))
+					clSleep(mm.group('sleeptime'))
 				except:
 					if Verbose>0:
 						print "Error in sleep(" + \
@@ -1077,7 +1079,7 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,hush,offset=0):
 					typefile = clEval(mm.group('typeexpr'))
 				# strip quotes
 				mdq = _re_double.match(typefile)
-				if mdq != None: typefile = mdq.group('value')
+				if mdq is not None: typefile = mdq.group('value')
 				try:
 					typefile = Expand(typefile)
 					if (not hush) and _os.path.exists(typefile):
@@ -1090,21 +1092,21 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,hush,offset=0):
 				except SyntaxError:
 					print "WARNING: Could not expand", typefile, \
 						"(line " + `next+offset` + ", " + filename + ")"
-			elif mm.group('packagename') != None:
+			elif mm.group('packagename') is not None:
 				pkgname = mm.group('packagename')
 				spkgname = _string.replace(pkgname, '.', '_')
 				if spkgname != pkgname:
-					print "Warning: '.' illegal in task name, changing", pkgname, \
+					print "Warning: `.' illegal in task name, changing", pkgname, \
 						"to", spkgname
 				pkgname = spkgname
-				if mm.group('packagebin') != None:
+				if mm.group('packagebin') is not None:
 					pkgbinary = mm.group('packagebin')
-			elif mm.group('vartype') != None:
+			elif mm.group('vartype') is not None:
 				# Declaration: currently ignored
 				if Verbose>0:
 					print "Ignoring '" + line[:i2] + \
 						"' (line " + `next+offset` + ", " + filename + ")"
-			elif mm.group('miscstmt') != None:
+			elif mm.group('miscstmt') is not None:
 				# Miscellaneous: parsed but quietly ignored
 				pass
 			else:
@@ -1117,24 +1119,24 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,hush,offset=0):
 
 				value = mmvalue.group('value')
 
-				if mm.group('clredir') != None:
+				if mm.group('clredir') is not None:
 					# open and read this file too
 					if Verbose>1: print "Reading",value
 					readCl(value,pkgname,pkgbinary,hush=hush)
 					if Verbose>1: print "Done reading",value
-				elif mm.group('varname') != None:
+				elif mm.group('varname') is not None:
 					name = mm.group('varname')
 					varDict[name] = value
-				elif mm.group('assign_var') != None:
+				elif mm.group('assign_var') is not None:
 					name = mm.group('assign_var')
 					try:
-						clSet(name,value,pkg=getPkg(pkgname))
+						clParSet(name,value,pkg=getPkg(pkgname))
 					except IrafError:
 						if Verbose>0:
 							print "Ignoring '" + line[:i2] + \
 								"' (line " + `next+offset` + ", " + \
 								filename + ")"
-				elif mm.group('hidestmt') != None:
+				elif mm.group('hidestmt') is not None:
 					# hide can take multiple task names
 					# XXX messy stuff here to allow parenthesized
 					# XXX list of quoted names.  remove this when
@@ -1142,22 +1144,22 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,hush,offset=0):
 					if value[:1] == '(': value = value[1:]
 					if value[-1:] == ')': value = value[:-1]
 					mw = _re_word.match(value,0)
-					while mw != None:
+					while mw is not None:
 						word = mw.group('word')
 						try:
 							word = _irafutils.stripQuotes(word)
-							getTask(word).setHidden(1)
+							getTask(word).setHidden()
 						except KeyError, e:
 							print "WARNING: Could not find task", \
 								word, "to hide (line " + `next+offset` + \
 								", " + filename + ")"
 							print e
 						mw = _re_word.match(value,mw.end())
-				elif mm.group('tasklist') != None:
+				elif mm.group('tasklist') is not None:
 					# assign value to each task in the list
 					tlist = mm.group('tasklist')
 					mtl = _re_taskname.match(tlist)
-					while mtl != None:
+					while mtl is not None:
 						name = mtl.group('taskname')
 						prefix = mtl.group('taskprefix')
 						suffix = mtl.group('tasksuffix')
@@ -1219,7 +1221,7 @@ def _parseLine(line):
 		if line[i1] == '"':
 			# strip off double quotes
 			mdq = _re_double.match(line,i1)
-			if mdq == None:
+			if mdq is None:
 				raise IrafError("Unmatched quotes")
 			mmlist.append(mdq)
 		else:
@@ -1232,18 +1234,18 @@ def _parseLine(line):
 # IRAF utility procedures (used to evaluate if statements)
 # -----------------------------------------------------
 
-def clGet(paramname,pkg=None,native=1):
+def clParGet(paramname,pkg=None,native=1):
 	"""Return value of parameter, which can be a cl task parameter,
 	a package parameter for any loaded package, or a fully qualified
 	(task.param) parameter from any known task."""
-	if pkg==None: pkg = loadedPath[-1]
+	if pkg is None: pkg = loadedPath[-1]
 	return pkg.getParam(paramname,native=native)
 
-def clSet(paramname,value,pkg=None):
+def clParSet(paramname,value,pkg=None):
 	"""Set value of parameter, which can be a cl task parameter,
 	a package parameter for any loaded package, or a fully qualified
 	(task.param) parameter from any known task."""
-	if pkg==None: pkg = loadedPath[-1]
+	if pkg is None: pkg = loadedPath[-1]
 
 	# XXX improve this by evaluating possible parameter expression
 	# XXX (but that requires leaving quotes on string arguments)
@@ -1251,14 +1253,20 @@ def clSet(paramname,value,pkg=None):
 	if value[:1] == "(" and value[-1:] == ")":
 		# try evaluating expressions in parantheses
 		result = clEval(value[1:-1],pkg=pkg,native=0)
-		if result == None: result = value
+		if result is None: result = value
 	else:
 		result = value
 	if Verbose>1:
-		print "clSet name", paramname, "value", `value`, "eval", result
+		print "clParSet name", paramname, "value", `value`, "eval", result
 	pkg.setParam(paramname,result)
 
+def envSet(**kw):
+	"""Set IRAF environment variables"""
+	for keyword, value in kw.items():
+		varDict[keyword] = str(value)
+
 def envget(var):
+	"""Get value of IRAF or OS environment"""
 	if varDict.has_key(var):
 		return varDict[var]
 	elif _os.environ.has_key(var):
@@ -1267,9 +1275,120 @@ def envget(var):
 		return ""
 		# raise KeyError("No IRAF or environment variable '" + var + "'")
 
+def clShow(*args):
+	for arg in args:
+		print envget(arg)
+
+def clPrcache(*args):
+	print "No process cache in Pyraf"
+
+def clFlprcache(*args):
+	print "No process cache in Pyraf"
+
+def clTime():
+	print _time.ctime(time.time())
+
+def clSleep(seconds):
+	_time.sleep(float(seconds))
+
+def clBeep():
+	_sys.stdout.write("")
+	_sys.stdout.flush()
+
+# some dummy routines
+
+def clKeep():
+	pass
+
+def clClbye():
+	pass
+
+def clBye():
+	pass
+
+def clLogout():
+	pass
+
+def clHidetask(*args):
+	for taskname in args:
+		try:
+			getTask(taskname).setHidden()
+		except KeyError, e:
+			print "WARNING: Could not find task", taskname, "to hide"
+
+def clTask(*args, **kw):
+	if len(kw) > 1:
+		raise SyntaxError("More than one `=' in task definition")
+	elif len(kw) < 1:
+		raise SyntaxError("Must be at least one `=' in task definition")
+	s = kw.keys()[0]
+	value = kw[s]
+	# translate 'DOLLAR' embedded in name to '$' (because cannot use $ in Python vars)
+	start = 0
+	i = string.find(s, 'DOLLAR', start)
+	while (i>=0):
+		s = s[:i] + '$' + s[i+6:]
+		start = i+1
+		i = string.find(s, 'DOLLAR', start)
+	args.append(s)
+	# get package info
+	if loadedPath:
+		pkg = loadedPath[-1]
+		pkgname = pkg.getName()
+		pkgbinary = pkg.getPkgbinary()
+	else:
+		pkgname = ''
+		pkgbinary = ''
+
+	# assign value to each task in the list
+	global _re_taskname
+	for tlist in args:
+		mtl = _re_taskname.match(tlist)
+		if not mtl:
+			raise SyntaxError("Illegal task name `%s'" % (tlist,)) 
+		name = mtl.group('taskname')
+		prefix = mtl.group('taskprefix')
+		suffix = mtl.group('tasksuffix')
+		newtask = IrafTaskFactory(prefix,name,suffix,value,
+				pkgname,pkgbinary)
+
+def clPackage(*args, **kw):
+	if len(kw) > 1:
+		raise SyntaxError("More than one `=' in task definition")
+	elif len(kw) < 1:
+		raise SyntaxError("Must be at least one `=' in task definition")
+	args = args + kw.keys()
+	value = kw[args[-1]]
+	# get package info
+	if loadedPath:
+		pkg = loadedPath[-1]
+		pkgname = pkg.getName()
+		pkgbinary = pkg.getPkgbinary()
+	else:
+		pkgname = ''
+		pkgbinary = ''
+
+	# assign value to each task in the list
+	global _re_taskname
+	for tlist in args:
+		mtl = _re_taskname.match(tlist)
+		if not mtl:
+			raise SyntaxError("Illegal task name `%s'" % (tlist,)) 
+		name = mtl.group('taskname')
+		prefix = mtl.group('taskprefix')
+		suffix = mtl.group('tasksuffix')
+		newtask = IrafTaskFactory(prefix,name,suffix,value,
+				pkgname,pkgbinary)
+
+def clPrint(*args):
+	# don't try to emulate cl spacing at moment
+	for arg in args:
+		print arg,
+	print
+
 def defpar(paramname):
 	try:
-		value = clGet(paramname)
+		value = clParGet(paramname)
 		return 1
 	except IrafError, e:
 		# ambiguous name is an error, not found is OK
@@ -1330,7 +1449,7 @@ def _evalCondition(s,pkgname):
 	# extract any quoted strings and replace with marker
 	s, qlist = _markQuotes(s)
 
-	# replace variable names with calls to clGet()
+	# replace variable names with calls to clParGet()
 	s = _re_varname.sub(_convertVar,s)
 
 	# replace '!' by not, except for '!='
@@ -1339,7 +1458,7 @@ def _evalCondition(s,pkgname):
 	# put quoted strings back into expression
 	s = _subMarkedQuotes(s,qlist)
 
-	# pkg gets used in the clGet call
+	# pkg gets used in the clParGet call
 	pkg = getPkg(pkgname)
 	# use native values, not strings
 	native = 1
@@ -1400,9 +1519,9 @@ def clEval(s,qlist=None,pkg=None,native=1):
 	"""Evaluate expression and return value"""
 
 	# extract any quoted strings and replace with markers
-	if qlist == None: s, qlist = _markQuotes(s)
+	if qlist is None: s, qlist = _markQuotes(s)
 
-	# replace variable names with calls to clGet()
+	# replace variable names with calls to clParGet()
 	s = _re_varname.sub(_convertVar,s)
 
 	# replace '!' by not, except for '!='
@@ -1423,8 +1542,8 @@ def clEval(s,qlist=None,pkg=None,native=1):
 		return None
 
 def _convertVar(mm):
-	# convert the matched variable name to a call to clGet
-	return 'clGet("' + mm.group('var') + '",pkg=pkg,native=native)'
+	# convert the matched variable name to a call to clParGet
+	return 'clParGet("' + mm.group('var') + '",pkg=pkg,native=native)'
 
 # -----------------------------------------------------
 # parseArgs: Parse IRAF command-mode arguments
@@ -1528,9 +1647,9 @@ def Expand(instring):
 def _expand1(instring):
 	"""Expand a string with embedded IRAF variables (IRAF virtual filename)"""
 	mm = __re_var_match.match(instring)
-	if mm == None:
+	if mm is None:
 		mm = __re_var_paren.search(instring)
-		if mm == None: return instring
+		if mm is None: return instring
 		if varDict.has_key(mm.group('varname')):
 			return instring[:mm.start()] + \
 				_expand1(mm.group('varname')+'$') + \
