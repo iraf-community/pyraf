@@ -9,6 +9,8 @@
 ** standard python library
 */
 
+/* $Id$ */
+
 void moveCursorTo(int win, int x, int y) {
   Display *d;
   Window w;
