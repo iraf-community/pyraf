@@ -61,7 +61,7 @@ $Id$
 
 R. White, 2000 January 21
 """
-__version__ = "$Revision$"
+__version__ = "v0.5 (2000Mar14)"
 
 import sys, os
 
@@ -91,7 +91,7 @@ def _startCmdline():
 	_pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
 	_pycmdline.start()
 
-print "Pyraf, Python front end to IRAF,", __version__, "(copyright AURA 1999)"
+print "Pyraf, Python front end to IRAF,", __version__, "(copyright AURA 2000)"
 print "Python: " + sys.copyright
 
 if doCmdline:
