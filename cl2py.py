@@ -1688,8 +1688,8 @@ class Tree2Python(GenericASTTraversal):
         # add extra arguments for task, package commands
         newname = _taskList.get(taskname, taskname)
         newname = "iraf." + irafutils.translateName(newname)
-        if taskname == 'task':
-            # task needs additional package, bin arguments
+        if taskname in ('task', 'pyexecute'):
+            # task, pyexecute need additional package, bin arguments
             self.specialDict['PkgName'] = 1
             self.additionalArguments.append("PkgName=PkgName")
             self.additionalArguments.append("PkgBinary=PkgBinary")

@@ -75,6 +75,7 @@ _types = types
 _time = time
 _fnmatch = fnmatch
 _glob = glob
+_linecache = linecache
 _StringIO = StringIO
 _pickle = pickle
 
@@ -89,7 +90,8 @@ _irafpar = irafpar
 _irafexecute = irafexecute
 _cl2py = cl2py
 
-del sys, os, string, re, math, types, time, fnmatch, glob, StringIO, pickle
+del sys, os, string, re, math, types, time, fnmatch, glob, linecache
+del StringIO, pickle
 del minmatch, subproc, wutil
 del irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 
@@ -1756,6 +1758,10 @@ def gflush(*args, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
+# list of namespaces that were created in pyexecute calls
+# need to keep these around to retain global variables
+_namespacelist = []
+
 def pyexecute(filename, **kw):
     """Execute python code in filename (which may include IRAF path).
 
@@ -1765,15 +1771,37 @@ def pyexecute(filename, **kw):
     """
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
-    # these keyword parameters are relevant only outside PyRAF
-    for keyword in ['_save', 'verbose', 'tasknames']:
-        if kw.has_key(keyword):
-            del kw[keyword]
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
     resetList = redirApply(redirKW)
     try:
-        execfile(Expand(filename))
+        # these keyword parameters are relevant only outside PyRAF
+        for keyword in ['_save', 'verbose', 'tasknames']:
+            if kw.has_key(keyword):
+                del kw[keyword]
+        # get package info
+        if kw.has_key('PkgName'):
+            pkgname = kw['PkgName']
+            del kw['PkgName']
+        else:
+            pkgname = curpack()
+        if kw.has_key('PkgBinary'):
+            pkgbinary = kw['PkgBinary']
+            del kw['PkgBinary']
+        else:
+            pkgbinary = curPkgbinary()
+        # fix illegal package names
+        spkgname = pkgname.replace('.', '_')
+        if spkgname != pkgname:
+            _writeError("Warning: `.' illegal in task name, changing "
+                    "`%s' to `%s'" % (pkgname, spkgname))
+            pkgname = spkgname
+        if len(kw):
+            raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        # execute code in a new namespace (including PkgName, PkgBinary)
+        efilename = Expand(filename)
+        namespace = {'PkgName': pkgname, 'PkgBinary': pkgbinary,
+            '__file__': efilename}
+        execfile(efilename, namespace)
+        _namespacelist.append(namespace)
     finally:
         rv = redirReset(resetList, closeFHList)
     return rv
@@ -2034,33 +2062,23 @@ def task(*args, **kw):
 
     resetList = redirApply(redirKW)
     try:
-
         # get package info
-        if loadedPath:
-            pkg = loadedPath[-1]
-            defaultPkgname = pkg.getName()
-            defaultPkgbinary = pkg.getPkgbinary()
-        else:
-            defaultPkgname = ''
-            defaultPkgbinary = ''
-        # override package using special keywords
-        pkgname = kw.get('PkgName')
-        if pkgname is None:
-            pkgname = defaultPkgname
-        else:
+        if kw.has_key('PkgName'):
+            pkgname = kw['PkgName']
             del kw['PkgName']
-        pkgbinary = kw.get('PkgBinary')
-        if pkgbinary is None:
-            pkgbinary = defaultPkgbinary
         else:
+            pkgname = curpack()
+        if kw.has_key('PkgBinary'):
+            pkgbinary = kw['PkgBinary']
             del kw['PkgBinary']
+        else:
+            pkgbinary = curPkgbinary()
         # fix illegal package names
         spkgname = pkgname.replace('.', '_')
         if spkgname != pkgname:
             _writeError("Warning: `.' illegal in task name, changing "
                     "`%s' to `%s'" % (pkgname, spkgname))
             pkgname = spkgname
-
         if len(kw) > 1:
             raise SyntaxError("More than one `=' in task definition")
         elif len(kw) < 1:
@@ -2530,7 +2548,7 @@ def clExecute(s, locals=None, mode="proc",
         codeObject = compile(code,scriptname,'exec')
         # add this script to linecache
         codeLines = code.split('\n')
-        linecache.cache[scriptname] = (0,0,codeLines,taskname)
+        _linecache.cache[scriptname] = (0,0,codeLines,taskname)
         if locals is None: locals = {}
         exec codeObject in locals
         if pycode.vars.proc_name:
