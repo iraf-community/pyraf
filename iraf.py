@@ -160,12 +160,13 @@ def addTask(task, pkgname=None):
 # load: Load an IRAF package by name
 # -----------------------------------------------------
 
-def load(pkgname,args=(),kw={},doprint=1):
+def load(pkgname,args=(),kw=None,doprint=1):
 	"""Load an IRAF package by name."""
 	if isinstance(pkgname,IrafPkg):
 		p = pkgname
 	else:
 		p = getPkg(pkgname)
+	if kw == None: kw = {}
 	kw['_doprint'] = doprint
 	apply(p.run, tuple(args), kw)
 
@@ -173,12 +174,13 @@ def load(pkgname,args=(),kw={},doprint=1):
 # run: Run an IRAF task by name
 # -----------------------------------------------------
 
-def run(taskname,args=(),kw={}):
+def run(taskname,args=(),kw=None):
 	"""Run an IRAF task by name."""
 	if isinstance(taskname,IrafTask):
 		t = taskname
 	else:
 		t = getTask(taskname)
+	if kw == None: kw = {}
 	apply(t.run, tuple(args), kw)
 
 # -----------------------------------------------------
