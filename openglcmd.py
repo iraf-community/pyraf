@@ -39,9 +39,9 @@ def markCross(x, y, size=1., xflag=0, yflag=0):
 
 	gkiX = gkiCoord(x)
 	gkiY = gkiCoord(y)
-	win = gwm.getActiveWindow()
-	width = win.winfo_width()
-	height = win.winfo_height()
+	gwidget = gwm.getActiveWindow()
+	width = gwidget.winfo_width()
+	height = gwidget.winfo_height()
 	xsize = 5./width
 	ysize = 5./height
 	if not xflag:

@@ -1,5 +1,40 @@
 """
 IRAF GKI interpreter -- abstract implementation
+
+The main classes here are GkiKernel and GkiController.
+
+GkiKernel is the base class for graphics kernel implementations.  Methods:
+
+	control() append()
+		Called by irafexecute to plot IRAF GKI metacode.
+	pushStdio() popStdio() getStdin/out/err()
+ 		Hooks to allow text I/O to special graphics devices, e.g. the
+		status line.
+	flush()
+		Flush graphics.  May print or write a file for hardcopy devices.
+	clearReturnData()
+		Empty out return data buffer.
+	gcur()
+		Activate interactive graphics and return key pressed, position, etc.
+	redrawOriginal()
+		Redraw graphics without any annotations, overlays, etc.
+	undoN()
+		Allows annotations etc. to be removed. 
+
+Classes that implement a kernel provide methods named gki_* and control_*
+which are called by the translate and control methods using dispatch
+tables (functionTable and controlFunctionTable).  The complete lists
+of methods are in opcode2name and control2name.  Python introspection
+is used to determine which methods are implemented; it is OK for
+unused methods to be omitted.
+
+GkiProxy is a GkiKernel proxy class that implements the GkiKernel
+interface and allows switching between GkiKernel objects (effectively
+allowing the kernel type to change.)
+
+GkiController is a GkiProxy that allows switching between different
+graphics kernels as directed by commands embedded in the metacode stream.
+
 $Id$
 """
 
@@ -44,41 +79,54 @@ GKI_GETWCS = 27
 
 GKI_ILLEGAL_LIST = (21,22,23,24)
 
-# mapping from gki opcode constants to names (for debug print)
+# Names of methods in GkiKernel that handle the various opcodes
+# This also can be useful for debug prints of opcode values.
 
 opcode2name = {
-	0: 'EOF',
-	1: 'OPENWS',
-	2: 'CLOSEWS',
-	3: 'REACTIVATEWS',
-	4: 'DEACTIVATEWS',
-	5: 'MFTITLE',
-	6: 'CLEARWS',
-	7: 'CANCEL',
-	8: 'FLUSH',
-	9: 'POLYLINE',
-	10: 'POLYMARKER',
-	11: 'TEXT',
-	12: 'FILLAREA',
-	13: 'PUTCELLARRAY',
-	14: 'SETCURSOR',
-	15: 'PLSET',
-	16: 'PMSET',
-	17: 'TXSET',
-	18: 'FASET',
-	19: 'GETCURSOR',
-	20: 'GETCELLARRAY',
-	21: 'ILLEGAL_21',
-	22: 'ILLEGAL_22',
-	23: 'ILLEGAL_23',
-	24: 'ILLEGAL_24',
-	25: 'ESCAPE',
-	26: 'SETWCS',
-	27: 'GETWCS',
+	0: 'gki_eof',
+	1: 'gki_openws',
+	2: 'gki_closews',
+	3: 'gki_reactivatews',
+	4: 'gki_deactivatews',
+	5: 'gki_mftitle',
+	6: 'gki_clearws',
+	7: 'gki_cancel',
+	8: 'gki_flush',
+	9: 'gki_polyline',
+	10: 'gki_polymarker',
+	11: 'gki_text',
+	12: 'gki_fillarea',
+	13: 'gki_putcellarray',
+	14: 'gki_setcursor',
+	15: 'gki_plset',
+	16: 'gki_pmset',
+	17: 'gki_txset',
+	18: 'gki_faset',
+	19: 'gki_getcursor',
+	20: 'gki_getcellarray',
+	21: 'gki_unknown',
+	22: 'gki_unknown',
+	23: 'gki_unknown',
+	24: 'gki_unknown',
+	25: 'gki_escape',
+	26: 'gki_setwcs',
+	27: 'gki_getwcs',
+	}
+
+# control channel opcodes
+
+control2name = {
+	1: 'control_openws',
+	2: 'control_closews',
+	3: 'control_reactivatews',
+	4: 'control_deactivatews',
+	6: 'control_clearws',
+	26: 'control_setwcs',
+	27: 'control_getwcs',
 	}
 
 class EditHistory:
-	"""keeps track of where undoable appends are made so they can be
+	"""Keeps track of where undoable appends are made so they can be
 	removed from the buffer on request. All it needs to know is
 	how much as been added to the metacode stream for each edit.
 	Since the process may add more gki, we distinguish specific edits
@@ -86,27 +134,24 @@ class EditHistory:
 
 	def __init__(self):
 		self.editinfo = []
+
 	def add(self, size, undomarker=0):
 		self.editinfo.append((undomarker,size))
+
 	def NEdits(self):
 		count = 0
 		for undomarker,size in self.editinfo:
 			if undomarker:
 				count = count+1
 		return count
+
 	def popLastSize(self):
-		if len(self.editinfo) > 0:
-			done = 0
-			tsize = 0
-			while not done and len(self.editinfo) > 0:
-				marker, size = self.editinfo[-1]
-				del self.editinfo[-1]
-				tsize = tsize + size
-				if marker:
-					done = 1
-			return tsize
-		else:
-			return 0
+		tsize = 0
+		while len(self.editinfo) > 0:
+			marker, size = self.pop()
+			tsize = tsize + size
+			if marker: break
+		return tsize
 
 class GkiBuffer:
 
@@ -116,11 +161,10 @@ class GkiBuffer:
 	INCREMENT = 50000
 
 	def __init__(self, metacode=None):
-	
-		getwcs = None  # Used to indicate a getwcs instruction was encountered
-		self.editHistory = EditHistory()
-		self.undoable = 0
+
 		if metacode:
+			self.editHistory = EditHistory()
+			self.undoable = 0
 			self.buffer = metacode
 			self.bufferSize = len(metacode)
 			self.bufferEnd = len(metacode)
@@ -130,10 +174,15 @@ class GkiBuffer:
 			# message.
 			self.nextTranslate = 0
 		else:
-			self.buffer = None
-			self.bufferSize = 0
-			self.bufferEnd = 0 
-			self.nextTranslate = 0
+			self.init()
+
+	def init(self):
+		self.buffer = Numeric.zeros(0, Numeric.Int16)
+		self.bufferSize = 0
+		self.bufferEnd = 0
+		self.editHistory = EditHistory()
+		self.undoable = 0
+		self.nextTranslate = 0
 
 	def reset(self):
 
@@ -144,11 +193,8 @@ class GkiBuffer:
 			self.buffer[0:newEnd] = self.buffer[self.nextTranslate:self.bufferEnd]
 			self.bufferEnd = newEnd
 		else:
-			self.buffer = None
-			self.bufferSize = 0
-			self.bufferEnd = 0
-			self.editHistory = EditHistory()
-			self.undoable = 0
+			# complete reset so buffer can shrink sometimes
+			self.init()
 		self.nextTranslate = 0
 
 	def append(self, metacode, isUndoable=0):
@@ -174,16 +220,16 @@ class GkiBuffer:
 		for i in xrange(nUndo):
 			size = self.editHistory.popLastSize()
 			self.bufferEnd = self.bufferEnd - size
+			if size == 0: break
+		if self.bufferEnd <= 0:
+			self.init()
 		# reset translation pointer to beginning so plot gets redone
 		# entirely
 		self.nextTranslate = 0
 
 	def get(self):
-	
-		if self.buffer:
-			return self.buffer[0:self.bufferEnd]
-		else:
-			return self.buffer
+		"""Return buffer contents (as Numeric array, even if empty)"""
+		return self.buffer[0:self.bufferEnd]
 
 	def getNextCode(self):
 		"""Read next opcode and argument from buffer, returning a tuple
@@ -191,15 +237,16 @@ class GkiBuffer:
 		Returns (None,None) on end of buffer or when opcode is truncated."""
 		ip = self.nextTranslate
 		lenMC = self.bufferEnd
+		buffer = self.buffer
 		while ip < lenMC:
-			if self.buffer[ip] == NOP:
+			if buffer[ip] == NOP:
 				ip = ip+1
-			elif self.buffer[ip] != BOI:
+			elif buffer[ip] != BOI:
 				print "WARNING: missynched graphics data stream"
 				# find next possible beginning of instruction
 				ip = ip + 1
 				while ip < lenMC:
-					if self.buffer[ip] == BOI: break
+					if buffer[ip] == BOI: break
 					ip = ip + 1
 				else:
 					# Unable to resync
@@ -207,10 +254,10 @@ class GkiBuffer:
 					break
 			else:
 				if ip+2 >= lenMC: break
-				opcode = self.buffer[ip+1]
-				arglen = self.buffer[ip+2]
+				opcode = buffer[ip+1]
+				arglen = buffer[ip+2]
 				if (ip+arglen) > lenMC: break
-				arg = self.buffer[ip+3:ip+arglen]
+				arg = buffer[ip+3:ip+arglen]
 				ip = ip + arglen
 				if ((opcode < 0) or 
 					(opcode > GKI_MAX_OP_CODE) or
@@ -244,22 +291,21 @@ class GkiReturnBuffer:
 	# Only needed for getcursor and getcellarray, neither of which are
 	# currently implemented.
 	def __init__(self):
-	
+
 		self.fifo = []
-		
+
 	def reset(self):
-	
+
 		self.fifo = []
-	
+
 	def put(self, metacode):
-	
+
 		self.fifo[:0] = metacode
-	
+
 	def get(self):
 
 		if len(self.fifo):
-			metacode = self.fifo[-1]
-			del self.fifo[-1]
+			metacode = self.fifo.pop()
 		else:
 			raise Exception("Attempted read on empty gki input buffer")
 
@@ -269,67 +315,103 @@ class GkiKernel:
 	"""Abstract class intended to be subclassed by implementations of GKI
 	kernels. This is to provide a standard interface to irafexecute"""
 
-	
 	def __init__(self):
-	
-		self.functionTable = gkiFunctionTable
+
+		self.createFunctionTables()
 		self.returnData = None
 		self.errorMessageCount = 0
+		self.stdin = None
+		self.stdout = None
+		self.stderr = None
+		self._stdioStack = []
 		self.gkibuffer = GkiBuffer() # no harm in allocating, doesn't
 		                             # actually allocate space unless
 									 # appended to.
 
-	def _gkiAction(self, opcode, arg):
-		pass
+	def createFunctionTables(self):
+
+		"""Use Python introspection to create function tables"""
+
+		self.functionTable =  [None]*(GKI_MAX_OP_CODE+1)
+		self.controlFunctionTable =  [None]*(GKI_MAX_OP_CODE+1)
+
+		# to protect against typos, make list of all gki_ & control_ methods
+		gkilist, gkidict, classlist = [], {}, [self.__class__]
+		for c in classlist:
+			for b in c.__bases__:
+				classlist.append(b)
+			for name in dir(c):
+				if (name[:4] == "gki_" or name[:8] == "control_") and \
+				  not gkidict.has_key(name):
+					gkilist.append(name)
+					gkidict[name] = 0
+		# now loop over all methods that might be present
+		for opcode, name in opcode2name.items():
+			if hasattr(self, name):
+				self.functionTable[opcode] = getattr(self, name)
+				gkidict[name] = 1
+		# do same for control methods
+		for opcode, name in control2name.items():
+			if hasattr(self, name):
+				self.controlFunctionTable[opcode] = getattr(self, name)
+				gkidict[name] = 1
+		# did we use all the gkidict methods?
+		badlist = []
+		for name, value in gkidict.items():
+			if not value:
+				badlist.append(name)
+		if badlist:
+			raise SyntaxError("Bug: error in definition of class %s\n"
+				"Special method name is incorrect: %s" %
+				(self.__class__.__name__, string.join(badlist," ")))
+
+	def control(self, gkiMetacode):
+		gkiTranslate(gkiMetacode, self.controlFunctionTable)
+		return self.returnData
+
+	def append(self, gkiMetacode, isUndoable=0):
+
+		# append metacode to the buffer
+		buffer = self.getBuffer()
+   		buffer.append(gkiMetacode, isUndoable)
+		# translate and display the metacode
+		self.translate(buffer)
+
+	def translate(self, gkiMetacode):
+		gkiTranslate(gkiMetacode, self.functionTable)
 
 	def errorMessage(self, text):
 
 		if self.errorMessageCount < MAX_ERROR_COUNT:
 			print text
 			self.errorMessageCount = self.errorMessageCount + 1
-	
-	def control(self, gkiMetacode):
-
-		# stub routine to be overridden in subclass. Purpose is to act
-		# on the GKI control instructions destined for that particular
-		# graphics kernel.
-		pass
 
 	def getBuffer(self):
 
 		# Normally, the buffer will be an attribute of the kernel, but
 		# in some cases some kernels need more than one instance (interactive
-		# graphics for example). In those cases, this method will be
+		# graphics for example). In those cases, this method may be
 		# overridden and the buffer will actually reside elsewhere
+
 		return self.gkibuffer
 
-	def append(self, gkiMetacode, isUndoable=0):
-	
-		buffer = self.getBuffer()
-   		buffer.append(gkiMetacode, isUndoable)
-		# a hook for acting on the metacode, but is only a stub routine
-		# that must be overridden in the subclass (or not, depending)
-		self.translate(buffer, self.functionTable)
-
 	def flush(self): pass
+
+	def clear(self):
+		self.gkibuffer.reset()
 
 	def undoN(self, nUndo=1):
 
 		# Remove the last nUndo interactive appends to the metacode buffer
 		buffer = self.getBuffer()
 		buffer.undoN(nUndo)
-		self.translate(buffer, self.functionTable)
+		self.translate(buffer)
 
 	def redrawOriginal(self):
 
 		buffer = self.getBuffer()
 		nUndo =  buffer.editHistory.NEdits()
 		self.undoN(nUndo)
-
-	def translate(self, gkiBuffer, functionTable):
-
-		# stub routine to be overridden in subclass of GkiKernel
-		pass
 
 	def clearReturnData(self):
 
@@ -340,6 +422,52 @@ class GkiKernel:
 		# a default gcur routine to handle all the kernels that aren't
 		# interactive
 		raise iraf.IrafError("The specified graphics device is not interactive")
+
+	# some special routines for getting and setting stdin/out/err attributes
+
+	def pushStdio(self, stdin=None, stdout=None, stderr=None):
+		"""Push current stdio settings onto stack at set new values"""
+		self._stdioStack.append((self.stdin, self.stdout, self.stderr))
+		self.stdin = stdin
+		self.stdout = stdout
+		self.stderr = stderr
+
+	def popStdio(self):
+		"""Restore stdio settings from stack"""
+		if self._stdioStack:
+			self.stdin, self.stdout, self.stderr = self._stdioStack.pop()
+		else:
+			self.stdin, self.stdout, self.stderr = None, None, None
+
+	def getStdin(self, default=None):
+		# if default is a file, don't redirect it
+		# otherwise if graphics is active, redirect to status line
+		try:
+			if (not self.stdin) or \
+			  (default and not default.isatty()):
+				return default
+		except AttributeError:
+			pass
+		return self.stdin
+
+	def getStdout(self, default=None):
+		# if default is a file, don't redirect it
+		# otherwise if graphics is active, redirect to status line
+		try:
+			if (not self.stdout) or \
+			  (default and not default.isatty()):
+				return default
+		except AttributeError:
+			# OK if isatty is missing
+			pass
+		return self.stdout
+
+	def getStderr(self, default=None):
+		# stderr always redirected in graphics mode because IRAF
+		# uses it for GUI code (go figure)
+		return self.stderr or default
+
+
 #*****************************************************************
 
 standardWarning = """
@@ -351,135 +479,9 @@ standardNotImplemented = """
 You have tried to run an IRAF task which requires graphics kernel
 facility not implemented in the Python graphics kernel for IRAF tasks"""
 
-def gki_eof(applyfunc, arg): pass # ignored
-def gki_openws(applyfunc, arg): pass	# handled in control channel
-def gki_closews(applyfunc, arg): pass # handled in control channel
-def gki_reactivatews(applyfunc, arg): pass # ignored
-def gki_deactivatews(applyfunc, arg): pass # ignored
-def gki_mftitle(applyfunc, arg): pass # ignored
-def gki_clearws(applyfunc, arg): apply(applyfunc,(GKI_CLEARWS,(0,)))
+#**********************************************************************
 
-def gki_cancel(applyfunc, arg): gki_clearws(arg)
-
-def gki_flush(applyfunc, arg): apply(applyfunc,(GKI_FLUSH,(arg,)))
-
-def gki_polyline(applyfunc, arg): apply(applyfunc,(GKI_POLYLINE,
-														 (ndc(arg[1:]),)))
-
-def gki_polymarker(applyfunc, arg):	apply(applyfunc, (GKI_POLYMARKER,
-													  (ndc(arg[1:]),)))
-		
-def gki_text(applyfunc, arg):
-	
-#	print "GKI_TEXT:", arg[3:].tostring()
-	x = ndc(arg[0])
-	y = ndc(arg[1])
-	text = arg[3:].astype(Numeric.Int8).tostring()
-	apply(applyfunc,(GKI_TEXT, (x, y, text)))
-
-def gki_fillarea(applyfunc, arg): 
-
-	apply(applyfunc,(GKI_FILLAREA,(ndc(arg[1:]),)))
-
-def gki_putcellarray(applyfunc, arg): 
-	
-	errorMessage(standardNotImplemented)
-	
-def gki_setcursor(applyfunc, arg):
-
-	cursorNumber = arg[0]
-	x = arg[1]/GKI_MAX
-	y = arg[2]/GKI_MAX
-	apply(applyfunc,(GKI_SETCURSOR, (cursorNumber, x, y)))
-	
-def gki_plset(applyfunc, arg):
-
-	linetype = arg[0]
-	linewidth = arg[1]/GKI_FLOAT_FACTOR
-	color = arg[2]
-	apply(applyfunc,(GKI_PLSET, (linetype, linewidth, color)))
-	
-def gki_pmset(applyfunc, arg):
-
-	marktype = arg[0]
-	marksize = arg[1]/GKI_MAX
-	color = arg[2]
-	apply(applyfunc,(GKI_PMSET, (marktype, marksize, color)))
-
-
-def gki_txset(applyfunc, arg):
-
-	charUp = float(arg[0])
-	charSize = arg[1]/GKI_FLOAT_FACTOR
-	charSpace = arg[2]/GKI_FLOAT_FACTOR
-	textPath = arg[3]
-	textHorizontalJust = arg[4]
-	textVerticalJust = arg[5]
-	textFont = arg[6]
-	textQuality = arg[7]
-	textColor = arg[8]
-	apply(applyfunc,(GKI_TXSET, (charUp, charSize, charSpace, textPath,
-		textHorizontalJust, textVerticalJust, textFont,
-		textQuality, textColor)))
-
-def gki_faset(applyfunc, arg):
-
-	fillstyle = arg[0]
-	color = arg[1]
-	apply(applyfunc,(GKI_FASET,(fillstyle, color)))
-
-def gki_getcursor(applyfunc, arg):
-
-	print "GKI_GETCURSOR"
-	raise standardNotImplemented
-	 
-def gki_getcellarray(applyfunc, arg):
-
-	print "GKI_GETCELLARRAY"
-	raise standardNotImplemented
-	
-def gki_unknown(applyfunc, arg): 
-	
-	errorMessage("GKI_UNKNOWN:\n"+standardWarning)
-	
-def gki_escape(applyfunc, arg): print "GKI_ESCAPE"
-def gki_setwcs(applyfunc, arg): pass #print "GKI_SETWCS"
-def gki_getwcs(applyfunc, arg): print "GKI_GETWCS"
-
-# function table
-gkiFunctionTable = [
-	gki_eof,			# 0
-	gki_openws,  
-	gki_closews,
-	gki_reactivatews,
-	gki_deactivatews,
-	gki_mftitle,	# 5
-	gki_clearws,
-	gki_cancel,
-	gki_flush,
-	gki_polyline,
-	gki_polymarker,# 10
-	gki_text,
-	gki_fillarea,
-	gki_putcellarray,
-	gki_setcursor,
-	gki_plset,		# 15
-	gki_pmset,
-	gki_txset,
-	gki_faset,
-	gki_getcursor, # also gki_cursorvalue,
-	gki_getcellarray,#20  also	gki_cellarray,
-	gki_unknown,
-	gki_unknown,
-	gki_unknown,
-	gki_unknown,
-	gki_escape,		# 25
-	gki_setwcs,
-	gki_getwcs]
-
-#**********************************************************************		
-
-def gkiTranslate(metacode, functionTable, applyfunc):
+def gkiTranslate(metacode, functionTable):
 
 	"""General Function that can be used for decoding and interpreting
 	the GKI metacode stream. FunctionTable is a 28 element list containing
@@ -499,41 +501,31 @@ def gkiTranslate(metacode, functionTable, applyfunc):
 	while opcode != None:
 		f = functionTable[opcode]
 		if f is not None:
-			apply(f,(applyfunc,arg))
+			apply(f,(arg,))
 		opcode, arg = gkiBuffer.getNextCode()
 
-class GkiController(GkiKernel):
+class GkiProxy(GkiKernel):
 
-	"""Proxy for the actual kernel being used
+	"""Base class for kernel proxy
 
-	This can gracefully handle changes in kernels which can appear
-	in any open workstation instruction.  It also uses lazy
-	instantiation of the real kernel (which can be expensive).  In
-	one sense it is a factory class that will instantiate the
-	necessary kernels as they are requested.
-
-	Most external modules should access the gki functions through
-	an instance of this class, gki.kernel.
+	stdgraph is an instance of a GkiKernel to which calls are deferred.
+	openKernel() method must be supplied to create a kernel and assign
+	it to stdgraph.
 	"""
 
 	def __init__(self):
 
 		GkiKernel.__init__(self)
 		self.stdgraph = None
-		self.interactiveKernel = None
-		self.functionTable = []
-		self.controlFunctionTable =  [None]*(GKI_MAX_OP_CODE+1)
-		self.controlFunctionTable[GKI_OPENWS] = self.openWS
-		self.devices = None
-		self.lastDevName = None
-		self.gcount = 0 # an activity counter
-		self.lastFlushCount = 0
-		self._stdioStack = []
 
 	def __del__(self):
 		self.flush()
 
-	# most methods simply defer to stdgraph
+	def openKernel(self):
+		raise Exception("bug: do not use GkiProxy class directly")
+
+	# methods simply defer to stdgraph
+	# some create kernel and some simply return if no kernel is defined
 
 	def errorMessage(self, text):
 		if not self.stdgraph: self.openKernel()
@@ -551,9 +543,9 @@ class GkiController(GkiKernel):
 		if not self.stdgraph: self.openKernel()
 		return self.stdgraph.redrawOriginal()
 
-	def translate(self, gkiBuffer, functionTable):
+	def translate(self, gkiMetacode):
 		if not self.stdgraph: self.openKernel()
-		return self.stdgraph.translate(gkiBuffer, functionTable)
+		return self.stdgraph.translate(gkiMetacode)
 
 	def clearReturnData(self):
 		if not self.stdgraph: self.openKernel()
@@ -563,85 +555,84 @@ class GkiController(GkiKernel):
 		if not self.stdgraph: self.openKernel()
 		return self.stdgraph.gcur()
 
-	def reactivateWS(self,dummy,arg):
-		if not self.stdgraph: self.openKernel()
-		return self.stdgraph.reactivateWS(dummy,arg)
-
-	def deactivateWS(self,dummy,arg):
-		if self.stdgraph:
-			self.stdgraph.deactivateWS(dummy,arg)
-
-	def closeWS(self,dummy,arg):
-		if self.stdgraph:
-			return self.stdgraph.closeWS(dummy,arg)
-
-	# some special routines for getting and setting stdin/out/err attributes
+	# keep both local and stdgraph stdin/out/err up-to-date
 
 	def pushStdio(self, stdin=None, stdout=None, stderr=None):
 		"""Push current stdio settings onto stack at set new values"""
 		if self.stdgraph:
-			self._stdioStack.append((self.stdgraph.stdin,
-									self.stdgraph.stdout,
-									self.stdgraph.stderr))
-			self.stdgraph.stdin = stdin
-			self.stdgraph.stdout = stdout
-			self.stdgraph.stderr = stderr
-		else:
-			self._stdioStack.append((None,None,None))
+			self.stdgraph.pushStdio(stdin,stdout,stderr)
+		#YYY still needs work here...
+		self._stdioStack.append((self.stdin, self.stdout, self.stderr))
+		self.stdin = stdin
+		self.stdout = stdout
+		self.stderr = stderr
 
 	def popStdio(self):
 		"""Restore stdio settings from stack"""
+		#YYY still needs work here...
 		if self.stdgraph:
-			self.stdgraph.stdin, \
-			self.stdgraph.stdout, \
-			self.stdgraph.stderr = self._stdioStack.pop()
+			self.stdgraph.popStdio()
+		if self._stdioStack:
+			self.stdin, self.stdout, self.stderr = self._stdioStack.pop()
 		else:
-			self._stdioStack.pop()
-
-	def setStdin(self, arg):
-		if self.stdgraph:
-			self.stdgraph.stdin = arg
-
-	def setStdout(self, arg):
-		if self.stdgraph:
-			self.stdgraph.stdout = arg
-
-	def setStderr(self, arg):
-		if self.stdgraph:
-			self.stdgraph.stderr = arg
+			self.stdin, self.stdout, self.stderr = None, None, None
 
 	def getStdin(self, default=None):
-		# if default is a file, don't redirect it
-		# otherwise if graphics is active, redirect to status line
-		try:
-			if (not self.stdgraph) or (not self.stdgraph.stdin) or \
-			  (default and not default.isatty()):
-				return default
-		except AttributeError:
-			pass
-		return self.stdgraph.stdin
+		if self.stdgraph:
+			return self.stdgraph.getStdin(default)
+		else:
+			return GkiKernel.getStdin(self, default)
 
 	def getStdout(self, default=None):
-		# if default is a file, don't redirect it
-		# otherwise if graphics is active, redirect to status line
-		try:
-			if (not self.stdgraph) or (not self.stdgraph.stdout) or \
-			  (default and not default.isatty()):
-				return default
-		except AttributeError:
-			# OK if isatty is missing
-			pass
-		return self.stdgraph.stdout
+		if self.stdgraph:
+			return self.stdgraph.getStdout(default)
+		else:
+			return GkiKernel.getStdout(self, default)
 
 	def getStderr(self, default=None):
-		# stderr always redirected in graphics mode because IRAF
-		# uses it for GUI code (go figure)
-		if not self.stdgraph:
-			return default
+		if self.stdgraph:
+			return self.stdgraph.getStderr(default)
 		else:
-			return self.stdgraph.stderr or default
+			return GkiKernel.getStderr(self, default)
 
-	# these methods do special processing before calling stdgraph
+	def append(self, arg, isUndoable=0):
+		if self.stdgraph:
+			self.stdgraph.append(arg,isUndoable)
+
+	def control(self, gkiMetacode):
+		if not self.stdgraph: self.openKernel()
+		return self.stdgraph.control(gkiMetacode)
+
+	def flush(self):
+		if self.stdgraph:
+			self.stdgraph.flush()
+
+	def clear(self):
+		if self.stdgraph:
+			self.stdgraph.clear()
+
+class GkiController(GkiProxy):
+
+	"""Proxy for the actual kernel being used
+
+	This can gracefully handle changes in kernels which can appear
+	in any open workstation instruction.  It also uses lazy
+	instantiation of the real kernel (which can be expensive).  In
+	one sense it is a factory class that will instantiate the
+	necessary kernels as they are requested.
+
+	Most external modules should access the gki functions through
+	an instance of this class, gki.kernel.
+	"""
+
+	def __init__(self):
+
+		GkiProxy.__init__(self)
+		self.interactiveKernel = None
+		self.devices = None
+		self.lastDevName = None
+		self.gcount = 0 # an activity counter
+		self.lastFlushCount = 0
 
 	def append(self, arg, isUndoable=0):
 
@@ -655,8 +646,9 @@ class GkiController(GkiKernel):
 
 		# some control functions get executed here because they can
 		# change the kernel
-		gkiTranslate(gkiMetacode, self.controlFunctionTable, self._gkiAction)
+		gkiTranslate(gkiMetacode, self.controlFunctionTable)
 		# rest of control is handled by the kernel
+		if not self.stdgraph: self.openKernel()
 		return self.stdgraph.control(gkiMetacode)
 
 	def flush(self):
@@ -668,7 +660,55 @@ class GkiController(GkiKernel):
 				self.lastFlushCount = self.gcount
 				self.stdgraph.flush()
 
-	def openWS(self, dummy, arg):
+	def openKernel(self, device=None):
+
+		"""This is a generic open function that determines which kernel
+		should become active based on the current value of stdgraph (this
+		will be generalized to allow other means of selecting graphics
+		kernels)"""
+		if not device:
+			device = self.getDevice()
+		kernel = self.devices[device]['kf']
+  		if kernel == 'cl':
+			self.openInteractiveKernel()
+		else:
+			task = self.devices[device]['tn']
+			self.stdgraph = gkiiraf.GkiIrafKernel(device, kernel, task)
+			self.stdin = self.stdgraph.stdin
+			self.stdout = self.stdgraph.stdout
+			self.stderr = self.stdgraph.stderr
+
+	def openInteractiveKernel(self):
+		"""Used so that an existing opened interactive session persists"""
+
+		if not wutil.hasGraphics and not self.interactiveKernel:
+			self.interactiveKernel = GkiNull()
+		if self.interactiveKernel:
+			self.stdgraph = self.interactiveKernel
+		else:
+			self.stdgraph = gwm.getGraphicsWindowManager()
+			self.stdgraph.window()
+			self.interactiveKernel = self.stdgraph
+		self.stdin = self.stdgraph.stdin
+		self.stdout = self.stdgraph.stdout
+		self.stderr = self.stdgraph.stderr
+
+	def control_reactivatews(self,arg):
+		if not self.stdgraph: self.openKernel()
+		func = self.stdgraph.controlFunctionTable[GKI_REACTIVATEWS]
+		if func is not None: func(arg) 
+
+	def control_deactivatews(self,arg):
+		if self.stdgraph:
+			func = self.stdgraph.controlFunctionTable[GKI_DEACTIVATEWS]
+			if func is not None: func(arg) 
+
+	def control_closews(self,arg):
+		if self.stdgraph:
+			closews = self.stdgraph.controlFunctionTable[GKI_CLOSEWS]
+			if closews is not None: closews(arg) 
+
+	def control_openws(self, arg):
 
 		mode = arg[0]
 		device = string.strip(arg[2:].astype(Numeric.Int8).tostring())
@@ -678,7 +718,8 @@ class GkiController(GkiKernel):
 			self.openKernel(device)
 			self.lastDevName = device
 			# call the active kernel's openws function
-			self.stdgraph.controlFunctionTable[GKI_OPENWS](dummy, arg) 
+			func = self.stdgraph.controlFunctionTable[GKI_OPENWS]
+			if func is not None: func(arg) 
 
 	def getDevice(self, device=None):
 		"""Starting with stdgraph, drill until a device is found in
@@ -686,7 +727,7 @@ class GkiController(GkiKernel):
 		if self.devices is None:
 			self.devices = graphcap.GraphCap(iraf.osfn(
 				iraf.envget('graphcap') or 'dev$graphcap'))
-		if device is None:
+		if not device:
 			device = iraf.envget("stdgraph")
 		# protect against circular definitions
 		devstr = device
@@ -700,7 +741,8 @@ class GkiController(GkiKernel):
 				devstr = iraf.envget(pdevstr)
 				if not devstr:
 					raise iraf.IrafError(
-						"No entry found for specified stdgraph device")
+						"No entry found for specified stdgraph device `%s'" %
+						device)
 				elif tried.has_key(devstr):
 					# track back through circular definition
 					s = [devstr]
@@ -717,34 +759,8 @@ class GkiController(GkiKernel):
 					tried[devstr] = pdevstr
 		return device
 
-	def openKernel(self, device=None):
-
-		"""This is a generic open function that determines which kernel
-		should become active based on the current value of stdgraph (this
-		will be generalized to allow other means of selecting graphics
-		kernels"""
-		if not device:
-			device = self.getDevice()
-		kernel = self.devices[device]['kf']
-  		if kernel == 'cl':
-			self.openInteractiveKernel()
-		else:
-			task = self.devices[device]['tn']
-			self.stdgraph = gkiiraf.GkiIrafKernel(device, kernel, task)
-
-	def openInteractiveKernel(self):
-		"""Used so that an existing opened interactive session persists"""
-
-		if not wutil.hasGraphics and not self.interactiveKernel:
-			self.interactiveKernel = GkiNull()
-		if self.interactiveKernel:
-			self.stdgraph = self.interactiveKernel
-		else:
-			self.stdgraph = gkiopengl.GkiOpenGlKernel()
-			self.interactiveKernel = self.stdgraph
-
 class GkiNull(GkiKernel):
-	
+
 	"""A version of the graphics kernel that does nothing except warn the
 	user that it does nothing. Used when graphics display isn't possible"""
 
@@ -755,51 +771,40 @@ class GkiNull(GkiKernel):
 		print "Graphics tasks that attempt to plot to an interactive " + \
 			  "screen will fail"
 		GkiKernel.__init__(self)
-		self.functionTable = []
-		self.controlFunctionTable = [None]*(GKI_MAX_OP_CODE+1)
-		self.controlFunctionTable[GKI_OPENWS] = self.openWS
-		self.controlFunctionTable[GKI_CLOSEWS] = self.closeWS
-		self.controlFunctionTable[GKI_REACTIVATEWS] = self.reactivateWS
-		self.controlFunctionTable[GKI_DEACTIVATEWS] = self.deactivateWS
-		self.controlFunctionTable[GKI_CLEARWS] = self.clearWS
-		self.controlFunctionTable[GKI_SETWCS] = self.setWCS
-		self.controlFunctionTable[GKI_GETWCS] = self.getWCS
 		self.name = 'Null'
 
 	def control(self, gkiMetacode):
-
-		gkiTranslate(gkiMetacode, self.controlFunctionTable, self._gkiAction)
+		gkiTranslate(gkiMetacode, self.controlFunctionTable)
 		return self.returnData
 
-	def openWS(self, dummy, arg):
+	def control_openws(self, arg):
 		raise iraf.IrafError("Unable to plot graphics to screen")
-	def reactivateWS(self, dummy, arg):
-		raise iraf.IrafError("Attempt to access graphics when it isn't available")
-	def getWCS(self, dummy, arg):
-		raise iraf.IrafError("Attempt to access graphics when it isn't available")
 
-	def translate(self, gkiMetacode, fTable): pass
-	def clearWS(self, dummy, arg): pass
-	def deactivateWS(self, dummy, arg): pass
-	def setWCS(self, dummy, arg): pass
-	def closeWS(self, dummy, arg): pass
+	def control_reactivatews(self, arg):
+		raise iraf.IrafError("Attempt to access graphics when "
+			"it isn't available")
+
+	def control_getwcs(self, arg):
+		raise iraf.IrafError("Attempt to access graphics when "
+			"it isn't available")
+
+	def translate(self, gkiMetacode):
+		pass
 
 
 #********************************
 
 def ndc(intarr):
-		
 	return intarr/GKI_MAX_FLOAT
-	
+
 def ndcpairs(intarr):
-	
 	f = ndc(intarr)
 	return f[0::2],f[1::2]
 
 
 # import these last so everything in this module is defined
 
-import gkiopengl, gkiiraf
+import gwm, gkiiraf
 
 # This is the proxy for the current graphics kernel
 

@@ -4,21 +4,16 @@ OpenGL implementation of the gki kernel class
 $Id$
 """
 
+import Numeric, sys, string, wutil
+import Tkinter, msgiobuffer
 from OpenGL.GL import *
-import gki
+import toglcolors
+import gki, openglgcur, opengltext, irafgwcs
 from irafglobals import IrafError
-import Numeric
-import gwm
-import openglgcur
-import irafgwcs
-import wutil
-import sys
-import string
-import opengltext
 
-# open /dev/null for general availability
-devNull = open('/dev/null','w')
-def_stderr = sys.stderr
+import gwm # needed only for delete function
+
+nIrafColors = 16
 
 _errorMessageCount = 0
 MAX_ERROR_COUNT = 3
@@ -35,21 +30,64 @@ def errorMessage(text):
 	elif _errorMessageCount == MAX_ERROR_COUNT:
 		print "\nAdditional graphics error messages suppressed"
 		_errorMessageCount = _errorMessageCount + 1
-			
-class IrafPlot:
 
-	"""An object that groups all the data items needed to support
-    IRAF gki graphics. This object is expected to be an attribute of
-	the togl widget used to display the graphics. Each togl widget
-	should have its own copy of this class object"""
 
-	def __init__(self):
+#*****************************************************************
 
+standardWarning = """
+The graphics kernel for IRAF tasks has just recieved a metacode
+instruction it never expected to see. Please inform the STSDAS
+group of this occurance"""
+
+standardNotImplemented = """
+You have tried to run an IRAF task which requires graphics kernel
+facility not implemented in the Python graphics kernel for IRAF tasks"""
+
+#**********************************************************************
+
+
+class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
+
+	"""OpenGL graphics kernel implementation"""
+
+	def __init__(self, windowName):
+
+		gki.GkiKernel.__init__(self)
+		self.stdin = None
+		self.stdout = None
+		self.stderr = None
+		self.name = 'OpenGL'
+
+		import Ptogl # local substitute for OpenGL.Tk
+					 # (to remove goofy 3d cursor effects)
+					 # import is placed here since it has the side effect
+					 # of creating a tk window, so delay import to
+					 # a time that a window is really needed. Subsequent
+					 # imports will be ignored
+		if Ptogl.createdRoot:
+			Tkinter._default_root.withdraw()
+			Ptogl.createdRoot = 0   # clear so subsequent calls don't redo
+
+		self.irafGkiConfig = IrafGkiConfig()
+		self.windowName = windowName
+		self.colorManager = glColorManager(self.irafGkiConfig.defaultColors)
+
+		self.top = Tkinter.Toplevel()
+		self.gwidget = Ptogl.Ptogl(self.top,width=600,height=420,
+								   rgba=self.colorManager.rgbamode)
+		self.gwidget.status = msgiobuffer.MsgIOBuffer(self.top, width=600)
+		self.gwidget.redraw = self.redraw
+		self.top.title(windowName)
+		self.gwidget.status.msgIO.pack(side=Tkinter.BOTTOM, fill = Tkinter.X)
+		self.gwidget.pack(side = 'top', expand=1, fill='both')
+		self.top.protocol("WM_DELETE_WINDOW", self.gwdestroy)
+		self.gwidget.firstPlotDone = 0
+		self.gwidget.interactive = 0
+
+		self.colorManager.setColors(self.gwidget)
 		self.glBuffer = GLBuffer()
-		self.gkiBuffer = gki.GkiBuffer()
 		self.wcs = None
-		self.kernel = None
-		self.colors = IrafColors()
+		self.colors = IrafColors(self)
 		self.linestyles = IrafLineStyles()
 		self.hatchfills = IrafHatchFills()
 		self.textAttributes = opengltext.TextAttributes()
@@ -57,60 +95,118 @@ class IrafPlot:
 		self.fillAttributes = FillAttributes()
 		self.markerAttributes = MarkerAttributes()
 
-def nullAction(arg): pass
+		windowID = self.gwidget.winfo_id()
+		wutil.setBackingStore(windowID)
+		self.gcursor = openglgcur.Gcursor(self)
 
-class GkiOpenGlKernel(gki.GkiKernel):
+	def activate(self):
+		"""Make this the active window"""
+		self.gwidget.activate()
 
-	def __init__(self):
+	def flush(self):
+		self.gwidget.update_idletasks()
 
-		gki.GkiKernel.__init__(self)
-		self.controlFunctionTable = [self.controlDefault]*(gki.GKI_MAX_OP_CODE+1)
-		self.controlFunctionTable[gki.GKI_OPENWS] = self.openWS
-		self.controlFunctionTable[gki.GKI_CLOSEWS] = self.closeWS
-		self.controlFunctionTable[gki.GKI_REACTIVATEWS] = self.reactivateWS
-		self.controlFunctionTable[gki.GKI_DEACTIVATEWS] = self.deactivateWS
-		self.controlFunctionTable[gki.GKI_CLEARWS] = self.clearWS
-		self.controlFunctionTable[gki.GKI_SETWCS] = self.setWCS
-		self.controlFunctionTable[gki.GKI_GETWCS] = self.getWCS
-		self.stdin = None
-		self.stdout = None
-		self.stderr = None
-		self.gcursor = openglgcur.Gcursor()
-		self.name = 'OpenGL'
+	def hasFocus(self):
+		"""Returns true if this window currently has focus"""
+		return  wutil.getTopID(wutil.getWindowID()) == \
+			wutil.getTopID(self.getWindowID())
 
-	def _gkiAction(self, opcode, arg):
+	def setDrawingColor(self, irafColorIndex):
+		self.colorManager.setDrawingColor(irafColorIndex)
+
+	def taskDoneCleanup(self):
+		"""Hack to prevent the double redraw after first Tk plot"""
+		gwin = self.gwidget
+		if gwin and (not gwin.firstPlotDone) and wutil.hasGraphics:
+			# this is a hack to prevent the double redraw on first plots
+			# (when they are not interactive plots). This should be done
+			# better, but it appears to work most of the time.
+			if not gwin.interactive:
+				gwin.ignoreNextNRedraws = 2
+			gwin.firstPlotDone = 1
+
+	# the following methods implement the FocusEntity interface
+	# used by wutil.FocusController
+
+	def saveCursorPos(self):
+
+		"""save current position if window has focus and cursor is
+		in window, otherwise do nothing"""
+
+		# first see if window has focus
+		if not self.hasFocus():
+			return
+
+		gwin = self.gwidget
+		posdict = wutil.getPointerPosition(gwin.winfo_id())
+		if posdict:
+			x = posdict['win_x']
+			y = posdict['win_y']
+		else:
+			return
+		maxX = gwin.winfo_width()
+		maxY = gwin.winfo_height()
+		if x < 0 or y < 0 or x >= maxX or y >= maxY:
+			return
+		gwin.lastX = x
+		gwin.lastY = y
+
+	def forceFocus(self):
+
+		# only force focus if window is viewable
+		if not wutil.isViewable(self.top.winfo_id()):
+			return
+		# warp cursor
+		# if no previous position, move to center
+		gwin = self.gwidget
+		if not gwin.lastX:
+			gwin.lastX = gwin.winfo_width()/2
+			gwin.lastY = gwin.winfo_height()/2
+		wutil.moveCursorTo(gwin.winfo_id(),gwin.lastX,gwin.lastY)
+		gwin.focus_force()
+
+	def getWindowID(self):
+
+		return self.gwidget.winfo_id()
+
+	# end of FocusEntity methods
+
+	def getWindowName(self):
+
+		return self.windowName
+
+	def gwdestroy(self):
+
+		# delete self-references to allow this to be reclaimed
+		del self.gcursor
+		gwm.delete(self.windowName)
+
+	# here's where GkiKernel methods start
+
+	def _glAppend(self, opcode, *args):
 
 		"""append a 2-tuple (gl_function, args) to the glBuffer"""
-		win = gwm.getActiveWindow()
 		if opcode == gki.GKI_CLEARWS:
-			win.iplot.gkiBuffer.reset()
-			win.iplot.glBuffer.reset()
-			win.iplot.wcs = None
-			win.immediateRedraw()
-			win.status.updateIO(text=" ")
-		glarg = (glFunctionTable[opcode],arg)
-		win.iplot.glBuffer.append(glarg)
+			self.clear()
+		glfunc = glFunctionTable[opcode]
+		if glfunc is not None:
+			# add the window to the args
+			self.glBuffer.append((glfunc,(self,) + args))
 
-	def getBuffer(self):
+	def clear(self, win=None):
+		if not win:
+			win = self.gwidget
+		self.gkibuffer.reset()
+		self.glBuffer.reset()
+		self.wcs = None
+		win.immediateRedraw()
+		win.status.updateIO(text=" ")
 
-		if gwm.getActiveWindow():
-			win = gwm.getActiveWindow()
-			return win.iplot.gkiBuffer
-		else:
-			print "ERROR: no IRAF plot window active"
-			raise IrafError
-	
-	def control(self, gkiMetacode):
+	def translate(self, gkiMetacode):
 
-		gki.gkiTranslate(gkiMetacode, self.controlFunctionTable,
-						 nullAction)
-		return self.returnData
-
-	def translate(self, gkiMetacode, fTable):
-
-		gki.gkiTranslate(gkiMetacode, fTable, self._gkiAction)
-		win = gwm.getActiveWindow()
-		glbuf = win.iplot.glBuffer
+		gki.gkiTranslate(gkiMetacode, self.functionTable)
+		win = self.gwidget
+		glbuf = self.glBuffer
 		# render new stuff immediately
 		function, args = glbuf.getNextCall()
 		while function:
@@ -118,41 +214,26 @@ class GkiOpenGlKernel(gki.GkiKernel):
 			function, args = glbuf.getNextCall()
 		glFlush()
 
-	def controlDefault(self, dummy, arg):
-
-		# This function should never be called.
-		print "controlDefault called"
-
-	def controlDoNothing(self, dummy, arg):
-		pass
-
-	def openWS(self, dummy, arg):
+	def control_openws(self, arg):
 
 		global _errorMessageCount
 		_errorMessageCount = 0
 		mode = arg[0]
-		# first see if there are any graphics windows, if not, create one 
-		win = gwm.getActiveWindow()
-		if win == None:
-			gwm.window()
-			win = gwm.getActiveWindow()
-		win.redraw = self.redraw
-		if not hasattr(win,"iplot"):
-			win.iplot = IrafPlot()
-		ta = win.iplot.textAttributes
-		ta.setFontSize()
-		gwm.raiseActiveWindow()
+		win = self.gwidget
+		ta = self.textAttributes
+		ta.setFontSize(self)
+		self.raiseWindow()
 		# redirect stdin & stdout to status line
-		self.stdout = StatusLine()
+		self.stdout = StatusLine(self.gwidget, self.windowName)
 		self.stdin = self.stdout
 		# disable stderr while graphics is active (to supress xgterm gui
 		# messages)
 		self.stderr = DevNullError()
 		if mode == 5:
 			# clear the display
-			win.iplot.gkiBuffer.reset()
-			win.iplot.glBuffer.reset()
-			win.iplot.wcs = None
+			self.gkibuffer.reset()
+			self.glBuffer.reset()
+			self.wcs = None
 			win.immediateRedraw()
 		elif mode == 4:
 			# append, i.e., do nothing!
@@ -160,31 +241,30 @@ class GkiOpenGlKernel(gki.GkiKernel):
 		elif mode == 6:
 			# Tee mode (?), ignore for now
 			pass
-			
-	def clearWS(self, dummy, arg):
 
+	def raiseWindow(self):
+		if self.top.state() != 'normal':
+			self.top.deiconify()
+		self.top.tkraise()
+
+	def control_clearws(self, arg):
 		# apparently this control routine is not used???
+		self.clear()
 
-		win = gwm.getActiveWindow()
-		win.iplot.gkiBuffer.reset()
-		win.iplot.glBuffer.reset()
-		win.iplot.wcs = None
-		win.immediateRedraw()
-
-	def reactivateWS(self, dummy, arg):
+	def control_reactivatews(self, arg):
 
 		global _errorMessageCount
 		_errorMessageCount = 0
-		gwm.raiseActiveWindow()
+		self.raiseWindow()
 
 		if not self.stdout:
 			# redirect stdout if not already
-			self.stdout = StatusLine()  
+			self.stdout = StatusLine(self.gwidget, self.windowName)
 			self.stdin = self.stdout
 		if not self.stderr:
 			self.stderr = DevNullError()
-		
-	def deactivateWS(self, dummy, arg):
+
+	def control_deactivatews(self, arg):
 		if self.stdout:
 			self.stdout.close()
 			self.stdout = None
@@ -193,26 +273,25 @@ class GkiOpenGlKernel(gki.GkiKernel):
 			self.stderr.close()
 			self.stderr = None
 
-	def setWCS(self, dummy, arg):
+	def control_setwcs(self, arg):
 
-		#__main__.wcs = arg # pass it up to play with
-		win = gwm.getActiveWindow()
-		win.iplot.wcs = irafgwcs.IrafGWcs(arg)
+		win = self.gwidget
+		self.wcs = irafgwcs.IrafGWcs(arg)
 
-	def getWCS(self, dummy, arg):
+	def control_getwcs(self, arg):
 
-		win = gwm.getActiveWindow()
-		if not win.iplot.wcs:
+		win = self.gwidget
+		if not self.wcs:
 			self.errorMessage("Error: can't append to a nonexistent plot!")
 			raise IrafError
 		if self.returnData:
-			self.returnData = self.returnData + win.iplot.wcs.pack()
+			self.returnData = self.returnData + self.wcs.pack()
 		else:
-			self.returnData = win.iplot.wcs.pack()
+			self.returnData = self.wcs.pack()
 
-	def closeWS(self, dummy, arg):
+	def control_closews(self, arg):
 
-		win = gwm.getActiveWindow()
+		win = self.gwidget
 		win.deactivateSWCursor()  # turn off software cursor
 		if self.stdout:
 			self.stdout.close()
@@ -223,28 +302,129 @@ class GkiOpenGlKernel(gki.GkiKernel):
 			self.stderr = None
 		wutil.focusController.restoreLast()
 
-	def redraw(self, o):
+	# special methods that go into the function tables
 
-		ta = o.iplot.textAttributes
-		ta.setFontSize()
-		cm = gwm.getColorManager()
+	def gki_clearws(self, arg):
+		self._glAppend(gki.GKI_CLEARWS,0)
+
+	def gki_cancel(self, arg):
+		self.gki_clearws(arg)
+
+	def gki_flush(self, arg):
+		self._glAppend(gki.GKI_FLUSH,arg)
+
+	def gki_polyline(self, arg):
+		self._glAppend(gki.GKI_POLYLINE, gki.ndc(arg[1:]))
+
+	def gki_polymarker(self, arg):
+		self._glAppend(gki.GKI_POLYMARKER, gki.ndc(arg[1:]))
+
+	def gki_text(self, arg):
+
+		x = gki.ndc(arg[0])
+		y = gki.ndc(arg[1])
+		text = arg[3:].astype(Numeric.Int8).tostring()
+		self._glAppend(gki.GKI_TEXT, x, y, text)
+
+	def gki_fillarea(self, arg): 
+
+		self._glAppend(gki.GKI_FILLAREA, gki.ndc(arg[1:]))
+
+	def gki_putcellarray(self, arg): 
+
+		errorMessage(standardNotImplemented)
+
+	def gki_setcursor(self, arg):
+
+		cursorNumber = arg[0]
+		x = arg[1]/gki.GKI_MAX
+		y = arg[2]/gki.GKI_MAX
+		self._glAppend(gki.GKI_SETCURSOR, cursorNumber, x, y)
+
+	def gki_plset(self, arg):
+
+		linetype = arg[0]
+		linewidth = arg[1]/gki.GKI_FLOAT_FACTOR
+		color = arg[2]
+		self._glAppend(gki.GKI_PLSET, linetype, linewidth, color)
+
+	def gki_pmset(self, arg):
+
+		marktype = arg[0]
+		marksize = arg[1]/gki.GKI_MAX
+		color = arg[2]
+		self._glAppend(gki.GKI_PMSET, marktype, marksize, color)
+
+	def gki_txset(self, arg):
+
+		charUp = float(arg[0])
+		charSize = arg[1]/gki.GKI_FLOAT_FACTOR
+		charSpace = arg[2]/gki.GKI_FLOAT_FACTOR
+		textPath = arg[3]
+		textHorizontalJust = arg[4]
+		textVerticalJust = arg[5]
+		textFont = arg[6]
+		textQuality = arg[7]
+		textColor = arg[8]
+		self._glAppend(gki.GKI_TXSET, charUp, charSize, charSpace, textPath,
+			textHorizontalJust, textVerticalJust, textFont,
+			textQuality, textColor)
+
+	def gki_faset(self, arg):
+
+		fillstyle = arg[0]
+		color = arg[1]
+		self._glAppend(gki.GKI_FASET, fillstyle, color)
+
+	def gki_getcursor(self, arg):
+
+		print "GKI_GETCURSOR"
+		raise standardNotImplemented
+		 
+	def gki_getcellarray(self, arg):
+
+		print "GKI_GETCELLARRAY"
+		raise standardNotImplemented
+
+	def gki_unknown(self, arg): 
+
+		errorMessage("GKI_UNKNOWN:\n"+standardWarning)
+
+	def gki_escape(self, arg):
+		print "GKI_ESCAPE"
+
+	def gki_setwcs(self, arg):
+		pass #print "GKI_SETWCS"
+
+	def gki_getwcs(self, arg):
+		print "GKI_GETWCS"
+
+
+	def redraw(self, o=None):
+
+		# Note argument is not needed because we only get redraw
+		# events for our own gwidget
+		ta = self.textAttributes
+		ta.setFontSize(self)
+		cm = self.colorManager
 		if cm.rgbamode:
 			glClearColor(0,0,0,0)
 		else:
-			glClearIndex(gwm._g.colorManager.indexmap[0])
+			glClearIndex(cm.indexmap[0])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
 		glOrtho(0,1,0,1,-1,1)
 		glDisable(GL_LIGHTING)
-                glDisable(GL_DITHER)
+		glDisable(GL_DITHER)
 		glShadeModel(GL_FLAT)
-		
-		for (function, args) in o.iplot.glBuffer.get():
+
+		for (function, args) in self.glBuffer.get():
 			apply(function, args)
 		glFlush()
 
 	def gcur(self): return self.gcursor()
+
 
 class DevNullError:
 
@@ -258,10 +438,10 @@ class DevNullError:
 		pass
 
 class StatusLine:
-	
-	def __init__(self):
-		self.graphicsWindow = gwm.getActiveWindow()
-		self.windowName = gwm.getActiveWindowName()
+
+	def __init__(self, window, name):
+		self.graphicsWindow = window
+		self.windowName = name
 	def readline(self):
 		"""Shift focus to graphics, read line from status, restore focus"""
 		wutil.focusController.setFocusTo(self.windowName,always=1)
@@ -280,27 +460,81 @@ class StatusLine:
 	def fileno(self):
 		return sys.__stdout__.fileno()
 
+class glColorManager:
+
+	"""Encapsulates the details of setting the graphic's windows colors.
+
+	Needed since we may be using rgba mode or color index mode and we
+	do not want any of the graphics programs to have to deal with the
+	mode being used. The current design applies the same colors to all
+	graphics windows for color index mode (but it isn't required).
+	An 8-bit display depth results in color index mode, otherwise rgba
+	mode is used. In color index mode we attempt to allocate pairs of
+	color indices (even, odd) so that xor mode on the least sig bit of
+	the index results in ideal color flipping. If no new colors are
+	available, we take what we can get. We do not attempt to get a
+	private colormap.
+	"""
+
+	def __init__(self, defaultColors):
+
+		self.colorset = [None]*nIrafColors
+		self.indexmap = [None]*nIrafColors
+		depth = wutil.getScreenDepth()
+		# print "screen depth =", depth
+		if depth <=8:
+			self.rgbamode = 0
+		else:
+			self.rgbamode = 1
+		for cind in xrange(len(defaultColors)):
+			self.defineColor(cind,
+				defaultColors[cind][0],
+				defaultColors[cind][1],
+				defaultColors[cind][2])
+		# call setColors to allocate colors after widget is created
+
+	def defineColor(self, colorindex, red, green, blue):
+		"""Color list consists of color triples. This method only
+		sets up the desired color set, it doesn't allocate any colors
+		from the colormap in color index mode."""
+		self.colorset[colorindex] = (red, green, blue)
+
+	def setColors(self, widget):
+		"""Does nothing in rgba mode, allocates colors in index mode"""
+		if self.rgbamode:
+			return
+		for i in xrange(len(self.indexmap)):
+			self.indexmap[i] = toglcolors.AllocateColor(widget.toglStruct,
+							   self.colorset[i][0],
+							   self.colorset[i][1],
+							   self.colorset[i][2])
+
+	def setDrawingColor(self, irafColorIndex):
+		"""Apply the specified iraf color to the current OpenGL drawing
+		state using the appropriate mode."""
+		if self.rgbamode:
+			color = self.colorset[irafColorIndex]
+			glColor3f(color[0], color[1], color[2])
+		else:
+			glIndex(self.indexmap[irafColorIndex])
+
+
 #***********************************************************
+# These are the routines for the innermost loop in the redraw
+# function.  They are supposed to be stripped down to make
+# redraws as fast as possible.  (Still could be improved.)
 
-def gl_eof(arg): pass
-def gl_openws(arg): pass
-def gl_closews(arg): pass
-def gl_reactivatews(arg): pass
-def gl_deactivatews(arg): pass
-def gl_mftitle(arg): pass
-def gl_clearws(arg): pass
-def gl_cancel(arg): pass
+def gl_flush(win, arg):
+	glFlush()
 
-def gl_flush(arg): glFlush()
+def gl_polyline(win, vertices):
 
-def gl_polyline(vertices):
-
+	gwidget = win.gwidget
 	# First, set all relevant attributes
-	win = gwm.getActiveWindow()
-	cursorActive =  win.isSWCursorActive()
+	cursorActive =  gwidget.isSWCursorActive()
 	if cursorActive:
-		win.SWCursorSleep()
-	la = win.iplot.lineAttributes
+		gwidget.SWCursorSleep()
+	la = win.lineAttributes
 	glPointSize(1.0)
 	glDisable(GL_LINE_SMOOTH)
 	glLineWidth(la.linewidth)
@@ -308,59 +542,59 @@ def gl_polyline(vertices):
 	clear = 0
 	if la.linestyle == 0: clear = 1 # "clear" linestyle, don't draw!
 	elif la.linestyle == 1: pass # solid line
-	elif 2 <= la.linestyle < len(win.iplot.linestyles.patterns):
+	elif 2 <= la.linestyle < len(win.linestyles.patterns):
 		glEnable(GL_LINE_STIPPLE)
 		stipple = 1
-		glLineStipple(1,win.iplot.linestyles.patterns[la.linestyle])
+		glLineStipple(1,win.linestyles.patterns[la.linestyle])
 	glBegin(GL_LINE_STRIP)
 	if not clear:
-		gwm.setGraphicsDrawingColor(la.color)
+		win.colorManager.setDrawingColor(la.color)
 	else:
-		gwm.setGraphicsDrawingColor(0)
+		win.colorManager.setDrawingColor(0)
 	glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
 	glEnd()
 	if stipple:
 		glDisable(GL_LINE_STIPPLE)
 	if cursorActive:
-		win.SWCursorWake()
+		gwidget.SWCursorWake()
 
-def gl_polymarker(vertices):
+def gl_polymarker(win, vertices):
 
+	gwidget = win.gwidget
 	# IRAF only implements points for poly marker, that makes it real simple
-	win = gwm.getActiveWindow()
-	cursorActive = win.isSWCursorActive()
-	ma = win.iplot.markerAttributes
+	cursorActive = gwidget.isSWCursorActive()
+	ma = win.markerAttributes
 	clear = 0
 	glPointSize(1)
 	if not clear:
-		gwm.setGraphicsDrawingColor(ma.color)
+		win.colorManager.setDrawingColor(ma.color)
 	else:
-		gwm.setGraphicsDrawingColor(0)
+		win.colorManager.setDrawingColor(0)
 	if cursorActive:
-		win.SWCursorSleep()
+		gwidget.SWCursorSleep()
 	glBegin(GL_POINTS)
 	glVertex(Numeric.reshape(vertices, (len(vertices)/2,2)))
 	glEnd()
 	if cursorActive:
-		win.SWCursorWake()
+		gwidget.SWCursorWake()
 
-def gl_text(x,y,text):
+def gl_text(win, x, y, text):
 
-	win = gwm.getActiveWindow()
-	cursorActive =  win.isSWCursorActive()
+	gwidget = win.gwidget
+	cursorActive =  gwidget.isSWCursorActive()
 	if cursorActive:
-		win.SWCursorSleep()
-	opengltext.softText(x,y,text)
+		gwidget.SWCursorSleep()
+	opengltext.softText(win,x,y,text)
 	if cursorActive:
-		win.SWCursorWake()
+		gwidget.SWCursorWake()
 
-def gl_fillarea(vertices):
+def gl_fillarea(win, vertices):
 
-	win = gwm.getActiveWindow()
-	cursorActive =  win.isSWCursorActive()
+	gwidget = win.gwidget
+	cursorActive =  gwidget.isSWCursorActive()
 	if cursorActive:
-		win.SWCursorSleep()
-	fa = win.iplot.fillAttributes
+		gwidget.SWCursorSleep()
+	fa = win.fillAttributes
 	clear = 0
 	polystipple = 0
 	if fa.fillstyle == 0: # clear region
@@ -374,19 +608,19 @@ def gl_fillarea(vertices):
 # This is commented out since PyOpenGL does not currently support
 # glPolygonStipple!
 #		if fa.fillstyle > 6: fa.fillstyle = 6
-#		t = win.iplot.hatchfills
+#		t = win.hatchfills
 #		print t
 #		tp = t.patterns
 #		print tp, "patterns"
-#		fill = win.iplot.hatchfills.patterns[fa.fillstyle]
+#		fill = win.hatchfills.patterns[fa.fillstyle]
 #		print fill, "fill"
 #		polystipple = 1
 #		glEnable(GL_POLYGON_STIPPLE)
 #		glPolygonStipple(fill)
 	if not clear:
-		gwm.setGraphicsDrawingColor(fa.color)
+		win.colorManager.setDrawingColor(fa.color)
 	else:
-		gwm.setGraphicsDrawingColor(0)
+		win.colorManager.setDrawingColor(0)
 #		glColor3f(0.,0.,0.)
 	# not a simple rectangle
 	glBegin(GL_POLYGON)
@@ -395,92 +629,60 @@ def gl_fillarea(vertices):
 	if polystipple:
 		glDisable(GL_POLYGON_STIPPLE)
 	if cursorActive:
-		win.SWCursorWake()
+		gwidget.SWCursorWake()
 
+def gl_setcursor(win, cursornumber, x, y):
 
-def gl_putcellarray(arg): pass
-
-def gl_setcursor(cursornumber, x, y):
-
-	win = gwm.getActiveWindow()
+	gwidget = win.gwidget
 	# wutil.MoveCursorTo uses 0,0 <--> upper left, need to convert
-	sy = win.winfo_height() - y
+	sy = gwidget.winfo_height() - y
 	sx = x
-	wutil.moveCursorTo(win.winfo_id(), sx, sy)
-	
-def gl_plset(linestyle, linewidth, color):
+	wutil.moveCursorTo(gwidget.winfo_id(), sx, sy)
 
-	win = gwm.getActiveWindow()
-	win.iplot.lineAttributes.set(linestyle, linewidth, color)
-	
-def gl_pmset(marktype, marksize, color):
+def gl_plset(win, linestyle, linewidth, color):
 
-	win = gwm.getActiveWindow()
-	win.iplot.markerAttributes.set(marktype, marksize, color)
+	win.lineAttributes.set(linestyle, linewidth, color)
 
-def gl_txset(charUp, charSize, charSpace, textPath, textHorizontalJust,
+def gl_pmset(win, marktype, marksize, color):
+
+	win.markerAttributes.set(marktype, marksize, color)
+
+def gl_txset(win, charUp, charSize, charSpace, textPath, textHorizontalJust,
 			 textVerticalJust, textFont, textQuality, textColor):
-	
-	win = gwm.getActiveWindow()
-	win.iplot.textAttributes.set(charUp, charSize, charSpace,
+
+	win.textAttributes.set(charUp, charSize, charSpace,
 		textPath, textHorizontalJust, textVerticalJust, textFont,
 		textQuality, textColor)
 
-def gl_faset(fillstyle, color):
-	
-	win = gwm.getActiveWindow()
-	win.iplot.fillAttributes.set(fillstyle, color)
+def gl_faset(win, fillstyle, color):
 
-def gl_getcursor(arg): pass
-def gl_getcellarray(arg): pass
-def gl_unknown(arg): pass
-def gl_escape(arg): pass
-def gl_setwcs(arg): pass
-def gl_getwcs(arg): pass
+	win.fillAttributes.set(fillstyle, color)
 
-glFunctionTable = [
-	gl_eof,	   	# 0
-	gl_openws,  
-	gl_closews,
-	gl_reactivatews,
-	gl_deactivatews,
-	gl_mftitle,	# 5
-	gl_clearws,
-	gl_cancel,
-	gl_flush,
-	gl_polyline,
-	gl_polymarker,# 10
-	gl_text,
-	gl_fillarea,
-	gl_putcellarray,
-	gl_setcursor,
-	gl_plset,		# 15
-	gl_pmset,
-	gl_txset,
-	gl_faset,
-	gl_getcursor, # also gl_cursorvalue,
-	gl_getcellarray,#20  also	gl_cellarray,
-	gl_unknown,
-	gl_unknown,
-	gl_unknown,
-	gl_unknown,
-	gl_escape,		# 25
-	gl_setwcs,
-	gl_getwcs]
+glFunctionTable = (gki.GKI_MAX_OP_CODE+1)*[None]
+glFunctionTable[gki.GKI_FLUSH] = gl_flush
+glFunctionTable[gki.GKI_POLYLINE] = gl_polyline
+glFunctionTable[gki.GKI_POLYMARKER] = gl_polymarker
+glFunctionTable[gki.GKI_TEXT] = gl_text
+glFunctionTable[gki.GKI_FILLAREA] = gl_fillarea
+glFunctionTable[gki.GKI_SETCURSOR] = gl_setcursor
+glFunctionTable[gki.GKI_PLSET] = gl_plset
+glFunctionTable[gki.GKI_PMSET] = gl_pmset
+glFunctionTable[gki.GKI_TXSET] = gl_txset
+glFunctionTable[gki.GKI_FASET] = gl_faset
+
 
 #********************************************
 
-
-
 class GLBuffer:
 
-	"""implement a buffer for GL commands which allocates memory in blocks so that 
-	a new memory allocation is not needed everytime functions are appended"""
+	"""implement a buffer for GL commands which allocates memory in blocks
+	so that a new memory allocation is not needed everytime functions are
+	appended"""
 
 	INCREMENT = 500
 
 	def __init__(self):
-	
+
 		self.buffer = None
 		self.bufferSize = 0
 		self.bufferEnd = 0 
@@ -501,7 +703,7 @@ class GLBuffer:
 		self.nextTranslate = 0
 
 	def append(self, funcargs):
-	
+
 		# append a single (function,args) tuple to the list
 
 		if self.bufferSize < self.bufferEnd + 1:
@@ -515,7 +717,7 @@ class GLBuffer:
 		self.bufferEnd = self.bufferEnd + 1
 
 	def get(self):
-	
+
 		if self.buffer:
 			return self.buffer[0:self.bufferEnd]
 		else:
@@ -540,9 +742,9 @@ class IrafGkiConfig:
 
 		# All set to constants for now, eventually allow setting other
 		# values
-		
+
 		# h = horizontal font dimension, v = vertical font dimension
-		
+
 		# ratio of font height to width
 		self.fontAspect = 42./27.
 		self.fontMax2MinSizeRatio = 4.
@@ -576,32 +778,42 @@ class IrafGkiConfig:
 			(1.,1.,0.),  # yellow
 			(1.,0.,1.),  # magenta
 			(1.,1.,1.),  # white
-			(0.32,0.32,0.32),  # gray32
+			# (0.32,0.32,0.32),  # gray32
+			(0.18,0.31,0.31),  # IRAF blue-green
 			(1.,1.,1.),  # white
 			(1.,1.,1.),  # white
 			(1.,1.,1.),  # white
 			(1.,1.,1.),  # white
 			(1.,1.,1.),  # white
-			(1.,1.,1.)   # white
+			(1.,1.,1.),  # white
 		]
-	def fontSize(self):
-	
+
+# old colors
+#			(1.,0.5,0.), # coral
+#			(0.7,0.19,0.38), # maroon
+#			(1.,0.65,0.), # orange
+#			(0.94,0.9,0.55), # khaki
+#			(0.85,0.45,0.83), # orchid
+#			(0.25,0.88,0.82), # turquoise
+#			(0.91,0.53,0.92), # violet
+#			(0.96,0.87,0.72) # wheat
+
+	def fontSize(self, gwidget):
+
+		"""Determine the unit font size for the given setup in pixels.
+		The unit size refers to the horizonal size of fixed width characters
+		(allow for proportionally sized fonts later?).
+
+		Basically, if font aspect is not fixed, the unit font size is
+		proportional to the window dimension (for v and h independently),
+		with the exception that if min or max pixel sizes are enabled,
+		they are 'clipped' at the specified value. If font aspect is fixed,
+		then the horizontal size is the driver if the window is higher than
+		wide and vertical size for the converse.
 		"""
-	Determine the unit font size for the given setup in pixels.
-	The unit size refers to the horizonal size of fixed width characters
-	(allow for proportionally sized fonts later?).
-	
-	Basically, if font aspect is not fixed, the unit font size is proportional
-	to the window dimension (for v and h independently), with the exception
-	that if min or max pixel sizes are enabled, they are 'clipped' at the 
-	specified value. If font aspect is fixed, then the horizontal size is the
-	driver if the window is higher than wide and vertical size for the 
-	converse.
-	"""
-	
-		win = gwm.getActiveWindow()
-		hWin = win.winfo_width()
-		vWin = win.winfo_height()
+
+		hWin = gwidget.winfo_width()
+		vWin = gwidget.winfo_height()
 		hSize = hWin * self.UnitFontHWindowFraction
 		vSize = vWin * self.UnitFontVWindowFraction*self.fontAspect
 		if not self.isFixedAspectFont:
@@ -611,7 +823,7 @@ class IrafGkiConfig:
 			if self.config.hasMaxPixSizeUnitFont:
 				hSize = min(hSize,self.maxUnitHFontSize)
 				vSize = min(hSize,self.maxUnitVFontSize)
-			fontAspect = vSize/hSize		
+			fontAspect = vSize/hSize
 		else:
 			hSize = min(hSize,vSize/self.fontAspect)
 			if self.hasMinPixSizeUnitFont:
@@ -626,21 +838,18 @@ class IrafGkiConfig:
 
 		return self.defaultColors
 
+
 class IrafColors:
 
-	def __init__(self):
+	def __init__(self, win):
 
-		self.setDefaults()
-
-	def setDefaults(self):
-
-		irafConfig = gwm.getIrafGkiConfig()
-		self.defaultColors = irafConfig.getIrafColors()
+		self.defaultColors = win.irafGkiConfig.getIrafColors()
 
 	def toRGB(self, irafcolor):
 
-		if not (0 <= irafcolor < 16):
-			print "WARNING: Iraf color out of legal range (1-16)"
+		if not (0 <= irafcolor < len(self.defaultColors)):
+			print "WARNING: Iraf color out of legal range (1-%d)" % \
+				(len(self.defaultColors),)
 			irafcolor = 1
 		return self.defaultColors[irafcolor]
 
@@ -709,12 +918,12 @@ class LineAttributes:
 class FillAttributes:
 
 	def __init__(self):
-	
+
 		self.fillstyle = 1
 		self.color = 1
-		
+
 	def set(self, fillstyle, color):
-	
+
 		self.fillstyle = fillstyle
 		self.color = color
 
@@ -728,4 +937,3 @@ class MarkerAttributes:
 	def set(self, markertype, size, color):
 
 		self.color = color
-

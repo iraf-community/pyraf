@@ -20,40 +20,17 @@ class GkiIrafKernel(gki.GkiKernel):
 	def __init__(self, device, executable, taskname):
 
 		gki.GkiKernel.__init__(self)
-		self.controlFunctionTable = [self.noAction]*(gki.GKI_MAX_OP_CODE+1)
-		self.controlFunctionTable[gki.GKI_OPENWS] = self.openWS
-		self.controlFunctionTable[gki.GKI_GETWCS] = self.getWCS
-		self.controlFunctionTable[gki.GKI_SETWCS] = self.setWCS
 		self.executable = executable
 		self.device = device
 		self.taskname = taskname
-		self.stdin = None
-		self.stdout = None
-		self.stderr = None
 		self.wcs = None
-		self.returnData = None
 
-	def nullAction(self, arg): pass
-
-	def control(self, gkiMetacode):
-
-		gki.gkiTranslate(gkiMetacode, self.controlFunctionTable,
-						 self.nullAction)
-		return self.returnData
-
-	def noAction(self, dummy, arg):
-		pass
-
-	def openWS(self, dummy, arg):
-		pass
-
-	def setWCS(self, dummy, arg):
-
+	def control_setwcs(self, arg):
 		self.wcs = irafgwcs.IrafGWcs(arg)
 
-	def getWCS(self, dummy, arg):
-
+	def control_getwcs(self, arg):
 		if not self.wcs:
+			#YYY clean up - raise exception with message
 			self.errorMessage("Error: can't append to a nonexistent plot!")
 			raise iraf.IrafError
 		if self.returnData:
@@ -61,11 +38,7 @@ class GkiIrafKernel(gki.GkiKernel):
 		else:
 			self.returnData = self.wcs.pack()
 
-	def _gkiAction(self, opcode, arg):
-		pass
-
 	def flush(self):
-
 		# only plot if buffer contains something
 		if len(self.gkibuffer):
 			# write to a temporary file

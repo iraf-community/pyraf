@@ -18,12 +18,14 @@ class Gcursor:
 
 	"""This handles the classical IRAF gcur mode"""
 
-	def __init__(self):
+	def __init__(self, window):
 	
 		self.x = 0
 		self.y = 0
 		self.top = None
-		self.win = None
+		self.window = window
+		self.gwidget = window.gwidget
+		self.top = window.top
 		self.markcur = 0
 		self.retString = None
 
@@ -31,79 +33,70 @@ class Gcursor:
 
 	def startCursorMode(self):
 		
-		# Get reference to active graphics window and bind event handling
-		#  from it.
-		self.top = gwm.getActiveWindowTop()
-		if not self.top:
-			# initialize if graphics hasn't been started yet
-			gwm.window()
-			gki.kernel.stdgraph.openWS(None,Numeric.array([5,0]))
-			gki.kernel.stdgraph.closeWS(None,None)
-			self.top = gwm.getActiveWindowTop()
-		self.win = gwm.getActiveWindow()
-		gwm.raiseActiveWindow()
-		self.win.interactive = 1
+		# bind event handling from this graphics window
+		self.window.raiseWindow()
+		self.gwidget.interactive = 1
 		self.top.update()
-		wutil.focusController.setFocusTo(gwm.getActiveGraphicsWindow())
-		if self.win.lastX is not None:
-			self.win.activateSWCursor(
-				float(self.win.lastX)/self.win.winfo_width(),
-				float(self.win.lastY)/self.win.winfo_height())
+		wutil.focusController.setFocusTo(self.window)
+		if self.gwidget.lastX is not None:
+			self.gwidget.activateSWCursor(
+				float(self.gwidget.lastX)/self.gwidget.winfo_width(),
+				float(self.gwidget.lastY)/self.gwidget.winfo_height())
 		else:
-			self.win.activateSWCursor()
+			self.gwidget.activateSWCursor()
 		self.bind()
-		self.win.ignoreNextRedraw = 1
-		activate = gki.kernel.getStdout() is None
+		self.gwidget.ignoreNextRedraw = 1
+		activate = self.window.getStdout() is None
 		if activate:
-			gki.kernel.reactivateWS(None,None)
+			self.window.control_reactivatews(None)
 		self.top.mainloop()
 		self.unbind()
-		self.win.deactivateSWCursor()
+		self.gwidget.deactivateSWCursor()
 		if activate:
-			gki.kernel.deactivateWS(None,None)
-		self.win.lastX = self.x
-		self.win.lastY = self.y
+			self.window.control_deactivatews(None)
+		self.gwidget.lastX = self.x
+		self.gwidget.lastY = self.y
 		return self.retString
 
 	def bind(self):
 	
-		self.win.bind("<Button-1>",self.getMousePosition)
-		self.win.bind("<Key>",self.getKey)
-		self.win.bind("<Up>",self.moveUp)
-		self.win.bind("<Down>",self.moveDown)
-		self.win.bind("<Right>",self.moveRight)
-		self.win.bind("<Left>",self.moveLeft)
-		self.win.bind("<Shift-Up>",self.moveUpBig)
-		self.win.bind("<Shift-Down>",self.moveDownBig)
-		self.win.bind("<Shift-Right>",self.moveRightBig)
-		self.win.bind("<Shift-Left>",self.moveLeftBig)
+		self.gwidget.bind("<Button-1>",self.getMousePosition)
+		self.gwidget.bind("<Key>",self.getKey)
+		self.gwidget.bind("<Up>",self.moveUp)
+		self.gwidget.bind("<Down>",self.moveDown)
+		self.gwidget.bind("<Right>",self.moveRight)
+		self.gwidget.bind("<Left>",self.moveLeft)
+		self.gwidget.bind("<Shift-Up>",self.moveUpBig)
+		self.gwidget.bind("<Shift-Down>",self.moveDownBig)
+		self.gwidget.bind("<Shift-Right>",self.moveRightBig)
+		self.gwidget.bind("<Shift-Left>",self.moveLeftBig)
 					
 	def unbind(self):
 	
-		self.win.unbind("<Button-1>")
-		self.win.unbind("<Key>")
-		self.win.unbind("<Up>")
-		self.win.unbind("<Down>")
-		self.win.unbind("<Right>")
-		self.win.unbind("<Left>")
-		self.win.unbind("<Shift-Up>")
-		self.win.unbind("<Shift-Down>")
-		self.win.unbind("<Shift-Right>")
-		self.win.unbind("<Shift-Left>")
+		self.gwidget.unbind("<Button-1>")
+		self.gwidget.unbind("<Key>")
+		self.gwidget.unbind("<Up>")
+		self.gwidget.unbind("<Down>")
+		self.gwidget.unbind("<Right>")
+		self.gwidget.unbind("<Left>")
+		self.gwidget.unbind("<Shift-Up>")
+		self.gwidget.unbind("<Shift-Down>")
+		self.gwidget.unbind("<Shift-Right>")
+		self.gwidget.unbind("<Shift-Left>")
 		
 	def getNDCCursorPos(self):
 
 		"""Do an immediate cursor read and return coordinates in
 		NDC coordinates"""
 
-		win = gwm.getActiveWindow()
+		win = self.gwidget
 		sx = win.winfo_pointerx() - win.winfo_rootx()
 		sy = win.winfo_pointery() - win.winfo_rooty()
 		self.x = sx
 		self.y = sy
 		# get current window size
-		winSizeX = self.win.winfo_width()
-		winSizeY = self.win.winfo_height()
+		winSizeX = self.gwidget.winfo_width()
+		winSizeY = self.gwidget.winfo_height()
 		ndcX = float(sx)/winSizeX
 		ndcY = float(winSizeY - sy)/winSizeY
 		return ndcX, ndcY
@@ -115,7 +108,7 @@ class Gcursor:
 
 	def moveCursorRelative(self, event, deltaX, deltaY):
 		
-		gwin = self.win
+		gwin = self.gwidget
 		# only force focus if window is viewable
 		if not wutil.isViewable(self.top.winfo_id()):
 			return
@@ -143,8 +136,8 @@ class Gcursor:
 
 	def readString(self, prompt=""):
 		"""Prompt and read a string"""
-		stdout = gki.kernel.getStdout(default=sys.stdout)
-		stdin = gki.kernel.getStdin(default=sys.stdin)
+		stdout = self.window.getStdout(default=sys.stdout)
+		stdin = self.window.getStdin(default=sys.stdin)
 		stdout.write(prompt)
 		stdout.flush()
 		return stdin.readline()[:-1]
@@ -201,9 +194,9 @@ class Gcursor:
 
 	def _setRetString(self, key, x, y, colonString):
 
-		wcs = gwm.getActiveWindow().iplot.wcs
+		wcs = self.window.wcs
 		if wcs:
-			wx,wy,gwcs = gwm.getActiveWindow().iplot.wcs.get(x,y)
+			wx,wy,gwcs = self.window.wcs.get(x,y)
 		else:
 			wx,wy,gwcs = x,y,0
 		if key <= ' ' or ord(key) >= 127:
@@ -215,8 +208,8 @@ class Gcursor:
 
 def printPlot():
 
-	win = gwm.getActiveWindow()
-	gkibuff = win.iplot.gkiBuffer.get()
+	win = gwm.getActiveGraphicsWindow()
+	gkibuff = win.gkibuffer.get()
 	if gkibuff:
 		# write to a temporary file
 		tmpfn = iraf.mktemp("snap") + ".gki"
