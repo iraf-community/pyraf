@@ -30,6 +30,7 @@ class IrafPlot:
 		self.wcs = None
 		self.colors = IrafColors()
 		self.linestyles = IrafLineStyles()
+		self.hatchfills = IrafHatchFills()
 		self.textAttributes = TextAttributes()
 		self.lineAttributes = LineAttributes()
 		self.fillAttributes = FillAttributes()
@@ -284,10 +285,21 @@ def gl_fillarea(vertices):
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 	elif fa.fillstyle == 1: # hollow
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-	elif fa.fillstyle == 2: # solid
+	elif fa.fillstyle >= 2: # solid
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-	elif fa.fillstyle > 2: # hatched
-		pass
+#	elif fa.fillstyle > 2: # hatched
+# This is commented out since PyOpenGL does not currently support
+# glPolygonStipple!
+#		if fa.fillstyle > 6: fa.fillstyle = 6
+#		t = win.iplot.hatchfills
+#		print t
+#		tp = t.patterns
+#		print tp, "patterns"
+#		fill = win.iplot.hatchfills.patterns[fa.fillstyle]
+#		print fill, "fill"
+#		polystipple = 1
+#		glEnable(GL_POLYGON_STIPPLE)
+#		glPolygonStipple(fill)
 	if not clear:
 		apply(glColor3f,win.iplot.colors.toRGB(fa.color))
 	else:
@@ -296,6 +308,8 @@ def gl_fillarea(vertices):
 	glBegin(GL_POLYGON)
 	glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
 	glEnd()
+	if polystipple:
+		glDisable(GL_POLYGON_STIPPLE)
 
 def gl_putcellarray(arg): pass
 def gl_setcursor(cursornumber, x, y): pass
@@ -537,7 +551,49 @@ class IrafLineStyles:
 	def __init__(self):
 
 		self.patterns = [0x0000,0xFFFF,0x00FF,0x5555,0x33FF]
-		
+
+class IrafHatchFills:
+
+	def __init__(self):
+
+		# Each fill pattern is a 32x4 ubyte array (represented as 1-d).
+		# These are computed on initialization rather than using a
+		# 'data' type initialization since they are such simple patterns.
+		# these arrays are stored in a pattern list. Pattern entries
+		# 0-2 should never be used since they are not hatch patterns.
+
+		# so much for these, currently PyOpenGL does not support
+		# glPolygonStipple()! But adding it probably is not too hard.
+
+		self.patterns = [None]*7
+		# pattern 3, vertical stripes
+		p = Numeric.zeros(128,Numeric.Int8)
+		p[0:4] = [0x92,0x49,0x24,0x92]
+		for i in xrange(31):
+			p[(i+1)*4:(i+2)*4] = p[0:4]
+		self.patterns[3] = p
+		# pattern 4, horizontal stripes
+		p = Numeric.zeros(128,Numeric.Int8)
+		p[0:4] = [0xFF,0xFF,0xFF,0xFF]
+		for i in xrange(10):
+			p[(i+1)*12:(i+1)*12+4] = p[0:4]
+		self.patterns[4] = p
+		# pattern 5, close diagonal striping
+		p = Numeric.zeros(128,Numeric.Int8)
+		p[0:12] = [0x92,0x49,0x24,0x92,0x24,0x92,0x49,0x24,0x49,0x24,0x92,0x49]
+		for i in xrange(9):
+			p[(i+1)*12:(i+2)*12] = p[0:12]
+		p[120:128] = p[0:8]
+		self.patterns[5] = p
+		# pattern 6, diagonal stripes the other way
+		p = Numeric.zeros(128,Numeric.Int8)
+		p[0:12] = [0x92,0x49,0x24,0x92,0x49,0x24,0x92,0x49,0x24,0x92,0x49,0x24]
+		for i in xrange(9):
+			p[(i+1)*12:(i+2)*12] = p[0:12]
+		p[120:128] = p[0:8]
+		self.patterns[6] = p
+
+
 class LineAttributes:
 
 	def __init__(self):

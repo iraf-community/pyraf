@@ -179,7 +179,7 @@ class GkiKernel:
 	
 		# if input parameter is string, assume it is a filename and read into
 		# a numeric array
-		try:
+#		try:
 			if type(gkiMetacode) == StringType:
 				gkiMetacode = getdata(gkiMetacode)
 			win = gwm.getActiveWindow()
@@ -188,8 +188,8 @@ class GkiKernel:
 			# a hook for acting on the metacode, but is only a stub routine
 			# that must be overridden in the subclass (or not, depending)
 			self.translate(buffer, self.functionTable)
-		except AttributeError:
-			print "ERROR: no IRAF plot window active"
+#		except AttributeError:
+#			print "ERROR: no IRAF plot window active"
 
 	def translate(self, gkiBuffer, functionTable):
 
