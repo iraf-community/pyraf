@@ -534,6 +534,8 @@ class IrafTask:
 		if not self._currentParList:
 			return
 		if self._defaultParList is not None:
+			# update defaultParList from file if necessary
+			self._defaultParList.update()
 			if self._scrunchParpath and \
 			  (self._scrunchParpath == self._currentParpath):
 				try:

@@ -1696,6 +1696,59 @@ class IrafParAR(_RealMixin,IrafArrayPar):
 		IrafArrayPar.__init__(self,fields,filename,strict)
 
 # -----------------------------------------------------
+# IRAF parameter list synchronized to disk file
+# -----------------------------------------------------
+
+from filecache import FileCache
+
+class ParCache(FileCache):
+
+	"""Parameter cache that updates from .par file when necessary"""
+
+	def __init__(self, filename, parlist):
+		self.initparlist = parlist
+		# special filename used by cl2py
+		if filename == 'string_proc':
+			filename = ''
+		FileCache.__init__(self, filename)
+
+	def getValue(self):
+		return self.pars, self.pardict, self.psetlist
+
+	def updateValue(self):
+		"""Initialize parameter list from parameter file"""
+		if self.initparlist is not None:
+			self.pars = self.initparlist
+		elif self.filename:
+			self.pars = _readpar(self.filename)
+		else:
+			# create empty list if no filename is specified
+			self.pars = []
+
+		# build minmatch dictionary of all parameters, including
+		# those in psets
+		self.pardict = minmatch.MinMatchDict()
+		psetlist = []
+		for p in self.pars:
+			self.pardict.add(p.name, p)
+			if isinstance(p, IrafParPset): psetlist.append(p)
+		# add mode, $nargs to parameter list if not already present
+		if not self.pardict.has_exact_key("mode"):
+			p = makeIrafPar("al", name="mode", datatype="string", mode="h")
+			self.pars.append(p)
+			self.pardict.add(p.name, p)
+		if not self.pardict.has_exact_key("$nargs"):
+			p = makeIrafPar(0, name="$nargs", datatype="int", mode="h")
+			self.pars.append(p)
+			self.pardict.add(p.name, p)
+
+		# save the list of pset parameters
+		# Defer adding the parameters until later because saved parameter
+		# sets may not be defined yet when restoring from save file.
+		self.psetlist = psetlist
+
+
+# -----------------------------------------------------
 # IRAF parameter list class
 # -----------------------------------------------------
 
@@ -1716,36 +1769,14 @@ class IrafParList:
 		"""
 		self.__filename = filename
 		self.__name = taskname
+		self.__filecache = ParCache(filename, parlist)
+		# initialize parameter list
+		self.update()
 
-		if parlist is not None:
-			self.__pars = parlist
-		elif filename:
-			self.__pars = _readpar(filename)
-		else:
-			# create empty list if no filename is specified
-			self.__pars = []
-
-		# build minmatch dictionary of all parameters, including
-		# those in psets
-		self.__pardict = minmatch.MinMatchDict()
-		psetlist = []
-		for p in self.__pars:
-			self.__pardict.add(p.name, p)
-			if isinstance(p, IrafParPset): psetlist.append(p)
-		# add mode, $nargs to parameter list if not already present
-		if not self.__pardict.has_exact_key("mode"):
-			p = makeIrafPar("al", name="mode", datatype="string", mode="h")
-			self.__pars.append(p)
-			self.__pardict.add(p.name, p)
-		if not self.__pardict.has_exact_key("$nargs"):
-			p = makeIrafPar(0, name="$nargs", datatype="int", mode="h")
-			self.__pars.append(p)
-			self.__pardict.add(p.name, p)
-
-		# save the list of pset parameters
-		# Defer adding the parameters until later because saved parameter
-		# sets may not be defined yet when restoring from save file.
-		self.__psetlist = psetlist
+	def update(self):
+		"""Check to make sure this list is in sync with parameter file"""
+		self.__pars, self.__pardict, self.__psetlist = \
+			self.__filecache.get()
 
 	def __addPsetParams(self):
 		"""Merge pset parameters into the parameter lists"""

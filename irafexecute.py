@@ -4,7 +4,8 @@ $Id$
 """
 
 import os, re, signal, string, struct, sys, time, types, Numeric, cStringIO
-import subproc, iraf, gki, gwm, wutil, irafutils, iraftask
+import subproc, filecache, wutil
+import iraf, gki, gwm, irafutils, iraftask
 
 #stdgraph = None
 
@@ -31,12 +32,47 @@ def _getExecutable(arg):
 			return task.getFullpath()
 	raise IrafProcessError("Cannot find task or executable %s" % arg)
 
+class _ProcessProxy(filecache.FileCache):
+
+	"""Proxy for a single process that restarts it if needed
+
+	Restart is triggered by change of executable on disk.
+	"""
+
+	def __init__(self, process):
+		self.process = process
+		self.envdict = {}
+		# pass executable filename to FileCache
+		filecache.FileCache.__init__(self, process.executable)
+
+	def newValue(self):
+		# no action required at proxy creation
+		pass
+
+	def updateValue(self):
+		"""Called when executable changes to start a new version"""
+		self.process.terminate()
+		# seems to be necessary to delete this process before starting
+		# next one to avoid some weird problems...
+		del self.process
+		self.process = IrafProcess(self.filename)
+		self.process.initialize(self.envdict)
+
+	def getProcess(self, envdict):
+		"""Get the process; create & initialize using envdict if needed"""
+		self.envdict = envdict
+		return self.get()
+
+	def getValue(self):
+		return self.process
+
+
 class _ProcessCache:
 
 	"""Cache of active processes indexed by executable path"""
 
 	def __init__(self, limit=8):
-		self._data = {}          # dictionary with active processes
+		self._data = {}          # dictionary with active process proxies
 		self._pcount = 0         # total number of processes started
 		self._plimit = limit     # number of active processes allowed
 		self._locked = {}        # processes locked into cache
@@ -44,29 +80,45 @@ class _ProcessCache:
 	def get(self, task, envdict):
 		"""Get process for given task.  Create a new one if needed."""
 		executable = _getExecutable(task)
-		value = self._data.get(executable)
-		if value is None:
-			# create and initialize a new process
-			process = IrafProcess(executable)
-			process.initialize(envdict)
-		else:
+		if self._data.has_key(executable):
 			# use existing process
-			rank, process = value
+			rank, proxy = self._data[executable]
+			process = proxy.getProcess(envdict)
+			if not process.running:
+				return process
+			# Whoops, process is already active...
+			# This could happen if one task in an executable tries to
+			# execute another task in the same executable.  Don't know
+			# if IRAF allows this, but we can handle it by just creating
+			# a new process running the same executable.
+		# create and initialize a new process
+		# this will be added to cache after successful task completion
+		process = IrafProcess(executable)
+		process.initialize(envdict)
 		return process
 
 	def add(self, process):
 		"""Add process to cache or update its rank if already there"""
-		if self._plimit <= len(self._locked):
-			# no cache if plimit is zero or if all processes are locked
-			process.terminate()
-			return
 		self._pcount = self._pcount+1
 		executable = process.executable
-		if (len(self._data) >= self._plimit) and \
-		  not self._data.has_key(executable):
-			# delete the oldest entry
-			self._deleteOldest()
-		self._data[executable] = (self._pcount, process)
+		if self._data.has_key(executable):
+			# don't replace current cached process
+			rank, proxy = self._data[executable]
+			oldprocess = proxy.process
+			if oldprocess != process:
+				# argument is a duplicate process, terminate this copy
+				process.terminate()
+		elif self._plimit <= len(self._locked):
+			# cache is null or all processes are locked
+			process.terminate()
+			return
+		else:
+			# new process -- make a proxy
+			proxy = _ProcessProxy(process)
+			if len(self._data) >= self._plimit:
+				# delete the oldest entry to make room
+				self._deleteOldest()
+		self._data[executable] = (self._pcount, proxy)
 
 	def _deleteOldest(self):
 		"""Delete oldest unlocked process from the cache
@@ -76,22 +128,27 @@ class _ProcessCache:
 		# each entry contains rank (to sort and find oldest) and process
 		values = self._data.values()
 		values.sort()
-		if len(self._locked) >= len(self._data):
-			rank, oldprocess = values[0]
-			self.terminate(oldprocess.executable)
-		else:
-			for rank, oldprocess in values:
-				executable = oldprocess.executable
-				if not self._locked.has_key(executable):
+		if len(self._locked) < len(self._data):
+			# find and delete oldest unlocked process
+			for rank, proxy in values:
+				process = proxy.process
+				executable = process.executable
+				if not (self._locked.has_key(executable) or process.running):
 					# terminate it
 					self.terminate(executable)
+					return
+		# no unlocked processes or all unlocked are running
+		# delete oldest locked process
+		rank, proxy = values[0]
+		executable = proxy.process.executable
+		self.terminate(executable)
 
 	def setenv(self, msg):
 		"""Update process value of environment variable by sending msg"""
-		for rank, process in self._data.values():
+		for rank, proxy in self._data.values():
 			# just save messages in a list, they all get sent at
 			# once when a task is run
-			process.appendEnv(msg)
+			proxy.process.appendEnv(msg)
 
 	def setSize(self, limit):
 		"""Set number of processes allowed in cache"""
@@ -125,15 +182,32 @@ class _ProcessCache:
 				else:
 					if iraf.Verbose>0: print "Cannot cache %s" % taskname
 
-	def kill(self, process):
-		"""Kill process and delete it from cache"""
+	def delget(self, process):
+		"""Get process object and delete it from cache
+		
+		process can be an IrafProcess, task name, IrafTask, or
+		executable filename.
+		"""
 		executable = _getExecutable(process)
 		if self._data.has_key(executable):
-			rank, process = self._data[executable]
-			del self._data[executable]
-			if self._locked.has_key(executable):
-				del self._locked[executable]
-				#XXX could restart the process if locked
+			rank, proxy = self._data[executable]
+			if not isinstance(process, IrafProcess):
+				process = proxy.process
+			# don't delete from cache if this is a duplicate process
+			if process == proxy.process:
+				del self._data[executable]
+				if self._locked.has_key(executable):
+					del self._locked[executable]
+					# could restart the process if locked?
+		return process
+
+	def kill(self, process):
+		"""Kill process and delete it from cache
+		
+		process can be an IrafProcess, task name, IrafTask, or
+		executable filename.
+		"""
+		process = self.delget(process)
 		if isinstance(process, IrafProcess):
 			process.kill()
 
@@ -141,13 +215,7 @@ class _ProcessCache:
 		"""Terminate process and delete it from cache"""
 		# This is gentler than kill(), which should be used only
 		# when there are process errors.
-		executable = _getExecutable(process)
-		if self._data.has_key(executable):
-			rank, process = self._data[executable]
-			del self._data[executable]
-			if self._locked.has_key(executable):
-				del self._locked[executable]
-				#XXX could restart the process if locked
+		process = self.delget(process)
 		if isinstance(process, IrafProcess):
 			process.terminate()
 
@@ -161,8 +229,8 @@ class _ProcessCache:
 				task = iraf.getTask(taskname, found=1)
 				if task is not None: self.terminate(task)
 		else:
-			for rank, process in self._data.values():
-				executable = process.executable
+			for rank, proxy in self._data.values():
+				executable = proxy.process.executable
 				if not self._locked.has_key(executable):
 					self.terminate(executable)
 
@@ -172,9 +240,9 @@ class _ProcessCache:
 		values.sort()
 		values.reverse()
 		n = 0
-		for rank, process in values:
+		for rank, proxy in values:
 			n = n+1
-			executable = process.executable
+			executable = proxy.process.executable
 			if self._locked.has_key(executable):
 				print "%2d: L %s" % (n, executable)
 			else:
@@ -259,6 +327,17 @@ class IrafProcess:
 
 		self.executable = executable
 		self.process = subproc.Subprocess(executable+' -c')
+		self.running = 0   # flag indicating whether process is active
+		self.task = None
+		self.stdin = None
+		self.stdout = None
+		self.stderr = None
+		self.default_stdin  = None
+		self.default_stdout = None
+		self.default_stderr = None
+		self.stdinIsatty = 0
+		self.stdoutIsatty = 0
+		self.envVarList = []
 
 	def initialize(self, envdict):
 
@@ -338,8 +417,12 @@ class IrafProcess:
 		# remove leading underscore, which is just a convention for CL
 		if taskname[:1]=='_': taskname = taskname[1:]
 		self.writeString(taskname+redir_info+'\n')
-		# begin slave mode
-		self.slave()
+		self.running = 1
+		try:
+			# begin slave mode
+			self.slave()
+		finally:
+			self.running = 0
 
 	def terminate(self):
 

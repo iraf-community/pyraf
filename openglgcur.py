@@ -170,7 +170,7 @@ class Gcursor:
 				self._setRetString(key,x,y,colonString)
 		elif key == '=':
 			# snap command - print the plot
-			printPlot()
+			gki.printPlot(self.window)
 		elif key in string.uppercase:
 			if   key == 'R':
 				openglcmd.redrawOriginal()
@@ -205,29 +205,4 @@ class Gcursor:
 		if colonString:
 			self.retString = self.retString +' '+colonString
 		self.top.quit() # time to go!
-
-def printPlot():
-
-	win = gwm.getActiveGraphicsWindow()
-	gkibuff = win.gkibuffer.get()
-	if gkibuff:
-		# write to a temporary file
-		tmpfn = iraf.mktemp("snap") + ".gki"
-		fout = open(tmpfn,'w')
-		fout.write(gkibuff.tostring())
-		fout.close()
-		try:
-			graphcap = gki.kernel.devices
-			stdplot = iraf.envget('stdplot')
-			printtaskname = graphcap[stdplot]['tn']
-			printtask = iraf.getTask(printtaskname)
-			# Need to redirect input because running this task with
-			# input from StatusLine does not work for some reason.
-			# May need to do this for other IRAF tasks run while in
-			# gcur mode (if there are more added in the future.)
-			printtask(tmpfn,Stdin=sys.__stdin__,Stdout=sys.__stdout__)
-		finally:
-			os.remove(tmpfn)
-	stdout = gki.kernel.getStdout(default=sys.stdout)
-	stdout.write("snap completed\n")
 

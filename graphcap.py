@@ -3,13 +3,7 @@
 $Id$
 """
 
-import string
-
-def rdgraphcap(graphcapPath):
-	f = open(graphcapPath)
-	lines = f.readlines()
-	f.close()
-	return lines
+import string, filecache
 
 def merge(inlines):
 	out = []
@@ -87,19 +81,33 @@ def getDevices(devlist):
 			devices[alias] = attributes
 	return devices
 
-class GraphCap:
+class GraphCap(filecache.FileCache):
+
+	"""Graphcap class that automatically updates if file changes"""
 
 	def __init__(self, graphcapPath):
-		lines = rdgraphcap(graphcapPath)
+		filecache.FileCache.__init__(self, graphcapPath)
+
+	def updateValue(self):
+		"""Called on init and if file changes"""
+		lines = open(self.filename,'r').readlines()
 		mergedlines = merge(lines)	
 		self.dict = getDevices(mergedlines)
+
+	def getValue(self):
+		return self.dict
+
 	def __getitem__(self, key):
-		if not self.dict.has_key(key):
+		"""Get up-to-date version of dictionary"""
+		dict = self.get()
+		if not dict.has_key(key):
 			print "Error: device not found in graphcap"
 			raise KeyError
-		return Device(self.dict, key)
+		return Device(dict, key)
+
 	def has_key(self, key):
-		if self.dict.has_key(key):
+		dict = self.get()
+		if dict.has_key(key):
 			return 1
 		else:
 			return 0
@@ -109,6 +117,7 @@ class Device:
 	def __init__(self, devices, devname):
 		self.dict = devices
 		self.devname = devname
+
 	def getAttribute(self, attrName):
 		dict = self.dict[self.devname]
 		value = None
@@ -126,3 +135,4 @@ class Device:
 	
 	def __getitem__(self, key):
 		return self.getAttribute(key)
+

@@ -104,7 +104,10 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 		self.gwidget.activate()
 
 	def flush(self):
-		self.gwidget.update_idletasks()
+		try:
+			self.gwidget.update_idletasks()
+		except Tkinter.TclError:
+			pass
 
 	def hasFocus(self):
 		"""Returns true if this window currently has focus"""

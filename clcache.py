@@ -6,6 +6,7 @@ R. White, 2000 January 19
 """
 
 import os, sys, types, string
+import filecache
 from irafglobals import Verbose, userIrafHome, pyrafDir
 
 # set up pickle so it can pickle code objects
@@ -25,32 +26,41 @@ def code_pickler(code):
 
 copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
 
-# Code cache is implemented using a dictionary clFileDict and a list of
-# persistent dictionaries (shelves) in cacheList.
+# Code cache is implemented using a dictionary clFileDict and
+# a list of persistent dictionaries (shelves) in cacheList.
 #
-# - clFileDict uses CL filename as the key and has a tuple
-#   value with the md5 digest of the file contents and
-#	file attributes (file size, and file creation/modification
-#	dates)
+# - clFileDict uses CL filename as the key and has 
+#   the md5 digest of the file contents as its value.
+#   The md5 digest is automatically updated if the file changes.
 #
 # - the persistent cache has the md5 digest as the key
 #	and the Pycode object as the value.
 #
 # This scheme allows files with different path names to
 # be found in the cache (since the file contents, not the
-# name, determine the shelve key), and uses the size & dates
-# in clFileDict for a quick check to see whether the Pycode
-# is still up-to-date for the given file so the md5 digest
-# does not have to be recomputed.
+# name, determine the shelve key) while staying up-to-date
+# with changes of the CL file contents when the script is
+# being developed.
 
 import dirshelve, stat, md5
 
 _versionKey = 'CACHE_VERSION'
 _currentVersion = "v1"
 
+class _FileContentsCache(filecache.FileCacheDict):
+	def __init__(self):
+		# create file dictionary with md5 digest as value
+		filecache.FileCacheDict.__init__(self,filecache.MD5Cache)
+
 class _CodeCache:
 
-	"""Python code cache class"""
+	"""Python code cache class
+	
+	Note that old out-of-date cached code never gets
+	removed in this system.  That's because another CL
+	script might still exist with the same code.  Need a
+	utility to clean up the cache by looking for unused keys...
+	"""
 
 	def __init__(self, cacheFileList):
 		# 
@@ -63,7 +73,7 @@ class _CodeCache:
 				cacheList.append(db)
 				nwrite = nwrite+db[0]
 				flist.append(file)
-		self.clFileDict = {}
+		self.clFileDict = _FileContentsCache()
 		self.cacheList = cacheList
 		self.cacheFileList = flist
 		self.nwrite = nwrite
@@ -76,7 +86,7 @@ class _CodeCache:
 			self.warning("Unable to open any CL script cache for writing")
 
 	def _cacheOpen(self, filename):
-		"""Open shelve database in filename and check version to make sure it is OK
+		"""Open shelve database in filename and check version
 
 		Returns tuple (writeflag, shelve-object) on success or None on failure.
 		"""
@@ -170,56 +180,15 @@ class _CodeCache:
 	def __del__(self):
 		self.close()
 
-	def getAttributes(self, filename):
-
-		"""Get file attributes for a file or filehandle"""
-
-		if type(filename) is types.StringType:
-			st = os.stat(filename)
-		elif hasattr(filename, 'fileno') and hasattr(filename, 'name'):
-			fh = filename
-			st = os.fstat(fh.fileno())
-		else:
-			return None
-		# file attributes are size, creation, and modification times
-		return st[stat.ST_SIZE], st[stat.ST_CTIME], st[stat.ST_MTIME]
-
 	def getIndex(self, filename, source=None):
 
 		"""Get cache key for a file or filehandle"""
 
-		attributes = self.getAttributes(filename)
-		if attributes is None: return None
-		# get key from clFileDict if file attributes are up-to-date
-		if self.clFileDict.has_key(filename):
-			oldkey, oldattr = self.clFileDict[filename]
-			if oldattr == attributes:
-				return oldkey
-			#XXX Note that old out-of-date cached code never gets
-			#XXX removed in this system.  That's because another CL
-			#XXX script might still exist with the same code.  Need a
-			#XXX utility to clean up the cache by looking for unused keys...
-		else:
-			oldkey = None
-		# use md5 digest as key
-		# read the source code if source is not defined
-		if hasattr(filename, 'fileno') and hasattr(filename, 'name'):
-			fh = filename
-			filename = fh.name
-		if source is None:
-			if type(filename) is types.StringType:
-				source = open(filename).read()
-			else:
-				source = fh.read()
-		key = md5.new(source).digest()
-		self.clFileDict[filename] = (key, attributes)
-		# print a warning if current file appears older than cached version
-		if oldkey is not None and oldkey != key and \
-		  (oldattr[1]>attributes[1] or oldattr[2]>attributes[2]):
-			self.warning("Warning: cached CL script (%s)"
-				" in %s was newer than current script"
-				 % (filename,self.cacheFileList[i]))
-		return key
+		if filename:
+			return self.clFileDict.get(filename)
+		elif source:
+			# there is no filename, but return md5 digest of source as key
+			return md5.new(source).digest()
 
 	def add(self, index, pycode):
 

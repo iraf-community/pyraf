@@ -40,6 +40,8 @@ class GraphicsWindowManager(gki.GkiProxy):
 		self.GkiKernelClass = GkiKernelClass
 		self.windows = {}
 		self.windowName = None
+		# save list of window names in order of creation
+		self.createList = []
 
 	def window(self, windowName=None):
 
@@ -52,8 +54,9 @@ class GraphicsWindowManager(gki.GkiProxy):
 				number = number + 1
 		if not self.windows.has_key(windowName):
 			self.windows[windowName] = self.GkiKernelClass(windowName)
-		self.stdgraph = self.windows[windowName]
+			self.createList.append(windowName)
 		self.windowName = windowName
+		self.stdgraph = self.windows[windowName]
 		self.stdgraph.activate()
 		# register with focus manager
 		wutil.focusController.addFocusEntity(windowName,self.stdgraph)
@@ -72,11 +75,26 @@ class GraphicsWindowManager(gki.GkiProxy):
 			window.top.destroy()
 			del self.windows[windowName]
 			if len(self.windows) == 0:
+				self.windowName = None
 				self.stdgraph = None
 			elif changeActiveWindow:
-				#XXX change to randomly selected active window
-				self.stdgraph =self.windows[self.windows.keys()[0]]
+				# change to most recently created window
+				while self.createList:
+					wname = self.createList.pop()
+					if self.windows.has_key(wname):
+						self.createList.append(wname)
+						break
+				else:
+					# something's messed up
+					# change to randomly selected active window
+					wname = self.windows.keys()[0]
+				self.windowName = wname
+				self.stdgraph =self.windows[wname]
 			wutil.focusController.removeFocusEntity(windowName)
+
+	def flush(self):
+		for window in self.windows.values():
+			window.flush()
 
 	def openKernel(self):
 		self.window()

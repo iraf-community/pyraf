@@ -40,7 +40,7 @@ $Id$
 
 import Numeric
 from types import *
-import string, wutil, graphcap, iraf
+import os, sys, string, wutil, graphcap, iraf
 
 BOI = -1  # beginning of instruction sentinel
 NOP = 0	  # no op value
@@ -561,7 +561,7 @@ class GkiProxy(GkiKernel):
 		"""Push current stdio settings onto stack at set new values"""
 		if self.stdgraph:
 			self.stdgraph.pushStdio(stdin,stdout,stderr)
-		#YYY still needs work here...
+		#XXX still need some work here?
 		self._stdioStack.append((self.stdin, self.stdout, self.stderr))
 		self.stdin = stdin
 		self.stdout = stdout
@@ -569,7 +569,7 @@ class GkiProxy(GkiKernel):
 
 	def popStdio(self):
 		"""Restore stdio settings from stack"""
-		#YYY still needs work here...
+		#XXX still need some work here?
 		if self.stdgraph:
 			self.stdgraph.popStdio()
 		if self._stdioStack:
@@ -629,7 +629,6 @@ class GkiController(GkiProxy):
 
 		GkiProxy.__init__(self)
 		self.interactiveKernel = None
-		self.devices = None
 		self.lastDevName = None
 		self.gcount = 0 # an activity counter
 		self.lastFlushCount = 0
@@ -668,11 +667,12 @@ class GkiController(GkiProxy):
 		kernels)"""
 		if not device:
 			device = self.getDevice()
-		kernel = self.devices[device]['kf']
+		devices = getGraphcap()
+		kernel = devices[device]['kf']
   		if kernel == 'cl':
 			self.openInteractiveKernel()
 		else:
-			task = self.devices[device]['tn']
+			task = devices[device]['tn']
 			self.stdgraph = gkiiraf.GkiIrafKernel(device, kernel, task)
 			self.stdin = self.stdgraph.stdin
 			self.stdout = self.stdgraph.stdout
@@ -681,14 +681,12 @@ class GkiController(GkiProxy):
 	def openInteractiveKernel(self):
 		"""Used so that an existing opened interactive session persists"""
 
-		if not wutil.hasGraphics and not self.interactiveKernel:
-			self.interactiveKernel = GkiNull()
-		if self.interactiveKernel:
-			self.stdgraph = self.interactiveKernel
-		else:
-			self.stdgraph = gwm.getGraphicsWindowManager()
-			self.stdgraph.window()
-			self.interactiveKernel = self.stdgraph
+		if not self.interactiveKernel:
+			if wutil.hasGraphics:
+				self.interactiveKernel = gwm.getGraphicsWindowManager()
+			else:
+				self.interactiveKernel = GkiNull()
+		self.stdgraph = self.interactiveKernel
 		self.stdin = self.stdgraph.stdin
 		self.stdout = self.stdgraph.stdout
 		self.stderr = self.stdgraph.stderr
@@ -724,16 +722,14 @@ class GkiController(GkiProxy):
 	def getDevice(self, device=None):
 		"""Starting with stdgraph, drill until a device is found in
 		the graphcap or isn't"""
-		if self.devices is None:
-			self.devices = graphcap.GraphCap(iraf.osfn(
-				iraf.envget('graphcap') or 'dev$graphcap'))
 		if not device:
 			device = iraf.envget("stdgraph")
+		devices = getGraphcap()
 		# protect against circular definitions
 		devstr = device
 		tried = {devstr: None}
 		while 1:
-			if self.devices.has_key(devstr):
+			if devices.has_key(devstr):
 				device = devstr
 				break
 			else:
@@ -753,7 +749,7 @@ class GkiController(GkiProxy):
 					if next: s.append(next)
 					s.reverse()
 					raise iraf.IrafError(
-					"Circular definition in dev$graphcap for device\n%s"
+					"Circular definition in graphcap for device\n%s"
 						% (string.join(s,' -> '),))
 				else:
 					tried[devstr] = pdevstr
@@ -790,6 +786,58 @@ class GkiNull(GkiKernel):
 
 	def translate(self, gkiMetacode):
 		pass
+
+# Dictionary of all graphcap files known so far
+
+graphcapDict = {}
+
+def getGraphcap(filename=None):
+	"""Get graphcap file from filename (or cached version if possible)"""
+	if filename is None:
+		filename = iraf.osfn(iraf.envget('graphcap') or 'dev$graphcap')
+	if not graphcapDict.has_key(filename):
+		graphcapDict[filename] = graphcap.GraphCap(filename)
+	return graphcapDict[filename]
+
+def printPlot(window=None):
+
+	"""Print contents of window (default active window) to stdplot
+	
+	window must be a GkiKernel object (with a gkibuffer attribute.)
+	"""
+
+	if window is None:
+		window = gwm.getActiveGraphicsWindow()
+		if window is None: return
+	gkibuff = window.gkibuffer.get()
+	if gkibuff:
+		# write to a temporary file
+		tmpfn = iraf.mktemp("snap") + ".gki"
+		fout = open(tmpfn,'w')
+		fout.write(gkibuff.tostring())
+		fout.close()
+		try:
+			devices = getGraphcap()
+			stdplot = iraf.envget('stdplot')
+			if not stdplot:
+				msg = 'No hardcopy device defined in stdplot'
+			elif not devices.has_key(stdplot):
+				msg = "Unknown hardcopy device stdplot=`%s'" % stdplot
+			else:
+				printtaskname = devices[stdplot]['tn']
+				if printtaskname == "psikern" and not iraf.stsdas.isLoaded():
+					iraf.stsdas(motd=0, _doprint=0)
+				printtask = iraf.getTask(printtaskname)
+				# Need to redirect input because running this task with
+				# input from StatusLine does not work for some reason.
+				# May need to do this for other IRAF tasks run while in
+				# gcur mode (if there are more added in the future.)
+				printtask(tmpfn,Stdin=sys.__stdin__,Stdout=sys.__stdout__)
+				msg = "snap completed"
+		finally:
+			os.remove(tmpfn)
+	stdout = kernel.getStdout(default=sys.stdout)
+	stdout.write("%s\n" % msg)
 
 
 #********************************
