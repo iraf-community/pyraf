@@ -48,7 +48,7 @@ def _writeError(msg):
 # now it is safe to import other iraf modules
 # -----------------------------------------------------
 
-import sys, os, string, re, math, types, time
+import sys, os, string, re, math, types, time, fnmatch, glob
 import sscanf, minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 
@@ -73,6 +73,8 @@ _re = re
 _math = math
 _types = types
 _time = time
+_fnmatch = fnmatch
+_glob = glob
 _StringIO = StringIO
 _pickle = pickle
 
@@ -87,7 +89,7 @@ _irafpar = irafpar
 _irafexecute = irafexecute
 _cl2py = cl2py
 
-del sys, os, string, re, math, types, time, StringIO, pickle
+del sys, os, string, re, math, types, time, fnmatch, glob, StringIO, pickle
 del minmatch, subproc, wutil
 del irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 
@@ -909,6 +911,69 @@ def access(filename):
 	"""Returns true if file exists"""
 	return _os.path.exists(Expand(filename))
 
+def _imextn():
+	"""Returns list of image types and extensions
+	
+	The return value is (ktype, globlist) where ktype is
+	the image kernel (oif, fxf, etc.) and globlist is a list
+	of glob-style patterns that match extensions.
+	"""
+	# imextn environment variable has list (or use default)
+	s = envget("imextn", "oif:imh fxf:fits,fit plf:pl qpf:qp stf:hhh,??h")
+	fields = _string.split(s)
+	extlist = []
+	for f in fields:
+		ilist = _string.split(f, ":")
+		if len(ilist) != 2:
+			raise IrafError("Illegal field `%s' in IRAF variable imextn" % f)
+		exts = _string.split(ilist[1], ",")
+		extlist.append((ilist[0], exts))
+	return extlist
+
+def _checkext(ext, extlist):
+	"""Returns image type if ext is in extlist, else returns None
+	
+	Assumes ext starts with a '.' (as returned by os.path.split) and
+	that null extensions can't match.
+	"""
+	if not ext: return None
+	ext = ext[1:]
+	for ktype, elist in extlist:
+		for pat in elist:
+			if _fnmatch.fnmatch(ext, pat):
+				return ktype
+	return None
+
+def _searchext(root, extlist):
+	"""Returns image type if file root.ext is found (ext from extlist)"""
+	for ktype, elist in extlist:
+		for pat in elist:
+			flist = _glob.glob(root + '.' + pat)
+			if flist:
+				return ktype
+	return None
+
+def imaccess(filename):
+	"""Returns true if image matching name exists and is readable"""
+	extlist = _imextn()
+	# strip off any image sections (just ignore them)
+	i = _string.find(filename, '[')
+	if i>=0: filename = filename[:i]
+	filename = Expand(filename)
+	# first see if filename is fully specified and exists
+	if _os.path.exists(filename):
+		root, ext = _os.path.splitext(filename)
+		if _checkext(ext, extlist):
+			return 1
+		else:
+			# doesn't look like an image
+			return 0
+	# file is not there, so try appending extensions
+	if _searchext(filename, extlist):
+		return 1
+	else:
+		return 0
+
 def defvar(varname):
 	"""Returns true if CL variable is defined"""
 	return _varDict.has_key(varname) or _os.environ.has_key(varname)
@@ -1202,14 +1267,6 @@ def nscan():
 	"""Return number of items read in last scan function"""
 	global _nscan
 	return _nscan
-
-# -----------------------------------------------------
-# unimplemented IRAF functions (raise exception)
-# -----------------------------------------------------
-
-def imaccess(*args, **kw):
-	"""Error unimplemented function"""
-	raise IrafError("The imaccess function has not been implemented")
 
 # -----------------------------------------------------
 # IRAF utility procedures
