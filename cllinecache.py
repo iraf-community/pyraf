@@ -9,12 +9,14 @@ import linecache, string, os, sys
 from stat import *
 import iraf
 
-# Discard cache entries that are out of date.
-# (This is not checked upon each call!)
 
 def checkcache():
-	for filename in linecache.cache.keys():
-		size, mtime, lines, fullname = linecache.cache[filename]
+	"""Discard cache entries that are out of date.
+	(This is not checked upon each call!)"""
+
+	cache = linecache.cache
+	for filename in cache.keys():
+		size, mtime, lines, fullname = cache[filename]
 		try:
 			if filename[:10] == "<CL script":
 				# special CL script case - find original script file for time check
@@ -25,19 +27,20 @@ def checkcache():
 			newsize = stat[ST_SIZE]
 			newmtime = stat[ST_MTIME]
 		except (os.error, iraf.IrafError):
-			del linecache.cache[filename]
+			del cache[filename]
 			continue
 		if size <> newsize or mtime <> newmtime:
-			del linecache.cache[filename]
+			del cache[filename]
 
-
-# Update a cache entry and return its list of lines.
-# If something's wrong, print a message, discard the cache entry,
-# and return an empty list.
 
 def updatecache(filename):
-	if linecache.cache.has_key(filename):
-		del linecache.cache[filename]
+	"""Update a cache entry and return its list of lines.
+	If something's wrong, print a message, discard the cache entry,
+	and return an empty list."""
+
+	cache = linecache.cache
+	if cache.has_key(filename):
+		del cache[filename]
 	if not filename or filename[0] + filename[-1] == '<>':
 		if filename[:10] == "<CL script":
 			# special CL script case
@@ -70,10 +73,11 @@ def updatecache(filename):
 ##		print '*** Cannot open', fullname, ':', msg
 		return []
 	size, mtime = stat[ST_SIZE], stat[ST_MTIME]
-	linecache.cache[filename] = size, mtime, lines, fullname
+	cache[filename] = size, mtime, lines, fullname
 	return lines
 
 def updateCLscript(filename):
+	cache = linecache.cache
 	try:
 		taskname = filename[11:-1]
 		taskobj = iraf.getTask(taskname)
@@ -82,7 +86,7 @@ def updateCLscript(filename):
 		size = stat[ST_SIZE]
 		mtime = stat[ST_MTIME]
 		lines = string.split(taskobj.getCode(),'\n')
-		linecache.cache[filename] = size, mtime, lines, taskname
+		cache[filename] = size, mtime, lines, taskname
 		return lines
 	except (iraf.IrafError, KeyError, AttributeError):
 		return []

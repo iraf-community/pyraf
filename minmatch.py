@@ -81,11 +81,11 @@ class MinMatchDict(UserDict):
 		self.mmkeys = mmkeys
 
 	def getfullkey(self, key, new=0):
-		if type(key) != StringType:
-			raise KeyError("MinMatchDict keys must be strings")
 		# check for exact match first
 		# ambiguous key is ok if there is exact match
 		if self.data.has_key(key): return key
+		if type(key) != StringType:
+			raise KeyError("MinMatchDict keys must be strings")
 		# no exact match, so look for unique minimum match
 		if self.mmkeys is None: self._mmInit()
 		keylist = self.mmkeys.get(key)
@@ -132,8 +132,11 @@ class MinMatchDict(UserDict):
 			raise e.__class__(str(e) + "\nUse add() method to add new items")
 
 	def __getitem__(self, key):
-		key = self.getfullkey(key)
-		return self.data[key]
+		try:
+			# try the common case that the exact key is given first
+			return self.data[key]
+		except KeyError:
+			return self.data[self.getfullkey(key)]
 
 	def get(self, key, failobj=None, exact=0):
 		"""Raises exception if key is ambiguous"""

@@ -84,16 +84,12 @@ class _CodeCache:
 		try:
 			fh = binshelve.open(filename)
 			writeflag = 1
-		except:
+		except binshelve.error:
 			# initial open failed -- try opening the cache read-only
-			# Note I'm catching all errors here because binshelve.open
-			# raises an unpredictable type of exception depending
-			# on the underlying database.  Ideally I should modify
-			# binshelve.open so it raises a standard error.
 			try:
 				fh = binshelve.open(filename,"r")
 				writeflag = 0
-			except:
+			except binshelve.error:
 				self.warning("Unable to open CL script cache file %s" %
 					(filename,))
 				return None
@@ -127,7 +123,7 @@ class _CodeCache:
 					fh[_versionKey] = _currentVersion
 					msg.append("Created new cache file %s" % filename)
 					rv = (writeflag, fh)
-				except:
+				except binshelve.error:
 					msg.append("Could not create new cache file %s" % filename)
 			except OSError:
 				msg.append("Could not rename old cache file %s" % filename)

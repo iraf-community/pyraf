@@ -5,7 +5,10 @@ $Id$
 R. White, 2000 January 19
 """
 
-import shelve
+import shelve, anydbm
+
+# tuple of errors that anydbm can raise
+from anydbm import error
 
 class Shelf(shelve.Shelf):
 	"""Extension of Shelf using binary pickling"""
@@ -20,6 +23,13 @@ class Shelf(shelve.Shelf):
 		p.dump(value)
 		self.dict[key] = f.getvalue()
 
+	def close(self):
+		if hasattr(self,'dict') and hasattr(self.dict,'close'):
+			try:
+				self.dict.close()
+			except:
+				pass
+		self.dict = 0
 
 class BsdDbShelf(Shelf, shelve.BsdDbShelf):
 	"""Shelf implementation using the "BSD" db interface."""
@@ -48,5 +58,5 @@ def open(filename, flag='c'):
 
 	try:
 		return GdbfilenameShelf(filename, flag)
-	except:
+	except error:
 		return DbfilenameShelf(filename, flag)
