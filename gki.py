@@ -508,7 +508,7 @@ class GkiController(GkiKernel):
 
 	def flush(self):
 
-		if self.stdgraph.__class__.__name__ == "GkiIrafKernel":
+		if self.stdgraph and self.stdgraph.__class__.__name__ == "GkiIrafKernel":
 			if self.gcount != self.lastFlushCount:
 				# this is to prevent flushes when no graphics activity
 				# occurred since the last time a task finished.
