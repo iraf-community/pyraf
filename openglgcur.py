@@ -61,6 +61,8 @@ class Gcursor:
 		self.win.deactivateSWCursor()
 		if activate:
 			gki.kernel.deactivateWS(None,None)
+		self.win.lastX = self.x
+		self.win.lastY = self.y
 		return self.retString
 
 	def bind(self):
@@ -172,7 +174,7 @@ class Gcursor:
 					print "Don't handle this CL level gcur :. commands."
 					print "Please check back later."
 			else:
-				self._setRetString(key,colonString)
+				self._setRetString(key,x,y,colonString)
 		elif key == '=':
 			# snap command - print the plot
 			printPlot()
@@ -190,16 +192,15 @@ class Gcursor:
 					  "CL level gcur command."
 				print "Please check back later."
 		else:
-			self._setRetString(key,"")
+			self._setRetString(key,x,y,"")
 
 	def getShiftKey(self, event):
 
 		print event.key
 		print ord(event.key)
 
-	def _setRetString(self, key, cstring):
+	def _setRetString(self, key, x, y, colonString):
 
-		x,y = self.getNDCCursorPos()
 		wcs = gwm.getActiveWindow().iplot.wcs
 		if wcs:
 			wx,wy,gwcs = gwm.getActiveWindow().iplot.wcs.get(x,y)
@@ -208,8 +209,8 @@ class Gcursor:
 		if key <= ' ' or ord(key) >= 127:
 			key = '\\%03o' % ord(key)
 		self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
-		if cstring:
-			self.retString = self.retString +' '+cstring
+		if colonString:
+			self.retString = self.retString +' '+colonString
 		self.top.quit() # time to go!
 
 def printPlot():
