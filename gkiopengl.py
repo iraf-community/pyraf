@@ -99,7 +99,7 @@ class GkiOpenGlKernel(GkiKernel):
 			win.iplot.gkiBuffer.reset()
 			win.iplot.glBuffer.reset()
 			win.iplot.wcs = None
-			win.tkRedraw()
+			win.immediateRedraw()
 		elif mode == 4:
 			# append, i.e., do nothing!
 			pass
@@ -115,7 +115,7 @@ class GkiOpenGlKernel(GkiKernel):
 		win.iplot.gkiBuffer.reset()
 		win.iplot.glBuffer.reset()
 		win.iplot.wcs = None
-		win.tkRedraw()
+		win.immediateRedraw()
 		
 	def setWCS(self, arg):
 
@@ -126,7 +126,6 @@ class GkiOpenGlKernel(GkiKernel):
 
 	def getWCS(self, arg):
 
-		print 'getwcs'
 		win = gwm.getActiveWindow()
 		if not win.iplot.wcs:
 			print "Error: can't append to a nonexistent plot!"
@@ -185,7 +184,7 @@ def gki_clearws(arg):
 	win.iplot.gkiBuffer.reset()
 	win.iplot.glBuffer.reset()
 	win.iplot.wcs = None
-	win.tkRedraw()
+	win.immediateRedraw()
 
 def gki_cancel(arg): gki_clearws(arg)
 
