@@ -49,7 +49,7 @@ def _writeError(msg):
 # -----------------------------------------------------
 
 import sys, os, string, re, math, types, time
-import minmatch, subproc, wutil
+import sscanf, minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 
 try:
@@ -1075,6 +1075,42 @@ def fscan(locals, line, *namelist, **kw):
 	_nscan = n
 	return n
 
+def fscanf(locals, line, format, *namelist, **kw):
+	"""fscanf function sets parameters from a string/list parameter with format
+
+	Implementation is similar to fscan but is a bit simpler because
+	special struct handling is not needed.  Does not allow strconv keyword.
+
+	Returns number of arguments set to new values.  If there are
+	too few space-delimited arguments on the input line, it does
+	not set all the arguments.  Returns EOF on end-of-file.
+	"""
+	# get the value of the line (which may be a variable, string literal,
+	# expression, or an IRAF list parameter)
+	global _nscan
+	try:
+		line = eval(line, locals)
+		# format also needs to be evaluated
+		format = eval(format, locals)
+	except EOFError:
+		_weirdEOF(locals, namelist)
+		_nscan = 0
+		return EOF
+	f = sscanf.sscanf(line, format)
+	n = min(len(f),len(namelist))
+	# if list is null, add a null string
+	# ugly but should be right most of the time
+	if n==0 and namelist:
+		f = ['']
+		n = 1
+	if len(kw):
+		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+	for i in range(n):
+		cmd = namelist[i] + ' = ' + `f[i]`
+		exec cmd in locals
+	_nscan = n
+	return n
+
 def _weirdEOF(locals, namelist):
 	# Replicate a weird IRAF behavior -- if the argument list
 	# consists of a single struct-type variable, and it does not
@@ -1133,6 +1169,31 @@ def scan(locals, *namelist, **kw):
 			return EOF
 		else:
 			return apply(fscan, (locals, `line`) + namelist, kw)
+	finally:
+		# note return value not used here
+		rv = redirReset(resetList, closeFHList)
+
+def scanf(locals, format, *namelist, **kw):
+	"""Formatted scan function sets parameters from line read from stdin
+
+	This can be used either as a function or as a task (it accepts
+	redirection and the _save keyword.)
+	"""
+	# handle redirection and save keywords
+	# other keywords are passed on to fscan
+	redirKW, closeFHList = redirProcess(kw)
+	if kw.has_key('_save'): del kw['_save']
+	resetList = redirApply(redirKW)
+	try:
+		line = _sys.stdin.readline()
+		# null line means EOF
+		if line == "":
+			_weirdEOF(locals, namelist)
+			global _nscan
+			_nscan = 0
+			return EOF
+		else:
+			return apply(fscanf, (locals, `line`, format) + namelist, kw)
 	finally:
 		# note return value not used here
 		rv = redirReset(resetList, closeFHList)

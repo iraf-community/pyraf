@@ -918,6 +918,8 @@ _functionType = {
 			"max":		"indef",
 			"fscan":	"int",
 			"scan":		"int",
+			"fscanf":	"int",
+			"scanf":	"int",
 			"nscan":	"int",
 			"stridx":	"int",
 			"strlen":	"int",
@@ -1392,7 +1394,7 @@ class Tree2Python(GenericASTTraversal):
 		self.write(newname + "(")
 		# argument list for scan statement
 		sargs = self.captureArgs(node[2])
-		if functionname in ["scan", "fscan"]:
+		if functionname in ["scan", "fscan", "scanf", "fscanf"]:
 			# scan is weird -- effectively uses call-by-name
 			# call special routine to change the args
 			sargs = self.modify_scan_args(functionname, sargs)
@@ -1707,7 +1709,7 @@ class Tree2Python(GenericASTTraversal):
 			s = sargs[0]
 			if s[:1] == "(" and s[-1:] == ")": sargs[0] = s[1:-1]
 
-		if self.currentTaskname in ["scan", "fscan"]:
+		if self.currentTaskname in ["scan", "fscan", "scanf", "fscanf"]:
 			# scan is weird -- effectively uses call-by-name
 			# call special routine to change the args
 			sargs = self.modify_scan_args(self.currentTaskname, sargs)
