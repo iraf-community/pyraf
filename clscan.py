@@ -146,7 +146,7 @@ class _BasicScanner_3:
 			parent.addToken(type=parent.argsep)
 			parent.argsep = ','
 		nline = _countNewlines(s)
-		s = irafutils.removeEscapes(irafutils.stripQuotes(s))
+		s = irafutils.removeEscapes(irafutils.stripQuotes(s),quoted=1)
 		# We use a different type for quoted strings to protect them
 		# against conversion to other token types by enterComputeEqnMode
 		parent.addToken(type='QSTRING', attr=s)
@@ -158,7 +158,7 @@ class _BasicScanner_3:
 			parent.addToken(type=parent.argsep)
 			parent.argsep = ','
 		nline = _countNewlines(s)
-		s = irafutils.removeEscapes(irafutils.stripQuotes(s))
+		s = irafutils.removeEscapes(irafutils.stripQuotes(s),quoted=1)
 		parent.addToken(type='QSTRING', attr=s)
 		parent.lineno = parent.lineno + nline
 

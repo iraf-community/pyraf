@@ -58,10 +58,14 @@ def stripQuotes(value):
 		value = re.sub(_re_singleq2, "'", value)
 	return value
 
-def removeEscapes(value):
+def removeEscapes(value, quoted=0):
 
 	"""Remove escapes from in front of quotes (which IRAF seems to
 	just stick in for fun sometimes.)  Remove \-newline too.
+	If quoted is true, removes all blanks following \-newline
+	(which is a nasty thing IRAF does for continuations inside
+	quoted strings.)
+
 	Don't worry about multiple-backslash case -- this will replace
 	\\" with just ", which is fine by me.
 	"""
@@ -78,7 +82,14 @@ def removeEscapes(value):
 	# delete backslash-newlines
 	i = string.find(value,"\\\n")
 	while i>=0:
-		value = value[:i] + value[i+2:]
+		j = i+2
+		if quoted:
+			# ignore blanks and tabs following \-newline in quoted strings
+			for c in value[i+2:]:
+				if c not in ' \t':
+					break
+				j = j+1
+		value = value[:i] + value[j:]
 		i = string.find(value,"\\\n")
 	return value
 
