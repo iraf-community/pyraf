@@ -6,7 +6,7 @@ R. White, 1999 March 25
 """
 
 import os, string, types
-import iraf, irafpar, irafexecute, minmatch
+import iraf, irafpar, irafexecute, minmatch, epar
 
 # -----------------------------------------------------
 # IRAF task class
@@ -182,8 +182,12 @@ class IrafTask:
 					# otherwise assume it is a filehandle
 					value = kw[key]
 					if type(value) == types.StringType:
+						# expand IRAF variables
+						value = iraf.Expand(value)
 						if outputRedir.has_key(key):
 							# output file
+							# check to see if it is dev$null
+							if iraf.isNullFile(value): value = '/dev/null'
 							fh = open(value,'w')
 							# close this when we're done
 							closeFHList.append(fh)
@@ -395,6 +399,14 @@ class IrafTask:
 			print "Task",self.__name," has no parameter file"
 		else:
 			self.__parList.lpar()
+
+	def epar(self):
+		"""Edit the task parameters"""
+		self.initTask()
+		if not self.__hasparfile:
+			print "Task",self.__name," has no parameter file"
+		else:
+			epar.epar(self)
 
 	def initTask(self):
 		"""Fill in full pathnames of files and read parameter file

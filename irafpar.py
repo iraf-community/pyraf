@@ -6,7 +6,7 @@ R. White, 1999 July 16
 """
 
 import os, sys, string, re
-import irafgcur, irafimcur, irafukey, irafutils, minmatch
+import irafgcur, irafimcur, irafukey, irafutils, minmatch, epar
 from types import *
 from iraffunctions import INDEF
 
@@ -1246,6 +1246,9 @@ class IrafParList:
 			p = self.__pars[i]
 			if iraf.Verbose>0 or p.name != '$nargs':
 				print p.pretty(verbose=verbose or iraf.Verbose>0)
+
+	def epar(self):
+		epar.epar(self.__name)
 
 	def __str__(self):
 		s = '<IrafParList ' + self.__name + ' (' + self.__filename + ') ' + \

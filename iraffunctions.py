@@ -121,6 +121,9 @@ del irafnames, irafutils, minmatch, iraftask, irafpar
 
 class IrafError(Exception):
 	pass
+
+class ScriptExit(Exception):
+	pass
  
 # -----------------------------------------------------
 # private dictionaries:
@@ -1318,7 +1321,7 @@ def _parseLine(line):
 	return mmlist
 
 # -----------------------------------------------------
-# IRAF utility procedures (used to evaluate if statements)
+# IRAF utility procedures
 # -----------------------------------------------------
 
 def clParGet(paramname,pkg=None,native=1):
@@ -1404,6 +1407,39 @@ def clBeep():
 		_sys.stdout.write("")
 		_sys.stdout.flush()
 
+def clOscmd(s):
+	"""Execute a system-dependent command in the shell, returning status
+	
+	Currently does not redirect IO, and os.system ignores
+	sys.stdin, sys.stdout, etc.  I think this always uses
+	the Bourne shell...
+	XXX possible enhancements -- capture output, input
+	XXX explicitly check SHELL environment variable (see
+	XXX iraf$unix/os/zoscmd.c for how IRAF does this)
+	"""
+
+	# ignore null commands
+	if not s: return 0
+	# if first character of s is '!' then force to Bourne shell
+	# just strip it off
+	if s[:1] == '!': s = s[1:]
+	return _os.system(s)
+
+_NullFile = "dev$null"
+_NullPath = None
+
+def isNullFile(s):
+	"""Returns true if this is the CL null file"""
+	global _NullFile, _NullPath
+	if s == _NullFile: return 1
+	sPath = Expand(s)
+	if _NullPath is None: _NullPath = Expand(_NullFile)
+	if sPath == _NullPath:
+		return 1
+	else:
+		return 0
+
+
 # some dummy routines
 
 def clKeep():
@@ -1460,9 +1496,14 @@ def clTask(*args, **kw):
 		raise SyntaxError("Must be at least one `=' in task definition")
 	s = kw.keys()[0]
 	value = kw[s]
+	# translate 'DOT' embedded in name to '.' (because cannot use . in Python keywords)
+	i = _string.find(s, 'DOT')
+	while (i>=0):
+		s = s[:i] + '$' + s[i+3:]
+		start = i+1
+		i = _string.find(s, 'DOT', start)
 	# translate 'DOLLAR' embedded in name to '$' (because cannot use $ in Python vars)
-	start = 0
-	i = _string.find(s, 'DOLLAR', start)
+	i = _string.find(s, 'DOLLAR')
 	while (i>=0):
 		s = s[:i] + '$' + s[i+6:]
 		start = i+1
