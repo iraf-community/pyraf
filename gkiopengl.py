@@ -263,7 +263,7 @@ class StatusLine:
 	def write(self, text):
    		self.graphicsWindow.status.config(text=string.strip(text))
 	def flush(self):
-		pass
+		self.graphicsWindow.update_idletasks()
 	def close(self):
 		# clear status line
 		self.graphicsWindow.status.config(text="")
