@@ -575,8 +575,10 @@ def _regexp_init():
 		optional_whitespace + '\)' + optional_whitespace
 
 	# declaration statement
-	declaration_stmt = r'(?P<vartype>int|float|bool|string|struct|file)' + \
-		required_whitespace
+	# XXX should add optional attributes to pattern
+	declaration_stmt = r'(?P<vartype>' + \
+		r'int|bool|char|real|string|struct|file|gcur|imcur' + \
+		r')' + required_whitespace
 
 	# block statement (after initial parsing and substitution
 	block_stmt = _blockMarker + r'(?P<block>[^' + _blockMarker + r']*)' +  \
