@@ -25,48 +25,99 @@ class GkiIrafKernel(gki.GkiKernel):
 		gki.GkiKernel.__init__(self)
 		self.gkiBuffer = gki.GkiBuffer()
 		self.controlFunctionTable = [self.noAction]*(gki.GKI_MAX_OP_CODE+1)
+		self.controlFunctionTable[gki.GKI_OPENWS] = self.openws
+		self.controlFunctionTable[gki.GKI_GETWCS] = self.getWCS
+		self.controlFunctionTable[gki.GKI_SETWCS] = self.setWCS
 		self._gkiAction = self._irafAction
 		self.executable = executable
 		self.device = device
 		self.taskname = taskname
 		self.stdout = sys.__stdout__
 		self.stderr = sys.__stderr__
-
+		self.wcs = None
+		self.returnData = None
+		
 	def getBuffer(self):
 
 		return self.gkiBuffer
 
-	def translate(self, gkiMetacode, fTable):
+	def nullAction(self, arg): pass
+	
+	def control(self, gkiMetacode):
 
-		gki.gkiTranslate(gkiMetacode, fTable, self._irafAction)
+		gki.gkiTranslate(gkiMetacode, self.controlFunctionTable,
+						 self.nullAction)
+		return self.returnData
+
+#	def translate(self, gkiMetacode, fTable):
+
+#		gki.gkiTranslate(gkiMetacode, fTable, self._irafAction)
 
 	def noAction(self, dummy, arg): pass
 
-	def _irafAction(self, opcode, arg):
+	def openws(self, dummy, arg):
 
-		"""Look for a gki_flush, otherwise, do nothing"""
-		#if opcode == gki.GKI_FLUSH:
-		#	self.flush()
-		pass
-	
+		mode = arg[0]
+		if mode == 5:
+			self.gkiBuffer = gki.GkiBuffer()
+			
+	def setWCS(self, dummy, arg):
+
+		self.wcs = irafgwcs.IrafGWcs(arg)
+
+	def getWCS(self, dummy, arg):
+
+		if not self.wcs:
+			self.errorMessage("Error: can't append to a nonexistent plot!")
+			raise iraf.IrafError
+		if self.returnData:
+			self.returnData = self.returnData + self.wcs.pack()
+		else:
+			self.returnData = self.wcs.pack()
+			
+#	def translate(self, gkiMetacode, fTable):
+
+#		gki.gkiTranslate(gkiMetacode, fTable, self._gkiAction)
+
+	def _irafAction(self, opcode, arg): pass
+
+#		print opcode
+#		"""Look for a gki_open, otherwise, do nothing"""
+#		if opcode == gki.GKI_OPENWS:
+#			print "gkiiraf openws", arg[0]
+#			mode = arg[0]
+#			if mode == 5:
+#				self.gkiBuffer.reset()
+
 	def flush(self):
 
 		# only plot if buffer contains something
-		if self.gkiBuffer.get():
+		if len(self.gkiBuffer):
 			# write to a temporary file
 			tmpfn = iraf.mktemp("iraf") + ".gki"
 			fout = open(tmpfn,'w')
 			fout.write(self.gkiBuffer.get().tostring())
 			fout.close()
+			#self.gkiBuffer.reset()
 			try:
-				task = iraf.getTask(self.taskname)
 				if self.taskname == "stdgraph":
 					# this is to allow users to specify via the
 					# stdgraph device parameter the device they really
-					# want to display to
+					# want to display to		
+					task = iraf.getTask(self.taskname)
 					task(tmpfn,generic="yes")
+				elif self.taskname == "psikern":
+					tempmode = iraf.stsdas.motd
+					iraf.stsdas.motd="no"
+					iraf.load("stsdas",doprint=0)
+					iraf.stsdas.motd=tempmode
+					iraf.load("graphics",doprint=0)
+					iraf.load("stplot",doprint=0)
+					task = iraf.getTask("psikern")
+					task(tmpfn,device=self.device,generic='yes')
 				else:
+					task = iraf.getTask(self.taskname)
 					task(tmpfn,device=self.device,generic='yes')
 			finally:
 				os.remove(tmpfn)
-		
+

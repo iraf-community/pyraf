@@ -494,6 +494,7 @@ class GkiController(GkiKernel):
 		self.lastDevName = None
 		self.gcount = 0 # an activity counter
 		self.lastFlushCount = 0
+		self.flushInProgress = 0
 
 	def append(self, arg):
 
@@ -523,14 +524,30 @@ class GkiController(GkiKernel):
 
 		mode = arg[0]
 		device = string.strip(arg[2:].astype(Numeric.Int8).tostring())
+		device = self.getDevice(device)
 		if device != self.lastDevName:
-			if self.stdgraph:
-				self.stdgraph.flush() # ensure all graphics is flushed before
-				                      # switching kernels!
 			self.openKernel(device)
 			self.lastDevName = device
 			# call the active kernel's openws function
 			#self.stdgraph.controlFunctionTable[GKI_OPENWS](dummy, arg) 
+
+	def getDevice(self, device=None):
+		"""Starting with stdgraph, drill until a device is found in
+		the graphcap or isn't"""
+		devstr = iraf.envget("stdgraph")
+		if (not device) or (not self.devices.has_key(device)):
+			while 1:
+				# no protection against circular definitions!
+				if self.devices.has_key(devstr):
+					device = devstr
+					break
+				else:
+					devstr = iraf.envget(devstr)
+					if not devstr:
+						raise IrafError(
+							"No entry found for specified stdgraph device")
+		
+		return device
 
 	def openKernel(self, device=None):
 
@@ -538,10 +555,8 @@ class GkiController(GkiKernel):
 		should become active based on the current value of stdgraph (this
 		will be generalized to allow other means of selecting graphics
 		kernels"""
-
 		if not device:
-			# get the current value of stdgraph
-			device = iraf.envget('stdgraph')
+			device = self.getDevice()
 		kernel = self.devices[device]['kf']
   		if kernel == 'cl':
 			self.openInteractiveKernel()
@@ -569,7 +584,7 @@ class GkiController(GkiKernel):
 class GkiNull(GkiKernel):
 	
 	"""A version of the graphics kernel that does nothing except warn the
-	user that does nothing. Used when graphics display isn't possible"""
+	user that it does nothing. Used when graphics display isn't possible"""
 
 	def __init__(self):
 
@@ -621,3 +636,4 @@ def ndcpairs(intarr):
 	
 	f = ndc(intarr)
 	return f[0::2],f[1::2]
+

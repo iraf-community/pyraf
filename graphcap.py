@@ -98,6 +98,11 @@ class GraphCap:
 			print "Error: device not found in graphcap"
 			raise KeyError
 		return Device(self.dict, key)
+	def has_key(self, key):
+		if self.dict.has_key(key):
+			return 1
+		else:
+			return 0
 
 class Device:
 
