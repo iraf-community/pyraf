@@ -257,24 +257,17 @@ def executeClCommand(process, msg):
 	if mo:
 		# Now extract arguments. Will eventually use general parsing
 		# stuff Rick developed
-		print "oh boy, trying to execute display!"
-		print msg
 		tmsg = msg[mo.end():]
-		print tmsg
 		pmo = _re_paren_pair.search(tmsg)
 		if pmo:
 			# hmmm, let's just try using the string and paste together
 			# something for exec
 			argstr = tmsg[pmo.start():pmo.end()]
-			print argstr
 			argstr = string.replace(argstr,'\\','')
-			print argstr
 			displaytask = iraf.getTask("display")
 			execstr= "displaytask"+argstr
-			print execstr
 			exec(execstr)
 			pos = string.find(tmsg, '\n')
-			print "leftover = ", tmsg[pos+1:]
 			return tmsg[pos+1:]
 		else:
 			raise IrafProcessError("display command not in expected format")
