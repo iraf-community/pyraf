@@ -5,7 +5,7 @@ $Id$
 """
 
 import string, os
-import gwm, wutil, iraf
+import gwm, wutil, iraf, irafexecute, gkiopengl
 import irafgwcs
 import tkSimpleDialog
 
@@ -35,25 +35,17 @@ class Gcursor:
 		# Get reference to active graphics window and bind event handling
 		#  from it.
 		self.top = gwm.getActiveWindowTop()
+		if not self.top:
+			# if graphics hasn't been started yet xxx depends implicitly on
+			# opengl kernel. This may become optional
+			irafexecute.stdgraph = gkiopengl.GkiOpenGlKernel()
+			irafexecute.stdgraph.openWS(irafexecute.Numeric.array([5,0]))
+			irafexecute.stdgraph.closeWS(None)
+			self.top = gwm.getActiveWindowTop()
 		self.win = gwm.getActiveWindow()
 		gwm.raiseActiveWindow()
 		self.top.update()
-		if not self.win.lastX:
-			self.win.lastX = self.win.winfo_width()/2
-			self.win.lastY = self.win.winfo_height()/2
-		if not wutil.isFocusElsewhere():
-			if wutil.isViewable(self.win.winfo_id()):
-				curWinID = wutil.getWindowID()
-				if curWinID == wutil.getTerminalWindowID():
-					# save terminal cursor position if in that window
-					wutil.saveTerminalCursorPosition()
-				if ((wutil.getTopID(self.win.winfo_id()) !=
-					   wutil.getTopID(curWinID))):
-					# if focus not in graphics window already
-					self.top.focus_force()
-				wutil.moveCursorTo(self.win.winfo_id(),
-							   self.win.lastX, self.win.lastY)
-		self.win.focus_set()
+		wutil.focusController.setFocusTo(gwm.getActiveGraphicsWindow())
 		self.win.activateSWCursor(
 			float(self.win.lastX)/self.win.winfo_width(),
 			float(self.win.lastY)/self.win.winfo_height())
@@ -128,13 +120,18 @@ class Gcursor:
 	def _setRetString(self, key, cstring):
 
 		x,y = self.getNDCCursorPos()
-		wx,wy,gwcs = gwm.getActiveWindow().iplot.wcs.get(x,y)
+		wcs = gwm.getActiveWindow().iplot.wcs
+		if wcs:
+			wx,wy,gwcs = gwm.getActiveWindow().iplot.wcs.get(x,y)
+		else:
+			wx,wy,gwcs = x,y,0
 		if key <= ' ' or ord(key) >= 127:
 			key = '\\%03o' % ord(key)
 		self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
 		if cstring:
 			self.retString = self.retString +' '+cstring
-		gwm.saveGraphicsCursorPosition()
+#		gwm.saveGraphicsCursorPosition()
+		wutil.focusController.restoreLast()
 		self.top.quit() # time to go!
 
 def printPlot():

@@ -13,6 +13,7 @@ GKI_MAX = 32767
 GKI_MAX_FLOAT = Numeric.array(GKI_MAX,Numeric.Float32)
 GKI_MAX_OP_CODE = 27
 GKI_FLOAT_FACTOR = 100.
+MAX_ERROR_COUNT = 7
 
 # need to treat this more generally
 # Could do a test with struct & byte-swapping option to determine byte order
@@ -196,8 +197,13 @@ class GkiKernel:
 	
 		self.functionTable = []
 		self.returnData = None
-#		self.return = GkiReturnBuffer()
+		self.errorMessageCount = 0
 
+	def errorMessage(self, text):
+
+		if self.errorMessageCount < MAX_ERROR_COUNT:
+			print text
+			self.errorMessageCount = self.errorMessageCount + 1
 	
 	def control(self, gkiMetacode):
 

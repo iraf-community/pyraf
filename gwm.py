@@ -60,13 +60,14 @@ class GraphicsWindowManager:
 		# it removed from the list (e.g., user closes window). This
 		# probably is not the best way to do it!
 		self.activeWindow.windowManager = self
+		# register with focus manager
+		wutil.focusController.addFocusEntity(windowName,self.activeWindow)
 			
 	def nWindows(self):
 		
 		return len(self.windows)
 
 	def delete(self, windowName):
-
 		
 		changeActiveWindow = 0
 		if self.windows.has_key(windowName):
@@ -107,6 +108,52 @@ class GraphicsWindow:
 		windowID = self.gwidget.winfo_id()
 		wutil.setBackingStore(windowID)
 
+	# the following methods implement the FocusEntity interface
+	# used by wutil.FocusController
+
+	def saveCursorPos(self):
+
+		"""save current position if window has focus and cursor is
+		in window, otherwise do nothing"""
+		gwin = self.gwidget
+
+		# first see if window has focus
+		if wutil.getTopID(wutil.getWindowID()) != \
+		   wutil.getTopID(self.gwidget.winfo_id()):
+			return
+		posdict = wutil.getPointerPosition(gwin.winfo_id())
+		if posdict:
+			x = posdict['win_x']
+			y = posdict['win_y']
+		else:
+			return
+		maxX = gwin.winfo_width()
+		maxY = gwin.winfo_height()
+		if x < 0 or y < 0 or x >= maxX or y >= maxY:
+			return
+		gwin.lastX = x
+		gwin.lastY = y
+
+	def forceFocus(self):
+
+		gwin = self.gwidget
+		# only force focus if window is viewable
+		if not wutil.isViewable(self.top.winfo_id()):
+			return
+		self.gwidget.focus_force()
+		# warp cursor
+		# if no previous position, move to center
+		if not gwin.lastX:
+			gwin.lastX = gwin.winfo_width()/2
+			gwin.lastY = gwin.winfo_height()/2
+		wutil.moveCursorTo(gwin.winfo_id(),gwin.lastX,gwin.lastY)
+
+	def getWindowID(self):
+
+		return self.gwidget.winfo_id()
+
+	# end of FocusEntity methods
+
 	def getWindowName(self):
 
 		return self.windowName
@@ -139,11 +186,17 @@ def createWindow():
 
 def getActiveWindow():
 
-	"""Get the active window"""
+	"""Get the active Ptogl window"""
 	if _g.activeWindow:
 		return _g.activeWindow.gwidget
 	else:
 		return None
+
+def getActiveGraphicsWindow():
+	
+	"""Get the active Graphics window object"""
+	if _g.activeWindow:
+		return _g.activeWindow
 
 def getActiveWindowTop():
 
@@ -167,22 +220,5 @@ def getIrafGkiConfig():
 	"""return configuration object"""
 	return _g.irafGkiConfig
 
-def saveGraphicsCursorPosition():
- 
-	# save current position unless (0,0), then save center position
-	graphicsWin = getActiveWindow()
-	if not graphicsWin: raise GWMError("No plot has been created yet")
-	posdict = wutil.getPointerPosition(graphicsWin.winfo_id())
-	if posdict:
-		x = posdict['win_x']
-		y = posdict['win_y']
-	else:
-		x, y = 0, 0
-	maxX = graphicsWin.winfo_width()
-	maxY = graphicsWin.winfo_height()
-	if x == 0 and y == 0:
-		x = maxX/2
-		y = maxY/2
-	graphicsWin.lastX = min(max(x,0),maxX)
-	graphicsWin.lastY = min(max(y,0),maxY)
+
 

@@ -103,6 +103,9 @@ class RawOpengl(Widget, Misc):
 		if eventCount > 2000000000: eventCount = 0 # yes, unlikely
 		self.after(REDRAW_DELAY, self.delayedRedraw, eventCount)
 
+	def isSWCursorActive(self):
+		return self.__isSWCursorActive
+
 	def activateSWCursor(self, x=0.5, y=0.5, type=None):
 		# Load a blank cursor from a file (isn't there a better way
 		# to disable a cursor in Tk?).

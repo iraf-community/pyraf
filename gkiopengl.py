@@ -6,13 +6,35 @@ $Id$
 
 from OpenGL.GL import *
 from gki import *
-from irafglobals import IrafError
+import iraf
 import Numeric
 import gwm
 import irafgcur
 import irafgwcs
 import wutil
+import sys
 from  iraftext import *
+
+# open /dev/null for general availability
+devNull = open('/dev/null','w')
+def_stderr = sys.stderr
+
+_errorMessageCount = 0
+MAX_ERROR_COUNT = 3
+
+def errorMessage(text):
+	"""a way of truncating the number of error messages produced
+	in a plot. This really should be done at the gki level, but would
+	require folding the function table members into the class itself,
+	so this less than ideal approach is being taken for now"""
+	global _errorMessageCount
+	if _errorMessageCount < MAX_ERROR_COUNT:
+		print text
+		_errorMessageCount = _errorMessageCount + 1
+	elif _errorMessageCount == MAX_ERROR_COUNT:
+		print "\nAdditional graphics error messages suppressed"
+		_errorMessageCount = _errorMessageCount + 1
+			
 
 # debugging purposes only
 
@@ -78,15 +100,14 @@ class GkiOpenGlKernel(GkiKernel):
 
 	def controlDoNothing(self, arg):
 		pass
-#		print "controlDoNothing called"
 
 	def openWS(self, arg):
 
+		global _errorMessageCount
+		_errorMessageCount = 0
 		mode = arg[0]
 		device = arg[1:].tostring() # but will be ignored
-		if wutil.getTerminalWindowID() == wutil.getWindowID():
-			# save current cursor position
-			wutil.saveTerminalCursorPosition()
+		wutil.focusController.saveCursorPos()
 		# first see if there are any graphics windows, if not, create one 
 		win = gwm.getActiveWindow()
 		if win == None:
@@ -110,7 +131,7 @@ class GkiOpenGlKernel(GkiKernel):
 		elif mode == 6:
 			# Tee mode (?), ignore for now
 			pass
-		
+			
 	def clearWS(self, arg):
 
 		# apparently this control routine is not used???
@@ -122,22 +143,13 @@ class GkiOpenGlKernel(GkiKernel):
 		win.immediateRedraw()
 
 	def reactivateWS(self, arg):
+
+		global _errorMessageCount
+		_errorMessageCount = 0
 		gwm.raiseActiveWindow()
-# for the time being it seems that the right thing to do is to leave
-# the sw cursor displayed during a deactivate/activate cycle
-#		win = gwm.getActiveWindow()
-#		win.activateSWCursor() # turn on software cursor
 		
 	def deactivateWS(self, arg):
-
-		# Move focus and cursor to terminal window if focus is currently
-		# within Pyraf family of windows -- Sigh, unless graphics was
-		# opened from an interactive session with an image display
-		# window, in which case we should try to move focus back to it.
-		self.restorePreviousFocus()
-# see above comments for reactivate
-#		win = gwm.getActiveWindow()
-#		win.deactivateSWCursor() # turn off software cursor
+		pass
 
 	def setWCS(self, arg):
 
@@ -149,8 +161,8 @@ class GkiOpenGlKernel(GkiKernel):
 
 		win = gwm.getActiveWindow()
 		if not win.iplot.wcs:
-			print "Error: can't append to a nonexistent plot!"
-			raise IrafError
+			self.errorMessage("Error: can't append to a nonexistent plot!")
+			raise iraf.IrafError
 		if self.returnData:
 			self.returnData = self.returnData + win.iplot.wcs.pack()
 		else:
@@ -158,7 +170,7 @@ class GkiOpenGlKernel(GkiKernel):
 
 	def closeWS(self, arg):
 
-		self.restorePreviousFocus()
+		wutil.focusController.saveCursorPos()
 		win = gwm.getActiveWindow()
 		win.deactivateSWCursor()  # turn off software cursor
 
@@ -178,22 +190,6 @@ class GkiOpenGlKernel(GkiKernel):
 			apply(function, args)
 		glFlush()
 
-	def restorePreviousFocus(self):
-
-		gwm.saveGraphicsCursorPosition()
-		if not wutil.isFocusElsewhere():
-			if not wutil.imcurActive:
-				x, y = wutil.getLastTermPos()
-				winID = wutil.getTerminalWindowID()
-			else:
-				x, y = wutil.getLastImagePos()
-				winID = wutil.getImageWindowID()
-			# make sure cursor is out of scroll bar region
-			if x < 50: x = 50
-			if wutil.isViewable(winID):
-				wutil.setFocusTo(winID)
-				wutil.moveCursorTo(winID,x,y)
-				
 def _glAppend(arg):
 
 	"""append a 2-tuple (gl_function, args) to the glBuffer"""
@@ -234,8 +230,7 @@ def gki_polyline(arg): _glAppend((gl_polyline,(ndc(arg[1:]),)))
 
 def gki_polymarker(arg): 
 
-	print standardWarning
-	# throw exception here xxx
+	errorMessage(standardWarning)
 		
 def gki_text(arg):
 	
@@ -251,8 +246,7 @@ def gki_fillarea(arg):
 
 def gki_putcellarray(arg): 
 	
-	print standardNotImplemented
-	# throw exception here xxxx
+	errorMessage(standardNotImplemented)
 	
 def gki_setcursor(arg):
 
@@ -275,7 +269,7 @@ def gki_pmset(arg):
 #	color = arg[2]
 #	print "GKI_PMSET", marktype, marksize, color
 #	_glAppend((gl_pmset, (marktype, marksize, color)))
-	print standardWarning
+	errorMessage(standardWarning)
 
 def gki_txset(arg):
 
@@ -301,20 +295,16 @@ def gki_faset(arg):
 def gki_getcursor(arg):
 
 	print "GKI_GETCURSOR"
-	print standardNotImplemented
-	# Throw exception here xxxx
+	raise standardNotImplemented
 	 
 def gki_getcellarray(arg):
 
 	print "GKI_GETCELLARRAY"
-	print standardNotImplemented
-	# Throw exception here xxxx
+	raise standardNotImplemented
 	
 def gki_unknown(arg): 
 	
-	print "GKI_UNKNOWN"
-	print standardWarning
-	# Throw exception here xxxx
+	errorMessage("GKI_UNKNOWN:\n"+standardWarning)
 	
 def gki_escape(arg): print "GKI_ESCAPE"
 def gki_setwcs(arg): pass #print "GKI_SETWCS"
@@ -337,6 +327,9 @@ def gl_polyline(vertices):
 
 	# First, set all relevant attributes
 	win = gwm.getActiveWindow()
+	cursorActive =  win.isSWCursorActive()
+	if cursorActive:
+		win.deactivateSWCursor()
 	la = win.iplot.lineAttributes
 	glLineWidth(la.linewidth)
 	stipple = 0
@@ -356,16 +349,27 @@ def gl_polyline(vertices):
 	glEnd()
 	if stipple:
 		glDisable(GL_LINE_STIPPLE)
+	if cursorActive:
+		win.activateSWCursor()
 
 def gl_polymarker(arg): pass
 
 def gl_text(x,y,text):
 
-	softText(x,y,text)
+	win = gwm.getActiveWindow()
+	cursorActive =  win.isSWCursorActive()
+	if cursorActive:
+		win.deactivateSWCursor()
+		softText(x,y,text)
+	if cursorActive:
+		win.activateSWCursor()
 
 def gl_fillarea(vertices):
 
 	win = gwm.getActiveWindow()
+	cursorActive =  win.isSWCursorActive()
+	if cursorActive:
+		win.deactivateSWCursor()
 	fa = win.iplot.fillAttributes
 	clear = 0
 	polystipple = 0
@@ -399,6 +403,9 @@ def gl_fillarea(vertices):
 	glEnd()
 	if polystipple:
 		glDisable(GL_POLYGON_STIPPLE)
+	if cursorActive:
+		win.activateSWCursor()
+
 
 def gl_putcellarray(arg): pass
 
