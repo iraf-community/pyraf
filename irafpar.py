@@ -359,6 +359,11 @@ class IrafPar:
 			newchoice[i] = self.coerceValue(clist[i])
 		self.choice = newchoice
 
+	def nullPrompt(self):
+		"""Returns value to use when answer to prompt is null string"""
+		# most parameters just keep current default (even if None)
+		return self.value
+
 	def getPrompt(self):
 		"""Interactively prompt for parameter value"""
 		pstring = string.strip( string.split(self.prompt,"\n")[0] )
@@ -386,14 +391,12 @@ class IrafPar:
 		# loop until we get an acceptable value
 		while (1):
 			try:
-				# null input means use current value as default
+				# null input usually means use current value as default
 				# check it anyway since it might not be acceptable
-				if value == "": value = self.value
+				if value == "": value = self.nullPrompt()
 				self.set(value)
 				# None (no value) is not acceptable value after prompt
 				if self.value is not None: return
-				#XXX for string parameter, should accept "" input
-				#XXX unless choice parameter forbids it
 				# if not EOF, keep looping
 				if ovalue == "":
 					sys.stdout.flush()
@@ -566,6 +569,7 @@ class IrafPar:
 		if v in [None, INDEF] or (type(v) is StringType and v[:1] == ")"):
 			return v
 		elif v == "":
+			# most parameters treat null string as omitted value
 			return None
 		elif self.choice is not None and v not in self.choice:
 			raise ValueError("Value '" + str(v) +
@@ -988,6 +992,15 @@ class _StringMixin:
 		else:
 			return value
 
+	def nullPrompt(self):
+		"""Returns value to use when answer to prompt is null string"""
+		# for string, null string is a legal value
+		# keep current default unless it is None
+		if self.value is None:
+			return ""
+		else:
+			return self.value
+
 	def coerceOneValue(self,value,strict=0):
 		if value is None:
 			return value 
@@ -998,12 +1011,10 @@ class _StringMixin:
 			return str(value)
 
 	# slightly modified checkOneValue allows minimum match for
-	# choice strings
+	# choice strings and permits null string as value
 	def checkOneValue(self,v,strict=0):
 		if v is None or v[:1] == ")":
 			return v
-		elif v == "":
-			return None
 		elif self.choice is not None:
 			try:
 				v = self.mmchoice[v]
