@@ -18,6 +18,7 @@ R. White, 2000 January 20
 # define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
 
 from irafglobals import *
+from subproc import SubprocessError
 
 # -----------------------------------------------------
 # setVerbose: set verbosity level
@@ -1755,8 +1756,11 @@ def clear(*args, **kw):
         if _clearString is None:
             # get the clear command by running system clear
             fh = _StringIO.StringIO()
-            clOscmd('/usr/bin/tput clear', Stdout=fh)
-            _clearString = fh.getvalue()
+            try:
+                clOscmd('/usr/bin/tput clear', Stdout=fh)
+                _clearString = fh.getvalue()
+            except SubprocessError:
+                _clearString = ""
             fh.close()
             del fh
         if _sys.stdout == _sys.__stdout__:
