@@ -100,6 +100,9 @@ class _CodeCache:
 		# check version of cache -- don't use it if out-of-date
 		if fh.has_key(_versionKey):
 			oldVersion = fh[_versionKey]
+		elif len(fh) == 0:
+			fh[_versionKey] = _currentVersion
+			oldVersion = _currentVersion
 		else:
 			oldVersion = 'v0'
 		if oldVersion == _currentVersion:
