@@ -158,7 +158,7 @@ class Token:
 					return self.attr
 				else:
 					return float(self.attr)
-			except:
+			except (ValueError, TypeError):
 				pass
 		raise ValueError("Cannot convert " +
 			self.verboseRepr() + " to float")

@@ -45,7 +45,7 @@ import minmatch, describe, iraf, iraftask, irafutils
 try:
 	import Numeric
 	_NumericArrayType = Numeric.ArrayType
-except:
+except ImportError:
 	# no Numeric available, so we won't encounter arrays
 	_NumericArrayType = None
 
@@ -67,7 +67,7 @@ try:
 		_NumericTypeName[Numeric.Complex32]    = 'Complex32'
 		_NumericTypeName[Numeric.Complex64]    = 'Complex64'
 		_NumericTypeName[Numeric.Complex128]   = 'Complex128'
-except:
+except AttributeError:
 	pass
 
 _MODULE = 0
@@ -357,9 +357,9 @@ def _valueString(value,verbose=0):
 			try:
 				if verbose and value.__doc__:
 					vstr = vstr + "\n" + value.__doc__
-			except:
+			except AttributeError:
 				pass
-		except:
+		except (AttributeError, TypeError):
 			# oh well, just have to live with type string alone
 			pass
 	elif t == _NumericArrayType:

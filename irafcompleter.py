@@ -269,6 +269,8 @@ class IrafCompleter(Completer):
 				matches = self.taskdot_matches(fields)
 				try:
 					matches.extend(Completer.attr_matches(self,text))
+				except KeyboardInterrupt:
+					raise
 				except:
 					pass
 				return matches

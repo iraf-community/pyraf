@@ -1216,6 +1216,8 @@ def _isStruct(locals, name, checklegal=0):
 	fname = _string.join(c,'.')
 	try:
 		par = eval(fname, locals)
+	except KeyboardInterrupt:
+		raise
 	except:
 		# assume all failures mean this is not an IrafPar
 		return 0

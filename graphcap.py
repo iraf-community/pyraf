@@ -36,34 +36,31 @@ def getAttributes(entry):
 	attrlist = string.split(astring,':')
 	for attrstr in attrlist:
 		if string.strip(attrstr):
-			try:
-				attrname = attrstr[:2]
-				attrval = attrstr[2:]
-				if len(attrstr) <= 2:
-					value = -1
-				elif attrval[0] == '=':
-					value = attrval[1:]
-				elif attrval[0] == '#':
+			attrname = attrstr[:2]
+			attrval = attrstr[2:]
+			if len(attrstr) <= 2:
+				value = -1
+			elif attrval[0] == '=':
+				value = attrval[1:]
+			elif attrval[0] == '#':
+				try:
+					value = int(attrval[1:])
+				except ValueError:
 					try:
-						value = int(attrval[1:])
+						value = float(attrval[1:])
 					except ValueError:
-						try:
-							value = float(attrval[1:])
-						except ValueError:
-							print "problem reading graphcap"
-							raise
-				elif attrval[0] == '@':
-					# implies false
-					value = None
-				else:
-					# ignore silently, at least as long as IRAF has a bad
-					# entry in its distribution (illegal colons)
-					# print "problem reading graphcap attributes: ", attrstr
-					# print entry
-					pass
-				attr[attrname] = value
-			except:
-				raise
+						print "problem reading graphcap"
+						raise
+			elif attrval[0] == '@':
+				# implies false
+				value = None
+			else:
+				# ignore silently, at least as long as IRAF has a bad
+				# entry in its distribution (illegal colons)
+				# print "problem reading graphcap attributes: ", attrstr
+				# print entry
+				pass
+			attr[attrname] = value
 	return attr
 
 def getDevices(devlist):

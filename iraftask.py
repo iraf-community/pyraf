@@ -1662,7 +1662,7 @@ def _splitName(qualifiedName):
 			pend = string.rindex(paramname,']')
 			pindex = int(paramname[pstart+1:pend])-1
 			slist[2:3] = [paramname[:pstart], pindex]
-		except:
+		except (TypeError, ValueError):
 			raise iraf.IrafError("Illegal syntax for array parameter: " +
 				qualifiedName)
 	else:
