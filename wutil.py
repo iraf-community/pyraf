@@ -32,6 +32,11 @@ except ImportError:
 		magicConstant = ord('T')*256 + 104 # at least on Solaris!
 	elif platform == 'linux2':
 		magicConstant = 0x5413
+	elif platform == 'linux-i386':
+		magicConstant = 0x5413
+	elif platform == 'osf1V4':
+		magicConstant = 0x40087468 # temp fix for Tru64 ejmc 3/9/00
+
 
 
 def getTopID(WindowID):
