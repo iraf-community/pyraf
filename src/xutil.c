@@ -27,8 +27,6 @@ char ErrorPrefix[] = "XWindows Error!\n";
 char ErrorMsg[120];
 char IOError[] = "XWindows IO exception.";
 
-static GC cursorGC;
-static GC graphGC;
 static Display *d;
 static int screen_num;
 static GC gc;
