@@ -132,19 +132,23 @@ def isFocusElsewhere():
 
 	# Determine if focus lies outside of terminal/graphics window set.
 	import gwm
-	currentFocusWinID = getWindowID()
-	currentTopID = getTopID(currentFocusWinID)
-	terminalWindowTopID = getTopID(getTerminalWindowID())
-	pyrafFamily = [terminalWindowTopID]
-	wm = gwm.getGraphicsWindowManager()
-	if gwm.getActiveWindow():
-		for win in wm.windows.values():
-			pyrafFamily.append(getTopID(win.top.winfo_id()))
-	if imageWindowID:
-		pyrafFamily.append(getTopID(imageWindowID))
-	if currentTopID in pyrafFamily:
-		return 0
-	else:
+	try:
+		currentFocusWinID = getWindowID()
+		currentTopID = getTopID(currentFocusWinID)
+		terminalWindowTopID = getTopID(getTerminalWindowID())
+		pyrafFamily = [terminalWindowTopID]
+		wm = gwm.getGraphicsWindowManager()
+		if gwm.getActiveWindow():
+			for win in wm.windows.values():
+				pyrafFamily.append(getTopID(win.top.winfo_id()))
+		if imageWindowID:
+			pyrafFamily.append(getTopID(imageWindowID))
+		if currentTopID in pyrafFamily:
+			return 0
+		else:
+			return 1
+	except EnvironmentError:
+		# if for some reason the above obtains a bad window ID for getTopID
 		return 1
 		
 # XXXX find more portable scheme for handling absence of FCNTL
