@@ -45,6 +45,8 @@ class GraphicsWindowManager(gki.GkiProxy):
 
 	def window(self, windowName=None):
 
+		if windowName is not None:
+			windowName = string.strip(str(windowName))
 		if not windowName: # think up a default name!
 			number = 1
 			while 1:
@@ -62,7 +64,7 @@ class GraphicsWindowManager(gki.GkiProxy):
 		self.windowVar.set(windowName)
 
 	def _setWindowVar(self, *args):
-		windowName = self.windowVar.get()
+		windowName = string.strip(self.windowVar.get())
 		if not windowName:
 			self.stdgraph = None
 		else:
@@ -81,6 +83,7 @@ class GraphicsWindowManager(gki.GkiProxy):
 
 	def delete(self, windowName):
 
+		windowName = string.strip(str(windowName))
 		window = self.windows.get(windowName)
 		if window is None:
 			print "error: graphics window `%s' doesn't exist" % (windowName,)
