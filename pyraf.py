@@ -34,6 +34,10 @@ R. White, 1999 March 4
 
 import os, sys, monty, iraf
 
+# read the user's startup file (if there is one)
+if os.path.isfile(os.environ['PYTHONSTARTUP']):
+	execfile(os.environ['PYTHONSTARTUP'])
+
 # load initial iraf symbols and packages (we could
 # do this automatically in iraf.py)
 
