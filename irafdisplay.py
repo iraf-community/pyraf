@@ -164,9 +164,6 @@ class ImageDisplay:
         a[3] = sum
         self._write(a.tostring())
 
-    def __del__(self):
-        self.close()
-
     def close(self, os_close=os.close):
 
         """Close image display connection"""
@@ -222,6 +219,8 @@ class FifoImageDisplay(ImageDisplay):
         except OSError, error:
             raise IOError("Cannot open image display (%s)" % (error,))
 
+    def __del__(self):
+        self.close()
 
 class UnixImageDisplay(ImageDisplay):
 
