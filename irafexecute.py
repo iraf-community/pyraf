@@ -243,6 +243,7 @@ _re_stty_command = re.compile(r'stty .*?\n')
 _re_display_command = re.compile(r'display')
 _re_curpack_command = re.compile(r'_curpack\n')
 _re_paren_pair = re.compile(r'\(.*\)')
+_re_iraf_sys_escape = re.compile(r'!!(.*\n)')
 
 def executeClCommand(process, msg):
 	
@@ -261,6 +262,14 @@ def executeClCommand(process, msg):
 			"set ttyncols="+str(ncols)+"\n" + 
 			"set ttynlines="+str(nlines)+"\n")
 		return msg[mo.end():]
+	mo = _re_iraf_sys_escape.match(msg)
+	if mo:
+		tmsg = msg[mo.start(1):mo.end(1)]
+		sysstatus = os.system(tmsg)
+		WriteToIrafProc(process,
+			Asc2IrafString(str(sysstatus)+"\n"))
+		print msg[mo.end():]
+		return msg[mo.end():]	
 	mo = _re_display_command.match(msg)
 	if mo:
 		# Now extract arguments. Will eventually use general parsing

@@ -4,8 +4,8 @@ implement IRAF gcur functionality
 $Id$
 """
 
-import string
-import gwm, wutil
+import string, os
+import gwm, wutil, iraf
 import irafgwcs
 import tkSimpleDialog
 
@@ -113,7 +113,11 @@ class Gcursor:
 				self._setRetString(key,colonString)
 		if key in string.lowercase+'?':
 			self._setRetString(key,"")
-		if key in string.uppercase:
+		elif key in ('='):
+			if key == '=':
+				# snap command - print the plot
+				printPlot()
+		elif key in string.uppercase:
 			print "Not quite ready to handle CL level gcur commands."
 			print "Please check back later."
 		else:
@@ -129,10 +133,28 @@ class Gcursor:
 			self.retString = self.retString +' '+cstring
 		gwm.saveGraphicsCursorPosition()
 		self.top.quit() # time to go!
+
+def printPlot():
+
+	win = gwm.getActiveWindow()
+	gkibuff = win.iplot.gkiBuffer.get()
+	if gkibuff:
+		# write to a temporary file
+		# XXXX better temporary filename?
+		tmpfn = iraf.Expand('tmp$')+"pysnap"+str(os.getpid())+".gki"
+		fout = open(tmpfn,'w')
+		fout.write(gkibuff.tostring())
+		fout.close()
+		iraf.stsdas.motd="no"
+		iraf.load("stsdas",doprint=0)
+		iraf.load("graphics",doprint=0)
+		iraf.load("stplot",doprint=0)
+		printkernel = iraf.getTask("psikern")
+		printkernel(tmpfn)
+		os.remove(tmpfn)
 		
 # Eventually there may be multiple Gcursor classes that return a string
 # that satisfies clgcur. In that case we will use a factory function
 # to set gcur to the desired mode of operation. For now Gcursor is it.
 
 gcur = Gcursor()
-
