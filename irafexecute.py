@@ -68,7 +68,6 @@ _re_chan_len = re.compile(r'\((\d+),(\d+)\)\n')
 _optsub = r'(?:\[\d+\])?'
 _re_paramset = re.compile(r'([a-zA-Z_][\w.]*' + _optsub + ')\s*=\s*(.*)\n')
 _re_paramrequest = re.compile(r'=([a-zA-Z_$][\w.]*' + _optsub + ')\n')
-_re_stty_command = re.compile(r'stty .*?\n')
 
 def IrafIO(process,task):
 
@@ -89,7 +88,7 @@ def IrafIO(process,task):
 		if not msg:
 			data = ReadFromIrafProc(process)
 			msg = Iraf2AscString(data)
-#			print "~~~~~~"+msg
+#			print "~~~~~~  "+msg
 		if msg[0:4] == 'bye\n':
 			return
 		elif msg[0:5] == "ERROR" or msg[0:5] == 'error':
@@ -225,21 +224,61 @@ def IrafIO(process,task):
 					if iraf.verbose: print 'Warning:',e
 					task.setParam(paramname,newvalue,check=0)
 			else:
-				# Could be any legal CL command. For the moment, we
-				# only support "stty resize". Later we will add support
-				# for those seen used by actual tasks. And maybe even
-				# later we will have CL emulation. But don't hold your
-				# breath.
-				mo = _re_stty_command.match(msg)
-				if mo:
-					msg = msg[mo.end():]
-					nlines,ncols = wutil.getTermWindowSize()
-					WriteStringToIrafProc(process,
-						"set ttyncols="+str(ncols)+"\n" + 
-						"set ttynlines="+str(nlines)+"\n")
-				else:
-					raise IrafProcessError(
-						"Unsupported CL command called by IRAF task: "+msg)
+				# Could be any legal CL command. 
+				msg = executeClCommand(process,msg)
+
+				
+_re_stty_command = re.compile(r'stty .*?\n')
+_re_display_command = re.compile(r'display')
+_re_paren_pair = re.compile(r'\(.*\)')
+
+def executeClCommand(process, msg):
+	
+	"""The beginnings of a black hole!
+	This function endevours to try to execute cl commands issued by
+	a connected subprocess. Initially, the supported set will be quite
+	small. Ultimately, we intend to support a limited set of built-in
+	commands and the ability to run all iraf tasks (and perhaps foreign
+	tasks). The structure of this function will change dramatically as
+	it is made more general"""
+	
+	mo = _re_stty_command.match(msg)
+	if mo:
+		msg = msg[mo.end():]
+		nlines,ncols = wutil.getTermWindowSize()
+		WriteStringToIrafProc(process,
+			"set ttyncols="+str(ncols)+"\n" + 
+			"set ttynlines="+str(nlines)+"\n")
+		return
+	mo = _re_display_command.match(msg)
+	if mo:
+		# Now extract arguments. Will eventually use general parsing
+		# stuff Rick developed
+		print "oh boy, trying to execute display!"
+		print msg
+		tmsg = msg[mo.end():]
+		print tmsg
+		pmo = _re_paren_pair.search(tmsg)
+		if pmo:
+			# hmmm, let's just try using the string and paste together
+			# something for exec
+			argstr = tmsg[pmo.start():pmo.end()]
+			print argstr
+			argstr = string.replace(argstr,'\\','')
+			print argstr
+			displaytask = iraf.getTask("display")
+			execstr= "displaytask"+argstr
+			print execstr
+			exec(execstr)
+			pos = string.find(tmsg, '\n')
+			print "leftover = ", tmsg[pos+1:]
+			return tmsg[pos+1:]
+		else:
+			raise IrafProcessError("display command not in expected format")
+	# apparently something that is not supported	
+	raise IrafProcessError(
+		"Unsupported CL command called by IRAF task: "+msg)
+	
 
 def IrafKill(process):
 	"""Try stopping process in IRAF approved way first; if that fails
