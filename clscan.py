@@ -1,4 +1,4 @@
-"""cl tokenizer/scanner using John Aycock's little languages framework
+"""cl tokenizer/scanner using John Aycock's little languages (SPARK) framework
 
 This version uses a context-sensitive pattern stack
 
@@ -278,6 +278,20 @@ class _CommandScanner_2(_BasicScanner_2,_CommandScanner_1):
 		parent.argsep = ','
 		parent.addIdent(s[:-1], usekey=0)
 		parent.addToken(type=s[-1])
+
+	def t_functioncall(self, s, m, parent):
+		r'[a-zA-Z\$_\d][a-zA-Z\$_\d.]*\('
+		# matches identifier follow by open parenthesis (no whitespace)
+		# note that keywords can start with a number (!) in command mode
+		parent.addToken(type=parent.argsep)
+		parent.argsep = ','
+		parent.addIdent(s[:-1], usekey=0)
+		parent.addToken(type='(')
+		# push to compute mode
+		parent.current.append(_COMPUTE_MODE)
+		parent.parencount = parent.parencount + 1
+		# redirection can follow open parens
+		parent.current.append(_ACCEPT_REDIR_MODE)
 
 	def t_assignop(self, s, m, parent):
 		r'( [+\-*/] | // )? ='
