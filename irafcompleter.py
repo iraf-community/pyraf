@@ -58,7 +58,8 @@ pkgArgDict = { '?': 1, }
 class IrafCompleter(Completer):
 
     def __init__(self):
-        Completer.__init__(self)
+        if hasattr(Completer, '__init__'):
+            Completer.__init__(self)
         self.completionChar = None
         self.taskpat = re.compile(r"(\?|(?:\w+))[ \t]+(?=$|[\w.<>|/~'" +r'"])')
         # executive commands dictionary (must be set by user)
