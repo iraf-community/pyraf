@@ -24,10 +24,10 @@ from iraffunctions import INDEF
 
 import iraf
 
-def warning(msg, strict=0, exception=SyntaxError):
+def warning(msg, strict=0, exception=SyntaxError, level=0):
 	if strict:
 		raise exception(msg)
-	elif iraf.Verbose>0:
+	elif iraf.Verbose>level:
 		sys.stdout.flush()
 		sys.stderr.write('Warning: %s' % msg)
 		if msg[-1:] != '\n': sys.stderr.write('\n')
@@ -1102,6 +1102,9 @@ class IrafParL(_StringMixin, IrafPar):
 		IrafPar.__init__(self,fields,filename,strict)
 		# filehandle for input file
 		self.__dict__['fh'] = None
+		# flag inidicating error message has been printed if file does not exist
+		# message only gets printed once for each file
+		self.__dict__['errMsg'] = 0
 		# omitted list parameters default to null string
 		if self.value is None: self.value = ""
 
@@ -1131,8 +1134,12 @@ class IrafParL(_StringMixin, IrafPar):
 			self.setChanged()
 			# close file if it is open
 			if self.fh:
-				self.fh.close()
+				try:
+					self.fh.close()
+				except IOError:
+					pass
 				self.fh = None
+			self.errMsg = 0
 
 	def get(self, field=None, index=None, lpar=0, prompt=1, native=0, mode="h"):
 		"""Return value of this parameter as a string (or in native format
@@ -1152,17 +1159,26 @@ class IrafParL(_StringMixin, IrafPar):
 
 		if self.value:
 			# non-null value means we're reading from a file
-			if not self.fh:
-				self.fh = open(iraf.Expand(self.value), "r")
-			value = self.fh.readline()
-			if not value:
-				# EOF -- return string 'EOF'
-				# XXX if native format, raise an exception?
-				return "EOF"
-			if value[-1:] == "\n": value = value[:-1]
+			try:
+				if not self.fh:
+					self.fh = open(iraf.Expand(self.value), "r")
+				value = self.fh.readline()
+				if not value:
+					# EOF -- return string 'EOF'
+					# XXX if native format, raise an exception?
+					return "EOF"
+				if value[-1:] == "\n": value = value[:-1]
+			except IOError, e:
+				if not self.errMsg:
+					warning("Unable to read from file %s\n%s" %
+						(self.value,str(e)), level=-1)
+					# only print message one time
+					self.errMsg = 1
+				# fall back on default behavior if file is not readable
+				value = self.getNextValue()
 		else:
-			# if self.value is null, use the special getNextValue method (which should
-			# always return a string)
+			# if self.value is null, use the special getNextValue method
+			# (which should always return a string)
 			value = self.getNextValue()
 		if native:
 			return self.coerceValue(value)
@@ -1191,10 +1207,20 @@ class IrafParLS(IrafParL):
 
 	def getNextValue(self):
 		"""Return next string value"""
-		self.getPrompt()
-		retval = self.value
-		self.value = ""
-		return retval
+		# save current values (in case this got called
+		# because filename was in error)
+		saveVal = self.value
+		saveErr = self.errMsg
+		try:
+			# get rid of default value in prompt
+			self.value = None
+			self.getPrompt()
+			retval = self.value
+			return retval
+		finally:
+			# restore original values
+			self.value = saveVal
+			self.errMsg = saveErr
 
 # -----------------------------------------------------
 # IRAF gcur (graphics cursor) parameter class
