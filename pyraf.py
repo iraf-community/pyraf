@@ -1,6 +1,5 @@
 #! /usr/local/bin/python -i
 #  #! /usr/bin/env python -i
-##
 # twiddle area to tickle cvs to update version number
 """
 pyraf: Python IRAF front end
@@ -108,7 +107,7 @@ __version__ = "$Revision$"
 
 yes = 1
 no = 0
-INDEF = "INDEF"
+INDEF = iraf.INDEF
 flpr = "This is not the IRAF cl!  Forget those old bad habits!"
 retall = "This is not IDL..."
 

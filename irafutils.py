@@ -5,7 +5,7 @@ $Id$
 R. White, 1999 Jul 16
 """
 
-import string, struct
+import string, struct, re
 
 # This may exist somewhere in the Python standard libraries?
 # Should probably rewrite this, it is pretty crude.
@@ -37,18 +37,25 @@ def isBigEndian():
 	else:
 		return 0
 
+_re_doubleq2 = re.compile('""')
+_re_singleq2 = re.compile("''")
+
 def stripQuotes(value):
 
-	"""Strip single or double quotes off string"""
+	"""Strip single or double quotes off string; remove embedded quote pairs"""
 
 	if value[:1] == '"':
 		value = value[1:]
 		if value[-1:] == '"':
 			value = value[:-1]
+		# replace "" with "
+		value = re.sub(_re_doubleq2, '"', value)
 	elif value[:1] == "'":
 		value = value[1:]
 		if value[-1:] == "'":
 			value = value[:-1]
+		# replace '' with '
+		value = re.sub(_re_singleq2, "'", value)
 	return value
 
 def removeEscapes(value):

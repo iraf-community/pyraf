@@ -8,6 +8,7 @@ R. White, 1999 July 16
 import os, sys, string, re
 import irafgcur, irafimcur, irafukey, irafutils, minmatch
 from types import *
+from iraffunctions import INDEF
 
 # -----------------------------------------------------
 # Warning (non-fatal) error.  Raise an exception if in
@@ -140,7 +141,8 @@ class IrafPar:
 			# XXX could also check for missing comma (null prompt, prompt in max field)
 			if fields[4]: self.min = self.coerceValue(fields[4],strict)
 			if fields[5]: self.max = self.coerceValue(fields[5],strict)
-		if self.min is not None and self.max is not None and self.max < self.min:
+		if self.min not in [None, INDEF] and \
+		   self.max not in [None, INDEF] and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
 				strict)
@@ -183,11 +185,13 @@ class IrafPar:
 			for i in xrange(len(self.choice)):
 				schoice[i] = self.toString(self.choice[i])
 			pstring = pstring + " (" + string.join(schoice,"|") + ")"
-		elif self.min is not None or self.max is not None:
+		elif self.min not in [None, INDEF] and self.max not in [None, INDEF]:
 			pstring = pstring + " ("
-			if self.min is not None: pstring = pstring + self.toString(self.min)
+			if self.min not in [None, INDEF]:
+				pstring = pstring + self.toString(self.min)
 			pstring = pstring + ":"
-			if self.max is not None: pstring = pstring + self.toString(self.max)
+			if self.max not in [None, INDEF]:
+				pstring = pstring + self.toString(self.max)
 			pstring = pstring + ")"
 		# add current value as default
 		if self.value: pstring = pstring + " (" + self.toString(self.value) + ")"
@@ -201,8 +205,9 @@ class IrafPar:
 					# null input means use current value as default
 					# null default is acceptable only if no min, max or choice
 					if (self.value or self.value == 0) or \
-							(self.choice is None and self.min is None and \
-							self.max is None):
+							(self.choice is None and
+							self.min in [None, INDEF] and
+							self.max in [None, INDEF]):
 						return
 				else:
 					self.set(value)
@@ -348,14 +353,14 @@ class IrafPar:
 		coerceOneValue.  Returns value if OK, or raises
 		ValueError if not OK.
 		"""
-		if v is None or v == "" or \
-				((type(v) is StringType) and (v[0] == ")")):
+		if v in [None, INDEF, ""] or \
+				(type(v) is StringType and v[0] == ")"):
 			return v
-		elif self.choice is not None and not (v in self.choice):
+		elif self.choice is not None and v not in self.choice:
 			raise ValueError("Value '" + str(v) +
 				"' is not in choice list for " + self.name)
-		elif (self.min is not None and v < self.min) or \
-			 (self.max is not None and v > self.max):
+		elif (self.min not in [None, INDEF] and v<self.min) or \
+			 (self.max not in [None, INDEF] and v>self.max):
 			raise ValueError("Value '" + str(v) + "' is out of min-max range for " +
 				self.name)
 		return v
@@ -399,12 +404,12 @@ class IrafPar:
 				if nline > 80:
 					s = s + "\n" + 32*" " + "|"
 					nline = 33
-		elif self.min is not None or self.max is not None:
+		elif self.min not in [None, INDEF] or self.max not in [None, INDEF]:
 			s = s + "\n" + 32*" "
-			if self.min is not None:
+			if self.min not in [None, INDEF]:
 				s = s + str(self.min) + " <= "
 			s = s + self.name
-			if self.max is not None:
+			if self.max not in [None, INDEF]:
 				s = s + " <= " + str(self.max)
 		return s
 
@@ -480,7 +485,8 @@ class IrafArrayPar(IrafPar):
 			self.min = self.coerceOneValue(fields[6],strict)
 			self.max = self.coerceOneValue(fields[7],strict)
 		self.prompt = irafutils.removeEscapes(fields[8])
-		if self.min is not None and self.max is not None and self.max < self.min:
+		if self.min not in [None, INDEF] and \
+		   self.max not in [None, INDEF] and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
 				strict)
@@ -890,7 +896,7 @@ class _BooleanMixin:
 			self.choice = None
 
 	def toString(self, value):
-		if value is None:
+		if value in [None, INDEF]:
 			return ""
 		elif type(value) == StringType:
 			# presumably an indirection value ')task.name'
@@ -901,12 +907,13 @@ class _BooleanMixin:
 
 	# accepts integer values 0,1 or string 'yes','no' and variants
 	def coerceOneValue(self,value,strict=0):
-		if value is None or value == 0 or value == 1: return value
+		if value == 0 or value == 1: return value
+		if value in [None, INDEF]: return INDEF
 		tval = type(value)
 		if tval is StringType:
 			v2 = string.strip(value)
 			if v2 == "":
-				return None
+				return INDEF
 			elif v2[0] == ")":
 				# assume this is indirection -- for now just save it as a string
 				return v2
@@ -947,14 +954,14 @@ class _IntMixin:
 	"""IRAF integer parameter mixin class"""
 
 	def toString(self, value):
-		if value is None:
+		if value in [None, INDEF]:
 			return "INDEF"
 		else:
 			return str(value)
 
 	# coerce value to integer
 	def coerceOneValue(self,value,strict=0):
-		if value is None: return None
+		if value in [None, INDEF]: return INDEF
 		tval = type(value)
 		if tval is IntType:
 			return value
@@ -971,7 +978,7 @@ class _IntMixin:
 			s2 = string.strip(value)
 			if s2 == "" or ((not strict) and (string.upper(s2) == "INDEF")) or \
 					(strict and (s2 == "INDEF")):
-				return None
+				return INDEF
 			elif s2[0] == ")":
 				# assume this is indirection -- for now just save it as a string
 				return s2
@@ -1023,14 +1030,14 @@ class _RealMixin:
 			self.choice = None
 
 	def toString(self, value):
-		if value is None:
+		if value in [None, INDEF]:
 			return "INDEF"
 		else:
 			return str(value)
 
 	# coerce value to real
 	def coerceOneValue(self,value,strict=0):
-		if value is None: return None
+		if value in [None, INDEF]: return INDEF
 		tval = type(value)
 		if tval is FloatType:
 			return value
@@ -1040,7 +1047,7 @@ class _RealMixin:
 			s2 = string.strip(value)
 			if s2 == "" or ((not strict) and (string.upper(s2) == "INDEF")) or \
 					(strict and (s2 == "INDEF")):
-				return None
+				return INDEF
 			elif s2[0] == ")":
 				# assume this is indirection -- just save it as a string
 				return s2
