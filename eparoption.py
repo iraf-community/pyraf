@@ -132,9 +132,15 @@ class EparOption:
         self.entry.bind('<Shift-Return>', self.entryCheck, "+")
         self.entry.bind('<Tab>', self.entryCheck, "+")
         self.entry.bind('<Shift-Tab>', self.entryCheck, "+")
-        self.entry.bind('<KeyPress-ISO_Left_Tab>', self.entryCheck, "+")
         self.entry.bind('<Up>', self.entryCheck, "+")
         self.entry.bind('<Down>', self.entryCheck, "+")
+        try:
+            # special shift-tab binding needed for (some? all?) linux systems
+            self.entry.bind('<KeyPress-ISO_Left_Tab>', self.entryCheck, "+")
+        except TclError:
+            # Ignore exception here, the binding can't be relevant
+            # if ISO_Left_Tab is unknown.
+            pass
 
         # Bind the right button to a popup menu of choices
         self.entry.bind('<Button-3>', self.popupChoices)

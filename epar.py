@@ -292,7 +292,13 @@ class EparDialog:
         top.bind('<Down>', self.focusNext)
         top.bind('<Shift-Return>', self.focusPrev)
         top.bind('<Return>', self.focusNext)
-        top.bind('<KeyPress-ISO_Left_Tab>', self.focusPrev)
+        try:
+            # special shift-tab binding needed for (some? all?) linux systems
+            top.bind('<KeyPress-ISO_Left_Tab>', self.focusPrev)
+        except TclError:
+            # Ignore exception here, the binding can't be relevant
+            # if ISO_Left_Tab is unknown.
+            pass
 
         # Pack the Frame and Canvas
         canvas.pack(side=TOP, expand=TRUE, fill=BOTH)
