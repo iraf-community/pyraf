@@ -935,14 +935,17 @@ def fscan(locals, line, *namelist, **kw):
 
 	Returns number of arguments set to new values.  If there are
 	too few space-delimited arguments on the input line, it does
-	not set all the arguments.  Returns EOF on end-of-file.
+	not set all the arguments.  Returns -2 on end-of-file.
 	"""
 	# get the value of the line (which may be a variable, string literal,
 	# expression, or an IRAF list parameter)
+	global _nscan
 	try:
 		line = eval(line, locals)
 	except EOFError:
-		return EOF
+		_weirdEOF(locals, namelist)
+		_nscan = 0
+		return -2
 	f = _string.split(line)
 	n = min(len(f),len(namelist))
 	# a tricky thing -- null input is OK if the first variable is
@@ -989,9 +992,21 @@ def fscan(locals, line, *namelist, **kw):
 		else:
 			cmd = namelist[i] + ' = ' + `f[i]`
 		exec cmd in locals
-	global _nscan
 	_nscan = n
 	return n
+
+def _weirdEOF(locals, namelist):
+	# Replicate a weird IRAF behavior -- if the argument list
+	# consists of a single struct-type variable, and it does not
+	# currently have a defined value, set it to the null string.
+	# (I warned you to abandon hope!)
+	if namelist and _isStruct(locals, namelist[0], checklegal=1):
+		if len(namelist) > 1:
+			raise TypeError("Struct type param `%s' must be the final"
+				" argument to scan" % namelist[0])
+		# it is an undefined struct, so set it to null string
+		cmd = namelist[0] + ' = ""'
+		exec cmd in locals
 
 def _isStruct(locals, name, checklegal=0):
 	"""Returns true if the variable `name' is of type struct
@@ -1032,21 +1047,12 @@ def scan(locals, *namelist, **kw):
 		line = _sys.stdin.readline()
 		# null line means EOF
 		if line == "":
-			# Replicate a weird IRAF behavior -- if the argument list
-			# consists of a single struct-type variable, and it does not
-			# currently have a defined value, set it to the null string.
-			# (I warned you to abandon hope!)
-			if namelist and _isStruct(locals, namelist[0], checklegal=1):
-				if len(namelist) > 1:
-					raise TypeError("Struct type param `%s' must be the final"
-						" argument to scan" % namelist[0])
-				# it is an undefined struct, so set it to null string
-				cmd = namelist[0] + ' = ""'
-				exec cmd in locals
+			_weirdEOF(locals, namelist)
 			global _nscan
 			_nscan = 0
-			return EOF
-		return apply(fscan, (locals, `line`) + namelist, kw)
+			return -2
+		else:
+			return apply(fscan, (locals, `line`) + namelist, kw)
 	finally:
 		redirReset(resetList, closeFHList)
 
