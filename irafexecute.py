@@ -203,17 +203,15 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 		irafprocess.run(task, stdin=stdin,stdout=stdout,stderr=stderr)
 		if wutil.hasGraphics:
 			gwm.restoreLastFocus()
-		if gki.kernel and gki.kernel.stdgraph:
-			gki.kernel.stdgraph.stdout = None
-			gki.kernel.stdgraph.stderr = None
+		gki.kernel.setStdout(None)
+		gki.kernel.setStderr(None)
 	except KeyboardInterrupt:
 		# On keyboard interrupt (^C), kill the subprocess
 		processCache.kill(irafprocess)
 		if wutil.hasGraphics:
 			gwm.resetFocusHistory()
-		if gki.kernel and gki.kernel.stdgraph:
-			gki.kernel.stdgraph.stdout = None
-			gki.kernel.stdgraph.stderr = None
+		gki.kernel.setStdout(None)
+		gki.kernel.setStderr(None)
 		raise KeyboardInterrupt
 	except (iraf.IrafError, IrafProcessError), exc:
 		# on error, kill the subprocess, then re-raise the original exception
@@ -458,8 +456,7 @@ class IrafProcess:
 			elif msg[:4] == 'bye\n':
 				# this part is the way used to signal it is time to actually
 				# feed a file for an iraf kernel, for others, it has no effect.
-				if gki.kernel:
-					gki.kernel.flush()
+				gki.kernel.flush()
 				return
 			elif msg5 in ['error','ERROR']:
 				raise IrafProcessError("IRAF task terminated abnormally\n"+msg)
@@ -532,9 +529,6 @@ class IrafProcess:
 			self.stderr.write(Iraf2AscString(xdata))
 			self.stderr.flush()
 		elif chan == 6:
-			# need to handle cases where WS not open yet
-			if not gki.kernel:
-				gki.kernel = gki.GkiController()
 			gki.kernel.append(Numeric.fromstring(xdata,'s'))
 		elif chan == 7:
 			self.stdout.write("data for STDIMAGE\n")
@@ -554,8 +548,6 @@ class IrafProcess:
 				forChan = sdata[0]
 			if forChan == 6:
 				# STDPLOT control
-				if gki.kernel is None:
-					gki.kernel = gki.GkiController()
 				# Pass it to the kernel to deal with
 				# Only returns a value for getwcs
 				wcs = gki.kernel.control(sdata[2:])
@@ -564,15 +556,9 @@ class IrafProcess:
 					# strangely enough, it doesn't use the
 					# STDGRAPH I/O channel.
 					self.write(wcs)
-					gki.kernel.stdgraph.clearReturnData()
-				if gki.kernel.stdgraph and gki.kernel.stdgraph.stdout:
-					self.stdout = gki.kernel.stdgraph.stdout
-				else:
-					self.stdout = self.default_stdout
-				if gki.kernel.stdgraph and gki.kernel.stdgraph.stderr:
-					self.stderr = gki.kernel.stdgraph.stderr
-				else:
-					self.stderr = self.default_stderr
+					gki.kernel.clearReturnData()
+				self.stdout = gki.kernel.getStdout() or self.default_stdout
+				self.stderr = gki.kernel.getStderr() or self.default_stderr
 			else:
 				self.stdout.write("GRAPHICS control data for channel %d\n" % (forChan,))
 				

@@ -11,7 +11,11 @@ from tkMessageBox import askokcancel
 import os, sys, string
 
 # PYRAF modules
-import iraf, irafpar, iraftask, irafhelp, openglgcur, irafukey, cStringIO
+# For some reason I do not understand, it is necessary to import
+# openglgcur here even though it is not used.  If omitted it dies during
+# startup. (rlw)
+# import iraf, irafpar, iraftask, irafhelp, cStringIO
+import iraf, irafpar, iraftask, irafhelp, openglgcur, cStringIO
 from eparoption import *
 
 # Constants 
@@ -707,7 +711,7 @@ class EparDialog:
         """
 
         fh = cStringIO.StringIO()
-        iraf.system.help(taskname, page = 0, Stdout = fh)
+        iraf.system.help(taskname, page = 0, Stdout = fh, Stderr = fh)
         result = fh.getvalue()
         fh.close()
         return result

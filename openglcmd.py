@@ -9,13 +9,13 @@ def gkiCoord(ndcCoord):
 	return Numeric.array(ndcCoord * gki.GKI_MAX,Numeric.Int16)
 
 def appendMetacode(metacode):
-	gki.kernel.stdgraph.append(metacode,1)
+	gki.kernel.append(metacode,1)
 
 def undo():
-	gki.kernel.stdgraph.undoN(1)
+	gki.kernel.undoN(1)
 
 def redrawOriginal():
-	gki.kernel.stdgraph.redrawOriginal()
+	gki.kernel.redrawOriginal()
 
 def text(textstring, x, y):
 	gkiX = gkiCoord(x)

@@ -5,12 +5,8 @@ $Id$
 
 import Numeric
 from types import *
-import graphcap, iraf, wutil, string
+import string, wutil, graphcap, iraf
 import gkiopengl
-#, gkiiraf
-
-kernel = None # This will be set to an instance of gkiController when graphics
-              # is first needed
 
 BOI = -1  # beginning of instruction sentinel
 NOP = 0	  # no op value
@@ -471,16 +467,24 @@ def gkiTranslate(metacode, functionTable, applyfunc):
 
 	opcode, arg = gkiBuffer.getNextCode()
 	while opcode != None:
-		apply(functionTable[opcode],(applyfunc,arg))
+		f = functionTable[opcode]
+		if f is not None:
+			apply(f,(applyfunc,arg))
 		opcode, arg = gkiBuffer.getNextCode()
 
 class GkiController(GkiKernel):
 
-	"""Indended to be used as a layer between the actual kernel being used
-	and the pyraf. This is so that it can gracefully
-	handle changes in kernels which can appear in any open workstation
-	instruction. In one sense it is a factory class that will instantiate
-	the necessary kernels as they are requested."""
+	"""Proxy for the actual kernel being used
+
+	This can gracefully handle changes in kernels which can appear
+	in any open workstation instruction.  It also uses lazy
+	instantiation of the real kernel (which can be expensive).  In
+	one sense it is a factory class that will instantiate the
+	necessary kernels as they are requested.
+
+	Most external modules should access the gki functions through
+	an instance of this class, gki.kernel.
+	"""
 
 	def __init__(self):
 
@@ -488,13 +492,66 @@ class GkiController(GkiKernel):
 		self.stdgraph = None
 		self.interactiveKernel = None
 		self.functionTable = []
-		self.controlFunctionTable =  [self.noAction]*(GKI_MAX_OP_CODE+1)
+		self.controlFunctionTable =  [None]*(GKI_MAX_OP_CODE+1)
 		self.controlFunctionTable[GKI_OPENWS] = self.openWS
-		self.devices = graphcap.GraphCap(iraf.osfn('dev$graphcap'))
+		self.devices = None
 		self.lastDevName = None
 		self.gcount = 0 # an activity counter
 		self.lastFlushCount = 0
-		self.flushInProgress = 0
+
+	# most methods simply defer to stdgraph
+
+	def errorMessage(self, text):
+		if not self.stdgraph: self.openKernel()
+		return self.stdgraph.errorMessage(text)
+
+	def getBuffer(self):
+		if not self.stdgraph: self.openKernel()
+		return self.stdgraph.getBuffer()
+
+	def undoN(self, nUndo=1):
+		if not self.stdgraph: self.openKernel()
+		return self.stdgraph.undoN(nUndo)
+
+	def redrawOriginal(self):
+		if not self.stdgraph: self.openKernel()
+		return self.stdgraph.redrawOriginal()
+
+	def translate(self, gkiBuffer, functionTable):
+		if not self.stdgraph: self.openKernel()
+		return self.stdgraph.translate(gkiBuffer, functionTable)
+
+	def clearReturnData(self):
+		if not self.stdgraph: self.openKernel()
+		return self.stdgraph.clearReturnData()
+
+	def gcur(self):
+		if not self.stdgraph: self.openKernel()
+		return self.stdgraph.gcur()
+
+	# some special routines for getting and setting stdout/err attributes
+
+	def setStdout(self, arg):
+		if self.stdgraph:
+			self.stdgraph.stdout = arg
+
+	def setStderr(self, arg):
+		if self.stdgraph:
+			self.stdgraph.stderr = arg
+
+	def getStdout(self):
+		if self.stdgraph:
+			return self.stdgraph.stdout
+		else:
+			return None
+
+	def getStderr(self):
+		if self.stdgraph:
+			return self.stdgraph.stderr
+		else:
+			return None
+
+	# these methods do special processing before calling stdgraph
 
 	def append(self, arg):
 
@@ -503,8 +560,14 @@ class GkiController(GkiKernel):
 			self.gcount = 0
 		if self.stdgraph:
 			self.stdgraph.append(arg)
-			
-	def noAction(self, dummy, arg): pass
+
+	def control(self, gkiMetacode):
+
+		# some control functions get executed here because they can
+		# change the kernel
+		gkiTranslate(gkiMetacode, self.controlFunctionTable, self._gkiAction)
+		# rest of control is handled by the kernel
+		return self.stdgraph.control(gkiMetacode)
 
 	def flush(self):
 
@@ -515,11 +578,6 @@ class GkiController(GkiKernel):
 				self.lastFlushCount = self.gcount
 				self.stdgraph.flush()
 
-	def gcur(self):
-		if not self.stdgraph:
-			self.openKernel()
-		return self.stdgraph.gcur()
-	
 	def openWS(self, dummy, arg):
 
 		mode = arg[0]
@@ -534,6 +592,8 @@ class GkiController(GkiKernel):
 	def getDevice(self, device=None):
 		"""Starting with stdgraph, drill until a device is found in
 		the graphcap or isn't"""
+		if self.devices is None:
+			self.devices = graphcap.GraphCap(iraf.osfn('dev$graphcap'))
 		devstr = iraf.envget("stdgraph")
 		if (not device) or (not self.devices.has_key(device)):
 			while 1:
@@ -544,7 +604,7 @@ class GkiController(GkiKernel):
 				else:
 					devstr = iraf.envget(devstr)
 					if not devstr:
-						raise IrafError(
+						raise iraf.IrafError(
 							"No entry found for specified stdgraph device")
 		
 		return device
@@ -576,11 +636,6 @@ class GkiController(GkiKernel):
 			self.stdgraph = gkiopengl.GkiOpenGlKernel()
 			self.interactiveKernel = self.stdgraph
 
-	def control(self, gkiMetacode):
-
-		gkiTranslate(gkiMetacode, self.controlFunctionTable, self._gkiAction)
-		return self.stdgraph.control(gkiMetacode)
-	
 class GkiNull(GkiKernel):
 	
 	"""A version of the graphics kernel that does nothing except warn the
@@ -594,7 +649,7 @@ class GkiNull(GkiKernel):
 			  "screen will fail"
 		GkiKernel.__init__(self)
 		self.functionTable = []
-		self.controlFunctionTable = [self.controlDefault]*(GKI_MAX_OP_CODE+1)
+		self.controlFunctionTable = [None]*(GKI_MAX_OP_CODE+1)
 		self.controlFunctionTable[GKI_OPENWS] = self.openWS
 		self.controlFunctionTable[GKI_CLOSEWS] = self.closeWS
 		self.controlFunctionTable[GKI_REACTIVATEWS] = self.reactivateWS
@@ -609,20 +664,17 @@ class GkiNull(GkiKernel):
 		gkiTranslate(gkiMetacode, self.controlFunctionTable, self._gkiAction)
 		return self.returnData
 
-	def translate(self, gkiMetacode, fTable): pass
-	def controlDefault(self, dummy, arg): pass
-	def controlDoNothing(self, dummy, arg): pass
 	def openWS(self, dummy, arg):
-		print "Unable to plot graphics to screen"
-		raise iraf.IrafError
-	def clearWS(self, dummy, arg): pass
+		raise iraf.IrafError("Unable to plot graphics to screen")
 	def reactivateWS(self, dummy, arg):
-		raise iraf.IrafError
+		raise iraf.IrafError("Attempt to access graphics when it isn't available")
+	def getWCS(self, dummy, arg):
+		raise iraf.IrafError("Attempt to access graphics when it isn't available")
+
+	def translate(self, gkiMetacode, fTable): pass
+	def clearWS(self, dummy, arg): pass
 	def deactivateWS(self, dummy, arg): pass
 	def setWCS(self, dummy, arg): pass
-	def getWCS(self, dummy, arg):
-		print "Attempt to access graphics when it isn't available"
-		raise iraf.IrafError
 	def closeWS(self, dummy, arg): pass
 
 
@@ -637,3 +689,7 @@ def ndcpairs(intarr):
 	f = ndc(intarr)
 	return f[0::2],f[1::2]
 
+
+# This is the proxy for the current graphics kernel
+
+kernel = GkiController()
