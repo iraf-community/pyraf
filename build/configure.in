@@ -20,6 +20,19 @@ fi
 
 AC_SUBST(PYTHON_LIB_DIR)
 
+# Check whether to use gcc
+
+AC_ARG_WITH(gcc,   [--with-gcc         allow for use of gcc if available],
+       CC=gcc, gcc_ok=no)
+
+if test "$gcc_ok"=no; then
+    AC_PROG_CC
+fi
+
+if test $CC=gcc; then
+    SHLIB_CFLAGS=-fPIC
+    AC_SUBST(SHLIB_CFLGS)
+fi
 
 #------------------------------------------------------------------
 #	Read site specific information, kept in site.config
@@ -85,14 +98,12 @@ case $system in
         IRAFARCH="ssun"
 	toglplatform="sunos"
 	CFLAGS="-c"
-        SHLIB_CFLAGS="-KPIC"
 	EXTRA_LFLAGS="-lnsl -lsocket"
 	LDFLAG='-G'
 	;;
     Linux*)
         IRAFARCH="redhat"
 	toglplatform="linux"
-        SHLIB_CFLAGS="-fPIC"
 	CFLAGS=" -c" 
 	EXTRA_LFLAGS="-lc"
         LDFLAG='-shared'
@@ -101,12 +112,25 @@ case $system in
         IRAFARCH="alpha"
 	toglplatform="osf1"
 	CFLAGS=" -c"
-        SHLIB_CFLAGS=""
         LDFLAG='-shared -expect_unresolved "*"'
 	EXTRA_LFLAGS=""
         ;;
 esac
 
+if test "$CC" != "gcc"
+then
+case $system in
+    SunOS-5.*)  
+        SHLIB_CFLAGS="-KPIC"
+        ;;
+    Linux*)
+        SHLIB_CFLAGS="-fPIC"
+        ;;
+    OSF1-V*)
+        SHLIB_CFLAGS=""
+        ;;
+esac
+fi
 
 AC_SUBST(ToglPath)
 ToglPath=`cd $PYTHON_LIB_DIR/site-packages/OpenGL/Tk*/$toglplatform*; pwd`
