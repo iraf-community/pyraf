@@ -330,9 +330,18 @@ class PyCmdLine(CmdConsole):
 			try:
 				t = getattr(iraf,cmd)
 				# OK, we found it in the iraf module
-				# If it could be a Python expression, check to see
-				# if the function exists in the local namespace
-				if line[i:i+1] == '(':
+				# It could still be a Python expression, so check to see
+				# if the variable exists in the local namespace
+				if line[i:i+1] == "":
+					if self.isLocal(cmd):
+						return line
+					elif not callable(t):
+						# variable from iraf module is not callable (e.g.
+						# yes, no, INDEF, etc.) -- add 'iraf.' so it echoes OK
+						j = string.find(line,cmd)
+						return line[:j] + 'iraf.' + line[j:]
+					# otherwise it is an IRAF task execution
+				elif line[i:i+1] == '(':
 					if self.isLocal(cmd) or cmd in ['type', 'dir']:
 						return line
 					# Not a local function, so user presumably intends to
@@ -340,12 +349,12 @@ class PyCmdLine(CmdConsole):
 					# string to the task name for convenience.
 					j = string.find(line,cmd)
 					return line[:j] + 'iraf.' + line[j:]
-				elif self.isLocal(cmd) and line[i:i+1] != "" and \
+				elif self.isLocal(cmd) and \
 				  line[i] not in string.digits and \
 				  line[i] not in string.letters and \
 				  line[i] not in "<>|":
 					# don't override local variable unless this really
-					# does not look like a legal Python command
+					# does look like an IRAF command
 					return line
 			except AttributeError, e:
 				return line
