@@ -329,7 +329,7 @@ def _addTask(task, pkgname=None):
 	# add task to global namespaces
 	_irafnames.strategy.addTask(task)
 	# add task to list for its package
-	_pkgs[pkgname].addTask(task,fullname)
+	getPkg(pkgname).addTask(task,fullname)
 
 # -----------------------------------------------------
 # addLoaded: Add an IRAF package to the loaded pkgs list
@@ -1548,6 +1548,32 @@ def package(pkgname, bin=None, PkgName='', PkgBinary='', **kw):
 			_writeError("Warning: illegal characters in task name, changing "
 				"`%s' to `%s'" % (pkgname, spkgname))
 		pkgname = spkgname
+		# is the package defined?
+		# if not, is there a CL task by this name?
+		# otherwise there is an error
+		pkg = getPkg(pkgname, found=1)
+		if pkg is None:
+			pkg = getTask(pkgname, found=1)
+			if pkg is None or not isinstance(pkg,_iraftask.IrafCLTask) or \
+					pkg.getName() != pkgname:
+				raise KeyError("Package `%s' not defined" % pkgname)
+			# Hack city -- there is a CL task with the package name, but it was
+			# not defined to be a package.  Convert it to an IrafPkg object.
+
+			_iraftask.mutateCLTask2Pkg(pkg)
+
+			# We must be currently loading this package if we encountered
+			# its package statement (XXX can I confirm that?).
+			# Add it to the lists of loaded packages (this usually
+			# is done by the IrafPkg run method, but we are executing
+			# as an IrafCLTask instead.)
+
+			_addPkg(pkg)
+			loadedPath.append(pkg)
+			addLoaded(pkg)
+			if Verbose>0: _writeError("Warning: CL task `%s' apparently is "
+				"a package" % pkgname)
+
 		return (pkgname, bin or PkgBinary)
 	finally:
 		redirReset(resetList, closeFHList)

@@ -1054,6 +1054,44 @@ class IrafPkg(IrafCLTask):
 				print "Done loading",self.getName()
 
 # -----------------------------------------------------
+# Turn an IrafCLTask into an IrafPkg
+# This is necessary because sometimes package scripts
+# are incorrectly defined as simple CL tasks.  (Currently
+# the only example I know of is the imred/ccdred/ccdtest
+# package, but there could be others.)  Need to keep
+# the same object (because there may be multiple references
+# to it) but repair the mistake by changing its class.
+#
+# A bit scary, but it works (at least in the current version
+# of Python.)
+# 
+# This doesn't do everything that might be necessary.  E.g., it does
+# not print the package contents after loading and does not put the
+# package on the list of loaded pcakges.  Leave that up to the calling
+# routine.
+# -----------------------------------------------------
+
+def mutateCLTask2Pkg(o, loaded=1):
+
+	"""Hack an IRAF CL task object into an IRAF package object"""
+
+	if isinstance(o, IrafPkg):
+		return
+	if not isinstance(o, IrafCLTask):
+		raise TypeError("Cannot turn object `%s' into an IrafPkg" % `o`)
+
+	# add the extra attributes used in IrafPkg
+	# this is usually called while actually loading the package, so by
+	# default loaded flag is set to true
+	o._loaded = loaded
+	o._tasks = minmatch.MinMatchDict()
+	o._pkgs = minmatch.MinMatchDict()
+
+	# Presto, you're an IrafPkg!
+	o.__class__ = IrafPkg
+
+
+# -----------------------------------------------------
 # IRAF foreign task class
 # -----------------------------------------------------
 
