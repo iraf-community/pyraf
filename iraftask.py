@@ -32,7 +32,7 @@ class IrafTask:
 		self._pkgbinary = []
 		self.addPkgbinary(pkgbinary)
 		# tasks with names starting with '_' are implicitly hidden
-		if name[0] == '_':
+		if name[0:1] == '_':
 			self._hidden = 1
 		else:
 			self._hidden = 0
@@ -54,7 +54,7 @@ class IrafTask:
 		self._defaultParpath = None
 		self._scrunchParpath = None
 		self._parDictList = None
-		if filename[0] == '$':
+		if filename and filename[0] == '$':
 			# this is a foreign task
 			self._foreign = 1
 			self._filename = filename[1:]
@@ -487,7 +487,7 @@ class IrafTask:
 
 	def initTask(self):
 		"""Fill in full pathnames of files and read parameter file(s)"""
-		if not self._fullpath: self.initFullpath()
+		if self._filename and not self._fullpath: self.initFullpath()
 		if self._currentParList is None:
 			self.initParpath()
 			self.initParList()
@@ -549,6 +549,12 @@ class IrafTask:
 
 	def initParpath(self):
 		"""Initialize parameter file paths"""
+
+		if not self._filename:
+			# if filename is missing we won't be able to find parameter file
+			# set hasparfile flag to zero if that is OK
+			self.noParFile()
+			self._hasparfile = 0
 
 		if not self._hasparfile:
 			# no parameter file
@@ -721,7 +727,7 @@ class IrafCLTask(IrafTask):
 			if hasattr(fh,'name'):
 				filename = fh.name
 			else:
-				filename = iraf.mktemp('cl')+'.cl'
+				filename = None
 		IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
 		if self.getForeign():
 			raise iraf.IrafError("CL task cannot be foreign " +
@@ -799,7 +805,7 @@ class IrafCLTask(IrafTask):
 		If filehandle is specified, reads CL code from there
 		"""
 
-		if filehandle is not None:
+		if filehandle is not None and self._filename:
 			self._fullpath = iraf.Expand(self._filename)
 
 		IrafTask.initTask(self)

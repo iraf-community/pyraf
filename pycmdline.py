@@ -64,6 +64,8 @@ class CmdConsole(code.InteractiveConsole):
 		else:
 			self.write("%s\n" % str(banner))
 		more = 0
+		# number of consecutive EOFs
+		neofs = 0
 		while 1:
 			try:
 				if more:
@@ -71,12 +73,19 @@ class CmdConsole(code.InteractiveConsole):
 				else:
 					prompt = self.ps1
 				line = self.raw_input(prompt)
+				neofs = 0
 				# note that this forbids combination of python & CL
 				# code -- e.g. a for loop that runs CL tasks.
 				if not more:
 					line = self.cmd(line)
 				if line or more: more = self.push(line)
 			except EOFError:
+				#XXX ugly code here -- refers to methods
+				#XXX defined in extensions of this class
+				neofs = neofs+1
+				if neofs>=5:
+					self.write("\nToo many EOFs, exiting now\n")
+					self.do_exit('',0)
 				self.write("\nUse .exit to exit\n"
 					".help describes executive commands\n")
 				self.resetbuffer()
