@@ -594,7 +594,7 @@ class IrafPkg(IrafTask):
 		"""Returns true if this package has already been loaded"""
 		return self.__loaded
 
-	def __getattr__(self, name, triedpkgs={}):
+	def __getattr__(self, name, triedpkgs=None):
 		"""Return the task 'name' from this package (if it exists).
 		
 		Also searches subpackages for the task.  triedpkgs is
@@ -610,10 +610,10 @@ class IrafPkg(IrafTask):
 		t = self.__tasks.get(name)
 		if t: return t
 		# try subpackages
+		if not triedpkgs: triedpkgs = {}
 		for p in self.__pkgs.values():
 			if p.__loaded and (not triedpkgs.get(p)):
 				try:
-					# return getattr(p, name)
 					triedpkgs[p] = 1
 					return p.__getattr__(name,triedpkgs=triedpkgs)
 				except AttributeError, e:
