@@ -5,19 +5,7 @@ $Id$
 """
 
 import os, re, signal, string, struct, sys, time
-import subproc
-import gki
-import gkiopengl
-import gwm
-import iraf
-
-# for debugging purposes (for generating a tk window for listing
-# subprocess communication events
-monitor = 0
-monwidget = None
-if monitor and (monwidget == None):
-	import irafmonitor, StringIO
-	monwidget = irafmonitor.IRAFmonitor()
+import subproc, iraf, gki, gkiopengl, gwm
 
 stdgraph = None
 
@@ -36,7 +24,7 @@ def IrafExecute(task, envdict):
 	setParam(param,value): set parameter value
 	"""
 
-	# Start'er up
+	# Start 'er up
 	try:
 		executable = task.getFullpath()
 		process = subproc.Subprocess(executable+' -c')
@@ -78,26 +66,37 @@ _re_chan_len = re.compile(r'\((\d+),(\d+)\)\n')
 _optsub = r'(?:\[\d+\])?'
 _re_paramset = re.compile(r'([a-zA-Z_][\w.]*' + _optsub + ')\s*=\s*(.*)\n')
 _re_paramrequest = re.compile(r'=([a-zA-Z_$][\w.]*' + _optsub + ')\n')
+_re_stty_command = re.compile(r'stty .*?\n')
 
 def IrafIO(process,task):
 
 	"""Talk to the IRAF process in slave mode. Raises an IrafProcessError
 	if an error occurs."""
 
+	# This routine has gotten to the point that it could be better
+	# organized with calls to more specialized routines. It's gotten
+	# way too long.
+	
 	global stdgraph
 	msg = ''
 	xferline = ''
 	while 1:
+
 		# each read may return multiple lines; only
 		# read new data when old has been used up
 		if not msg:
 			data = ReadFromIrafProc(process)
 			msg = Iraf2AscString(data)
+#			print "~~~~~~"+msg
 		if msg[0:4] == 'bye\n':
 			return
 		elif msg[0:5] == "ERROR" or msg[0:5] == 'error':
 			raise IrafProcessError("IRAF task terminated abnormally\n" + msg)
 		elif msg[0:4] == 'xmit':
+			if msg == "xmit(4,6)\n" or msg == "xmit(4,5)\n":
+				checkForEscapeSeq = 1
+			else:
+				checkForEscapeSeq = 0
 			mo = _re_chan_len.match(msg,4)
 			if not mo:
 				raise IrafProcessError("Illegal xmit command format\n" + msg)
@@ -114,27 +113,31 @@ def IrafIO(process,task):
 						(len(xdata), 2*nbytes, chan)))
 			else:
 				if chan == 4:
-					print Iraf2AscString(xdata),
+					txdata = Iraf2AscString(xdata)
+					if checkForEscapeSeq:
+						if ((txdata[0:5] == "\033=rDw") or
+						    (txdata[0:5] == "\033+rAw") or
+							(txdata[0:5] == "\033-rAw")):
+							# ignore IRAF io escape sequences for now
+							continue
+					print txdata
 				elif chan == 5:
 					sys.stderr.write(Iraf2AscString(xdata))
 				elif chan == 6:
-#					print "data for STDGRAPH"
 					stdgraph.append(Numeric.fromstring(xdata,'s'))
 				elif chan == 7:
 					print "data for STDIMAGE"
 				elif chan == 8:
 					print "data for STDPLOT"
 				elif chan == 9:
-#					print "data for PSIOCNTRL"
 					sdata = Numeric.fromstring(xdata,'s')
 					forChan = sdata[1] # a bit sloppy here
 					if forChan == 6:
 						# STDPLOT control
 						# first see if OPENWS to get device, otherwise
 						# pass through to current kernel, use braindead
-						# interpetation to look for openws 
+						# interpretation to look for openws 
 						if (sdata[2] == -1) and (sdata[3] == 1):
-							print "openws for stdgraph"
 							length = sdata[4]
 							device = sdata[5:length+2].astype('b').tostring()
 							# but of course, for the time being (until
@@ -154,14 +157,6 @@ def IrafIO(process,task):
 							WriteToIrafProc(process ,wcs)
  					else:
 						print "GRAPHICS control data for channel",forChan
-						
-#						print adata[0:10]
-#						oldstdout = sys.stdout
-#						sys.stdout = StringIO.StringIO()
-#						gkistr = sys.stdout.getvalue()
-#						monwidget.append(gkistr)
-#						sys.stdout.close()
-#						sys.stdout = oldstdout
 				else:
 					print "data for channel", chan
 		elif msg[0:4] == 'xfer':
@@ -208,7 +203,7 @@ def IrafIO(process,task):
 				raise IrafProcessError("Bad parameter request from task: " +
 					`msg`)
 		else:
-			# last possibility: set value of parameter
+			# set value of parameter?
 			mo = _re_paramset.match(msg)
 			if mo:
 				msg = msg[mo.end():]
@@ -220,8 +215,19 @@ def IrafIO(process,task):
 					print 'Warning:',e
 					task.setParam(paramname,newvalue,check=0)
 			else:
-				print "Warning, unrecognized IRAF pipe protocol"
-				print msg
+				# Could be any legal CL command. For the moment, we
+				# only support "stty resize". Later we will add support
+				# for those seen used by actual tasks. And maybe even
+				# later we will have CL emulation. But don't hold your
+				# breath.
+				mo = _re_stty_command.match(msg)
+				if mo:
+					msg = msg[mo.end():]
+					WriteStringToIrafProc(process,
+						"set ttyncols=80\n"+"set ttynlines=24\n")
+				else:
+					raise IrafProcessError(
+						"Unsupported CL command called by IRAF task: "+msg)
 
 def IrafKill(process):
 	"""Try stopping process in IRAF approved way first; if that fails

@@ -6,7 +6,7 @@ $Id$
 R. White, 1999 March 4
 """
 
-import os, sys, string, re, irafgcur, minmatch
+import os, sys, string, re, irafgcur, irafukey, minmatch
 from types import *
 
 # -----------------------------------------------------
@@ -40,7 +40,7 @@ def warning(msg, strict=0, exception=SyntaxError,
 # -----------------------------------------------------
 
 _string_types = [ 's', 'f', 'struct', 'pset',
-	'*imcur', '*struct', '*s', '*i', '*ukey' ]
+	'*imcur', '*struct', '*s', '*i']
 _real_types = [ 'r', 'd' ]
 
 def IrafParFactory(fields,filename=None,strict=0):
@@ -57,6 +57,8 @@ def IrafParFactory(fields,filename=None,strict=0):
 		return IrafParS(fields,filename,strict)
 	elif type == "*gcur":
 		return IrafParGCur(fields,filename,strict)
+	elif type == "*ukey":
+		return IrafParUKey(fields,filename,strict)
 	elif type in _real_types:
 		return IrafParR(fields,filename,strict)
 	elif type == "i":
@@ -520,6 +522,24 @@ class IrafParGCur(IrafParS):
 		if field: return self.getField(field)
 		if lpar: return str(self.value)
 		return irafgcur.gcur()
+# -----------------------------------------------------
+# IRAF ukey (user typed key) parameter class
+# -----------------------------------------------------
+
+# XXX Cut and paste of GCur class; Rick, check this out
+
+class IrafParUKey(IrafParS):
+	"""IRAF user typed key parameter class"""
+	def __init__(self,fields,filename,strict=0):
+		IrafParS.__init__(self,fields,filename,strict)
+	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
+		"""Return typed character"""
+		if index:
+			raise SyntaxError("Parameter " + self.name +
+				" is ukey parameter, cannot use index")
+		if field: return self.getField(field)
+		if lpar: return str(self.value)
+		return irafukey.UserKey()()
 
 # -----------------------------------------------------
 # IRAF boolean parameter class
