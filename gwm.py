@@ -182,13 +182,6 @@ def raiseActiveWindow():
 		raise GWMError("No plot has been created yet")
 	stdgraph.raiseWindow()
 
-def taskDoneCleanup():
-
-	"""Hook to handle double redraw after first Tk plot and other problems"""
-
-	gwin = getActiveGraphicsWindow()
-	if gwin: gwin.taskDoneCleanup()
-
 def resetFocusHistory():
 
 	"""Reset focus history after an error occurs"""

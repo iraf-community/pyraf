@@ -395,10 +395,15 @@ class GkiKernel:
 
 		return self.gkibuffer
 
-	def flush(self): pass
+	def flush(self):
+		pass
 
 	def clear(self):
 		self.gkibuffer.reset()
+
+	def taskDone(self):
+		"""Hook for stuff that needs to be done at completion of task"""
+		pass
 
 	def undoN(self, nUndo=1):
 
@@ -610,6 +615,10 @@ class GkiProxy(GkiKernel):
 	def clear(self):
 		if self.stdgraph:
 			self.stdgraph.clear()
+
+	def taskDone(self):
+		if self.stdgraph:
+			self.stdgraph.taskDone()
 
 class GkiController(GkiProxy):
 

@@ -5,7 +5,7 @@ $Id$
 
 import os, re, signal, string, struct, sys, time, types, Numeric, cStringIO
 import subproc, filecache, wutil
-import iraf, gki, gwm, irafutils, iraftask
+import iraf, gki, irafutils, iraftask
 
 #stdgraph = None
 
@@ -276,7 +276,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 			wutil.focusController.restoreToMark(focusMark)
 			gki.kernel.popStdio()
 		# do any cleanup needed on task completion
-		gwm.taskDoneCleanup()
+		gki.kernel.taskDone()
 	except KeyboardInterrupt, exc:
 		# On keyboard interrupt (^C), kill the subprocess
 		processCache.kill(irafprocess)

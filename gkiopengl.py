@@ -106,15 +106,7 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 		except Tkinter.TclError:
 			pass
 
-	def hasFocus(self):
-		"""Returns true if this window currently has focus"""
-		return  wutil.getTopID(wutil.getWindowID()) == \
-			wutil.getTopID(self.getWindowID())
-
-	def setDrawingColor(self, irafColorIndex):
-		self.colorManager.setDrawingColor(irafColorIndex)
-
-	def taskDoneCleanup(self):
+	def taskDone(self):
 		"""Hack to prevent the double redraw after first Tk plot"""
 		gwin = self.gwidget
 		if gwin and (not gwin.firstPlotDone) and wutil.hasGraphics:
@@ -124,6 +116,14 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 			if not gwin.interactive:
 				gwin.ignoreNextNRedraws = 2
 			gwin.firstPlotDone = 1
+
+	def hasFocus(self):
+		"""Returns true if this window currently has focus"""
+		return  wutil.getTopID(wutil.getWindowID()) == \
+			wutil.getTopID(self.getWindowID())
+
+	def setDrawingColor(self, irafColorIndex):
+		self.colorManager.setDrawingColor(irafColorIndex)
 
 	# the following methods implement the FocusEntity interface
 	# used by wutil.FocusController
