@@ -52,6 +52,11 @@ class GraphicsWindowManager:
 				self.windows[windowName] = GraphicsWindow(windowName)
 			self.activeWindow = self.windows[windowName]
 		self.activeWindow.gwidget.activate()
+		# The following attaches to the new window a reference to the
+		# window manager so that the window knows who to call to have
+		# it removed from the list (e.g., user closes window). This
+		# probably is not the best way to do it!
+		self.activeWindow.windowManager = self
 			
 	def nWindows(self):
 		
@@ -59,15 +64,21 @@ class GraphicsWindowManager:
 
 	def delete(self, windowName):
 
+		
+		changeActiveWindow = 0
 		if self.windows.has_key(windowName):
+			if self.activeWindow.getWindowName() == windowName:
+				changeActiveWindow = 1
 			window = self.windows[windowName]
 			window.top.destroy()
 			del self.windows[windowName]
-			self.activeWindow = None
+			if changeActiveWindow:
+				if len(self.windows):
+					self.activeWindow = self.windows.keys()[0]
+				else:
+					self.activeWindow = None
 		else:
 			print "error: specified graphics window doesn't exist"
-
-
 				
 class GraphicsWindow:
 
@@ -83,18 +94,23 @@ class GraphicsWindow:
 			Tkinter._default_root.withdraw()
 			Ptogl.createdRoot = 0   # clear so subsequent calls don't redo
 
+		self.windowName = windowName
 		self.top = Tkinter.Toplevel()
 		self.gwidget = Ptogl.Ptogl(self.top,width=700,height=500)
 		self.gwidget.redraw = redraw
 		self.top.title(windowName)
 		self.gwidget.pack(side = 'top', expand=1, fill='both')
-		self.top.protocol("WM_DELETE_WINDOW", self.callback)
+		self.top.protocol("WM_DELETE_WINDOW", self.gwdestroy)
 		windowID = self.gwidget.winfo_id()
 		wutil.setBackingStore(windowID)
-		
-	def callback(dummyarg):
+
+	def getWindowName(self):
+
+		return self.windowName
+			
+	def gwdestroy(self):
 	
-		pass # completely ignore attempts to close the window
+		self.windowManager.delete(self.windowName)
 
 # Create a module instance of the GWM object that can be referred
 # by anything that imports this module. It is in effect a singleton
@@ -157,11 +173,11 @@ def saveGraphicsCursorPosition():
 		y = posdict['win_y']
 	else:
 		x, y = 0, 0
-		maxX = graphicsWin.winfo_width()
-		maxY = graphicsWin.winfo_height()
-		if x == 0 and y == 0:
-			x = maxX/2
-			y = maxY/2
-		graphicsWin.lastX = min(max(x,0),maxX)
-		graphicsWin.lastY = min(max(y,0),maxY)
+	maxX = graphicsWin.winfo_width()
+	maxY = graphicsWin.winfo_height()
+	if x == 0 and y == 0:
+		x = maxX/2
+		y = maxY/2
+	graphicsWin.lastX = min(max(x,0),maxX)
+	graphicsWin.lastY = min(max(y,0),maxY)
 
