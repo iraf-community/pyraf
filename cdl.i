@@ -17,7 +17,7 @@
 	float *z1_out, float *z2_out}
 %apply int *OUTPUT {int *zt_out, int *ztrans_out, int *frame_out,
 	int *nsample_out, int *nlines_out, int *configno_out, int *w_out,
-	int *h_out, int *nframes_out, int *nf_out, int *fb_out  }
+	int *h_out, int *nframes_out, int *nf_out, int *fb_out, int *wcs_out  }
 %apply char *OUTPUT {char *name_out, char *title_out, char *imname_out,
 	char *imtitle_out}
 %apply char *OUTPUT_1CHAR {char *key_out_1char}

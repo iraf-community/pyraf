@@ -33,15 +33,9 @@
  * and things like that.
  *
  * $Log$
- * Revision 1.1  2000/02/21 23:51:13  perry
- * Includes: Color index mode for 8 bit deep displays
- * 	  status line for graphics
- * 	  Text annotation, cursor marking, undo, redraw commands
- * 	  arrow keys move graphics cursor
- * 	  fixes crash when current focus is root window
- * 	  removes double redraw on first plot
- * 	  first plot returns focus to terminal window
- * 	  iraf stderr gui messages now ignored
+ * Revision 1.2  2000/04/18 14:18:30  perry
+ * Updated to reflect the changed interface to the readCursor
+ * routine
  *
  ************************************************************************/
 
@@ -653,8 +647,10 @@ static PyObject *_wrap_cdl_readCursor(PyObject *self, PyObject *args) {
     float  temp;
     float * _arg3;
     float  temp0;
-    char * _arg4;
-    char  temp1;
+    int * _arg4;
+    int  temp1;
+    char * _arg5;
+    char  temp2;
     char * _argc0 = 0;
 
     self = self;
@@ -667,6 +663,9 @@ static PyObject *_wrap_cdl_readCursor(PyObject *self, PyObject *args) {
 {
   _arg4 = &temp1;
 }
+{
+  _arg5 = &temp2;
+}
     if(!PyArg_ParseTuple(args,"si:cdl_readCursor",&_argc0,&_arg1)) 
         return NULL;
     if (_argc0) {
@@ -675,12 +674,8 @@ static PyObject *_wrap_cdl_readCursor(PyObject *self, PyObject *args) {
         return NULL;
         }
     }
-{
-Py_BEGIN_ALLOW_THREADS
-    _result = (char )cdl_readCursor(_arg0,_arg1,_arg2,_arg3,_arg4);
-
-Py_END_ALLOW_THREADS
-}    _resultobj = Py_BuildValue("c",_result);
+    _result = (char )cdl_readCursor(_arg0,_arg1,_arg2,_arg3,_arg4,_arg5);
+    _resultobj = Py_BuildValue("c",_result);
 {
     PyObject *o;
     o = PyFloat_FromDouble((double) (*_arg2));
@@ -693,7 +688,12 @@ Py_END_ALLOW_THREADS
 }
 {
     PyObject *o;
-    o = PyString_FromStringAndSize(_arg4,1);
+    o = PyInt_FromLong((long) (*_arg4));
+    _resultobj = t_output_helper(_resultobj, o);
+}
+{
+    PyObject *o;
+    o = PyString_FromStringAndSize(_arg5,1);
     _resultobj = t_output_helper(_resultobj,o);
 }
     return _resultobj;
@@ -6655,12 +6655,12 @@ SWIGEXPORT(void,initcdl)() {
 	 d = PyModule_GetDict(m);
 
 	import_array();
-	 PyDict_SetItemString(d,"CDL_VERSION", PyString_FromString("Client Display Library V1.6 02/28/98"));
+	 PyDict_SetItemString(d,"CDL_VERSION", PyString_FromString("Client Display Library V1.7 04/28/99"));
 	 PyDict_SetItemString(d,"MAX_FBCONFIG", PyInt_FromLong((long) 128));
-	 PyDict_SetItemString(d,"MAX_FRAMES", PyInt_FromLong((long) 4));
+	 PyDict_SetItemString(d,"MAX_FRAMES", PyInt_FromLong((long) 16));
 	 PyDict_SetItemString(d,"DEF_CONTRAST", PyFloat_FromDouble((double) 0.25));
 	 PyDict_SetItemString(d,"DEF_NSAMPLE", PyInt_FromLong((long) 600));
-	 PyDict_SetItemString(d,"DEF_NSAMPLINES", PyInt_FromLong((long) 5));
+	 PyDict_SetItemString(d,"DEF_NSAMPLINES", PyInt_FromLong((long) -1));
 	 PyDict_SetItemString(d,"INDEF", PyInt_FromLong((long) -999));
 	 PyDict_SetItemString(d,"FB_AUTO", PyInt_FromLong((long) -1));
 	 PyDict_SetItemString(d,"CDL_UNITARY", PyInt_FromLong((long) 0));

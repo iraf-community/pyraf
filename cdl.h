@@ -1,19 +1,31 @@
 /*  
  *  CDL.H -- Global definitions for the Client Display Library.
  */
+#ifndef	_CDL_Defined
+#define	_CDL_Defined
 
-#define	CDL_VERSION	"Client Display Library V1.6 02/28/98"
+#define	CDL_VERSION	"Client Display Library V1.7 04/28/99"
 
 /* Declare prototypes if using ANSI C */
+#define CDL_ANSIC
 
+#ifdef  CDL_ANSIC
+#define ANSI_FUNC
+#endif
+#endif
 
 #define MAX_FBCONFIG     128            /* max size of FB config table  */
-#define MAX_FRAMES         4            /* max frames support by server */
+#define MAX_FRAMES        16            /* max frames support by server */
 #define DEF_CONTRAST    0.25            /* default zscale contrast      */
 #define DEF_NSAMPLE      600            /* default number of samples    */
-#define DEF_NSAMPLINES     5            /* default no. of sample lines  */
+#define DEF_NSAMPLINES    -1            /* default no. of sample lines  */
 #define INDEF           -999            /* INDEF value flag             */
 
+/* Include private definitions when compiling linrary sources. */
+#ifdef   CDL_LIBRARY_SOURCE
+/* #include "eps.h" */
+/* #include "cdlP.h" */
+#endif
 
 /* Frame buffer selection code. */
 #define	FB_AUTO		-1		/* autoconfig the frame buffer	*/
@@ -67,7 +79,11 @@
 #define L_HOLLOW           4
 #define L_SHADOW           5
 
-typedef	unsigned char	uchar;
+#ifndef AIXV3
+#ifndef OSF1
+typedef unsigned char   uchar;
+#endif
+#endif
 
 /* Local type definitions. */
 typedef	struct CDL 	*CDLPtr;
@@ -191,13 +207,12 @@ struct Marker {
 
 
 
-
 /* Include function prototypes for all CDL functions when using ANSI C */
 
 
 
 CDLPtr cdl_open(char *imtdev);
-char cdl_readCursor(CDLPtr cdl, int sample, float *x_out, float *y_out, char *key_out_1char);
+char cdl_readCursor(CDLPtr cdl, int sample, float *x_out, float *y_out, int *wcs_out, char *key_out_1char);
 int cdl_setCursor(CDLPtr cdl, int x, int y, int wcs);
 int cdl_setWCS(CDLPtr cdl, char *imname, char *imtitle, float a, float b, float c, float d, float tx, float ty, float z1, float z2, int zt);
 int cdl_getWCS(CDLPtr cdl, char *name_out, char *title_out, float *a_out, float *b_out, float *c_out, float  *d_out, float *tx_out, float *ty_out, float *z1_out, float *z2_out, int *zt_out);
@@ -232,8 +247,8 @@ int cdl_markPoint(CDLPtr cdl, int x, int y, int number, int size, int type, int 
 int cdl_markPointLabel(CDLPtr cdl, int x, int y, char *label, int size, int type, int color);
 int cdl_markLine(CDLPtr cdl, int xs, int ys, int xe, int ye, int color);
 int cdl_markBox(CDLPtr cdl, int lx, int ly, int ux, int uy, int fill, int color);
-int cdl_markPolygon(CDLPtr cdl, int *xlist, int *ylist, int npts, int fill, int color);
-int cdl_markPolyline(CDLPtr cdl, int *xlist, int *ylist, int npts, int color);
+int cdl_markPolygon(CDLPtr cdl, int xarray[], int yarray[], int npts, int fill, int color);
+int cdl_markPolyline(CDLPtr cdl, int *xarray, int *yarray, int npts, int color);
 int cdl_markCircle(CDLPtr cdl, int x, int y, int radius, int fill, int color);
 int cdl_markCircAnnuli(CDLPtr cdl, int x, int y, int radius, int nannuli, int sep, int color);
 int cdl_markEllipse(CDLPtr cdl, int x, int y, int xrad, int yrad, float rotang, int fill, int color);
