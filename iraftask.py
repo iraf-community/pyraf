@@ -1448,6 +1448,10 @@ class IrafForeignTask(IrafTask):
 	# private methods
 	#=========================================================
 
+	def _applyRedir(self, redirKW):
+		"""Apply I/O redirection"""
+		return iraf.redirApply(redirKW)
+
 	def _run(self, redirKW, specialKW):
 		"""Execute task after parameters, I/O redirection are prepared."""
 		args = self._args
