@@ -227,6 +227,11 @@ class GkiKernel:
 		# stub routine to be overridden in subclass of GkiKernel
 		pass
 
+	def clearReturnData(self):
+
+		# intended to be called after return data is used by the client
+		self.returnData = None
+		
 def gkiTranslate(metacode, functionTable):
 
 	"""General Function that can be used for decoding and interpreting

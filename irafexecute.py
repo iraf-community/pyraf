@@ -155,6 +155,7 @@ def IrafIO(process,task):
 							# strangely enough, it doesn't use the
 							# STDGRAPH I/O channel.
 							WriteToIrafProc(process ,wcs)
+							stdgraph.clearReturnData()
  					else:
 						print "GRAPHICS control data for channel",forChan
 				else:
