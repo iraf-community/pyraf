@@ -43,24 +43,15 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 		raise exc
 	return
 
-# message strings received from process start with one of these commands
-_p_bye     = r'bye\n'
-_p_error   = r'ERROR|error'
-_p_xmit    = r'xmit\((?P<xmitchan>\d+),(?P<xmitnbytes>\d+)\)\n'
-_p_xfer    = r'xfer\((?P<xferchan>\d+),(?P<xfernbytes>\d+)\)\n'
+# patterns for matching messages from process
 
 # '=param' and '_curpack' have to be treated specially because
 # they write to the task rather than to stdout
-# 'set param=value' is special because it allows errors
+# 'param=value' is special because it allows errors
 
 _p_par_get = r'=(?P<gname>[a-zA-Z_$][\w.]*(?:\[\d+\])?)\n'
 _p_par_set = r'(?P<sname>[a-zA-Z_][\w.]*(?:\[\d+\])?)\s*=\s*(?P<svalue>.*)\n'
-
 _re_msg = re.compile(
-			r'(?P<bye>'     + _p_bye     + ')|' +
-			r'(?P<error>'   + _p_error   + ')|' +
-			r'(?P<xmit>'    + _p_xmit    + ')|' +
-			r'(?P<xfer>'    + _p_xfer    + ')|' +
 			r'(?P<par_get>' + _p_par_get + ')|' +
 			r'(?P<par_set>' + _p_par_set + ')'
 			)
@@ -121,6 +112,10 @@ class IrafProcess:
 		self.stdin = stdin
 		self.stdout = stdout
 		self.stderr = stderr
+		try:
+			self.isatty = self.stdin.isatty()
+		except:
+			self.isatty = 0
 
 		# redir_info tells task that IO has been redirected
 
@@ -218,71 +213,80 @@ class IrafProcess:
 
 		self.msg = ''
 		self.xferline = ''
+		# try to speed up loop a bit
+		re_match = _re_msg.match
+		xfer = self.xfer
+		xmit = self.xmit
+		par_get = self.par_get
+		par_set = self.par_set
+		executeClCommand = self.executeClCommand
 		while 1:
 
 			# each read may return multiple lines; only
 			# read new data when old has been used up
 
-			if not self.msg:
-				self.msg = self.readString()
+			if not self.msg: self.msg = self.readString()
 
-			# pattern match to see what this message is
+			msg = self.msg
+			msg5 = msg[:5]
 
-			mcmd = _re_msg.match(self.msg)
-			if mcmd is None:
-				# Could be any legal CL command.
-				self.executeClCommand()
-			elif mcmd.group('bye'):
+			if msg5 == 'xfer(':
+				xfer()
+			elif msg5 == 'xmit(':
+				xmit()
+			elif msg[:4] == 'bye\n':
 				return
-			elif mcmd.group('error'):
-				raise IrafProcessError("IRAF task terminated abnormally\n" +
-						self.msg)
-			elif mcmd.group('xmit'):
-				self.xmit(mcmd)
-			elif mcmd.group('xfer'):
-				self.xfer(mcmd)
-			elif mcmd.group('par_get'):
-				# parameter get request
-				paramname = mcmd.group('gname')
-				# list parameters can generate EOF exception
-				try:
-					pmsg = self.task.getParam(paramname) + '\n'
-				except EOFError:
-					pmsg = 'EOF\n'
-				self.writeString(pmsg)
-				self.msg = self.msg[mcmd.end():]
-			elif mcmd.group('par_set'):
-				# set value of parameter
-				paramname = mcmd.group('sname')
-				newvalue = mcmd.group('svalue')
-				self.msg = self.msg[mcmd.end():]
-				try:
-					self.task.setParam(paramname,newvalue)
-				except ValueError, e:
-					# on ValueError, just print warning and then force set
-					if iraf.Verbose>0:
-						self.stderr.write('Warning: %s\n' % (e,))
-						self.stderr.flush()
-					self.task.setParam(paramname,newvalue,check=0)
+			elif msg5 in ['error','ERROR']:
+				raise IrafProcessError("IRAF task terminated abnormally\n"+msg)
 			else:
-				# should never get here
-				raise RuntimeError(
-						"Program bug: uninterpreted message `%s'"
-						% (self.msg,))
+				# pattern match to see what this message is
+				mcmd = re_match(msg)
+				if mcmd is None:
+					# Could be any legal CL command.
+					executeClCommand()
+				elif mcmd.group('par_get'):
+					par_get(mcmd)
+				elif mcmd.group('par_set'):
+					par_set(mcmd)
+				else:
+					# should never get here
+					raise RuntimeError("Program bug: uninterpreted message `%s'"
+							% (msg,))
 
-	def xmit(self, mcmd):
+	def par_get(self, mcmd):
+		# parameter get request
+		paramname = mcmd.group('gname')
+		# list parameters can generate EOF exception
+		try:
+			pmsg = self.task.getParam(paramname) + '\n'
+		except EOFError:
+			pmsg = 'EOF\n'
+		self.writeString(pmsg)
+		self.msg = self.msg[mcmd.end():]
+
+	def par_set(self, mcmd):
+		# set value of parameter
+		group = mcmd.group
+		paramname = group('sname')
+		newvalue = group('svalue')
+		self.msg = self.msg[mcmd.end():]
+		try:
+			self.task.setParam(paramname,newvalue)
+		except ValueError, e:
+			# on ValueError, just print warning and then force set
+			if iraf.Verbose>0:
+				self.stderr.write('Warning: %s\n' % (e,))
+				self.stderr.flush()
+			self.task.setParam(paramname,newvalue,check=0)
+
+	def xmit(self):
 
 		"""Handle xmit data transmissions"""
 
 		global stdgraph
 
-		# this must always be the last command in a message
-		self.msg = self.msg[mcmd.end():]
-		if self.msg: raise IrafProcessError("Bad xmit: " +
-				`len(self.msg)` + " bytes follow request")
+		chan, nbytes = self.chanbytes()
 
-		chan = int(mcmd.group('xmitchan'))
-		nbytes = int(mcmd.group('xmitnbytes'))
 		checkForEscapeSeq = (chan == 4 and (nbytes==6 or nbytes==5))
 		xdata = self.read()
 		if len(xdata) != 2*nbytes:
@@ -356,18 +360,39 @@ class IrafProcess:
 			self.stdout.write("data for channel %d\n" % (chan,))
 			self.stdout.flush()
 
-	def xfer(self, mcmd):
+	def xfer(self):
 
 		"""Handle xfer data requests"""
 
-		chan = int(mcmd.group('xferchan'))
-		nbytes = int(mcmd.group('xfernbytes'))
+		chan, nbytes = self.chanbytes()
+		nchars = nbytes/2
 		if chan == 3:
 
-			# Read a line from stdin unless xferline already has
+			# Read data from stdin unless xferline already has
 			# some untransmitted data from a previous read
 
-			if not self.xferline: self.xferline = self.stdin.readline()
+			line = self.xferline
+			if not line:
+				if self.isatty:
+					# tty input, read a single line
+					line = self.stdin.readline()
+				else:
+					# file input, read a big chunk of data
+
+					# NOTE: Here we are reading ahead in the stdin stream,
+					# which works fine with a single IRAF task.  This approach
+					# could conceivably cause problems if some program expects
+					# to continue reading from this stream starting at the
+					# first line not read by the IRAF task.  That sounds
+					# very unlikely to be a good design and will not work
+					# as a result of this approach.  Sending the data in
+					# large chunks is *much* faster than sending many
+					# small messages (due to the overhead of handshaking
+					# between the CL task and this main process.)  That's
+					# why it is done this way.
+
+					line = self.stdin.read(nchars)
+				self.xferline = line
 
 			# Send two messages, the first with the number of characters
 			# in the line and the second with the line itself.
@@ -375,18 +400,34 @@ class IrafProcess:
 			# will keep sending xfer requests until it gets the
 			# newline.
 
-			nchars = nbytes/2
-			lsection = self.xferline[:nchars]
-			self.writeString(str(len(lsection)))
-			self.writeString(lsection)
-			self.xferline = self.xferline[nchars:]
+			if len(line)<=nchars:
+				# short line
+				self.writeString(str(len(line)))
+				self.writeString(line)
+				self.xferline = ''
+			else:
+				# long line
+				self.writeString(str(nchars))
+				self.writeString(line[:nchars])
+				self.xferline = line[nchars:]
 		else:
-			raise IrafProcessError("xfer request for unknown channel " +
-				self.msg)
-		# this must always be the last command in a message
-		self.msg = self.msg[mcmd.end():]
-		if self.msg: raise IrafProcessError("Bad xfer: " +
-				`len(self.msg)` + " bytes follow request")
+			raise IrafProcessError("xfer request for unknown channel %d" % chan)
+
+	def chanbytes(self):
+		"""Parse xmit(chan,nbytes) and return integer tuple
+		
+		Assumes first 5 characters have already been checked
+		"""
+		msg = self.msg
+		try:
+			i = string.find(msg,",",5)
+			if i<0 or msg[-2:] != ")\n": raise ValueError
+			chan = int(msg[5:i])
+			nbytes = int(msg[i+1:-2])
+			self.msg = ''
+		except ValueError:
+			raise IrafProcessError("Illegal message format `%s'" % self.msg)
+		return chan, nbytes
 
 	def executeClCommand(self):
 

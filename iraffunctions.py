@@ -917,6 +917,7 @@ def boolean(value):
 
 # -----------------------------------------------------
 # scan functions
+# Abandon all hope, ye who enter here
 # -----------------------------------------------------
 
 _nscan = 0
@@ -952,7 +953,33 @@ def fscan(locals, line, *namelist, **kw):
 	if len(kw):
 		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
 	for i in range(n):
-		if strconv[i]:
+		# even messier: special handling for struct type variables, which
+		# consume the entire remaining string
+		if _isStruct(locals, namelist[i]):
+			if i < n-1:
+				raise TypeError("Struct type param `%s' must be the final"
+					" argument to scan" % namelist[i])
+			# messy -- struct needs rest of line with embedded whitespace
+			if i==0:
+				iend = 0
+			else:
+				# construct a regular expression that matches the line so far
+				pat = [r'\s*']*(2*i)
+				for j in range(i): pat[2*j+1] = f[j]
+				# a single following whitespace character also gets removed
+				# (don't blame me, this is how IRAF does it!)
+				pat.append(r'\s')
+				pat = _string.join(pat,'')
+				mm = _re.match(pat, line)
+				if mm is None:
+					raise RuntimeError("Bug: line '%s' pattern '%s' failed" %
+						(line, pat))
+				iend = mm.end()
+			if line[-1:] == '\n':
+				cmd = namelist[i] + ' = ' + `line[iend:-1]`
+			else:
+				cmd = namelist[i] + ' = ' + `line[iend:]`
+		elif strconv[i]:
 			cmd = namelist[i] + ' = ' + strconv[i] + '(' + `f[i]` + ')'
 		else:
 			cmd = namelist[i] + ' = ' + `f[i]`
@@ -960,6 +987,20 @@ def fscan(locals, line, *namelist, **kw):
 	global _nscan
 	_nscan = n
 	return n
+
+def _isStruct(locals, name):
+	"""Returns true if the variable `name' is of type struct"""
+	c = _string.split(name,'.')
+	if len(c)>1:
+		# must get the parameter object, not the value
+		c[-1] = 'getParObject(%s)' % `c[-1]`
+	fname = _string.join(c,'.')
+	try:
+		par = eval(fname, locals)
+	except:
+		# assume all failures mean this is not an IrafPar
+		return 0
+	return (isinstance(par, _irafpar.IrafPar) and par.type == 'struct')
 
 def scan(locals, *namelist, **kw):
 	"""Scan function sets parameters from line read from stdin

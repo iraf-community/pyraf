@@ -623,7 +623,7 @@ class ReadBuf:
 					self.eof = 1
 					return got
 			else:
-				print 'Select returned without input?'
+				print 'Select returned without input?'
 
 
 #############################################################################
