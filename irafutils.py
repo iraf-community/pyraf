@@ -54,9 +54,10 @@ def stripQuotes(value):
 def removeEscapes(value):
 
 	"""Remove escapes from in front of quotes (which IRAF seems to
-	just stick in for fun sometimes.)
+	just stick in for fun sometimes.)  Remove \-newline too.
 	Don't worry about multiple-backslash case -- this will replace
-	\\" with just ", which is fine by me."""
+	\\" with just ", which is fine by me.
+	"""
 
 	i = string.find(value,r'\"')
 	while i>=0:
@@ -67,5 +68,10 @@ def removeEscapes(value):
 	while i>=0:
 		value = value[:i] + value[i+1:]
 		i = string.find(value,r"\'")
+	# delete backslash-newlines
+	i = string.find(value,"\\\n")
+	while i>=0:
+		value = value[:i] + value[i+2:]
+		i = string.find(value,"\\\n")
 	return value
 
