@@ -12,6 +12,8 @@ the native file system.)
 See the notes in the (standard Python) module rlcompleter.py for more
 information.
 
+$Id$
+
 RLW, 2000 February 13
 """
 
