@@ -257,7 +257,6 @@ class FileDialog(ModalDialog):
 		p = getcwd()
 		chdir(self.orig_dir)
 		return p
-
 ####
 #	Class LoadFileDialog
 #
@@ -313,4 +312,68 @@ class SaveFileDialog(FileDialog):
 			warningDlg.DialogCleanup()
 		FileDialog.OkPressed(self)
 
+#----------------------------------------------------------------------------
 
+#############################################################################
+#
+# Class:   PersistFileDialog
+# Purpose: Essentially the same as FileDialog, except this class contains
+#          a class variable (lastAccessedDir) which keeps track of the last 
+#          directory from which a file was chosen.  Subsequent invocations of 
+#          this dialog in the same Python session will start up in the last 
+#          directory where a file was successfully chosen, rather than in the
+#          current working directory.
+#
+# History: M.D. De La Pena, 08 June 2000
+#
+#############################################################################
+
+class PersistFileDialog(FileDialog):
+
+	# Define a class variable to track the last accessed directory 
+	lastAccessedDir = None
+
+	def __init__(self, widget, title, filter="*"):
+
+		FileDialog.__init__(self, widget, title, filter="*")
+
+                # If the last accessed directory were not None, start up
+                # the file browser in the last accessed directory.
+		if self.__class__.lastAccessedDir:
+			self.cwd      = self.__class__.lastAccessedDir
+			self.orig_dir = self.__class__.lastAccessedDir
+
+        # Override the OkPressed method from the parent in order to
+        # update the class variable.
+	def OkPressed(self):
+                self.__class__.lastAccessedDir = self.cwd_print()
+		self.TerminateDialog(1)
+
+
+#############################################################################
+#
+# Class:   PersistLoadFileDialog
+# Purpose: Essentially the same as LoadFileDialog, except this class invokes
+#          PersistFileDialog instead of FileDialog.
+#
+# History: M.D. De La Pena, 08 June 2000
+#
+#############################################################################
+
+class PersistLoadFileDialog(PersistFileDialog):
+
+	def __init__(self, master, title, filter):
+		PersistFileDialog.__init__(self, master, title, filter)
+		self.top.title(title)
+
+	def OkPressed(self):
+		from utils import file_exists
+		from alert import ErrorDialog
+		fileName = self.GetFileName()
+		if file_exists(fileName) == 0:
+			str = 'File ' + fileName + ' not found.'
+			errorDlg = ErrorDialog(self.top, str)
+			errorDlg.Show()
+			errorDlg.DialogCleanup()
+			return
+		PersistFileDialog.OkPressed(self)

@@ -361,7 +361,7 @@ class StringEparOption(EparOption):
     def fileBrowser(self):
 
         # *** Invoke a Community Tkinter generic File Dialog FOR NOW ***
-        self.fd = filedlg.LoadFileDialog(self.entry, "File Browser", "*")
+        self.fd = filedlg.PersistLoadFileDialog(self.entry, "Directory Browser", "*")
         if self.fd.Show() != 1:
                     self.fd.DialogCleanup()
                     return
