@@ -128,23 +128,33 @@ class IrafPar:
 			print pstring,
 			value = string.strip(sys.stdin.readline())
 
-	def get(self, field=None, index=None, lpar=0, prompt=1):
-		"""Return value of this parameter as a string"""
+	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
+		"""Return value of this parameter as a string (or in native format
+		if native is non-zero.)"""
 		# prompt for query parameters unless prompt is set to zero
 		if prompt and self.mode == "q": self.getPrompt()
 		if index != None:
 			if self.dim < 2:
 				raise SyntaxError("Parameter "+self.name+" is not an array")
 			try:
-				return self.toString(self.value[index])
+				if native:
+					return self.value[index]
+				else:
+					return self.toString(self.value[index])
 			except IndexError:
 				raise SyntaxError("Illegal index [" + `index` +
 					"] for array parameter " + self.name)
 
-		if field: return self.getField(field)
+		if field: return self.getField(field,native=native)
 
 		if self.dim == 1:
-			return self.toString(self.value)
+			if native:
+				return self.value
+			else:
+				return self.toString(self.value)
+		elif native:
+			# return list of values for array
+			return self.value
 		else:
 			# return blank-separated string of values for array
 			sval = self.dim*[None]
@@ -160,7 +170,7 @@ class IrafPar:
 		else:
 			return str(value)
 
-	def getField(self, field):
+	def getField(self, field, native=0):
 		ffield = _getFieldDict.get(field)
 		if not ffield:
 			raise SyntaxError(
@@ -176,7 +186,7 @@ class IrafPar:
 		elif field == "p_xtype": return self.type
 		elif field == "p_mode": return self.mode
 		elif field == "p_prompt": return self.prompt
-		elif field == "p_value": return self.get()
+		elif field == "p_value": return self.get(native=native)
 		elif field == "p_filename": return str(self.value)
 		elif field == "p_maximum": return self.toString(self.maximum)
 		elif field == "p_minimum":
@@ -444,7 +454,7 @@ class IrafParGCur(IrafParS):
 	"""IRAF graphics cursor parameter class"""
 	def __init__(self,fields,strict=0):
 		IrafParS.__init__(self,fields,strict)
-	def get(self, field=None, index=None, lpar=0, prompt=1):
+	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
 		"""Return graphics cursor value"""
 		if index:
 			raise SyntaxError("Parameter " + self.name +
