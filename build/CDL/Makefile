@@ -13,7 +13,7 @@
          RANLIB = ranlib
              RM = rm
 
-        SUBDIRS = examples test
+        SUBDIRS = test
         MATHLIB = -lm
 
            SRCS = cdl.c cdlmark.c cdlfits.c cdliraf.c cdlzscale.c cdl_f77.c \
