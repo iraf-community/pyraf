@@ -95,22 +95,22 @@ class IrafTask:
 
 	def getFullpath(self):
 		"""Return full path name of executable"""
-		if self.__fullpath == None: self.initTask()
+		self.initTask()
 		return self.__fullpath
 
 	def getParpath(self):
 		"""Return full path name of parameter file"""
-		if self.__fullpath == None: self.initTask()
+		self.initTask()
 		return self.__parpath
 
 	def getParList(self):
 		"""Return list of all parameter objects"""
-		if self.__fullpath == None: self.initTask()
+		self.initTask()
 		return self.__pars
 
 	def getParDict(self):
 		"""Return (min-match) dictionary of all parameter objects"""
-		if self.__fullpath == None: self.initTask()
+		self.initTask()
 		return self.__pardict
 
 	# public access to set hidden attribute, which can be specified
@@ -120,7 +120,7 @@ class IrafTask:
 
 	def getParObject(self,param):
 		"""Get the IrafPar object for a parameter"""
-		if self.__fullpath == None: self.initTask()
+		self.initTask()
 		if not self.__hasparfile:
 			raise KeyError("Task "+self.__name+" has no parameter file")
 		try:
@@ -149,7 +149,7 @@ class IrafTask:
 
 	def run(self,*args,**kw):
 		"""Execute this task with the specified arguments"""
-		if self.__fullpath == None: self.initTask()
+		self.initTask()
 		if self.__foreign:
 			print "No run yet for foreign task",self.__name
 		elif self.__cl:
@@ -224,7 +224,7 @@ class IrafTask:
 		the getParam() and setParam() methods.
 		"""
 
-		if self.__fullpath == None: self.initTask()
+		self.initTask()
 		parDictList = [(self.__name,self.__pardict)]
 		# package parameters
 		for i in xrange(len(iraf._loadedPath)):
@@ -357,7 +357,7 @@ class IrafTask:
 
 	def lpar(self,verbose=0):
 		"""List the task parameters"""
-		if self.__fullpath == None: self.initTask()
+		self.initTask()
 		if not self.__hasparfile:
 			print "Task",self.__name," has no parameter file"
 		else:
@@ -370,15 +370,12 @@ class IrafTask:
 		"""Fill in full pathnames of files and read parameter file
 
 		If names are None then need to run this.
-		If names are "" then already tried and failed.
+		If names are "" then already tried and failed.  Try again
+		in case something has changed.
 		If names are strings then already did it.
 		"""
 
-		if self.__fullpath == "":
-			raise iraf.IrafError("Cannot find executable for task "+self.__name)
-		if (self.__hasparfile and self.__parpath == ""):
-			raise iraf.IrafError("Cannot find .par file for task "+self.__name)
-		if self.__fullpath == None:
+		if not self.__fullpath:
 			# This follows the search strategy used by findexe in
 			# cl/exec.c: first it checks in the BIN directory for the
 			# "installed" version of the executable, and if that is not
@@ -426,55 +423,56 @@ class IrafTask:
 					self.__fullpath = ""
 					raise iraf.IrafError("Cannot find executable for task " +
 						self.__name + "\nTried "+exename1+" and "+exename2)
-			if self.__hasparfile:
-				pfile = os.path.join(basedir,self.__name + ".par")
-				# check uparm first for scrunched version of par filename
-				# with saved parameters
-				if iraf._vars.has_key("uparm"):
-					upfile = iraf.expand("uparm$" + self.scrunchName() + ".par")
+
+		if self.__hasparfile and (not self.__parpath):
+			pfile = os.path.join(basedir,self.__name + ".par")
+			# check uparm first for scrunched version of par filename
+			# with saved parameters
+			if iraf._vars.has_key("uparm"):
+				upfile = iraf.expand("uparm$" + self.scrunchName() + ".par")
+			else:
+				upfile = None
+			if upfile and os.path.exists(upfile):
+				# probably should do some sort of comparison with pfile
+				# here to make sure this file is an up-to-date version?
+				self.__parpath = upfile
+			elif os.path.exists(pfile):
+				self.__parpath = pfile
+			else:
+				# XXX need to parse header of cl tasks to get parameters
+				# XXX if package has no par file, create a par list with
+				# just mode and $nargs parameters
+				if isinstance(self,IrafPkg):
+					self.__parpath = None
+					self.__pars = [
+						irafpar.IrafParFactory(["mode","s","h","al"]),
+						irafpar.IrafParFactory(["$nargs","i","h","0"]) ]
 				else:
-					upfile = None
-				if upfile and os.path.exists(upfile):
-					# probably should do some sort of comparison with pfile
-					# here to make sure this file is an up-to-date version?
-					self.__parpath = upfile
-				elif os.path.exists(pfile):
-					self.__parpath = pfile
-				else:
-					# XXX need to parse header of cl tasks to get parameters
-					# XXX if package has no par file, create a par list with
-					# just mode and $nargs parameters
-					if isinstance(self,IrafPkg):
-						self.__parpath = None
-						self.__pars = [
-							irafpar.IrafParFactory(["mode","s","h","al"]),
-							irafpar.IrafParFactory(["$nargs","i","h","0"]) ]
-					else:
-						self.__parpath = ""
-						raise iraf.IrafError("Cannot find .par file for task " +
-							self.__name)
-				if self.__parpath: self.__pars = irafpar.readpar(self.__parpath)
-				# build minmatch dictionary of all parameters, including
-				# those in psets
-				self.__pardict = minmatch.MinMatchDict()
-				psetlist = []
-				for p in self.__pars:
-					self.__pardict.add(p.name, p)
-					if isinstance(p, irafpar.IrafParPset): psetlist.append(p)
-				# Now add the pset parameters
-				# Work from the pset's pardict because then we get
-				# parameters from nested psets too
-				for p in psetlist:
-					# silently ignore parameters from this pset
-					# that already are defined
-					psetdict = p.get().getParDict()
-					for pname in psetdict.keys():
-						if not self.__pardict.has_exact_key(pname):
-							self.__pardict.add(pname, psetdict[pname])
+					self.__parpath = ""
+					raise iraf.IrafError("Cannot find .par file for task " +
+						self.__name)
+			if self.__parpath: self.__pars = irafpar.readpar(self.__parpath)
+			# build minmatch dictionary of all parameters, including
+			# those in psets
+			self.__pardict = minmatch.MinMatchDict()
+			psetlist = []
+			for p in self.__pars:
+				self.__pardict.add(p.name, p)
+				if isinstance(p, irafpar.IrafParPset): psetlist.append(p)
+			# Now add the pset parameters
+			# Work from the pset's pardict because then we get
+			# parameters from nested psets too
+			for p in psetlist:
+				# silently ignore parameters from this pset
+				# that already are defined
+				psetdict = p.get().getParDict()
+				for pname in psetdict.keys():
+					if not self.__pardict.has_exact_key(pname):
+						self.__pardict.add(pname, psetdict[pname])
 
 	def unlearn(self):
 		"""Reset task parameters to their default values"""
-		if self.__fullpath == None: self.initTask()
+		self.initTask()
 		if self.__hasparfile:
 			exename1 = iraf.expand(self.__filename)
 			basedir, basename = os.path.split(exename1)
@@ -540,7 +538,7 @@ class IrafPset(IrafTask):
 
 	def getParObject(self,param):
 		"""Get the IrafPar object for a parameter"""
-		if self.__fullpath == None: self.initTask()
+		self.initTask()
 		try:
 			return self.__pardict[param]
 		except KeyError, e:
