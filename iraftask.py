@@ -129,6 +129,14 @@ class IrafTask:
 		self.initTask()
 		return self._currentParList.getParObject(param)
 
+	def getAllMatches(self,param):
+		"""Return list of names of all parameters that may match param"""
+		self.initTask()
+		if self._currentParList:
+			return self._currentParList.getAllMatches(param)
+		else:
+			return []
+
 	#---------------------------------------------------------
 	# modify attributes
 	#---------------------------------------------------------
@@ -1055,6 +1063,32 @@ class IrafPkg(IrafCLTask):
 	#=========================================================
 	# other public methods
 	#=========================================================
+
+	def getAllMatches(self, name, triedpkgs=None):
+		"""Return list of names of all parameters/tasks that may match name"""
+		self.initTask()
+		if self._currentParList:
+			matches = self._currentParList.getAllMatches(name)
+		else:
+			matches = []
+		if self._loaded:
+			# tasks in this package
+			if name == "":
+				matches.extend(self._tasks.keys())
+			else:
+				matches.extend(self._tasks.getallkeys(name, []))
+			# tasks in subpackages
+			if not triedpkgs: triedpkgs = {}
+			triedpkgs[self] = 1
+			for fullname in self._pkgs.values():
+				p = iraf.getPkg(fullname)
+				if p._loaded and (not triedpkgs.get(p)):
+					try:
+						matches.extend(p.getAllMatches(name,
+									triedpkgs=triedpkgs))
+					except AttributeError, e:
+						pass
+		return matches
 
 	def __getattr__(self, name, triedpkgs=None):
 		"""Return the task 'name' from this package (if it exists).

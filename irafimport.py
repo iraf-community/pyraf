@@ -75,6 +75,19 @@ class _irafModuleClass:
 		setattr(self.module, attr, value)
 		self.mmdict.add(attr, value)
 
+	def getAllMatches(self, taskname):
+		"""Get list of names of all tasks that may match taskname
+
+		Useful for command completion.
+		"""
+		if self.module is None: self._moduleInit()
+		if taskname == "":
+			matches = self.mmdict.keys()
+		else:
+			matches = self.mmdict.getallkeys(taskname, [])
+		matches.extend(self.module.getAllTasks(taskname))
+		return matches
+
 # Save the original hooks
 _originalImport = __builtin__.__import__
 _originalReload = __builtin__.reload

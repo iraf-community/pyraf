@@ -1861,6 +1861,13 @@ class IrafParList:
 			raise e.__class__("Error in parameter '" +
 				param + "' for task " + self.__name + "\n" + str(e))
 
+	def getAllMatches(self,param):
+		"""Return list of all parameter names that may match param"""
+		if param == "":
+			return self.__pardict.keys()
+		else:
+			return self.__pardict.getallkeys(param, [])
+
 	def getValue(self,param,native=0,prompt=1,mode="h"):
 		"""Return value for task parameter 'param' (with min-match)
 		

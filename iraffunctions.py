@@ -375,6 +375,14 @@ def run(taskname,args=(),kw=None,save=1):
 
 
 # -----------------------------------------------------
+# getAllTasks: Get list of all IRAF tasks that match partial name
+# -----------------------------------------------------
+
+def getAllTasks(taskname):
+	"""Returns list of names of all IRAF tasks that may match taskname"""
+	return _mmtasks.getallkeys(taskname, [])
+
+# -----------------------------------------------------
 # getTask: Find an IRAF task by name
 # -----------------------------------------------------
 
