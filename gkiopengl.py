@@ -64,17 +64,14 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 					 # of creating a tk window, so delay import to
 					 # a time that a window is really needed. Subsequent
 					 # imports will be ignored
-		if Ptogl.createdRoot:
-			Tkinter._default_root.withdraw()
-			Ptogl.createdRoot = 0   # clear so subsequent calls don't redo
 
 		self.irafGkiConfig = IrafGkiConfig()
 		self.windowName = windowName
-		self.colorManager = glColorManager(self.irafGkiConfig.defaultColors)
 
-		self.top = Tkinter.Toplevel()
-		self.gwidget = Ptogl.Ptogl(self.top,width=600,height=420,
-								   rgba=self.colorManager.rgbamode)
+		self.top = Tkinter.Toplevel(visual='best')
+		self.gwidget = Ptogl.Ptogl(self.top,width=600,height=420)
+		self.colorManager = glColorManager(self.irafGkiConfig.defaultColors,
+				self.gwidget.rgbamode)
 		self.gwidget.status = msgiobuffer.MsgIOBuffer(self.top, width=600)
 		self.gwidget.redraw = self.redraw
 		self.top.title(windowName)
@@ -183,6 +180,8 @@ class GkiOpenGlKernel(gki.GkiKernel, wutil.FocusEntity):
 		# delete self-references to allow this to be reclaimed
 		del self.gcursor
 		gwm.delete(self.windowName)
+		# protect against bugs that try to access deleted object
+		self.gwidget = None
 
 	# here's where GkiKernel methods start
 
@@ -479,16 +478,11 @@ class glColorManager:
 	private colormap.
 	"""
 
-	def __init__(self, defaultColors):
+	def __init__(self, defaultColors, rgbamode):
 
 		self.colorset = [None]*nIrafColors
 		self.indexmap = [None]*nIrafColors
-		depth = wutil.getScreenDepth()
-		# print "screen depth =", depth
-		if depth <=8:
-			self.rgbamode = 0
-		else:
-			self.rgbamode = 1
+		self.rgbamode = rgbamode
 		for cind in xrange(len(defaultColors)):
 			self.defineColor(cind,
 				defaultColors[cind][0],

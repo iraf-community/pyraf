@@ -28,11 +28,14 @@ REDRAW_DELAY = 100 # in milliseconds
 CURSOR_DELAY = 100 # in milliseconds
 
 if _default_root is None:
+	# create the initial Tk window and immediately withdraw it
+	import Tkinter
 	Tk().tk.call('package', 'require', 'Togl')
-	createdRoot = 1
+	_default_root = Tkinter._default_root
+	_default_root.withdraw()
+	del Tkinter
 else:
 	_default_root.tk.call('package', 'require', 'Togl')
-	createdRoot = 0
 
 # This code is needed to avoid faults on sys.exit()
 # [DAA, Jan 1998]
@@ -53,14 +56,31 @@ sys.exitfunc = cleanup
 # [end DAA]
 toglcolors.init() # posts the togl widget create callback function
 
-class RawOpengl(Widget, Misc):
-	"""Widget without any sophisticated bindings\
-	by Tom Schwaller (modified by Perry Greenfield to remove
-	interactive behavior of original widget and to minimize redraws
-	when backing store is not being used, and invoke a software cursor"""
+# visuals that use true colors
+truevis = {
+		'truecolor' : 1,
+		'directcolor' : 1,
+		}
 
-	def __init__(self, master=None, cnf={}, **kw):
+class RawOpengl(Widget, Misc):
+	"""Widget without any sophisticated bindings by Tom Schwaller
+
+	Modified by Perry Greenfield to remove interactive behavior of
+	original widget, to minimize redraws when backing store is
+	not being used, and to invoke a software cursor.
+	"""
+
+	def __init__(self, master=None, cnf=None, **kw):
+		if cnf is None: cnf = {}
+		# choose rgb mode that is compatible with master widget
+		top = master or _default_root
+		visual = top.winfo_visual()
+		if truevis.has_key(visual):
+			kw['rgba'] = 1
+		else:
+			kw['rgba'] = 0
 		Widget.__init__(self, master, 'togl', cnf, kw)
+		self.rgbamode = kw['rgba']
 		self.eventCount = 0
 		self.cursorEventCount = 0
 		# self.bind('<Map>', self.tkMap)
@@ -70,11 +90,6 @@ class RawOpengl(Widget, Misc):
 		self.ignoreNextNRedraws = 0
 		self.status = None
 		self.toglStruct = toglcolors.getToglStruct()
-		if kw.has_key('rgba'):
-			self.rgbamode = kw['rgba']
-		else:
-			print "Warning, no rgba mode found when creating Graphics window"
-			self.rgbamode = 1
 		# Add a placeholder software cursor attribute. If it is None,
 		# that means no software cursor is in effect. If it is not None,
 		# then it will be used to render the cursor.
@@ -205,16 +220,15 @@ class RawOpengl(Widget, Misc):
 #		self.tkRedraw()
 
 class Ptogl(RawOpengl):
-	"""
-Subclassing the togl widget
-"""
 
-	def __init__(self, master=None, cnf={}, **kw):
-		"""
-		Create an opengl widget.
+	"""Subclassing the togl widget"""
+
+	def __init__(self, master=None, cnf=None, **kw):
+		"""Create an opengl widget.
 		Arrange for redraws when the window is exposed or when
 		it changes size."""
 		
+		if cnf is None: cnf = {}
 		apply(RawOpengl.__init__, (self, master, cnf), kw)
 		self.initialised = 0
 
@@ -241,8 +255,7 @@ Subclassing the togl widget
 		# But I have put it here for convenience.
 
 	def basic_lighting(self):
-		"""\
-		Set up some basic lighting (single infinite light source).
+		"""Set up some basic lighting (single infinite light source).
 
 		Also switch on the depth buffer."""
 

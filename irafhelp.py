@@ -282,7 +282,8 @@ def _getContents(vlist, regexp, object):
 		for c in classlist:
 			classlist.extend(list(c.__bases__))
 			for vname, value in vars(c).items():
-				if not namedict.has_key(vname):
+				if not namedict.has_key(vname) and \
+				  ((regexp is None) or re_check.match(vname)):
 					vorder = _sortOrder(type(value))
 					sortlist[vorder].append((vname,value))
 					namedict[vname] = 1
