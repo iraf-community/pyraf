@@ -6,40 +6,41 @@ from distutils.command.build_ext import build_ext
 from distutils.sysconfig import *
 from distutils.command.install import install
 
-try:
-    import Tkinter
-    tk=Tkinter.Tk()
-    tk.withdraw()
-    tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
-    tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
-    tk_lib = os.path.join((tk.getvar('tk_library')), '../')
-    tkv = str(Tkinter.TkVersion)[:3]
-    if Tkinter.TkVersion < 8.3:
-        print "Tcl/Tk v8.3 or later required\n"
-        sys.exit(1)
+
+
+def find_x(xdir=""):
+    if xdir != "":
+        x_lib_dirs = os.path.join(xdir,'lib')
+        x_inc_dirs = os.path.join(xdir,'include')
+    elif sys.platform == 'darwin' or sys.platform.startswith('linux'):
+        x_lib_dirs = '/usr/X11R6/lib'
+        x_inc_dirs = '/usr/X11R6/include'
     else:
-        suffix = '.so'
-        tklib='libtk'+tkv+suffix
-        command = "ldd %s" % (os.path.join(tk_lib, tklib))
-        lib_list = string.split(commands.getoutput(command))
-        for lib in lib_list:
-            if string.find(lib, 'libX11') == 0:
-                ind = lib_list.index(lib)
-                x_lib_dirs = os.path.dirname(lib_list[ind + 2])
-                break
-        x_inc_dirs = os.path.join(x_lib_dirs, '../include')
-except:
-    for a in sys.argv:
-        if a.startswith("--with-x="):
-            dir = a.split("=")[1]
-            x_lib_dirs = os.path.join(dir,'lib')
-            x_inc_dirs = os.path.join(dir,'include')
-            sys.argv.remove(a)
-
-if sys.platform == 'darwin' or sys.platform.startswith('linux'):
-    x_lib_dirs = '/usr/X11R6/lib'
-    x_inc_dirs = '/usr/X11R6/include'
-
+        try:
+            import Tkinter
+            tk=Tkinter.Tk()
+            tk.withdraw()
+            tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
+            tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
+            tk_lib = os.path.join((tk.getvar('tk_library')), '../')
+            tkv = str(Tkinter.TkVersion)[:3]
+            if Tkinter.TkVersion < 8.3:
+                print "Tcl/Tk v8.3 or later required\n"
+                sys.exit(1)
+            else:
+                suffix = '.so'
+                tklib='libtk'+tkv+suffix
+                command = "ldd %s" % (os.path.join(tk_lib, tklib))
+                lib_list = string.split(commands.getoutput(command))
+                for lib in lib_list:
+                    if string.find(lib, 'libX11') == 0:
+                        ind = lib_list.index(lib)
+                        x_lib_dirs = os.path.dirname(lib_list[ind + 2])
+                        break
+                x_inc_dirs = os.path.join(x_lib_dirs, '../include')
+        except:
+            raise ImportError("Tkinter is not installed")
+    return x_lib_dirs, x_inc_dirs
 
 #local_libs = parse_makefile(get_makefile_filename())['LOCALMODLIBS']
 py_includes = get_python_inc(plat_specific=1)
@@ -143,7 +144,14 @@ def copy_clcache(data_dir, args):
 
 def main():
     args = sys.argv
+    x_dir = ""
+    for a in args:
+        if a.startswith('--with-x='):
+            x_dir = a.split("=")[1]
+            sys.argv.remove(a)
+    x_lib_dirs, x_inc_dirs = find_x(x_dir)
     dolocal()
+    print x_lib_dirs, x_inc_dirs
     data_dir = getDataDir(args)
     ext = getExtensions(args, x_inc_dirs, x_lib_dirs)
     dosetup(x_lib_dirs, x_inc_dirs, data_dir, ext)
