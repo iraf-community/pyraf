@@ -64,9 +64,10 @@ def help(object=__main__, variables=1, functions=1, modules=1,
 	# on it too (XXX this is a bit risky, but I suppose people will not often
 	# be asking for help with simple strings as an argument...)
 
-	if isinstance(object,iraftask.IrafTask) or \
-			(type(object) == types.StringType and \
-			re.match(r'_?[a-z]+$',object)):
+	if isinstance(object,iraftask.IrafTask):
+		print object
+		_htmlHelp(object)
+	if type(object) == types.StringType and re.match(r'_?[a-z]+$',object):
 		_htmlHelp(object)
 
 	try:
@@ -201,5 +202,5 @@ def _htmlHelp(taskname):
 			print "Starting Netscape for HTML help..."
 			os.execvp("netscape",["netscape",url])
 		os._exit(0)
-	print "See Netscape for HTML help on", taskname
+	print "HTML help on", taskname,"is being displayed in Netscape"
 

@@ -507,7 +507,11 @@ class IrafPkg(IrafTask):
 	def __getattr__(self, name):
 		"""Return the task identified by name (if it exists).  Also searches
 		subpackages for the task."""
-		if name[:1] == '_': raise AttributeError(name)
+		if name[:1] == '_':
+			raise AttributeError(name)
+		if not self.__loaded:
+			raise AttributeError("Package " + self.getName() +
+				" has not been loaded; no tasks are defined")
 		t = self.__tasks.get(name)
 		if t: return t
 		# try subpackages
