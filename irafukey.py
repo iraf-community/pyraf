@@ -5,76 +5,65 @@ $id$
 """
 
 import sys
-import wutil
+import wutil, gwm
+import termios, TERMIOS, sys, os, string
 
 # This class emulates the IRAF ukey parameter mechanism. IRAF calls for
 # a ukey parameter and expects that the user will type a character in
 # response. The value of this character is then returned to the iraf task
-# This class works in a manner similar to irafgcur. Importing the module
-# creates a ukey object and subsequent calls to this object return
-# the key typed by the user. Tkinter is used to handle user keystrokes,
-# even for non-graphical tasks (the only simple portable way of doing
-# such I/O). We may implement a termios variant for nongraphics
-# tasks later.
 
-class UserKey:
+def getSingleTTYChar():
 
-	"""This handles the classical IRAF ukey parameter mode"""
+	"""Returns None if Control-C is typed or any other exception occurs"""
 
-	def __init__(self):
+	# Ripped off from python FAQ
+	fd = sys.stdin.fileno()
+	old = termios.tcgetattr(fd)
+	new = termios.tcgetattr(fd)
+	new[3] = new[3] & ~TERMIOS.ICANON & ~TERMIOS.ECHO
+	new[6][TERMIOS.VMIN] = 1
+	new[6][TERMIOS.VTIME] = 0
+	termios.tcsetattr(fd, TERMIOS.TCSANOW, new)
+	c = None
+	try:
+		c = os.read(fd, 1)
+	finally:
+		termios.tcsetattr(fd, TERMIOS.TCSAFLUSH, old)
+		return c
 
-		self.retString = None
-		self.prevFocus = None
+def ukey():
 
-	def __call__(self): return self.startUKeyMode()
+	"""Returns the string expected for the IRAF ukey parameter"""
 
-	def startUKeyMode(self):
-
-		self.top = self._getFocusWindow()
-		self.bind()
-		self.top.mainloop()
-		self.unbind()
-		if self.prevFocus: wutil.setFocusTo(self.prevFocus)
-		return self.retString
-
-	def _getFocusWindow(self):
-
-		# use existing graphics window for Tk events if it exists.
-		# If not, use Tk root, else import if not there
-
-		self.prevFocus = wutil.getWindowID()
-		if sys.modules.has_key('gwm'):
-			import gwm
-			tkwin = gwm.getActiveWindowTop()
-		elif sys.modules.has_key('Tkinter'):
-			import Tkinter
-			tkwin = Tkinter.root
-		else:
-			# a warning message indicating a delay for importing
-			warnMess="...wait until this message disappears before responding"
-			print warnMess,
-			import Tkinter
-			print (len(warnMess)+1)*'\b',
-			print len(warnMess)*' ',
-			print (len(warnMess)+1)*'\b',
-			tkwin = root
-		tkwin.focus_force()
-		return tkwin
-		
-	def bind(self):
-
-		self.top.bind("<Key>",self.getKey)
-
-	def unbind(self):
-
-		self.top.unbind("<Key>")
-		
-	def getKey(self, event):
-
-		key = event.char
-		if not key:
-			# ignore keypresses non printable characters.
-			return
-		else:
-			self.retString = key
-			self.top.quit()
+	char = getSingleTTYChar()
+	# should determine what Control-C maps to, for now, CR
+	if not char: returnStr = r'\012'
+	elif ord(char) <= ord(' '):
+		# convert to octal ascii representation
+		returnStr = '\\'+"%03o" % ord(char)
+	elif char == ':':
+		# suck in colon string until newline is encountered
+		done = 0
+		sys.stdout.write(':')
+		sys.stdout.flush()
+		colonString = ''
+		while not done:
+			char = getSingleTTYChar()
+			if (not char) or (char == '\n'):
+				done = 1
+			elif char == '\b':
+				# backspace
+				colonString = colonString[:-1]
+				sys.stdout.write('\b \b')
+				sys.stdout.flush()
+			elif ord(char) >= ord(' '):
+				colonString = colonString+char
+				sys.stdout.write(char)
+				sys.stdout.flush()
+			else:
+				# ignore all other characters
+				pass
+		returnStr = ': '+colonString
+	else:
+		returnStr = char
+	return returnStr
