@@ -178,7 +178,7 @@ def Init(doprint=1,hush=0,savefile=None):
 		clpkg.run(_doprint=0, _hush=hush, _save=1)
 
 		if access('login.cl'):
-			fname = 'login.cl'
+			fname = _os.path.abspath('login.cl')
 		elif access('home$login.cl'):
 			fname = 'home$login.cl'
 		else:
