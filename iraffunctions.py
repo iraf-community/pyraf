@@ -1757,11 +1757,18 @@ def gflush(*args, **kw):
     return rv
 
 def pyexecute(filename, **kw):
-    """Execute python code in filename (which may include IRAF path)."""
+    """Execute python code in filename (which may include IRAF path).
+
+    This is callable from within CL scripts.  There is a corresponding
+    pyexecute.cl task that runs outside the PyRAF environment and just
+    prints a warning.
+    """
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if kw.has_key('verbose'): del kw['verbose']
+    # these keyword parameters are relevant only outside PyRAF
+    for keyword in ['_save', 'verbose', 'tasknames']:
+        if kw.has_key(keyword):
+            del kw[keyword]
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
     resetList = redirApply(redirKW)
