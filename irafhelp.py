@@ -159,7 +159,11 @@ def _help(object, variables, functions, modules,
 	# look inside the object
 
 	tasklist, pkglist, functionlist, methodlist, modulelist, otherlist = \
-		_getContents(vlist, regexp)
+		_getContents(vlist, regexp, object)
+
+	if type(object) == types.InstanceType:
+		# for instances, print a help line for the object itself first
+		_valueHelp(object, padchars=0)
 
 	if modules and modulelist:
 		# modules get listed in simple column format
@@ -187,14 +191,7 @@ def _help(object, variables, functions, modules,
 		irafutils.printCols(tasklist)
 		print
 
-	#XXX Need to modify this to look at all parents of this class
-	#XXX too.  That's tricky because want to sort all methods/attributes
-	#XXX together and, to be completely correct, need to resolve
-	#XXX name clashes using the same scheme as Python does for multiple
-	#XXX inheritance and multiply-overridden attributes.
 	if (type(object) == types.InstanceType) and functions:
-		# print a help line for the object itself first
-		_valueHelp(object, padchars=0)
 		# for instances, call recursively to list class methods
 		help(object.__class__, functions=functions, tasks=tasks,
 			packages=packages, variables=variables, hidden=hidden,
@@ -228,10 +225,11 @@ def _valueHelp(object, padchars):
 		# omit the colon if name is null
 		print vstr
 
-def _getContents(vlist, regexp):
-	# make one pass through names getting the type and sort order
-	# also split IrafTask and IrafPkg objects into separate lists
-	# returns lists of various types of included objects
+def _getContents(vlist, regexp, object):
+	# Make one pass through names getting the type and sort order
+	# Also split IrafTask and IrafPkg objects into separate lists and
+	#  look into base classes if object is a class.
+	# Returns lists of various types of included objects
 	if regexp: re_check = re.compile(regexp)
 	tasklist = []
 	pkglist = []
@@ -245,6 +243,7 @@ def _getContents(vlist, regexp):
 	sortlist[_METHOD] = methodlist
 	sortlist[_MODULE] = modulelist
 	sortlist[_OTHER] = otherlist
+	namedict = {}
 	names = vlist.keys()
 	for vname in names:
 		if (regexp is None) or re_check.match(vname):
@@ -254,9 +253,19 @@ def _getContents(vlist, regexp):
 			elif isinstance(value,iraftask.IrafTask):
 				tasklist.append(vname)
 			else:
-				vtype = type(value)
 				vorder = _sortOrder(type(value))
 				sortlist[vorder].append((vname,value))
+				namedict[vname] = 1
+	# add methods from base classes if this is a class
+	if type(object) is types.ClassType:
+		classlist = list(object.__bases__)
+		for c in classlist:
+			classlist.extend(list(c.__bases__))
+			for vname, value in vars(c).items():
+				if not namedict.has_key(vname):
+					vorder = _sortOrder(type(value))
+					sortlist[vorder].append((vname,value))
+					namedict[vname] = 1
 	# sort into alphabetical order by name
 	tasklist.sort()
 	pkglist.sort()
