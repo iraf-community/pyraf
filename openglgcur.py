@@ -157,12 +157,16 @@ class Gcursor:
     def moveRightBig(self, event): self.moveCursorRelative(event, 5, 0)
     def moveLeftBig(self, event): self.moveCursorRelative(event, -5, 0)
 
+    def writeString(self, s):
+        """Write a string to status line"""
+        stdout = self.window.getStdout(default=sys.stdout)
+        stdout.write(s)
+        stdout.flush()
+
     def readString(self, prompt=""):
         """Prompt and read a string"""
-        stdout = self.window.getStdout(default=sys.stdout)
+        self.writeString(prompt)
         stdin = self.window.getStdin(default=sys.stdin)
-        stdout.write(prompt)
-        stdout.flush()
         return irafutils.tkreadline(stdin)[:-1]
 
     def getKey(self, event):
@@ -188,7 +192,7 @@ class Gcursor:
                     elif colonString[1:] == 'markcur':
                         self.markcur = not self.markcur
                     else:
-                        print "Unimplemented CL gcur `:%s'" % colonString,
+                        self.writeString("Unimplemented CL gcur `:%s'" % colonString)
                 else:
                     self._setRetString(key,x,y,colonString)
         elif key == '=':
@@ -208,20 +212,15 @@ class Gcursor:
                 self.window.undoN()
             elif key == 'C':
                 wx,wy,gwcs = self._convertXY(x,y)
-                print "%g %g" % (wx,wy),
+                self.writeString("%g %g" % (wx,wy))
             else:
-                print "Unimplemented CL gcur command `%s'" % key,
+                self.writeString("Unimplemented CL gcur command `%s'" % key)
         else:
             self._setRetString(key,x,y,"")
 
     def appendMetacode(self, metacode):
         # appended code is undoable
         self.window.append(metacode, 1)
-
-    def getShiftKey(self, event):
-
-        print event.key
-        print ord(event.key)
 
     def _convertXY(self, x, y):
         """Returns x,y,gwcs converted to physical units using current WCS"""
