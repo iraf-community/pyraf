@@ -1,5 +1,5 @@
 #! /usr/local/Python-2.0/bin/python2.0 -i
-#Generated automatically from pyraf.in by configure.
+
 """
 Usage: pyraf [options] [savefile]
 
