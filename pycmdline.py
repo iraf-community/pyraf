@@ -315,7 +315,7 @@ Commands can be abbreviated.
 				# If it could be a Python expression, check to see
 				# if the function exists in the local namespace
 				if line[i:i+1] == '(':
-					if self.isLocal(cmd): return line
+					if self.isLocal(cmd) or cmd == 'dir': return line
 					# Not a local function, so user presumably intends to
 					# call IRAF task.  Force Python mode but add the 'iraf.'
 					# string to the task name for convenience.
