@@ -2,10 +2,10 @@
 
 $Id$
 
-R. White, 1999 March 2
+R. White, 1999 March 25
 """
 
-import sys, os, string, re, types, time
+import os, string
 import iraf, irafpar, irafexecute, minmatch
 
 # -----------------------------------------------------
