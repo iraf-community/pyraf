@@ -905,8 +905,8 @@ class RedirProcess(Subprocess):
 					del self.toChild_fdlist[0]
 					doIn = 0
 			else:
-				sys.stderr.write('Timeout %d secs, continuing...\n' % timeout)
-				sys.stderr.flush()
+				# timeout, just continue
+				pass
 		# Finished with the IO under our control, but task could
 		# still be running.  Wait for it to finish.
 		while not self.wait(5):
