@@ -175,7 +175,10 @@ def addTask(task):
 
 def load(pkgname,args=(),kw={},doprint=1):
 	"""Load an IRAF package by name."""
-	p = getPkg(pkgname)
+	if isinstance(pkgname,IrafPkg):
+		p = pkgname
+	else:
+		p = getPkg(pkgname)
 	apply(p.run, tuple(args), kw)
 	if doprint: listtasks(p.getName())
 
@@ -185,7 +188,10 @@ def load(pkgname,args=(),kw={},doprint=1):
 
 def run(taskname,args=(),kw={}):
 	"""Run an IRAF task by name."""
-	t = getTask(taskname)
+	if isinstance(taskname,IrafTask):
+		t = taskname
+	else:
+		t = getTask(taskname)
 	apply(t.run, tuple(args), kw)
 
 # -----------------------------------------------------
@@ -198,12 +204,13 @@ def getPkg(pkgname):
 	fullname = _mmpkgs.get(pkgname)
 	if not fullname:
 		raise KeyError("Package "+pkgname+" is not defined")
-	if len(fullname) > 1:
-		# ambiguous match is OK only if pkgname is the full name
-		if pkgname not in fullname:
-			raise KeyError("Package '" + pkgname + "' is ambiguous, " +
-				"could be " + `fullname`)
-	return _pkgs[fullname[0]]
+	if len(fullname) == 1:
+		return _pkgs[fullname[0]]
+	# ambiguous match is OK only if pkgname is the full name
+	if pkgname not in fullname:
+		raise KeyError("Package '" + pkgname + "' is ambiguous, " +
+			"could be " + `fullname`)
+	return _pkgs[pkgname]
 
 # -----------------------------------------------------
 # getTask: Find an IRAF task by name
@@ -589,7 +596,7 @@ def _regexp_init():
 		')|(?:' + r'clear' + \
 		')|(?:' + r'begin' + \
 		')|(?:' + r'string' + required_whitespace + 'mode' + optional_whitespace + \
-					'=' + optional_whitespace + '"(al|h)"' + \
+					'=' + optional_whitespace + '[\'"](al|a|h)[\'"]' + \
 		')|(?:' + r'procedure' + required_whitespace + variable_name + \
 					optional_whitespace + r'\(' + optional_whitespace + r'\)' + \
 		')|(?:' + r'end' + \
@@ -639,6 +646,12 @@ def readcl(filename,pkgname,pkgbinary):
 	# initialize regular expressions
 
 	if not _re_ComSngDbl: _regexp_init()
+
+	spkgname = string.replace(pkgname, '.', '_')
+	if spkgname != pkgname:
+		print "Warning: '.' illegal in task name, changing", pkgname, \
+			"to", spkgname
+	pkgname = spkgname
 
 	# expand any IRAF variables in filename
 	expfile = expand(filename)
@@ -959,6 +972,11 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 						typefile, "(line " + `next+offset` + ")"
 			elif mm.group('packagename') != None:
 				pkgname = mm.group('packagename')
+				spkgname = string.replace(pkgname, '.', '_')
+				if spkgname != pkgname:
+					print "Warning: '.' illegal in task name, changing", pkgname, \
+						"to", spkgname
+				pkgname = spkgname
 				if mm.group('packagebin') != None:
 					pkgbinary = mm.group('packagebin')
 			elif mm.group('miscstmt') != None:
