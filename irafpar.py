@@ -6,7 +6,7 @@ R. White, 2000 January 7
 """
 
 import os, sys, string, re, types
-import irafimcur, irafukey, irafutils, iraftask, minmatch, epar
+import irafimcur, irafukey, irafutils, minmatch, epar
 from irafglobals import INDEF, Verbose, yes, no
 import gki
 

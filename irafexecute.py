@@ -581,7 +581,6 @@ class IrafProcess:
 		sys.stdout = gki.kernel.getStdout(default=sys.__stdout__)
 		try:
 			try:
-				#YYY? pmsg = str(self.task.getParam(paramname)) + '\n'
 				pmsg = self.task.getParam(paramname)
 				if type(pmsg) != types.StringType:
 					# Only psets should return a non-string type (they

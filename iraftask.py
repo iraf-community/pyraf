@@ -614,8 +614,6 @@ class IrafTask:
 		return apply(self.run,args,kw)
 
 	def __repr__(self):
-		# return '<%s %s at %s>' % (self.__class__.__name__, self._name,
-		#					hex(id(self))[2:])
 		s = '<%s %s (%s) Pkg: %s Bin: %s' % \
 			(self.__class__.__name__, self._name, self._filename, 
 			self._pkgname, string.join(self._pkgbinary,':'))
@@ -626,7 +624,7 @@ class IrafTask:
 		return s + '>'
 
 	def __str__(self):
-		return str(self)
+		return repr(self)
 
 	#=========================================================
 	# private methods -- may be used by subclasses, but should
@@ -926,7 +924,7 @@ class IrafGKITask(IrafTask):
 
 	def saveParList(self,filename=None):
 		"""Never save parameters for kernels"""
-		pass
+		return ""
 
 
 # -----------------------------------------------------
