@@ -150,15 +150,14 @@ def IrafIO(process,paramdict):
 			# param get request
 			# XXX is this correct?  Can this command be stacked?
 			# If so, need to match to end of line
-			paramname = msg[1:-1]
+			print msg,
+			value = msg[1:-1]
 			msg = ''
-			if paramdict.has_key(paramname):
-				WriteStringToIrafProc(process,paramdict[paramname].get()+'\n')
-			else:
-				raise IrafProcessError(
-					"IRAF task asking for parameter not in list: " + paramname)
+			WriteStringToIrafProc(process, _getParam(paramdict,value) + '\n')
 		else:
 			# last possibility: set value of parameter
+			# XXX need to add capability to set field (e.g. x1.p_maximum
+			# is set in iraf/pkg/plot/t_pvector.x)
 			mo = _re_parmset.match(msg)
 			if mo:
 				msg = msg[mo.end():]
@@ -171,6 +170,61 @@ def IrafIO(process,paramdict):
 			else:
 				print "Warning, unrecognized IRAF pipe protocol"
 				print msg
+
+def _getParam(paramdict,value):
+
+	"""Return parameter specified by value, which can be a simple parameter
+	name or can be [[package.]task.]paramname[.field]"""
+
+	slist = string.split(value,'.')
+	field = None
+	package = None
+	task = None
+	ip = len(slist)-1
+	if ip>0 and slist[ip][:2] == "p_":
+		field = slist[ip]
+		ip = ip-1
+	paramname = slist[ip]
+	if ip > 0:
+		ip = ip-1
+		task = slist[ip]
+	if ip > 0:
+		ip = ip-1
+		package = slist[ip]
+	if ip > 0:
+		raise IrafProcessError(
+			"Illegal parameter request from IRAF task: " + value)
+
+	# XXX need to add package.task handling
+	if package or task:
+		raise IrafProcessError(
+			"Cannot yet handle parameter request with task and/or package: " +
+			value)
+
+	pstart = string.find(paramname,'[')
+	if pstart<0:
+		if paramdict.has_key(paramname):
+			return paramdict[paramname].get(field=field)
+		else:
+			raise IrafProcessError(
+				"IRAF task asking for parameter not in list: " +
+				paramname)
+
+	# special handling for array parameters
+	try:
+		pend = string.rindex(paramname,']')
+		pindex = int(paramname[pstart+1:pend])
+		paramname = paramname[:pstart]
+	except:
+		raise IrafProcessError(
+			"IRAF task asking for illegal array parameter: " +
+			paramname)
+	if paramdict.has_key(paramname):
+		return paramdict[paramname].get(index=pindex-1,field=field)
+	else:
+		raise IrafProcessError(
+			"IRAF task asking for parameter not in list: " +
+			value)
 
 def IrafKill(process):
 	"""Try stopping process in IRAF approved way first; if that fails
