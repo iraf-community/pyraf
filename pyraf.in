@@ -1,5 +1,4 @@
 #! @PythonBin@ -i
-# #! /usr/bin/python -i
 #@configure_input@
 """
 pyraf: Python IRAF front end
