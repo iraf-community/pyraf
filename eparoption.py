@@ -275,7 +275,7 @@ class StringEparOption(EparOption):
         # Get the current coordinates of the Entry 
         xcoord = self.entry.winfo_rootx()
         ycoord = self.entry.winfo_rooty()
-        print xcoord, ycoord
+        # print xcoord, ycoord
 
         # Display the Menu as a popup as it is not associated with a Button
         self.menu.tk_popup(xcoord, ycoord)
