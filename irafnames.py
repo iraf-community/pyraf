@@ -49,7 +49,7 @@ class IrafNamePkg(IrafNameClean):
 # IrafNameTask puts everything (tasks and packages) in __main__ name space
 
 class IrafNameTask(IrafNameClean):
-	def addTaskHook(self,task):
+	def addTask(self,task):
 		_addName(task, iraf)
 		_addName(task, __main__)
 
