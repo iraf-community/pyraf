@@ -76,11 +76,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  * and do a make.
  *
  */
-
-#include <ctype.h>
-
 #include "Python.h"
-
+#include <ctype.h>
 
 /*
  * Size of copy buffer for conversions with a specified field width.
