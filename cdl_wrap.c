@@ -33,6 +33,10 @@
  * and things like that.
  *
  * $Log$
+ * Revision 1.4  2001/02/19 14:23:00  delapena
+ * Modified the include statement to be "Numeric/arrayobject.h" and
+ * not just "arrayobject.h".
+ *
  * Revision 1.3  2000/11/03 22:19:06  rlw
  * Changes in pyraf version 0.8.5 (2000Nov03)
  *
@@ -597,7 +601,7 @@ char *SWIG_GetPtr(char *_c, void **ptr, char *_t)
 #define SWIG_name    "cdl"
 
 #include "Python.h"
-#include "arrayobject.h"
+#include "Numeric/arrayobject.h"
 #include "cdl.h"
 
 static PyObject* l_output_helper(PyObject* target, PyObject* o) {

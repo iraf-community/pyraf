@@ -2,7 +2,7 @@
 %module cdl
 %{
 #include "Python.h"
-#include "arrayobject.h"
+#include "Numeric/arrayobject.h"
 #include "cdl.h"
 %}
 
