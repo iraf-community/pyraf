@@ -49,13 +49,14 @@ file=$srcdir/config.site
 #-----------------------------------------------------------------
 #	Paths to where various header files are kept
 #-----------------------------------------------------------------
+AC_SUBST(PYTHONVERSION)
 
 AC_SUBST(PythonIncludePath)
-PythonIncludePath=`cd $PYTHON_LIB_DIR; cd ../../include/python*; pwd`
+PythonIncludePath=`cd $PYTHON_LIB_DIR; cd ../../include/python$PYTHONVERSION; pwd`
 
 AC_SUBST(PythonBin)
 PYTHONBIN=`cd $PythonIncludePath; cd ../../; pwd`
-PythonBin=$PYTHONBIN/bin/python
+PythonBin=$PYTHONBIN/bin/python$PYTHONVERSION
 
 AC_SUBST(OpenGLIncludePath)	
 AC_SUBST(TclIncludePath)

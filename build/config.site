@@ -4,13 +4,17 @@
 #We provide an example file - config.site.example
 #
 
+#Python version (e.g.2.0, 2.1, 2.2)
+PYTHONVERSION=2.0
+
+
 #path to Mesa or OpenGL include dir
 OpenGLIncludePath=/opt/X11R5/include
 
 #path to Tcl/Tk header files
 TclIncludePath=/opt/X11R5/include
 
-#path to Tcl/Tk lib files
+#path to Tcl/Tk lib files (files libtcl.so and libtk.so)
 TclLibPath=/opt/X11R5/lib
 
 #path to X11 libraries and header files (uncomment and provide a path

@@ -8,6 +8,8 @@
 
 PYTHON_LIB_DIR = @PYTHON_LIB_DIR@
 PythonIncludePath  = @PythonIncludePath@
+PythonBin = @PythonBin@
+PYTHONVERSION = @PYTHONVERSION@
 TclIncludePath    = @TclIncludePath@
 OpenGLIncludePath = @OpenGLIncludePath@
 srcdir		= @srcdir@
