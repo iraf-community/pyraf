@@ -232,8 +232,8 @@ int cdl_markPoint(CDLPtr cdl, int x, int y, int number, int size, int type, int 
 int cdl_markPointLabel(CDLPtr cdl, int x, int y, char *label, int size, int type, int color);
 int cdl_markLine(CDLPtr cdl, int xs, int ys, int xe, int ye, int color);
 int cdl_markBox(CDLPtr cdl, int lx, int ly, int ux, int uy, int fill, int color);
-int cdl_markPolygon(CDLPtr cdl, int xarray[], int yarray[], int npts, int fill, int color);
-int cdl_markPolyline(CDLPtr cdl, int *xarray, int *yarray, int npts, int color);
+int cdl_markPolygon(CDLPtr cdl, int *xlist, int *ylist, int npts, int fill, int color);
+int cdl_markPolyline(CDLPtr cdl, int *xlist, int *ylist, int npts, int color);
 int cdl_markCircle(CDLPtr cdl, int x, int y, int radius, int fill, int color);
 int cdl_markCircAnnuli(CDLPtr cdl, int x, int y, int radius, int nannuli, int sep, int color);
 int cdl_markEllipse(CDLPtr cdl, int x, int y, int xrad, int yrad, float rotang, int fill, int color);

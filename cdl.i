@@ -71,8 +71,24 @@
 	tempptr = (uchar *) ((PyArrayObject *)$source)->data;
 	$target = (uchar **) &tempptr;
 }
+%typemap(python,in) int *NUMARR_IN {
+	if (!PyArray_Check($source)) {
+		PyErr_SetString(PyExc_TypeError,"not a Numeric array");
+		return NULL;
+	}
+	if (!PyArray_ISCONTIGUOUS((PyArrayObject *)$source)) {
+		PyErr_SetString(PyExc_TypeError,
+			"not a contiguous Numeric Array");
+		return NULL;
+	}
+	$target = (int *) ((PyArrayObject *)$source)->data;
+}
+
 %apply uchar *NUMARR_IN {uchar *pix_in}
 %apply uchar **NUMARR_INOUT {uchar **pix_inout}
+%apply int *NUMARR_IN {int *xlist}
+%apply int *NUMARR_IN {int *ylist}
+
 %inline %{
 
 %}

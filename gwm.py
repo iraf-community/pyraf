@@ -100,13 +100,13 @@ class GraphicsWindowManager:
 				self.initialized = 0
 			if changeActiveWindow:
 				if len(self.windows):
-					self.activeWindow = self.windows.keys()[0]
+					self.activeWindow =self.windows[self.windows.keys()[0]]
 				else:
 					self.activeWindow = None
 			wutil.focusController.removeFocusEntity(windowName)
 		else:
 			print "error: specified graphics window doesn't exist"
-			
+
 class GraphicsWindow:
 
 	def __init__(self, windowName, colormode):
@@ -382,12 +382,16 @@ def window(windowName=None):
 	"""Create a new graphics window if the named one doesn't exist or
 	make it the active one if it does. If no argument is given a new
 	name is constructed."""
-	_g.window()
+	_g.window(windowName)
 
 def delete(windowName):
 
 	"""delete the named window"""
 	_g.delete(windowName)
+
+def getActiveWindowName():
+
+	return _g.activeWindow.windowName
 
 def getActiveWindow():
 
