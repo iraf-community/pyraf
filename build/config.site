@@ -5,16 +5,16 @@
 #
 
 #path to Mesa or OpenGL include dir
-OpenGLIncludePath=
+OpenGLIncludePath=/opt/X11R5/include 
 
 #path to Tcl/Tk header files
-TclIncludePath=
+TclIncludePath=/opt/X11R5/include 
 
 #path to Tcl/Tk lib files
-TclLibPath=
+TclLibPath=/opt/X11R5/lib
 
 #path to CDL
-CDLPath=
+CDLPath=/data/grail3/dencheva/temp/DISTRIB/CDL
 
 #path to X11 libraries and header files (uncomment and provide a path
 #only in case theconfigure script cannot find them)
