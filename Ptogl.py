@@ -27,6 +27,8 @@ del dirname
 
 eventCount = 0 #
 REDRAW_DELAY = 100 # in milliseconds
+cursorEventCount = 0
+CURSOR_DELAY = 100 # in milliseconds
 
 if _default_root is None:
 	Tk().tk.call('package', 'require', 'Togl')
@@ -66,24 +68,24 @@ class RawOpengl(Widget, Misc):
 		self.bind('<Configure>', self.tkExpose)
 		self.ignoreNextRedraw = 1
 		self.__isSWCursorActive = 0
+		self.__isSWCursorSleeping = 0
 		self.__SWCursor = None
 		# Add a placeholder software cursor attribute. If it is None,
 		# that means no software cursor is in effect. If it is not None,
 		# then it will be used to render the cursor.
-	
+
 	def immediateRedraw(self):
 		self.tk.call(self._w, 'makecurrent')
 		glPushMatrix()
 		self.update_idletasks()
 		self.redraw(self)
 		# If software cursor exists, render it.
-		if self.__isSWCursorActive:
+		if self.__isSWCursorActive and not self.__isSWCursorSleeping:
 			self.__SWCursor.isVisible = 0 # after all, it's just been erased!
 #			self.__SWCursor.draw()
 		glFlush()
 		glPopMatrix()
-#		self.update_idletasks()
-		self.tk.call(self._w, 'swapbuffers')
+   		self.tk.call(self._w, 'swapbuffers')
 
 	def delayedRedraw(self, eventNumber):
 		if self.ignoreNextRedraw:
@@ -114,6 +116,7 @@ class RawOpengl(Widget, Misc):
 		self['cursor'] = '@' + _blankcursor + ' black'
 		# ignore type for now since only one type of software cursor
 		# is implemented
+		self.__isSWCcursorSleeping = 0
 		if not self.__isSWCursorActive:
 			if not self.__SWCursor:
 				self.__SWCursor = FullWindowCursor(x,y)
@@ -124,13 +127,40 @@ class RawOpengl(Widget, Misc):
 			self.update_idletasks()
 
 	def deactivateSWCursor(self):
+		self.__isSWCursorSleeping = 0
 		if self.__isSWCursorActive:
 			self.__SWCursor.erase()
 			self.unbind("<Motion>")
 			self.__isSWCursorActive = 0
 			self['cursor'] = 'arrow'
-#			self.update_idletasks()			
 
+	def SWCursorSleep(self):
+		global cursorEventCount
+		self.__isSWCursorSleeping = 1
+		self.__SWCursor.erase()
+		cursorEventCount = 0 # reset
+
+	def SWCursorWake(self):
+		global cursorEventCount
+		cursorEventCount = cursorEventCount + 1 # Assumes that we don't have
+		                                        # > 2**31 drawing operations
+												# before reset, should be ok
+												# since user will die of old
+												# age by then.
+		self.after(CURSOR_DELAY, self.SWCursorDelayedWake, cursorEventCount)
+		
+	def SWCursorImmediateWake(self):
+		self.__isSWCursorSleeping = 0
+		if self.__isSWCursorActive:
+			self.__SWCursor.draw()
+		
+		
+	def SWCursorDelayedWake(self, cursorEventNumber):
+		if cursorEventNumber == cursorEventCount:
+			# No cursor Wake calls since the last one that generated this
+			# delayed call, restore the cursor.
+			self.SWCursorImmediateWake()
+					
 	def moveCursor(self, event):
 		"""Call back for mouse motion events"""
 		x = event.x
@@ -139,7 +169,7 @@ class RawOpengl(Widget, Misc):
 		winSizeY = self.winfo_height()
 		ndcX = float(x)/winSizeX
 		ndcY = float(winSizeY - y)/winSizeY
-		self.__SWCursor.moveTo(ndcX,ndcY)
+		self.__SWCursor.moveTo(ndcX,ndcY,self.__isSWCursorSleeping)
 	
 	def tkMap(self, *dummy):
 		self.tkExpose()
@@ -281,13 +311,14 @@ class FullWindowCursor:
 			self.xorDraw()
 			self.isVisible = 1
 
-	def moveTo(self,x,y):
+	def moveTo(self,x,y,hide=0):
 
 		if (self.lastx != x) or (self.lasty != y):
 			self.erase() # erase previous cursor
 			self.lastx = x
 			self.lasty = y
-			self.draw() # draw new position
+			if not hide:
+				self.draw() # draw new position
 
 
 	

@@ -329,7 +329,7 @@ def gl_polyline(vertices):
 	win = gwm.getActiveWindow()
 	cursorActive =  win.isSWCursorActive()
 	if cursorActive:
-		win.deactivateSWCursor()
+		win.SWCursorSleep()
 	la = win.iplot.lineAttributes
 	glLineWidth(la.linewidth)
 	stipple = 0
@@ -350,7 +350,7 @@ def gl_polyline(vertices):
 	if stipple:
 		glDisable(GL_LINE_STIPPLE)
 	if cursorActive:
-		win.activateSWCursor()
+		win.SWCursorWake()
 
 def gl_polymarker(arg): pass
 
@@ -359,17 +359,17 @@ def gl_text(x,y,text):
 	win = gwm.getActiveWindow()
 	cursorActive =  win.isSWCursorActive()
 	if cursorActive:
-		win.deactivateSWCursor()
-		softText(x,y,text)
+		win.SWCursorSleep()
+	softText(x,y,text)
 	if cursorActive:
-		win.activateSWCursor()
+		win.SWCursorWake()
 
 def gl_fillarea(vertices):
 
 	win = gwm.getActiveWindow()
 	cursorActive =  win.isSWCursorActive()
 	if cursorActive:
-		win.deactivateSWCursor()
+		win.SWCursorSleep()
 	fa = win.iplot.fillAttributes
 	clear = 0
 	polystipple = 0
@@ -404,7 +404,7 @@ def gl_fillarea(vertices):
 	if polystipple:
 		glDisable(GL_POLYGON_STIPPLE)
 	if cursorActive:
-		win.activateSWCursor()
+		win.SWCursorWake()
 
 
 def gl_putcellarray(arg): pass
