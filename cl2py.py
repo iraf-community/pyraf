@@ -1085,8 +1085,11 @@ class Tree2Python(CleanupASTTraversal):
 		del self.code_buffer
 
 		if self.warnlist:
+			self.warnlist = map(lambda x: 'Warning: '+x, self.warnlist)
 			warnmsg = string.join(self.warnlist,"\n")
-			print 'Warning:', warnmsg
+			sys.stdout.flush()
+			sys.stderr.write(warnmsg)
+			if warnmsg[-1:] != '\n': sys.stderr.write('\n')
 
 		if self.errlist:
 			errmsg = string.join(self.errlist,"\n")
@@ -1435,7 +1438,6 @@ class Tree2Python(CleanupASTTraversal):
 		if nlocal>0:
 			localType = map(repr, localType)
 			sargs.append("strconv=(" + string.join(localType,",") + ",)")
-			print 'sargs', sargs
 		return sargs
 
 	def default(self, node):

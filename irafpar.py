@@ -28,7 +28,9 @@ def warning(msg, strict=0, exception=SyntaxError):
 	if strict:
 		raise exception(msg)
 	elif iraf.Verbose>0:
-		print msg
+		sys.stdout.flush()
+		sys.stderr.write('Warning: %s' % msg)
+		if msg[-1:] != '\n': sys.stderr.write('\n')
 
 # -----------------------------------------------------
 # IRAF parameter factory
