@@ -69,7 +69,7 @@ def isViewable(WindowID):
 
 def getTermWindowSize():
 
-	"""return a tuple containing the x,y size of the terminal window
+	"""return a tuple containing the y,x (rows,cols) size of the terminal window
 	in characters"""
 
 	if magicConstant is None:
@@ -82,6 +82,9 @@ def getTermWindowSize():
 	try:
 		rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
 		ysize, xsize = struct.unpack('hh',rstruct[0:4])
+		# handle bug in konsole (and maybe other bad cases)
+		if ysize <= 0: ysize = 24
+		if xsize <= 0: xsize = 80
 		return ysize, xsize
 	except IOError:
 		return (24,80) # assume generic size
