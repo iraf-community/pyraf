@@ -1167,6 +1167,23 @@ def clPrint(*args, **kw):
 	finally:
 		redirReset(resetList, closeFHList)
 
+_badFormats = ["%h", "%m", "%b", "%r", "%t", "%u", "%w", "%z"]
+		
+def printf(format, *args):
+	"""Formatted print function"""
+	for bad in _badFormats:
+		i = _string.find(format, bad)
+		while i >= 0:
+			_sys.stderr.write("Warning: printf cannot handle %s format, "
+					"using %%s instead\n" % bad)
+			format = format[:i] + "%s" + format[i+2:]
+			i = _string.find(format, bad, i)
+	try:
+		print format % args,
+		_sys.stdout.softspace = 0
+	except ValueError, e:
+		raise IrafError(str(e))
+
 def pwd():
 	"""Print working directory"""
 	print _os.getcwd()
