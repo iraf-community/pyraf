@@ -128,7 +128,7 @@ class IrafPar:
 			print pstring,
 			value = string.strip(sys.stdin.readline())
 
-	def get(self, field=None, index=None, prompt=1):
+	def get(self, field=None, index=None, lpar=0, prompt=1):
 		"""Return value of this parameter as a string"""
 		# prompt for query parameters unless prompt is set to zero
 		if prompt and self.mode == "q": self.getPrompt()
@@ -304,10 +304,10 @@ class IrafPar:
 		plines = string.join(plines,'\n')
 		if self.mode == "h":
 			s = "%13s = %-15s %s" % ("("+self.name,
-						self.get(prompt=0)+")", plines)
+						self.get(prompt=0,lpar=1)+")", plines)
 		else:
 			s = "%13s = %-15s %s" % (self.name,
-						self.get(prompt=0), plines)
+						self.get(prompt=0,lpar=1), plines)
 		if not verbose: return s
 
 		if self.choice != None:
@@ -444,12 +444,13 @@ class IrafParGCur(IrafParS):
 	"""IRAF graphics cursor parameter class"""
 	def __init__(self,fields,strict=0):
 		IrafParS.__init__(self,fields,strict)
-	def get(self, field=None, index=None, prompt=1):
+	def get(self, field=None, index=None, lpar=0, prompt=1):
 		"""Return graphics cursor value"""
-		if index or (prompt != 1):
+		if index:
 			raise SyntaxError("Parameter " + self.name +
-				" is graphics cursor, cannot use index or prompt")
+				" is graphics cursor, cannot use index")
 		if field: return self.getField(field)
+		if lpar: return str(self.value)
 		return irafgcur.gcur()
 
 # -----------------------------------------------------
