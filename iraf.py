@@ -279,14 +279,15 @@ class IrafTask:
 		# (e.g. imheader).  Emulate same behavior by setting $nargs.
 		# XXX Are there any other weird parameter conventions?
 		self.set('$nargs',len(args))
-	def lpar(self):
+	def lpar(self,verbose=0):
 		if self.__fullpath == None: self.initTask()
 		if not self.__hasparfile:
 			print "Task",self.__name," has no parameter file"
 		else:
 			for i in xrange(len(self.__pars)):
 				p = self.__pars[i]
-				if _verbose or p.name != '$nargs': print p.pretty()
+				if _verbose or p.name != '$nargs':
+					print p.pretty(verbose=verbose or _verbose)
 
 	# fill in full pathnames of files and read parameter file (if it exists)
 	# if names are None then need to run this

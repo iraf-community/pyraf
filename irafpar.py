@@ -157,11 +157,17 @@ class IrafPar:
 		raise RuntimeError("Bug: base class IrafPar cannot be used directly")
 
 	# return pretty list description of parameter
-	def pretty(self):
+	def pretty(self,verbose=0):
+		# split prompt lines and add blanks in later lines to align them
+		plines = string.split(self.prompt,'\n')
+		for i in xrange(len(plines)-1): plines[i+1] = 32*' ' + plines[i+1]
+		plines = string.join(plines,'\n')
 		if self.mode == "h":
-			s = "%13s = %-15s %s" % ("("+self.name, self.get()+")", self.prompt)
+			s = "%13s = %-15s %s" % ("("+self.name, self.get()+")", plines)
 		else:
-			s = "%13s = %-15s %s" % (self.name, self.get(), self.prompt)
+			s = "%13s = %-15s %s" % (self.name, self.get(), plines)
+		if not verbose: return s
+
 		if self.choice != None:
 			s = s + "\n" + 32*" " + "|"
 			nline = 33
