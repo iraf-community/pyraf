@@ -1,4 +1,4 @@
-"""pycmdline.py -- Python/CL command line interface for Pyraf
+""" pycmdline.py -- Python/CL command line interface for Pyraf
 
 Provides this functionality:
 
