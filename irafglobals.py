@@ -41,6 +41,7 @@ class _VerboseClass:
 	def get(self): return self.value
 	def __cmp__(self, other): return cmp(self.value, other)
 	def __nonzero__(self): return (self.value != 0)
+	def __str__(self): return str(self.value)
 
 Verbose = _VerboseClass()
 

@@ -7,6 +7,7 @@ Provides this functionality:
 	.exit
 	.help
 	.complete [ 1 | 0 ]
+	.fulltraceback
 	.clemulate
 	.debug
 - Shell escapes (!cmd, !!cmd to run in /bin/sh)
@@ -24,8 +25,9 @@ $Id$
 R. White, 2000 February 20
 """
 
-import string, re, os, sys, code, types, keyword
+import string, re, os, sys, code, types, keyword, traceback
 import minmatch, iraf, irafcompleter
+from irafglobals import pyrafDir
 
 class CmdConsole(code.InteractiveConsole):
 	"""Base class for command console.
@@ -142,6 +144,7 @@ _cmdDict = minmatch.MinMatchDict({
 				'.clemulate': 'do_clemulate',
 				'.logfile': 'do_logfile',
 				'.exit': 'do_exit',
+				'.fulltrace': 'do_fulltrace',
 				'.complete': 'do_complete',
 				'.debug': 'do_debug',
 				})
@@ -212,7 +215,7 @@ class PyCmdLine(CmdConsole):
 
 	def do_help(self, line='', i=0):
 		"""Print help on executive commands"""
-		if self.debug: self.write('do_help: %s\n' % line[i:])
+		if self.debug>1: self.write('do_help: %s\n' % line[i:])
 		self.write("""Executive commands (commands can be abbreviated):
 .exit
     Exit from Pyraf.
@@ -222,6 +225,8 @@ class PyCmdLine(CmdConsole):
     If filename is specified, start logging commands to the file.  If filename
     is omitted, turns off logging.  The optional append/overwrite argument
     determines action for existing file (default is to append.)
+.fulltraceback
+    Print full version of last error traceback.
 .complete [0|1]
     Turn command-completion on (default) or off.  When on, the tab character
     acts as the completion character, attempting to complete a partially
@@ -238,12 +243,12 @@ class PyCmdLine(CmdConsole):
 
 	def do_exit(self, line='', i=0):
 		"""Exit from Python"""
-		if self.debug: self.write('do_exit: %s\n' % line[i:])
+		if self.debug>1: self.write('do_exit: %s\n' % line[i:])
 		raise SystemExit
 
 	def do_logfile(self, line='', i=0):
 		"""Start or stop logging commands"""
-		if self.debug: self.write('do_logfile: %s\n' % line[i:])
+		if self.debug>1: self.write('do_logfile: %s\n' % line[i:])
 		args = string.split(line[i:])
 		if len(args) == 0:	# turn off logging (if on)
 			if self.logfile:
@@ -275,7 +280,7 @@ class PyCmdLine(CmdConsole):
 
 	def do_clemulate(self, line='', i=0):
 		"""Turn CL emulation on or off"""
-		if self.debug: self.write('do_clemulate: %s\n' % line[i:])
+		if self.debug>1: self.write('do_clemulate: %s\n' % line[i:])
 		self.clemulate = 1
 		if line[i:] != "":
 			try:
@@ -287,7 +292,7 @@ class PyCmdLine(CmdConsole):
 
 	def do_complete(self, line='', i=0):
 		"""Turn command completion on or off"""
-		if self.debug: self.write('do_complete: %s\n' % line[i:])
+		if self.debug>1: self.write('do_complete: %s\n' % line[i:])
 		self.complete = 1
 		if line[i:] != "":
 			try:
@@ -303,7 +308,7 @@ class PyCmdLine(CmdConsole):
 
 	def do_debug(self, line='', i=0):
 		"""Turn debug output on or off"""
-		if self.debug: self.write('do_debug: %s\n' % line[i:])
+		if self.debug>1: self.write('do_debug: %s\n' % line[i:])
 		self.debug = 1
 		if line[i:] != "":
 			try:
@@ -313,6 +318,12 @@ class PyCmdLine(CmdConsole):
 				pass
 		return ""
 
+	def do_fulltrace(self, line='', i=0):
+		"""Print full version of last traceback"""
+		if self.debug>1: self.write('do_fulltrace: %s\n' % line[i:])
+		self.showtraceback(reprint=1)
+		return ""
+
 	def default(self, cmd, line, i):
 		"""Check for IRAF task calls and use CL emulation mode if needed
 
@@ -320,7 +331,7 @@ class PyCmdLine(CmdConsole):
 		line = full line (including cmd, preceding blanks, etc.)
 		i = index in line of first non-blank character following cmd
 		"""
-		if self.debug: self.write('default: %s - %s\n' % (cmd,line[i:]))
+		if self.debug>1: self.write('default: %s - %s\n' % (cmd,line[i:]))
 		if len(cmd)==0:
 			if line[i:i+1] == '!':
 				# '!' is shell escape
@@ -377,7 +388,7 @@ class PyCmdLine(CmdConsole):
 				return line
 
 		# if we get to here then it looks like CL code
-		if self.debug: self.write('CL: %s\n' % line)
+		if self.debug>1: self.write('CL: %s\n' % line)
 		try:
 			code = iraf.clExecute(line, locals=self.locals, mode='single')
 			if self.logfile is not None:
@@ -403,4 +414,38 @@ class PyCmdLine(CmdConsole):
 			"  .help describes executive commands"):
 		"""Start interpreter"""
 		self.interact(banner=banner)
+
+	def showtraceback(self, reprint=0):
+		"""Display the exception that just occurred.
+
+		We remove the first stack item because it is our own code.
+		Strip out references to modules within pyraf unless reprint
+		or debug is set.
+		"""
+		try:
+			if reprint:
+				type, value, tbmod = self.lasttrace
+			else:
+				type, value, tb = sys.exc_info()
+				sys.last_type = type
+				sys.last_value = value
+				sys.last_traceback = tb
+				tblist = traceback.extract_tb(tb)
+				del tblist[:1]
+				self.lasttrace = type, value, tblist
+				if self.debug:
+					tbmod = tblist
+				else:
+					tbmod = []
+					for tb1 in tblist:
+						path, filename = os.path.split(tb1[0])
+						if path != pyrafDir:
+							tbmod.append(tb1)
+			list = traceback.format_list(tbmod)
+			if list:
+				list.insert(0, "Traceback (innermost last):\n")
+			list[len(list):] = traceback.format_exception_only(type, value)
+		finally:
+			tbmod = tblist = tb = None
+		map(self.write, list)
 

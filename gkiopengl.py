@@ -392,7 +392,7 @@ def gl_setcursor(cursornumber, x, y):
 
 	win = gwm.getActiveWindow()
 	# wutil.MoveCursorTo uses 0,0 <--> upper left, need to convert
-	sy = win.wininfo_height() - y
+	sy = win.winfo_height() - y
 	sx = x
 	wutil.moveCursorTo(win.winfo_id(), sx, sy)
 	
