@@ -230,18 +230,28 @@ class GkiBuffer:
 		self.lastTranslate = 0
 		self.lastOpcode = None
 
-	def reset(self):
+	def reset(self, last=0):
 
-		"""Discard everything up to nextTranslate pointer"""
+		"""Discard everything up to end pointer
+		
+		End is lastTranslate if last is true, else nextTranslate
+		"""
 
-		newEnd = self.bufferEnd - self.nextTranslate
+		if last:
+			end = self.lastTranslate
+		else:
+			end = self.nextTranslate
+		newEnd = self.bufferEnd - end
 		if newEnd > 0:
-			self.buffer[0:newEnd] = self.buffer[self.nextTranslate:self.bufferEnd]
+			self.buffer[0:newEnd] = self.buffer[end:self.bufferEnd]
 			self.bufferEnd = newEnd
+			self.nextTranslate = self.nextTranslate-end
+			self.lastTranslate = 0
+			if not last:
+				self.lastOpcode = None
 		else:
 			# complete reset so buffer can shrink sometimes
 			self.init()
-		self.prepareToRedraw()
 
 	def split(self):
 
@@ -335,6 +345,21 @@ class GkiBuffer:
 		"""Return buffer contents (as Numeric array, even if empty)"""
 
 		return self.buffer[0:self.bufferEnd]
+
+	def delget(self, last=0):
+
+		"""Return buffer up to end pointer, deleting those elements
+		
+		End is lastTranslate if last is true, else nextTranslate
+		"""
+
+		if last:
+			end = self.lastTranslate
+		else:
+			end = self.nextTranslate
+		b = acopy(self.buffer[:end])
+		self.reset(last)
+		return b
 
 	def getNextCode(self):
 
@@ -436,9 +461,9 @@ class GkiKernel:
 		self.stdout = None
 		self.stderr = None
 		self._stdioStack = []
-		self.gkibuffer = GkiBuffer() # no harm in allocating, doesn't
-									 # actually allocate space unless
-									 # appended to.
+		# no harm in allocating gkibuffer, doesn't actually allocate
+		# space unless appended to.
+		self.gkibuffer = GkiBuffer()
 
 	def createFunctionTables(self):
 
@@ -752,7 +777,7 @@ class GkiProxy(GkiKernel):
 
 class GkiController(GkiProxy):
 
-	"""Proxy for the actual kernel being used
+	"""Proxy that switches between interactive and other kernels
 
 	This can gracefully handle changes in kernels which can appear
 	in any open workstation instruction.  It also uses lazy
@@ -769,16 +794,16 @@ class GkiController(GkiProxy):
 		GkiProxy.__init__(self)
 		self.interactiveKernel = None
 		self.lastDevName = None
-		self.gcount = 0 # an activity counter
-		self.lastFlushCount = 0
 
 	def taskStart(self, name):
+
 		# GkiController manages the tasknameStack
 		tasknameStack.append(name)
 		if self.stdgraph:
 			self.stdgraph.taskStart(name)
 
 	def taskDone(self, name):
+
 		# delete name from stack; pop until we find it if necessary
 		while tasknameStack:
 			lastname = tasknameStack.pop()
@@ -788,9 +813,6 @@ class GkiController(GkiProxy):
 
 	def append(self, arg, isUndoable=0):
 
-		self.gcount = self.gcount + 1     # used by self.flush()
-		if self.gcount >= 30000000:
-			self.gcount = 0
 		if self.stdgraph:
 			self.stdgraph.append(arg,isUndoable)
 
@@ -805,12 +827,8 @@ class GkiController(GkiProxy):
 
 	def flush(self):
 
-		if self.stdgraph and isinstance(self.stdgraph, gkiiraf.GkiIrafKernel):
-			if self.gcount != self.lastFlushCount:
-				# this is to prevent flushes when no graphics activity
-				# occurred since the last time a task finished.
-				self.lastFlushCount = self.gcount
-				self.stdgraph.flush()
+		if self.stdgraph:
+			self.stdgraph.flush()
 
 	def openKernel(self, device=None):
 
@@ -821,12 +839,12 @@ class GkiController(GkiProxy):
 		if not device:
 			device = self.getDevice()
 		devices = getGraphcap()
-		kernel = devices[device]['kf']
-		if kernel == 'cl':
+		executable = devices[device]['kf']
+		if executable == 'cl':
 			self.openInteractiveKernel()
 		else:
 			task = devices[device]['tn']
-			self.stdgraph = gkiiraf.GkiIrafKernel(device, kernel, task)
+			self.stdgraph = gkiiraf.GkiIrafKernel(device, executable, task)
 			self.stdin = self.stdgraph.stdin
 			self.stdout = self.stdgraph.stdout
 			self.stderr = self.stdgraph.stderr
@@ -844,33 +862,17 @@ class GkiController(GkiProxy):
 		self.stdout = self.stdgraph.stdout
 		self.stderr = self.stdgraph.stderr
 
-	def control_reactivatews(self,arg):
-		if not self.stdgraph: self.openKernel()
-		func = self.stdgraph.controlFunctionTable[GKI_REACTIVATEWS]
-		if func is not None: func(arg) 
-
-	def control_deactivatews(self,arg):
-		if self.stdgraph:
-			func = self.stdgraph.controlFunctionTable[GKI_DEACTIVATEWS]
-			if func is not None: func(arg) 
-
-	def control_closews(self,arg):
-		if self.stdgraph:
-			closews = self.stdgraph.controlFunctionTable[GKI_CLOSEWS]
-			if closews is not None: closews(arg) 
-
 	def control_openws(self, arg):
 
 		mode = arg[0]
 		device = string.strip(arg[2:].astype(Numeric.Int8).tostring())
 		device = self.getDevice(device)
-		if device != self.lastDevName:
+		graphcap = getGraphcap()
+		if self.lastDevName is None or \
+ 				(graphcap[device] != graphcap[self.lastDevName]):
 			self.flush()
 			self.openKernel(device)
 			self.lastDevName = device
-			# call the active kernel's openws function
-			func = self.stdgraph.controlFunctionTable[GKI_OPENWS]
-			if func is not None: func(arg) 
 
 	def getDevice(self, device=None):
 		"""Starting with stdgraph, drill until a device is found in
@@ -991,6 +993,10 @@ def getGraphcap(filename=None):
 		graphcapDict[filename] = graphcap.GraphCap(filename)
 	return graphcapDict[filename]
 
+#YYY printPlot belongs in gwm, not gki?
+#YYY or maybe should be a method of gwm window manager
+#YYY This surely ought to create a GkiIrafKernel object to do printing.
+
 def printPlot(window=None):
 
 	"""Print contents of window (default active window) to stdplot
@@ -1018,13 +1024,16 @@ def printPlot(window=None):
 			else:
 				printtaskname = devices[stdplot]['tn']
 				if printtaskname == "psikern" and not iraf.stsdas.isLoaded():
+					#XXX Note we should not load stsdas here but should
+					#XXX use generic gio kernel parameter set
 					iraf.stsdas(motd=0, _doprint=0)
 				printtask = iraf.getTask(printtaskname)
 				# Need to redirect input because running this task with
 				# input from StatusLine does not work for some reason.
 				# May need to do this for other IRAF tasks run while in
 				# gcur mode (if there are more added in the future.)
-				printtask(tmpfn,Stdin=sys.__stdin__,Stdout=sys.__stdout__)
+				printtask(tmpfn, device=stdplot, generic="yes",
+					Stdin=sys.__stdin__, Stdout=sys.__stdout__)
 				msg = "snap completed"
 		finally:
 			os.remove(tmpfn)

@@ -23,20 +23,14 @@ def merge(inlines):
 def getAliases(entry):
 	# return list of aliases (and dump the comment)
 	aend = string.find(entry,':')
-	astring = entry[:aend]
-	done = 0
-	alist = []
-	while not done:
-		pos = string.find(astring, '|')
-		if pos > 0:
-			alist.append(astring[:pos])
-			astring = astring[pos+1:]
-		else:
-			done = 1
-	return alist
+	if aend<0:
+		raise ValueError("Graphcap entry does not have any colons\n%s" % entry)
+	return string.split(entry[:aend], "|")[:-1]
 
 def getAttributes(entry):
 	abeg = string.find(entry,':')
+	if abeg<0:
+		raise ValueError("Graphcap entry does not have any colons\n%s" % entry)
 	astring = entry[abeg+1:]
 	attr = {}
 	attrlist = string.split(astring,':')
@@ -91,7 +85,7 @@ class GraphCap(filecache.FileCache):
 	def updateValue(self):
 		"""Called on init and if file changes"""
 		lines = open(self.filename,'r').readlines()
-		mergedlines = merge(lines)	
+		mergedlines = merge(lines)
 		self.dict = getDevices(mergedlines)
 
 	def getValue(self):
@@ -132,7 +126,14 @@ class Device:
 				else:
 					break
 		return value
-	
+
+	def __cmp__(self, other):
+		if isinstance(other, Device):
+			return cmp(id(self.dict[self.devname]),
+					id(other.dict[other.devname]))
+		else:
+			return cmp(id(self), id(other))
+
 	def __getitem__(self, key):
 		return self.getAttribute(key)
 
