@@ -1,7 +1,7 @@
 ##############################################################
 #
-# PyRAF Makefile.in for the source distribution 
-# 18 April 2001
+# PyRAF Makefile.in for the binary distribution 
+# 19 April 2002
 #
 ##############################################################
 #@configure_input@
@@ -27,7 +27,7 @@ CC = @CC@
 RM = rm
 LD = ld
 
-all:	libcdl.a xutilmodule.so toglcolorsmodule.so cdlmodule.so \
+all:	 xutilmodule.so toglcolorsmodule.so  \
 		sscanfmodule.so install
 
 clean: 
@@ -59,13 +59,7 @@ toglcolorsmodule.so: toglcolors.c
 	$(LD) $(LDFLAG) toglcolors.o -o toglcolorsmodule.so \
 		$(ToglLib)/Togl.so \
 		$(EXTRA_LFLAGS)
-#
-# Dependent on Python and Numeric and a static build of CDL
-#
-cdlmodule.so: cdl_wrap.c
-	$(CC) $(CFLAGS) $(SHLIB_CFLAGS) -I$(PythonIncludePath) cdl_wrap.c
-	$(LD) $(LDFLAG) cdl_wrap.o -o cdlmodule.so libcdl.a -lm \
-		$(EXTRA_LFLAGS)
+
 #
 # Dependent on Python
 #
@@ -74,8 +68,9 @@ sscanfmodule.so: sscanfmodule.c
 	$(LD) $(LDFLAG) sscanfmodule.o -o sscanfmodule.so \
 		$(EXTRA_LFLAGS)
 
-libcdl.a:
-	cd CDL; ./configure; make World; cp libcdl.a ../
+#
+#copies the shared libraries, adjust permissions and compiles .py files
+#
 
 install:
 	cp *.so ../; chmod +x ../pyraf ../../Bin/pyraf
