@@ -27,8 +27,8 @@ char ErrorPrefix[] = "XWindows Error!\n";
 char ErrorMsg[120];
 
 #define TrapXlibErrors \
-  oldIOErrorHandler = XSetIOErrorHandler(MyXlibErrorHandler); \
-  oldErrorHandler = XSetErrorHandler(MyXlibErrorHandler); \
+  oldIOErrorHandler = XSetIOErrorHandler(&MyXlibErrorHandler); \
+  oldErrorHandler = XSetErrorHandler(&MyXlibErrorHandler); \
   xstatus = setjmp(ErrorEnv); \
   if ( xstatus != 0) { \
     XSetIOErrorHandler(oldIOErrorHandler); \
@@ -162,10 +162,22 @@ PyObject *wrap_setBackingStore(PyObject *self, PyObject *args) {
   return Py_None;
 }
 
-void getWindowAttributes(int win, XWindowAttributes *winAttr) {
+void getWindowAttributes(int win, XWindowAttributes *winAttr, char **visual) {
   Window w;
   Display *d;
+  XVisualInfo visual_info;
+  static char *visual_class[] = {
+	  "StaticGray",
+	  "GrayScale",
+	  "StaticColor",
+	  "PseudoColor",
+	  "TrueColor",
+	  "DirectColor"
+  };
+  int i;
+  int screen_num;
   Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
+  i = 5;
   w = (Window) win;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
@@ -173,30 +185,37 @@ void getWindowAttributes(int win, XWindowAttributes *winAttr) {
     return;
   }
   XGetWindowAttributes(d, w, winAttr);
+  screen_num = DefaultScreen(d);
+  while (!XMatchVisualInfo(d, screen_num, DefaultDepth(d, screen_num),
+                 i--, &visual_info));
+  *visual = visual_class[++i];
   XCloseDisplay(d);
 }
 
 PyObject *wrap_getWindowAttributes(PyObject *self, PyObject *args) {
 	int win, viewable;
 	XWindowAttributes wa;
+	char *visual;
 	if (!PyArg_ParseTuple(args,"i", &win))
 		return NULL;
 	TrapXlibErrors /* macro code to handle xlib exceptions */
-	getWindowAttributes(win, &wa);
+	getWindowAttributes(win, &wa, &visual);
 	if (wa.map_state == IsViewable) {
 	  viewable = 1;
 	} else {
 	  viewable = 0;
 	}
 	RestoreOldXlibErrorHandlers /* macro */
-	return Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
+	return Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:s}",
 		"x", wa.x,
 		"y", wa.y,
 		"rootID", (int) wa.root,
 		"width", wa.width,
 		"height", wa.height,
 		"borderWidth", wa.border_width,
-		"viewable", viewable);
+						 "viewable", viewable,
+		"depth", wa.depth,
+		"visualClass", visual);
 }
 
 PyObject *wrap_getPointerPosition(PyObject *self, PyObject *args) {
@@ -247,6 +266,9 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args,"i", &win))
 		return NULL;
 	w = (Window) win;
+	if ((w==PointerRoot) | (w==None)) {
+	  return Py_BuildValue("i", (int) w);
+	}
 	TrapXlibErrors /* macro code to handle xlib exceptions */
 	d = XOpenDisplay(NULL);
 	if (d == NULL) {
@@ -265,6 +287,128 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
 	}
 }
 
+long getColorCell(long red, long green, long blue) {
+
+  /* not much error checking in this to see that read/write colors are
+	 supported */
+  Display *d;
+  int screen_num;
+  Colormap cmap;
+  XColor singlecolor;
+  long colorindex;
+  Status status;
+
+  d = XOpenDisplay(NULL);
+
+  if (d == NULL) {
+    printf("could not open display!\n");
+    return; 
+  }
+  screen_num = DefaultScreen(d);
+  cmap = DefaultColormap(d, screen_num);
+  singlecolor.flags = DoRed | DoGreen | DoBlue;
+  singlecolor.pixel = 0;
+  singlecolor.red = (unsigned short) red;
+  singlecolor.green = (unsigned short) green;
+  singlecolor.blue = (unsigned short) blue;
+  status = XAllocColor(d, cmap, &singlecolor);
+  if (status==0)
+	colorindex = -1;
+  else
+	colorindex = (long) singlecolor.pixel;
+
+  XFlush(d);
+  XCloseDisplay(d);
+  return colorindex;
+}
+
+PyObject *wrap_getColorCell(PyObject *self, PyObject *args) {
+  
+  long colorindex, red, green, blue;
+  if (!PyArg_ParseTuple(args,"lll",&red,&green,&blue))
+    return NULL;
+  TrapXlibErrors /* macro code to handle xlib exceptions */
+  colorindex = getColorCell(red, green, blue);
+  RestoreOldXlibErrorHandlers /* macro */
+  if (colorindex == -1)
+    return Py_BuildValue("");
+  else
+	return Py_BuildValue("l",(long) colorindex); 
+}
+void getColor(long colorindex, long *red, long *green, long *blue) {
+
+  /* not much error checking in this to see that read/write colors are
+	 supported */
+  Display *d;
+  int screen_num;
+  Colormap cmap;
+  XColor color;
+
+  d = XOpenDisplay(NULL);
+  if (d == NULL) {
+    printf("could not open display!\n");
+    return; 
+  }
+  screen_num = DefaultScreen(d);
+  cmap = DefaultColormap(d, screen_num);
+  color.pixel = (unsigned long) colorindex;
+  XQueryColor(d, cmap, &color);
+  XFlush(d);
+  XCloseDisplay(d);
+  *red   = color.red;
+  *green = color.green;
+  *blue  = color.blue;
+}
+
+PyObject *wrap_getColor(PyObject *self, PyObject *args) {
+  
+  long colorindex, red, green, blue;
+
+  if (!PyArg_ParseTuple(args,"l",&colorindex))
+    return NULL;
+  TrapXlibErrors /* macro code to handle xlib exceptions */
+  getColor(colorindex, &red, &green, &blue);
+  RestoreOldXlibErrorHandlers /* macro */
+  return Py_BuildValue("lll",red, green, blue); 
+}
+
+
+void freeColor(long colorindex) {
+
+  /* not much error checking in this to see that read/write colors are
+	 supported */
+  Display *d;
+  int screen_num;
+  unsigned long colorindicies[1];
+  Colormap cmap;
+  XColor color;
+
+  d = XOpenDisplay(NULL);
+  if (d == NULL) {
+    printf("could not open display!\n");
+    return; 
+  }
+  colorindicies[0] = (unsigned long) colorindex;
+  screen_num = DefaultScreen(d);
+  cmap = DefaultColormap(d, screen_num);
+  XFreeColors(d, cmap, colorindicies, 1, 0);
+  XFlush(d);
+  XCloseDisplay(d);
+}
+
+PyObject *wrap_freeColor(PyObject *self, PyObject *args) {
+  
+  long colorindex;
+
+  if (!PyArg_ParseTuple(args,"l",&colorindex))
+    return NULL;
+  TrapXlibErrors /* macro code to handle xlib exceptions */
+  freeColor(colorindex);
+  RestoreOldXlibErrorHandlers /* macro */
+  return Py_BuildValue(""); 
+}
+
+
 static PyMethodDef xlibtricksMethods[] = {
   { "moveCursorTo",wrap_moveCursorTo, 1},
   { "getWindowID",wrap_getWindowID, 1},
@@ -273,6 +417,9 @@ static PyMethodDef xlibtricksMethods[] = {
   { "getWindowAttributes",wrap_getWindowAttributes, 1},
   { "getPointerPosition",wrap_getPointerPosition, 1},
   { "getParentID",wrap_getParentID, 1},
+  { "getColorCell",wrap_getColorCell, 1},
+  { "getColor",wrap_getColor, 1},
+  { "freeColor",wrap_freeColor, 1},
   {NULL, NULL}
 };
 

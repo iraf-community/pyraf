@@ -8,11 +8,12 @@ PyOpenGL. (to get rid of 3-d cursor effects among other things)
 $Id$
 """
 
-import os
+import os, toglcolors
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from Tkinter import _default_root
 from Tkinter import *
+import gwm
 #import gki
 
 # XBM file for cursor is in same directory as this module
@@ -36,7 +37,7 @@ if _default_root is None:
 else:
 	_default_root.tk.call('package', 'require', 'Togl')
 	createdRoot = 0
-	
+
 # This code is needed to avoid faults on sys.exit()
 # [DAA, Jan 1998]
 import sys
@@ -54,6 +55,7 @@ def cleanup():
 	if oldexitfunc: oldexitfunc()
 sys.exitfunc = cleanup
 # [end DAA]
+toglcolors.init() # posts the togl widget create callback function
 
 class RawOpengl(Widget, Misc):
 	"""Widget without any sophisticated bindings\
@@ -67,9 +69,17 @@ class RawOpengl(Widget, Misc):
 		self.bind('<Expose>', self.tkExpose)
 		self.bind('<Configure>', self.tkExpose)
 		self.ignoreNextRedraw = 1
+		self.ignoreNextNRedraws = 0
+		self.status = None
+		self.toglStruct = toglcolors.getToglStruct()
 		self.__isSWCursorActive = 0
 		self.__isSWCursorSleeping = 0
 		self.__SWCursor = None
+		if kw.has_key('rgba'):
+			self.rgbamode = kw['rgba']
+		else:
+			print "Warning, no rgba mode found when creating Graphics window"
+			self.rgbamode = 1
 		# Add a placeholder software cursor attribute. If it is None,
 		# that means no software cursor is in effect. If it is not None,
 		# then it will be used to render the cursor.
@@ -90,6 +100,9 @@ class RawOpengl(Widget, Misc):
 	def delayedRedraw(self, eventNumber):
 		if self.ignoreNextRedraw:
 			self.ignoreNextRedraw = 0
+			return
+		if self.ignoreNextNRedraws > 0:
+			self.ignoreNextNRedraws = self.ignoreNextNRedraws - 1
 			return
 		if eventNumber == eventCount:
 			# No events since the event that generated this delayed call;
@@ -119,7 +132,7 @@ class RawOpengl(Widget, Misc):
 		self.__isSWCcursorSleeping = 0
 		if not self.__isSWCursorActive:
 			if not self.__SWCursor:
-				self.__SWCursor = FullWindowCursor(x,y)
+				self.__SWCursor = FullWindowCursor(x,y,self.rgbamode)
 			self.__isSWCursorActive = 1
 			self.bind("<Motion>",self.moveCursor)
 		if not self.__SWCursor.isVisible:
@@ -271,13 +284,14 @@ class FullWindowCursor:
 	# but if we use OpenGL coordinate transforms to implement zooming
 	# and translation, they won't be.
 
-	def __init__(self, x, y):
+	def __init__(self, x, y, rgbamode):
 
 		"""Display the cursor for the first time"""
 
 		self.lastx = x
 		self.lasty = y
 		self.isVisible = 0
+		self.rgbamode = rgbamode
  		self.draw()
 
 	def setPosition(self, x, y):
@@ -287,8 +301,13 @@ class FullWindowCursor:
 		
 	def xorDraw(self):
 
-		glEnable(GL_COLOR_LOGIC_OP)
-		glLogicOp(GL_INVERT)
+		if self.rgbamode:
+			glEnable(GL_COLOR_LOGIC_OP)
+			glLogicOp(GL_INVERT)
+		else:
+			glEnable(GL_INDEX_LOGIC_OP)
+			glLogicOp(GL_XOR)
+			glIndex(1)
 		glBegin(GL_LINES)
 #		glColor3f(1,1,1)
 		glVertex2f(0,self.lasty)
@@ -296,7 +315,10 @@ class FullWindowCursor:
 		glVertex2f(self.lastx,0)
 		glVertex2f(self.lastx,1)
 		glEnd()
-		glDisable(GL_COLOR_LOGIC_OP)
+		if self.rgbamode:
+			glDisable(GL_COLOR_LOGIC_OP)
+		else:
+			glDisable(GL_INDEX_LOGIC_OP)
 		glFlush()
 
 	def erase(self):

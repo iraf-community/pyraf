@@ -25,8 +25,13 @@ except ImportError:
 def getTopID(WindowID):
 
 	"""Find top level X windows ID parent of given window.
-	If window is already top (or not implemented), it returns its own ID"""
+	If window is already top (or not implemented), it returns its own ID.
+	If the input Id represents the root window then it will just
+	return itself"""
+	# Assuming root window has id 1 (should eliminate this dependency)
 	wid = WindowID
+	if wid <= 0:
+		return wid
 	while 1:
 		pid = getParentID(wid)
 		if not pid:
@@ -356,6 +361,11 @@ class TerminalFocusEntity:
 		rstruct = fcntl.ioctl(sys.stdin.fileno(), magicConstant, tstruct)
 		xsize, ysize = struct.unpack('hh',rstruct[0:4])
 		return xsize, ysize
+
+def getScreenDepth():
+
+	win_attr = getWindowAttributes(terminal.getWindowID())
+	return win_attr['depth']
 
 terminal = TerminalFocusEntity()
 terminalWindowID = terminal.getWindowID()

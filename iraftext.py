@@ -197,7 +197,8 @@ def softText(x,y,textstr):
 	#   left hand corner, not center as assumed above.
 	glTranslatef(-fsize*hsize/2.,-fsize*vsize/2.,0)
 	glLineWidth(1.0)
-	apply(glColor3f,win.iplot.colors.toRGB(ta.textColor))
+	gwm.setGraphicsDrawingColor(ta.textColor)
+	#apply(glColor3f,win.iplot.colors.toRGB(ta.textColor))
 	# The main event!
 	for char in textstr:
 		drawchar(char,ta.font,fsize*hsize,fontAspect)
@@ -216,7 +217,6 @@ def drawchar(char,font,size,aspect):
 				size*charstrokes[0][i]/27.,
 				size*charstrokes[1][i]*aspect/27.]))
 		glBegin(GL_LINE_STRIP)
-		glColor3f(1,1,1)
 		glVertex(vertex)
 		glEnd()
 

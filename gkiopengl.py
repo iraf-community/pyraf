@@ -6,6 +6,7 @@ $Id$
 
 from OpenGL.GL import *
 from gki import *
+import irafexecute
 import iraf
 import Numeric
 import gwm
@@ -13,6 +14,7 @@ import irafgcur
 import irafgwcs
 import wutil
 import sys
+import string
 from  iraftext import *
 
 # open /dev/null for general availability
@@ -35,11 +37,6 @@ def errorMessage(text):
 		print "\nAdditional graphics error messages suppressed"
 		_errorMessageCount = _errorMessageCount + 1
 			
-
-# debugging purposes only
-
-import __main__
-
 class IrafPlot:
 
 	"""An object that groups all the data items needed to support
@@ -75,6 +72,8 @@ class GkiOpenGlKernel(GkiKernel):
 		self.controlFunctionTable[GKI_CLEARWS] = self.clearWS
 		self.controlFunctionTable[GKI_SETWCS] = self.setWCS
 		self.controlFunctionTable[GKI_GETWCS] = self.getWCS
+		self.stdout = None
+		self.stderr = None
 
 	def control(self, gkiMetacode):
 
@@ -119,6 +118,11 @@ class GkiOpenGlKernel(GkiKernel):
 		ta = win.iplot.textAttributes
 		ta.setFontSize()
 		gwm.raiseActiveWindow()
+		# redirect stdout to status line
+		self.stdout = StatusLine()
+		# disable stderr while graphics is active (to supress xgterm gui
+		# messages
+		self.stderr = DevNullError()
 		if mode == 5:
 			# clear the display
 			win.iplot.gkiBuffer.reset()
@@ -147,13 +151,24 @@ class GkiOpenGlKernel(GkiKernel):
 		global _errorMessageCount
 		_errorMessageCount = 0
 		gwm.raiseActiveWindow()
+
+		if not self.stdout:
+			# redirect stdout if not already
+			self.stdout = StatusLine()  
+		if not self.stderr:
+			self.stderr = DevNullError()
 		
 	def deactivateWS(self, arg):
-		pass
+		if self.stdout:
+			self.stdout.close()
+			self.stdout = None
+		if self.stderr:
+			self.stderr.close()
+			self.stderr = None
 
 	def setWCS(self, arg):
 
-		__main__.wcs = arg # pass it up to play with
+		#__main__.wcs = arg # pass it up to play with
 		win = gwm.getActiveWindow()
 		win.iplot.wcs = irafgwcs.IrafGWcs(arg)
 
@@ -173,12 +188,20 @@ class GkiOpenGlKernel(GkiKernel):
 		wutil.focusController.saveCursorPos()
 		win = gwm.getActiveWindow()
 		win.deactivateSWCursor()  # turn off software cursor
-
+		if self.stdout:
+			self.stdout.close()
+			self.stdout = None
+		if self.stderr:
+			self.stderr.close()
+			self.stderr = None
+			
 	def redraw(self, o):
 
 		ta = o.iplot.textAttributes
 		ta.setFontSize()
+		# xxx fix this (should use Color interface)!!
 		glClearColor(0,0,0,0)
+		glClearIndex(gwm._g.colorManager.indexmap[0])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
@@ -196,7 +219,30 @@ def _glAppend(arg):
 	win = gwm.getActiveWindow()
 	win.iplot.glBuffer.append(arg)
 
+class DevNullError:
 
+	def __init__(self):
+		pass
+	def write(self, text):
+		pass
+	def flush(self):
+		pass
+	def close(self):
+		pass
+
+class StatusLine:
+	
+	def __init__(self):
+
+		self.graphicsWindow = gwm.getActiveWindow()
+	def write(self, text):
+   		self.graphicsWindow.status.config(text=string.rstrip(text))
+	def flush(self):
+		pass
+	def close(self):
+		# clear status line
+		self.graphicsWindow.status.config(text="")
+		
 #***********************************************************
 
 standardWarning = """
@@ -221,6 +267,7 @@ def gki_clearws(arg):
 	win.iplot.glBuffer.reset()
 	win.iplot.wcs = None
 	win.immediateRedraw()
+	win.status.config(text=" ")
 
 def gki_cancel(arg): gki_clearws(arg)
 
@@ -342,9 +389,11 @@ def gl_polyline(vertices):
 		glLineStipple(1,win.iplot.linestyles.patterns[la.linestyle])
 	glBegin(GL_LINE_STRIP)
 	if not clear:
-		apply(glColor3f,win.iplot.colors.toRGB(la.color))
+		gwm.setGraphicsDrawingColor(la.color)
+#		apply(glColor3f,win.iplot.colors.toRGB(la.color))
 	else:
-		glColor3f(0.,0.,0.)
+		gwm.setGraphicsDrawingColor(0)
+#		glColor3f(0.,0.,0.)
 	glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
 	glEnd()
 	if stipple:
@@ -394,9 +443,10 @@ def gl_fillarea(vertices):
 #		glEnable(GL_POLYGON_STIPPLE)
 #		glPolygonStipple(fill)
 	if not clear:
-		apply(glColor3f,win.iplot.colors.toRGB(fa.color))
+		gwm.setGraphicsDrawingColor(fa.color)
 	else:
-		glColor3f(0.,0.,0.)
+		gwm.setGraphicsDrawingColor(0)
+#		glColor3f(0.,0.,0.)
 	# not a simple rectangle
 	glBegin(GL_POLYGON)
 	glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
@@ -573,20 +623,22 @@ class IrafGkiConfig:
 		# The following is a list of rgb tuples (0.0-1.0 range) for the
 		# default IRAF set of colors
 		self.defaultColors = [
-			(0.,0.,0.), # black
-			(1.,1.,1.), # white
-			(1.,0.,0.), # red
-			(0.,1.,0.), # green
-			(0.,0.,1.), # blue
-			(1.,1.,0.), # yellow
-			(0.,1.,1.), # cyan
-			(1.,0.,1.), # magenta
-			(1.,0.5,0.), # coral
+			(0.,0.,0.01), # black
+			(0.99,1.,1.), # white
+			(0.99,0.,0.), # red
+			(0.,0.99,0.), # green
+			(0.,0.,0.99), # blue
+			(0.99,0.99,0.), # yellow
+			(0.,0.99,0.99), # cyan
+			(0.99,0.,0.99), # magenta
+			(0.99,0.51,0.), # coral
 			(0.7,0.19,0.38), # maroon
-			(1.,0.65,0.), # orange
+			(0.99,0.65,0.), # orange
 			(0.94,0.9,0.55), # khaki
+			(0.85,0.45,0.83), # orchid
 			(0.25,0.88,0.82), # turquoise
-			(0.96,0.87,0.7) # wheat
+			(0.91,0.53,0.92), # violet
+			(0.96,0.87,0.72) # wheat
 		]
 	def fontSize(self):
 	

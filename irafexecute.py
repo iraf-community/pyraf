@@ -7,6 +7,7 @@ import os, re, signal, string, struct, sys, time, Numeric, cStringIO
 import subproc, iraf, gki, gkiopengl, gwm, wutil, irafutils
 
 stdgraph = None
+firstPlotDone = 0
 
 IPC_PREFIX = Numeric.array([01120],Numeric.Int16).tostring()
 
@@ -18,6 +19,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 	"""Execute IRAF task (defined by the IrafTask object task)
 	using the provided envionmental variables."""
 
+	global firstPlotDone
 	# Start 'er up
 	try:
 		irafprocess = IrafProcess(task)
@@ -28,11 +30,19 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 	try:
 		irafprocess.initialize(envdict,stdout=stdout or stderr)
 		irafprocess.run(stdin=stdin,stdout=stdout,stderr=stderr)
-		# just kill the damn thing
+		# just kill the damn thing, no process cache
 		irafprocess.terminate()
+		wutil.focusController.restoreLast()
+		if stdgraph:
+			stdgraph.stdout = None
+			stdgraph.stderr = None
 	except KeyboardInterrupt:
 		# On keyboard interrupt (^C), kill the subprocess
 		irafprocess.kill()
+		wutil.focusController.resetFocusHistory()
+		if stdgraph:
+			stdgraph.stdout = None
+			stdgraph.stderr = None
 	except (iraf.IrafError, IrafProcessError), exc:
 		# on error, kill the subprocess, then re-raise the original exception
 		try:
@@ -41,6 +51,11 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 			# append new exception text to previous one (right thing to do?)
 			exc.args = exc.args + exc2.args
 		raise exc
+	if not firstPlotDone:
+		gwin = gwm.getActiveWindow()
+		if gwin:
+			gwin.ignoreNextNRedraws = 2
+			firstPlotDone = 1
 	return
 
 # patterns for matching messages from process
@@ -120,6 +135,8 @@ class IrafProcess:
 		self.stdin = stdin
 		self.stdout = stdout
 		self.stderr = stderr
+		self.default_stdout = stdout
+		self.default_stderr = stderr
 		try:
 			self.isatty = self.stdin.isatty()
 		except:
@@ -352,8 +369,7 @@ class IrafProcess:
 					# device!
 
 				# Pass it to the kernel to deal with
-				# Only in the case of a GETWCS command will
-				# stdgraph.control return a value.
+				# Only returns a value for getwcs
 				wcs = stdgraph.control(sdata[2:])
 				if wcs:
 					# Write directly to stdin of subprocess;
@@ -361,6 +377,14 @@ class IrafProcess:
 					# STDGRAPH I/O channel.
 					self.write(wcs)
 					stdgraph.clearReturnData()
+				if stdgraph.stdout:
+					self.stdout = stdgraph.stdout
+				else:
+					self.stdout = self.default_stdout
+				if stdgraph.stderr:
+					self.stderr = stdgraph.stderr
+				else:
+					self.stderr = self.default_stderr
 			else:
 				self.stdout.write("GRAPHICS control data for channel %d\n" % (forChan,))
 				self.stdout.flush()

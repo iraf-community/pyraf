@@ -15,11 +15,6 @@ GKI_MAX_OP_CODE = 27
 GKI_FLOAT_FACTOR = 100.
 MAX_ERROR_COUNT = 7
 
-# need to treat this more generally
-# Could do a test with struct & byte-swapping option to determine byte order
-
-BYTESWAP = 0
-
 # gki opcode constants
 
 GKI_EOF = 0
@@ -49,6 +44,25 @@ GKI_GETWCS = 27
 
 GKI_ILLEGAL_LIST = (21,22,23,24)
 
+class EditHistory:
+	"""keeps track of where undoable appends are made so they can be
+	removed from the buffer on request. All it needs to know is
+	how much as been added to the metacode stream for each edit."""
+
+	def __init__(self):
+		self.editinfo = []
+	def NEdits(self):
+		return len(self.editinfo)
+	def add(self, size):
+		self.editinfo.append(size)
+	def popLastSize(self):
+		if len(self.editinfo) > 0:
+			size = self.editinfo[-1]
+			del self.editinfo[-1]
+			return size
+		else:
+			return 0
+
 class GkiBuffer:
 
 	"""implement a buffer for gki which allocates memory in blocks so that 
@@ -59,6 +73,8 @@ class GkiBuffer:
 	def __init__(self, metacode=None):
 	
 		getwcs = None  # Used to indicate a getwcs instruction was encountered
+		self.editHistory = EditHistory()
+		self.undoable = 0
 		if metacode:
 			self.buffer = metacode
 			self.bufferSize = len(metacode)
@@ -86,10 +102,14 @@ class GkiBuffer:
 			self.buffer = None
 			self.bufferSize = 0
 			self.bufferEnd = 0
+			self.editHistory = EditHistory()
+			self.undoable = 0
 		self.nextTranslate = 0
 
-	def append(self, metacode):
+	def append(self, metacode, isUndoable=0):
 
+		if isUndoable:
+			self.undoable = 1
 		if self.bufferSize < (self.bufferEnd + len(metacode)):
 			# increment buffer size and copy into new array
 			diff = self.bufferEnd + len(metacode) - self.bufferSize
@@ -101,6 +121,17 @@ class GkiBuffer:
 			self.buffer = newbuffer
 		self.buffer[self.bufferEnd:self.bufferEnd+len(metacode)] = metacode
 		self.bufferEnd = self.bufferEnd + len(metacode)
+		if self.undoable:
+			self.editHistory.add(len(metacode))
+
+	def undoN(self, nUndo=1):
+
+		for i in xrange(nUndo):
+			size = self.editHistory.popLastSize()
+			self.bufferEnd = self.bufferEnd - size
+		# reset translation pointer to beginning so plot gets redone
+		# entirely
+		self.nextTranslate = 0
 
 	def get(self):
 	
@@ -212,22 +243,31 @@ class GkiKernel:
 		# graphics kernel.
 		pass
 
-	def append(self, gkiMetacode):
+	def append(self, gkiMetacode, isUndoable=0):
 	
-		# if input parameter is string, assume it is a filename and read into
-		# a numeric array
 		try:
 			if gwm.getActiveWindow():
-				if type(gkiMetacode) == StringType:
-					gkiMetacode = getdata(gkiMetacode)
 				win = gwm.getActiveWindow()
 				buffer = win.iplot.gkiBuffer
-				buffer.append(gkiMetacode)
+				buffer.append(gkiMetacode, isUndoable)
 				# a hook for acting on the metacode, but is only a stub routine
 				# that must be overridden in the subclass (or not, depending)
 				self.translate(buffer, self.functionTable)
-		except AttributeError:
+		#except AttributeError:
+		except ImportError:
 			print "ERROR: no IRAF plot window active"
+
+	def undoN(self, nUndo=1):
+
+		# Remove the last nUndo interactive appends to the metacode buffer
+		buffer = gwm.getActiveWindow().iplot.gkiBuffer
+		buffer.undoN(nUndo)
+		self.translate(buffer, self.functionTable)
+
+	def redrawOriginal(self):
+		
+		nUndo =  gwm.getActiveWindow().iplot.gkiBuffer.editHistory.NEdits()
+		self.undoN(nUndo)
 
 	def translate(self, gkiBuffer, functionTable):
 
@@ -262,18 +302,6 @@ def gkiTranslate(metacode, functionTable):
 
 
 #********************************
-
-def getdata(filename):
-
-	f = open(filename, 'rb')
-	rawbytes = f.read() 
-	rawarray = Numeric.fromstring(rawbytes,'s')
-	if BYTESWAP:
-		# intel for example
-		return rawarray.byteswapped()
-	else:
-		# sparcs for example
-		return rawarray
 
 def ndc(intarr):
 		
