@@ -49,19 +49,19 @@ _cl = None
 # setVerbose, getVerbose: turn on and check verbose printing
 # -----------------------------------------------------
 
-_verbose = 0
+verbose = 0
 
-def setVerbose(verbose=1):
+def setVerbose(value=1):
 	"""Set verbosity level when running tasks.  Level 0 (default)
 	prints almost nothing.  Level 1 prints parsing warnings.
 	Level 2 prints info on progress.  Level 2 prints cl code
 	itself."""
-	global _verbose
-	_verbose = verbose
+	global verbose
+	verbose = value
 
 def getVerbose():
 	"""Return verbosity level"""
-	return _verbose
+	return verbose
 
 
 # -----------------------------------------------------
@@ -218,7 +218,7 @@ def getTask(taskname):
 
 	task = _tasks.get(taskname)
 	if task:
-		if _verbose>1: print 'found',taskname,'in task list'
+		if verbose>1: print 'found',taskname,'in task list'
 		return task
 
 	# Look it up in the minimum-match dictionary
@@ -229,7 +229,7 @@ def getTask(taskname):
 	if len(fullname) == 1:
 		# unambiguous match
 		task = _tasks[fullname[0]]
-		if _verbose>1: print 'found',task.getName(),'in task list'
+		if verbose>1: print 'found',task.getName(),'in task list'
 		return task
 
 	# Ambiguous match is OK only if taskname is the full name
@@ -657,7 +657,7 @@ def readcl(filename,pkgname,pkgbinary):
 
 	# delete comments and replace quoted strings with marker+pointer
 	# into list of extracted strings
-	if _verbose>2: print '%%%%%% before ComSngDbl substitution:\n', all
+	if verbose>2: print '%%%%%% before ComSngDbl substitution:\n', all
 	qlist = []
 	mm = _re_ComSngDbl.search(all)
 	while mm:
@@ -672,10 +672,10 @@ def readcl(filename,pkgname,pkgbinary):
 			all = all[0:mm.start()] + this + all[mm.end():]
 		mm = _re_ComSngDbl.search(all,mm.start())
 
-	if _verbose>2: print '%%%%%% after ComSngDbl substitution:\n', all
+	if verbose>2: print '%%%%%% after ComSngDbl substitution:\n', all
 	# join continuation lines
 	all = _joinContinuation(all)
-	if _verbose>2: print '%%%%%% after joinContinuation:\n', all
+	if verbose>2: print '%%%%%% after joinContinuation:\n', all
 
 	# Break code up into blocks delimited by {} and
 	# replace blocks with marker+pointer.
@@ -692,7 +692,7 @@ def readcl(filename,pkgname,pkgbinary):
 		# print filename+': Found block'
 		# print blist[-1]
 
-	if _verbose>2: print '%%%%%% after block substitution:\n', all
+	if verbose>2: print '%%%%%% after block substitution:\n', all
 
 	# Split the remaining lines
 	lines = string.split(all,'\n')
@@ -880,7 +880,7 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 					state.append(S_SKIP)
 			elif mm.group('else') != None:
 				# error to encounter else in S_EXECUTE state
-				if _verbose:
+				if verbose:
 					print filename + ": Unexpected 'else' statement\n" + \
 						"'" + line + "'\n" + \
 						"(line " + `next+offset` + ")"
@@ -895,17 +895,17 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 					p = getPkg(value)
 					value = p.getName()
 					if value == pkgname:
-						if _verbose>1:
+						if verbose>1:
 							print "Skipping recursive load of package",value
 					else:
-						if _verbose>1:
+						if verbose>1:
 							print "Loading package",value
 						# Parse parameters to package
 						tail = string.strip(mm.group('tail'))
 						args, kw = parseArgs(tail)
 						load(value,args,kw,doprint=0)
 				except KeyError:
-					if _verbose:
+					if verbose:
 						print filename + ": Ignoring '" + line[:i2] + \
 							"' (line " + `next+offset` + ")"
 			elif mm.group('setfilename') != None:
@@ -933,7 +933,7 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 				try:
 					time.sleep(float(mm.group('sleeptime')))
 				except:
-					if _verbose:
+					if verbose:
 						print filename + ": Error in sleep(" + \
 							mm.group("sleeptime") + ")" + \
 							" (line " + `next+offset` + ")"
@@ -976,7 +976,7 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 
 				if mm.group('clredir') != None:
 					# open and read this file too
-					if _verbose>1: print "Reading",value
+					if verbose>1: print "Reading",value
 					readcl(value,pkgname,pkgbinary)
 				elif mm.group('varname') != None:
 					name = mm.group('varname')
@@ -986,7 +986,7 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 					try:
 						clset(name,value,pkg=getPkg(pkgname))
 					except IrafError:
-						if _verbose:
+						if verbose:
 							print filename + ": Ignoring '" + line[:i2] + \
 								"' (line " + `next+offset` + ")"
 				elif mm.group('hidestmt') != None:
@@ -1019,7 +1019,7 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 							addTask(newtask)
 						mtl = _re_taskname.match(tlist,mtl.end())
 				else:
-					if _verbose:
+					if verbose:
 						print "Parsed but ignored line " + `next+offset` + \
 							" '" + line + "'"
 
@@ -1032,7 +1032,7 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,offset=0):
 						mm.group('block') or
 						mm.group('empty')):
 				# probably a parsing error
-				if _verbose:
+				if verbose:
 					print 'Error:', filename
 					print "Non-blank characters after end of command\n" + \
 						"'" + line + "' (line " + `next+offset` + ")"
@@ -1107,7 +1107,7 @@ def clset(paramname,value,pkg=None):
 		if result == None: result = value
 	else:
 		result = value
-	if _verbose>1:
+	if verbose>1:
 		print "clset name", paramname, "value", `value`, "eval", result
 	pkg.setParam(paramname,result)
 
@@ -1192,10 +1192,10 @@ def _evalCondition(s,pkgname):
 	try:
 		result = eval(s)
 	except Exception, e:
-		if _verbose: print 'error in condition: '+str(e)
+		if verbose: print 'error in condition ' + s_in + ': '+str(e)
 		result = 0
 
-	if _verbose>1:
+	if verbose>1:
 		print "condition:", s_in, "=",
 		if s != s_in: print s, "=",
 		print result
@@ -1259,7 +1259,7 @@ def cleval(s,qlist,pkg,native=1):
 	try:
 		return eval(s)
 	except Exception, e:
-		if _verbose:
+		if verbose:
 			print 'error evaluating: '+s
 			print str(e)
 		return None
@@ -1280,7 +1280,7 @@ def parseArgs(s):
 	smod = string.strip(s)
 	if not smod: return (args, kw)
 
-	if _verbose>1:
+	if verbose>1:
 		print "(Parsing package parameters '" + smod + "')"
 
 	# extract any double-quoted strings and replace with marker
@@ -1295,7 +1295,7 @@ def parseArgs(s):
 		word = _subMarkedQuotes(word,qlist)
 		args.append(word)
 	else:
-		if _verbose>1:
+		if verbose>1:
 			print "(args", args, "kw", kw, ")"
 		return (args, kw)
 
@@ -1334,7 +1334,7 @@ def parseArgs(s):
 					key + "\nFull parameter list: '" + s + "'")
 			kw[key] = value
 		i = i+1
-	if _verbose>1:
+	if verbose>1:
 		print "(args", args, "kw", kw, ")"
 	return (args, kw)
 
