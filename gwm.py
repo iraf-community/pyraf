@@ -140,13 +140,13 @@ class GraphicsWindow:
 		# only force focus if window is viewable
 		if not wutil.isViewable(self.top.winfo_id()):
 			return
-		self.gwidget.focus_force()
 		# warp cursor
 		# if no previous position, move to center
 		if not gwin.lastX:
 			gwin.lastX = gwin.winfo_width()/2
 			gwin.lastY = gwin.winfo_height()/2
 		wutil.moveCursorTo(gwin.winfo_id(),gwin.lastX,gwin.lastY)
+		self.gwidget.focus_force()
 
 	def getWindowID(self):
 

@@ -150,10 +150,9 @@ class ImageDisplay:
 			return
 		if not isViewable(self.winID):
 			return
-		setFocusTo(self.winID)
 		if not self.lastX:
-			return
-		moveCursorTo(self.winID,self.lastX,self.lastY)
+			moveCursorTo(self.winID,self.lastX,self.lastY)
+		setFocusTo(self.winID)
 
 	def getWindowID(self):
 		return self.winID
@@ -309,8 +308,8 @@ class TerminalFocusEntity:
 	def forceFocus(self):
 		if not isViewable(self.windowID):
 			return
-		setFocusTo(self.windowID)
 		moveCursorTo(self.windowID, self.curposX, self.curposY)
+		setFocusTo(self.windowID)
 
 	def saveCursorPos(self):
 		posdict = getPointerPosition(self.windowID)
