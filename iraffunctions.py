@@ -149,9 +149,23 @@ def Init(doprint=1,hush=0,savefile=None):
 		restoreFromFile(savefile,doprint=doprint)
 		return
 	if len(_pkgs) == 0:
-		set(iraf = _os.environ['iraf'])
-		set(host = _os.environ['host'])
-		set(hlib = _os.environ['hlib'])
+		try:
+			iraf = _os.environ['iraf']
+		except KeyError:
+			raise SystemExit("""
+Your iraf environment variable is not defined.  Before starting
+pyraf, define it by doing (for example)
+	setenv iraf /usr/local/iraf/
+at the Unix command line.  (In the near future we will modify pyraf so
+this is not required.)
+""")
+		# ensure trailing slash is present
+		iraf = _os.path.join(iraf,'')
+		host = _os.environ.get('host', _os.path.join(iraf,'unix',''))
+		hlib = _os.environ.get('hlib', _os.path.join(host,'hlib',''))
+		set(iraf = iraf)
+		set(host = host)
+		set(hlib = hlib)
 		arch = _os.environ.get('IRAFARCH','')
 		if arch: arch = '.' + arch
 		set(arch = arch)
@@ -757,10 +771,8 @@ def envget(var,default=""):
 	"""Get value of IRAF or OS environment variable"""
 	if _varDict.has_key(var):
 		return _varDict[var]
-	elif _os.environ.has_key(var):
-		return _os.environ[var]
 	else:
-		return default
+		return _os.environ.get(var, default)
 
 _tmpfileCounter = 0
 
@@ -2402,7 +2414,7 @@ def clExecute(s, locals=None, mode="proc",
 		# use special scriptname
 		taskname = "CL%s" % (_clExecuteCount,)
 		scriptname = "<CL script %s>" % (taskname,)
-		code = _string.lstrip(pycode.code) #YYY needed?
+		code = _string.lstrip(pycode.code) #XXX needed?
 		codeObject = compile(code,scriptname,'exec')
 		# add this script to linecache
 		codeLines = _string.split(code,'\n')
