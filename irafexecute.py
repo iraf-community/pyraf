@@ -7,6 +7,7 @@ import os, re, signal, string, struct, sys, time, types, Numeric, cStringIO
 import subproc, filecache, wutil
 import iraf, gki, irafutils
 from irafglobals import IrafTask
+import irafgwcs
 
 #stdgraph = None
 
@@ -745,7 +746,10 @@ class IrafProcess:
                 self.setStdio()
             else:
                 self.stdout.write("GRAPHICS control data for channel %d\n" % (forChan,))
-
+                self.stdout.write(str(sdata[2:])) ###
+                if sdata[3] == 27:                ###
+                    wcs = irafgwcs.IrafGWcs()     ###
+                    self.write(wcs.pack())        ###
                 self.stdout.flush()
         else:
             self.stdout.write("data for channel %d\n" % (chan,))

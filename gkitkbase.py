@@ -583,7 +583,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
         scroll = Tkinter.Scrollbar(hb, command=hb.list.yview)
         hb.list.configure(yscrollcommand=scroll.set)
-        hb.list.pack(side=Tkinter.LEFT)
+        hb.list.pack(side=Tkinter.LEFT, fill=Tkinter.BOTH, expand=1)
         scroll.pack(side=Tkinter.RIGHT, fill=Tkinter.Y)
 
         # Insert each line of the helpString into the box
