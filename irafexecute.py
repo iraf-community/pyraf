@@ -5,7 +5,7 @@ $Id$
 """
 
 import os, re, signal, string, struct, sys, time, Numeric
-import subproc, iraf, gki, gkiopengl, gwm, wutil
+import subproc, iraf, gki, gkiopengl, gwm, wutil, irafutils
 
 stdgraph = None
 
@@ -132,7 +132,7 @@ def IrafIO(process,task):
 					print "data for STDPLOT"
 				elif chan == 9:
 					sdata = Numeric.fromstring(xdata,'s')
-					if iraf.isBigEndian():
+					if irafutils.isBigEndian():
 						# Actually, the channel destination is sent
 						# by the iraf process as a 4 byte int, the following
 						# code basically chooses the right two bytes to

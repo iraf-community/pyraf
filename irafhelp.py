@@ -36,7 +36,7 @@ R. White, 1999 May 28
 """
 
 import __main__, re, os, types
-import minmatch, describe, iraf, iraftask
+import minmatch, describe, iraf, iraftask, irafutils
 
 # print info on Numeric arrays if Numeric is available
 
@@ -164,13 +164,13 @@ def help(object=__main__, variables=1, functions=1, modules=1,
 			for i in xrange(len(pkglist)):
 				pkglist[i] = pkglist[i] + '/'
 			print "IRAF Packages:"
-			iraf._printcols(pkglist)
+			irafutils.printCols(pkglist)
 
 	if tasks:
 		if tasklist:
 			tasklist.sort()
 			print "IRAF Tasks:"
-			iraf._printcols(tasklist)
+			irafutils.printCols(tasklist)
 
 	# XXX Need to modify this to look at all parents of this class
 	# XXX too.  That's tricky because want to sort all methods/attributes
