@@ -92,7 +92,6 @@ def getTermWindowSize():
     # define string to serve as memory area to receive copy of structure
     # created by IOCTL call
     tstruct = ' '*20 # that should be more than enough memory
-    # xxx exception handling needed (but what exception to catch?)
     try:
         rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
         ysize, xsize = struct.unpack('hh',rstruct[0:4])
@@ -100,7 +99,7 @@ def getTermWindowSize():
         if ysize <= 0: ysize = 24
         if xsize <= 0: xsize = 80
         return ysize, xsize
-    except IOError:
+    except (IOError, AttributeError):
         return (24,80) # assume generic size
 
 

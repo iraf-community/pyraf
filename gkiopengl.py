@@ -1358,6 +1358,17 @@ class StatusLine:
         rv = self.status.readline()
         return rv
 
+    def read(self, n=0):
+        """Return up to n bytes from status line
+
+        Reads only a single line.  If n<=0, just returns the line.
+        """
+        s = self.readline()
+        if n>0:
+            return s[:n]
+        else:
+            return s
+
     def write(self, text):
         self.status.updateIO(text=string.strip(text))
 

@@ -320,7 +320,7 @@ def saveToFile(savefile, **kw):
     else:
         # if clobber is not set, do not overwrite file
         savefile = Expand(savefile)
-        if (not kw.get('clobber')) and envget("clobber") != yes and _os.path.exists(savefile):
+        if (not kw.get('clobber')) and envget("clobber","") != yes and _os.path.exists(savefile):
             raise IOError("Output file `%s' already exists" % savefile)
         # open binary pickle file
         fh = open(savefile,'wb')
@@ -833,12 +833,18 @@ def clParGet(paramname,pkg=None,native=1,mode=None,prompt=1):
         paramname = pkg.getName() + paramname[1:]
     return pkg.getParam(paramname,native=native,mode=mode,prompt=prompt)
 
-def envget(var,default=""):
+def envget(var,default=None):
     """Get value of IRAF or OS environment variable"""
-    if _varDict.has_key(var):
+    try:
         return _varDict[var]
-    else:
-        return _os.environ.get(var, default)
+    except KeyError:
+        try:
+            return _os.environ[var]
+        except KeyError:
+            if default is not None:
+                return default
+            else:
+                raise KeyError("Undefined environment variable `%s'" % var)
 
 _tmpfileCounter = 0
 
@@ -1421,6 +1427,28 @@ def show(*args, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
+def unset(*args, **kw):
+    """Unset IRAF environment variables
+
+    This is not a standard IRAF task, but it is obviously useful.
+    It makes the resulting variables undefined.  It silently ignores
+    variables that are not defined.  It does not change the os environment
+    variables.
+    """
+    # handle redirection and save keywords
+    redirKW, closeFHList = redirProcess(kw)
+    if kw.has_key('_save'): del kw['_save']
+    resetList = redirApply(redirKW)
+    try:
+        if len(kw) != 0:
+            raise SyntaxError("unset requires a list of variable names")
+        for arg in args:
+            if _varDict.has_key(arg):
+                del _varDict[arg]
+    finally:
+        rv = redirReset(resetList, closeFHList)
+    return rv
+
 def time(**kw):
     """Print current time and date"""
     # handle redirection and save keywords
@@ -1520,8 +1548,8 @@ def stty(terminal=None, **kw):
                 raise TypeError('unexpected keyword argument: '+key)
         if terminal is None and len(kw) == 0:
             # no args: print terminal type and size
-            print '%s ncols=%s nlines=%s' % (envget('terminal'),
-                    envget('ttyncols'), envget('ttynlines'))
+            print '%s ncols=%s nlines=%s' % (envget('terminal','undefined'),
+                    envget('ttyncols','80'), envget('ttynlines','24'))
         elif expkw['resize'] or expkw['terminal'] == "resize":
             # resize: sets CL environmental parameters giving screen size
             if _sys.stdout.isatty():
@@ -2539,8 +2567,8 @@ def _expand1(instring, noerror):
         elif noerror:
             varname = ""
         else:
-            raise IrafError("Undefined variable " + varname + \
-                    " in string " + instring)
+            raise IrafError("Undefined variable `%s' in string `%s'" %
+                    (varname, instring))
         instring = instring[:mm.start()] + varname + instring[mm.end():]
         mm = __re_var_paren.search(instring)
     # now expand variable name at start of string
@@ -2554,8 +2582,8 @@ def _expand1(instring, noerror):
     elif noerror:
         return _expand1(varname + instring[mm.end():], noerror)
     else:
-        raise IrafError("Undefined variable " + varname + \
-                " in string " + instring)
+        raise IrafError("Undefined variable `%s' in string `%s'" %
+                (varname, instring))
 
 def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
                 pkgname=None, pkgbinary=None, redefine=0, function=None):
@@ -2787,7 +2815,7 @@ def redirProcess(kw):
                         if isNullFile(value):
                             value = '/dev/null'
                         elif "w" in openArgs and \
-                          envget("clobber") != yes and \
+                          envget("clobber","") != yes and \
                           _os.path.exists(value):
                             # don't overwrite unless clobber is set
                             raise IOError("Output file `%s' already exists" %
