@@ -188,8 +188,8 @@ class PyCmdLine(CmdConsole):
 				self.do_logfile(logfile)
 			else:
 				self.write('logfile ignored -- not string or filehandle\n')
-		if self.complete:
-			self.do_complete()
+		# turn command completion on or off as requested
+		self.do_complete(default=self.complete)
 
 	def runsource(self, source, filename="<input>", symbol="single"):
 		"""Compile and run some source in the interpreter.
@@ -291,10 +291,10 @@ class PyCmdLine(CmdConsole):
 				pass
 		return ""
 
-	def do_complete(self, line='', i=0):
+	def do_complete(self, line='', i=0, default=1):
 		"""Turn command completion on or off"""
 		if self.debug>1: self.write('do_complete: %s\n' % line[i:])
-		self.complete = 1
+		self.complete = default
 		if line[i:] != "":
 			try:
 				self.complete = int(line[i:])
@@ -302,6 +302,8 @@ class PyCmdLine(CmdConsole):
 				if self.debug: self.write(str(e)+'\n')
 				pass
 		if self.complete:
+			# set list of executive commands
+			irafcompleter.completer.executive(_cmdDict.keys())
 			irafcompleter.activate()
 		else:
 			irafcompleter.deactivate()

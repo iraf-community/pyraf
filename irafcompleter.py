@@ -1,8 +1,11 @@
 """irafcompleter.py: command-line completion for pyraf
 
-Experimental module that does taskname completion using tab key.  This is
-almost useful as-is -- if I could get it to do filename completion too
-(depending on the context in the line), it would be *really* useful.
+Does taskname and filename completion using tab key.  Some of this
+should be rewritten for Python 1.6, which will fix a bug in
+the readline completion implementation and will add some
+additional methods for getting information on the context
+of the string being completed.  At the moment there are some
+hacks to work around the missing functionality.
 
 Another thought would be to use raw_input to do the input when IRAF
 tasks prompt for input, and to use a special completer function that just
@@ -61,6 +64,8 @@ class IrafCompleter(Completer):
 	def __init__(self):
 		self.completionChar = None
 		self.taskpat = re.compile(r"(\?|(?:\w+))[ \t]+(?=$|[\w.<>|/~'" +r'"])')
+		# executive commands dictionary (must be set by user)
+		self.executiveDict = minmatch.MinMatchDict()
 
 	def activate(self, char="\t"):
 		"""Turn on completion using the specified character"""
@@ -81,11 +86,17 @@ class IrafCompleter(Completer):
 			readline.parse_and_bind("%s: self-insert" % lab)
 			self.completionChar = None
 
+	def executive(self, elist):
+		"""Add list of executive commands (assumed to start with '.')"""
+		self.executiveDict = minmatch.MinMatchDict()
+		for cmd in elist:
+			self.executiveDict.add(cmd, 1)
+
 	def global_matches(self, text):
 		"""Compute matches when text is a simple name.
 
 		Return a list of all keywords, built-in functions and names
-		currently defines in __main__ that match.
+		currently defined in __main__ that match.
 		Also return IRAF task matches.
 		"""
 		line = self.get_line_buffer()
@@ -239,7 +250,10 @@ class IrafCompleter(Completer):
 			# at start of line, special handling for iraf.xxx and
 			# taskname.xxx
 			fields = string.split(text,".")
-			if fields[0] == "iraf":
+			if fields[0] == "":
+				# line starts with dot, look in executive commands
+				return self.executive_matches(text)
+			elif fields[0] == "iraf":
 				return self.taskdot_matches(fields)
 			elif iraf.getTask(fields[0], found=1):
 				# include both eval results and task. matches
@@ -269,6 +283,10 @@ class IrafCompleter(Completer):
 				#XXX Could try to match pset.param keywords too?
 				lt = len(line)-len(text)
 				return self.filename_matches(text, line[:lt])
+
+	def executive_matches(self, text):
+		"""Return matches to executive commands"""
+		return self.executiveDict.getallkeys(text)
 
 	def taskdot_matches(self, fields):
 		"""Return matches for iraf.package.task.param..."""
