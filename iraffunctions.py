@@ -90,12 +90,6 @@ del sys, os, string, re, math, types, time, StringIO, pickle
 del minmatch, subproc, wutil
 del irafnames, irafutils, iraftask, irafpar, cl2py
 
-class IrafError(Exception):
-	pass
-
-yes = 1
-no = 0
- 
 # -----------------------------------------------------
 # private dictionaries:
 #

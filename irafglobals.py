@@ -17,14 +17,12 @@ $Id$
 R. White, 2000 January 5
 """
 
-import os, sys, types
+import os, sys, types, string
 _os = os
 _sys = sys
 _types = types
-del os, sys, types
-
-yes = 1
-no = 0
+_string = string
+del os, sys, types, string
 
 class IrafError(Exception):
 	pass
@@ -82,6 +80,58 @@ else:
 userWorkingHome = _os.getcwd()
 
 # -----------------------------------------------------
+# Boolean constant class
+# -----------------------------------------------------
+
+class _Boolean:
+	"""Class of boolean constant object"""
+	def __init__(self, value):
+		# change value to 1 or 0
+		if value:
+			self.__value = 1
+		else:
+			self.__value = 0
+		self.__strvalue = ["no", "yes"][self.__value]
+
+	def __copy__(self):
+		"""Don't bother to make a copy"""
+		return self
+
+	def __deepcopy__(self, memo=None):
+		"""Don't bother to make a copy"""
+		return self
+
+	def __cmp__(self, other):
+		if isinstance(other, self.__class__):
+			return cmp(self.__value, other.__value)
+		elif type(other) is _types.StringType:
+			# If a string, compare with string value of this parameter
+			# Allow uppercase "YES", "NO" as well as lowercase
+			# Also allows single letter abbrevation "y" or "n"
+			ovalue = _string.lower(other)
+			if len(ovalue) == 1:
+				return cmp(self.__strvalue[0], ovalue)
+			else:
+				return cmp(self.__strvalue, ovalue)
+		elif type(other) in (_types.IntType, _types.FloatType):
+			# If a number, compare with this value
+			return cmp(self.__value, other)
+		else:
+			return 1
+
+	def __nonzero__(self): return self.__value
+	def __repr__(self): return self.__strvalue
+	def __str__(self): return self.__strvalue
+	def __int__(self): return self.__value
+	def __float__(self): return float(self.__value)
+
+# create yes, no boolean values
+
+yes = _Boolean(1)
+no = _Boolean(0)
+
+
+# -----------------------------------------------------
 # define end-of-file object
 # if printed, says 'EOF'
 # if converted to integer, has value -2 (special IRAF value)
@@ -106,10 +156,10 @@ class _EOFClass:
 		return self
 
 	def __cmp__(self, other):
-		if type(other) is _types.InstanceType:
+		if isinstance(other, self.__class__):
 			# Despite trying to create only one EOF object, there
 			# could be more than one.  All EOFs are equal.
-			return other.__class__ != self.__class__
+			return 0
 		elif type(other) is _types.StringType:
 			# If a string, compare with 'EOF'
 			return cmp("EOF", other)
@@ -150,10 +200,10 @@ class _INDEFClass:
 		return self
 
 	def __cmp__(self, other):
-		if type(other) is _types.InstanceType:
+		if isinstance(other, self.__class__):
 			# Despite trying to create only one INDEF object, there
 			# could be more than one.  All INDEFs are equal.
-			return other.__class__ != self.__class__
+			return 0
 		else:
 			#XXX Note this implies INDEF is equivalent to +infinity
 			#XXX This is the only way to get the right answer

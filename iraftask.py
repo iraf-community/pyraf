@@ -557,10 +557,8 @@ class IrafTask:
 		mode = self.getMode(newParList)
 		changed = 0
 		for par in newParList.getParList():
-			if par.name != "$nargs" and (
-				 (save and par.isChanged() or
-					(par.isCmdline() and par.isLearned(mode))) or
-				 ((not save) and par.isChanged()) ):
+			if par.name != "$nargs" and (par.isChanged() or
+			  (save and par.isCmdline() and par.isLearned(mode))):
 				changed = 1
 				# get task parameter object
 				tpar = self._currentParList.getParObject(par.name)

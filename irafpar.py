@@ -7,7 +7,7 @@ R. White, 2000 January 7
 
 import os, sys, string, re, types
 import irafgcur, irafimcur, irafukey, irafutils, minmatch, epar
-from irafglobals import INDEF, Verbose
+from irafglobals import INDEF, Verbose, yes, no
 
 # container class used for __deepcopy__ method
 import copy
@@ -1403,8 +1403,8 @@ class _BooleanMixin:
 			else:
 				return value
 		else:
-			strval = ["no", "yes"]
-			return strval[value]
+			# must be internal yes, no value
+			return str(value)
 
 	#--------------------------------------------
 	# private methods
@@ -1432,34 +1432,27 @@ class _BooleanMixin:
 				self.name, strict)
 			self.choice = None
 
-	# accepts integer values 0,1 or string 'yes','no' and variants
+	# accepts special yes, no objects, integer values 0,1 or
+	# string 'yes','no' and variants
+	# internal value is yes, no, None/INDEF, or indirection string
 	def _coerceOneValue(self,value,strict=0):
-		if value in [None,INDEF,0,1]:
+		if value in [None,INDEF]:
 			return value
 		elif value == "":
 			return None
-		tval = type(value)
-		if tval is types.StringType:
+		elif value==yes:
+			# this handles 1, 1.0, yes, "yes", "YES", "y", "Y"
+			return yes
+		elif value==no:
+			# this handles 0, 0.0, no, "no", "NO", "n", "N"
+			return no
+		if type(value) is types.StringType:
 			v2 = irafutils.stripQuotes(string.strip(value))
 			if v2 == "" or v2 == "INDEF":
 				return INDEF
 			elif v2[0:1] == ")":
-				# assume this is indirection -- for now just save it as a string
+				# assume this is indirection -- just save it as a string
 				return v2
-			# even more strict would just accept lower-case "yes", "no"
-			ff = string.lower(v2)
-			if ff == "no" or ff == "n":
-				return 0
-			elif ff == "yes" or ff == "y":
-				return 1
-		elif tval is types.FloatType:
-			# try converting to integer
-			try:
-				ival = int(value)
-				if (ival == value) and (ival == 0 or ival == 1):
-					return ival
-			except (ValueError, OverflowError):
-				pass
 		raise ValueError("Illegal boolean value "+`value` +
 			" for parameter " + self.name)
 
@@ -1516,7 +1509,7 @@ class _IntMixin:
 			  ((not strict) and (string.upper(s2) == "INDEF")):
 				return INDEF
 			elif s2[0:1] == ")":
-				# assume this is indirection -- for now just save it as a string
+				# assume this is indirection -- just save it as a string
 				return s2
 			elif s2[-1:] == "x":
 				# hexadecimal
