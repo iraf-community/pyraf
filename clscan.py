@@ -30,9 +30,12 @@ _ACCEPT_REDIR_MODE = 6          # mode at points where redirection allowed
 #---------------------------------------------------------------------
 #
 # Recognize comments in a multi-line string
+#    - comment can start with any amount of white-space
+#    - comment can also be in-line, starting on a new line is optional
+#    - comment ends on new line after optional line-continuation '\'
+#    - comment can end with any amount of white-space prior to optional '\'
 #
-comment_pat = re.compile(r'(\n\W*#.*\\)*\n')
-
+comment_pat = re.compile(r'[\\\s*\n]?(\s*#.*\s*)*\n\s*')
 #---------------------------------------------------------------------
 # Scanners for various contexts
 #---------------------------------------------------------------------
@@ -146,16 +149,18 @@ class _BasicScanner_3:
         parent.addToken(type='OSESCAPE', attr=string.strip(cmd))
 
     def t_singlequote(self, s, m, parent):
-        r"' [^'\\\n]* ( ( (\\(.|\n)) | '' ) [^'\\\n]* )*'"
+        r"' [^'\\\n]* ( ( ((\\(.|\n)|\n)[\s?]*) | '' ) [^'\\\n]* )*'"
         # this pattern allows both escaped embedded quotes and
         # embedded double quotes ('embedded''quotes')
         # it also allows escaped newlines
         if parent.current[-1] == _COMMAND_MODE:
             parent.addToken(type=parent.argsep)
             parent.argsep = ','
+
         nline = _countNewlines(s)
         # Recognize and remove any embedded comments
-        s = comment_pat.sub('\n',s)
+        s = comment_pat.sub('',s)
+
         s = irafutils.removeEscapes(irafutils.stripQuotes(s),quoted=1)
         # We use a different type for quoted strings to protect them
         # against conversion to other token types by enterComputeEqnMode
@@ -163,13 +168,16 @@ class _BasicScanner_3:
         parent.lineno = parent.lineno + nline
 
     def t_doublequote(self, s, m, parent):
-        r'" [^"\\\n]* ( ( (\\(.|\n)) | "" ) [^"\\\n]* )*"'
+        r'" [^"\\\n]* ( ( ((\\(.|\n)|\n)[\s?]*) | "" ) [^"\\\n]* )* "'
         if parent.current[-1] == _COMMAND_MODE:
             parent.addToken(type=parent.argsep)
             parent.argsep = ','
+
         nline = _countNewlines(s)
+
         # Recognize and remove any embedded comments
-        s = comment_pat.sub('\n',s)
+        s = comment_pat.sub('',s)
+
         s = irafutils.removeEscapes(irafutils.stripQuotes(s),quoted=1)
         parent.addToken(type='QSTRING', attr=s)
         parent.lineno = parent.lineno + nline
