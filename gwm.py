@@ -83,15 +83,16 @@ class GraphicsWindow:
 		self.gwidget.redraw = redraw
 		self.top.title(windowName)
 		self.gwidget.pack(side = 'top', expand=1, fill='both')
+		self.top.protocol("WM_DELETE_WINDOW", self.callback)
 		
 		# try this hack to reset focus back to command line window
 		
 #		self.top.after_idle(self.callback,())
 #		self.top.mainloop()
 
-#	def callback(self, event):
+	def callback(dummyarg):
 	
-#		self.top.quit()
+		pass # completely ignore attempts to close the window
 
 # Create a module instance of the GWM object that can be referred
 # by anything that imports this module. It is in effect a singleton
