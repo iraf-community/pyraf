@@ -32,7 +32,7 @@ $Id$
 R. White, 1999 Jan 25
 """
 
-import sys, monty, iraf
+import os, sys, monty, iraf
 
 # load initial iraf symbols and packages (we could
 # do this automatically in iraf.py)
@@ -50,9 +50,17 @@ iraf.load("images",doprint=0)
 imstat = iraf.getTask("imstatistics")
 imhead = iraf.getTask("imheader")
 disp = iraf.getTask("display")
+implot = iraf.getTask("implot")
 
 flpr = "This is not the IRAF cl!  Forget those old bad habits!"
 retall = "This is not IDL..."
+
+# set search path to include directory containing this script
+
+dirname = os.path.dirname(sys.argv[0])
+if not dirname: dirname = os.getcwd()
+if dirname not in sys.path: sys.path.insert(0, dirname)
+del dirname
 
 if __name__ == "__main__":
 	#
