@@ -21,12 +21,29 @@ def initGraphics(): pass
 def closeGraphics(): pass
 
 try:
+    import xutil
+    #initGraphics = initXGraphics
+    xutil.initXGraphics() # call here for lack of a better place for n
+
+    # Check to make sure a valid XWindow ID was initialized
+    # Attach closeGraphics to XWindow methods
+    #ONLY if an XWindow was successfully initialized.
+    #  WJH (10June2004)
+    if xutil.getWindowID() == -1:
+        raise EnvironmentError
+
+    # Successful intialization. Reset dummy methods with
+    # those from 'xutil' now.
     from xutil import *
-    initGraphics = initXGraphics
+    hasXWindow = True # Flag to mark successful initialization of XWindow
     closeGraphics = closeXGraphics
-    initGraphics() # call here for lack of a better place for n
 except ImportError:
-    pass
+    hasXWindow = False # Unsuccessful init of XWindow
+except EnvironmentError:
+    hasXWindow = False # Unsuccessful init of XWindow
+
+# Clean up the namespace a bit...
+del xutil
 
 magicConstant = None
 try:
@@ -364,7 +381,11 @@ class FocusController:
 
 terminal = TerminalFocusEntity()
 focusController = FocusController(terminal)
-hasGraphics = focusController.hasGraphics
+
+if hasXWindow:
+    hasGraphics = focusController.hasGraphics
+else:
+    hasGraphics = None
 
 if not hasGraphics:
     print ""
