@@ -12,9 +12,10 @@ def getWindowID(): return None
 def moveCursorTo(WindowID, x, y): pass
 def setFocusTo(WindowID): pass
 def setBackingStore(WindowID): pass
-def getPointerPosition(WindowID): pass
+def getPointerPostion(WindowID): pass
 def getWindowAttributes(WindowID): pass
 def getParentID(WindowID): pass
+def getDeepestVisual(): return 24
 
 try:
 	from xlibtricks import *
@@ -30,14 +31,17 @@ def getTopID(WindowID):
 	return itself"""
 	# Assuming root window has id 1 (should eliminate this dependency)
 	wid = WindowID
-	if wid <= 0:
-		return wid
-	while 1:
-		pid = getParentID(wid)
-		if not pid:
+	try:
+		if wid <= 0:
 			return wid
-		else:
-			wid = pid
+		while 1:
+			pid = getParentID(wid)
+			if not pid:
+				return wid
+			else:
+				wid = pid
+	except EnvironmentError:
+		return None
 
 def isViewable(WindowID):
 
@@ -365,8 +369,6 @@ class TerminalFocusEntity:
 def getScreenDepth():
 
 	return getDeepestVisual()
-	#win_attr = getWindowAttributes(terminal.getWindowID())
-	#return win_attr['depth']
 
 terminal = TerminalFocusEntity()
 terminalWindowID = terminal.getWindowID()
