@@ -815,37 +815,29 @@ _radixDigits = list(_string.digits+_string.uppercase)
 def radix(value, base=10, length=0):
 	"""Convert integer value to string expressed using given base
 	
-	If length is given, field is padded with leading zeros to reach length
+	If length is given, field is padded with leading zeros to reach length.
+	Note that if value is negative, this routine returns the actual
+	bit-pattern of the twos-complement integer (even for base 10) rather
+	than a signed value.  This is consistent with IRAF's behavior.
 	"""
-	ivalue = int(value)
-	if base == 10:
-		return "%0*d" % (length, ivalue)
-	elif base == 16:
-		return "%0*X" % (length, ivalue)
-	elif base == 8:
-		return "%0*o" % (length, ivalue)
-	elif ivalue == 0:
-		# handle specially so don't have to worry about it below
-		return "%0*d" % (length, ivalue)
-
-	# arbitrary base
 	if not (2 <= base <= 36):
 		raise ValueError("base must be between 2 and 36 (inclusive)")
+	ivalue = int(value)
+	if ivalue == 0:
+		# handle specially so don't have to worry about it below
+		return "%0*d" % (length, ivalue)
+	# convert to an unsigned long integer
+	lvalue = eval(hex(ivalue) + 'L')
 	outdigits = []
-	if ivalue < 0:
-		sign = "-"
-		ivalue = -ivalue
-	else:
-		sign = ""
-	while ivalue > 0:
-		ivalue, digit = divmod(ivalue, base)
-		outdigits.append(digit)
+	while lvalue > 0:
+		lvalue, digit = divmod(lvalue, base)
+		outdigits.append(int(digit))
 	outdigits = map(lambda index: _radixDigits[index], outdigits)
 	# zero-padding
-	if length>len(outdigits)+len(sign):
-		outdigits.extend((length-len(outdigits)-len(sign))*["0"])
+	if length>len(outdigits):
+		outdigits.extend((length-len(outdigits))*["0"])
 	outdigits.reverse()
-	return sign+_string.join(outdigits,'')
+	return _string.join(outdigits,'')
 
 def osfn(filename):
 	"""Convert IRAF virtual path name to OS pathname"""
@@ -2144,8 +2136,8 @@ def printf(format, *args, **kw):
 		format = _string.join(newformat,'')
 		# finally ready to print
 		try:
-			print format % tuple(args),
-			_sys.stdout.softspace = 0
+			_sys.stdout.write(format % tuple(args))
+			_sys.stdout.flush()
 		except ValueError, e:
 			raise IrafError(str(e))
 		except TypeError, e:
