@@ -10,7 +10,7 @@ R. White, 1999 September 10
 from cgeneric import ContextSensitiveScanner
 from generic import GenericScanner
 from cltoken import Token
-import string
+import string, re
 import irafutils
 
 # contexts for scanner
@@ -24,6 +24,14 @@ _COMPUTE_EQN_MODE = 3           # compute mode in task arg when equation-mode
 _COMPUTE_MODE = 4                       # compute (script, equation) mode
 _SWALLOW_NEWLINE_MODE = 5       # mode at points where embedded newlines allowed
 _ACCEPT_REDIR_MODE = 6          # mode at points where redirection allowed
+
+#---------------------------------------------------------------------
+# Regular Expressions for additional string replacement
+#---------------------------------------------------------------------
+#
+# Recognize comments in a multi-line string
+#
+comment_pat = re.compile(r'(\n\W*#.*\\)*\n')
 
 #---------------------------------------------------------------------
 # Scanners for various contexts
@@ -146,6 +154,8 @@ class _BasicScanner_3:
             parent.addToken(type=parent.argsep)
             parent.argsep = ','
         nline = _countNewlines(s)
+        # Recognize and remove any embedded comments
+        s = comment_pat.sub('\n',s)
         s = irafutils.removeEscapes(irafutils.stripQuotes(s),quoted=1)
         # We use a different type for quoted strings to protect them
         # against conversion to other token types by enterComputeEqnMode
@@ -158,6 +168,8 @@ class _BasicScanner_3:
             parent.addToken(type=parent.argsep)
             parent.argsep = ','
         nline = _countNewlines(s)
+        # Recognize and remove any embedded comments
+        s = comment_pat.sub('\n',s)
         s = irafutils.removeEscapes(irafutils.stripQuotes(s),quoted=1)
         parent.addToken(type='QSTRING', attr=s)
         parent.lineno = parent.lineno + nline
