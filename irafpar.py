@@ -164,7 +164,7 @@ class IrafPar:
 			# p_length: length in bytes? IRAF words? something else?
 			# p_default: from task parameter file (as opposed to current
 			#    .par file)?
-			raise RuntimeError("Program bug in IrafPar.setField()")
+			raise RuntimeError("Program bug in IrafPar.getField()")
 
 	def set(self, value, field=None, index=None):
 		"""Set value of this parameter from a string or other value"""
@@ -194,16 +194,17 @@ class IrafPar:
 				"\nCould be any of " + `ffield`)
 		field = ffield[0]
 		if field == "p_prompt":
-			self.prompt = str(value)
+			self.prompt = _stripQuote(value)
 		elif field == "p_value":
 			self.set(value)
 		elif field == "p_filename":
 			# this is only relevant for list parameters (*imcur, *gcur, etc.)
-			self.value = str(value)
+			self.value = _stripQuote(value)
 		elif field == "p_maximum":
 			self.maximum = self.coerceOneValue(value)
 		elif field == "p_minimum":
 			if type(value) == StringType and '|' in value:
+				value = _stripQuote(value)
 				# new choice list
 				clist = _getChoice(value)
 				newchoice = len(clist)*[0]
@@ -347,13 +348,21 @@ class IrafParS(IrafPar):
 			return ""
 		elif type(value) is StringType:
 			# strip double quotes
-			if value[:1] == '"':
-				value = value[1:]
-				if value[-1:] == '"':
-					value = value[:-1]
-			return value
+			return _stripQuote(value)
 		else:
 			return str(value)
+
+# -----------------------------------------------------
+# Utility function to strip double quotes off string
+# -----------------------------------------------------
+
+def _stripQuote(value):
+	if value[:1] == '"':
+		value = value[1:]
+		if value[-1:] == '"':
+			value = value[:-1]
+	return value
+
 
 # -----------------------------------------------------
 # IRAF boolean parameter class
