@@ -70,7 +70,9 @@ class IrafPar:
 		self.choice = None
 		self.prompt = None
 
-	def get(self):
+	def get(self, index=None):
+		if index != None:
+			raise SyntaxError("Parameter "+self.name+" is not an array")
 		if self.value == None:
 			return ""
 		else:
@@ -217,7 +219,9 @@ class IrafParB(IrafPar):
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
-	def get(self):
+	def get(self, index=None):
+		if index != None:
+			raise SyntaxError("Parameter "+self.name+" is not an array")
 		if self.value == None:
 			return ""
 		elif type(self.value) == StringType:
@@ -290,7 +294,9 @@ class IrafParI(IrafPar):
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
-	def get(self):
+	def get(self, index=None):
+		if index != None:
+			raise SyntaxError("Parameter "+self.name+" is not an array")
 		if self.value == None:
 			return "INDEF"
 		else:
@@ -420,7 +426,9 @@ class IrafParR(IrafPar):
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
 
-	def get(self):
+	def get(self, index=None):
+		if index != None:
+			raise SyntaxError("Parameter "+self.name+" is not an array")
 		if self.value == None:
 			return "INDEF"
 		else:
