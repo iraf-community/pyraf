@@ -318,7 +318,10 @@ class IrafProcess:
 				(nlines, ncols))
 			# iraf.stty('resize')
 
-		self.writeString(self.task.getName()+redir_info+'\n')
+		taskname = self.task.getName()
+		# remove leading underscore, which is just a convention for CL
+		if taskname[:1]=='_': taskname = taskname[1:]
+		self.writeString(taskname+redir_info+'\n')
 		# begin slave mode
 		self.slave()
 
