@@ -14,7 +14,7 @@ Usage: pyraf [options] [savefile]
 Brief help:
 
 To load a package, use any of:
-	iraf.images()
+        iraf.images()
     iraf.load("images")
     iraf.run("images")
     pkg = iraf.images; pkg()
@@ -26,7 +26,7 @@ which is necessary because you can also include package
 parameters as arguments.)
 
 To get short-hand task or package object:
-	imstat = iraf.imstat
+        imstat = iraf.imstat
     imstat = iraf.getTask("imstat")
     imhead = iraf.getTask("imheader")
     sts = iraf.getPkg("stsdas")
@@ -62,7 +62,7 @@ $Id$
 R. White, 2000 January 21
 """
 
-__version__ = "v0.8.20 (2001Mar29)"
+__version__ = "v0.8.21 (2001Jun20)"
 
 
 import sys, os, string
@@ -74,9 +74,9 @@ import sys, os, string
 
 pyrafDir = os.path.dirname(sys.argv[0])
 try:
-	sys.path.remove(pyrafDir)
+    sys.path.remove(pyrafDir)
 except ValueError:
-	pass
+    pass
 
 absPyrafDir = os.path.abspath(os.path.join(pyrafDir,'..'))
 if absPyrafDir not in sys.path: sys.path.insert(0, absPyrafDir)
@@ -87,8 +87,8 @@ if "." not in sys.path: sys.path.insert(0, ".")
 # read the user's startup file (if there is one)
 
 if os.environ.has_key("PYTHONSTARTUP") and \
-		os.path.isfile(os.environ["PYTHONSTARTUP"]):
-	execfile(os.environ["PYTHONSTARTUP"])
+                os.path.isfile(os.environ["PYTHONSTARTUP"]):
+    execfile(os.environ["PYTHONSTARTUP"])
 
 from pyraf import doCmdline, iraf
 from pyraf.irafpar import makeIrafPar
@@ -100,12 +100,11 @@ print "Pyraf, Python front end to IRAF,", __version__, "(copyright AURA 2000)"
 print "Python: " + string.split(sys.copyright,'\n')[0]
 
 if doCmdline:
-	del doCmdline
-	# Start up command line wrapper keeping definitions in main name space
-	# Keep the command-line object in namespace too for access to history
-	import pyraf.pycmdline
-	_pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
-	_pycmdline.start()
+    del doCmdline
+    # Start up command line wrapper keeping definitions in main name space
+    # Keep the command-line object in namespace too for access to history
+    import pyraf.pycmdline
+    _pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
+    _pycmdline.start()
 else:
-	del doCmdline
-
+    del doCmdline

@@ -188,8 +188,7 @@ class Gcursor:
                     elif colonString[1:] == 'markcur':
                         self.markcur = not self.markcur
                     else:
-                        print "Don't handle this CL level gcur :. commands."
-                        print "Please check back later."
+                        print "Unimplemented CL gcur `:%s'" % colonString,
                 else:
                     self._setRetString(key,x,y,colonString)
         elif key == '=':
@@ -207,10 +206,11 @@ class Gcursor:
                 self.appendMetacode(metacode)
             elif key == 'U':
                 self.window.undoN()
+            elif key == 'C':
+                wx,wy,gwcs = self._convertXY(x,y)
+                print "%g %g" % (wx,wy),
             else:
-                print "Not quite ready to handle this particular" + \
-                          "CL level gcur command."
-                print "Please check back later."
+                print "Unimplemented CL gcur command `%s'" % key,
         else:
             self._setRetString(key,x,y,"")
 
@@ -223,13 +223,17 @@ class Gcursor:
         print event.key
         print ord(event.key)
 
-    def _setRetString(self, key, x, y, colonString):
-
+    def _convertXY(self, x, y):
+        """Returns x,y,gwcs converted to physical units using current WCS"""
         wcs = self.window.wcs
         if wcs:
-            wx,wy,gwcs = self.window.wcs.get(x,y)
+            return self.window.wcs.get(x,y)
         else:
-            wx,wy,gwcs = x,y,0
+            return (x,y,0)
+
+    def _setRetString(self, key, x, y, colonString):
+
+        wx,wy,gwcs = self._convertXY(x,y)
         if key <= ' ' or ord(key) >= 127:
             key = '\\%03o' % ord(key)
         self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
