@@ -42,6 +42,7 @@ import Numeric
 from types import *
 import os, sys, string, re, wutil, graphcap, iraf
 import fontdata
+from textattrib import *
 
 nIrafColors = 16
 
@@ -90,27 +91,6 @@ CONTROL_DEACTIVATEWS = 4
 CONTROL_CLEARWS = 6
 CONTROL_SETWCS = 26
 CONTROL_GETWCS = 27
-
-# constants for text attributes
-
-CHARPATH_LEFT  = 2
-CHARPATH_RIGHT = 3
-CHARPATH_UP = 4
-CHARPATH_DOWN = 5
-JUSTIFIED_NORMAL = 0
-JUSTIFIED_CENTER = 1
-JUSTIFIED_TOP = 6
-JUSTIFIED_BOTTOM = 7
-JUSTIFIED_LEFT = 2
-JUSTIFIED_RIGHT = 3
-FONT_ROMAN = 8
-FONT_GREEK = 9
-FONT_ITALIC = 10
-FONT_BOLD = 11
-FQUALITY_NORMAL = 0
-FQUALITY_LOW = 12
-FQUALITY_MEDIUM = 13
-FQUALITY_HIGH = 14
 
 # Names of methods in GkiKernel that handle the various opcodes
 # This also can be useful for debug prints of opcode values.
