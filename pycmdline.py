@@ -295,8 +295,10 @@ Commands can be abbreviated.
 		elif self.clemulate == 0:
 			# if CL emulation is turned off then just return
 			return line
-		elif keyword.iskeyword(cmd):
-			# don't mess with Python keywords
+		elif keyword.iskeyword(cmd) or \
+		  (os.__builtins__.has_key(cmd) and cmd != 'dir'):
+			# don't mess with Python keywords or built-in functions
+			# except allow 'dir' to be used for directory listings
 			return line
 		elif line[i:i+1] != "" and line[i] in '=,[':
 			# don't even try if it doesn't look like a procedure call
