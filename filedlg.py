@@ -335,7 +335,7 @@ class PersistFileDialog(FileDialog):
 
 	def __init__(self, widget, title, filter="*"):
 
-		FileDialog.__init__(self, widget, title, filter="*")
+		FileDialog.__init__(self, widget, title, filter)
 
                 # If the last accessed directory were not None, start up
                 # the file browser in the last accessed directory.
