@@ -6,7 +6,8 @@ $Id$
 """
 
 import string, wutil, Tkinter
-import gki, gkiopengl
+import gki
+import os
 
 class GWMError(Exception):
     pass
@@ -128,7 +129,31 @@ class GraphicsWindowManager(gki.GkiProxy):
 # the module.
 
 if wutil.hasGraphics:
-    _g = GraphicsWindowManager(gkiopengl.GkiOpenGlKernel)
+    # see which kernel to use
+    if os.environ.has_key('PYRAFGRAPHICS'):
+        kernelname = os.environ['PYRAFGRAPHICS'].lower()
+        if kernelname == "tkplot":
+            import gkitkplot
+            kernel = gkitkplot.GkiTkplotKernel
+        elif kernelname == "opengl":
+            try:
+                import gkiopengl
+                kernel = gkiopengl.GkiOpenGlKernel
+            except ImportError:
+                print "OpenGL module not installed, using default instead"
+                kernel = "default"
+        else:
+            print "Graphics kernel specified by PYRAFGRAPHICS=", \
+                   kernelname, " not found."
+            print "Using default kernel instead."
+            kernel = "default"
+    else:
+        kernel = "default"
+    if kernel == "default":
+        import gkitkplot
+        kernel = gkitkplot.GkiTkplotKernel
+    _g = GraphicsWindowManager(kernel)
+#    _g = GraphicsWindowManager(gkitkplot.GkiTkplotKernel)
     wutil.isGwmStarted = 1
 else:
     _g = None

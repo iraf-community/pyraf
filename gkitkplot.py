@@ -1,39 +1,32 @@
 """
-OpenGL implementation of the gki kernel class
+Tkplot implementation of the gki kernel class
 
 $Id$
 """
 
-import Numeric, os, sys, string, re, wutil
+import Numeric, sys, string, wutil
 import Tkinter, msgiobuffer
-from OpenGL.GL import *
-import toglcolors
-import gki, gkitkbase, gkigcur, opengltext, irafgwcs
-import openglutil
+import Ptkplot
+import gki, gkitkbase, gkigcur, tkplottext, textattrib, irafgwcs
+
+TK_LINE_STYLE_PATTERNS = ['.','.','_','.','.._']
 
 #-----------------------------------------------
 
 
-#-----------------------------------------------
+class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
 
-class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
-
-    """OpenGL graphics kernel implementation"""
+    """Tkplot graphics kernel implementation"""
 
     def makeGWidget(self, width=600, height=420):
 
         """Make the graphics widget"""
 
-        # Ptogl is local substitute for OpenGL.Tk
-        # (to remove goofy 3d cursor effects)
-        # Import is placed here since it can be slow, so delay import to
-        # a time that a window is really needed. Subsequent imports will
-        # be fast.
-        import Ptogl
-        self.gwidget = Ptogl.Ptogl(self.top,width=width,height=height)
+        self.gwidget = Ptkplot.PyrafCanvas(self.top,
+                                           width=width, height=height)
+#        self.gwidget = Ptogl.Ptogl(self.top,width=width,height=height)
         self.gwidget.firstPlotDone = 0
-        self.colorManager = glColorManager(self.irafGkiConfig,
-                                self.gwidget.rgbamode)
+        self.colorManager = tkColorManager(self.irafGkiConfig)
         self.startNewPage()
         self._gcursorObject = gkigcur.Gcursor(self)
         self.gRedraw()
@@ -147,11 +140,11 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
 
     # special methods that go into the function tables
 
-    def _glAppend(self, gl_function, *args):
+    def _tkplotAppend(self, tkplot_function, *args):
 
-        """append a 2-tuple (gl_function, args) to the glBuffer"""
+        """append a 2-tuple (tkplot_function, args) to the glBuffer"""
 
-        self.drawBuffer.append((gl_function,args))
+        self.drawBuffer.append((tkplot_function,args))
 
     def gki_clearws(self, arg):
 
@@ -172,12 +165,12 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
 
         # commit pending WCS changes when draw is found
         self.wcs.commit()
-        self._glAppend(self.gl_polyline, gki.ndc(arg[1:]))
+        self._tkplotAppend(self.tkplot_polyline, gki.ndc(arg[1:]))
 
     def gki_polymarker(self, arg):
 
         self.wcs.commit()
-        self._glAppend(self.gl_polymarker, gki.ndc(arg[1:]))
+        self._tkplotAppend(self.tkplot_polymarker, gki.ndc(arg[1:]))
 
     def gki_text(self, arg):
 
@@ -185,12 +178,12 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
         x = gki.ndc(arg[0])
         y = gki.ndc(arg[1])
         text = arg[3:].astype(Numeric.Int8).tostring()
-        self._glAppend(self.gl_text, x, y, text)
+        self._tkplotAppend(self.tkplot_text, x, y, text)
 
     def gki_fillarea(self, arg):
 
         self.wcs.commit()
-        self._glAppend(self.gl_fillarea, gki.ndc(arg[1:]))
+        self._tkplotAppend(self.tkplot_fillarea, gki.ndc(arg[1:]))
 
     def gki_putcellarray(self, arg):
 
@@ -202,14 +195,14 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
         cursorNumber = arg[0]
         x = gki.ndc(arg[1])
         y = gki.ndc(arg[2])
-        self._glAppend(self.gl_setcursor, cursorNumber, x, y)
+        self._tkplotAppend(self.tkplot_setcursor, cursorNumber, x, y)
 
     def gki_plset(self, arg):
 
         linetype = arg[0]
         linewidth = arg[1]/gki.GKI_FLOAT_FACTOR
         color = arg[2]
-        self._glAppend(self.gl_plset, linetype, linewidth, color)
+        self._tkplotAppend(self.tkplot_plset, linetype, linewidth, color)
 
     def gki_pmset(self, arg):
 
@@ -217,7 +210,7 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
         #XXX Is this scaling for marksize correct?
         marksize = gki.ndc(arg[1])
         color = arg[2]
-        self._glAppend(self.gl_pmset, marktype, marksize, color)
+        self._tkplotAppend(self.tkplot_pmset, marktype, marksize, color)
 
     def gki_txset(self, arg):
 
@@ -230,7 +223,7 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
         textFont = arg[6]
         textQuality = arg[7]
         textColor = arg[8]
-        self._glAppend(self.gl_txset, charUp, charSize, charSpace, textPath,
+        self._tkplotAppend(self.tkplot_txset, charUp, charSize, charSpace, textPath,
                 textHorizontalJust, textVerticalJust, textFont,
                 textQuality, textColor)
 
@@ -238,7 +231,7 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
 
         fillstyle = arg[0]
         color = arg[1]
-        self._glAppend(self.gl_faset, fillstyle, color)
+        self._tkplotAppend(self.tkplot_faset, fillstyle, color)
 
     def gki_getcursor(self, arg):
 
@@ -270,21 +263,6 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
         # events for our own gwidget
         ta = self.textAttributes
         ta.setFontSize(self)
-        cm = self.colorManager
-        if cm.rgbamode:
-            glClearColor(0,0,0,0)
-        else:
-            glClearIndex(cm.indexmap[0])
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        if not openglutil.oldpyopengl:
-            glEnableClientState(GL_VERTEX_ARRAY) ## for pyOpenGL V2
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0,1,0,1,-1,1)
-        glDisable(GL_LIGHTING)
-        glDisable(GL_DITHER)
-        glShadeModel(GL_FLAT)
-
         # finally ready to do the drawing
         self.activate()
         for (function, args) in self.drawBuffer.get():
@@ -296,88 +274,83 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
     # function.  They are supposed to be stripped down to make
     # redraws as fast as possible.  (Still could be improved.)
 
-    def gl_flush(self, arg):
+    def tkplot_flush(self, arg):
 
         self.gwidget.flush()
 
-    def gl_polyline(self, vertices):
+    def tkplot_polyline(self, vertices):
 
         # First, set all relevant attributes
         la = self.lineAttributes
-        glPointSize(1.0)
-        glDisable(GL_LINE_SMOOTH)
-        glLineWidth(la.linewidth)
+        # XXX not handling linestyle yet, except for clear
         stipple = 0
-        clear = 0
         npts = len(vertices)/2
-        if la.linestyle == 0:
-            clear = 1 # "clear" linestyle, don't draw!
-        elif la.linestyle == 1:
-            pass # solid line
-        elif 2 <= la.linestyle < len(self.linestyles.patterns):
-            glEnable(GL_LINE_STIPPLE)
-            stipple = 1
-            glLineStipple(1,self.linestyles.patterns[la.linestyle])
-        if not clear:
-            self.colorManager.setDrawingColor(la.color)
+        if la.linestyle == 0: # clear
+            color = self.colorManager.setDrawingColor(0)
         else:
-            self.colorManager.setDrawingColor(0)
-        openglutil.glPlot(vertices, GL_LINE_STRIP)
-        if stipple:
-            glDisable(GL_LINE_STIPPLE)
+            color = self.colorManager.setDrawingColor(la.color)
+        options = {"fill":color,"width":la.linewidth}
+        if la.linestyle > 1:
+            options['dash'] = TK_LINE_STYLE_PATTERNS[la.linestyle]
+        # scale coordinates
+        gw = self.gwidget
+        h = gw.winfo_height()
+        w = gw.winfo_width()
+        scaled = (Numeric.array([w,-h]) *
+                  (Numeric.reshape(vertices, (npts, 2))
+                   - Numeric.array([0.,1.])))
+        apply(gw.create_line,tuple(scaled.flat.astype(Numeric.Int32)),options)
 
-    def gl_polymarker(self, vertices):
+    def tkplot_polymarker(self, vertices):
 
         # IRAF only implements points for poly marker, that makes it simple
-        ma = self.markerAttributes
-        clear = 0
+        ma = self.markerAttributes   # Marker attributes don't appear
+                                     # to be set when this mode is used though.
         npts = len(vertices)/2
-        glPointSize(1)
-        if not clear:
-            self.colorManager.setDrawingColor(ma.color)
-        else:
-            self.colorManager.setDrawingColor(0)
-        openglutil.glPlot(vertices, GL_POINTS)
+        color = self.colorManager.setDrawingColor(ma.color)
+        gw = self.gwidget
+        h = gw.winfo_height()
+        w = gw.winfo_width()
+        scaled = (Numeric.array([w,-h]) *
+                  (Numeric.reshape(vertices, (npts, 2))
+                   - Numeric.array([0.,1.]))).astype(Numeric.Int32)
+        # Lack of intrinsic Tk point mode means that they must be explicitly
+        # looped over.
+        for i in xrange(npts):
+            gw.create_oval(scaled[i,0], scaled[i,1],
+                           scaled[i,0], scaled[i,1],
+                           fill=color,outline=color)
 
-    def gl_text(self, x, y, text):
+    def tkplot_text(self, x, y, text):
 
-        opengltext.softText(self,x,y,text)
+        tkplottext.softText(self,x,y,text)
 
-    def gl_fillarea(self, vertices):
+    def tkplot_fillarea(self, vertices):
 
         fa = self.fillAttributes
         clear = 0
         polystipple = 0
         npts = len(vertices)/2
-        if fa.fillstyle == 0: # clear region
-            clear = 1
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        elif fa.fillstyle == 1: # hollow
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-        elif fa.fillstyle >= 2: # solid
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-    #       elif fa.fillstyle > 2: # hatched
-    # This is commented out since PyOpenGL does not currently support
-    # glPolygonStipple!
-    #               if fa.fillstyle > 6: fa.fillstyle = 6
-    #               t = self.hatchfills
-    #               print t
-    #               tp = t.patterns
-    #               print tp, "patterns"
-    #               fill = self.hatchfills.patterns[fa.fillstyle]
-    #               print fill, "fill"
-    #               polystipple = 1
-    #               glEnable(GL_POLYGON_STIPPLE)
-    #               glPolygonStipple(fill)
-        if not clear:
-            self.colorManager.setDrawingColor(fa.color)
-        else:
-            self.colorManager.setDrawingColor(0)
-        openglutil.glPlot(vertices, GL_POLYGON)
-        if polystipple:
-            glDisable(GL_POLYGON_STIPPLE)
+        if fa.fillstyle != 0:
+            color = self.colorManager.setDrawingColor(fa.color)
+        else: # clear region
+            color = self.colorManager.setDrawingColor(0)
+        options = {"fill":color}
+        # scale coordinates
+        gw = self.gwidget
+        h = gw.winfo_height()
+        w = gw.winfo_width()
+        scaled = (Numeric.array([w,-h]) *
+                  (Numeric.reshape(vertices, (npts, 2))
+                   - Numeric.array([0.,1.])))
+        coords = tuple(scaled.flat.astype(Numeric.Int32))
+        if fa.fillstyle == 1: # hollow
+            apply(gw.create_line, coords+(coords[0],coords[1]), options)
+        else: # solid or clear cases
+            apply(gw.create_polygon, coords, options)
 
-    def gl_setcursor(self, cursornumber, x, y):
+
+    def tkplot_setcursor(self, cursornumber, x, y):
 
         gwidget = self.gwidget
         # wutil.MoveCursorTo uses 0,0 <--> upper left, need to convert
@@ -385,15 +358,15 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
         sy = int((1-y) * gwidget.winfo_height())
         wutil.moveCursorTo(gwidget.winfo_id(), sx, sy)
 
-    def gl_plset(self, linestyle, linewidth, color):
+    def tkplot_plset(self, linestyle, linewidth, color):
 
         self.lineAttributes.set(linestyle, linewidth, color)
 
-    def gl_pmset(self, marktype, marksize, color):
+    def tkplot_pmset(self, marktype, marksize, color):
 
         self.markerAttributes.set(marktype, marksize, color)
 
-    def gl_txset(self, charUp, charSize, charSpace, textPath,
+    def tkplot_txset(self, charUp, charSize, charSpace, textPath,
                     textHorizontalJust, textVerticalJust,
                     textFont, textQuality, textColor):
 
@@ -401,13 +374,13 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
                 textPath, textHorizontalJust, textVerticalJust, textFont,
                 textQuality, textColor)
 
-    def gl_faset(self, fillstyle, color):
+    def tkplot_faset(self, fillstyle, color):
 
         self.fillAttributes.set(fillstyle, color)
 
 #-----------------------------------------------
 
-class glColorManager:
+class tkColorManager:
 
     """Encapsulates the details of setting the graphic's windows colors.
 
@@ -420,52 +393,38 @@ class glColorManager:
     get. We do not attempt to get a private colormap.
     """
 
-    def __init__(self, config, rgbamode):
+    def __init__(self, config):
 
         self.config = config
-        self.rgbamode = rgbamode
+        self.rgbamode = 0
         self.indexmap = len(self.config.defaultColors)*[None]
         # call setColors to allocate colors after widget is created
 
     def setColors(self, widget):
 
-        """Does nothing in rgba mode, allocates colors in index mode"""
-
-        if not self.rgbamode:
-            colorset = self.config.defaultColors
-            for i in xrange(len(self.indexmap)):
-                self.indexmap[i] = toglcolors.AllocateColor(widget.toglStruct,
-                                                   colorset[i][0],
-                                                   colorset[i][1],
-                                                   colorset[i][2])
-        self.setCursorColor()
+        """Not needed for Tkplot, a nop"""
+        pass
 
     def setCursorColor(self, irafColorIndex=None):
 
         """Set crosshair cursor color to given index
 
         Only has an effect in index color mode."""
-        import Ptogl
+#        import Ptogl
         if irafColorIndex is not None:
             self.config.setCursorColor(irafColorIndex)
-        if self.rgbamode:
-            Ptogl.cursorTrue = self.config.defaultColors[self.config.cursorColor]
-        else:
+#        else:
             # cursor color is result of xor-ing desired cursor color with
             # background color
-            fgcolor = self.indexmap[self.config.cursorColor]
-            bgcolor = self.indexmap[0]
-            Ptogl.cursorColor = fgcolor ^ bgcolor
+#            fgcolor = self.indexmap[self.config.cursorColor]
+#            bgcolor = self.indexmap[0]
+#            Ptogl.cursorColor = fgcolor ^ bgcolor
 
     def setDrawingColor(self, irafColorIndex):
 
-        """Apply the specified iraf color to the current OpenGL drawing
-
-        state using the appropriate mode."""
-        if self.rgbamode:
-            color = self.config.defaultColors[irafColorIndex]
-            glColor3f(color[0], color[1], color[2])
-        else:
-            glIndex(self.indexmap[irafColorIndex])
-
-#-----------------------------------------------
+        """Return the specified iraf color usable by Tkinter"""
+        color = self.config.defaultColors[irafColorIndex]
+        red = int(255*color[0])
+        green = int(255*color[1])
+        blue = int(255*color[2])
+        return "#%02x%02x%02x" % (red,green,blue)

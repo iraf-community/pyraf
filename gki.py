@@ -40,7 +40,10 @@ $Id$
 
 import Numeric
 from types import *
-import os, sys, string, wutil, graphcap, iraf
+import os, sys, string, re, wutil, graphcap, iraf
+import fontdata
+
+nIrafColors = 16
 
 BOI = -1  # beginning of instruction sentinel
 NOP = 0   # no op value
@@ -87,6 +90,27 @@ CONTROL_DEACTIVATEWS = 4
 CONTROL_CLEARWS = 6
 CONTROL_SETWCS = 26
 CONTROL_GETWCS = 27
+
+# constants for text attributes
+
+CHARPATH_LEFT  = 2
+CHARPATH_RIGHT = 3
+CHARPATH_UP = 4
+CHARPATH_DOWN = 5
+JUSTIFIED_NORMAL = 0
+JUSTIFIED_CENTER = 1
+JUSTIFIED_TOP = 6
+JUSTIFIED_BOTTOM = 7
+JUSTIFIED_LEFT = 2
+JUSTIFIED_RIGHT = 3
+FONT_ROMAN = 8
+FONT_GREEK = 9
+FONT_ITALIC = 10
+FONT_BOLD = 11
+FQUALITY_NORMAL = 0
+FQUALITY_LOW = 12
+FQUALITY_MEDIUM = 13
+FQUALITY_HIGH = 14
 
 # Names of methods in GkiKernel that handle the various opcodes
 # This also can be useful for debug prints of opcode values.
@@ -137,6 +161,15 @@ control2name.update({
     CONTROL_SETWCS: 'control_setwcs',
     CONTROL_GETWCS: 'control_getwcs',
     })
+
+standardWarning = """
+The graphics kernel for IRAF tasks has just received a metacode
+instruction (%s) it never expected to see.  Please inform the
+STSDAS group of this occurrence."""
+
+standardNotImplemented = \
+"""This IRAF task requires a graphics kernel facility not implemented
+in the Pyraf graphics kernel (%s)."""
 
 class EditHistory:
     """Keeps track of where undoable appends are made so they can be
@@ -673,6 +706,80 @@ def gkiTranslate(metacode, functionTable):
             apply(f,(arg,))
         opcode, arg = gkiBuffer.getNextCode()
 
+class DrawBuffer:
+
+    """implement a buffer for draw commands which allocates memory in blocks
+    so that a new memory allocation is not needed everytime functions are
+    appended"""
+
+    INCREMENT = 500
+
+    def __init__(self):
+
+        self.buffer = None
+        self.bufferSize = 0
+        self.bufferEnd = 0
+        self.nextTranslate = 0
+
+    def __len__(self):
+
+        return self.bufferEnd
+
+    def reset(self):
+
+        """Discard everything up to nextTranslate pointer"""
+
+        newEnd = self.bufferEnd - self.nextTranslate
+        if newEnd > 0:
+            self.buffer[0:newEnd] = self.buffer[self.nextTranslate:self.bufferEnd]
+            self.bufferEnd = newEnd
+        else:
+            self.buffer = None
+            self.bufferSize = 0
+            self.bufferEnd = 0
+        self.nextTranslate = 0
+
+    def append(self, funcargs):
+
+        """Append a single (function,args) tuple to the list"""
+
+        if self.bufferSize < self.bufferEnd + 1:
+            # increment buffer size and copy into new array
+            self.bufferSize = self.bufferSize + self.INCREMENT
+            newbuffer = self.bufferSize*[None]
+            if self.bufferEnd > 0:
+                newbuffer[0:self.bufferEnd] = self.buffer[0:self.bufferEnd]
+            self.buffer = newbuffer
+        self.buffer[self.bufferEnd] = funcargs
+        self.bufferEnd = self.bufferEnd + 1
+
+    def get(self):
+
+        """Get current contents of buffer
+
+        Note that this returns a view into the Numeric array,
+        so if the return value is modified the buffer will change too.
+        """
+
+        if self.buffer:
+            return self.buffer[0:self.bufferEnd]
+        else:
+            return []
+
+    def getNewCalls(self):
+
+        """Return tuples (function, args) with all new calls in buffer"""
+
+        ip = self.nextTranslate
+        if ip < self.bufferEnd:
+            self.nextTranslate = self.bufferEnd
+            return self.buffer[ip:self.bufferEnd]
+        else:
+            return []
+
+#-----------------------------------------------
+
+
 class GkiProxy(GkiKernel):
 
     """Base class for kernel proxy
@@ -1010,6 +1117,326 @@ def printPlot(window=None):
     stdout = kernel.getStdout(default=sys.stdout)
     stdout.write("%s\n" % msg)
 
+
+class IrafGkiConfig:
+
+    """Holds configurable aspects of IRAF plotting behavior
+
+    This gets instantiated as a singleton instance so all windows
+    can share the same configuration.
+    """
+
+    def __init__(self):
+
+        # All set to constants for now, eventually allow setting other
+        # values
+
+        # h = horizontal font dimension, v = vertical font dimension
+
+        # ratio of font height to width
+        self.fontAspect = 42./27.
+        self.fontMax2MinSizeRatio = 4.
+
+        # Empirical constants for font sizes
+        self.UnitFontHWindowFraction = 1./80
+        self.UnitFontVWindowFraction = 1./45
+
+        # minimum unit font size in pixels (set to None if not relevant)
+        self.minUnitHFontSize = 5.
+        self.minUnitVFontSize = self.minUnitHFontSize * self.fontAspect
+
+        # maximum unit font size in pixels (set to None if not relevant)
+        self.maxUnitHFontSize = \
+                self.minUnitHFontSize * self.fontMax2MinSizeRatio
+        self.maxUnitVFontSize = self.maxUnitHFontSize * self.fontAspect
+
+        # offset constants to match iraf's notion of where 0,0 is relative
+        # to the coordinates of a character
+        self.vFontOffset = 0.0
+        self.hFontOffset = 0.0
+
+        # font sizing switch
+        self.isFixedAspectFont = 1
+
+        # List of rgb tuples (0.0-1.0 range) for the default IRAF set of colors
+        self.defaultColors = [
+                (0.,0.,0.),  # black
+                (1.,1.,1.),  # white
+                (1.,0.,0.),  # red
+                (0.,1.,0.),  # green
+                (0.,0.,0.1), # blue
+                (0.,1.,1.),  # cyan
+                (1.,1.,0.),  # yellow
+                (1.,0.,1.),  # magenta
+                (1.,1.,1.),  # white
+                # (0.32,0.32,0.32),  # gray32
+                (0.18,0.31,0.31),  # IRAF blue-green
+                (1.,1.,1.),  # white
+                (1.,1.,1.),  # white
+                (1.,1.,1.),  # white
+                (1.,1.,1.),  # white
+                (1.,1.,1.),  # white
+                (1.,1.,1.),  # white
+        ]
+        self.cursorColor = 2  # red
+        if len(self.defaultColors) != nIrafColors:
+            raise ValueError("defaultColors should have %d elements (has %d)" %
+                (nIrafColors, len(self.defaultColors)))
+
+        # old colors
+        #       (1.,0.5,0.),      # coral
+        #       (0.7,0.19,0.38),  # maroon
+        #       (1.,0.65,0.),     # orange
+        #       (0.94,0.9,0.55),  # khaki
+        #       (0.85,0.45,0.83), # orchid
+        #       (0.25,0.88,0.82), # turquoise
+        #       (0.91,0.53,0.92), # violet
+        #       (0.96,0.87,0.72)  # wheat
+
+    def setCursorColor(self, color):
+        if not 0 <= color < len(self.defaultColors):
+            raise ValueError("Bad cursor color (%d) should be >=0 and <%d" %
+                (color, len(self.defaultColors)-1))
+        self.cursorColor = color
+
+    def fontSize(self, gwidget):
+
+        """Determine the unit font size for the given setup in pixels.
+        The unit size refers to the horizonal size of fixed width characters
+        (allow for proportionally sized fonts later?).
+
+        Basically, if font aspect is not fixed, the unit font size is
+        proportional to the window dimension (for v and h independently),
+        with the exception that if min or max pixel sizes are enabled,
+        they are 'clipped' at the specified value. If font aspect is fixed,
+        then the horizontal size is the driver if the window is higher than
+        wide and vertical size for the converse.
+        """
+
+        hwinsize = gwidget.winfo_width()
+        vwinsize = gwidget.winfo_height()
+        hsize = hwinsize * self.UnitFontHWindowFraction
+        vsize = vwinsize * self.UnitFontVWindowFraction
+        if self.minUnitHFontSize is not None:
+            hsize = max(hsize,self.minUnitHFontSize)
+        if self.minUnitVFontSize is not None:
+            vsize = max(vsize,self.minUnitVFontSize)
+        if self.maxUnitHFontSize is not None:
+            hsize = min(hsize,self.maxUnitHFontSize)
+        if self.maxUnitVFontSize is not None:
+            vsize = min(vsize,self.maxUnitVFontSize)
+        if not self.isFixedAspectFont:
+            fontAspect = vsize/hsize
+        else:
+            hsize = min(hsize, vsize/self.fontAspect)
+            vsize = hsize * self.fontAspect
+            fontAspect = self.fontAspect
+        return (hsize, fontAspect)
+
+    def getIrafColors(self):
+
+        return self.defaultColors
+
+# create the singleton instance
+
+_irafGkiConfig = IrafGkiConfig()
+
+#-----------------------------------------------
+
+class IrafLineStyles:
+
+    def __init__(self):
+
+        self.patterns = [0x0000,0xFFFF,0x00FF,0x5555,0x33FF]
+
+class IrafHatchFills:
+
+    def __init__(self):
+
+        # Each fill pattern is a 32x4 ubyte array (represented as 1-d).
+        # These are computed on initialization rather than using a
+        # 'data' type initialization since they are such simple patterns.
+        # these arrays are stored in a pattern list. Pattern entries
+        # 0-2 should never be used since they are not hatch patterns.
+
+        # so much for these, currently PyOpenGL does not support
+        # glPolygonStipple()! But adding it probably is not too hard.
+
+        self.patterns = [None]*7
+        # pattern 3, vertical stripes
+        p = Numeric.zeros(128,Numeric.Int8)
+        p[0:4] = [0x92,0x49,0x24,0x92]
+        for i in xrange(31):
+            p[(i+1)*4:(i+2)*4] = p[0:4]
+        self.patterns[3] = p
+        # pattern 4, horizontal stripes
+        p = Numeric.zeros(128,Numeric.Int8)
+        p[0:4] = [0xFF,0xFF,0xFF,0xFF]
+        for i in xrange(10):
+            p[(i+1)*12:(i+1)*12+4] = p[0:4]
+        self.patterns[4] = p
+        # pattern 5, close diagonal striping
+        p = Numeric.zeros(128,Numeric.Int8)
+        p[0:12] = [0x92,0x49,0x24,0x92,0x24,0x92,0x49,0x24,0x49,0x24,0x92,0x49]
+        for i in xrange(9):
+            p[(i+1)*12:(i+2)*12] = p[0:12]
+        p[120:128] = p[0:8]
+        self.patterns[5] = p
+        # pattern 6, diagonal stripes the other way
+        p = Numeric.zeros(128,Numeric.Int8)
+        p[0:12] = [0x92,0x49,0x24,0x92,0x49,0x24,0x92,0x49,0x24,0x92,0x49,0x24]
+        for i in xrange(9):
+            p[(i+1)*12:(i+2)*12] = p[0:12]
+        p[120:128] = p[0:8]
+        self.patterns[6] = p
+
+class LineAttributes:
+
+    def __init__(self):
+
+        self.linestyle = 1
+        self.linewidth = 1.0
+        self.color = 1
+
+    def set(self, linestyle, linewidth, color):
+
+        self.linestyle = linestyle
+        self.linewidth = linewidth
+        self.color = color
+
+class FillAttributes:
+
+    def __init__(self):
+
+        self.fillstyle = 1
+        self.color = 1
+
+    def set(self, fillstyle, color):
+
+        self.fillstyle = fillstyle
+        self.color = color
+
+class MarkerAttributes:
+
+    def __init__(self):
+
+        # the first two attributes are not currently used in IRAF, so ditch'em
+        self.color = 1
+
+    def set(self, markertype, size, color):
+
+        self.color = color
+
+
+class TextAttributes:
+
+    # Used as a structure definition basically, perhaps it should be made
+    # more sophisticated.
+    def __init__(self):
+
+        self.charUp = 90.
+        self.charSize = 1.
+        self.charSpace = 0.
+        self.textPath = CHARPATH_RIGHT
+        self.textHorizontalJust = JUSTIFIED_NORMAL
+        self.textVerticalJust = JUSTIFIED_NORMAL
+        self.textFont = FONT_ROMAN
+        self.textQuality = FQUALITY_NORMAL
+        self.textColor = 1
+        self.font = fontdata.font1
+        # Place to keep font size and aspect for current window dimensions
+        self.hFontSize = None
+        self.fontAspect = None
+
+    def set(self,charUp=90., charSize=1.,charSpace=0.,
+            textPath=CHARPATH_RIGHT, textHorizontalJust=JUSTIFIED_NORMAL,
+            textVerticalJust=JUSTIFIED_NORMAL, textFont=FONT_ROMAN,
+            textQuality=FQUALITY_NORMAL, textColor=1):
+
+        self.charUp = charUp
+        self.charSize = charSize
+        self.charSpace = charSpace
+        self.textPath = textPath
+        self.textHorizontalJust = textHorizontalJust
+        self.textVerticalJust = textVerticalJust
+        self.textFont = textFont
+        self.textQuality = textQuality
+        self.textColor = textColor
+        # Place to keep font size and aspect for current window dimensions
+
+    def setFontSize(self, win):
+
+        """Set the unit font size for a given window using the iraf
+        configuration parameters contained in an attribute class"""
+
+        conf = win.irafGkiConfig
+        self.hFontSize, self.fontAspect = conf.fontSize(win.gwidget)
+
+    def getFontSize(self):
+
+        return self.hFontSize, self.fontAspect
+
+#-----------------------------------------------
+
+class FilterStderr:
+
+    """Filter GUI messages out of stderr during plotting"""
+
+    pat = re.compile('\031[^\035]*\035\037')
+
+    def __init__(self):
+        self.fh = sys.stderr
+
+    def write(self, text):
+        # remove GUI junk
+        edit = self.pat.sub('',text)
+        if edit: self.fh.write(edit)
+
+    def flush(self):
+        self.fh.flush()
+
+    def close(self):
+        pass
+
+#-----------------------------------------------
+
+class StatusLine:
+
+    def __init__(self, status, name):
+        self.status = status
+        self.windowName = name
+
+    def readline(self):
+        """Shift focus to graphics, read line from status, restore focus"""
+        wutil.focusController.setFocusTo(self.windowName)
+        rv = self.status.readline()
+        return rv
+
+    def read(self, n=0):
+        """Return up to n bytes from status line
+
+        Reads only a single line.  If n<=0, just returns the line.
+        """
+        s = self.readline()
+        if n>0:
+            return s[:n]
+        else:
+            return s
+
+    def write(self, text):
+        self.status.updateIO(text=string.strip(text))
+
+    def flush(self):
+        self.status.update_idletasks()
+
+    def close(self):
+        # clear status line
+        self.status.updateIO(text="")
+
+    def isatty(self):
+        return 1
+
+#-----------------------------------------------
 
 #********************************
 

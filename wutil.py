@@ -37,6 +37,12 @@ except ImportError:
         magicConstant = 0x5413
     elif platform[:4] == 'osf1':
         magicConstant = 0x40087468
+    elif platform == 'darwin':
+        try:
+            import termios
+            magicConstant = termios.TIOCGWINSZ
+        except ImportError:
+            magicConstant = 1074275912
     else:
         raise ImportError(
                 "wutil.py: Needs definition of TIOCGWINSZ constant for platform %s"

@@ -5,7 +5,7 @@ $Id$
 """
 
 import string, os, sys, Numeric, Tkinter
-import gwm, wutil, iraf, openglcmd, gki, irafutils
+import gwm, wutil, iraf, gkicmd, gki, irafutils
 
 # The following class attempts to emulate the standard IRAF gcursor
 # mode of operation. That is to say, it is basically a keyboard driven
@@ -78,8 +78,8 @@ class Gcursor:
     def cursorOff(self):
         """Turn cross-hair cursor off"""
         self.gwidget.deactivateSWCursor()
-        self.gwidget.lastX = self.x
-        self.gwidget.lastY = self.y
+        self.gwidget.lastX = self.x/self.gwidget.winfo_width()
+        self.gwidget.lastY = self.y/self.gwidget.winfo_height()
 
     def bind(self):
 
@@ -113,15 +113,16 @@ class Gcursor:
         NDC coordinates"""
 
         gwidget = self.gwidget
-        sx = gwidget.winfo_pointerx() - gwidget.winfo_rootx()
-        sy = gwidget.winfo_pointery() - gwidget.winfo_rooty()
-        self.x = sx
-        self.y = sy
-        # get current window size
-        winSizeX = gwidget.winfo_width()
-        winSizeY = gwidget.winfo_height()
-        ndcX = (sx+0.5)/winSizeX
-        ndcY = (winSizeY-0.5-sy)/winSizeY
+        width  = gwidget.winfo_width()
+        height = gwidget.winfo_height()
+        if gwidget._SWCursor.isLastSWmove:
+            ndcX = gwidget._SWCursor.lastx
+            ndcY = gwidget._SWCursor.lasty
+        else:
+            sx = gwidget.winfo_pointerx() - gwidget.winfo_rootx()
+            sy = gwidget.winfo_pointery() - gwidget.winfo_rooty()
+            ndcX = (sx+0.5)/width
+            ndcY = (height-0.5-sy)/height
         return ndcX, ndcY
 
     def getMousePosition(self, event):
@@ -132,28 +133,34 @@ class Gcursor:
     def moveCursorRelative(self, event, deltaX, deltaY):
 
         gwidget = self.gwidget
+        width  = gwidget.winfo_width()
+        height = gwidget.winfo_height()
         # only force focus if window is viewable
         if not wutil.isViewable(self.top.winfo_id()):
             return
         # if no previous position, ignore
-        newX = event.x + deltaX
-        newY = event.y + deltaY
+        cursorobj = gwidget._SWCursor
+        newX = cursorobj.lastx * width  + deltaX
+        newY = cursorobj.lasty * height + deltaY
+
         if newX < 0:
             newX = 0
         if newY < 0:
             newY = 0
-        if newX >= gwidget.winfo_width():
-            newX = gwidget.winfo_width() - 1
-        if newY >= gwidget.winfo_height():
-            newY = gwidget.winfo_height() - 1
-        wutil.moveCursorTo(gwidget.winfo_id(),newX,newY)
+        if newX >= width:
+            newX = width - 1
+        if newY >= height:
+            newY = height - 1
+        gwidget.moveCursorTo(newX, newY, SWmove=1)
+        self.x = newX
+        self.y = newY
 
-    def moveUp(self, event): self.moveCursorRelative(event, 0, -1)
-    def moveDown(self, event): self.moveCursorRelative(event, 0, 1)
+    def moveUp(self, event): self.moveCursorRelative(event, 0, 1)
+    def moveDown(self, event): self.moveCursorRelative(event, 0, -1)
     def moveRight(self, event): self.moveCursorRelative(event, 1, 0)
     def moveLeft(self, event): self.moveCursorRelative(event, -1, 0)
-    def moveUpBig(self, event): self.moveCursorRelative(event, 0, -5)
-    def moveDownBig(self, event): self.moveCursorRelative(event, 0, 5)
+    def moveUpBig(self, event): self.moveCursorRelative(event, 0, 5)
+    def moveDownBig(self, event): self.moveCursorRelative(event, 0, -5)
     def moveRightBig(self, event): self.moveCursorRelative(event, 5, 0)
     def moveLeftBig(self, event): self.moveCursorRelative(event, -5, 0)
 
@@ -187,7 +194,7 @@ class Gcursor:
 
         x,y = self.getNDCCursorPos()
         if self.markcur and key not in 'q?:=UR':
-            metacode = openglcmd.markCross(x,y)
+            metacode = gkicmd.markCross(x,y)
             self.appendMetacode(metacode)
         if key == ':':
             colonString = self.readString(prompt=": ")
@@ -214,7 +221,7 @@ class Gcursor:
                 self.window.redrawOriginal()
             elif key == 'T':
                 textString = self.readString(prompt="Annotation string: ")
-                metacode = openglcmd.text(textString,x,y)
+                metacode = gkicmd.text(textString,x,y)
                 self.appendMetacode(metacode)
             elif key == 'U':
                 self.window.undoN()

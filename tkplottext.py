@@ -1,4 +1,4 @@
-"""Implements text rendering using stroked font and OpenGL
+"""Implements text rendering using stroked font and Tkplot/X
 
 $Id$
 """
@@ -28,10 +28,7 @@ by a system-wide configuration state. See gkiopengl.py
 import fontdata
 import Numeric
 import math
-from OpenGL.GL import *
-import openglutil
-from textattrib import *
-
+import gki
 
 def softText(win,x,y,textstr):
 
@@ -52,25 +49,25 @@ def softText(win,x,y,textstr):
     # First include added space if any
     hspace = fsize * hsize * (1. + ta.charSpace)
     vspace = fsize * vsize * (1. + ta.charSpace)
-    if ta.textPath in (CHARPATH_LEFT, CHARPATH_RIGHT):
+    if ta.textPath in (gki.CHARPATH_LEFT, gki.CHARPATH_RIGHT):
         dx = hspace
-        if ta.textPath == CHARPATH_LEFT: dx = -dx
+        if ta.textPath == gki.CHARPATH_LEFT: dx = -dx
         dy = 0.
     else:
         dx = 0.
         dy = -vspace
-        if ta.textPath == CHARPATH_UP: dy = -dy
+        if ta.textPath == gki.CHARPATH_UP: dy = -dy
     # Figure out 'path' size of the text string for use in justification
     xpath,ypath = (dx*(len(textstr)-1),dy*(len(textstr)-1))
     charUp = math.fmod(ta.charUp, 360.)
     if charUp < 0: charUp = charUp + 360.
-    if ta.textPath == CHARPATH_RIGHT:
+    if ta.textPath == gki.CHARPATH_RIGHT:
         textdir = math.fmod(charUp+270,360.)
-    elif ta.textPath == CHARPATH_LEFT:
+    elif ta.textPath == gki.CHARPATH_LEFT:
         textdir = math.fmod(charUp+90,360.)
-    elif ta.textPath ==     CHARPATH_UP:
+    elif ta.textPath ==     gki.CHARPATH_UP:
         textdir = charUp
-    elif ta.textPath ==     CHARPATH_DOWN:
+    elif ta.textPath ==     gki.CHARPATH_DOWN:
         textdir = math.fmod(charUp+180,360.)
     # IRAF definition of justification is a bit weird, justification is
     # for the text string relative to the window. So a rotated string will
@@ -89,20 +86,20 @@ def softText(win,x,y,textstr):
                                             abs(-sinv*hsize-cosv*vsize))
     xoffset, yoffset = (0., 0.)
     xcharoff, ycharoff = (0., 0.)
-    if ta.textHorizontalJust == JUSTIFIED_CENTER:
+    if ta.textHorizontalJust == gki.JUSTIFIED_CENTER:
         xoffset = -xpathwin/2.
-    elif ta.textHorizontalJust == JUSTIFIED_RIGHT:
+    elif ta.textHorizontalJust == gki.JUSTIFIED_RIGHT:
         if not left: xoffset = -xpathwin
         xcharoff = -xcharsize/2.
-    elif ta.textHorizontalJust in (JUSTIFIED_LEFT,JUSTIFIED_NORMAL):
+    elif ta.textHorizontalJust in (gki.JUSTIFIED_LEFT,gki.JUSTIFIED_NORMAL):
         if left: xoffset = xpathwin
         xcharoff = xcharsize/2.
-    if ta.textVerticalJust == JUSTIFIED_CENTER:
+    if ta.textVerticalJust == gki.JUSTIFIED_CENTER:
         yoffset = -ypathwin/2.
-    elif ta.textVerticalJust == JUSTIFIED_TOP:
+    elif ta.textVerticalJust == gki.JUSTIFIED_TOP:
         if up: yoffset = -ypathwin
         ycharoff = -ycharsize/2.
-    elif ta.textVerticalJust in (JUSTIFIED_BOTTOM, JUSTIFIED_NORMAL):
+    elif ta.textVerticalJust in (gki.JUSTIFIED_BOTTOM, gki.JUSTIFIED_NORMAL):
         if not up: yoffset = ypathwin
         ycharoff = ycharsize/2.
     xNetOffset = xoffset + xcharoff
@@ -112,37 +109,28 @@ def softText(win,x,y,textstr):
     # when drawing the character.
 
     # Now start drawing!
-
-    # Translate drawing coordinates to specified x,y and rescale to pixel units
-    glMatrixMode(GL_MODELVIEW)
-    glPushMatrix()
-    try:
-        glTranslatef(x,y,0.)
-        xwin = float(win.gwidget.winfo_width())
-        ywin = float(win.gwidget.winfo_height())
-        glScalef(1./xwin,1./ywin,1.)
-        # Apply above computed pixel offsets
-        glTranslatef(xNetOffset,yNetOffset,0.)
-        # Rotate so that charUp is aligned with x-axis (expects angle in deg!)
-        glRotatef(charUp-90.,0.,0.,1.)
-        # Apply offset to take into account our fonts have origin 0 at bottom
-        #   left hand corner, not center as assumed above.
-        glTranslatef(-fsize*hsize/2.,-fsize*vsize/2.,0)
-        glLineWidth(1.0)
-        win.colorManager.setDrawingColor(ta.textColor)
-        # The main event!
-        for char in textstr:
-            drawchar(char,ta.font,fsize*hsize,fontAspect)
-            glTranslatef(dx,dy,0.)
-    finally:
-        glPopMatrix()
-
-def drawchar(char,font,size,aspect):
-
-    # draw character with origin at bottom left corner of character box
-    charstrokes = font[ord(char)-ord(' ')]
-    for i in xrange(len(charstrokes[0])):
-        vertex = Numeric.zeros((len(charstrokes[0][i]),2),Numeric.Float64)
-        vertex[:,0] = size * charstrokes[0][i]/27.
-        vertex[:,1] = size * charstrokes[1][i] * aspect/27.
-        openglutil.glPlot(vertex.flat, GL_LINE_STRIP)
+    gw = win.gwidget
+    xwin = float(gw.winfo_width())
+    ywin = float(gw.winfo_height())
+    color = win.colorManager.setDrawingColor(ta.textColor)
+    options = {"fill":color}
+    font = ta.font
+    size = fsize*hsize
+    cosrot = Numeric.cos((charUp-90)*Numeric.pi/180)
+    sinrot = Numeric.sin((charUp-90)*Numeric.pi/180)
+    nchar = 0
+    # The main event!
+    for char in textstr:
+        # draw character with origin at bottom left corner of character box
+        charstrokes = ta.font[ord(char)-ord(' ')]
+        for i in xrange(len(charstrokes[0])):
+            vertex = Numeric.zeros((len(charstrokes[0][i]),2),Numeric.Float64)
+            xf = size * charstrokes[0][i]/27. -fsize*hsize/2.
+            yf = size * charstrokes[1][i]*fontAspect/27. - fsize*vsize/2.
+            vertex[:,0]=      cosrot*xf - sinrot*yf + \
+                                             xNetOffset + xwin*x  + nchar*dx
+            vertex[:,1]=ywin-(sinrot*xf + cosrot*yf + \
+                                             yNetOffset + ywin*y) + nchar*dy
+            apply(gw.create_line, tuple(vertex.flat.astype(Numeric.Int32)),
+                      options)
+        nchar = nchar + 1
