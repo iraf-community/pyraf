@@ -87,6 +87,10 @@ if dirname not in sys.path:
 	sys.path.insert(0, ".")
 del dirname
 
+# The following is to grab the terminal window's id at the earliest
+# possible moment
+import wutil
+
 import iraf
 
 help = iraf.help
