@@ -498,6 +498,7 @@ class GkiController(GkiKernel):
 		self.lastDevName = None
 		self.gcount = 0 # an activity counter
 		self.lastFlushCount = 0
+		self._stdioStack = []
 
 	# most methods simply defer to stdgraph
 
@@ -543,11 +544,26 @@ class GkiController(GkiKernel):
 
 	# some special routines for getting and setting stdin/out/err attributes
 
-	def clrStdio(self):
+	def pushStdio(self, stdin=None, stdout=None, stderr=None):
+		"""Push current stdio settings onto stack at set new values"""
 		if self.stdgraph:
-			self.stdgraph.stdin = None
-			self.stdgraph.stdout = None
-			self.stdgraph.stderr = None
+			self._stdioStack.append((self.stdgraph.stdin,
+									self.stdgraph.stdout,
+									self.stdgraph.stderr))
+			self.stdgraph.stdin = stdin
+			self.stdgraph.stdout = stdout
+			self.stdgraph.stderr = stderr
+		else:
+			self._stdioStack.append((None,None,None))
+
+	def popStdio(self):
+		"""Restore stdio settings from stack"""
+		if self.stdgraph:
+			self.stdgraph.stdin, \
+			self.stdgraph.stdout, \
+			self.stdgraph.stderr = self._stdioStack.pop()
+		else:
+			self._stdioStack.pop()
 
 	def setStdin(self, arg):
 		if self.stdgraph:

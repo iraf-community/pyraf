@@ -1628,6 +1628,21 @@ def prcache(*args, **kw):
 		rv = redirReset(resetList, closeFHList)
 	return rv
 
+def gflush(*args, **kw):
+	"""Flush any buffered graphics output."""
+	# handle redirection and save keywords
+	redirKW, closeFHList = redirProcess(kw)
+	if kw.has_key('_save'): del kw['_save']
+	if len(kw):
+		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+	resetList = redirApply(redirKW)
+	try:
+		import gki
+		gki.kernel.flush()
+	finally:
+		rv = redirReset(resetList, closeFHList)
+	return rv
+
 # history routines
 
 def history(n=20, *args, **kw):
@@ -1697,7 +1712,7 @@ def clDummy(*args, **kw):
 	# just ignore keywords and arguments
 	pass
 
-bye = keep = logout = clbye = gflush = cache = language = clDummy
+bye = keep = logout = clbye = cache = language = clDummy
 
 # unimplemented but no exception raised (and no message
 # printed if not in verbose mode)

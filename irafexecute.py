@@ -201,11 +201,12 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 	# Run it
 	try:
 		focusMark = wutil.focusController.getCurrentMark()
+		gki.kernel.pushStdio(None,None,None)
 		try:
 			irafprocess.run(task, stdin=stdin,stdout=stdout,stderr=stderr)
 		finally:
 			wutil.focusController.restoreToMark(focusMark)
-			gki.kernel.clrStdio()
+			gki.kernel.popStdio()
 		# do any cleanup needed on task completion
 		gwm.taskDoneCleanup()
 	except KeyboardInterrupt, exc:
@@ -311,16 +312,15 @@ class IrafProcess:
 		self.default_stdin  = stdin
 		self.default_stdout = stdout
 		self.default_stderr = stderr
-		try:
-			self.isatty = self.stdin.isatty()
-		except:
-			self.isatty = 0
+
+		self.stdinIsatty = hasattr(stdin,'isatty') and stdin.isatty()
+		self.stdoutIsatty = hasattr(stdout,'isatty') and stdout.isatty()
 
 		# redir_info tells task that IO has been redirected
 
 		redir_info = ''
-		if stdin != sys.__stdin__: redir_info = '<'
-		if stdout != sys.__stdout__: redir_info = redir_info+'>'
+		if not self.stdinIsatty: redir_info = '<'
+		if not self.stdoutIsatty: redir_info = redir_info+'>'
 
 		# update IRAF environment variables if necessary
 		if self.envVarList:
@@ -330,7 +330,7 @@ class IrafProcess:
 		# if stdout is a terminal, set the lines & columns sizes
 		# this ensures that they are up-to-date at the start of the task
 		# (which is better than the CL does)
-		if stdout.isatty():
+		if self.stdoutIsatty:
 			nlines, ncols = wutil.getTermWindowSize()
 			self.writeString('set ttynlines=%d\nset ttyncols=%d\n' %
 				(nlines, ncols))
@@ -454,9 +454,6 @@ class IrafProcess:
 			elif msg5 == 'xmit(':
 				xmit()
 			elif msg[:4] == 'bye\n':
-				# this part is the way used to signal it is time to actually
-				# feed a file for an iraf kernel, for others, it has no effect.
-				gki.kernel.flush()
 				return
 			elif msg5 in ['error','ERROR']:
 				raise IrafProcessError("IRAF task terminated abnormally\n"+msg)
@@ -599,7 +596,7 @@ class IrafProcess:
 
 			line = self.xferline
 			if not line:
-				if self.isatty:
+				if self.stdinIsatty:
 					self.setStdio()
 					# tty input, read a single line
 					line = self.stdin.readline()
@@ -674,7 +671,7 @@ class IrafProcess:
 			iraf.clExecute(cmd)
 		elif mcmd.group('stty'):
 			# terminal window size
-			if self.stdout.isatty():
+			if self.stdoutIsatty:
 				nlines, ncols = wutil.getTermWindowSize()
 			else:
 				# a kluge -- if self.stdout is not a tty, assume it is a

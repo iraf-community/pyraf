@@ -275,8 +275,11 @@ class StatusLine:
 	def close(self):
 		# clear status line
 		self.graphicsWindow.status.updateIO(text="")
+	def isatty(self):
+		return 1
+	def fileno(self):
+		return sys.__stdout__.fileno()
 
-		
 #***********************************************************
 
 def gl_eof(arg): pass
