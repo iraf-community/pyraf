@@ -4,15 +4,15 @@ OpenGL implementation of the gki kernel class
 $Id$
 """
 
-import gki
-import iraf
-import irafgwcs
-import sys, os
-import string
+import sys, os, string
+import gki, irafgwcs, iraftask, iraf
 
 # kernels to flush frequently
 # imdkern does not erase, so always flush it
-alwaysFlush = {"imdkern": 1}
+_alwaysFlush = {"imdkern": 1}
+
+# dictionary of IrafTask objects for known kernels
+_kernelDict = {}
 
 class GkiIrafKernel(gki.GkiKernel):
 
@@ -21,21 +21,31 @@ class GkiIrafKernel(gki.GkiKernel):
 	metacode in the buffer and ship it off on flushes and when the kernel
 	is shut down."""
 
-	def __init__(self, device, executable, taskname):
+	def __init__(self, device):
 
 		gki.GkiKernel.__init__(self)
-		self.executable = executable
+		graphcap = gki.getGraphcap()
+		if not graphcap.has_key(device):
+			raise iraf.IrafError(
+				"No entry found for specified stdgraph device `%s'" %
+				device)
+		gentry = graphcap[device]
 		self.device = device
-		self.taskname = taskname
+		self.executable = executable = gentry['kf']
+		self.taskname = taskname = gentry['tn']
 		self.wcs = None
+		if not _kernelDict.has_key(taskname):
+			# create special IRAF task object for this kernel
+			_kernelDict[taskname] = iraftask.IrafGKITask(taskname, executable)
+		self.task = _kernelDict[taskname]
 
 	def control_openws(self, arg):
 		# control_openws precedes gki_openws, so trigger on it to
 		# send everything before the open to the device
 		mode = arg[0]
-		if mode == 5 or alwaysFlush.has_key(self.taskname):
+		if mode == 5 or _alwaysFlush.has_key(self.taskname):
 			self.flush()
- 
+
 	def control_setwcs(self, arg):
 		self.wcs = irafgwcs.IrafGWcs(arg)
 
@@ -50,11 +60,11 @@ class GkiIrafKernel(gki.GkiKernel):
 	def gki_closews(self, arg):
 		# gki_closews follows control_closews, so trigger on it to
 		# send everything up through the close to the device
-		if alwaysFlush.has_key(self.taskname):
+		if _alwaysFlush.has_key(self.taskname):
 			self.flush()
 
 	def gki_flush(self, arg):
-		if alwaysFlush.has_key(self.taskname):
+		if _alwaysFlush.has_key(self.taskname):
 			self.flush()
 
 	def flush(self):
@@ -72,22 +82,8 @@ class GkiIrafKernel(gki.GkiKernel):
 					# this is to allow users to specify via the
 					# stdgraph device parameter the device they really
 					# want to display to
-					task = iraf.getTask(self.taskname)
-					device = task.device
-				elif self.taskname == "psikern":
-					#XXX Note that parameters are always the same for
-					#XXX graphics kernels as long as generic=yes.
-					#XXX Should not load stsdas here,
-					#XXX but rather create a (hidden) task if it does
-					#XXX not exist.  That would work for any kernel
-					#XXX that has a defined executable...
-					if not iraf.stsdas.isLoaded():
-						# load stsdas for this kernel
-						iraf.stsdas(motd="no", _doprint=0)
-					task = iraf.getTask("psikern")
-					device = self.device
+					device = iraf.stdgraph.device
 				else:
-					task = iraf.getTask(self.taskname)
 					device = self.device
 
 				#XXX In principle we could read from Stdin by
@@ -99,7 +95,7 @@ class GkiIrafKernel(gki.GkiKernel):
 
 				# Set stdin/out to defaults because if they have been
 				# redirected the task will try to read from them.
-				task(tmpfn,device=device,generic="yes",
+				self.task(tmpfn,device=device,generic="yes",
 					Stdin=sys.__stdin__, Stdout=sys.__stdout__)
 			finally:
 				os.remove(tmpfn)

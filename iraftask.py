@@ -560,7 +560,7 @@ class IrafTask:
 			if self._scrunchParpath and \
 			  (self._scrunchParpath == self._currentParpath):
 				try:
-					os.remove(self._scrunchParpath)
+					os.remove(iraf.Expand(self._scrunchParpath, noerror=1))
 				except OSError:
 					pass
 			self._currentParList = copy.deepcopy(self._defaultParList)
@@ -817,8 +817,10 @@ class IrafTask:
 					self._fullpath = exename1
 				else:
 					self._fullpath = ""
-					raise iraf.IrafError("Cannot find executable for task " +
-						self._name + "\nTried "+exename1+" and "+exename2)
+					exelist.append(exename1)
+					raise iraf.IrafError(
+						"Cannot find executable for task %s\nTried %s" %
+						(self._name, string.join(exelist,", ")))
 
 	def _initParpath(self):
 		"""Initialize parameter file paths"""
@@ -850,16 +852,12 @@ class IrafTask:
 
 		# default parameters are found with task
 		self._defaultParpath = os.path.join(basedir,self._name + ".par")
-		if not os.path.exists(self._defaultParpath):
+		if not os.path.exists(iraf.Expand(self._defaultParpath, noerror=1)):
 			self._noParFile()
 			self._defaultParpath = ""
 
 		# uparm has scrunched version of par filename with saved parameters
-		if iraf.defvar("uparm"):
-			self._scrunchParpath = iraf.Expand("uparm$" +
-						self.scrunchName() + ".par")
-		else:
-			self._scrunchParpath = None
+		self._scrunchParpath = "uparm$" + self.scrunchName() + ".par"
 
 	def _noParFile(self):
 		"""Decide what to do if .par file is not found"""
@@ -875,23 +873,24 @@ class IrafTask:
 			return
 
 		self._defaultParList = irafpar.IrafParList(self._name,
-							self._defaultParpath)
+							iraf.Expand(self._defaultParpath, noerror=1))
 
-		if self._scrunchParpath and os.path.exists(self._scrunchParpath):
+		if self._scrunchParpath and \
+				os.path.exists(iraf.Expand(self._scrunchParpath, noerror=1)):
 			self._currentParpath = self._scrunchParpath
 			self._currentParList = irafpar.IrafParList(self._name,
-								self._currentParpath)
+								iraf.Expand(self._currentParpath, noerror=1))
 			# are lists consistent?
 			if not self._isConsistentPar():
 				sys.stderr.write("uparm parameter list `%s' inconsistent "
 				  "with default parameters for %s `%s'\n" %
 				  (self._currentParpath, self.__class__.__name__, self._name,))
 				sys.stderr.flush()
-				print 'default'
-				self._defaultParList.lParam(verbose=1)
-				print 'current'
-				self._currentParList.lParam(verbose=1)
 				#XXX just toss it for now -- later can try to merge new,old
+				try:
+					os.remove(iraf.Expand(self._scrunchParpath, noerror=1))
+				except OSError:
+					pass
 				self._currentParpath = self._defaultParpath
 				self._currentParList = copy.deepcopy(self._defaultParList)
 		else:
@@ -902,6 +901,32 @@ class IrafTask:
 		"""Check current par list and default par list for consistency"""
 		return (not self._currentParList) or \
 			self._currentParList.isConsistent(self._defaultParList)
+
+# -----------------------------------------------------
+# IRAF graphics kernel class
+# -----------------------------------------------------
+
+class IrafGKITask(IrafTask):
+
+	"""IRAF graphics kernel class (special case of IRAF task)"""
+
+	def __init__(self, name, filename):
+		"""Initialize: only name and executable filename are needed"""
+		IrafTask.__init__(self,'',name,'',filename,'clpackage','bin$')
+		self.setHidden()
+		# all graphics kernel  tasks have the same parameters
+		pars = irafpar.IrafParList(name)
+		makepar = irafpar.makeIrafPar
+		pars.addParam(makepar('', datatype='string', name='input', mode='ql'))
+		pars.addParam(makepar('', datatype='string', name='device', mode='h'))
+		pars.addParam(makepar('yes', datatype='bool', name='generic', mode='h'))
+		self._defaultParList = pars
+		self._currentParList = pars
+
+	def save(self,filename=None):
+		"""Never save parameters for kernels"""
+		pass
+
 
 # -----------------------------------------------------
 # IRAF Pset class
@@ -1198,11 +1223,12 @@ class IrafCLTask(IrafTask):
 					  (self._currentParpath, self.__class__.__name__,
 						self._name,))
 					sys.stderr.flush()
-					print 'default'
-					self._defaultParList.lParam()
-					print 'current'
-					self._currentParList.lParam()
 					#XXX just toss it for now -- later can try to merge new,old
+					if self._currentParpath == self._scrunchParpath:
+						try:
+							os.remove(iraf.Expand(self._scrunchParpath, noerror=1))
+						except OSError:
+							pass
 					self._currentParpath = self._defaultParpath
 					self._currentParList = copy.deepcopy(self._defaultParList)
 			else:
@@ -1242,6 +1268,14 @@ class IrafCLTask(IrafTask):
 		# add the searchable task object to keywords
 		kw['taskObj'] = ParDictListSearch(self)
 		if parList is None: parList = self.getParList()
+		#XXX
+		# It might be better to pass all parameters as
+		# keywords instead of as positional arguments?
+		# That would be more robust against some errors
+		# but would also not allow certain IRAF-like
+		# behaviors (where the .par file gives a different
+		# name for the parameter.)
+		#XXX
 		apply(self._clFunction, parList, kw)
 
 	def _noParFile(self):

@@ -843,8 +843,7 @@ class GkiController(GkiProxy):
 		if executable == 'cl':
 			self.openInteractiveKernel()
 		else:
-			task = devices[device]['tn']
-			self.stdgraph = gkiiraf.GkiIrafKernel(device, executable, task)
+			self.stdgraph = gkiiraf.GkiIrafKernel(device)
 			self.stdin = self.stdgraph.stdin
 			self.stdout = self.stdgraph.stdout
 			self.stderr = self.stdgraph.stderr
@@ -993,9 +992,8 @@ def getGraphcap(filename=None):
 		graphcapDict[filename] = graphcap.GraphCap(filename)
 	return graphcapDict[filename]
 
-#YYY printPlot belongs in gwm, not gki?
-#YYY or maybe should be a method of gwm window manager
-#YYY This surely ought to create a GkiIrafKernel object to do printing.
+#XXX printPlot belongs in gwm, not gki?
+#XXX or maybe should be a method of gwm window manager
 
 def printPlot(window=None):
 
@@ -1009,34 +1007,17 @@ def printPlot(window=None):
 		if window is None: return
 	gkibuff = window.gkibuffer.get()
 	if gkibuff:
-		# write to a temporary file
-		tmpfn = iraf.mktemp("snap") + ".gki"
-		fout = open(tmpfn,'w')
-		fout.write(gkibuff.tostring())
-		fout.close()
-		try:
-			devices = getGraphcap()
-			stdplot = iraf.envget('stdplot')
-			if not stdplot:
-				msg = 'No hardcopy device defined in stdplot'
-			elif not devices.has_key(stdplot):
-				msg = "Unknown hardcopy device stdplot=`%s'" % stdplot
-			else:
-				printtaskname = devices[stdplot]['tn']
-				if printtaskname == "psikern" and not iraf.stsdas.isLoaded():
-					#XXX Note we should not load stsdas here but should
-					#XXX use generic gio kernel parameter set
-					iraf.stsdas(motd=0, _doprint=0)
-				printtask = iraf.getTask(printtaskname)
-				# Need to redirect input because running this task with
-				# input from StatusLine does not work for some reason.
-				# May need to do this for other IRAF tasks run while in
-				# gcur mode (if there are more added in the future.)
-				printtask(tmpfn, device=stdplot, generic="yes",
-					Stdin=sys.__stdin__, Stdout=sys.__stdout__)
-				msg = "snap completed"
-		finally:
-			os.remove(tmpfn)
+		devices = getGraphcap()
+		stdplot = iraf.envget('stdplot')
+		if not stdplot:
+			msg = "No hardcopy device defined in stdplot"
+		elif not devices.has_key(stdplot):
+			msg = "Unknown hardcopy device stdplot=`%s'" % stdplot
+		else:
+			printer = gkiiraf.GkiIrafKernel(stdplot)
+			printer.append(gkibuff)
+			printer.flush()
+			msg = "snap completed"
 	stdout = kernel.getStdout(default=sys.stdout)
 	stdout.write("%s\n" % msg)
 

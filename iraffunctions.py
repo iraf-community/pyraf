@@ -2414,7 +2414,10 @@ def clExecute(s, locals=None, mode="proc",
 # -----------------------------------------------------
 
 # Input string is in format 'name$rest' or 'name$str(name2)' where
-# name and name2 are defined in the _varDict dictionary.
+# name and name2 are defined in the _varDict dictionary.  The
+# name2 string may have embedded dollar signs, which are ignored.
+# There may be multiple embedded parenthesized variable names.
+#
 # Returns string with IRAF variable name expanded to full host name.
 # Input may also be a comma-separated list of strings to Expand,
 # in which case an expanded comma-separated list is returned.
@@ -2423,36 +2426,53 @@ def clExecute(s, locals=None, mode="proc",
 __re_var_match = _re.compile(r'(?P<varname>[^$]*)\$')
 
 # search for string embedded in parentheses
-# assumes no double embedding
-__re_var_paren = _re.compile(r'\((?P<varname>[^$]*)\)')
+__re_var_paren = _re.compile(r'\((?P<varname>[^()]*)\)')
 
-def Expand(instring):
+def Expand(instring, noerror=0):
 	"""Expand a string with embedded IRAF variables (IRAF virtual filename)
 
 	Allows comma-separated lists.  Also uses os.path.expanduser to
 	replace '~' symbols.
+	Set noerror flag to silently replace undefined variables with just
+	the variable name or null (so Expand('abc$def') = 'abcdef' and
+	Expand('(abc)def') = 'def').  This is the IRAF behavior, though it
+	is confusing and hides errors.
 	"""
 	# call _expand1 for each entry in comma-separated list
 	wordlist = _string.split(instring,",")
 	outlist = []
 	for word in wordlist:
-		outlist.append(_os.path.expanduser(_expand1(word)))
+		outlist.append(_os.path.expanduser(_expand1(word, noerror=noerror)))
 	return _string.join(outlist,",")
 
-def _expand1(instring):
+def _expand1(instring, noerror):
 	"""Expand a string with embedded IRAF variables (IRAF virtual filename)"""
+	# first expand names in parentheses
+	# note this works on nested names too, expanding from the
+	# inside out (just like IRAF)
+	mm = __re_var_paren.search(instring)
+	while mm is not None:
+		# remove embedded dollar signs from name
+		varname = _string.replace(mm.group('varname'),'$','')
+		if defvar(varname):
+			varname = envget(varname)
+		elif noerror:
+			varname = ""
+		else:
+			raise IrafError("Undefined variable " + varname + \
+				" in string " + instring)
+		instring = instring[:mm.start()] + varname + instring[mm.end():]
+		mm = __re_var_paren.search(instring)
+	# now expand variable name at start of string
 	mm = __re_var_match.match(instring)
 	if mm is None:
-		mm = __re_var_paren.search(instring)
-		if mm is None: return instring
-		if defvar(mm.group('varname')):
-			return instring[:mm.start()] + \
-				_expand1(mm.group('varname')+'$') + \
-				instring[mm.end():]
+		return instring
 	varname = mm.group('varname')
 	if defvar(varname):
 		# recursively expand string after substitution
-		return _expand1(envget(varname) + instring[mm.end():])
+		return _expand1(envget(varname) + instring[mm.end():], noerror)
+	elif noerror:
+		return _expand1(varname + instring[mm.end():], noerror)
 	else:
 		raise IrafError("Undefined variable " + varname + \
 			" in string " + instring)

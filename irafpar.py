@@ -339,7 +339,7 @@ class IrafPar:
 
 	def isLearned(self, mode=None):
 		"""Return true if this parameter is learned
-		
+
 		Hidden parameters are not learned; automatic parameters inherit
 		behavior from package/cl; other parameters are learned.
 		If mode is set, it determines how automatic parameters behave.
@@ -499,7 +499,7 @@ class IrafPar:
 
 	def dpar(self, cl=1):
 		"""Return dpar-style executable assignment for parameter
-		
+
 		Default is to write CL version of code; if cl parameter is
 		false, writes Python executable code instead.
 		"""
@@ -544,7 +544,7 @@ class IrafPar:
 
 	def save(self, dolist=0):
 		"""Return .par format string for this parameter
-		
+
 		If dolist is set, returns fields as a list of strings.  Default
 		is to return a single string appropriate for writing to a file.
 		"""
@@ -682,7 +682,7 @@ class IrafPar:
 
 	def _optionalPrompt(self, mode):
 		"""Interactively prompt for parameter if necessary
-		
+
 		Prompt for value if
 		(1) mode is hidden but value is undefined or bad, or
 		(2) mode is query and value was not set on command line
@@ -706,14 +706,14 @@ class IrafPar:
 
 	def _getPFilename(self,native,prompt):
 		"""Get p_filename field for this parameter
-		
+
 		Same as get for non-list params
 		"""
 		return self.get(native=native,prompt=prompt)
 
 	def _getPType(self):
 		"""Get underlying datatype for this parameter
-		
+
 		Just self.type for normal params
 		"""
 		return self.type
@@ -801,14 +801,14 @@ class IrafPar:
 
 	def _coerceValue(self,value,strict=0):
 		"""Coerce parameter to appropriate type
-		
+
 		Should accept None or null string.
 		"""
 		return self._coerceOneValue(value,strict)
 
 	def _coerceOneValue(self,value,strict=0):
 		"""Coerce a scalar parameter to the appropriate type
-		
+
 		Default implementation simply prevents direct use of base class.
 		Should accept None or null string.
 		"""
@@ -908,7 +908,7 @@ class IrafArrayPar(IrafPar):
 
 	def save(self, dolist=0):
 		"""Return .par format string for this parameter
-		
+
 		If dolist is set, returns fields as a list of strings.  Default
 		is to return a single string appropriate for writing to a file.
 		"""
@@ -951,7 +951,7 @@ class IrafArrayPar(IrafPar):
 
 	def dpar(self, cl=1):
 		"""Return dpar-style executable assignment for parameter
-		
+
 		Default is to write CL version of code; if cl parameter is
 		false, writes Python executable code instead.  Note that
 		dpar doesn't even work for arrays in the CL, so we just use
@@ -1069,7 +1069,7 @@ class IrafArrayPar(IrafPar):
 
 	def _coerceValue(self,value,strict=0):
 		"""Coerce parameter to appropriate type
-		
+
 		Should accept None or null string.  Must be an array.
 		"""
 		if (type(value) not in [types.ListType,types.TupleType]) or \
@@ -1176,7 +1176,7 @@ class _StringMixin:
 
 	def _coerceOneValue(self,value,strict=0):
 		if value is None:
-			return value 
+			return value
 		elif type(value) is types.StringType:
 			# strip double quotes and remove escapes before quotes
 			return irafutils.removeEscapes(irafutils.stripQuotes(value))
@@ -1362,7 +1362,7 @@ class IrafParL(_StringMixin, IrafPar):
 
 	def _getPType(self):
 		"""Get underlying datatype for this parameter
-		
+
 		Strip off '*' from list params
 		"""
 		return self.type[1:]
@@ -1739,15 +1739,16 @@ class ParCache(FileCache):
 	def __init__(self, filename, parlist):
 		self.initparlist = parlist
 		# special filename used by cl2py
-		if filename == 'string_proc':
+		if filename is None or filename == 'string_proc':
 			filename = ''
 		FileCache.__init__(self, filename)
 
 	def getValue(self):
 		return self.pars, self.pardict, self.psetlist
 
-	def updateValue(self):
-		"""Initialize parameter list from parameter file"""
+	def newValue(self):
+		"""Called to create initial value"""
+		# initparlist dominates .par file during initialization
 		if self.initparlist is not None:
 			self.pars = self.initparlist
 		elif self.filename:
@@ -1755,7 +1756,23 @@ class ParCache(FileCache):
 		else:
 			# create empty list if no filename is specified
 			self.pars = []
+		# build auxiliary attributes from pars list
+		self._buildFromPars()
 
+	def updateValue(self):
+		"""Initialize parameter list from parameter file"""
+		if self.filename:
+			# .par file dominates initparlist on update
+			self.pars = _readpar(self.filename)
+		elif self.initparlist is not None:
+			self.pars = self.initparlist
+		else:
+			# create empty list if no filename is specified
+			self.pars = []
+		# build auxiliary attributes from pars list
+		self._buildFromPars()
+
+	def _buildFromPars(self):
 		# build minmatch dictionary of all parameters, including
 		# those in psets
 		self.pardict = minmatch.MinMatchDict()
@@ -1793,7 +1810,7 @@ class IrafParList:
 
 	def __init__(self, taskname, filename="", parlist=None):
 		"""Create a parameter list for task taskname
-		
+
 		If parlist is specified, uses it as a list of IrafPar objects.
 		Else if filename is specified, reads a .par file.
 		If neither is specified, generates a default list.
@@ -1811,7 +1828,7 @@ class IrafParList:
 
 	def setFilename(self, filename):
 		"""Change filename and create ParCache object
-		
+
 		Retains current parameter values until an unlearn is done
 		"""
 		if hasattr(filename, 'name') and hasattr(filename, 'read'):
@@ -1894,7 +1911,7 @@ class IrafParList:
 
 	def isConsistent(self, other):
 		"""Compare two IrafParLists for consistency
-		
+
 		Returns true if lists are consistent, false if inconsistent.
 		Only checks immutable param characteristics (name & type).
 		Allows hidden parameters to be in any order, but requires
@@ -1904,21 +1921,28 @@ class IrafParList:
 			if Verbose>0:
 				print 'Comparison list is not a %s' % self.__class__.__name__
 			return 0
-		if len(self) != len(other): return 0
-		# compare dictionaries of parameters
-		return self._getConsistentList() == other._getConsistentList()
+		# compare minimal set of parameter attributes
+		thislist = self._getConsistentList()
+		otherlist = other._getConsistentList()
+		if thislist == otherlist:
+			return 1
+		else:
+			if Verbose>0:
+				_printVerboseDiff(thislist, otherlist)
+			return 0
 
 	def _getConsistentList(self):
 		"""Return simplified parameter dictionary used for consistency check
-		
+
 		Dictionary is keyed by param name, with value of type and
 		(for non-hidden parameters) sequence number.
 		"""
 		dpar = {}
 		j = 0
+		hflag = -1
 		for par in self.__pars:
 			if par.mode == "h":
-				dpar[par.name] = par.type
+				dpar[par.name] = (par.type, hflag)
 			else:
 				dpar[par.name] = (par.type, j)
 				j = j+1
@@ -1991,7 +2015,7 @@ class IrafParList:
 
 	def getValue(self,param,native=0,prompt=1,mode="h"):
 		"""Return value for task parameter 'param' (with min-match)
-		
+
 		If native is non-zero, returns native format for value.  Default is
 		to return a string.
 		If prompt is zero, does not prompt for parameter.  Default is to
@@ -2090,7 +2114,7 @@ class IrafParList:
 
 	def dParam(self, taskname="", cl=1):
 		"""Dump the task parameters in executable form
-		
+
 		Default is to write CL version of code; if cl parameter is
 		false, writes Python executable code instead.
 		"""
@@ -2106,7 +2130,7 @@ class IrafParList:
 		if hasattr(filename,'write'):
 			fh = filename
 		else:
-			fh = open(filename,'w')
+			fh = open(iraf.Expand(filename),'w')
 		nsave = len(self.__pars)
 		for par in self.__pars:
 			if par.name == '$nargs':
@@ -2138,6 +2162,99 @@ class IrafParList:
 		s = '<IrafParList ' + self.__name + ' (' + self.__filename + ') ' + \
 			str(len(self.__pars)) + ' parameters>'
 		return s
+
+def _printVerboseDiff(list1, list2):
+	"""Print description of differences between parameter lists"""
+	pd1, hd1 = _extractDiffInfo(list1)
+	pd2, hd2 = _extractDiffInfo(list2)
+	_printHiddenDiff(pd1,hd1,pd2,hd2)	# look for hidden/positional changes
+	_printDiff(pd1, pd2, 'positional')	# compare positional parameters
+	_printDiff(hd1, hd2, 'hidden')		# compare hidden parameters
+
+def _extractDiffInfo(list):
+	hflag = -1
+	pd = {}
+	hd = {}
+	for key, value in list.items():
+		if value[1] == hflag:
+			hd[key] = value
+		else:
+			pd[key] = value
+	return (pd,hd)
+
+def _printHiddenDiff(pd1,hd1,pd2,hd2):
+	for key in pd1.keys():
+		if hd2.has_key(key):
+			print "Parameter `%s' is hidden in list 2 but not list 1" % (key,)
+			del pd1[key]
+			del hd2[key]
+	for key in pd2.keys():
+		if hd1.has_key(key):
+			print "Parameter `%s' is hidden in list 1 but not list 2" % (key,)
+			del pd2[key]
+			del hd1[key]
+
+def _printDiff(pd1, pd2, label):
+	if pd1 == pd2:
+		return
+	noextra = 1
+	k1 = pd1.keys()
+	k1.sort()
+	k2 = pd2.keys()
+	k2.sort()
+	if k1 != k2:
+		# parameter name lists differ
+		i1 = 0
+		i2 = 0
+		noextra = 0
+		while i1<len(k1) and i2<len(k2):
+			key1 = k1[i1]
+			key2 = k2[i2]
+			if key1 == key2:
+				i1 = i1+1
+				i2 = i2+1
+			else:
+				# one or both parameters missing
+				if not pd2.has_key(key1):
+					print "Extra %s parameter `%s' (type `%s') in list 1" % \
+						(label, key1, pd1[key1][0])
+					# delete the extra parameter
+					del pd1[key1]
+					i1 = i1+1
+				if not pd1.has_key(key2):
+					print "Extra %s parameter `%s' (type `%s') in list 2" % \
+						(label, key2, pd2[key2][0])
+					del pd2[key2]
+					i2 = i2+1
+		# other parameters must be missing
+		while i1<len(k1):
+			key1 = k1[i1]
+			print "Extra %s parameter `%s' (type `%s') in list 1" % \
+				(label, key1, pd1[key1][0])
+			del pd1[key1]
+			i1 = i1+1
+		while i2<len(k2):
+			key2 = k2[i2]
+			print "Extra %s parameter `%s' (type `%s') in list 2" % \
+				(label, key2, pd2[key2][0])
+			del pd2[key2]
+			i2 = i2+1
+	# remaining parameters are in both lists
+	# check for differing order or type, but ignore order if there
+	# were extra parameters
+	for key in pd1.keys():
+		val1 = pd1[key]
+		val2 = pd2[key]
+		if pd1[key] != pd2[key]:
+			mm = []
+			type1, order1 = pd1[key]
+			type2, order2 = pd2[key]
+			if noextra and order1 != order2:
+				mm.append("order disagreement")
+			if type1 != type2:
+				mm.append("type disagreement (`%s' vs. `%s')" % (type1, type2))
+			print "Parameter `%s': %s" % (key, string.join(mm,", "))
+
 
 # -----------------------------------------------------
 # Read IRAF .par file and return list of parameters
