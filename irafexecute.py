@@ -257,12 +257,14 @@ def executeClCommand(process, msg):
 	
 	mo = _re_stty_command.match(msg)
 	if mo:
-		nlines,ncols = wutil.getTermWindowSize()
 		if sys.stdout != sys.__stdout__:
 			#XXX a kluge -- if sys.stdout is not the terminal,
 			#XXX assume it is a file and give a large number for
 			#XXX the number of lines 
 			nlines = 1000000
+			ncols = 80
+		else:
+			nlines,ncols = wutil.getTermWindowSize()
 		WriteStringToIrafProc(process,
 			"set ttyncols="+str(ncols)+"\n" + 
 			"set ttynlines="+str(nlines)+"\n")
