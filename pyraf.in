@@ -1,0 +1,115 @@
+#! @PythonBin@ -i
+# #! /usr/bin/python -i
+#@configure_input@
+"""
+pyraf: Python IRAF front end
+
+Usage: pyraf [options] [savefile]
+  where savefile is an optional save file to start from and
+  options are one or more of:
+  -i  Do not run command line wrapper, just run standard Python front end
+  -m  Run command line wrapper to provide extra capabilities (default)
+  -v  Set verbosity level (may be repeated to increase verbosity)
+  -h  Print this message
+
+Brief help:
+
+To load a package, use any of:
+        iraf.images()
+    iraf.load("images")
+    iraf.run("images")
+    pkg = iraf.images; pkg()
+    pkg = iraf.getPkg("images"); pkg()
+You can also do iraf.load("images",doprint=0) or just
+iraf.load("images",0) to skip printing.  pkg(_doprint=0)
+has the same effect (note the '_' in front of the keyword,
+which is necessary because you can also include package
+parameters as arguments.)
+
+To get short-hand task or package object:
+        imstat = iraf.imstat
+    imstat = iraf.getTask("imstat")
+    imhead = iraf.getTask("imheader")
+    sts = iraf.getPkg("stsdas")
+Note minimum match is used for task names.  Packages are accessible
+using either getTask() or getPkg(), while tasks are available only
+through getTask().  Both packages and tasks are available as attributes
+of the iraf module.
+
+Tasks are available as attributes of the package, e.g.
+    iraf.restore()
+    iraf.restore.lucy.lpar()
+When accessed this way, minimum match is still used for the task names.
+Both tasks directly in the package and tasks in subpackages that
+have already been loaded are accessible (so images.imhead() works
+even though imheader is in the imutil package.)
+
+To set task parameters there are various syntaxes:
+    imhead.long = "yes"
+    imstat.image = "dev$pix"
+    imstat.set("images","dev$pix")
+As usual, minimum match is used for parameter names (so we can
+use just 'long' rather than 'longheader').
+
+To run tasks, use one of these forms:
+    imstat()
+    imstat.run()
+    iraf.run("imstat")
+    imhead("dev$pix",long="yes")
+
+
+$Id$
+
+R. White, 2000 January 21
+"""
+
+__version__ = "v0.8.22 (2001Jun20)"
+
+
+import sys, os, string
+
+
+
+# set search path to include directory above this script and current directory
+# ... but do not want the pyraf package directory itself in the path, since
+# that messes things up by allowing direct imports of pyraf submodules
+# (bypassing the __init__ mechanism.)
+
+
+
+pyrafDir = os.path.dirname(sys.argv[0])
+try:
+    sys.path.remove(pyrafDir)
+except ValueError:
+    pass
+
+absPyrafDir = os.path.abspath(os.path.join(pyrafDir,'..'))
+if absPyrafDir not in sys.path: sys.path.insert(0, absPyrafDir)
+del absPyrafDir, pyrafDir
+
+if "." not in sys.path: sys.path.insert(0, ".")
+
+# read the user's startup file (if there is one)
+
+if os.environ.has_key("PYTHONSTARTUP") and \
+                os.path.isfile(os.environ["PYTHONSTARTUP"]):
+    execfile(os.environ["PYTHONSTARTUP"])
+
+from pyraf import doCmdline, iraf
+from pyraf.irafpar import makeIrafPar
+from pyraf.irafglobals import yes, no, INDEF, EOF
+logout = quit = exit = 'Use ".exit" to exit'
+
+print "Pyraf, Python front end to IRAF,", __version__, "(copyright AURA 2000)"
+# just print first line of Python copyright (long in v2.0)
+print "Python: " + string.split(sys.copyright,'\n')[0]
+
+if doCmdline:
+    del doCmdline
+    # Start up command line wrapper keeping definitions in main name space
+    # Keep the command-line object in namespace too for access to history
+    import pyraf.pycmdline
+    _pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
+    _pycmdline.start()
+else:
+    del doCmdline
