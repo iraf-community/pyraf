@@ -47,7 +47,7 @@ class Gcursor:
 		self.win.bind("<Key>",self.getKey)
 		self.win.bind("q",self.getKey)
 		self.win.focus_force()
-
+	
 	def test(self, event):
 
 		print "Woo woo baby!"
@@ -79,9 +79,9 @@ class Gcursor:
 	
 		self.x = event.x
 		self.y = event.y
-		print self.x, self.y
 
 	def getKey(self, event):
+
 		# The main character handling routine (to be filled out)
 		key = event.char
 		if not key:
@@ -112,7 +112,6 @@ class Gcursor:
 		self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
 		if cstring:
 			self.retString = self.retString +' '+cstring
-		print "getKey:", self.retString
 		self.top.quit() # time to go!
 		
 # Eventually there may be multiple Gcursor classes that return a string

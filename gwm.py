@@ -8,6 +8,7 @@ $Id$
 from OpenGL.GL import *
 import Tkinter
 import gkiopengl
+import wutil
 
 # for the moment this is a really crude implementation. It leaves out
 # lots of useful methods for managing these windows as well as handling
@@ -29,6 +30,7 @@ class GraphicsWindowManager:
 	def __init__(self):
 	
 		self.windows = {}
+		self.terminalWindow = wutil.getWindowID()
 		self.activeWindow = None
 		self.irafGkiConfig = gkiopengl.IrafGkiConfig()
 		
@@ -132,3 +134,8 @@ def getIrafGkiConfig():
 
 	"""return configuration object"""
 	return _g.irafGkiConfig
+
+def getTerminalWindowID():
+
+	"""return ID of python terminal window manager was started from"""
+	return _g.terminalWindow

@@ -11,6 +11,7 @@ import Numeric
 import gwm
 import irafgcur
 import irafgwcs
+import wutil
 from  iraftext import *
 
 # debugging purposes only
@@ -45,7 +46,7 @@ class GkiOpenGlKernel(GkiKernel):
 		self.functionTable = gkiFunctionTable
 		self.controlFunctionTable = [self.controlDefault]*(GKI_MAX_OP_CODE+1)
 		self.controlFunctionTable[GKI_OPENWS] = self.openWS
-		self.controlFunctionTable[GKI_CLOSEWS] = self.controlDoNothing
+		self.controlFunctionTable[GKI_CLOSEWS] = self.closeWS
 		self.controlFunctionTable[GKI_REACTIVATEWS] = self.controlDoNothing
 		self.controlFunctionTable[GKI_DEACTIVATEWS] = self.controlDoNothing
 		self.controlFunctionTable[GKI_CLEARWS] = self.clearWS
@@ -95,7 +96,6 @@ class GkiOpenGlKernel(GkiKernel):
 		ta.setFontSize()
 		if mode == 5:
 			# clear the display
-			print "clearing the display"
 			win.iplot.gkiBuffer.reset()
 			win.iplot.glBuffer.reset()
 			win.iplot.wcs = None
@@ -135,6 +135,10 @@ class GkiOpenGlKernel(GkiKernel):
 			self.returnData = self.returnData + win.iplot.wcs.pack()
 		else:
 			self.returnData = win.iplot.wcs.pack()
+
+	def closeWS(self, arg):
+
+		wutil.setFocusTo(gwm.getTerminalWindowID())
 
 	def redraw(self, o):
 
@@ -216,7 +220,6 @@ def gki_setcursor(arg):
 	cursorNumber = arg[0]
 	x = arg[1]/GKI_MAX
 	y = arg[2]/GKI_MAX
-	print "GKI_SETCURSOR", cursorNumber, x, y
 	_glAppend((gl_setcursor, (cursorNumber, x, y)))
 	
 def gki_plset(arg):
@@ -224,7 +227,6 @@ def gki_plset(arg):
 	linetype = arg[0]
 	linewidth = arg[1]/GKI_FLOAT_FACTOR
 	color = arg[2]
-	print "GKI_PLSET",linetype, linewidth, color
 	_glAppend((gl_plset, (linetype, linewidth, color)))
 	
 def gki_pmset(arg):
@@ -247,8 +249,6 @@ def gki_txset(arg):
 	textFont = arg[6]
 	textQuality = arg[7]
 	textColor = arg[8]
-	print "txset",charUp, charSize, charSpace, textPath, textHorizontalJust, \
-		textVerticalJust, textFont, textQuality, textColor
 	_glAppend((gl_txset, (charUp, charSize, charSpace, textPath,
 		textHorizontalJust, textVerticalJust, textFont,
 		textQuality, textColor)))
@@ -257,7 +257,6 @@ def gki_faset(arg):
 
 	fillstyle = arg[0]
 	color = arg[1]
-	print "GKI_FASET",fillstyle, color
 	_glAppend((gl_faset,(fillstyle, color)))
 
 def gki_getcursor(arg):
@@ -320,6 +319,7 @@ def gl_polyline(vertices):
 		glDisable(GL_LINE_STIPPLE)
 
 def gl_polymarker(arg): pass
+
 def gl_text(x,y,text):
 
 	softText(x,y,text)
@@ -362,11 +362,15 @@ def gl_fillarea(vertices):
 		glDisable(GL_POLYGON_STIPPLE)
 
 def gl_putcellarray(arg): pass
+
 def gl_setcursor(cursornumber, x, y):
 
-	sx = win.winfo_pointerx() - win.winfo_rootx()
-	sy = win.winfo_pointery() - win.winfo_rooty()
-
+	win = gwm.getActiveWindow()
+	# wutil.MoveCursorTo uses 0,0 <--> upper left, need to convert
+	sy = win.wininfo_height() - y
+	sx = x
+	wutil.moveCursorTo(win.winfo_id(), sx, sy)
+	
 def gl_plset(linestyle, linewidth, color):
 
 	win = gwm.getActiveWindow()
@@ -395,7 +399,6 @@ def gl_setwcs(arg): pass
 def gl_getwcs(arg): pass
 
 #********************************************
-
 
 # function tables
 gkiFunctionTable = [
