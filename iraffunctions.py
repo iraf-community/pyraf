@@ -1912,7 +1912,7 @@ def _clProcedure(*args, **kw):
     exec 'from pyraf.irafglobals import *' in locals
     # feed the input to clExecute
     # redirect input to sys.__stdin__ after reading the CL script from sys.stdin
-    clExecute(_sys.stdin.read(), locals=locals, mode="single", Stdin=_sys.__stdin__)
+    clExecute(_sys.stdin.read(), locals=locals, Stdin=_sys.__stdin__)
 
 def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     """Run CL commands from a file (cl < input) -- OBSOLETE
@@ -2512,7 +2512,7 @@ def clExecute(s, locals=None, mode="proc",
         if locals is None: locals = {}
         exec codeObject in locals
         if pycode.vars.proc_name:
-            exec pycode.vars.proc_name+"()" in locals
+            exec pycode.vars.proc_name+"(taskObj=iraf.cl)" in locals
         return code
     finally:
         _clExecuteCount = _clExecuteCount - 1
