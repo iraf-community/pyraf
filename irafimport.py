@@ -53,7 +53,7 @@ class _irafModuleClass:
 		try:
 			return self.module.getTask(attr)
 		except KeyError:
-			raise AttributeError(attr)
+			raise AttributeError('Undefined IRAF task '+`attr`)
 
 _irafModuleProxy = _irafModuleClass(iraf)
 
