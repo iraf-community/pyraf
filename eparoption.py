@@ -155,7 +155,7 @@ class EnumEparOption(EparOption):
 
         # Need to adjust the value width so the menu button is the
         # aligned properly
-        self.valueWidth = self.valueWidth - 5
+        self.valueWidth = self.valueWidth - 4
 
         # Generate the button
         self.button = Menubutton(self.master.frame, 
@@ -214,14 +214,14 @@ class BooleanEparOption(EparOption):
         self.rbyes = Radiobutton(self.frame, text = "Yes",
                                  variable    = self.choice,
                                  value       = "yes",  
-                                 selectcolor = "SpringGreen",
-                                 anchor      = E)
+                                 anchor      = E,
+                                 selectcolor = "SpringGreen")
         self.rbyes.pack(side = LEFT, ipadx = self.padWidth)
         self.rbno  = Radiobutton(self.frame, text = "No", 
                                  variable    = self.choice,
                                  value       = "no",  
-                                 selectcolor = "SpringGreen",
-                                 anchor      = W)
+                                 anchor      = W,
+                                 selectcolor = "SpringGreen")
         self.rbno.pack(side = RIGHT, ipadx = self.padWidth)
         self.frame.pack(side = LEFT)
 

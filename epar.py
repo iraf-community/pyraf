@@ -38,7 +38,8 @@ def epar(taskName, parent = None, child = "no"):
 
 class EparDialog:
     def __init__(self, taskName, parent = None, child = "no", 
-                 title = "PYTHON Parameter Editor v0.3"):
+                 title = "PYTHON Parameter Editor"):
+                 #title = "PYTHON Parameter Editor v0.4"):
 
         # Declare the global variables so they can be updated
         global CHILDX
@@ -272,11 +273,11 @@ class EparDialog:
         helpbox = Frame(topbox, bg = self.bkgColor)
     
         # Set up the information strings
-        packString = "Package = " + string.upper(taskName)
+        packString = "Package = " + string.upper(pkgName)
         Label(textbox, text = packString, bg = self.bkgColor).pack(side = TOP, 
               anchor = W)
 
-        taskString = "     Task = " + string.upper(pkgName)
+        taskString = "     Task = " + string.upper(taskName)
         Label(textbox, text = taskString, bg = self.bkgColor).pack(side = TOP, 
               anchor = W)
         textbox.pack(side = LEFT, anchor = W)
@@ -479,7 +480,7 @@ class EparDialog:
     def htmlHelp(self, event = None):
 
         # Invoke the STSDAS HTML help
-        irafhelp.help(self.taskName)
+        irafhelp.help(self.taskName, html = 1)
 
 
     # HELP: invoke help and put the page in a window
@@ -607,8 +608,20 @@ class EparDialog:
             # Cannot change an entry if it is a PSET, just skip
             if (self.paramList[i].type != "pset"):
 
+                # Determine the type of entry variable
+                classType = self.entryNo[i].choiceClass
+
                 # Acquire the value for update of the parameter entry
-                value = self.entryNo[i].choice.get()
+                # The BooleanVar might be a null string which is VALID, 
+                # so catch the exception.  If not a boolean, rethrow 
+                # the exception.
+                try:
+                    value = self.entryNo[i].choice.get()
+                except TclError, exceptionInfo:
+                    if (classType == BooleanVar):
+                        value = ""
+                    else:
+                        raise TclError, exceptionInfo
 
                 # If the parameter is not a native type of string, it
                 # must be converted.
