@@ -3,7 +3,7 @@
 R. White, 2001 Dec 15
 """
 
-import os, Tkinter
+import os, sys, Tkinter
 import irafglobals
 
 logo = "pyraflogo_rgb_web.gif"
@@ -148,23 +148,34 @@ class IrafMonitorSplash(PyrafSplash):
 
     def __init__(self, label="PyRAF Execution Monitor", **kw):
         PyrafSplash.__init__(self, text=[None, label], **kw)
+        # self.stack tracks messages displayed in monitor
+        self.stack = []
         import iraftask
         iraftask.executionMonitor = self.monitor
 
     def monitor(self, task=None):
         if task is None:
-            # set monitor to blank but don't call update_idletasks
-            # let update happen naturally
-            if self.text is not None:
-                self.canvas.itemconfigure(self.text[0], text='')
+            # if arg is omitted, restore monitor message to previous value
+            try:
+                self.stack.pop()
+                msg = self.stack[-1]
+            except IndexError:
+                msg = ""
         else:
-            # cl task info is not helpful, so just omit it
             name = task.getName()
             if name != 'cl':
                 if isinstance(task, irafglobals.IrafPkg):
-                    self.write("Loading %s" % name)
+                    msg = "Loading %s" % name
                 else:
-                    self.write("Running %s" % name)
+                    msg = "Running %s" % name
+            else:
+                # cl task message includes input file name
+                try:
+                    msg = "cl %s" % os.path.basename(sys.stdin.name)
+                except AttributeError:
+                    msg = "cl <pipe>"
+            self.stack.append(msg)
+        self.write(msg)
 
     def Destroy(self, event=None):
         """Shut down window and disable monitor"""
