@@ -125,6 +125,9 @@ def IrafIO(process,task):
 				elif chan == 5:
 					sys.stderr.write(Iraf2AscString(xdata))
 				elif chan == 6:
+					# need to handle cases where WS not open yet
+					if not stdgraph:
+						stdgraph = gkiopengl.GkiOpenGlKernel()
 					stdgraph.append(Numeric.fromstring(xdata,'s'))
 				elif chan == 7:
 					print "data for STDIMAGE"

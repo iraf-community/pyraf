@@ -88,7 +88,7 @@ class GkiBuffer:
 		self.nextTranslate = 0
 
 	def append(self, metacode):
-	
+
 		if self.bufferSize < (self.bufferEnd + len(metacode)):
 			# increment buffer size and copy into new array
 			diff = self.bufferEnd + len(metacode) - self.bufferSize
@@ -211,14 +211,15 @@ class GkiKernel:
 		# if input parameter is string, assume it is a filename and read into
 		# a numeric array
 		try:
-			if type(gkiMetacode) == StringType:
-				gkiMetacode = getdata(gkiMetacode)
-			win = gwm.getActiveWindow()
-			buffer = win.iplot.gkiBuffer
-			buffer.append(gkiMetacode)
-			# a hook for acting on the metacode, but is only a stub routine
-			# that must be overridden in the subclass (or not, depending)
-			self.translate(buffer, self.functionTable)
+			if gwm.getActiveWindow():
+				if type(gkiMetacode) == StringType:
+					gkiMetacode = getdata(gkiMetacode)
+				win = gwm.getActiveWindow()
+				buffer = win.iplot.gkiBuffer
+				buffer.append(gkiMetacode)
+				# a hook for acting on the metacode, but is only a stub routine
+				# that must be overridden in the subclass (or not, depending)
+				self.translate(buffer, self.functionTable)
 		except AttributeError:
 			print "ERROR: no IRAF plot window active"
 

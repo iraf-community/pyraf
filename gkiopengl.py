@@ -83,9 +83,9 @@ class GkiOpenGlKernel(GkiKernel):
 
 		mode = arg[0]
 		device = arg[1:].tostring() # but will be ignored
-		if gwm.getTerminalWindowID() == wutil.getWindowID():
+		if wutil.getTerminalWindowID() == wutil.getWindowID():
 			# save current cursor position
-			gwm.saveTerminalCursorPosition()
+			wutil.saveTerminalCursorPosition()
 		# first see if there are any graphics windows, if not, create one 
 		win = gwm.getActiveWindow()
 		if win == None:
@@ -120,19 +120,16 @@ class GkiOpenGlKernel(GkiKernel):
 		win.iplot.wcs = None
 		win.immediateRedraw()
 
-	def reactivateWS(self, arg): gwm.raiseActiveWindow()
-
+	def reactivateWS(self, arg):
+		gwm.raiseActiveWindow()
+		
 	def deactivateWS(self, arg):
 
 		# Move focus and cursor to terminal window if focus is currently
-		# within Pyraf family of windows
-		gwm.saveGraphicsCursorPosition()
-		if not gwm.isFocusElsewhere():
-			x, y = gwm.getLastTermPos()
-			termWinID = gwm.getTerminalWindowID()
-			if wutil.isViewable(termWinID):
-				wutil.setFocusTo(termWinID)
-				wutil.moveCursorTo(termWinID,x,y)
+		# within Pyraf family of windows -- Sigh, unless graphics was
+		# opened from an interactive session with an image display
+		# window, in which case we should try to move focus back to it.
+		self.restorePreviousFocus()
 		
 	def setWCS(self, arg):
 
@@ -153,11 +150,7 @@ class GkiOpenGlKernel(GkiKernel):
 
 	def closeWS(self, arg):
 
-		termWinID = gwm.getTerminalWindowID()
-		if wutil.isViewable(termWinID):
-			wutil.setFocusTo(termWinID)
-			x, y = gwm.getLastTermPos()
-			wutil.moveCursorTo(termWinID,x,y)
+		self.restorePreviousFocus()
 		
 	def redraw(self, o):
 
@@ -175,12 +168,28 @@ class GkiOpenGlKernel(GkiKernel):
 			apply(function, args)
 		glFlush()
 
+	def restorePreviousFocus(self):
 
+		gwm.saveGraphicsCursorPosition()
+		if not wutil.isFocusElsewhere():
+			if not wutil.imcurActive:
+				x, y = wutil.getLastTermPos()
+				winID = wutil.getTerminalWindowID()
+			else:
+				x, y = wutil.getLastImagePos()
+				winID = wutil.getImageWindowID()
+			# make sure cursor is out of scroll bar region
+			if x < 50: x = 50
+			if wutil.isViewable(winID):
+				wutil.setFocusTo(winID)
+				wutil.moveCursorTo(winID,x,y)
+				
 def _glAppend(arg):
 
 	"""append a 2-tuple (gl_function, args) to the glBuffer"""
 	win = gwm.getActiveWindow()
 	win.iplot.glBuffer.append(arg)
+
 
 #***********************************************************
 
