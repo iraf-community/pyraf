@@ -536,7 +536,7 @@ def getTask(taskname, found=0):
     trylist = []
     pkglist = []
     for name in fullname:
-        sp = _string.split(name,'.')
+        sp = name.split('.')
         if sp[-1] == taskname:
             trylist.append(name)
             pkglist.append(sp[0])
@@ -545,11 +545,11 @@ def getTask(taskname, found=0):
 
     if not trylist:
         # no exact matches, see if all tasks have same name
-        sp = _string.split(fullname[0],'.')
+        sp = fullname[0].split('.')
         name = sp[-1]
         pkglist = [ sp[0] ]
         for i in xrange(len(fullname)-1):
-            sp = _string.split(fullname[i+1],'.')
+            sp = fullname[i+1].split('.')
             if name != sp[-1]:
                 if len(fullname)>3:
                     fullname[3:] = ['...']
@@ -558,7 +558,7 @@ def getTask(taskname, found=0):
                 else:
                     raise _minmatch.AmbiguousKeyError(
                             "Task `%s' is ambiguous, could be %s" %
-                            (taskname, _string.join(fullname,', ')))
+                            (taskname, ', '.join(fullname)))
             pkglist.append(sp[0])
         trylist = fullname
 
@@ -751,7 +751,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
         lastpkg = ''
         tlist = []
         for tname in keylist:
-            pkg, task = _string.split(tname,'.')
+            pkg, task = tname.split('.')
             tobj = _tasks[tname]
             if hidden or not tobj.isHidden():
                 if isinstance(tobj,_iraftask.IrafPkg):
@@ -889,7 +889,7 @@ def substr(s,first,last):
 
 def stridx(test, s):
     """Return location of string s in test using IRAF 1-based indexing"""
-    return _string.find(s,test)+1
+    return s.find(test)+1
 
 def strlen(s):
     """Return length of string"""
@@ -931,7 +931,7 @@ def radix(value, base=10, length=0):
     if length>len(outdigits):
         outdigits.extend((length-len(outdigits))*["0"])
     outdigits.reverse()
-    return _string.join(outdigits,'')
+    return ''.join(outdigits)
 
 def osfn(filename):
     """Convert IRAF virtual path name to OS pathname"""
@@ -944,7 +944,7 @@ def osfn(filename):
     # - otherwise return absolute pathname
 
     ename = Expand(filename)
-    dlist = _string.split(ename,_os.sep)
+    dlist = ename.split(_os.sep)
     dlist = map(_string.strip, dlist)
     if len(dlist)==1 and dlist[0] not in [_os.curdir,_os.pardir]:
         return dlist[0]
@@ -952,7 +952,7 @@ def osfn(filename):
     # I use string.join instead of os.path.join here because
     # os.path.join("","") returns "" instead of "/"
 
-    epath = _string.join(dlist, _os.sep)
+    epath = _os.sep.join(dlist)
     fname = _os.path.abspath(epath)
     # append '/' if relative directory was at end or filename ends with '/'
     if fname[-1] != _os.sep and dlist[-1] in ['', _os.curdir,_os.pardir]:
@@ -1019,13 +1019,13 @@ def _imextn():
     """
     # imextn environment variable has list (or use default)
     s = envget("imextn", "oif:imh fxf:fits,fit plf:pl qpf:qp stf:hhh,??h")
-    fields = _string.split(s)
+    fields = s.split()
     extlist = []
     for f in fields:
-        ilist = _string.split(f, ":")
+        ilist = f.split(":")
         if len(ilist) != 2:
             raise IrafError("Illegal field `%s' in IRAF variable imextn" % f)
-        exts = _string.split(ilist[1], ",")
+        exts = ilist[1].split(",")
         extlist.append((ilist[0], exts))
     return extlist
 
@@ -1056,7 +1056,7 @@ def imaccess(filename):
     """Returns true if image matching name exists and is readable"""
     extlist = _imextn()
     # strip off any image sections (just ignore them)
-    i = _string.find(filename, '[')
+    i = filename.find('[')
     if i>=0: filename = filename[:i]
     filename = Expand(filename)
     # first see if filename is fully specified and exists
@@ -1134,10 +1134,10 @@ def boolean(value):
         return INDEF
     tval = type(value)
     if tval is _types.StringType:
-        v2 = _irafutils.stripQuotes(_string.strip(value))
+        v2 = _irafutils.stripQuotes(value.strip())
         if v2 == "INDEF":
             return INDEF
-        ff = _string.lower(v2)
+        ff = v2.lower()
         if ff == "no":
             return 0
         elif ff == "yes":
@@ -1184,7 +1184,7 @@ def fscan(locals, line, *namelist, **kw):
         _weirdEOF(locals, namelist)
         _nscan = 0
         return EOF
-    f = _string.split(line)
+    f = line.split()
     n = min(len(f),len(namelist))
     # a tricky thing -- null input is OK if the first variable is
     # a struct
@@ -1215,7 +1215,7 @@ def fscan(locals, line, *namelist, **kw):
                 # a single following whitespace character also gets removed
                 # (don't blame me, this is how IRAF does it!)
                 pat.append(r'\s')
-                pat = _string.join(pat,'')
+                pat = ''.join(pat)
                 mm = _re.match(pat, line)
                 if mm is None:
                     raise RuntimeError("Bug: line '%s' pattern '%s' failed" %
@@ -1288,11 +1288,11 @@ def _isStruct(locals, name, checklegal=0):
     If checklegal is true, returns true only if variable is struct and
     does not currently have a legal value.
     """
-    c = _string.split(name,'.')
+    c = name.split('.')
     if len(c)>1:
         # must get the parameter object, not the value
         c[-1] = 'getParObject(%s)' % `c[-1]`
-    fname = _string.join(c,'.')
+    fname = '.'.join(c)
     try:
         par = eval(fname, locals)
     except KeyboardInterrupt:
@@ -1386,7 +1386,7 @@ def set(*args, **kw):
                     svalue = str(value)
                     _varDict[keyword] = svalue
                     msg.append("set %s=%s\n" % (keyword, svalue))
-                _irafexecute.processCache.setenv(_string.join(msg,""))
+                _irafexecute.processCache.setenv("".join(msg))
             else:
                 # set with no arguments lists all variables (using same format
                 # as IRAF)
@@ -1684,7 +1684,7 @@ def edit(*args, **kw):
     try:
         editor = envget('editor')
         margs = map(Expand, args)
-        _os.system(_string.join([editor,]+margs,' '))
+        _os.system(' '.join([editor,]+margs))
     finally:
         rv = redirReset(resetList, closeFHList)
     return rv
@@ -1752,6 +1752,20 @@ def gflush(*args, **kw):
     try:
         import gki
         gki.kernel.flush()
+    finally:
+        rv = redirReset(resetList, closeFHList)
+    return rv
+
+def pyexecute(filename, **kw):
+    """Execute python code in filename (which may include IRAF path)."""
+    # handle redirection and save keywords
+    redirKW, closeFHList = redirProcess(kw)
+    if kw.has_key('_save'): del kw['_save']
+    if len(kw):
+        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+    resetList = redirApply(redirKW)
+    try:
+        execfile(Expand(filename))
     finally:
         rv = redirReset(resetList, closeFHList)
     return rv
@@ -1933,7 +1947,7 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
         stdin = redirKW['stdin']
         del redirKW['stdin']
         if hasattr(stdin,'name'):
-            filename = _string.split(stdin.name,'.')[0]
+            filename = stdin.name.split('.')[0]
         else:
             filename = 'tmp'
     elif input is not None:
@@ -1945,7 +1959,7 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
             # input is a filehandle
             stdin = input
             if hasattr(stdin,'name'):
-                filename = _string.split(stdin.name,'.')[0]
+                filename = stdin.name.split('.')[0]
             else:
                 filename = 'tmp'
         else:
@@ -2033,7 +2047,7 @@ def task(*args, **kw):
         else:
             del kw['PkgBinary']
         # fix illegal package names
-        spkgname = _string.replace(pkgname, '.', '_')
+        spkgname = pkgname.replace('.', '_')
         if spkgname != pkgname:
             _writeError("Warning: `.' illegal in task name, changing "
                     "`%s' to `%s'" % (pkgname, spkgname))
@@ -2096,7 +2110,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
                     print '    %s' % pkgname
             rv1 = (PkgName, PkgBinary)
         else:
-            spkgname = _string.replace(pkgname, '.', '_')
+            spkgname = pkgname.replace('.', '_')
             # remove trailing comma
             if spkgname[-1:] == ",": spkgname = spkgname[:-1]
             if (spkgname != pkgname) and (Verbose > 0):
@@ -2281,7 +2295,7 @@ def printf(format, *args, **kw):
             mm = _reFormat.search(format, iend)
             i = i+1
         newformat.append(format[iend:])
-        format = _string.join(newformat,'')
+        format = ''.join(newformat)
         # finally ready to print
         try:
             _sys.stdout.write(format % tuple(args))
@@ -2429,19 +2443,19 @@ def clCompatibilityMode(verbose=0, _save=0):
             # simple continuation escape handling
             while line[-1:] == '\\':
                 line = line + '\n' + raw_input(prompt2)
-            line = _string.strip(line)
+            line = line.strip()
             if _exitCommands.has_key(line):
                 break
             elif line[:2] == '!P':
                 # Python escape -- execute Python code
-                exec _string.strip(line[2:]) in locals
+                exec line[2:].strip() in locals
             elif line and (line[0] != '#'):
                 code = clExecute(line, locals=locals, mode='single',
                         local_vars_dict=local_vars_dict,
                         local_vars_list=local_vars_list)
                 if logfile is not None:
                     # log CL code as comment
-                    cllines = _string.split(line,'\n')
+                    cllines = line.split('\n')
                     for oneline in cllines:
                         logfile.write('# '+oneline+'\n')
                     logfile.write(code)
@@ -2504,10 +2518,10 @@ def clExecute(s, locals=None, mode="proc",
         # use special scriptname
         taskname = "CL%s" % (_clExecuteCount,)
         scriptname = "<CL script %s>" % (taskname,)
-        code = _string.lstrip(pycode.code) #XXX needed?
+        code = pycode.code.lstrip() #XXX needed?
         codeObject = compile(code,scriptname,'exec')
         # add this script to linecache
-        codeLines = _string.split(code,'\n')
+        codeLines = code.split('\n')
         linecache.cache[scriptname] = (0,0,codeLines,taskname)
         if locals is None: locals = {}
         exec codeObject in locals
@@ -2551,11 +2565,11 @@ def Expand(instring, noerror=0):
     is confusing and hides errors.
     """
     # call _expand1 for each entry in comma-separated list
-    wordlist = _string.split(instring,",")
+    wordlist = instring.split(",")
     outlist = []
     for word in wordlist:
         outlist.append(_os.path.expanduser(_expand1(word, noerror=noerror)))
-    return _string.join(outlist,",")
+    return ",".join(outlist)
 
 def _expand1(instring, noerror):
     """Expand a string with embedded IRAF variables (IRAF virtual filename)"""
@@ -2565,7 +2579,7 @@ def _expand1(instring, noerror):
     mm = __re_var_paren.search(instring)
     while mm is not None:
         # remove embedded dollar signs from name
-        varname = _string.replace(mm.group('varname'),'$','')
+        varname = mm.group('varname').replace('$','')
         if defvar(varname):
             varname = envget(varname)
         elif noerror:
@@ -2613,13 +2627,13 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
     elif pkgbinary is None:
         pkgbinary = ''
     # fix illegal names
-    spkgname = _string.replace(pkgname, '.', '_')
+    spkgname = pkgname.replace('.', '_')
     if spkgname != pkgname:
         _writeError("Warning: `.' illegal in package name, changing "
                 "`%s' to `%s'" % (pkgname, spkgname))
         pkgname = spkgname
 
-    staskname = _string.replace(taskname, '.', '_')
+    staskname = taskname.replace('.', '_')
     if staskname != taskname:
         _writeError("Warning: `.' illegal in task name, changing "
                 "`%s' to `%s'" % (taskname, staskname))
@@ -2857,12 +2871,12 @@ def redirProcess(kw):
                             (key, type(value)))
                 try:
                     if value and value[0][-1:] == '\n':
-                        s = _string.join(value,'')
+                        s = ''.join(value)
                     else:
                         # ensure there is a newline at the end
                         value.append('')
                         try:
-                            s = _string.join(value,'\n')
+                            s = '\n'.join(value)
                         finally:
                             value.pop()
                     fh = _StringIO.StringIO(s)
@@ -2927,7 +2941,7 @@ def redirReset(resetList, closeFHList):
         # unfortunately cStringIO.StringIO has no readlines method:
         # PipeOut.seek(0)
         # rv = PipeOut.readlines()
-        rv = _string.split(PipeOut.getvalue(),'\n')
+        rv = PipeOut.getvalue().split('\n')
         PipeOut.close()
         # delete trailing null value
         if len(rv)>1 and rv[-1] == '':

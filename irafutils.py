@@ -67,16 +67,16 @@ def removeEscapes(value, quoted=0):
     XXX Should we remove \\ too?
     """
 
-    i = string.find(value,r'\"')
+    i = value.find(r'\"')
     while i>=0:
         value = value[:i] + value[i+1:]
-        i = string.find(value,r'\"',i+1)
-    i = string.find(value,r"\'")
+        i = value.find(r'\"',i+1)
+    i = value.find(r"\'")
     while i>=0:
         value = value[:i] + value[i+1:]
-        i = string.find(value,r"\'",i+1)
+        i = value.find(r"\'",i+1)
     # delete backslash-newlines
-    i = string.find(value,"\\\n")
+    i = value.find("\\\n")
     while i>=0:
         j = i+2
         if quoted:
@@ -86,7 +86,7 @@ def removeEscapes(value, quoted=0):
                     break
                 j = j+1
         value = value[:i] + value[j:]
-        i = string.find(value,"\\\n",i+1)
+        i = value.find("\\\n",i+1)
     return value
 
 # Must modify Python keywords to make Python code legal.  I add 'PY' to
@@ -103,26 +103,26 @@ def translateName(s, dot=0):
     If dot != 0, also replaces '.' with 'DOT'
     """
 
-    s = string.replace(s, '$', 'DOLLAR')
-    sparts = string.split(s,'.')
+    s = s.replace('$', 'DOLLAR')
+    sparts = s.split('.')
     for i in range(len(sparts)):
         if sparts[i] == "" or sparts[i][0] in string.digits or \
           keyword.iskeyword(sparts[i]):
             sparts[i] = 'PY' + sparts[i]
     if dot:
-        return string.join(sparts,'DOT')
+        return 'DOT'.join(sparts)
     else:
-        return string.join(sparts,'.')
+        return '.'.join(sparts)
 
 def untranslateName(s):
 
     """Undo Python conversion of CL parameter or variable name"""
 
-    s = string.replace(s, 'DOT', '.')
-    s = string.replace(s, 'DOLLAR', '$')
+    s = s.replace('DOT', '.')
+    s = s.replace('DOLLAR', '$')
     # delete 'PY' at start of name components
     if s[:2] == 'PY': s = s[2:]
-    s = string.replace(s, '.PY', '.')
+    s = s.replace('.PY', '.')
     return s
 
 # procedures to read while still allowing Tk widget updates
