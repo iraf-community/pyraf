@@ -1037,7 +1037,18 @@ def defpar(paramname):
 
 def access(filename):
     """Returns true if file exists"""
+    filename = _denode(filename)
     return _os.path.exists(Expand(filename))
+
+_denode_pat = _re.compile(r'[^/]*!')
+
+def _denode(filename):
+    """Remove IRAF "node!" specification from filename"""
+    mm = _denode_pat.match(filename)
+    if mm is None:
+        return filename
+    else:
+        return filename[len(mm.group()):]
 
 def _imextn():
     """Returns list of image types and extensions
@@ -1084,6 +1095,7 @@ def _searchext(root, extlist):
 def imaccess(filename):
     """Returns true if image matching name exists and is readable"""
     extlist = _imextn()
+    filename = _denode(filename)
     # strip off any image sections (just ignore them)
     i = filename.find('[')
     if i>=0: filename = filename[:i]
