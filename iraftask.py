@@ -523,7 +523,7 @@ class IrafTask:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
 
-	def save(self,filename=None):
+	def saveParList(self,filename=None):
 		"""Write task parameters in .par format to filename (name or handle)
 
 		If filename is omitted, writes to uparm scrunch file (if possible)
@@ -541,7 +541,7 @@ class IrafTask:
 					(self._name,)
 				if iraf.Verbose>0: print status
 				return status
-		rv = self._currentParList.saveList(filename)
+		rv = self._currentParList.saveParList(filename)
 		if type(filename) is types.StringType:
 			self._currentParpath = filename
 		elif hasattr(filename,'name'):
@@ -614,10 +614,8 @@ class IrafTask:
 		return apply(self.run,args,kw)
 
 	def __repr__(self):
-		return '<%s %s at %s>' % (self.__class__.__name__, self._name,
-							hex(id(self))[2:])
-
-	def __str__(self):
+		# return '<%s %s at %s>' % (self.__class__.__name__, self._name,
+		#					hex(id(self))[2:])
 		s = '<%s %s (%s) Pkg: %s Bin: %s' % \
 			(self.__class__.__name__, self._name, self._filename, 
 			self._pkgname, string.join(self._pkgbinary,':'))
@@ -626,6 +624,9 @@ class IrafTask:
 		if self._hasparfile == 0: s = s + ' No parfile'
 		if self._tbflag: s = s + ' .tb'
 		return s + '>'
+
+	def __str__(self):
+		return str(self)
 
 	#=========================================================
 	# private methods -- may be used by subclasses, but should
@@ -693,7 +694,7 @@ class IrafTask:
 				par.get()._updateParList(save)
 		# save to disk if there were changes
 		if changed:
-			rv = self.save()
+			rv = self.saveParList()
 			if iraf.Verbose>1: print rv
 
 	def _deleteRunningParList(self):
@@ -923,7 +924,7 @@ class IrafGKITask(IrafTask):
 		self._defaultParList = pars
 		self._currentParList = pars
 
-	def save(self,filename=None):
+	def saveParList(self,filename=None):
 		"""Never save parameters for kernels"""
 		pass
 
@@ -951,6 +952,12 @@ class IrafPset(IrafTask):
 		# should executing a pset run epar?
 		# currently we silently do nothing
 		pass
+
+	def __str__(self):
+		# when coerced to a string, pset is name of task
+		# this makes assignment of a pset to a string do the right thing
+		return self.getName()
+
 
 # -----------------------------------------------------
 # IRAF Python task class

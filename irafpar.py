@@ -6,7 +6,7 @@ R. White, 2000 January 7
 """
 
 import os, sys, string, re, types
-import irafimcur, irafukey, irafutils, minmatch, epar
+import irafimcur, irafukey, irafutils, iraftask, minmatch, epar
 from irafglobals import INDEF, Verbose, yes, no
 import gki
 
@@ -1215,7 +1215,7 @@ class IrafParPset(IrafParS):
 
 	def __init__(self,fields,filename,strict=0):
 		IrafParS.__init__(self,fields,filename,strict)
-		# omitted list parameters default to null string
+		# omitted pset parameters default to null string
 		if self.value is None: self.value = ""
 
 	def get(self, field=None, index=None, lpar=0, prompt=1, native=0, mode="h"):
@@ -1236,6 +1236,7 @@ class IrafParPset(IrafParS):
 		else:
 			raise ValueError("Pset parameter `%s' is a .par file -- "
 				" Pyraf cannot handle this yet" % self.name)
+
 
 # -----------------------------------------------------
 # IRAF list parameter base class
@@ -1968,7 +1969,7 @@ class IrafParList:
 		if name[:1] == '_':
 			self.__dict__[name] = value
 		else:
-			self.setValue(name,value)
+			self.setParam(name,value)
 
 	def __len__(self): return len(self.__pars)
 
@@ -2033,7 +2034,7 @@ class IrafParList:
 				value = iraf.clParGet(value[1:],native=native,mode="h")
 		return value
 
-	def setValue(self,param,value):
+	def setParam(self,param,value):
 		"""Set task parameter 'param' to value (with minimum-matching)"""
 		self.getParObject(param).set(value)
 
@@ -2100,10 +2101,10 @@ class IrafParList:
 
 		# Number of arguments on command line, $nargs, is used by some IRAF
 		# tasks (e.g. imheader).
-		self.setValue('$nargs',len(args))
+		self.setParam('$nargs',len(args))
 
 	def eParam(self):
-		epar.epar(self.__name)
+		epar.epar(self)
 
 	def lParam(self,verbose=0):
 		"""List the task parameters"""
@@ -2125,8 +2126,12 @@ class IrafParList:
 				print "%s%s" % (taskname,p.dpar(cl=cl))
 		if cl: print "# EOF"
 
-	def saveList(self, filename):
+	def saveParList(self, filename=None):
 		"""Write .par file data to filename (string or filehandle)"""
+		if filename is None:
+			filename = self.__filename
+		if not filename:
+			raise ValueError("No filename specified to save parameters")
 		if hasattr(filename,'write'):
 			fh = filename
 		else:
@@ -2162,6 +2167,21 @@ class IrafParList:
 		s = '<IrafParList ' + self.__name + ' (' + self.__filename + ') ' + \
 			str(len(self.__pars)) + ' parameters>'
 		return s
+
+	# these methods are provided so an IrafParList can be treated like
+	# an IrafTask object by epar (and other modules)
+
+	def getDefaultParList(self):
+		return self.getParList()
+
+	def getName(self):
+		return self.__filename
+
+	def getPkgname(self):
+		return ''
+
+	def run(self, *args, **kw):
+		pass
 
 def _printVerboseDiff(list1, list2):
 	"""Print description of differences between parameter lists"""

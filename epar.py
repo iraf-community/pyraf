@@ -11,7 +11,7 @@ from tkMessageBox import askokcancel
 import os, sys, string
 
 # PyRAF modules
-import iraf, irafpar, iraftask, irafhelp, cStringIO
+import iraf, irafpar, irafhelp, cStringIO
 from irafglobals import pyrafDir, userWorkingHome
 
 from eparoption import *
@@ -48,11 +48,12 @@ class EparDialog:
     def __init__(self, taskName, parent = None, isChild = 0,
                  title = "PyRAF Parameter Editor", childList = None):
 
-        # Get the Iraftask object to determine the package name
-        if isinstance(taskName, iraftask.IrafTask):
+        # Get the Iraftask object
+        if isinstance(taskName, irafpar.IrafParList):
+            # IrafParList acts as an IrafTask for our purposes
             self.taskObject = taskName
         else:
-            self.taskName   = string.lower(taskName)
+            # taskName must be a string or an IrafTask object
             self.taskObject = iraf.getTask(taskName)
 
         # Now go back and ensure we have the full taskname
@@ -355,15 +356,21 @@ class EparDialog:
         helpbox = Frame(topbox, bg = self.bkgColor)
 
         # Set up the information strings
-        packString = "  Package = " + string.upper(pkgName)
-        Label(textbox, text = packString, bg = self.bkgColor).pack(side = TOP,
-              anchor = W)
+        if isinstance(self.taskObject, irafpar.IrafParList):
+            # label for a parameter list is just filename
+            packString = " Filename = " + taskName
+            Label(textbox, text=packString, bg=self.bkgColor).pack(side=TOP,
+                  anchor=W)
+        else:
+            # labels for Iraf task
+            packString = "  Package = " + string.upper(pkgName)
+            Label(textbox, text=packString, bg=self.bkgColor).pack(side=TOP,
+                  anchor=W)
 
-        taskString = "       Task = " + string.upper(taskName)
-        Label(textbox, text = taskString, bg = self.bkgColor).pack(side = TOP,
-              anchor = W)
+            taskString = "       Task = " + string.upper(taskName)
+            Label(textbox, text=taskString, bg=self.bkgColor).pack(side=TOP,
+                  anchor=W)
         textbox.pack(side = LEFT, anchor = W)
-
         topbox.pack(side = TOP, expand = TRUE, fill = X)
 
     # Method to set up the parent menu bar
@@ -654,10 +661,7 @@ class EparDialog:
     # back to the system default
     def unlearn(self, event = None):
 
-        ## This sets the memory objects back to the defaults
-        #self.taskObject.unlearn()
-
-        # Reset the view of the parameters
+        # Reset the values of the parameters
         self.unlearnAllEntries(self.top.f.canvas.entries)
 
 
@@ -802,7 +806,7 @@ class EparDialog:
                 self.taskObject.setParam(par.name, value)
 
         # save results to the uparm directory
-        self.taskObject.save()
+        self.taskObject.saveParList()
 
         return self.badEntries
 

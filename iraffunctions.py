@@ -413,7 +413,10 @@ def getTask(taskname, found=0):
 	if task is not found.
 	"""
 
-	if isinstance(taskname,_iraftask.IrafTask): return taskname
+	if isinstance(taskname,_iraftask.IrafTask):
+		return taskname
+	elif not isinstance(taskname, _types.StringType):
+		raise TypeError("Argument to getTask is not a string or IrafTask instance")
 
 	# undo any modifications to the taskname
 	taskname = _irafutils.untranslateName(taskname)
@@ -1535,7 +1538,7 @@ def update(*args, **kw):
 	try:
 		for taskname in args:
 			try:
-				getTask(taskname).save()
+				getTask(taskname).saveParList()
 			except KeyError, e:
 				_writeError("Warning: Could not find task %s for update" %
 					taskname)

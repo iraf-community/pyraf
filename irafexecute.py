@@ -279,7 +279,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 		focusMark = wutil.focusController.getCurrentMark()
 		gki.kernel.pushStdio(None,None,None)
 		try:
-			irafprocess.run(task, stdin=stdin,stdout=stdout,stderr=stderr)
+			irafprocess.run(task, pstdin=stdin, pstdout=stdout, pstderr=stderr)
 		finally:
 			wutil.focusController.restoreToMark(focusMark)
 			gki.kernel.popStdio()
@@ -372,7 +372,7 @@ class IrafProcess:
 
 		self.envVarList.append(msg)
 
-	def run(self, task, stdin=None, stdout=None, stderr=None):
+	def run(self, task, pstdin=None, pstdout=None, pstderr=None):
 
 		"""Run the IRAF logical task (which must be in this executable)
 
@@ -381,17 +381,14 @@ class IrafProcess:
 		getName(): return the name of the task
 		getParam(param): get parameter value
 		setParam(param,value): set parameter value
+		getParObject(param): get parameter object
 		"""
 
 		self.task = task
 		# set IO streams
-		if stdin is None: stdin = sys.stdin
-		if stdout is None:
-			if stderr is not None:
-				stdout = stderr
-			else:
-				stdout = sys.stdout
-		if stderr is None: stderr = sys.stderr
+		stdin = pstdin or sys.stdin
+		stdout = pstdout or pstderr or sys.stdout
+		stderr = pstderr or sys.stderr
 		self.stdin = stdin
 		self.stdout = stdout
 		self.stderr = stderr
@@ -409,8 +406,8 @@ class IrafProcess:
 		# redir_info tells task that IO has been redirected
 
 		redir_info = ''
-		if not self.stdinIsatty: redir_info = '<'
-		if not self.stdoutIsatty: redir_info = redir_info+'>'
+		if pstdin: redir_info = '<'
+		if pstdout or pstderr: redir_info = '>'
 
 		# update IRAF environment variables if necessary
 		if self.envVarList:
@@ -584,7 +581,19 @@ class IrafProcess:
 		sys.stdout = gki.kernel.getStdout(default=sys.__stdout__)
 		try:
 			try:
-				pmsg = self.task.getParam(paramname) + '\n'
+				#YYY? pmsg = str(self.task.getParam(paramname)) + '\n'
+				pmsg = self.task.getParam(paramname)
+				if type(pmsg) != types.StringType:
+					# Only psets should return a non-string type (they
+					# return the task object).
+					# Work a little to get the underlying string value.
+					# (Yes, this is klugy, but there are so many places
+					# where it is necessary to return the task object
+					# for a pset that this seems like a small price to
+					# pay.)
+					param = self.task.getParObject(paramname)
+					pmsg = param.get(lpar=1)
+				pmsg = pmsg + '\n'
 			except EOFError:
 				pmsg = 'EOF\n'
 		finally:
@@ -760,7 +769,9 @@ class IrafProcess:
 				self.msg = ""
 			if not (string.find(cmd, IPCOUT) >= 0):
 				# normal case -- execute the CL script code
-				iraf.clExecute(cmd)
+				# redirect I/O (but don't use graphics status line)
+				iraf.clExecute(cmd, Stdout=self.default_stdout,
+					Stdin=self.default_stdin, Stderr=self.default_stderr)
 			else:
 				#
 				# Bizzaro protocol -- redirection to file with special
@@ -778,16 +789,14 @@ class IrafProcess:
 						% (cmd,))
 				sys.stdout.flush()
 				# strip the redirection off and capture output of command
-				saveout = sys.stdout
-				try:
-					sys.stdout = cStringIO.StringIO()
-					iraf.clExecute(cmd[:ll]+"\n")
-					# send it off to the task with special flag line at end
-					sys.stdout.write(IPCDONEMSG)
-					self.writeString(sys.stdout.getvalue())
-					sys.stdout.close()
-				finally:
-					sys.stdout = saveout
+				buffer = cStringIO.StringIO()
+				# redirect other I/O (but don't use graphics status line)
+				iraf.clExecute(cmd[:ll]+"\n", Stdout=buffer,
+					Stdin=self.default_stdin, Stderr=self.default_stderr)
+				# send it off to the task with special flag line at end
+				buffer.write(IPCDONEMSG)
+				self.writeString(buffer.getvalue())
+				buffer.close()
 		elif mcmd.group('stty'):
 			# terminal window size
 			if self.stdoutIsatty:
