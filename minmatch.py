@@ -20,10 +20,10 @@ for ambiguous matches.
 
 $Id$
 
-R. White, 1999 March 24
+R. White, 2000 January 19
 """
 
-import types
+import types, copy
 from UserDict import UserDict
 
 class AmbiguousKeyError(KeyError):
@@ -38,6 +38,24 @@ class MinMatchDict(UserDict):
 		self.minkeylength = minkeylength
 		if dict:
 			for key in dict.keys(): self.add(key,dict[key])
+
+	def __deepcopy__(self, memo=None):
+		"""Deep copy of dictionary"""
+		# this is about twice as fast as the default implementation
+		return self.__class__(copy.deepcopy(self.data,memo), self.minkeylength)
+
+	def __getinitargs__(self):
+		"""Return __init__ args for pickle"""
+		return (self.data, self.minkeylength)
+
+	def __getstate__(self):
+		"""Return state info for pickle"""
+		# no additional state after init
+		return None
+
+	def __setstate__(self, state):
+		"""Restore state info from pickle"""
+		pass
 
 	def getfullkey(self, key, new=0):
 		if type(key) != types.StringType:
@@ -67,9 +85,9 @@ class MinMatchDict(UserDict):
 		if not self.has_exact_key(key):
 			# add abbreviations as short as minkeylength
 			# always add at least one entry (even for key="")
-			start = max(min(self.minkeylength,len(key)),0)-1
-			for i in xrange(start,len(key)):
-				s = key[0:i+1]
+			start = min(self.minkeylength,len(key))
+			for i in range(start,len(key)+1):
+				s = key[0:i]
 				value = self.mmkeys.get(s)
 				if value is None:
 					self.mmkeys[s] = [key]

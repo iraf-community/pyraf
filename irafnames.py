@@ -14,12 +14,15 @@ def _addName(task, module):
 	"""Add a task object to the module namespace
 
 	Skip if there is a collision with another name
+	unless it is an IrafTask
 	"""
 	name = task.getName()
-	d = module.__dict__
-	p = d.get(name)
+	if hasattr(module, name):
+		p = getattr(module, name)
+	else:
+		p = None
 	if (not p) or isinstance(p, iraftask.IrafTask):
-		d[name] = task
+		setattr(module, name, task)
 	else:
 		if irafglobals.Verbose>0:
 			print "Warning: " + module.__name__ + "." + \

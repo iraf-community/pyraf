@@ -9,16 +9,41 @@ import os, sys, string, types, copy, re
 import minmatch, subproc
 import iraf, irafpar, irafexecute, epar, cl2py, irafutils
 
-
 # -----------------------------------------------------
 # IRAF task class
 # -----------------------------------------------------
+
+# basic IrafTask attributes
+_IrafTask_attr_dict = {
+	'_name': None,
+	'_pkgname': None,
+	'_pkgbinary': None,
+	'_hidden': 0,
+	'_hasparfile': 1,
+	'_tbflag': 0,
+	# full path names and parameter list get filled in on demand
+	'_fullpath': None,
+	# parameters have a current set of values and a default set
+	'_currentParList': None,
+	'_defaultParList': None,
+	'_runningParList': None,
+	'_currentParpath': None,
+	'_defaultParpath': None,
+	'_scrunchParpath': None,
+	'_parDictList': None,
+	'_foreign': 0,
+	}
 
 class IrafTask:
 
 	"""IRAF task class"""
 
 	def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
+		# for this heavily used code, pull out the dictionary and
+		# initialize it directly to avoid calls to __setattr__
+		objdict = self.__dict__
+		# stuff all the parameters into the object
+		objdict.update(_IrafTask_attr_dict)
 		sname = string.replace(name, '.', '_')
 		if sname != name:
 			print "Warning: '.' illegal in task name, changing", name, \
@@ -27,48 +52,27 @@ class IrafTask:
 		if spkgname != pkgname:
 			print "Warning: '.' illegal in pkgname, changing", pkgname, \
 				"to", spkgname
-		self._name = sname
-		self._pkgname = spkgname
-		self._pkgbinary = []
+		objdict['_name'] = sname
+		objdict['_pkgname'] = spkgname
+		objdict['_pkgbinary'] = []
 		self.addPkgbinary(pkgbinary)
 		# tasks with names starting with '_' are implicitly hidden
-		if name[0:1] == '_':
-			self._hidden = 1
-		else:
-			self._hidden = 0
-		if prefix == '$':
-			self._hasparfile = 0
-		else:
-			self._hasparfile = 1
-		if suffix == '.tb':
-			self._tbflag = 1
-		else:
-			self._tbflag = 0
-		# full path names and parameter list get filled in on demand
-		self._fullpath = None
-		# parameters have a current set of values and a default set
-		self._currentParList = None
-		self._defaultParList = None
-		self._runningParList = None
-		# parameter file has a current value and a default value
-		self._currentParpath = None
-		self._defaultParpath = None
-		self._scrunchParpath = None
-		self._parDictList = None
+		if name[0:1] == '_': objdict['_hidden'] = 1
+		if prefix == '$': objdict['_hasparfile'] = 0
+		if suffix == '.tb': objdict['_tbflag'] = 1
 		if filename and filename[0] == '$':
 			# this is a foreign task
-			self._foreign = 1
-			self._filename = filename[1:]
+			objdict['_foreign'] = 1
+			objdict['_filename'] = filename[1:]
 			# handle weird syntax for names
 			if self._filename == 'foreign':
-				self._filename = name
+				objdict['_filename'] = name
 			elif self._filename[:8] == 'foreign ':
-				self._filename = name + self._filename[7:]
+				objdict['_filename'] = name + self._filename[7:]
 			elif filename[:2] == '$0':
-				self._filename = name + filename[2:]
+				objdict['_filename'] = name + filename[2:]
 		else:
-			self._foreign = 0
-			self._filename = filename
+			objdict['_filename'] = filename
 
 	def initTask(self, force=0):
 		"""Fill in full pathnames of files and read parameter file(s)"""
@@ -305,7 +309,7 @@ class IrafTask:
 				raise iraf.IrafError("Could not find task " + task +
 					" to get parameter " + qualifiedName)
 			except iraf.IrafError, e:
-				raise iraf.IrafError(e + "\nFailed to set parameter " +
+				raise iraf.IrafError(str(e) + "\nFailed to set parameter " +
 					qualifiedName)
 
 		# no task specified, just search the standard dictionaries
@@ -381,7 +385,7 @@ class IrafTask:
 				raise iraf.IrafError("Could not find task " + task +
 					" to get parameter " + qualifiedName)
 			except iraf.IrafError, e:
-				raise iraf.IrafError(e + "\nFailed to get parameter " +
+				raise iraf.IrafError(str(e) + "\nFailed to get parameter " +
 					qualifiedName)
 
 		# no task specified, just search the standard dictionaries
@@ -795,12 +799,14 @@ class IrafPset(IrafTask):
 class ParDictListSearch:
 	def __init__(self, taskObj):
 		self.__dict__['_taskObj'] = taskObj
+
 	def __getattr__(self, paramname):
 		if paramname[:1] == '_': raise AttributeError(paramname)
 		try:
 			return self._taskObj.getParam(paramname,native=1)
 		except SyntaxError, e:
 			raise AttributeError(str(e))
+
 	def __setattr__(self, paramname, value):
 		if paramname[:1] == '_': raise AttributeError(paramname)
 		self._taskObj.setParam(paramname, value)
@@ -833,7 +839,8 @@ class IrafCLTask(IrafTask):
 				(self.getName(), filename))
 		# placeholder for Python translation of CL code
 		# (lazy instantiation)
-		self._pycode = None
+		self.__dict__['_pycode'] = None
+		self.__dict__['_clFunction'] = None
 		if fh is not None:
 			# if filehandle was specified, go ahead and do the
 			# initialization now
@@ -887,7 +894,14 @@ class IrafCLTask(IrafTask):
 
 		if self._pycode is not None:
 			# Python code already exists, but make sure file has not changed
-			if cl2py.checkCache(filehandle, self._pycode): return
+			if cl2py.checkCache(filehandle, self._pycode):
+				# make sure function pointer is defined (it may not be
+				# if this object has been reconstituted from pickle file)
+				if self._clFunction is None:
+					clDict = {}
+					exec self._codeObject in clDict
+					self._clFunction = clDict[self._pycode.vars.proc_name]
+				return
 			if iraf.Verbose>1:
 				print "Cached version of %s is out-of-date" % (self._name,)
 
@@ -962,6 +976,22 @@ class IrafCLTask(IrafTask):
 			if self._parDictList: self._parDictList[0] = (self._name,
 								self._currentParList.getParDict())
 		if iraf.Verbose>1: print 'Successful task termination'
+
+	#=========================================================
+	# special methods
+	#=========================================================
+
+	def __getstate__(self):
+		"""Return state for pickling"""
+		# Dictionary is OK except for function pointer
+		# Note that __setstate__ is not needed because
+		# returned state is a dictionary
+		if self._clFunction is None:
+			return self.__dict__
+		# replace _clFunction in shallow copy of dictionary
+		dict = copy.copy(self.__dict__)
+		dict['_clFunction'] = None
+		return dict
 
 	#=========================================================
 	# private methods

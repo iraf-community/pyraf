@@ -17,10 +17,11 @@ $Id$
 R. White, 2000 January 5
 """
 
-import os, sys
+import os, sys, types
 _os = os
 _sys = sys
-del os, sys
+_types = types
+del os, sys, types
 
 yes = 1
 no = 0
@@ -93,10 +94,19 @@ class _INDEFClass:
 			# only allow one to be created
 			raise RuntimeError("Use INDEF object, not _INDEFClass")
 
+	def __copy__(self):
+		"""Not allowed to make a copy"""
+		return self
+
+	def __deepcopy__(self, memo=None):
+		"""Not allowed to make a copy"""
+		return self
+
 	def __cmp__(self, other):
-		if other is INDEF:
-			# this probably never gets called since Python checks
-			# whether the objects are identical before calling __cmp__
+		if type(other) is _types.InstanceType and \
+				other.__class__ == self.__class__:
+			# Despite trying to create only one INDEF object, there
+			# could be more than one.  All INDEFs are equal.
 			return 0
 		else:
 			#XXX Note this implies INDEF is equivalent to +infinity

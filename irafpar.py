@@ -5,10 +5,13 @@ $Id$
 R. White, 2000 January 7
 """
 
-import os, sys, string, re
+import os, sys, string, re, types
 import irafgcur, irafimcur, irafukey, irafutils, minmatch, epar
-from types import *
 from irafglobals import INDEF, Verbose
+
+# container class used for __deepcopy__ method
+import copy
+class _EmptyClass: pass
 
 # -----------------------------------------------------
 # Warning (non-fatal) error.  Raise an exception if in
@@ -189,6 +192,7 @@ _IrafPar_attr_dict = {
 	"min" : None,
 	"max" : None,
 	"choice" : None,
+	"choiceDict" : None,
 	"prompt" : None,
 	"flags" : 0,
 	}
@@ -289,7 +293,7 @@ class IrafPar:
 		Returns true if parameters are consistent, false if inconsistent.
 		Only checks immutable param characteristics (name & type).
 		"""
-		if (type(other) != InstanceType) or \
+		if (type(other) != types.InstanceType) or \
 		   (other.__class__ != self.__class__): return 0
 		# check the fields
 		# returns 1 if all agree, else 0
@@ -361,9 +365,7 @@ class IrafPar:
 		else:
 			pstring = self.name
 		if self.choice:
-			schoice = [None]*len(self.choice)
-			for i in xrange(len(self.choice)):
-				schoice[i] = self.toString(self.choice[i])
+			schoice = map(self.toString, self.choice)
 			pstring = pstring + " (" + string.join(schoice,"|") + ")"
 		elif self.min not in [None, INDEF] or \
 			 self.max not in [None, INDEF]:
@@ -459,12 +461,12 @@ class IrafPar:
 		_coerceOneValue.  Returns value if OK, or raises
 		ValueError if not OK.
 		"""
-		if v in [None, INDEF] or (type(v) is StringType and v[:1] == ")"):
+		if v in [None, INDEF] or (type(v) is types.StringType and v[:1] == ")"):
 			return v
 		elif v == "":
 			# most parameters treat null string as omitted value
 			return None
-		elif self.choice is not None and v not in self.choice:
+		elif self.choice is not None and not self.choiceDict.has_key(v):
 			raise ValueError("Value '" + str(v) +
 				"' is not in choice list for " + self.name)
 		elif (self.min not in [None, INDEF] and v<self.min):
@@ -515,21 +517,30 @@ class IrafPar:
 				s = s + " <= " + str(self.max)
 		return s
 
-	def save(self):
-		"""Return .par format string for this parameter"""
+	def save(self, dolist=0):
+		"""Return .par format string for this parameter
+		
+		If dolist is set, returns fields as a list of strings.  Default
+		is to return a single string appropriate for writing to a file.
+		"""
+		quoted = not dolist
 		fields = 7*[""]
 		fields[0] = self.name
 		fields[1] = self.type
 		fields[2] = self.mode
-		fields[3] = self.toString(self.value,quoted=1)
+		fields[3] = self.toString(self.value,quoted=quoted)
 		if self.choice is not None:
-			fields[4] = repr(string.join(map(self.toString, self.choice),'|'))
+			schoice = map(self.toString, self.choice)
+			fields[4] = repr(string.join(schoice,'|'))
 		elif self.min not in [None,INDEF]:
-			fields[4] = self.toString(self.min,quoted=1)
+			fields[4] = self.toString(self.min,quoted=quoted)
 		if self.max not in [None,INDEF]:
-			fields[5] = self.toString(self.max,quoted=1)
+			fields[5] = self.toString(self.max,quoted=quoted)
 		if self.prompt:
-			sprompt = repr(self.prompt)
+			if quoted:
+				sprompt = repr(self.prompt)
+			else:
+				sprompt = self.prompt
 			# prompt can have embedded newlines (which are printed)
 			sprompt = string.replace(sprompt, r'\012', '\n')
 			sprompt = string.replace(sprompt, r'\n', '\n')
@@ -538,7 +549,10 @@ class IrafPar:
 		for i in [6,5,4]:
 			if fields[i] != "": break
 			del fields[i]
-		return string.join(fields, ',')
+		if dolist:
+			return fields
+		else:
+			return string.join(fields, ',')
 
 	#--------------------------------------------
 	# special methods to give desired object syntax
@@ -570,14 +584,43 @@ class IrafPar:
 			raise AttributeError("No attribute %s for parameter %s" %
 				(attr, self.name))
 
+	def __deepcopy__(self, memo=None):
+		"""Deep copy of this parameter object"""
+		new = _EmptyClass()
+		# shallow copy of dictionary suffices for most attributes
+		new.__dict__ = copy.copy(self.__dict__)
+		# value, choice may be lists of atomic items
+		new.value = copy.copy(self.value)
+		new.choice = copy.copy(self.choice)
+		# choiceDict needs deep copy
+		if new.choice is not None:
+			new.choiceDict = copy.deepcopy(self.choiceDict, memo)
+		new.__class__ = self.__class__
+		return new
+
+	def __getstate__(self):
+		"""Return state info for pickle"""
+		# choiceDict gets reconstructed
+		if self.choice is None:
+			return self.__dict__
+		else:
+			d = copy.copy(self.__dict__)
+			d['choiceDict'] = None
+			return d
+
+	def __setstate__(self, state):
+		"""Restore state info from pickle"""
+		self.__dict__ = state
+		if self.choice is not None:
+			self._setChoiceDict()
+
 	def __str__(self):
 		"""Return readable description of parameter"""
 		s = "<" + self.__class__.__name__ + " " + self.name + " " + self.type
 		s = s + " " + self.mode + " " + `self.value`
 		if self.choice is not None:
-			s = s + " |"
-			for i in xrange(len(self.choice)):
-				s = s + str(self.choice[i]) + "|"
+			schoice = map(self.toString, self.choice)
+			s = s + " |" + string.join(schoice,"|") + "|"
 		else:
 			s = s + " " + `self.min` + " " + `self.max`
 		s = s + ' "' + self.prompt + '">'
@@ -595,10 +638,14 @@ class IrafPar:
 	def _setChoice(self,s,strict=0):
 		"""Set choice parameter from string s"""
 		clist = _getChoice(self,s,strict)
-		newchoice = len(clist)*[0]
-		for i in xrange(len(clist)):
-			newchoice[i] = self._coerceValue(clist[i])
-		self.choice = newchoice
+		self.choice = map(self._coerceValue, clist)
+		self._setChoiceDict()
+
+	def _setChoiceDict(self):
+		"""Create dictionary for choice list"""
+		# value is name of choice parameter (same as key)
+		self.choiceDict = {}
+		for c in self.choice: self.choiceDict[c] = c
 
 	def _nullPrompt(self):
 		"""Returns value to use when answer to prompt is null string"""
@@ -681,11 +728,8 @@ class IrafPar:
 				if native:
 					return self.choice
 				else:
-					schoice = [None]*len(self.choice)
-					for i in xrange(len(self.choice)):
-						schoice[i] = self.toString(self.choice[i])
-					schoice = "|" + string.join(schoice,"|") + "|"
-					return schoice
+					schoice = map(self.toString, self.choice)
+					return "|" + string.join(schoice,"|") + "|"
 			else:
 				if native:
 					return self.min
@@ -715,7 +759,7 @@ class IrafPar:
 		elif field == "p_maximum":
 			self.max = self._coerceOneValue(value)
 		elif field == "p_minimum":
-			if type(value) is StringType and '|' in value:
+			if type(value) is types.StringType and '|' in value:
 				self._setChoice(irafutils.stripQuotes(value))
 			else:
 				self.min = self._coerceOneValue(value)
@@ -835,8 +879,13 @@ class IrafArrayPar(IrafPar):
 	# public methods
 	#--------------------------------------------
 
-	def save(self):
-		"""Return .par format string for this parameter"""
+	def save(self, dolist=0):
+		"""Return .par format string for this parameter
+		
+		If dolist is set, returns fields as a list of strings.  Default
+		is to return a single string appropriate for writing to a file.
+		"""
+		quoted = not dolist
 		fields = (9+self.dim)*[""]
 		fields[0] = self.name
 		fields[1] = self.type
@@ -845,24 +894,31 @@ class IrafArrayPar(IrafPar):
 		fields[4] = str(self.dim)
 		fields[5] = '1'
 		if self.choice is not None:
-			fields[6] = repr(string.join(map(self.toString, self.choice),'|'))
+			schoice = map(self.toString, self.choice)
+			fields[6] = repr(string.join(schoice,'|'))
 		elif self.min not in [None,INDEF]:
-			fields[6] = self.toString(self.min,quoted=1)
+			fields[6] = self.toString(self.min,quoted=quoted)
 		# insert an escaped line break before min field
-		fields[6] = '\\\n' + fields[6]
+		if quoted: fields[6] = '\\\n' + fields[6]
 		if self.max not in [None,INDEF]:
-			fields[7] = self.toString(self.max,quoted=1)
+			fields[7] = self.toString(self.max,quoted=quoted)
 		if self.prompt:
-			sprompt = repr(self.prompt)
+			if quoted:
+				sprompt = repr(self.prompt)
+			else:
+				sprompt = self.prompt
 			# prompt can have embedded newlines (which are printed)
 			sprompt = string.replace(sprompt, r'\012', '\n')
 			sprompt = string.replace(sprompt, r'\n', '\n')
 			fields[8] = sprompt
 		for i in range(self.dim):
-			fields[9+i] = self.toString(self.value[i],quoted=1)
+			fields[9+i] = self.toString(self.value[i],quoted=quoted)
 		# insert an escaped line break before value fields
-		fields[9] = '\\\n' + fields[9]
-		return string.join(fields, ',')
+		if dolist:
+			return fields
+		else:
+			fields[9] = '\\\n' + fields[9]
+			return string.join(fields, ',')
 
 	def dpar(self):
 		"""Return dpar-style executable assignment for parameter"""
@@ -961,9 +1017,8 @@ class IrafArrayPar(IrafPar):
 			self.type + "[" + str(self.dim) + "]"
 		s = s + " " + self.mode + " " + `self.value`
 		if self.choice is not None:
-			s = s + " |"
-			for i in xrange(len(self.choice)):
-				s = s + str(self.choice[i]) + "|"
+			schoice = map(str, self.choice)
+			s = s + " |" + string.join(schoice,"|") + "|"
 		else:
 			s = s + " " + `self.min` + " " + `self.max`
 		s = s + ' "' + self.prompt + '">'
@@ -982,7 +1037,8 @@ class IrafArrayPar(IrafPar):
 		
 		Should accept None or null string.  Must be an array.
 		"""
-		if (type(value) not in [ListType,TupleType]) or len(value) != self.dim:
+		if (type(value) not in [types.ListType,types.TupleType]) or \
+				len(value) != self.dim:
 			raise ValueError("Value must be a " + `self.dim` +
 				"-element array for " + self.name)
 		v = self.dim*[0]
@@ -1019,7 +1075,7 @@ class _StringMixin:
 			return v
 		elif self.choice is not None:
 			try:
-				v = self.mmchoice[v]
+				v = self.choiceDict[v]
 			except minmatch.AmbiguousKeyError, e:
 				raise ValueError("Ambiguous value '" + str(v) +
 					"' from choice list for " + self.name +
@@ -1065,13 +1121,11 @@ class _StringMixin:
 				strict)
 			self.choice = None
 
-	def _setChoice(self,s,strict=0):
-		"""Set choice parameter and min-match dictionary from string"""
-		self.choice = _getChoice(self,s,strict)
-		# minimum-match dictionary for choice list
+	def _setChoiceDict(self):
+		"""Create min-match dictionary for choice list"""
 		# value is full name of choice parameter
-		self.__dict__['mmchoice'] = minmatch.MinMatchDict()
-		for c in self.choice: self.mmchoice.add(c, c)
+		self.choiceDict = minmatch.MinMatchDict()
+		for c in self.choice: self.choiceDict.add(c, c)
 
 	def _nullPrompt(self):
 		"""Returns value to use when answer to prompt is null string"""
@@ -1085,7 +1139,7 @@ class _StringMixin:
 	def _coerceOneValue(self,value,strict=0):
 		if value is None:
 			return value 
-		elif type(value) is StringType:
+		elif type(value) is types.StringType:
 			# strip double quotes and remove escapes before quotes
 			return irafutils.removeEscapes(irafutils.stripQuotes(value))
 		else:
@@ -1348,7 +1402,7 @@ class _BooleanMixin:
 	def toString(self, value, quoted=0):
 		if value in [None, INDEF]:
 			return ""
-		elif type(value) is StringType:
+		elif type(value) is types.StringType:
 			# presumably an indirection value ')task.name'
 			if quoted:
 				return `value`
@@ -1391,7 +1445,7 @@ class _BooleanMixin:
 		elif value == "":
 			return None
 		tval = type(value)
-		if tval is StringType:
+		if tval is types.StringType:
 			v2 = irafutils.stripQuotes(string.strip(value))
 			if v2 == "" or v2 == "INDEF":
 				return INDEF
@@ -1404,7 +1458,7 @@ class _BooleanMixin:
 				return 0
 			elif ff == "yes" or ff == "y":
 				return 1
-		elif tval is FloatType:
+		elif tval is types.FloatType:
 			# try converting to integer
 			try:
 				ival = int(value)
@@ -1451,18 +1505,18 @@ class _IntMixin:
 	# coerce value to integer
 	def _coerceOneValue(self,value,strict=0):
 		tval = type(value)
-		if value in [None, INDEF] or tval is IntType:
+		if value in [None, INDEF] or tval is types.IntType:
 			return value
 		elif value == "":
 			return None
-		elif tval is FloatType:
+		elif tval is types.FloatType:
 			# try converting to integer
 			try:
 				ival = int(value)
 				if (ival == value): return ival
 			except (ValueError, OverflowError):
 				pass
-		elif tval is StringType:
+		elif tval is types.StringType:
 			s2 = irafutils.stripQuotes(string.strip(value))
 			if s2 == "INDEF" or \
 			  ((not strict) and (string.upper(s2) == "INDEF")):
@@ -1547,13 +1601,13 @@ class _RealMixin:
 	# coerce value to real
 	def _coerceOneValue(self,value,strict=0):
 		tval = type(value)
-		if value in [None, INDEF] or tval is FloatType:
+		if value in [None, INDEF] or tval is types.FloatType:
 			return value
 		elif value == "":
 			return None
-		elif tval in [LongType,IntType]:
+		elif tval in [types.LongType,types.IntType]:
 			return float(value)
-		elif tval is StringType:
+		elif tval is types.StringType:
 			s2 = irafutils.stripQuotes(string.strip(value))
 			if s2 == "INDEF" or \
 			  ((not strict) and (string.upper(s2) == "INDEF")):
@@ -1679,7 +1733,7 @@ class IrafParList:
 		"""Add a parameter to the list"""
 		if not isinstance(p, IrafPar):
 			t = type(p)
-			if t is InstanceType:
+			if t is types.InstanceType:
 				tname = p.__class__.__name__
 			else:
 				tname = t.__name__
@@ -1721,7 +1775,7 @@ class IrafParList:
 		Returns true if lists are consistent, false if inconsistent.
 		Only checks immutable param characteristics (name & type).
 		"""
-		if (type(other) != InstanceType) or \
+		if (type(other) != types.InstanceType) or \
 		   (other.__class__ != self.__class__):
 			if Verbose>0:
 				print 'Classes inconsistent %s %s' % \
@@ -1884,6 +1938,19 @@ class IrafParList:
 		else:
 			return "%d parameters written" % (nsave,)
 
+	def __getinitargs__(self):
+		"""Return parameters for __init__ call in pickle"""
+		return (self.__name, self.__filename, self.__pars)
+
+	def __getstate__(self):
+		"""Return additional state for pickle"""
+		# nothing beyond init
+		return None
+
+	def __setstate__(self, state):
+		"""Restore additional state from pickle"""
+		pass
+
 	def __str__(self):
 		s = '<IrafParList ' + self.__name + ' (' + self.__filename + ') ' + \
 			str(len(self.__pars)) + ' parameters>'
@@ -1897,51 +1964,58 @@ class IrafParList:
 # with some messy variations involving embedded quotes
 # and the ability to break the final field across lines.
 
+# First define regular expressions used in parsing
+
+# Patterns that match a quoted string with embedded \" or \'
+# From Freidl, Mastering Regular Expressions, p. 176.
+#
+# Modifications:
+# - I'm using the "non-capturing" parentheses (?:...) where
+#   possible; I only capture the part of the string between
+#   the quotes.
+# - Match leading white space and optional trailing comma.
+# - Pick up any non-whitespace between the closing quote and
+#   the comma or end-of-line (which is a syntax error.)
+#   Any matched string gets captured into djunk or sjunk
+#   variable, depending on which quotes were matched.
+
+whitespace = r'[ \t]*'
+optcomma = r',?'
+noncommajunk = r'[^,]*'
+double = whitespace + r'"(?P<double>[^"\\]*(?:\\.[^"\\]*)*)"' + \
+	whitespace + r'(?P<djunk>[^,]*)' + optcomma
+single = whitespace + r"'(?P<single>[^'\\]*(?:\\.[^'\\]*)*)'" + \
+	whitespace + r'(?P<sjunk>[^,]*)' + optcomma
+
+# Comma-terminated string that doesn't start with quote
+# Match explanation:
+# - match leading white space
+# - if end-of-string then done with capture
+# - elif lookahead == comma then done with capture
+# - else match not-[comma | blank | quote] followed
+#     by string of non-commas; then done with capture
+# - match trailing comma if present
+#
+# Trailing blanks do get captured (which I think is
+# the right thing to do)
+
+comma = whitespace + r"(?P<comma>$|(?=,)|(?:[^, \t'" + r'"][^,]*))' + optcomma
+
+# Combined pattern
+
+field = '(?:' + comma + ')|(?:' + double + ')|(?:' + single + ')'
+_re_field = re.compile(field,re.DOTALL)
+
+# Pattern that matches trailing backslashes at end of line
+_re_bstrail = re.compile(r'\\*$')
+
+# clean up unnecessary global variables
+del whitespace, field, comma, optcomma, noncommajunk, double, single
+
 def _readpar(filename,strict=0):
 	"""Read IRAF .par file and return list of parameters"""
 
-	# Patterns that match a quoted string with embedded \" or \'
-	# From Freidl, Mastering Regular Expressions, p. 176.
-	#
-	# Modifications:
-	# - I'm using the "non-capturing" parentheses (?:...) where
-	#   possible; I only capture the part of the string between
-	#   the quotes.
-	# - Match leading white space and optional trailing comma.
-	# - Pick up any non-whitespace between the closing quote and
-	#   the comma or end-of-line (which is a syntax error.)
-	#   Any matched string gets captured into djunk or sjunk
-	#   variable, depending on which quotes were matched.
-
-	whitespace = r'[ \t]*'
-	optcomma = r',?'
-	noncommajunk = r'[^,]*'
-	double = whitespace + r'"(?P<double>[^"\\]*(?:\\.[^"\\]*)*)"' + \
-		whitespace + r'(?P<djunk>[^,]*)' + optcomma
-	single = whitespace + r"'(?P<single>[^'\\]*(?:\\.[^'\\]*)*)'" + \
-		whitespace + r'(?P<sjunk>[^,]*)' + optcomma
-
-	# Comma-terminated string that doesn't start with quote
-	# Match explanation:
-	# - match leading white space
-	# - if end-of-string then done with capture
-	# - elif lookahead == comma then done with capture
-	# - else match not-[comma | blank | quote] followed
-	#     by string of non-commas; then done with capture
-	# - match trailing comma if present
-	#
-	# Trailing blanks do get captured (which I think is
-	# the right thing to do)
-
-	comma = whitespace + r"(?P<comma>$|(?=,)|(?:[^, \t'" + r'"][^,]*))' + optcomma
-
-	# Combined pattern
-
-	field = '(?:' + comma + ')|(?:' + double + ')|(?:' + single + ')'
-	re_field = re.compile(field,re.DOTALL)
-
-	# Pattern that matches trailing backslashes at end of line
-	re_bstrail = re.compile(r'\\*$')
+	global _re_field, _re_bstrail
 
 	param_dict = {}
 	param_list = []
@@ -1956,14 +2030,14 @@ def _readpar(filename,strict=0):
 			# Append next line if this line ends with continuation character.
 			while line[-1:] == "\\":
 				# odd number of trailing backslashes means this is continuation
-				if (len(re_bstrail.search(line).group()) % 2 == 1):
+				if (len(_re_bstrail.search(line).group()) % 2 == 1):
 					line = line[:-1] + string.rstrip(fh.readline())
 				else:
 					break
 			flist = []
 			i1 = 0
 			while len(line) > i1:
-				mm = re_field.match(line,i1)
+				mm = _re_field.match(line,i1)
 				if mm is None:
 					# Failure occurs only for unmatched leading quote.
 					# Append more lines to get quotes to match.  (Probably
@@ -1977,7 +2051,7 @@ def _readpar(filename,strict=0):
 							raise SyntaxError(filename + ": Unmatched quote\n" +
 								sline[0])
 						line = line + '\n' + string.rstrip(nline)
-						mm = re_field.match(line,i1)
+						mm = _re_field.match(line,i1)
 				if mm.group('comma') is not None:
 					g = mm.group('comma')
 					# completely omitted field (,,)

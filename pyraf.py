@@ -5,17 +5,11 @@
 """
 pyraf: Python IRAF front end
 
-Usage: pyraf [options]
-  where options are one or more of:
-  -n  Keep user namespace clean, don't define tasks or packages as variables
-      (default)
-  -p  Packages are defined as variables
-  -t  Both tasks and packages are defined as variables
+Usage: pyraf [options] [savefile]
+  where savefile is an optional save file to start from and
+  options are one or more of:
   -i  Do not run command line wrapper, just run standard Python front end
   -m  Run command line wrapper to provide extra capabilities (default)
-  -w name (pyraf|monty)
-      Name of command line wrapper to use.  Default is 'pyraf', but older
-	  'monty' wrapper can also be used.
   -v  Set verbosity level (may be repeated to increase verbosity)
   -h  Print this message
 
@@ -43,29 +37,13 @@ using either getTask() or getPkg(), while tasks are available only
 through getTask().  Both packages and tasks are available as attributes
 of the iraf module.
 
-If the -p option is used (the default), packages are defined as
-objects with the package name.  E.g. after startup you can load
-stsdas by saying
-    stsdas()
-Note there is no minimum match in this case, you must type the
-entire package name.  Tasks are available as attributes of the
-package, e.g.
-    restore()
-    restore.lucy.lpar()
-When accessed this way, minimum match is used for the task names.
+Tasks are available as attributes of the package, e.g.
+    iraf.restore()
+    iraf.restore.lucy.lpar()
+When accessed this way, minimum match is still used for the task names.
 Both tasks directly in the package and tasks in subpackages that
 have already been loaded are accessible (so images.imhead() works
 even though imheader is in the imutil package.)
-
-Similarly, if you set the -t option then both tasks and packages are
-defined as variables, so this will work:
-    stsdas()
-    restore()
-    lucy.lpar()
-
-If you set the -n option, neither tasks nor packages are defined
-as variables in your namespace (maximally clean but maximally
-inconvenient too.)
 
 To set task parameters there are various syntaxes:
     imhead.long = "yes"
@@ -82,12 +60,18 @@ To run tasks, use one of these forms:
 
 $Id$
 
-R. White, 1999 May 27
+R. White, 2000 January 21
 """
 
+import os, sys
 from irafglobals import yes, no, INDEF, pyrafDir
 
-import os, sys
+__version__ = "$Revision$"
+
+def usage():
+	print __doc__
+	sys.stdout.flush()
+	sys.exit()
 
 # if this script is being executed as __main__, add it as module 'pyraf'
 # too so 'import pyraf' gets the same module
@@ -117,79 +101,59 @@ import iraf
 import cllinecache
 del cllinecache
 
-help = iraf.help
-
-__version__ = "$Revision$"
-
-def usage():
-	print __doc__
-	sys.stdout.flush()
-	sys.exit()
+# Set clean name strategy
+import irafnames
+irafnames.setCleanStrategy()
+del irafnames
 
 if __name__ != "__main__":
 	# if not main program, just initialize iraf module
-
-	# Set clean name strategy if not main
-	import irafnames
-	irafnames.setCleanStrategy()
-	del irafnames
-
 	# quietly load initial iraf symbols and packages
 	iraf.Init(doprint=0, hush=1)
 else:
 	# special initialization when this is the main program
-
 	# read the user's startup file (if there is one)
 	if os.environ.has_key("PYTHONSTARTUP") and \
 			os.path.isfile(os.environ["PYTHONSTARTUP"]):
 		execfile(os.environ["PYTHONSTARTUP"])
 
-	# use command-line options to define behavior for iraf namespaces
-	# -n  Don't add anything to namespace (default)
-	# -p  Add packages to namespace
-	# -t  Add tasks (and packages) to namespace
-	# -v  Increment verbosity (note can use multiple times to make
-	#     more verbose, e.g. -v -v)
+	# command-line options
 
-	import getopt, irafnames
+	import getopt
 	try:
-		optlist, args = getopt.getopt(sys.argv[1:], "ptnimvhw:")
+		optlist, args = getopt.getopt(sys.argv[1:], "imvh")
+		if len(args) > 1:
+			print 'Error: more than one savefile argument'
+			usage()
 	except getopt.error, e:
 		print str(e)
 		usage()
 	verbose = 0
 	doCmdline = 1
-	wrapper = "pyraf"
 	if optlist:
 		for opt, value in optlist:
-			if opt == "-p":
-				irafnames.setPkgStrategy()
-			elif opt == "-t":
-				irafnames.setTaskStrategy()
-			elif opt == "-n":
-				irafnames.setCleanStrategy()
+			if opt == "-i":
+				doCmdline = 0
 			elif opt == "-m":
 				doCmdline = 1
-			elif opt == "-i":
-				doCmdline = 0
 			elif opt == "-v":
 				verbose = verbose + 1
 			elif opt == "-h":
 				usage()
-			elif opt == "-w":
-				if value in ["pyraf", "monty"]:
-					wrapper = value
-				else:
-					usage()
 			else:
 				print "Program bug, uninterpreted option", opt
 				raise SystemExit
 	iraf.setVerbose(verbose)
-	del getopt, irafnames, verbose, usage, optlist, args
+	del getopt, verbose, usage, optlist
 
 	# load initial iraf symbols and packages
+	if args:
+		iraf.Init(savefile=args[0])
+	else:
+		iraf.Init()
+	del args
 
-	iraf.Init()
+help = iraf.help
 
 if __name__ == "__main__":
 	print "Pyraf, Python front end to IRAF,", __version__, "(copyright AURA 1999)"
@@ -201,18 +165,10 @@ if __name__ == "__main__":
 		exit = 'Use ".exit" to exit'
 		quit = exit
 		logout = exit
-		if wrapper == "pyraf":
-			import pycmdline, cStringIO
-			from irafpar import makeIrafPar
-			_pycmdline = pycmdline.PyCmdLine(locals=locals())
-			del pycmdline
-		elif wrapper == "monty":
-			import monty
-			_pycmdline = monty.monty(locals=locals())
-			del monty
-		else:
-			print "Program bug, unknown wrapper module", wrapper
-			raise SystemExit
+		import pycmdline, cStringIO
+		from irafpar import makeIrafPar
+		_pycmdline = pycmdline.PyCmdLine(locals=locals())
+		del pycmdline
 		del doCmdline
 		_pycmdline.start()
 		del _pycmdline

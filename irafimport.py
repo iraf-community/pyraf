@@ -13,7 +13,7 @@ $Id$
 R. White, 1999 August 17
 """
 
-import minmatch, iraf
+import minmatch
 import __builtin__
 
 def _irafImport(name, globals={}, locals={}, fromlist=[]):
@@ -40,12 +40,18 @@ def _irafReload(module):
 
 class _irafModuleClass:
 	"""Proxy for iraf module that makes tasks appear as attributes"""
-	def __init__(self, module):
-		self.module = module
-		self.__name__ = module.__name__
+	def __init__(self):
+		self.__dict__['module'] = None
+
+	def _moduleInit(self):
+		global iraf
+		self.__dict__['module'] = iraf
+		self.__dict__['__name__'] = iraf.__name__
 		# create minmatch dictionary of current module contents
-		self.mmdict = minmatch.MinMatchDict(vars(self.module))
+		self.__dict__['mmdict'] = minmatch.MinMatchDict(vars(self.module))
+
 	def __getattr__(self, attr):
+		if self.module is None: self._moduleInit()
 		# first try getting this attribute directly from the usual module 
 		try:
 			return getattr(self.module, attr)
@@ -64,8 +70,10 @@ class _irafModuleClass:
 		except KeyError:
 			raise AttributeError("Undefined IRAF task `%s'" % (attr,))
 
-
-_irafModuleProxy = _irafModuleClass(iraf)
+	def __setattr__(self, attr, value):
+		# add an attribute to the module itself
+		setattr(self.module, attr, value)
+		self.mmdict.add(attr, value)
 
 # Save the original hooks
 _originalImport = __builtin__.__import__
@@ -74,3 +82,9 @@ _originalReload = __builtin__.reload
 # Install our hooks
 __builtin__.__import__ = _irafImport
 __builtin__.reload = _irafReload
+
+# create the module proxy
+_irafModuleProxy = _irafModuleClass()
+
+# import iraf module using original mechanism
+iraf = _originalImport('iraf', globals(), locals(), [])

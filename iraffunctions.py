@@ -12,7 +12,7 @@ initialization is complete.
 
 $Id$
 
-R. White, 1999 December 20
+R. White, 2000 January 20
 """
 
 # define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
@@ -48,9 +48,15 @@ def _writeError(msg):
 # now it is safe to import other iraf modules
 # -----------------------------------------------------
 
-import sys, os, string, re, math, types, time
+import sys, os, string, re, math, types, time, copy
 import minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, cl2py
+
+try:
+	import cPickle
+	pickle = cPickle
+except ImportError:
+	import pickle
 
 try:
 	import cStringIO
@@ -67,7 +73,9 @@ _re = re
 _math = math
 _types = types
 _time = time
+_copy = copy
 _StringIO = StringIO
+_pickle = pickle
 
 _minmatch = minmatch
 _subproc = subproc
@@ -79,7 +87,7 @@ _iraftask = iraftask
 _irafpar = irafpar
 _cl2py = cl2py
 
-del sys, os, string, re, math, types, time, StringIO
+del sys, os, string, re, math, types, time, copy, StringIO, pickle
 del minmatch, subproc, wutil
 del irafnames, irafutils, iraftask, irafpar, cl2py
 
@@ -138,9 +146,12 @@ from irafhelp import help
 # gets imported, but that would not allow control over output
 # (which is available through the doprint and hush parameters.)
 
-def Init(doprint=1,hush=0):
+def Init(doprint=1,hush=0,savefile=None):
 	"""Basic initialization of IRAF environment"""
 	global _pkgs, cl
+	if savefile is not None:
+		restoreFromFile(savefile,doprint=doprint)
+		return
 	if len(_pkgs) == 0:
 		set(iraf = _os.environ['iraf'])
 		set(host = _os.environ['host'])
@@ -188,6 +199,107 @@ def Init(doprint=1,hush=0):
 		# make clpackage the current package
 		loadedPath.append(clpkg)
 		if doprint: listTasks('clpackage')
+
+# module variables that don't get saved (they get
+# initialized when this module is imported)
+
+unsavedVars = [
+			'EOF',
+			'IrafError',
+			'_NullFile',
+			'_NullPath',
+			'__builtins__',
+			'__doc__',
+			'__file__',
+			'__name__',
+			'__re_var_match',
+			'__re_var_paren',
+			'_badFormats',
+			'_clearString',
+			'_exitCommands',
+			'_unsavedVarsDict',
+			'_radixDigits',
+			'_re_taskname',
+			'_sttyArgs',
+			'no',
+			'yes',
+			'userWorkingHome',
+			]
+_unsavedVarsDict = {}
+for v in unsavedVars: _unsavedVarsDict[v] = 1
+del unsavedVars, v
+
+# there are a few tricky things here:
+#
+# - I restore userIrafHome, which therefore can be inconsistent with
+#   with the IRAF environment variable.
+#
+# - I do not restore userWorkingHome, so it always tells where the
+#   user actually started this pyraf session.  Is that the right thing
+#   to do?
+#
+# - I am restoring the INDEF object, which means that there could be
+#   multiple versions of this supposed singleton floating around.
+#   I changed the __cmp__ method for INDEF so it produces 'equal'
+#   if the two objects are both INDEFs -- I hope that will take care
+#   of any possible problems.
+
+def saveToFile(savefile, **kw):
+	"""Save IRAF environment to pickle file"""
+	# make a shallow copy of the dictionary and edit out
+	# functions, modules, and objects named in _unsavedVarsDict
+	dict = _copy.copy(globals())
+	for key in dict.keys():
+		item = dict[key]
+		if type(item) in (_types.FunctionType, _types.ModuleType) or \
+				_unsavedVarsDict.has_key(key):
+			del dict[key]
+	# save just the value of Verbose, not the object
+	global Verbose
+	dict['Verbose'] = Verbose.get()
+	# open binary pickle file
+	fh = open(savefile,'wb')
+	# p = _pickle.Pickler(fh,1)
+	#PPP
+	p = _pickle.Pickler(fh)
+	#PPP
+	p.dump(dict)
+	fh.close()
+
+
+def restoreFromFile(savefile, doprint=1, **kw):
+	"""Initialize IRAF environment from pickled save file"""
+	fh = open(savefile, 'rb')
+	u = _pickle.Unpickler(fh)
+	dict = u.load()
+	fh.close()
+
+	# restore the value of Verbose
+	global Verbose
+	Verbose.set(dict['Verbose'])
+	del dict['Verbose']
+
+	# replace the contents of loadedPath
+	global loadedPath
+	loadedPath[:] = dict['loadedPath']
+	del dict['loadedPath']
+
+	# update the values
+	globals().update(dict)
+
+	# replace INDEF everywhere we can find it
+	# this does not replace references in parameters, unfortunately
+	INDEF = dict['INDEF']
+	import irafpar, iraf, irafglobals, pyraf, cltoken
+	for module in (irafpar, iraf, irafglobals, pyraf, cltoken):
+		if hasattr(module,'INDEF'): module.INDEF = INDEF
+
+	# replace cl in the iraf module (and possibly other locations)
+	global cl
+	_addTask(cl)
+
+	if doprint: listCurrent()
+
 
 # -----------------------------------------------------
 # _addPkg: Add an IRAF package to the pkgs list
