@@ -868,7 +868,7 @@ def access(filename):
 
 def defvar(varname):
 	"""Returns true if CL variable is defined"""
-	return _varDict.has_key(varname)
+	return _varDict.has_key(varname) or _os.environ.has_key(varname)
 
 def deftask(taskname):
 	"""Returns true if CL task is defined"""
