@@ -8,9 +8,24 @@ R. White, 1999 March 26
 """
 
 import __main__
-import iraf
+import iraf, iraftask
 
-# base class for namespace strategy
+def _addName(task, module):
+	"""Add a task object to the module namespace
+
+	Skip if there is a collision with another name
+	"""
+	name = task.getName()
+	d = module.__dict__
+	p = d.get(name)
+	if (not p) or isinstance(p, iraftask.IrafTask):
+		d[name] = task
+	else:
+		if iraf.Verbose>0:
+			print "Warning: " + module.__name__ + "." + \
+				name + " was not redefined as Iraf Task"
+
+# Basic namespace strategy class (does nothing)
 
 class IrafNameStrategy:
 	def addTask(self,task):
@@ -18,40 +33,25 @@ class IrafNameStrategy:
 	def addPkg(self,pkg):
 		pass
 
-# NameClean implementation does nothing with either tasks or packages
+# NameClean implementation puts tasks and packages in iraf module name space
+# Note that since packages are also tasks, we only need to do this for tasks
 
 class IrafNameClean(IrafNameStrategy):
-	pass
-
-# IrafNamePkg adds packages to name space
-
-class IrafNamePkg(IrafNameStrategy):
 	def addTask(self,task):
-		pass
+		_addName(task, iraf)
+
+# IrafNamePkg also adds packages to __main__ name space
+
+class IrafNamePkg(IrafNameClean):
 	def addPkg(self,pkg):
-		d = __main__.__dict__
-		pkgname = pkg.getName()
-		p = d.get(pkgname)
-		if (not p) or isinstance(p,iraf.IrafPkg):
-			d[pkgname] = pkg
-		else:
-			if iraf.verbose:
-				print "Warning: variable " +  pkgname + \
-					" was not redefined as IrafPkg"
+		_addName(pkg, __main__)
 
-# IrafNameTask puts everything (tasks and packages) in name space
+# IrafNameTask puts everything (tasks and packages) in __main__ name space
 
-class IrafNameTask(IrafNamePkg):
-	def addTask(self,task):
-		d = __main__.__dict__
-		taskname = task.getName()
-		p = d.get(taskname)
-		if (not p) or isinstance(p,iraf.IrafTask):
-			d[taskname] = task
-		else:
-			if iraf.verbose:
-				print "Warning: variable " +  taskname + \
-					" was not redefined as IrafTask"
+class IrafNameTask(IrafNameClean):
+	def addTaskHook(self,task):
+		_addName(task, iraf)
+		_addName(task, __main__)
 
 # define adding package names as the default behavior
 

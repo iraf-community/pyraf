@@ -169,7 +169,7 @@ class IrafTask:
 		else:
 			# set parameters
 			apply(self.setParList,args,kw)
-			if iraf.verbose>1:
+			if iraf.Verbose>1:
 				print "Connected subproc run ", self.__name, \
 					"("+self.__fullpath+")"
 				self.lpar()
@@ -177,8 +177,8 @@ class IrafTask:
 				# create the list of parameter dictionaries to use
 				self.setParDictList()
 				# run the task
-				irafexecute.IrafExecute(self, iraf._vars)
-				if iraf.verbose>1: print 'Successful task termination'
+				irafexecute.IrafExecute(self, iraf.varDict)
+				if iraf.Verbose>1: print 'Successful task termination'
 			except irafexecute.IrafProcessError, value:
 				raise iraf.IrafError("Error running IRAF task " + self.__name +
 					"\n" + str(value))
@@ -207,14 +207,14 @@ class IrafTask:
 		self.initTask()
 		parDictList = [(self.__name,self.__parList.getParDict())]
 		# package parameters
-		for i in xrange(len(iraf._loadedPath)):
-			pkg = iraf._loadedPath[-1-i]
+		for i in xrange(len(iraf.loadedPath)):
+			pkg = iraf.loadedPath[-1-i]
 			pd = pkg.getParDict()
 			# don't include null dictionaries
 			if pd:
 				parDictList.append( (pkg.getName(), pd) )
 		# cl
-		parDictList.append( (iraf._cl.getName(),iraf._cl.getParDict()) )
+		parDictList.append( (iraf.cl.getName(),iraf.cl.getParDict()) )
 		self.__parDictList = parDictList
 
 	def setParam(self,qualifiedName,newvalue,check=1):
@@ -371,11 +371,11 @@ class IrafTask:
 			#
 			# Expand iraf variables.  We will try both paths if the expand fails.
 			try:
-				exename1 = iraf.expand(self.__filename)
+				exename1 = iraf.Expand(self.__filename)
 				# get name of executable file without path
 				basedir, basename = os.path.split(exename1)
 			except iraf.IrafError, e:
-				if iraf.verbose:
+				if iraf.Verbose>0:
 					print "Error searching for executable for task " + \
 						self.__name
 					print str(e)
@@ -398,9 +398,9 @@ class IrafTask:
 				exelist = []
 				for pbin in self.__pkgbinary:
 					try:
-						exelist.append(iraf.expand(pbin + basename))
+						exelist.append(iraf.Expand(pbin + basename))
 					except iraf.IrafError, e:
-						if iraf.verbose:
+						if iraf.Verbose>0:
 							print "Error searching for executable for task " + \
 								self.__name
 							print str(e)
@@ -423,10 +423,10 @@ class IrafTask:
 			else:
 				if basedir == None:
 					try:
-						exename1 = iraf.expand(self.__filename)
+						exename1 = iraf.Expand(self.__filename)
 						basedir, basename = os.path.split(exename1)
 					except iraf.IrafError, e:
-						if iraf.verbose:
+						if iraf.Verbose>0:
 							print "Error searching for executable for task " + \
 								self.__name
 							print str(e)
@@ -435,8 +435,8 @@ class IrafTask:
 				pfile = os.path.join(basedir,self.__name + ".par")
 				# check uparm first for scrunched version of par filename
 				# with saved parameters
-				if iraf._vars.has_key("uparm"):
-					upfile = iraf.expand("uparm$" + self.scrunchName() + ".par")
+				if iraf.varDict.has_key("uparm"):
+					upfile = iraf.Expand("uparm$" + self.scrunchName() + ".par")
 				else:
 					upfile = None
 				if upfile and os.path.exists(upfile):
@@ -461,7 +461,7 @@ class IrafTask:
 		"""Reset task parameters to their default values"""
 		self.initTask()
 		if self.__hasparfile:
-			exename1 = iraf.expand(self.__filename)
+			exename1 = iraf.Expand(self.__filename)
 			basedir, basename = os.path.split(exename1)
 			pfile = os.path.join(basedir,self.__name + ".par")
 			if os.path.exists(pfile):
@@ -595,27 +595,38 @@ class IrafPkg(IrafTask):
 		else:
 			doprint = 1
 
+		# Special _hush keyword is used to suppress most output when loading
+		# packages.  Default is to print output.
+		if kw.has_key('_hush'):
+			if kw['_hush']:
+				hush = 1
+			else:
+				hush = 0
+			del kw['_hush']
+		else:
+			hush = 0
+
 		# set parameters
 		apply(self.setParList,args,kw)
-		# if already loaded, just add to iraf._loadedPath
-		iraf._loadedPath.append(self)
+		# if already loaded, just add to iraf.loadedPath
+		iraf.loadedPath.append(self)
 		if not self.__loaded:
 			self.__loaded = 1
-			iraf._loaded[self.getName()] = len(iraf._loaded)
-			if iraf.verbose>1:
+			iraf.addLoaded(self)
+			if iraf.Verbose>1:
 				print "Loading pkg ",self.getName(), "("+self.getFullpath()+")",
 				if self.hasParfile():
 					print "par", self.getParpath(), \
 						"["+`len(self.getParList())`+"] parameters",
 				print
-			iraf.readcl(self.getFullpath(), self.getPkgname(), self.getPkgbinary())
-			if iraf.verbose>1:
+			iraf.readCl(self.getFullpath(), self.getPkgname(), self.getPkgbinary(), hush=hush)
+			if iraf.Verbose>1:
 				print "Done loading",self.getName()
 			# if other packages were loaded, put this on the
-			# _loadedPath list one more time
-			if iraf._loadedPath[-1] != self:
-				iraf._loadedPath.append(self)
-		if doprint: iraf.listtasks(self)
+			# loadedPath list one more time
+			if iraf.loadedPath[-1] != self:
+				iraf.loadedPath.append(self)
+		if doprint: iraf.listTasks(self)
 
 	def __str__(self):
 		s = '<IrafPkg ' + self.getName() + ' (' + self.getFilename() + ')' + \

@@ -11,7 +11,7 @@ from types import *
 
 # -----------------------------------------------------
 # Warning (non-fatal) error.  Raise an exception if in
-# strict mode, or print a message if iraf.verbose is on.
+# strict mode, or print a message if iraf.Verbose is on.
 # -----------------------------------------------------
 
 # The iraf.py parameter verbose, set by iraf.setVerbose(), determines
@@ -34,7 +34,7 @@ def warning(msg, strict=0, exception=SyntaxError,
 		prefix = "<no filename>:\n"
 	if strict:
 		raise exception(prefix + msg)
-	elif iraf.verbose:
+	elif iraf.Verbose>0:
 		print prefix + msg
 
 # -----------------------------------------------------
@@ -776,7 +776,7 @@ class IrafParL(_StringMixin, IrafPar):
 		if self.value:
 			# non-null value means we're reading from a file
 			if not self.fh:
-				self.fh = open(iraf.expand(self.value), "r")
+				self.fh = open(iraf.Expand(self.value), "r")
 			value = self.fh.readline()
 			if not value:
 				# EOF -- return string 'EOF'
@@ -1214,8 +1214,8 @@ class IrafParList:
 		"""List the task parameters"""
 		for i in xrange(len(self.__pars)):
 			p = self.__pars[i]
-			if iraf.verbose or p.name != '$nargs':
-				print p.pretty(verbose=verbose or iraf.verbose)
+			if iraf.Verbose>0 or p.name != '$nargs':
+				print p.pretty(verbose=verbose or iraf.Verbose>0)
 
 	def __str__(self):
 		s = '<IrafParList ' + self.__name + ' (' + self.__filename + ') ' + \

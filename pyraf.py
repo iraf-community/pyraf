@@ -91,6 +91,12 @@ del dirname
 # The following is to grab the terminal window's id at the earliest
 # possible moment
 import wutil
+del wutil
+
+# This modifies the standard import mechanism to make it more
+# convenient for the iraf module
+import irafimport
+del irafimport
 
 import iraf
 
@@ -98,17 +104,30 @@ help = iraf.help
 
 __version__ = "$Revision$"
 
+yes = 1
+no = 0
+INDEF = "INDEF"
+flpr = "This is not the IRAF cl!  Forget those old bad habits!"
+retall = "This is not IDL..."
+
 def usage():
 	print __doc__
 	sys.stdout.flush()
 	sys.exit()
 
-# special initialization when this is the main program
 
-if __name__ == "__main__":
+if __name__ != "__main__":
+	# if not main program, just initialize iraf module
+
+	# XXX Should we set clean name strategy if not main?
+	# irafnames.setCleanStrategy()
+
+	# quietly load initial iraf symbols and packages
+	iraf.Init(doprint=0, hush=1)
+else:
+	# special initialization when this is the main program
 
 	# read the user's startup file (if there is one)
-
 	if os.environ.has_key("PYTHONSTARTUP") and \
 			os.path.isfile(os.environ["PYTHONSTARTUP"]):
 		execfile(os.environ["PYTHONSTARTUP"])
@@ -122,7 +141,7 @@ if __name__ == "__main__":
 
 	import getopt, irafnames
 	try:
-		optlist,args = getopt.getopt(sys.argv[1:], "ptnimvh")
+		optlist, args = getopt.getopt(sys.argv[1:], "ptnimvh")
 	except getopt.error, e:
 		print str(e)
 		usage()
@@ -145,26 +164,25 @@ if __name__ == "__main__":
 			elif opt == "-h":
 				usage()
 	iraf.setVerbose(verbose)
-	del getopt, irafnames, verbose
+	del getopt, irafnames, verbose, usage, optlist, args
 
-# load initial iraf symbols and packages
+	# load initial iraf symbols and packages
 
-iraf.init()
+	iraf.Init()
 
-yes = 1
-no = 0
-INDEF = "INDEF"
-flpr = "This is not the IRAF cl!  Forget those old bad habits!"
-retall = "This is not IDL..."
-
-if __name__ == "__main__":
 	print "Pyraf, Python front end to IRAF,", __version__, "(copyright AURA 1999)"
 	print "Python: " + sys.copyright
 	if doMonty:
 		#
 		# start up monty keeping definitions in local name space
 		#
+		exit = 'Use ".exit" to exit'
+		quit = exit
+		logout = exit
 		import monty
-		m = monty.monty(locals=locals())
-		m.start()
+		_monty = monty.monty(locals=locals())
+		del doMonty, monty
+		_monty.start()
+	else:
+		del doMonty
 

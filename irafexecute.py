@@ -122,8 +122,10 @@ def IrafIO(process,task):
 							# ignore IRAF io escape sequences for now
 							continue
 					print txdata,
+					sys.stdout.flush()
 				elif chan == 5:
 					sys.stderr.write(Iraf2AscString(xdata))
+					sys.stderr.flush()
 				elif chan == 6:
 					# need to handle cases where WS not open yet
 					if not stdgraph:
@@ -131,8 +133,10 @@ def IrafIO(process,task):
 					stdgraph.append(Numeric.fromstring(xdata,'s'))
 				elif chan == 7:
 					print "data for STDIMAGE"
+					sys.stdout.flush()
 				elif chan == 8:
 					print "data for STDPLOT"
+					sys.stdout.flush()
 				elif chan == 9:
 					sdata = Numeric.fromstring(xdata,'s')
 					if irafutils.isBigEndian():
@@ -169,8 +173,10 @@ def IrafIO(process,task):
 							stdgraph.clearReturnData()
  					else:
 						print "GRAPHICS control data for channel",forChan
+						sys.stdout.flush()
 				else:
 					print "data for channel", chan
+					sys.stdout.flush()
 		elif msg[0:4] == 'xfer':
 			mo = _re_chan_len.match(msg,4)
 			if not mo:
@@ -178,8 +184,8 @@ def IrafIO(process,task):
 			chan = int(mo.group(1))
 			nbytes = int(mo.group(2))
 			if chan == 3:
-				# Flush output to make sure prompts without newlines appear
-				sys.stdout.flush()
+				#XXX Flush output to make sure prompts without newlines appear
+				#XXX sys.stdout.flush()
 
 				# Read a line from stdin unless xferline already has
 				# some untransmitted data from a previous read
@@ -224,7 +230,9 @@ def IrafIO(process,task):
 					task.setParam(paramname,newvalue)
 				except ValueError, e:
 					# on ValueError, just print warning and then force set
-					if iraf.verbose: print 'Warning:',e
+					if iraf.Verbose>0:
+						print 'Warning:',e
+						sys.stdout.flush()
 					task.setParam(paramname,newvalue,check=0)
 			else:
 				# Could be any legal CL command. 
@@ -233,6 +241,7 @@ def IrafIO(process,task):
 				
 _re_stty_command = re.compile(r'stty .*?\n')
 _re_display_command = re.compile(r'display')
+_re_curpack_command = re.compile(r'_curpack\n')
 _re_paren_pair = re.compile(r'\(.*\)')
 
 def executeClCommand(process, msg):
@@ -247,12 +256,11 @@ def executeClCommand(process, msg):
 	
 	mo = _re_stty_command.match(msg)
 	if mo:
-		msg = msg[mo.end():]
 		nlines,ncols = wutil.getTermWindowSize()
 		WriteStringToIrafProc(process,
 			"set ttyncols="+str(ncols)+"\n" + 
 			"set ttynlines="+str(nlines)+"\n")
-		return
+		return msg[mo.end():]
 	mo = _re_display_command.match(msg)
 	if mo:
 		# Now extract arguments. Will eventually use general parsing
@@ -271,6 +279,10 @@ def executeClCommand(process, msg):
 			return tmsg[pos+1:]
 		else:
 			raise IrafProcessError("display command not in expected format")
+	mo = _re_curpack_command.match(msg)
+	if mo:
+		WriteStringToIrafProc(process, iraf.curpack()+"\n")
+		return msg[mo.end():]
 	# apparently something that is not supported	
 	raise IrafProcessError(
 		"Unsupported CL command called by IRAF task: "+msg)
@@ -283,6 +295,7 @@ def IrafKill(process):
 	if not process.pid: return		# no need, process gone
 
 	print " Killing IRAF task"
+	sys.stdout.flush()
 	if not process.cont():
 		raise IrafProcessError("Can't kill IRAF subprocess")
 	# get the task's attention for input
