@@ -117,7 +117,9 @@ class RawOpengl(Widget, Misc):
                 self.activateSWCursor(x,y)
             glFlush()
         finally:
-            glPopMatrix()
+            try:
+                glPopMatrix()
+            except GLerror: pass
         self.tk.call(self._w, 'swapbuffers')
 
     def tkRedraw(self, *dummy):
@@ -224,8 +226,8 @@ class Ptogl(RawOpengl):
         Also switch on the depth buffer."""
 
         self.activate()
-        light_position = (1, 1, 1, 0);
-        glLightf(GL_LIGHT0, GL_POSITION, light_position);
+        light_position = (1., 1., 1., 0.);
+        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
         glEnable(GL_LIGHTING);
         glEnable(GL_LIGHT0);
         glDepthFunc(GL_LESS);
