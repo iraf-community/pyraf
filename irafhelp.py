@@ -87,10 +87,29 @@ def help(object=__main__, variables=1, functions=1, modules=1,
 		tasks=0, packages=0, hidden=0, padchars=16, regexp=None, html=0,
 		**kw):
 
-	"""List the type and value of all the variables in the
-	specified object.  Default is to list variables in main.
-	The keywords can be abbreviated.  See module documentation
-	for more info."""
+	"""List the type and value of all the variables in the specified object.
+
+- help() with no arguments will list all the defined variables.
+- help("taskname") or help(IrafTaskObject) displays IRAF help for the task
+- help(object) where object is a module, instance, etc., will display
+  information on the attributes and methods of the object.
+- help(function) will give the calling sequence for the function.
+
+Optional keyword arguments specify what information is to be printed.
+The keywords can be abbreviated:
+
+variables=1 Print info on variables/attributes
+functions=1 Print info on function/method calls
+modules=1   Print info on modules
+tasks=0     Print info on IrafTask objects
+packages=0  Print info on IrafPkg objects
+hidden=0    Print info on hidden variables/attributes (starting with '_')
+html=0      Use HTML help instead of standard IRAF help for tasks
+
+regexp=None Specify a regular expression that matches the names of variables of
+            interest.  E.g., help(sys, regexp='std') will give help on all attr-
+            ibutes of sys that start with std.  All the re patterns can be used.
+    """
 
 	# handle I/O redirection keywords
 	redirKW, closeFHList = iraf.redirProcess(kw)

@@ -17,7 +17,7 @@ import minmatch
 import __builtin__
 
 def _irafImport(name, globals={}, locals={}, fromlist=[]):
-	if name == "iraf":
+	if name in ["iraf", "pyraf.iraf"]:
 		if fromlist:
 			for task in fromlist:
 				pkg = iraf.getPkg(task,found=1)

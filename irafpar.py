@@ -585,9 +585,8 @@ class IrafPar:
 			new.value = list(self.value)
 		if isinstance(self.choice, types.ListType):
 			new.choice = list(self.choice)
-		# choiceDict needs deep copy
-		if new.choice is not None:
-			new.choiceDict = copy.deepcopy(self.choiceDict, memo)
+		# choiceDict is OK with shallow copy because it will
+		# always be reset if choices change
 		new.__class__ = self.__class__
 		return new
 
