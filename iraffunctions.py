@@ -174,13 +174,13 @@ at the Unix command line.  The values will depend on your IRAF installation.
         iraf = _os.path.join(iraf,'')
         host = _os.environ.get('host', _os.path.join(iraf,'unix',''))
         hlib = _os.environ.get('hlib', _os.path.join(host,'hlib',''))
+        tmp = _os.environ.get('tmp', '/tmp/')
         set(iraf = iraf)
         set(host = host)
         set(hlib = hlib)
+        set(tmp = tmp)
         if arch and arch[0] != '.': arch = '.' + arch
         set(arch = arch)
-        if _os.environ.has_key('tmp'):
-            set(tmp = _os.environ['tmp'])
         global userIrafHome
         set(home = userIrafHome)
 
