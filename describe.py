@@ -54,7 +54,7 @@ CO_NEWLOCALS = 0x0002
 CO_VARARGS = 0x0004
 CO_VARKEYWORDS = 0x0008
 
-def _describe(func, name = None):
+def describeParams(func, name = None):
 	# get argument list
 
 	code = func.func_code
@@ -103,7 +103,7 @@ def describe(func, name = None):
 	"Return the function or method declaration as a string"
 
 	# argument list
-	a = _describe(func)
+	a = describeParams(func)
 	args = []
 	for arg in a:
 		if type(arg) == type(""):
@@ -153,10 +153,14 @@ if __name__ == "__main__":
 	bar = lambda a: 0
 
 	# from Duncan Booth
-	# def baz(a, (b, c) = ('foo','bar'), (d, e, f), g):
-	#	pass
+	def baz(a, (b, c) = ('foo','bar'), (d, e, f) = (None, None, None), g = None):
+		pass
+
+	print "describeParams(foo)", describeParams(foo)
+	print "describeParams(bar)", describeParams(bar)
+	print "describeParams(baz)", describeParams(baz)
 
 	print describe(foo)
 	print describe(bar)
-	# print describe(baz)
+	print describe(baz)
 
