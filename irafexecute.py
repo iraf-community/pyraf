@@ -213,7 +213,7 @@ def IrafIO(process,task):
 					task.setParam(paramname,newvalue)
 				except ValueError, e:
 					# on ValueError, just print warning and then force set
-					print 'Warning:',e
+					if iraf.verbose: print 'Warning:',e
 					task.setParam(paramname,newvalue,check=0)
 			else:
 				# Could be any legal CL command. For the moment, we
