@@ -1325,8 +1325,12 @@ def show(*args, **kw):
 		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
 	resetList = redirApply(redirKW)
 	try:
-		for arg in args:
-			print envget(arg)
+		if args:
+			for arg in args:
+				print envget(arg)
+		else:
+			# print them all
+			listVars(prefix="    ", equals="=")
 	finally:
 		rv = redirReset(resetList, closeFHList)
 	return rv
@@ -1428,14 +1432,19 @@ def stty(terminal=None, **kw):
 				expkw[key] = item
 			else:
 				raise TypeError('unexpected keyword argument: '+key)
-		if expkw['playback'] is not None:
-			_writeError("stty playback not implemented")
-			return
-		if expkw['resize'] or expkw['terminal'] == "resize":
-			# sets CL environmental parameters giving screen size
+		if terminal is None and len(kw) == 0:
+			# no args: print terminal type and size
+			print '%s ncols=%s nlines=%s' % (envget('terminal'),
+				envget('ttyncols'), envget('ttynlines'))
+		elif expkw['resize'] or expkw['terminal'] == "resize":
+			# resize: sets CL environmental parameters giving screen size
 			if _sys.stdout.isatty():
 				nlines,ncols = _wutil.getTermWindowSize()
 				set(ttyncols=str(ncols), ttynlines=str(nlines))
+		elif expkw['terminal']:
+			set(terminal=expkw['terminal'])
+		elif expkw['playback'] is not None:
+			_writeError("stty playback not implemented")
 	finally:
 		rv = redirReset(resetList, closeFHList)
 	return rv
