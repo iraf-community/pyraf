@@ -84,6 +84,10 @@ class MinMatchDict(UserDict):
 		key = self.getfullkey(key,new=1)
 		return self.data.get(key,failobj)
 
+	def get_exact_key(self, key, failobj=None):
+		"""Raises exception if key does not match exactly"""
+		return self.data.get(key,failobj)
+
 	def __delitem__(self, key):
 		key = self.getfullkey(key)
 		del self.data[key]
