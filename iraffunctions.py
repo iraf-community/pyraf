@@ -858,7 +858,7 @@ def osfn(filename):
 	# - otherwise return absolute pathname
 
 	ename = Expand(filename)
-	dlist = _string.split(filename,_os.sep)
+	dlist = _string.split(ename,_os.sep)
 	dlist = map(_string.strip, dlist)
 	if len(dlist)==1 and dlist[0] not in [_os.curdir,_os.pardir]:
 		return dlist[0]
