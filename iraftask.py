@@ -80,6 +80,7 @@ class IrafTask:
 		if name[:1] == '_':
 			self.__dict__[name] = value
 		else:
+			self.initTask()
 			self.__parList.set(name,value)
 
 	# public accessor functions for attributes
