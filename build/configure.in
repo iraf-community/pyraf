@@ -1,12 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(cdl.h)
-AC_SUBST(VERSION)
-VERSION=v0.8.19 
-
-AC_SUBST(ReleaseDate)
-ReleaseDate=2001Feb07
-
-
 
 
 dnl Checks for programs.
@@ -57,24 +50,9 @@ AC_SUBST(TclIncludePath)
 #-----------------------------------------------------------------
 #	Paths to where various libraries are located 
 #-----------------------------------------------------------------
+dnl Checks for libraries.
 
 AC_SUBST(TclLibPath)
-AC_SUBST(CDLPath)
-AC_SUBST(toglplatform)
-AC_SUBST(ToglLib)
-#ToglLib = $TclLibPath
-#ToglLib=`cd $PYTHON_LIB_DIR/site-packages/OpenGL/Tk*/$toglplatform*; pwd`
-
-AC_SUBST(IRAFPATH)
-#AC_MSG_CHECKING(iraf)
-#if test -z "$iraf"
-#then
-#	IRAF_PATH=""
-#else   IRAF_PATH=`echo $iraf`
-#fi
-#AC_MSG_RESULT(IRAFPATH)
-
-dnl Checks for libraries.
 
 dnl Checks for header files.
 AC_PATH_X
@@ -94,9 +72,7 @@ AC_CHECK_FUNCS(strtod)
 #	SHLIB_CFLAGS - flags to pass to CC when compiling the components 
 #	of a shared library
 #--------------------------------------------------------------------
-
-
-AC_SUBST(IRAFARCH)
+#AC_SUBST(IRAFARCH)
 AC_MSG_CHECKING(platform)
 if test -z "$IRAFPLAT"
 then
@@ -132,9 +108,8 @@ case $system in
 esac
 
 
-AC_SUBST(ToglLib)
-#ToglLib = $TclLibPath
-ToglLib=`cd $PYTHON_LIB_DIR/site-packages/OpenGL/Tk*/$toglplatform*; pwd`
+AC_SUBST(ToglPath)
+ToglPath=`cd $PYTHON_LIB_DIR/site-packages/OpenGL/Tk*/$toglplatform*; pwd`
 
 AC_SUBST(CFLAGS)
 AC_SUBST(EXTRA_LFLAGS)
@@ -142,3 +117,10 @@ AC_SUBST(LDFLAG)
 AC_SUBST(SHLIB_CFLAGS)
 
 AC_OUTPUT(Makefile ../pyraf)
+
+
+
+
+
+
+

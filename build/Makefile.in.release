@@ -7,7 +7,6 @@
 #@configure_input@
 
 PYTHON_LIB_DIR = @PYTHON_LIB_DIR@
-CDLPath            = @CDLPath@
 PythonIncludePath  = @PythonIncludePath@
 TclIncludePath    = @TclIncludePath@
 OpenGLIncludePath = @OpenGLIncludePath@
@@ -16,8 +15,7 @@ SHLIB_CFLAGS = @SHLIB_CFLAGS@
 x_includes = @x_includes@
 x_libraries = @x_libraries@
 TclLibPath         = @TclLibPath@
-#toglplatform=        = @toglplatform@
-#ToglLibPath = @ToglLib@
+ToglPath = @ToglPath@
 ToglLib	= @TclLibPath@
 
 CFLAGS = @CFLAGS@
@@ -27,15 +25,15 @@ CC = @CC@
 RM = rm
 LD = ld
 
-all:	xutilmodule.so toglcolorsmodule.so cdlmodule.so sscanfmodule.so install
+all:	libcdl.a xutilmodule.so toglcolorsmodule.so cdlmodule.so \
+		sscanfmodule.so install
 
 clean: 
 	$(RM) -f *.o *.so *.a Makefile config.cache *~
 	cd ../; $(RM) -f *.so pyraf *~
 
 links:
-	cp $(CDLPath)/libcdl.a $(srcdir)
-	cd $(TclLibPath); cp $(ToglLib)/* .
+	cd $(TclLibPath); cp $(ToglPath)/* .
 
 dist: 
 	$(RM) -f *.o *.so *.a Makefile config.cache config.log config.status *~
@@ -73,6 +71,9 @@ sscanfmodule.so: sscanfmodule.c
 	$(CC) $(CFLAGS) $(SHLIB_CFLAGS) -I$(PythonIncludePath) sscanfmodule.c
 	$(LD) $(LDFLAG) sscanfmodule.o -o sscanfmodule.so \
 		$(EXTRA_LFLAGS)
+
+libcdl.a:
+	cd CDL; ./configure; make World; cp libcdl.a ../
 
 install:
 	cp *.so ../; chmod +x ../pyraf
