@@ -6,7 +6,7 @@ a string compatible with IRAF's imcur parameter.
 $Id$
 """
 
-import sys
+import sys,string
 from irafglobals import Verbose, IrafError
 import irafdisplay, irafutils
 
@@ -31,6 +31,14 @@ def imcur():
             # ctrl-D and ctrl-Z are treated as EOF
             # Should ctrl-C raise a KeyboardInterrupt?
             raise EOFError
+        elif key == 'q':
+            # Reproduce IRAF behavior by confirming whether
+            # the user really intended on quitting. This prevents
+            # accidentally hitting 'q' in the middle of a big
+            # process and having to restart.
+            _quit = raw_input("Do you really want to quit? (yes or no) ")
+            if string.find(string.lower(_quit),'y') > -1:
+                raise EOFError
         elif key == ':':
             sys.stdout.write(": ")
             sys.stdout.flush()

@@ -1584,7 +1584,11 @@ class IrafForeignTask(IrafTask):
         if len(kw)>0:
             raise ValueError('Illegal keyword parameters %s for task %s' %
                     (kw.keys(), self._name,))
-        self._args = args
+        #self._args = args
+        # Insure that all arguments passed to ForeignTasks are
+        # converted to strings, including objects which are not
+        # naturally converted to strings.
+        self._args = map(re.escape,map(str,args))
 
     #=========================================================
     # private methods

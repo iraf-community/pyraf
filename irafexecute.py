@@ -634,8 +634,13 @@ class IrafProcess:
         # status line, but do not get redirected to a file
         c_stdin = sys.stdin
         c_stdout = sys.stdout
+        c_stderr = sys.stderr
+        #
+        # These lines reset stdin/stdout/stderr to the graphics
+        # window.
         sys.stdin = gki.kernel.getStdin(default=sys.__stdin__)
         sys.stdout = gki.kernel.getStdout(default=sys.__stdout__)
+        sys.stderr = gki.kernel.getStderr(default=sys.__stderr__)
         try:
             try:
                 pmsg = self.task.getParam(paramname)
@@ -653,8 +658,11 @@ class IrafProcess:
             except EOFError:
                 pmsg = 'EOF\n'
         finally:
+            # Make sure that STDIN/STDOUT/STDERR are reset to
+            # tty mode instead of being stuck in graphics window.
             sys.stdin = c_stdin
             sys.stdout = c_stdout
+            sys.stderr = c_stderr
         self.writeString(pmsg)
         self.msg = self.msg[mcmd.end():]
 

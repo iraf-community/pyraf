@@ -637,9 +637,16 @@ class GkiKernel:
         return self.stdout
 
     def getStderr(self, default=None):
-        # stderr always redirected in graphics mode because IRAF
-        # uses it for GUI code (go figure)
-        return self.stderr or default
+        # if default is a file, don't redirect it
+        # otherwise if graphics is active, redirect to status line
+        try:
+            if (not self.stderr) or \
+              (default and not default.isatty()):
+                return default
+        except AttributeError:
+            # OK if isatty is missing
+            pass
+        return self.stderr
 
 #**********************************************************************
 

@@ -745,7 +745,8 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
         self.stdin = self.stdout
         # disable stderr while graphics is active (to supress xgterm gui
         # messages)
-        self.stderr = FilterStderr()
+        #self.stderr = FilterStderr()
+        self.stderr = FilterStderrStatus(self.top.status,self.windowName)
         if mode == 5:
             # clear the display
             self.clear()
@@ -776,7 +777,8 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
             self.stdout = self.StatusLine
             self.stdin = self.stdout
         if not self.stderr:
-            self.stderr = FilterStderr()
+            #self.stderr = FilterStderr()
+            self.stderr = FilterStderrStatus(self.top.status,self.windowName)
 
     def control_deactivatews(self, arg):
 
@@ -1386,6 +1388,39 @@ class FilterStderr:
 
 #-----------------------------------------------
 
+class FilterStderrStatus:
+
+    """Filter GUI messages out of stderr during plotting
+       yet still send the rest to the Status buffer.
+       Based on write methods from StatusLine class.
+    """
+
+    pat = re.compile('\031[^\035]*\035\037')
+
+    def __init__(self, status, name):
+        self.status = status
+        self.windowName = name
+
+    def write(self, text):
+        # remove GUI junk
+        edit = self.pat.sub('',text)
+        if edit:
+            self.status.updateIO(text=edit)
+        else:
+            self.status.updateIO(text=text)
+
+    def flush(self):
+        self.status.update_idletasks()
+
+    def close(self):
+        # clear status line
+        self.status.updateIO(text="")
+
+    def isatty(self):
+        return 1
+
+#-----------------------------------------------
+
 class StatusLine:
 
     def __init__(self, status, name):
@@ -1410,7 +1445,7 @@ class StatusLine:
             return s
 
     def write(self, text):
-        self.status.updateIO(text=string.strip(text))
+        self.status.updateIO(text=text)
 
     def flush(self):
         self.status.update_idletasks()

@@ -917,10 +917,11 @@ _taskList = {
 
 # builtin functions that are translated
 # other functions just have 'iraf.' prepended
+# Replaced mapping for real with an internal function. WJH 12 Nov 02
+#                          "real":         "float",
 
 _functionList = {
                         "int":          "int",
-                        "real":         "float",
                         "str":          "str",
                         "abs":          "abs",
                         "min":          "min",

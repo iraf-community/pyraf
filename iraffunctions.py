@@ -906,6 +906,14 @@ def frac(x):
     frac_part, int_part = _math.modf(x)
     return frac_part
 
+def real(x):
+    """Return real/float representation of x"""
+    try:
+        return float(x)
+    except ValueError:
+        #...handle the special a:b:c case here...
+        return clSexagesimal(*map(float,x.split(":")))
+
 def mod(a, b):
     """Return a modulo b"""
     return (a % b)

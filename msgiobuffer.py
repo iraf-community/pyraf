@@ -24,7 +24,7 @@ class MsgIOBuffer(Frame):
         # Initialize class attributes
         self.messageText  = ""
         self.currentText  = text
-        self.minHgt       = 20
+        self.minHgt       = 25
         self.viewHeight   = viewHeight
         self.entrySetting = StringVar()
         self.entrySetting.set("")
@@ -115,19 +115,19 @@ class MsgIOBuffer(Frame):
                                       expand = TRUE)
 
         # The full scrolling region is the width of the parent and
-        # the height of the label/entry (20) and the message box (18)
+        # the height of the label/entry (25) and the message box (18)
         # combined.  Hardcoded to avoid too much updating which causes
         # redraws in PyRAF.
-        scrollHgt = 38
+        scrollHgt = 43
         self.msgIO.canvas.itemconfigure(1, height = scrollHgt)
         self.msgIO.canvas.configure(scrollregion = (0, 0, 0, scrollHgt))
 
         # The displayed portion of the window on the canvas is primarily
         # the label/entry region.
         if (self.viewHeight == None or self.viewHeight < self.minHgt):
-           self.msgIO.canvas.configure(height = self.minHgt)
+            self.msgIO.canvas.configure(height = self.minHgt)
         else:
-           self.msgIO.canvas.configure(height = self.viewHeight)
+            self.msgIO.canvas.configure(height = self.viewHeight)
 
         # View is to show the information just moved into the message area
         self.msgIO.canvas.yview_moveto(1.0)
@@ -137,8 +137,13 @@ class MsgIOBuffer(Frame):
 
         """Method to update the I/O portion of the scrolling canvas"""
 
-        # Move the current contents of the I/O frame to the message box
-        self.__updateMsg(self.currentText)
+        if string.find(self.currentText[-2:],'\n') == -1:
+            # No newline at end of line, so
+            # do NOT move to message box and append new text
+            text = self.currentText + text
+        else:
+            # Move the current contents of the I/O frame to the message box
+            self.__updateMsg(self.currentText)
 
         # Update the class variable with the latest text
         self.currentText = text
@@ -168,7 +173,7 @@ class MsgIOBuffer(Frame):
 
         # Combine any label value and the entry value in order
         # to update the current text
-        self.currentText = self.currentText + " " + self.entryValue
+        self.currentText = self.currentText + " " + self.entryValue + '\n'
 
         # Disable the entry
         self.msgIO.canvas.f.iomb.entry.configure(state = DISABLED)
@@ -196,7 +201,7 @@ class MsgIOBuffer(Frame):
         """Private method to update the message box of the scrolling canvas."""
 
         # Ensure there is a new line
-        text = "\n" + text
+        #text = "\n" + text
 
         # Append the new text to the previous message text
         self.messageText = self.messageText + text
@@ -215,22 +220,22 @@ class MsgIOBuffer(Frame):
 # Test the MsgIOBuffer class
 if __name__ == '__main__':
 
-        width   = 500
-        height  = 300
-        vheight = 50
-        text    = "Tiptop"
+    width   = 500
+    height  = 300
+    vheight = 50
+    text    = "Tiptop"
 
-        top = Toplevel()
-        f   = Frame(top, width = width, height = height, bg = "red")
-        m   = MsgIOBuffer(top, width, vheight, text)
-        m.msgIO.pack(side=BOTTOM, fill = X)
-        f.pack(side = TOP, fill = BOTH, expand = TRUE)
-        for i in range(10):
-            t = "Text " + str(i)
-            m.updateIO(t)
-        m.updateIO("The quick brown fox jumps over the lazy dog with ease.")
-        m.updateIO("What is your quest?")
-        #inputValue = m.readline()
-        #print "inputValue = ", inputValue
+    top = Toplevel()
+    f   = Frame(top, width = width, height = height, bg = "red")
+    m   = MsgIOBuffer(top, width, vheight, text)
+    m.msgIO.pack(side=BOTTOM, fill = X)
+    f.pack(side = TOP, fill = BOTH, expand = TRUE)
+    for i in range(10):
+        t = "Text " + str(i)
+        m.updateIO(t)
+    m.updateIO("The quick brown fox jumps over the lazy dog with ease.")
+    m.updateIO("What is your quest?")
+    #inputValue = m.readline()
+    #print "inputValue = ", inputValue
 
-        top.mainloop()
+    top.mainloop()
