@@ -39,8 +39,7 @@ def warning(msg, strict=0, exception=SyntaxError,
 # IRAF parameter factory
 # -----------------------------------------------------
 
-_string_types = [ 's', 'f', 'struct', 'pset',
-	'*imcur', '*struct', '*s', '*i']
+_string_types = [ 's', 'f', 'struct', '*imcur', '*struct', '*s', '*i']
 _real_types = [ 'r', 'd' ]
 
 def IrafParFactory(fields,filename=None,strict=0):
@@ -59,6 +58,8 @@ def IrafParFactory(fields,filename=None,strict=0):
 		return IrafParGCur(fields,filename,strict)
 	elif type == "*ukey":
 		return IrafParUKey(fields,filename,strict)
+	elif type == "pset":
+		return IrafParPset(fields,filename,strict)
 	elif type in _real_types:
 		return IrafParR(fields,filename,strict)
 	elif type == "i":
@@ -501,6 +502,26 @@ def _removeEscapes(value):
 	return value
 
 # -----------------------------------------------------
+# IRAF pset parameter class
+# -----------------------------------------------------
+
+class IrafParPset(IrafParS):
+	"""IRAF graphics cursor parameter class"""
+	def __init__(self,fields,filename,strict=0):
+		IrafParS.__init__(self,fields,filename,strict)
+	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
+		"""Return pset value (IrafTask object)"""
+		if index:
+			raise SyntaxError("Parameter " + self.name +
+				" is pset, cannot use index")
+		if field: return self.getField(field)
+		if lpar: return str(self.value)
+		return iraf.getTask(self.value or self.name)
+	def set(self, value, field=None, index=None, check=1):
+		raise ValueError("Pset parameter " + self.name +
+			" cannot be assigned a value")
+
+# -----------------------------------------------------
 # IRAF gcur (graphics cursor) parameter class
 # -----------------------------------------------------
 
@@ -522,11 +543,10 @@ class IrafParGCur(IrafParS):
 		if field: return self.getField(field)
 		if lpar: return str(self.value)
 		return irafgcur.gcur()
+
 # -----------------------------------------------------
 # IRAF ukey (user typed key) parameter class
 # -----------------------------------------------------
-
-# XXX Cut and paste of GCur class; Rick, check this out
 
 class IrafParUKey(IrafParS):
 	"""IRAF user typed key parameter class"""
