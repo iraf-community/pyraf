@@ -84,9 +84,8 @@ import os, sys
 
 dirname = os.path.dirname(sys.argv[0])
 if not dirname: dirname = os.getcwd()
-if dirname not in sys.path:
-	sys.path.insert(0, dirname)
-	sys.path.insert(0, ".")
+if dirname not in sys.path: sys.path.insert(0, dirname)
+if "." not in sys.path: sys.path.insert(0, ".")
 del dirname
 
 # The following is to grab the terminal window's id at the earliest
