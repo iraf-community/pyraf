@@ -93,6 +93,12 @@ Text Entry Fields
         beeps and a warning message appears in the status bar at the bottom of
         the window.
 
+        To see the value of a string that is longer than the entry widget,
+        either use the left mouse button to do a slow "scroll" through the
+        entry or use the middle mouse button to "pull" the value in the entry
+        back and forth quickly.  In either case, just click in the entry widget
+        with the mouse and then drag to the left or right.
+
 
 The Menu Bar
 -----------
@@ -198,6 +204,9 @@ class EparDialog:
         # help windows do not exist yet
         self.irafHelpWin = None
         self.eparHelpWin = None
+
+        # no last focus widget
+        self.lastFocusWidget = None
 
         # Generate the top epar window
         self.top = top = Toplevel(self.parent, bg=self.bkgColor, visual="best")
@@ -381,11 +390,22 @@ class EparDialog:
         event.widget.tk_focusPrev().focus_set()
 
     def doScroll(self, event):
-        """Scroll the panel down to ensure widget with focus to be visible"""
+        """Scroll the panel down to ensure widget with focus to be visible
+
+        Tracks the last widget that doScroll was called for and ignores
+        repeated calls.  That handles the case where the focus moves not
+        between parameter entries but to someplace outside the hierarchy.
+        In that case the scrolling is not expected.
+
+        Returns false if the scroll is ignored, else true.
+        """
         canvas = self.top.f.canvas
-        widgetWithFocus = canvas.entries.focus_get()
+        widgetWithFocus = event.widget
+        if widgetWithFocus is self.lastFocusWidget:
+            return FALSE
+        self.lastFocusWidget = widgetWithFocus
         if widgetWithFocus is None:
-            return
+            return TRUE
         # determine distance of widget from top & bottom edges of canvas
         y1 = widgetWithFocus.winfo_rooty()
         y2 = y1 + widgetWithFocus.winfo_height()
@@ -399,6 +419,7 @@ class EparDialog:
         elif cy2<y2:
             sdist = int((y2-cy2+yinc-1.)/yinc)
             canvas.yview_scroll(sdist, "units")
+        return TRUE
 
     def getDefaultParamList(self):
 

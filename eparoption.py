@@ -58,6 +58,8 @@ class EparOption:
 
         # Hook to allow scroll when this widget gets focus
         self.doScroll = doScroll
+        # Track selection at the last FocusOut event
+        self.lastSelection = (0,END)
 
         # A new Frame is created for each parameter entry
         self.master       = master
@@ -112,6 +114,13 @@ class EparOption:
                                  text = promptLines, width = self.promptWidth)
         self.promptLabel.pack(side = RIGHT, fill = X, expand = TRUE)
 
+        # Default is none of items on popup menu are activated
+        # These can be changed by the makeInputWidget method to customize
+        # behavior for each widget.
+        self.browserEnabled = DISABLED
+        self.clearEnabled = DISABLED
+        self.unlearnEnabled = DISABLED
+
         # Generate the input widget depending upon the datatype
         self.makeInputWidget()
 
@@ -126,6 +135,9 @@ class EparOption:
         self.entry.bind('<KeyPress-ISO_Left_Tab>', self.entryCheck, "+")
         self.entry.bind('<Up>', self.entryCheck, "+")
         self.entry.bind('<Down>', self.entryCheck, "+")
+
+        # Bind the right button to a popup menu of choices
+        self.entry.bind('<Button-3>', self.popupChoices)
 
         # Pack the parameter entry Frame
         self.master.frame.pack(side = TOP, ipady = 1)
@@ -155,27 +167,38 @@ class EparOption:
     def focusOut(self, event=None):
         """Clear selection (if text is selected in this widget)"""
         if self.entryCheck(event) is None:
-            self.entry.selection_clear()
+            # Entry value is OK
+            # Save the last selection so it can be restored if we
+            # come right back to this widget.  Then clear the selection
+            # before moving on.
+            entry = self.entry
+            try:
+                if not entry.selection_present():
+                    self.lastSelection = None
+                else:
+                    self.lastSelection = (entry.index(SEL_FIRST),
+                                          entry.index(SEL_LAST))
+            except AttributeError:
+                pass
+            entry.selection_clear()
         else:
             return "break"
 
     def focusIn(self, event=None):
         """Select all text (if applicable) on taking focus"""
         try:
-            self.entry.selection_range(0, END)
+            # doScroll returns false if the call was ignored because the
+            # last call also came from this widget.  That avoids unwanted
+            # scrolls and text selection when the focus moves in and out
+            # of the window.
+            if self.doScroll(event):
+                self.entry.selection_range(0, END)
+            else:
+                # restore selection to what it was on the last FocusOut
+                if self.lastSelection:
+                    self.entry.selection_range(*self.lastSelection)
         except AttributeError:
             pass
-        if self.doScroll:
-            self.doScroll(event)
-
-    # Method called with the "unlearn" menu option is chosen from the
-    # popup menu.  Used to unlearn a single parameter value.
-    def unlearnValue(self):
-
-        defaultValue = self.defaultParamInfo.get(field = "p_filename",
-                            native = 0, prompt = 0)
-        self.choice.set(defaultValue)
-
 
     # Check the validity of the entry
     # If valid, changes the value of the parameter (note that this
@@ -208,15 +231,74 @@ class EparOption:
     def makeInputWidget(self):
         pass
 
+    def popupChoices(self, event=None):
+        """Popup right-click menu of special parameter operations
+
+        Relies on browserEnabled, clearEnabled, unlearnEnabled
+        instance attributes to determine which items are available.
+        """
+        # don't bother if all items are disabled
+        if NORMAL not in [self.browserEnabled,
+                          self.clearEnabled,
+                          self.unlearnEnabled]:
+            return
+
+        self.menu = Menu(self.entry, tearoff = 0)
+        self.menu.add_command(label   = "File Browser",
+                              state   = self.browserEnabled,
+                              command = self.fileBrowser)
+        self.menu.add_separator()
+        self.menu.add_command(label   = "Clear",
+                              state   = self.clearEnabled,
+                              command = self.clearEntry)
+        self.menu.add_command(label   = "Unlearn",
+                              state   = self.unlearnEnabled,
+                              command = self.unlearnValue)
+
+        # Get the current y-coordinate of the Entry
+        ycoord = self.entry.winfo_rooty()
+
+        # Get the current x-coordinate of the cursor
+        xcoord = self.entry.winfo_pointerx() - XSHIFT
+
+        # Display the Menu as a popup as it is not associated with a Button
+        self.menu.tk_popup(xcoord, ycoord)
+
+    def fileBrowser(self):
+        """Invoke a Community Tkinter generic File Dialog"""
+        self.fd = filedlg.PersistLoadFileDialog(self.entry,
+                        "Directory Browser", "*")
+        if self.fd.Show() != 1:
+            self.fd.DialogCleanup()
+            return
+        self.fname = self.fd.GetFileName()
+        self.fd.DialogCleanup()
+        self.choice.set(self.fname)
+        # don't select when we go back to widget to reduce risk of
+        # accidentally typing over the filename
+        self.lastSelection = None
+
+    def clearEntry(self):
+        """Clear just this Entry"""
+        self.entry.delete(0, END)
+
+    def unlearnValue(self):
+        """Unlearn a parameter value by setting it back to its default"""
+        defaultValue = self.defaultParamInfo.get(field = "p_filename",
+                            native = 0, prompt = 0)
+        self.choice.set(defaultValue)
+
 
 class EnumEparOption(EparOption):
 
     def makeInputWidget(self):
 
+        self.unlearnEnabled = NORMAL
+
         # Set the initial value for the button
         self.choice.set(self.value)
 
-        # Need to adjust the value width so the menu button is the
+        # Need to adjust the value width so the menu button is
         # aligned properly
         self.valueWidth = self.valueWidth - 4
 
@@ -276,8 +358,6 @@ class EnumEparOption(EparOption):
 
         # Left button sets focus (as well as popping up menu)
         self.entry.bind('<Button-1>', self.focus_set)
-        # Bind the right button to a popup menu of choices
-        self.entry.bind('<Button-3>', self.popupChoices)
 
     def keypress(self, event):
         """Allow keys typed in widget to select items"""
@@ -298,37 +378,12 @@ class EnumEparOption(EparOption):
             # initial null value may not be in list
             pass
 
-    def post(self):
-        """Post the menu"""
-        x = self.entry.winfo_rootx()
-        y = self.entry.winfo_rooty() + self.entry.winfo_height()
-        self.entry.menu.tk_popup(x,y)
-
-    def popupChoices(self, event):
-
-        self.menu = Menu(self.entry, tearoff = 0)
-        self.menu.add_command(label   = "File Browser",
-                              state   = DISABLED)
-        self.menu.add_separator()
-        self.menu.add_command(label   = "Clear",
-                              state   = DISABLED)
-        self.menu.add_command(label   = "Unlearn",
-                             command = self.unlearnValue)
-
-        # Get the current y-coordinate of the Entry
-        ycoord = self.entry.winfo_rooty()
-
-        # Get the current x-coordinate of the cursor
-        xcoord = self.entry.winfo_pointerx() - XSHIFT
-
-        # Display the Menu as a popup as it is not associated with a Button
-        self.menu.tk_popup(xcoord, ycoord)
-
-
 
 class BooleanEparOption(EparOption):
 
     def makeInputWidget(self):
+
+        self.unlearnEnabled = NORMAL
 
         # Need to buffer the value width so the radio buttons and
         # the adjoining labels are aligned properly
@@ -369,6 +424,15 @@ class BooleanEparOption(EparOption):
         self.entry.bind('<n>', self.unset)
         self.entry.bind('<N>', self.unset)
         self.entry.bind('<space>', self.toggle)
+        # When variable changes, make sure widget gets focus
+        self.choice.trace("w", self.trace)
+
+        # Right-click menu is bound to individual widgets too
+        self.rbno.bind('<Button-3>', self.popupChoices)
+        self.rbyes.bind('<Button-3>', self.popupChoices)
+
+    def trace(self, *args):
+        self.entry.focus_set()
 
     def set(self, event=None):
         """Set value to Yes"""
@@ -389,52 +453,14 @@ class StringEparOption(EparOption):
 
     def makeInputWidget(self):
 
+        self.browserEnabled = NORMAL
+        self.clearEnabled = NORMAL
+        self.unlearnEnabled = NORMAL
+
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
                      textvariable = self.choice)
         self.entry.pack(side = LEFT, fill = X, expand = TRUE)
-
-        # Bind the entry to a popup menu of choices
-        self.entry.bind('<Button-3>', self.popupChoices)
-
-    def popupChoices(self, event):
-
-        self.menu = Menu(self.entry, tearoff = 0)
-        self.menu.add_command(label   = "File Browser",
-                              command = self.fileBrowser)
-        self.menu.add_separator()
-        self.menu.add_command(label   = "Clear",
-                              command = self.clearEntry)
-        self.menu.add_command(label   = "Unlearn",
-                              command = self.unlearnValue)
-
-        # Get the current y-coordinate of the Entry
-        ycoord = self.entry.winfo_rooty()
-
-        # Get the current x-coordinate of the cursor
-        xcoord = self.entry.winfo_pointerx() - XSHIFT
-
-        # Display the Menu as a popup as it is not associated with a Button
-        self.menu.tk_popup(xcoord, ycoord)
-
-
-    def fileBrowser(self):
-
-        # *** Invoke a Community Tkinter generic File Dialog FOR NOW ***
-        self.fd = filedlg.PersistLoadFileDialog(self.entry, "Directory Browser", "*")
-        if self.fd.Show() != 1:
-            self.fd.DialogCleanup()
-            return
-        self.fname = self.fd.GetFileName()
-        self.fd.DialogCleanup()
-        self.choice.set(self.fname)
-
-
-    # Clear just this Entry
-    def clearEntry(self):
-
-        self.entry.delete(0, END)
-
 
 
 class IntEparOption(EparOption):
@@ -444,6 +470,9 @@ class IntEparOption(EparOption):
 
     def makeInputWidget(self):
 
+        self.clearEnabled = NORMAL
+        self.unlearnEnabled = NORMAL
+
         # Retain the original parameter value in case of bad entry
         self.previousValue = self.value
 
@@ -451,35 +480,6 @@ class IntEparOption(EparOption):
         self.entry = Entry(self.master.frame, width = self.valueWidth,
                      textvariable = self.choice)
         self.entry.pack(side = LEFT)
-
-        # Bind the button to a popup menu of choices
-        self.entry.bind('<Button-3>', self.popupChoices)
-
-    def popupChoices(self, event):
-
-        self.menu = Menu(self.entry, tearoff = 0)
-        self.menu.add_command(label   = "File Browser",
-                              state   = DISABLED)
-        self.menu.add_separator()
-        self.menu.add_command(label   = "Clear",
-                              command = self.clearEntry)
-        self.menu.add_command(label   = "Unlearn",
-                             command = self.unlearnValue)
-
-        # Get the current y-coordinate of the Entry
-        ycoord = self.entry.winfo_rooty()
-
-        # Get the current x-coordinate of the cursor
-        xcoord = self.entry.winfo_pointerx() - XSHIFT
-
-        # Display the Menu as a popup as it is not associated with a Button
-        self.menu.tk_popup(xcoord, ycoord)
-
-    # Clear just this Entry
-    def clearEntry(self):
-
-        self.entry.delete(0, END)
-
 
     # Check the validity of the entry
     # Note that doing this using the parameter set method
@@ -517,6 +517,9 @@ class RealEparOption(EparOption):
 
     def makeInputWidget(self):
 
+        self.clearEnabled = NORMAL
+        self.unlearnEnabled = NORMAL
+
         # Retain the original parameter value in case of bad entry
         self.previousValue = self.value
 
@@ -524,34 +527,6 @@ class RealEparOption(EparOption):
         self.entry = Entry(self.master.frame, width = self.valueWidth,
                      textvariable = self.choice)
         self.entry.pack(side = LEFT)
-
-        # Bind the button to a popup menu of choices
-        self.entry.bind('<Button-3>', self.popupChoices)
-
-    def popupChoices(self, event):
-
-        self.menu = Menu(self.entry, tearoff = 0)
-        self.menu.add_command(label   = "File Browser",
-                              state   = DISABLED)
-        self.menu.add_separator()
-        self.menu.add_command(label   = "Clear",
-                              command = self.clearEntry)
-        self.menu.add_command(label   = "Unlearn",
-                             command = self.unlearnValue)
-
-        # Get the current y-coordinate of the Entry
-        ycoord = self.entry.winfo_rooty()
-
-        # Get the current x-coordinate of the cursor
-        xcoord = self.entry.winfo_pointerx() - XSHIFT
-
-        # Display the Menu as a popup as it is not associated with a Button
-        self.menu.tk_popup(xcoord, ycoord)
-
-    # Clear just this Entry
-    def clearEntry(self):
-
-        self.entry.delete(0, END)
 
 
     # Check the validity of the entry
