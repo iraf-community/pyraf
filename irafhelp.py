@@ -185,6 +185,7 @@ def _valueString(value):
 	return vstr
 
 _HelpURL = "http://ra.stsci.edu/cgi-bin/gethelp.cgi?task="
+_Netscape = "/opt/X11R5/lib/X11/netscape/v451/netscape"
 
 def _htmlHelp(taskname):
 	"""Display HTML help for given IRAF task in Netscape.
@@ -196,7 +197,7 @@ def _htmlHelp(taskname):
 	pid = os.fork()
 	if pid == 0:
 		url = _HelpURL + taskname
-		cmd = "netscape -remote 'openURL(" + url + ")' 1> /dev/null 2>&1"
+		cmd = _Netscape + " -remote 'openURL(" + url + ")' 1> /dev/null 2>&1"
 		status = os.system(cmd)
 		if status != 0:
 			print "Starting Netscape for HTML help..."
