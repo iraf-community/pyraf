@@ -14,7 +14,7 @@ import os, sys, string
 import iraf, irafpar, irafhelp, cStringIO
 from irafglobals import pyrafDir, userWorkingHome
 
-from eparoption import *
+import eparoption
 
 # Constants
 MINVIEW     = 500
@@ -40,13 +40,123 @@ CHILDY = PARENTY
 HELPX   = 300
 HELPY   = 0
 
-def epar(taskName, parent = None, isChild = 0):
+eparHelpString = """\
+The PyRAF parameter editor window is used to edit IRAF parameter sets.  It
+allows multiple parameter sets to be edited concurrently (e.g., to edit IRAF
+Psets).  It also allows the IRAF task help to be displayed in a separate window
+that remains accessible while the parameters are being edited.
+
+
+Editing Parameters
+---------------
+
+Parameter values are modified using various GUI widgets that depend on the
+parameter properties.  It is possible to edit parameters using either the mouse
+or the keyboard.  Most parameters have a context-dependent menu accessible via
+right-clicking that enables unlearning the parameter (restoring its value to
+the task default), clearing the value, and activating a file browser that
+allows a filename to be selected and entered in the parameter field.  Some
+items on the right-click pop-up menu may be disabled depending on the parameter
+type (e.g., the file browser cannot be used for numeric parameters.)
+
+The mouse-editing behavior should be familiar, so the notes below focus on
+keyboard-editing.  When the editor starts, the first parameter is selected.  To
+select another parameter, use the Tab key (Shift-Tab to go backwards) to move
+the focus from item to item. The toolbar buttons can also be selected with
+Tab.  Use the space bar to "push" buttons or activate menus.
+
+Enumerated Parameters
+        Parameters that have a list of choices use a drop-down menu.  The space
+        bar causes the menu to appear; the up/down arrow keys also activate the
+        menu and can be used to select different items.  Items in the list have
+        accelerators (underlined, generally the first letter) that can be typed
+        to jump directly to that item.  When editing is complete, hit Return or
+        Tab to accept the changes, or type Escape to close the menu without
+        changing the current parameter value.
+
+Boolean Parameters
+        Boolean parameters appear as Yes/No radio buttons.  Hitting the space
+        bar toggles the setting, while 'y' and 'n' can be typed to select the
+        desired value.
+
+Parameter Sets
+        Parameter sets (Psets) appear as a button which, when clicked, brings
+        up a new editor window.  Note that two (or more) parameter lists can be
+        edited concurrently.  The Package and Task identification are shown
+        in the window and in the title bar.
+
+Text Entry Fields
+        Strings, integers, floats, etc. appear as text-entry fields.  Values
+        are verified to to be legal before being stored in the parameter. If an
+        an attempt is made to set a parameter to an illegal value, the program
+        beeps and a warning message appears in the status bar at the bottom of
+        the window.
+
+
+The Menu Bar
+-----------
+
+File menu:
+    Execute
+             Save all the parameters, close the editor windows, and start the
+             IRAF task.  This is disabled in the secondary windows used to edit
+             Psets.
+    Save
+             Save the parameters and close the editor window.  The task is not
+             executed.
+    Unlearn
+             Restore all parameters to the system default values for this
+             task.  Note that individual parameters can be unlearned using the
+             menu shown by right-clicking on the parameter entry.
+    Cancel
+             Cancel editing session and exit the parameter editor.  Changes
+             that were made to the parameters are not saved; the parameters
+             retain the values they had when the editor was started.
+
+Options menu:
+    Display Task Help in a Window
+             Help on the IRAF task is available through the Help menu.  If this
+             option is selected, the help text is displayed in a pop-up window.
+             This is the default behavior.
+    Display Task Help in a Browser
+             If this option is selected, instead of a pop-up window help is
+             displayed in the user's web browser.  This requires access to
+             the internet and is a somewhat experimental feature.  The HTML
+             version of help does have some nice features such as links to
+             other IRAF tasks.
+
+Help menu:
+    Task Help
+             Display help on the IRAF task whose parameters are being edited.
+             By default the help pops up in a new window, but the help can also
+             be displayed in a web browser by modifying the Options.
+    Epar Help
+             Display this help.
+
+
+Toolbar Buttons
+------------
+
+The Toolbar contains a set of buttons that provide shortcuts for the most
+common menu bar actions.  Their names are the same as the menu items given
+above: Execute, Save, Unlearn, Cancel, and Task Help.  The Execute button is
+disabled in the secondary windows used to edit Psets.
+
+Note that the toolbar buttons are accessible from the keyboard using the Tab
+and Shift-Tab keys.  They are located in sequence before the first parameter.
+If the first parameter is selected, Shift-Tab backs up to the "Task Help"
+button, and if the last parameter is selected then Tab wraps around and selects
+the "Execute" button.
+
+"""
+
+def epar(taskName, parent=None, isChild=0):
 
     EparDialog(taskName, parent, isChild)
 
 class EparDialog:
-    def __init__(self, taskName, parent = None, isChild = 0,
-                 title = "PyRAF Parameter Editor", childList = None):
+    def __init__(self, taskName, parent=None, isChild=0,
+                 title="PyRAF Parameter Editor", childList=None):
 
         # Get the Iraftask object
         if isinstance(taskName, irafpar.IrafParList):
@@ -57,12 +167,12 @@ class EparDialog:
             self.taskObject = iraf.getTask(taskName)
 
         # Now go back and ensure we have the full taskname
-        self.taskName   = self.taskObject.getName()
-        self.pkgName    = self.taskObject.getPkgname()
-        self.paramList  = self.taskObject.getParList(docopy=1)
+        self.taskName = self.taskObject.getName()
+        self.pkgName = self.taskObject.getPkgname()
+        self.paramList = self.taskObject.getParList(docopy=1)
 
         # Ignore the last parameter which is $nargs
-        self.numParams  = len(self.paramList) - 1
+        self.numParams = len(self.paramList) - 1
 
         # Get default parameter values for unlearn
         self.getDefaultParamList()
@@ -78,33 +188,34 @@ class EparDialog:
 
         # Set up a color for the background to differeniate parent and child
         if self.isChild:
-        #    self.bkgColor  = "LightSteelBlue"
+        #    self.bkgColor = "LightSteelBlue"
             self.iconLabel = "EPAR Child"
         else:
-        #    self.bkgColor  = "SlateGray3"
+        #    self.bkgColor = "SlateGray3"
             self.iconLabel = "EPAR Parent"
         self.bkgColor = None
 
+        # help windows do not exist yet
+        self.irafHelpWin = None
+        self.eparHelpWin = None
+
         # Generate the top epar window
-        self.top = Toplevel(self.parent, bg = self.bkgColor, visual="best")
-        self.top.title(title)
+        self.top = top = Toplevel(self.parent, bg=self.bkgColor, visual="best")
+        self.top.title('%s: %s.%s' % (title, self.pkgName, self.taskName))
         self.top.iconname(self.iconLabel)
 
         # Read in the epar options database file
         optfile = "epar.optionDB"
         try:
-             # User's current directory
-             self.top.option_readfile(os.path.join(os.curdir,optfile))
+            # User's current directory
+            self.top.option_readfile(os.path.join(os.curdir,optfile))
         except TclError:
             try:
-                 # User's startup directory
-                 self.top.option_readfile(os.path.join(userWorkingHome,optfile))
+                # User's startup directory
+                self.top.option_readfile(os.path.join(userWorkingHome,optfile))
             except TclError:
-                 # PyRAF default
-                 self.top.option_readfile(os.path.join(pyrafDir,optfile))
-
-        # Disable interactive resizing
-        self.top.resizable(width = FALSE, height = FALSE)
+                # PyRAF default
+                self.top.option_readfile(os.path.join(pyrafDir,optfile))
 
         # Create an empty list to hold child EparDialogs
         # *** Not a good way, REDESIGN with Mediator!
@@ -119,70 +230,67 @@ class EparDialog:
         self.makeMenuBar(self.top)
 
         # Create a spacer
-        Frame(self.top, bg = self.bkgColor, height = 10).pack(side = TOP,
-              fill = X)
+        Frame(self.top, bg=self.bkgColor, height=10).pack(side=TOP, fill=X)
 
         # Print the package and task names
         self.printNames(self.top, self.taskName, self.pkgName)
 
         # Insert a spacer between the static text and the buttons
-        Frame(self.top, bg = self.bkgColor, height = 15).pack(side = TOP,
-              fill = X)
+        Frame(self.top, bg=self.bkgColor, height=15).pack(side=TOP, fill=X)
 
         # Set control buttons at the top of the frame
         self.buttonBox(self.top)
 
         # Insert a spacer between the static text and the buttons
-        Frame(self.top, bg = self.bkgColor, height = 15).pack(side = TOP,
-              fill = X)
+        Frame(self.top, bg=self.bkgColor, height=15).pack(side=TOP, fill=X)
 
         # Set up an information Frame at the bottom of the EPAR window
         # RESIZING is currently disabled.
         # Do this here so when resizing to a smaller sizes, the parameter
         # panel is reduced - not the information frame.
-        self.top.status = Label(self.top, text = "", relief = SUNKEN,
-                           borderwidth = 1, anchor = W)
-        self.top.status.pack(side = BOTTOM, fill = X, padx = 0, pady = 3,
-                             ipady = 3)
+        self.top.status = Label(self.top, text="", relief=SUNKEN,
+                           borderwidth=1, anchor=W)
+        self.top.status.pack(side=BOTTOM, fill=X, padx=0, pady=3,
+                             ipady=3)
 
         # Set up a Frame to hold a scrollable Canvas
-        self.top.f = Frame(self.top, relief = RIDGE, borderwidth = 1)
+        self.top.f = frame = Frame(self.top, relief=RIDGE, borderwidth=1)
 
         # Overlay a Canvas which will hold a Frame
-        self.top.f.canvas = Canvas(self.top.f, width = 100, height = 100)
+        self.top.f.canvas = canvas = Canvas(self.top.f, width=100, height=100)
 
-        # Only build the scrollbar, if there is something to scroll
-        self.isScrollable = "no"
-        if (self.numParams > MINPARAMS):
+        # Always build the scrollbar, even if number of parameters is small,
+        # to allow window to be resized.
 
-            # Attach a vertical Scrollbar to the Frame/Canvas
-            self.top.f.vscroll = Scrollbar(self.top.f, orient = VERTICAL,
-                 width = 11, relief = SUNKEN, activerelief = RAISED,
-                 takefocus = FALSE)
-            self.top.f.canvas['yscrollcommand']  = self.top.f.vscroll.set
-            self.top.f.vscroll['command'] = self.top.f.canvas.yview
+        # Attach a vertical Scrollbar to the Frame/Canvas
+        self.top.f.vscroll = Scrollbar(self.top.f, orient=VERTICAL,
+             width=11, relief=SUNKEN, activerelief=RAISED,
+             takefocus=FALSE)
+        canvas['yscrollcommand'] = self.top.f.vscroll.set
+        self.top.f.vscroll['command'] = canvas.yview
 
-            # Pack the Scrollbar
-            self.top.f.vscroll.pack(side = RIGHT, fill = Y)
+        # Pack the Scrollbar
+        self.top.f.vscroll.pack(side=RIGHT, fill=Y)
 
-            # Reset the variable used to reveal the canvas on Tab
-            self.isScrollable = "yes"
+        # enable Page Up/Down keys
+        scroll = canvas.yview_scroll
+        top.bind('<Next>', lambda event, fs=scroll: fs(1, "pages"))
+        top.bind('<Prior>', lambda event, fs=scroll: fs(-1, "pages"))
 
         # Pack the Frame and Canvas
-        self.top.f.canvas.pack(side = TOP, expand = TRUE, fill = BOTH)
-        self.top.f.pack(side = TOP, fill = BOTH, expand = TRUE)
+        canvas.pack(side=TOP, expand=TRUE, fill=BOTH)
+        self.top.f.pack(side=TOP, expand=TRUE, fill=BOTH)
 
         # Define a Frame to contain the parameter information
-        self.top.f.canvas.entries = Frame(self.top.f.canvas)
+        canvas.entries = Frame(canvas)
 
         # Generate the window to hold the Frame which sits on the Canvas
-        cWindow = self.top.f.canvas.create_window(0, 0,
-                           anchor = NW,
-                           window = self.top.f.canvas.entries)
+        cWindow = canvas.create_window(0, 0,
+                           anchor=NW,
+                           window=canvas.entries)
 
         # Insert a spacer between the Canvas and the information frame
-        Frame(self.top, bg = self.bkgColor, height = 4).pack(side = TOP,
-              fill = X)
+        Frame(self.top, bg=self.bkgColor, height=4).pack(side=TOP, fill=X)
 
         # The parent has the control, unless there are children
         # Fix the geometry of where the windows first appear on the screen
@@ -210,41 +318,72 @@ class EparDialog:
         #
 
         # The makeEntries method creates the parameter entry Frame
-        self.makeEntries(self.top.f.canvas.entries, self.top.status)
+        self.makeEntries(canvas.entries, self.top.status)
 
         # Force an update of the entry Frame
-        self.top.f.canvas.entries.update()
+        canvas.entries.update()
 
         # Determine the size of the entry Frame
-        width  = self.top.f.canvas.entries.winfo_width()
-        height = self.top.f.canvas.entries.winfo_height()
+        width = canvas.entries.winfo_width()
+        height = canvas.entries.winfo_height()
 
         # Reconfigure the Canvas size based on the Frame.
         if (self.numParams <= MINPARAMS):
             viewHeight = height
         else:
-
             # Set the minimum display
             viewHeight = MINVIEW
 
-            # Scrollregion is based upon the full size of the entry Frame
-            self.top.f.canvas.config(scrollregion = (0, 0, width, height))
-
-            # Smooth scroll
-            self.top.f.canvas.config(yscrollincrement = 50)
+        # Scrollregion is based upon the full size of the entry Frame
+        canvas.config(scrollregion=(0, 0, width, height))
+        # Smooth scroll
+        self.yscrollincrement = 50
+        canvas.config(yscrollincrement=self.yscrollincrement)
 
         # Set the actual viewable region for the Canvas
-        self.top.f.canvas.config(width = width, height = viewHeight)
+        canvas.config(width=width, height=viewHeight)
 
         # Force an update of the Canvas
-        self.top.f.canvas.update()
+        canvas.update()
 
         # Associate deletion of the main window to a Abort
         self.top.protocol("WM_DELETE_WINDOW", self.abort)
 
+        # Set focus to first parameter
+        self.entryNo[0].focus_set()
+
+        # Enable interactive resizing in height
+        self.top.resizable(width=FALSE, height=TRUE)
+
+        # Limit maximum window height
+        width = self.top.winfo_width()
+        height = self.top.winfo_height() + height - viewHeight
+        self.top.maxsize(width=width, height=height)
+
         # run the mainloop
         if not self.isChild:
             self.top.mainloop()
+
+    def doScroll(self, event):
+        """Scroll the panel down to ensure widget with focus to be visible
+
+        Triggered by Tab or Shift-Tab key.
+        """
+        canvas = self.top.f.canvas
+        widgetWithFocus = canvas.entries.focus_get()
+        # determine distance of widget from top & bottom edges of canvas
+        y1 = widgetWithFocus.winfo_rooty()
+        y2 = y1 + widgetWithFocus.winfo_height()
+        cy1 = canvas.winfo_rooty()
+        cy2 = cy1 + canvas.winfo_height()
+        yinc = self.yscrollincrement
+        if y1<cy1:
+            # this will continue to work when integer division goes away
+            sdist = int((y1-cy1-yinc+1.)/yinc)
+            canvas.yview_scroll(sdist, "units")
+        elif cy2<y2:
+            sdist = int((y2-cy2+yinc-1.)/yinc)
+            canvas.yview_scroll(sdist, "units")
 
     def getDefaultParamList(self):
 
@@ -282,78 +421,25 @@ class EparDialog:
         # Allow extra spaces for buffer and in case the longest parameter
         # has the hidden parameter indicator
         self.fieldWidths = {}
-        self.fieldWidths['inputWidth']  = inputLength + 4
-        self.fieldWidths['valueWidth']  = VALUEWIDTH
+        self.fieldWidths['inputWidth'] = inputLength + 4
+        self.fieldWidths['valueWidth'] = VALUEWIDTH
         self.fieldWidths['promptWidth'] = PROMPTWIDTH
 
         # Loop over the parameters to create the entries
         self.entryNo = [None] * self.numParams
         for i in range(self.numParams):
-
-            # If there is an enumerated list, regardless of datatype, use
-            # the EnumEparOption
-            if (self.paramList[i].choice != None):
-                self.entryNo[i] = EnumEparOption(master, statusBar,
+            self.entryNo[i] = eparoption.eparOptionFactory(master, statusBar,
                                   self.paramList[i], self.defaultParamList[i],
-                                  self.isScrollable, self.fieldWidths)
-
-            # PSET
-            elif (self.paramList[i].type == "pset"):
-                 self.entryNo[i] = PsetEparOption(master, statusBar,
-                                   self.paramList[i], self.defaultParamList[i],
-                                   self.isScrollable, self.fieldWidths)
-
-            # *GCUR
-            #elif (self.paramList[i].type == "*gcur"):
-            #    self.entryNo[i] = GcurEparOption(master, statusBar,
-            #                      self.paramList[i], self.defaultParamList[i],
-            #                      self.isScrollable, self.fieldWidths)
-
-            # *UKEY
-            #elif (self.paramList[i].type == "*ukey"):
-            #    self.entryNo[i] = UkeyEparOption(master, statusBar,
-            #                      self.paramList[i], self.defaultParamList[i],
-            #                      self.isScrollable, self.fieldWidths)
-
-            # BOOLEAN
-            elif (self.paramList[i].type == 'b'):
-                self.entryNo[i] = BooleanEparOption(master, statusBar,
-                                  self.paramList[i], self.defaultParamList[i],
-                                  self.isScrollable, self.fieldWidths)
-
-            # STRING (s, f, struct, *imcur, *struct, *s, *i)
-            elif (self.paramList[i].type in irafpar._string_types):
-                self.entryNo[i] = StringEparOption(master, statusBar,
-                                  self.paramList[i], self.defaultParamList[i],
-                                  self.isScrollable, self.fieldWidths)
-
-            # REAL
-            elif (self.paramList[i].type in irafpar._real_types):
-                self.entryNo[i] = RealEparOption(master, statusBar,
-                                  self.paramList[i], self.defaultParamList[i],
-                                  self.isScrollable, self.fieldWidths)
-
-            # INT
-            elif (self.paramList[i].type == 'i'):
-                self.entryNo[i] = IntEparOption(master, statusBar,
-                                  self.paramList[i], self.defaultParamList[i],
-                                  self.isScrollable, self.fieldWidths)
-
-            else:
-                self.entryNo[i] = StringEparOption(master, statusBar,
-                                  self.paramList[i], self.defaultParamList[i],
-                                  self.isScrollable, self.fieldWidths)
-                # Need to keep commented out until *gcur and such are resolved
-                #raise SyntaxError("Cannot handle parameter type" + type)
+                                  self.doScroll, self.fieldWidths)
 
 
     # Method to print the package and task names and to set up the menu
     # button for the choice of the display for the IRAF help page
     def printNames(self, top, taskName, pkgName):
 
-        topbox  = Frame(top, bg = self.bkgColor)
-        textbox = Frame(topbox, bg = self.bkgColor)
-        helpbox = Frame(topbox, bg = self.bkgColor)
+        topbox = Frame(top, bg=self.bkgColor)
+        textbox = Frame(topbox, bg=self.bkgColor)
+        helpbox = Frame(topbox, bg=self.bkgColor)
 
         # Set up the information strings
         if isinstance(self.taskObject, irafpar.IrafParList):
@@ -370,13 +456,13 @@ class EparDialog:
             taskString = "       Task = " + string.upper(taskName)
             Label(textbox, text=taskString, bg=self.bkgColor).pack(side=TOP,
                   anchor=W)
-        textbox.pack(side = LEFT, anchor = W)
-        topbox.pack(side = TOP, expand = TRUE, fill = X)
+        textbox.pack(side=LEFT, anchor=W)
+        topbox.pack(side=TOP, expand=FALSE, fill=X)
 
     # Method to set up the parent menu bar
     def makeMenuBar(self, top):
 
-        menubar = Frame(top, bd = 1, relief = GROOVE)
+        menubar = Frame(top, bd=1, relief=GROOVE)
 
         # Generate the menus
         fileMenu = self.makeFileMenu(menubar)
@@ -386,26 +472,27 @@ class EparDialog:
         #    optionsMenu = self.makeOptionsMenu(menubar)
         optionsMenu = self.makeOptionsMenu(menubar)
 
-        menubar.pack(fill = X)
+        helpMenu = self.makeHelpMenu(menubar)
+
+        menubar.pack(fill=X)
 
 
     # Method to generate a "File" menu
     def makeFileMenu(self, menubar):
 
-        fileButton = Menubutton(menubar, text = 'File')
-        fileButton.pack(side = LEFT, padx = 2)
+        fileButton = Menubutton(menubar, text='File')
+        fileButton.pack(side=LEFT, padx=2)
 
-        fileButton.menu = Menu(fileButton, tearoff = 0)
+        fileButton.menu = Menu(fileButton, tearoff=0)
 
-        if not self.isChild:
-            fileButton.menu.add_command(label = "Execute", command=self.execute)
+        fileButton.menu.add_command(label="Execute", command=self.execute)
+        if self.isChild:
+            fileButton.menu.entryconfigure(0, state=DISABLED)
 
-        fileButton.menu.add_command(label = "Save",    command=self.quit)
-        fileButton.menu.add_command(label = "Unlearn", command=self.unlearn)
+        fileButton.menu.add_command(label="Save",    command=self.quit)
+        fileButton.menu.add_command(label="Unlearn", command=self.unlearn)
         fileButton.menu.add_separator()
-        fileButton.menu.add_command(label = "Help",    command=self.setHelpViewer)
-        fileButton.menu.add_separator()
-        fileButton.menu.add_command(label = "Abort/Exit", command=self.abort)
+        fileButton.menu.add_command(label="Cancel", command=self.abort)
 
         # Associate the menu with the menu button
         fileButton["menu"] = fileButton.menu
@@ -419,75 +506,86 @@ class EparDialog:
         self.helpChoice = StringVar()
         self.helpChoice.set("WINDOW")
 
-        optionButton = Menubutton(menubar, text = "Options")
-        optionButton.pack(side = LEFT, padx = 2)
+        optionButton = Menubutton(menubar, text="Options")
+        optionButton.pack(side=LEFT, padx=2)
 
-        optionButton.menu = Menu(optionButton, tearoff = 0)
+        optionButton.menu = Menu(optionButton, tearoff=0)
 
-        optionButton.menu.add_radiobutton(label = "Display Help in a Window",
-                                          value    = "WINDOW",
-                                          variable = self.helpChoice)
-        optionButton.menu.add_radiobutton(label = "Display Help in a Browser",
-                                          value    = "BROWSER",
-                                          variable = self.helpChoice)
+        optionButton.menu.add_radiobutton(label="Display Task Help in a Window",
+                                          value="WINDOW",
+                                          variable=self.helpChoice)
+        optionButton.menu.add_radiobutton(label="Display Task Help in a Browser",
+                                          value="BROWSER",
+                                          variable=self.helpChoice)
 
         # Associate the menu with the menu button
         optionButton["menu"] = optionButton.menu
 
         return optionButton
 
+    def makeHelpMenu(self, menubar):
+
+        button = Menubutton(menubar, text='Help')
+        button.pack(side=RIGHT, padx=2)
+        button.menu = Menu(button, tearoff=0)
+        button.menu.add_command(label="Task Help", command=self.setHelpViewer)
+        button.menu.add_command(label="Epar Help", command=self.eparHelp)
+        button["menu"] = button.menu
+        return button
 
     # Method to set up the action buttons
     # Create the buttons in an order for good navigation
     def buttonBox(self, top):
 
-        box = Frame(top, bg = self.bkgColor, bd = 1, relief = SUNKEN)
+        box = Frame(top, bg=self.bkgColor, bd=1, relief=SUNKEN)
 
         # When the Button is exited, the information clears, and the
         # Button goes back to the nonactive color.
         top.bind("<Leave>", self.clearInfo)
 
-        # Determine if the EXECUTE button should be present
-        if not self.isChild:
-            # Execute the task
-            buttonExecute = Button(box, text = "EXECUTE",
-                                   relief = RAISED, command = self.execute)
-            buttonExecute.pack(side = LEFT, padx = 5, pady = 7)
-            buttonExecute.bind("<Enter>", self.printExecuteInfo)
+        # Execute the task
+        buttonExecute = Button(box, text="Execute",
+                               relief=RAISED, command=self.execute)
+        buttonExecute.pack(side=LEFT, padx=5, pady=7)
+        buttonExecute.bind("<Enter>", self.printExecuteInfo)
+
+        # EXECUTE button is disabled for child windows
+        if self.isChild:
+            buttonExecute.configure(state=DISABLED)
 
         # Save the parameter settings and exit from epar
-        buttonQuit = Button(box, text = "SAVE",
-                            relief = RAISED, command = self.quit)
-        buttonQuit.pack(side = LEFT, padx = 5, pady = 7)
+        buttonQuit = Button(box, text="Save",
+                            relief=RAISED, command=self.quit)
+        buttonQuit.pack(side=LEFT, padx=5, pady=7)
         buttonQuit.bind("<Enter>", self.printQuitInfo)
 
         # Unlearn all the parameter settings (set back to the defaults)
-        buttonUnlearn = Button(box, text = "UNLEARN",
-                            relief = RAISED, command = self.unlearn)
-        buttonUnlearn.pack(side = LEFT, padx = 5, pady = 7)
+        buttonUnlearn = Button(box, text="Unlearn",
+                            relief=RAISED, command=self.unlearn)
+        buttonUnlearn.pack(side=LEFT, padx=5, pady=7)
         buttonUnlearn.bind("<Enter>", self.printUnlearnInfo)
 
         # Abort this edit session.  Currently, if an UNLEARN has already
         # been done, the UNLEARN is kept.
-        buttonAbort = Button(box, text = "ABORT",
-                              relief = RAISED, command = self.abort)
-        buttonAbort.pack(side = LEFT, padx = 5, pady = 7)
+        buttonAbort = Button(box, text="Cancel",
+                              relief=RAISED, command=self.abort)
+        buttonAbort.pack(side=LEFT, padx=5, pady=7)
         buttonAbort.bind("<Enter>", self.printAbortInfo)
 
         # Generate the a Help button
-        buttonHelp = Button(box, text = "HELP",
-                            relief = RAISED, command = self.setHelpViewer)
-        buttonHelp.pack(side = RIGHT, padx = 5, pady = 7)
+        buttonHelp = Button(box, text="Task Help",
+                            relief=RAISED, command=self.setHelpViewer)
+        buttonHelp.pack(side=RIGHT, padx=5, pady=7)
         buttonHelp.bind("<Enter>", self.printHelpInfo)
 
-        box.pack(fill = X, expand = TRUE)
+        box.pack(fill=X, expand=FALSE)
 
 
     # Determine which method of displaying the IRAF help pages was
     # chosen by the user.  WINDOW displays in a task generated scrollable
     # window.  BROWSER invokes the STSDAS HTML help pages and displays
     # in a browser.
-    def setHelpViewer(self, event = None):
+    def setHelpViewer(self, event=None):
 
         value = self.helpChoice.get()
         if value == "WINDOW":
@@ -501,7 +599,7 @@ class EparDialog:
     #
 
     def clearInfo(self, event):
-        self.top.status.config(text = "")
+        self.top.status.config(text="")
 
     def printHelpViewInfo(self, event):
         self.top.status.config(text =
@@ -520,7 +618,7 @@ class EparDialog:
              " Save the current entries and exit this edit session")
 
     def printAbortInfo(self, event):
-        self.top.status.config(text = " Abort this edit session")
+        self.top.status.config(text=" Abort this edit session")
 
     def printExecuteInfo(self, event):
         self.top.status.config(text =
@@ -547,7 +645,7 @@ class EparDialog:
 
 
     # QUIT: save the parameter settings and exit epar
-    def quit(self, event = None):
+    def quit(self, event=None):
 
         # first save the child parameters, aborting save if
         # invalid entries were encountered
@@ -634,7 +732,7 @@ class EparDialog:
 
 
     # ABORT: abort this epar session
-    def abort(self, event = None):
+    def abort(self, event=None):
 
         # Declare the global variables so they can be updated
         global CHILDX
@@ -659,73 +757,93 @@ class EparDialog:
 
     # UNLEARN: unlearn all the parameters by setting their values
     # back to the system default
-    def unlearn(self, event = None):
+    def unlearn(self, event=None):
 
         # Reset the values of the parameters
         self.unlearnAllEntries(self.top.f.canvas.entries)
 
 
     # HTMLHELP: invoke the HTML help
-    def htmlHelp(self, event = None):
+    def htmlHelp(self, event=None):
 
         # Invoke the STSDAS HTML help
-        irafhelp.help(self.taskName, html = 1)
+        irafhelp.help(self.taskName, html=1)
 
 
     # HELP: invoke help and put the page in a window
-    def help(self, event = None):
+    def help(self, event=None):
 
+        try:
+            if self.irafHelpWin.state() != NORMAL:
+                self.irafHelpWin.deiconify()
+            self.irafHelpWin.tkraise()
+            return
+        except (AttributeError, TclError):
+            pass
         # Acquire the IRAF help as a string
-        self.helpString = self.getHelpString(self.taskName)
-        self.helpBrowser(self.helpString)
+        helpString = self.getHelpString(self.taskName)
+        self.irafHelpWin = self.helpBrowser(helpString)
+
+    # EPAR HELP: invoke help and put the epar help page in a window
+    def eparHelp(self, event=None):
+
+        try:
+            if self.eparHelpWin.state() != NORMAL:
+                self.eparHelpWin.deiconify()
+            self.eparHelpWin.tkraise()
+            return
+        except (AttributeError, TclError):
+            pass
+        self.eparHelpWin = self.helpBrowser(eparHelpString, title='Epar Help')
 
 
     # Get the IRAF help in a string (RLW)
     def getHelpString(self, taskname):
 
         fh = cStringIO.StringIO()
-        iraf.system.help(taskname, page = 0, Stdout = fh, Stderr = fh)
+        iraf.system.help(taskname, page=0, Stdout=fh, Stderr=fh)
         result = fh.getvalue()
         fh.close()
         return result
 
     # Set up the help dialog (browser)
-    def helpBrowser(self, helpString):
+    def helpBrowser(self, helpString, title="IRAF Help Browser"):
 
         # Generate a new Toplevel window for the browser
-        #self.hb = Toplevel(self.top, bg = "SlateGray3")
-        self.hb = Toplevel(self.top, bg = None)
-        self.hb.title("IRAF Help Browser")
+        # hb = Toplevel(self.top, bg="SlateGray3")
+        hb = Toplevel(self.top, bg=None)
+        hb.title(title)
+        hb.iconLabel = title
 
         # Set up the Menu Bar
-        self.menubar = Frame(self.hb, relief = RIDGE, borderwidth = 0)
-        self.menubar.button = Button(self.menubar, text = "QUIT",
-                                     relief  = RAISED,
-                                     command = self.hbQuit)
-        self.menubar.button.pack(side = LEFT)
-        self.menubar.pack(side = TOP, anchor = W, padx = 5, pady = 5)
+        self.menubar = Frame(hb, relief=RIDGE, borderwidth=0)
+        self.menubar.button = Button(self.menubar, text="Close",
+                                     relief=RAISED,
+                                     command=hb.destroy)
+        self.menubar.button.pack()
+        self.menubar.pack(side=BOTTOM, padx=5, pady=5)
 
         # Define the Frame for the scrolling Listbox
-        self.hb.frame = Frame(self.hb, relief = RIDGE, borderwidth = 1)
+        hb.frame = Frame(hb, relief=RIDGE, borderwidth=1)
 
         # Attach a vertical Scrollbar to the Frame
-        self.hb.frame.vscroll = Scrollbar(self.hb.frame, orient = VERTICAL,
-                 width = 11, relief = SUNKEN, activerelief = RAISED,
-                 takefocus = FALSE)
+        hb.frame.vscroll = Scrollbar(hb.frame, orient=VERTICAL,
+                 width=11, relief=SUNKEN, activerelief=RAISED,
+                 takefocus=FALSE)
 
         # Define the Listbox and setup the Scrollbar
-        self.hb.frame.list = Listbox(self.hb.frame,
-                                     relief            = FLAT,
-                                     height            = 25,
-                                     width             = 80,
-                                     selectmode        = SINGLE,
-                                     selectborderwidth = 0)
-        self.hb.frame.list['yscrollcommand']  = self.hb.frame.vscroll.set
+        hb.frame.list = Listbox(hb.frame,
+                                     relief=FLAT,
+                                     height=25,
+                                     width=80,
+                                     selectmode=SINGLE,
+                                     selectborderwidth=0)
+        hb.frame.list['yscrollcommand'] = hb.frame.vscroll.set
 
-        self.hb.frame.vscroll['command'] = self.hb.frame.list.yview
-        self.hb.frame.vscroll.pack(side = RIGHT, fill = Y)
-        self.hb.frame.list.pack(side = TOP, expand = TRUE, fill = BOTH)
-        self.hb.frame.pack(side = TOP, fill = BOTH, expand = TRUE)
+        hb.frame.vscroll['command'] = hb.frame.list.yview
+        hb.frame.vscroll.pack(side=RIGHT, fill=Y)
+        hb.frame.list.pack(side=TOP, expand=TRUE, fill=BOTH)
+        hb.frame.pack(side=TOP, fill=BOTH, expand=TRUE)
 
         # Insert each line of the helpString onto the Frame
         listing = string.split(helpString, '\n')
@@ -737,21 +855,21 @@ class EparDialog:
             line = string.replace(line, "\f", "")
 
             # Insert the text into the Listbox
-            self.hb.frame.list.insert(END, line)
+            hb.frame.list.insert(END, line)
 
         # When the Listbox appears, the listing will be at the beginning
-        y = self.hb.frame.vscroll.get()[0]
-        self.hb.frame.list.yview(int(y))
+        y = hb.frame.vscroll.get()[0]
+        hb.frame.list.yview(int(y))
+
+        # enable Page Up/Down keys
+        scroll = hb.frame.list.yview_scroll
+        hb.bind('<Next>', lambda event, fs=scroll: fs(1, "pages"))
+        hb.bind('<Prior>', lambda event, fs=scroll: fs(-1, "pages"))
 
         # Position this dialog relative to the parent
-        self.hb.geometry("+%d+%d" % (self.top.winfo_rootx() + HELPX,
+        hb.geometry("+%d+%d" % (self.top.winfo_rootx() + HELPX,
                                      self.top.winfo_rooty() + HELPY))
-
-    # QUIT: Quit the help browser window
-    def hbQuit(self, event = None):
-
-        self.hb.focus_set()
-        self.hb.destroy()
+        return hb
 
 
     def validate(self):
@@ -791,9 +909,9 @@ class EparDialog:
                 # Verify the value is valid. If it is invalid,
                 # the value will be converted to its original valid value.
                 # Maintain a list of the reset values for user notification.
-                resetValue = entry.entryCheck(event = None)
+                resetValue = entry.entryCheck(event=None)
                 if (resetValue != None):
-                   self.badEntries.append(resetValue)
+                    self.badEntries.append(resetValue)
 
                 # Determine the type of entry variable
                 classType = entry.choiceClass

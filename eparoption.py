@@ -1,10 +1,10 @@
-#XXX some rlw notes
-
-"""module 'eparoption.py' -- module for defining the various parameter display
+"""eparoption.py: module for defining the various parameter display
    options to be used for the parameter editor task.  The widget that is used
-   for entering the parameter value is the variant.
+   for entering the parameter value is the variant.  Instances should be
+   created using the eparOptionFactory function defined at the end of the
+   module.
 
-   Parameter types: 
+   Parameter types:
    string  - Entry widget
    *gcur   - NOT IMPLEMENTED AT THIS TIME
    ukey    - NOT IMPLEMENTED AT THIS TIME
@@ -32,31 +32,38 @@ import filedlg
 # PYRAF modules
 import epar
 
-# Constants 
+# Constants
 MAXLIST  =  15
 MAXLINES = 100
 XSHIFT   = 110
 
-# This value is dependent upon the yscroll increment.  This is a test
-# implementation.
-SDOWNLIMIT = 680
-
 class EparOption:
 
-    # Chosen option 
+    """EparOption base class
+
+    Implementation for a specific parameter type must implement
+    the makeInputWidget method and must create an attribute `entry'
+    with the base widget created.  The entry widget is used for
+    focus setting and automatic scrolling.  doScroll is a callback to
+    do the scrolling when tab changes focus.
+    """
+
+    # Chosen option
     choiceClass = StringVar
 
-    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, isScrollable, fieldWidths):
+    def __init__(self, master, statusBar, paramInfo, defaultParamInfo, doScroll, fieldWidths):
 
         # Connect to the information/status Label
         self.status = statusBar
+
+        # Hook to allow scroll when this widget gets focus
+        self.doScroll = doScroll
 
         # A new Frame is created for each parameter entry
         self.master       = master
         self.master.frame = Frame(self.master)
         self.paramInfo    = paramInfo
         self.defaultParamInfo = defaultParamInfo
-        self.isScrollable = isScrollable
         self.inputWidth   = fieldWidths.get('inputWidth')
         self.valueWidth   = fieldWidths.get('valueWidth')
         self.promptWidth  = fieldWidths.get('promptWidth')
@@ -64,24 +71,24 @@ class EparOption:
         self.choice = self.choiceClass(self.master.frame)
 
         self.name  = self.paramInfo.name
-        self.value = self.paramInfo.get(field = "p_filename", native = 0, 
-                     prompt = 0) 
+        self.value = self.paramInfo.get(field = "p_filename", native = 0,
+                     prompt = 0)
         self.previousValue = self.value
 
         # Generate the input label
         if (self.paramInfo.get(field = "p_mode") == "h"):
-            self.inputLabel = Label(self.master.frame, anchor = W, 
-                                    text  = "(" + self.name + ")", 
+            self.inputLabel = Label(self.master.frame, anchor = W,
+                                    text  = "(" + self.name + ")",
                                     width = self.inputWidth)
         else:
-            self.inputLabel = Label(self.master.frame, anchor = W, 
-                                    text  = self.name, 
+            self.inputLabel = Label(self.master.frame, anchor = W,
+                                    text  = self.name,
                                     width = self.inputWidth)
         self.inputLabel.pack(side = LEFT, fill = X, expand = TRUE)
 
         # Get the prompt string and determine if special handling is needed
-        self.prompt = self.paramInfo.get(field = "p_prompt", native = 0, 
-                      prompt = 0) 
+        self.prompt = self.paramInfo.get(field = "p_prompt", native = 0,
+                      prompt = 0)
 
         # Check the prompt to determine how many lines of valid text exist
         lines       = string.split(self.prompt, "\n")
@@ -90,15 +97,15 @@ class EparOption:
         infoLines   = ""
         blankLineNo = MAXLINES
         if (nlines > 1):
-  
+
             # Keep all the lines of text before the blank line for the prompt
             for i in range(1, nlines):
                 ntokens = string.split(lines[i])
                 if ntokens != []:
-                   promptLines = string.join([promptLines, lines[i]], "\n")
+                    promptLines = string.join([promptLines, lines[i]], "\n")
                 else:
-                   blankLineNo = i
-                   break
+                    blankLineNo = i
+                    break
 
         # Generate the prompt label
         self.promptLabel = Label(self.master.frame, anchor = W,
@@ -108,11 +115,14 @@ class EparOption:
         # Generate the input widget depending upon the datatype
         self.makeInputWidget()
 
+        self.entry.bind('<FocusOut>', self.focusOut, "+")
+        self.entry.bind('<FocusIn>', self.focusIn, "+")
+
         # Pack the parameter entry Frame
         self.master.frame.pack(side = TOP, ipady = 1)
 
-        # If there is more text associated with this entry, join all the 
-        # lines of text with the blank line.  This is the "special" text 
+        # If there is more text associated with this entry, join all the
+        # lines of text with the blank line.  This is the "special" text
         # information.
         if (blankLineNo < (nlines - 1)):
 
@@ -127,30 +137,36 @@ class EparOption:
                     break
 
             # Assign the informational text to the label and pack
-            self.master.infoText.label = Label(self.master.infoText, 
-                                               text = infoLines, 
+            self.master.infoText.label = Label(self.master.infoText,
+                                               text = infoLines,
                                                anchor = W)
             self.master.infoText.label.pack(side = LEFT)
             self.master.infoText.pack(side = TOP, anchor = W)
 
-    # Method called with the "unlearn" menu option is chosen from the 
+    def focusOut(self, event=None):
+        """Clear selection (if text is selected in this widget)"""
+        if self.entryCheck(event) is None:
+            self.entry.selection_clear()
+        else:
+            self.focusIn(event)
+            return "break"
+
+    def focusIn(self, event=None):
+        """Select all text (if applicable) on taking focus"""
+        try:
+            self.entry.selection_range(0, END)
+        except AttributeError:
+            pass
+        if self.doScroll:
+            self.doScroll(event)
+
+    # Method called with the "unlearn" menu option is chosen from the
     # popup menu.  Used to unlearn a single parameter value.
     def unlearnValue(self):
- 
-        defaultValue = self.defaultParamInfo.get(field = "p_filename", 
-                            native = 0, prompt = 0) 
+
+        defaultValue = self.defaultParamInfo.get(field = "p_filename",
+                            native = 0, prompt = 0)
         self.choice.set(defaultValue)
-
-
-    # If using the Tab key to move down the parameter panel, scroll the panel
-    # down to ensure the input widget with focus is visible.
-    def scrollDown(self, event):
-
-        widgetWithFocus = self.master.frame.focus_get()
-        ylocation       = widgetWithFocus.winfo_rooty()
-        if (ylocation > SDOWNLIMIT):
-            parentToplevel  = self.master.winfo_toplevel()
-            parentToplevel.f.canvas.yview_scroll(1, "units") 
 
 
     # Check the validity of the entry
@@ -173,6 +189,9 @@ class EparOption:
                 self.status.config(text = errorMsg)
             return [self.name, value, self.previousValue]
 
+    def focus_set(self, event=None):
+        """Set focus to input widget"""
+        self.entry.focus_set()
 
     # Generate the the input widget as appropriate to the parameter datatype
     def makeInputWidget(self):
@@ -191,40 +210,114 @@ class EnumEparOption(EparOption):
         self.valueWidth = self.valueWidth - 4
 
         # Generate the button
-        self.button = Menubutton(self.master.frame, 
+        self.entry = Menubutton(self.master.frame,
                                  width  = self.valueWidth,
                                  text   = self.choice.get(),      # label
-                                 relief = RAISED,           
+                                 relief = RAISED,
                                  anchor = W,                      # alignment
-                                 textvariable = self.choice,      # var to sync 
+                                 textvariable = self.choice,      # var to sync
                                  indicatoron  = 1,
                                  takefocus    = 1,
                                  highlightthickness = 1)
 
-        self.button.menu = Menu(self.button, tearoff = 0)
+        self.entry.menu = Menu(self.entry, tearoff=0, postcommand=self.postcmd)
 
-        # Generate the menu options
-        for option in (self.paramInfo.choice):
-            self.button.menu.add_radiobutton(label    = option,
-                                             value    = option, 
-                                             variable = self.choice, 
-                                             indicatoron = 0)
+        # Generate the dictionary of shortcuts using first letter,
+        # second if first not available, etc.
+        self.shortcuts = {}
+        trylist = self.paramInfo.choice
+        underline = {}
+        i = 0
+        while trylist:
+            trylist2 = []
+            for option in trylist:
+                # shortcuts dictionary is case-insensitive
+                letter = option[i:i+1].lower()
+                if self.shortcuts.has_key(letter):
+                    # will try again with next letter
+                    trylist2.append(option)
+                elif letter:
+                    self.shortcuts[letter] = option
+                    self.shortcuts[letter.upper()] = option
+                    underline[option] = i
+                else:
+                    # no letters left, so no shortcut for this item
+                    underline[option] = -1
+            trylist = trylist2
+            i = i+1
+
+        # Generate the menu options with shortcuts underlined
+        for option in self.paramInfo.choice:
+            self.entry.menu.add_radiobutton(label    = option,
+                                             value    = option,
+                                             variable = self.choice,
+                                             indicatoron = 0,
+                                             underline = underline[option])
 
         # set up a pointer from the menubutton back to the menu
-        self.button['menu'] = self.button.menu
+        self.entry['menu'] = self.entry.menu
 
-        self.button.pack(side = LEFT)
+        self.entry.pack(side = LEFT)
 
-        # Bind the button to a popup menu of choices
-        self.button.bind('<Button-3>', self.popupChoices)
+        # up and down arrows navigate on menu
+        self.entry.bind('<KeyPress-Up>', self.keypress)
+        self.entry.bind('<KeyPress-Down>', self.keypress)
 
-        if (self.isScrollable == "yes"):
-            # Piggyback additional functionality to the Tab key
-            self.button.bind('<Tab>', self.scrollDown, "+")
+        # shortcut keys jump to items
+        for letter in self.shortcuts.keys():
+            self.entry.bind('<KeyPress-%s>' % letter, self.keypress)
+
+        # Left button sets focus (as well as popping up menu)
+        self.entry.bind('<Button-1>', self.focus_set)
+        # Bind the right button to a popup menu of choices
+        self.entry.bind('<Button-3>', self.popupChoices)
+
+    def keypress(self, event):
+        """Allow keys typed in widget to select items"""
+        key = event.keysym
+        choices = self.paramInfo.choice
+        value = self.choice.get()
+        if key == 'Down':
+            try:
+                index = min(choices.index(value)+1, len(choices)-1)
+            except ValueError:
+                # initial null value may not be in list
+                index = 0
+            self.choice.set(choices[index])
+            self.post()
+        elif key == 'Up':
+            try:
+                index = max(choices.index(value)-1, 0)
+            except ValueError:
+                index = 0
+            self.choice.set(choices[index])
+            self.post()
+        elif self.shortcuts.has_key(key):
+            self.choice.set(self.shortcuts[key])
+        else:
+            # key not found (probably a bug, since we intend to catch
+            # only events from shortcut keys, but ignore it anyway)
+            pass
+
+    def postcmd(self):
+        """Make sure proper entry is activated when menu is posted"""
+        value = self.choice.get()
+        try:
+            index = self.paramInfo.choice.index(value)
+            self.entry.menu.activate(index)
+        except ValueError:
+            # initial null value may not be in list
+            pass
+
+    def post(self):
+        """Post the menu"""
+        x = self.entry.winfo_rootx()
+        y = self.entry.winfo_rooty() + self.entry.winfo_height()
+        self.entry.menu.tk_popup(x,y)
 
     def popupChoices(self, event):
- 
-        self.menu = Menu(self.button, tearoff = 0)
+
+        self.menu = Menu(self.entry, tearoff = 0)
         self.menu.add_command(label   = "File Browser",
                               state   = DISABLED)
         self.menu.add_separator()
@@ -233,11 +326,11 @@ class EnumEparOption(EparOption):
         self.menu.add_command(label   = "Unlearn",
                              command = self.unlearnValue)
 
-        # Get the current y-coordinate of the Entry 
-        ycoord = self.button.winfo_rooty()
+        # Get the current y-coordinate of the Entry
+        ycoord = self.entry.winfo_rooty()
 
         # Get the current x-coordinate of the cursor
-        xcoord = self.button.winfo_pointerx() - XSHIFT
+        xcoord = self.entry.winfo_pointerx() - XSHIFT
 
         # Display the Menu as a popup as it is not associated with a Button
         self.menu.tk_popup(xcoord, ycoord)
@@ -258,30 +351,50 @@ class BooleanEparOption(EparOption):
         # undefined)
         self.choice.set(self.value)
 
-        self.frame = Frame(self.master.frame, 
-                           relief    = FLAT, 
+        self.entry = Frame(self.master.frame,
+                           relief    = FLAT,
                            width     = self.valueWidth,
                            takefocus = 1,
                            highlightthickness = 1)
 
-        self.rbyes = Radiobutton(self.frame, text = "Yes",
+        self.rbyes = Radiobutton(self.entry, text = "Yes",
                                  variable    = self.choice,
-                                 value       = "yes",  
+                                 value       = "yes",
                                  anchor      = E,
-                                 takefocus   = 0)
+                                 takefocus   = 0,
+                                 underline   = 0)
         self.rbyes.pack(side = LEFT, ipadx = self.padWidth)
-        self.rbno  = Radiobutton(self.frame, text = "No", 
+        self.rbno  = Radiobutton(self.entry, text = "No",
                                  variable    = self.choice,
-                                 value       = "no",  
+                                 value       = "no",
                                  anchor      = W,
-                                 takefocus   = 0)
+                                 takefocus   = 0,
+                                 underline   = 0)
         self.rbno.pack(side = RIGHT, ipadx = self.padWidth)
-        self.frame.pack(side = LEFT)
+        self.entry.pack(side = LEFT)
 
-        if (self.isScrollable == "yes"):
-            # Piggyback additional functionality to the Tab key
-            self.frame.bind('<Tab>', self.scrollDown, "+")
+        # keyboard accelerators
+        # Y/y sets yes, N/n sets no, space toggles selection
+        self.entry.bind('<y>', self.set)
+        self.entry.bind('<Y>', self.set)
+        self.entry.bind('<n>', self.unset)
+        self.entry.bind('<N>', self.unset)
+        self.entry.bind('<space>', self.toggle)
 
+    def set(self, event=None):
+        """Set value to Yes"""
+        self.rbyes.select()
+
+    def unset(self, event=None):
+        """Set value to No"""
+        self.rbno.select()
+
+    def toggle(self, event=None):
+        """Toggle value between Yes and No"""
+        if self.choice.get() == "yes":
+            self.rbno.select()
+        else:
+            self.rbyes.select()
 
 class StringEparOption(EparOption):
 
@@ -296,16 +409,12 @@ class StringEparOption(EparOption):
         self.entry.bind('<Button-3>', self.popupChoices)
 
         # Set up key bindings
-        self.entry.bind('<Return>', self.entryCheck)
-        self.entry.bind('<Tab>', self.entryCheck, "+")
-
-        if (self.isScrollable == "yes"):
-            # Piggyback additional functionality to the Tab key
-            self.entry.bind('<Tab>', self.scrollDown, "+")
-
+        self.entry.bind('<Return>', self.focusOut, "+")
+        self.entry.bind('<Tab>', self.focusOut, "+")
+        self.entry.bind('<Shift-Tab>', self.focusOut, "+")
 
     def popupChoices(self, event):
- 
+
         self.menu = Menu(self.entry, tearoff = 0)
         self.menu.add_command(label   = "File Browser",
                               command = self.fileBrowser)
@@ -315,7 +424,7 @@ class StringEparOption(EparOption):
         self.menu.add_command(label   = "Unlearn",
                               command = self.unlearnValue)
 
-        # Get the current y-coordinate of the Entry 
+        # Get the current y-coordinate of the Entry
         ycoord = self.entry.winfo_rooty()
 
         # Get the current x-coordinate of the cursor
@@ -330,8 +439,8 @@ class StringEparOption(EparOption):
         # *** Invoke a Community Tkinter generic File Dialog FOR NOW ***
         self.fd = filedlg.PersistLoadFileDialog(self.entry, "Directory Browser", "*")
         if self.fd.Show() != 1:
-                    self.fd.DialogCleanup()
-                    return
+            self.fd.DialogCleanup()
+            return
         self.fname = self.fd.GetFileName()
         self.fd.DialogCleanup()
         self.choice.set(self.fname)
@@ -360,19 +469,15 @@ class IntEparOption(EparOption):
         self.entry.pack(side = LEFT)
 
         # Set up key bindings
-        self.entry.bind('<Return>', self.entryCheck)
-        self.entry.bind('<Tab>', self.entryCheck, "+")
+        self.entry.bind('<Return>', self.focusOut, "+")
+        self.entry.bind('<Tab>', self.focusOut, "+")
+        self.entry.bind('<Shift-Tab>', self.focusOut, "+")
 
         # Bind the button to a popup menu of choices
         self.entry.bind('<Button-3>', self.popupChoices)
 
-        if (self.isScrollable == "yes"):
-            # Piggyback additional functionality to the Tab key
-            self.entry.bind('<Tab>', self.scrollDown, "+")
-
-
     def popupChoices(self, event):
- 
+
         self.menu = Menu(self.entry, tearoff = 0)
         self.menu.add_command(label   = "File Browser",
                               state   = DISABLED)
@@ -382,7 +487,7 @@ class IntEparOption(EparOption):
         self.menu.add_command(label   = "Unlearn",
                              command = self.unlearnValue)
 
-        # Get the current y-coordinate of the Entry 
+        # Get the current y-coordinate of the Entry
         ycoord = self.entry.winfo_rooty()
 
         # Get the current x-coordinate of the cursor
@@ -439,19 +544,15 @@ class RealEparOption(EparOption):
         self.entry.pack(side = LEFT)
 
         # Set up key bindings
-        self.entry.bind('<Return>', self.entryCheck)
-        self.entry.bind('<Tab>', self.entryCheck, "+")
+        self.entry.bind('<Return>', self.focusOut, "+")
+        self.entry.bind('<Tab>', self.focusOut, "+")
+        self.entry.bind('<Shift-Tab>', self.focusOut, "+")
 
         # Bind the button to a popup menu of choices
         self.entry.bind('<Button-3>', self.popupChoices)
 
-        if (self.isScrollable == "yes"):
-            # Piggyback additional functionality to the Tab key
-            self.entry.bind('<Tab>', self.scrollDown, "+")
-
-
     def popupChoices(self, event):
- 
+
         self.menu = Menu(self.entry, tearoff = 0)
         self.menu.add_command(label   = "File Browser",
                               state   = DISABLED)
@@ -461,7 +562,7 @@ class RealEparOption(EparOption):
         self.menu.add_command(label   = "Unlearn",
                              command = self.unlearnValue)
 
-        # Get the current y-coordinate of the Entry 
+        # Get the current y-coordinate of the Entry
         ycoord = self.entry.winfo_rooty()
 
         # Get the current x-coordinate of the cursor
@@ -511,19 +612,15 @@ class PsetEparOption(EparOption):
         self.valueWidth = self.valueWidth - 3
 
         # Generate the button
-        self.psetButton = Button(self.master.frame,
+        self.entry = Button(self.master.frame,
                                  width   = self.valueWidth,
                                  text    = "PSET " + self.buttonText,
-                                 relief  = RAISED,           
+                                 relief  = RAISED,
                                  command = self.childEparDialog)
-        self.psetButton.pack(side = LEFT)
-
-        if (self.isScrollable == "yes"):
-            # Piggyback additional functionality to the Tab key
-            self.psetButton.bind('<Tab>', self.scrollDown, "+")
+        self.entry.pack(side = LEFT)
 
     def childEparDialog(self):
-        
+
         # Get a reference to the parent TopLevel
         parentToplevel  = self.master.winfo_toplevel()
 
@@ -534,14 +631,38 @@ class PsetEparOption(EparOption):
                 child.top.deiconify()
                 child.top.tkraise()
                 return
-        childPsetHandle = epar.EparDialog(self.buttonText, 
-                                          parent  = self.master.frame, 
-                                          isChild = 1, 
+        childPsetHandle = epar.EparDialog(self.buttonText,
+                                          parent  = self.master.frame,
+                                          isChild = 1,
                                           childList = parentToplevel.childList,
-                                          title   = "PSET Parameter Editor") 
+                                          title   = "PSET Parameter Editor")
         parentToplevel.childList.append(childPsetHandle)
 
-    # Method called with the "unlearn" menu option is chosen from the 
+    # Method called with the "unlearn" menu option is chosen from the
     # popup menu.  Used to unlearn a single parameter value.
     def unlearnValue(self):
         pass
+
+
+# EparOption values for non-string types
+_eparOptionDict = { "b": BooleanEparOption,
+                    "r": RealEparOption,
+                    "d": RealEparOption,
+                    "i": IntEparOption,
+                    "pset": PsetEparOption,
+                  }
+
+def eparOptionFactory(master, statusBar, param, defaultParam,
+                      doScroll, fieldWidths):
+
+    """Return EparOption item of appropriate type for the parameter param"""
+
+    # If there is an enumerated list, regardless of datatype, use
+    # the EnumEparOption
+    if (param.choice != None):
+        eparOption = EnumEparOption
+    else:
+        # Use String for types not in the dictionary
+        eparOption = _eparOptionDict.get(param.type, StringEparOption)
+    return eparOption(master, statusBar, param, defaultParam,
+                      doScroll, fieldWidths)
