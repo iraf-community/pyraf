@@ -1,1 +1,1 @@
-dummy file, needed to force cvs to export an empty directory.
+dummy file, needed to force cvs to export an empty directory
