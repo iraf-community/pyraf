@@ -1055,6 +1055,8 @@ class IrafParPset(IrafParS):
 
 	def __init__(self,fields,filename,strict=0):
 		IrafParS.__init__(self,fields,filename,strict)
+		# omitted list parameters default to null string
+		if self.value is None: self.value = ""
 
 	def get(self, field=None, index=None, lpar=0, prompt=1, native=0, mode="h"):
 		"""Return pset value (IrafTask object)"""
@@ -1084,6 +1086,8 @@ class IrafParL(_StringMixin, IrafPar):
 		IrafPar.__init__(self,fields,filename,strict)
 		# filehandle for input file
 		self.__dict__['fh'] = None
+		# omitted list parameters default to null string
+		if self.value is None: self.value = ""
 
 	# Use getNextValue() method to implement a particular type
 
