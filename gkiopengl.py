@@ -278,6 +278,7 @@ def gl_fillarea(vertices):
 	win = gwm.getActiveWindow()
 	fa = win.iplot.fillAttributes
 	clear = 0
+	polystipple = 0
 	if fa.fillstyle == 0: # clear region
 		clear = 1
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
@@ -293,11 +294,12 @@ def gl_fillarea(vertices):
 		glColor3f(0.,0.,0.)
 	# not a simple rectangle
 	glBegin(GL_POLYGON)
-	glVertex(Numeric.reshape(v,(len(v)/2,2)))
+	glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
 	glEnd()
 
 def gl_putcellarray(arg): pass
 def gl_setcursor(cursornumber, x, y): pass
+
 def gl_plset(linestyle, linewidth, color):
 
 	win = gwm.getActiveWindow()
