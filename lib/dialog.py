@@ -65,4 +65,7 @@ class ModalDialog(Dialog):
         self.top.focus()
         self.top.deiconify()
         self.top.waitvar(self.myWaitVar)
-        return string.atoi(self.top.getvar(self.myWaitVar))
+        try:
+            return string.atoi(self.top.getvar(self.myWaitVar))
+        except TypeError:
+            return int(self.top.getvar(self.myWaitVar))
