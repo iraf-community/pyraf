@@ -20,6 +20,21 @@ DEFINED = 1
 CLIP = 2 # needed for this?
 NEWFORMAT = 4
 
+def elog(x):
+    """Extended range log scale. Handles negative and positive values.
+
+    values between 10 and -10 are linearly scaled, values outside are
+    log scaled (with appropriate sign changes.
+    """
+
+    if x > 10:
+        return math.log10(float(x))
+    elif x > -10.:
+        return x/10.
+    else:
+        return -math.log10(-float(x))
+
+
 class IrafGWcs:
 
     """Class to handle the IRAF Graphics World Coordinate System
@@ -118,6 +133,25 @@ class IrafGWcs:
             lw2, lw1 = math.log10(w2), math.log10(w1)
             lval = (lw2-lw1)*fract + lw1
             val = 10**lval
+        elif type == ELOG:
+            # Determine inverse mapping to determine corresponding values of s to w
+            # This must be done to figure out which regime of the elog function the
+            # specified point is in. (cs*ew + c0 = s)
+            ew1, ew2 = elog(w1), elog(w2)
+            cs = (s2-s1)/(ew2-ew1)
+            c0 = s1 - cs*ew1
+            # linear part is between ew = 1 and -1, so just map those to s
+            s10p =  cs + c0
+            s10m = -cs + c0
+            if coord > s10p: # positive log area
+                frac = (coord-s10p)/(s2-s10p)
+                val = 10.*(w2/10.)**frac
+            elif coord >= s10m and coord <= s10p: # linear area
+                frac = (coord-s10m)/(s10p-s10m)
+                val = frac*20 - 10.
+            else: # negative log area
+                frac = -(coord-s10m)/(s10m-s1)
+                val = -10.*(-w1/10.)**frac
         else:
             raise IrafError("Unknown or unsupported axis plotting type")
         return val
