@@ -10,7 +10,7 @@ from stat import *
 import iraf
 
 
-def checkcache(orig_checkcache=linecache.checkcache):
+def checkcache(filename=None,orig_checkcache=linecache.checkcache):
 
     """Discard cache entries that are out of date.
     (This is not checked upon each call!)"""
@@ -20,7 +20,16 @@ def checkcache(orig_checkcache=linecache.checkcache):
     # restore the saved entries.  (Modelled after Idle/PyShell.py.)
     cache = linecache.cache
     save = {}
-    for filename in cache.keys():
+    if filename is None:
+        filenames = cache.keys()
+    else:
+        if filename in cache:
+            filenames = [filename]
+        else:
+            return
+
+    for filename in filenames:
+#    for filename in cache.keys():
         if filename[:10] == "<CL script":
             entry = cache[filename]
             del cache[filename]
@@ -41,6 +50,7 @@ def checkcache(orig_checkcache=linecache.checkcache):
                 if size == newsize and mtime == newmtime:
                     # save the ones that didn't change
                     save[filename] = entry
+
     orig_checkcache()
     cache.update(save)
 
