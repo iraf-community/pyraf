@@ -14,6 +14,9 @@ from Tkinter import _default_root
 from Tkinter import *
 import gki
 
+eventCount = 0 #
+REDRAW_DELAY = 100 # in milliseconds
+
 if _default_root is None:
     Tk().tk.call('package', 'require', 'Togl')
     createdRoot = 1
@@ -49,14 +52,26 @@ class RawOpengl(Widget, Misc):
     self.bind('<Expose>', self.tkExpose)
     self.bind('<Configure>', self.tkExpose)
 
+  def delayRedraw(self, eventNumber):
+    if eventNumber == eventCount:
+       # No events since the event that generated this delayed call;
+       # perform the redraw
+       self.tk.call(self._w, 'makecurrent')
+       glPushMatrix()
+       self.update_idletasks()
+       self.redraw(self)
+       glFlush()
+       glPopMatrix()
+       self.tk.call(self._w, 'swapbuffers')
+    else:
+       # New events, do nothing
+       return
+
   def tkRedraw(self, *dummy):
-    self.tk.call(self._w, 'makecurrent')
-    glPushMatrix()
-    self.update_idletasks()
-    self.redraw(self)
-    glFlush()
-    glPopMatrix()
-    self.tk.call(self._w, 'swapbuffers')
+    global eventCount
+    eventCount = eventCount + 1
+    if eventCount > 2000000000: eventCount = 0 # yes, unlikely
+    self.after(REDRAW_DELAY, self.delayRedraw, eventCount)
 
   def tkMap(self, *dummy):
     self.tkExpose()
