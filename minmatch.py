@@ -28,11 +28,13 @@ class AmbiguousKeyError(KeyError):
 	pass
 
 class MinMatchDict(UserDict):
+
 	def __init__(self,dict=None):
 		self.data = {}
 		self.mmkeys = {}
 		if dict:
 			for key in dict.keys(): self.add(key,dict[key])
+
 	def getfullkey(self, key, new=0):
 		if type(key) != types.StringType:
 			raise KeyError("MinMatchDict keys must be strings")
@@ -50,10 +52,11 @@ class MinMatchDict(UserDict):
 		else:
 			raise AmbiguousKeyError("Ambiguous key "+ `key` +
 				", could be any of " + `keylist`)
+
 	def add(self, key, item):
 		"""Add a new key/item pair to the dictionary.  Resets an existing
 		key value only if this is an exact match to a known key."""
-		if not self.data.has_key(key):
+		if not self.has_exact_key(key):
 			for i in xrange(len(key)):
 				s = key[0:i+1]
 				value = self.mmkeys.get(s)
@@ -62,6 +65,7 @@ class MinMatchDict(UserDict):
 				else:
 					value.append(key)
 		self.data[key] = item
+
 	def __setitem__(self, key, item):
 		"""Set value of existing key/item in dictionary"""
 		try:
@@ -70,13 +74,16 @@ class MinMatchDict(UserDict):
 		except KeyError, e:
 			raise e.__class__(str(e) + "\nUse add() method to add new items")
 			# raise KeyError(str(e) + "\nUse add() method to add new items")
+
 	def __getitem__(self, key):
 		key = self.getfullkey(key)
 		return self.data[key]
+
 	def get(self, key, failobj=None):
 		"""Raises exception if key is ambiguous"""
 		key = self.getfullkey(key,new=1)
 		return self.data.get(key,failobj)
+
 	def __delitem__(self, key):
 		key = self.getfullkey(key)
 		del self.data[key]
@@ -84,13 +91,20 @@ class MinMatchDict(UserDict):
 			s = key[0:i+1]
 			value = self.mmkeys.get(s)
 			value.remove(key)
+
 	def clear(self):
 		self.mmkeys.clear()
 		return self.data.clear()
+
 	def has_key(self, key):
 		"""Raises an exception if key is ambiguous"""
 		key = self.getfullkey(key,new=1)
 		return self.data.has_key(key)
+
+	def has_exact_key(self, key):
+		"""Returns true if there is an exact match for this key"""
+		return self.data.has_key(key)
+
 	def update(self, other):
 		if type(other) is type(self.data):
 			for key in other.keys():
@@ -98,6 +112,7 @@ class MinMatchDict(UserDict):
 		else:
 			for key, value in other.items():
 				self.add(key,value)
+
 	def getall(self, key, failobj=None):
 		"""Returns a list of all the matching values for key,
 		containing a single entry for unambiguous matches and
