@@ -228,9 +228,9 @@ class IrafPar:
 		#
 		while len(fields) < 7: fields.append(None)
 		#
-		self.value = self.coerceValue(fields[3],strict)
+		self.value = self._coerceValue(fields[3],strict)
 		if fields[4] is not None and '|' in fields[4]:
-			self.setChoice(string.strip(fields[4]),strict)
+			self._setChoice(string.strip(fields[4]),strict)
 			if fields[5] is not None:
 				if orig_len < 7:
 					warning("Max value illegal when choice list given" +
@@ -248,9 +248,9 @@ class IrafPar:
 			#XXX could also check for missing comma (null prompt, prompt
 			#XXX in max field)
 			if fields[4] is not None:
-				self.min = self.coerceValue(fields[4],strict)
+				self.min = self._coerceValue(fields[4],strict)
 			if fields[5] is not None:
-				self.max = self.coerceValue(fields[5],strict)
+				self.max = self._coerceValue(fields[5],strict)
 		if self.min not in [None, INDEF] and \
 		   self.max not in [None, INDEF] and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than minimum " + \
@@ -267,7 +267,7 @@ class IrafPar:
 		# this parameter type (e.g. some do not allow choice list
 		# or min/max)
 		#
-		self.checkAttribs(strict)
+		self._checkAttribs(strict)
 		#
 		# check parameter value to see if it is correct
 		#
@@ -278,6 +278,10 @@ class IrafPar:
 				strict, exception=ValueError)
 			# Set illegal values to None, just like IRAF
 			self.value = None
+
+	#--------------------------------------------
+	# public accessor methods
+	#--------------------------------------------
 
 	def isConsistent(self, other):
 		"""Check two IrafPar parameters for consistency
@@ -346,49 +350,9 @@ class IrafPar:
 				return 0
 		return 1
 
-	def __coerce__(self, other):
-		return coerce(self.get(native=1), other)
-
-	def checkAttribs(self,strict=0):
-		# by default no restrictions on attributes
-		pass
-
-	def setChoice(self,s,strict=0):
-		"""Set choice parameter from string s"""
-		clist = _getChoice(self,s,strict)
-		newchoice = len(clist)*[0]
-		for i in xrange(len(clist)):
-			newchoice[i] = self.coerceValue(clist[i])
-		self.choice = newchoice
-
-	def nullPrompt(self):
-		"""Returns value to use when answer to prompt is null string"""
-		# most parameters just keep current default (even if None)
-		return self.value
-
-	def optionalPrompt(self, mode):
-		"""Interactively prompt for parameter if necessary
-		
-		Prompt for value if
-		(1) mode is hidden but value is undefined or bad, or
-		(2) mode is query and value was not set on command line
-		Never prompt for "u" mode parameters, which are local variables.
-		"""
-		if (self.mode == "h") or (self.mode == "a" and mode == "h"):
-			# hidden parameter
-			if not self.isLegal():
-				self.getPrompt()
-		elif self.mode == "u":
-			# "u" is a special mode used for local variables in CL scripts
-			# They should never prompt under any circumstances
-			if not self.isLegal():
-				raise ValueError(
-						"Attempt to access undefined local variable `%s'" %
-						self.name)
-		else:
-			# query parameter
-			if self.isCmdline()==0:
-				self.getPrompt()
+	#--------------------------------------------
+	# other public methods
+	#--------------------------------------------
 
 	def getPrompt(self):
 		"""Interactively prompt for parameter value"""
@@ -424,7 +388,7 @@ class IrafPar:
 			try:
 				# null input usually means use current value as default
 				# check it anyway since it might not be acceptable
-				if value == "": value = self.nullPrompt()
+				if value == "": value = self._nullPrompt()
 				self.set(value)
 				# None (no value) is not acceptable value after prompt
 				if self.value is not None: return
@@ -445,10 +409,10 @@ class IrafPar:
 
 		if field and field != "p_value":
 			# note p_value comes back to this routine, so shortcut that case
-			return self.getField(field,native=native,prompt=prompt)
+			return self._getField(field,native=native,prompt=prompt)
 
 		# may prompt for value if prompt flag is set
-		if prompt: self.optionalPrompt(mode)
+		if prompt: self._optionalPrompt(mode)
 
 		if index is not None:
 			raise SyntaxError("Parameter "+self.name+" is not an array")
@@ -457,68 +421,6 @@ class IrafPar:
 			return self.value
 		else:
 			return self.toString(self.value)
-
-	def getField(self, field, native=0, prompt=1):
-		"""Get a parameter field value"""
-		try:
-			# expand field name using minimum match
-			field = _getFieldDict[field]
-		except KeyError, e:
-			# re-raise the exception with a bit more info
-			raise SyntaxError("Cannot get field " + field +
-				" for parameter " + self.name + "\n" + str(e))
-		if field == "p_value":
-			# return value of parameter
-			# Note that IRAF returns the filename for list parameters
-			# when p_value is used.  I consider this a bug, and it does
-			# not appear to be used by any cl scripts or SPP programs
-			# in either IRAF or STSDAS.  It is also in conflict with
-			# the IRAF help documentation.  I am making p_value exactly
-			# the same as just a simple CL parameter reference.
-			return self.get(native=native,prompt=prompt)
-		elif field == "p_name": return self.name
-		elif field == "p_xtype": return self.type
-		elif field == "p_type": return self.getPType()
-		elif field == "p_mode": return self.mode
-		elif field == "p_prompt": return self.prompt
-		elif field == "p_default" or field == "p_filename":
-			# these all appear to be equivalent -- they just return the
-			# current PFilename of the parameter (which is the same as the value
-			# for non-list parameters, and is the filename for list parameters)
-			return self.getPFilename(native,prompt)
-		elif field == "p_maximum":
-			if native:
-				return self.max
-			else:
-				return self.toString(self.max)
-		elif field == "p_minimum":
-			if self.choice is not None:
-				if native:
-					return self.choice
-				else:
-					schoice = [None]*len(self.choice)
-					for i in xrange(len(self.choice)):
-						schoice[i] = self.toString(self.choice[i])
-					schoice = "|" + string.join(schoice,"|") + "|"
-					return schoice
-			else:
-				if native:
-					return self.min
-				else:
-					return self.toString(self.min)
-		else:
-			# XXX unimplemented fields:
-			# p_length: maximum string length in bytes -- what to do with it?
-			raise RuntimeError("Program bug in IrafPar.getField()\n" +
-				"Requested field " + field + " for parameter " + self.name)
-
-	def getPFilename(self,native,prompt):
-		"""Get p_filename field for this parameter (same as get for non-list params)"""
-		return self.get(native=native,prompt=prompt)
-
-	def getPType(self):
-		"""Get underlying datatype for this parameter (just self.type for normal params)"""
-		return self.type
 
 	def set(self, value, field=None, index=None, check=1):
 		"""Set value of this parameter from a string or other value.
@@ -531,43 +433,13 @@ class IrafPar:
 			raise SyntaxError("Parameter "+self.name+" is not an array")
 
 		if field:
-			self.setField(value,field,check=check)
+			self._setField(value,field,check=check)
 		else:
 			if check:
 				self.value = self.checkValue(value)
 			else:
-				self.value = self.coerceValue(value)
+				self.value = self._coerceValue(value)
 			self.setChanged()
-
-	def setField(self, value, field, check=1):
-		"""Set a parameter field value"""
-		try:
-			# expand field name using minimum match
-			field = _setFieldDict[field]
-		except KeyError, e:
-			raise SyntaxError("Cannot set field " + field +
-				" for parameter " + self.name + "\n" + str(e))
-		if field == "p_prompt":
-			self.prompt = irafutils.removeEscapes(irafutils.stripQuotes(value))
-		elif field == "p_value":
-			self.set(value,check=check)
-		elif field == "p_filename":
-			# this is only relevant for list parameters (*imcur, *gcur, etc.)
-			self.set(value,check=check)
-		elif field == "p_maximum":
-			self.max = self.coerceOneValue(value)
-		elif field == "p_minimum":
-			if type(value) is StringType and '|' in value:
-				self.setChoice(irafutils.stripQuotes(value))
-			else:
-				self.min = self.coerceOneValue(value)
-		elif field == "p_mode":
-			# not doing any type or value checking here -- setting mode is
-			# rare, so assume that it is being done correctly
-			self.mode = irafutils.stripQuotes(value)
-		else:
-			raise RuntimeError("Program bug in IrafPar.setField()" +
-				"Requested field " + field + " for parameter " + self.name)
 
 	def checkValue(self,value,strict=0):
 		"""Check and convert a parameter value.
@@ -576,7 +448,7 @@ class IrafPar:
 		parameter.  Otherwise returns the value (converted to the
 		right type.)
 		"""
-		v = self.coerceValue(value,strict)
+		v = self._coerceValue(value,strict)
 		return self.checkOneValue(v,strict)
 
 	def checkOneValue(self,v,strict=0):
@@ -584,7 +456,7 @@ class IrafPar:
 
 		Allows indirection strings starting with ")".  Assumes
 		v has already been converted to right value by
-		coerceOneValue.  Returns value if OK, or raises
+		_coerceOneValue.  Returns value if OK, or raises
 		ValueError if not OK.
 		"""
 		if v in [None, INDEF] or (type(v) is StringType and v[:1] == ")"):
@@ -602,21 +474,6 @@ class IrafPar:
 			raise ValueError("Value `%s' for %s is greater than maximum %s" %
 				(str(v), self.name, str(self.max)))
 		return v
-
-	def coerceValue(self,value,strict=0):
-		"""Coerce parameter to appropriate type
-		
-		Should accept None or null string.
-		"""
-		return self.coerceOneValue(value,strict)
-
-	def coerceOneValue(self,value,strict=0):
-		"""Coerce a scalar parameter to the appropriate type
-		
-		Default implementation simply prevents direct use of base class.
-		Should accept None or null string.
-		"""
-		raise RuntimeError("Bug: base class IrafPar cannot be used directly")
 
 	def dpar(self):
 		"""Return dpar-style executable assignment for parameter"""
@@ -683,13 +540,22 @@ class IrafPar:
 			del fields[i]
 		return string.join(fields, ',')
 
+	#--------------------------------------------
+	# special methods to give desired object syntax
+	#--------------------------------------------
+
+	# allow parameter object to be used in arithmetic expression
+
+	def __coerce__(self, other):
+		return coerce(self.get(native=1), other)
+
 	# fields are accessible as attributes
 
 	def __getattr__(self,field):
 		if field[:1] == '_':
 			raise AttributeError(field)
 		try:
-			return self.getField(field, native=1)
+			return self._getField(field, native=1)
 		except SyntaxError, e:
 			raise AttributeError(str(e))
 
@@ -699,7 +565,7 @@ class IrafPar:
 			self.__dict__[attr] = value
 		elif attr[:2] == "p_":
 			#XXX should check=0 be used here?
-			self.setField(value, attr)
+			self._setField(value, attr)
 		else:
 			raise AttributeError("No attribute %s for parameter %s" %
 				(attr, self.name))
@@ -716,6 +582,165 @@ class IrafPar:
 			s = s + " " + `self.min` + " " + `self.max`
 		s = s + ' "' + self.prompt + '">'
 		return s
+
+	#--------------------------------------------
+	# private methods -- may be used by subclasses, but should
+	# not be needed outside this module
+	#--------------------------------------------
+
+	def _checkAttribs(self,strict=0):
+		# by default no restrictions on attributes
+		pass
+
+	def _setChoice(self,s,strict=0):
+		"""Set choice parameter from string s"""
+		clist = _getChoice(self,s,strict)
+		newchoice = len(clist)*[0]
+		for i in xrange(len(clist)):
+			newchoice[i] = self._coerceValue(clist[i])
+		self.choice = newchoice
+
+	def _nullPrompt(self):
+		"""Returns value to use when answer to prompt is null string"""
+		# most parameters just keep current default (even if None)
+		return self.value
+
+	def _optionalPrompt(self, mode):
+		"""Interactively prompt for parameter if necessary
+		
+		Prompt for value if
+		(1) mode is hidden but value is undefined or bad, or
+		(2) mode is query and value was not set on command line
+		Never prompt for "u" mode parameters, which are local variables.
+		"""
+		if (self.mode == "h") or (self.mode == "a" and mode == "h"):
+			# hidden parameter
+			if not self.isLegal():
+				self.getPrompt()
+		elif self.mode == "u":
+			# "u" is a special mode used for local variables in CL scripts
+			# They should never prompt under any circumstances
+			if not self.isLegal():
+				raise ValueError(
+						"Attempt to access undefined local variable `%s'" %
+						self.name)
+		else:
+			# query parameter
+			if self.isCmdline()==0:
+				self.getPrompt()
+
+	def _getPFilename(self,native,prompt):
+		"""Get p_filename field for this parameter
+		
+		Same as get for non-list params
+		"""
+		return self.get(native=native,prompt=prompt)
+
+	def _getPType(self):
+		"""Get underlying datatype for this parameter
+		
+		Just self.type for normal params
+		"""
+		return self.type
+
+	def _getField(self, field, native=0, prompt=1):
+		"""Get a parameter field value"""
+		try:
+			# expand field name using minimum match
+			field = _getFieldDict[field]
+		except KeyError, e:
+			# re-raise the exception with a bit more info
+			raise SyntaxError("Cannot get field " + field +
+				" for parameter " + self.name + "\n" + str(e))
+		if field == "p_value":
+			# return value of parameter
+			# Note that IRAF returns the filename for list parameters
+			# when p_value is used.  I consider this a bug, and it does
+			# not appear to be used by any cl scripts or SPP programs
+			# in either IRAF or STSDAS.  It is also in conflict with
+			# the IRAF help documentation.  I am making p_value exactly
+			# the same as just a simple CL parameter reference.
+			return self.get(native=native,prompt=prompt)
+		elif field == "p_name": return self.name
+		elif field == "p_xtype": return self.type
+		elif field == "p_type": return self._getPType()
+		elif field == "p_mode": return self.mode
+		elif field == "p_prompt": return self.prompt
+		elif field == "p_default" or field == "p_filename":
+			# these all appear to be equivalent -- they just return the
+			# current PFilename of the parameter (which is the same as the value
+			# for non-list parameters, and is the filename for list parameters)
+			return self._getPFilename(native,prompt)
+		elif field == "p_maximum":
+			if native:
+				return self.max
+			else:
+				return self.toString(self.max)
+		elif field == "p_minimum":
+			if self.choice is not None:
+				if native:
+					return self.choice
+				else:
+					schoice = [None]*len(self.choice)
+					for i in xrange(len(self.choice)):
+						schoice[i] = self.toString(self.choice[i])
+					schoice = "|" + string.join(schoice,"|") + "|"
+					return schoice
+			else:
+				if native:
+					return self.min
+				else:
+					return self.toString(self.min)
+		else:
+			# XXX unimplemented fields:
+			# p_length: maximum string length in bytes -- what to do with it?
+			raise RuntimeError("Program bug in IrafPar._getField()\n" +
+				"Requested field " + field + " for parameter " + self.name)
+
+	def _setField(self, value, field, check=1):
+		"""Set a parameter field value"""
+		try:
+			# expand field name using minimum match
+			field = _setFieldDict[field]
+		except KeyError, e:
+			raise SyntaxError("Cannot set field " + field +
+				" for parameter " + self.name + "\n" + str(e))
+		if field == "p_prompt":
+			self.prompt = irafutils.removeEscapes(irafutils.stripQuotes(value))
+		elif field == "p_value":
+			self.set(value,check=check)
+		elif field == "p_filename":
+			# this is only relevant for list parameters (*imcur, *gcur, etc.)
+			self.set(value,check=check)
+		elif field == "p_maximum":
+			self.max = self._coerceOneValue(value)
+		elif field == "p_minimum":
+			if type(value) is StringType and '|' in value:
+				self._setChoice(irafutils.stripQuotes(value))
+			else:
+				self.min = self._coerceOneValue(value)
+		elif field == "p_mode":
+			# not doing any type or value checking here -- setting mode is
+			# rare, so assume that it is being done correctly
+			self.mode = irafutils.stripQuotes(value)
+		else:
+			raise RuntimeError("Program bug in IrafPar._setField()" +
+				"Requested field " + field + " for parameter " + self.name)
+
+	def _coerceValue(self,value,strict=0):
+		"""Coerce parameter to appropriate type
+		
+		Should accept None or null string.
+		"""
+		return self._coerceOneValue(value,strict)
+
+	def _coerceOneValue(self,value,strict=0):
+		"""Coerce a scalar parameter to the appropriate type
+		
+		Default implementation simply prevents direct use of base class.
+		Should accept None or null string.
+		"""
+		raise RuntimeError("Bug: base class IrafPar cannot be used directly")
 
 # -----------------------------------------------------
 # IRAF array parameter base class
@@ -759,9 +784,9 @@ class IrafArrayPar(IrafPar):
 			raise SyntaxError("Too many values for array" +
 				" for parameter " + self.name)
 		#
-		self.value = self.coerceValue(fields[9:9+self.dim],strict)
+		self.value = self._coerceValue(fields[9:9+self.dim],strict)
 		if fields[6] is not None and '|' in fields[6]:
-			self.setChoice(string.strip(fields[6]),strict)
+			self._setChoice(string.strip(fields[6]),strict)
 			if fields[7] is not None:
 				if orig_len < 9:
 					warning("Max value illegal when choice list given" +
@@ -776,8 +801,8 @@ class IrafArrayPar(IrafPar):
 					warning("Max value illegal when choice list given" +
 						" for parameter " + self.name, strict)
 		else:
-			self.min = self.coerceOneValue(fields[6],strict)
-			self.max = self.coerceOneValue(fields[7],strict)
+			self.min = self._coerceOneValue(fields[6],strict)
+			self.max = self._coerceOneValue(fields[7],strict)
 		if fields[8] is not None:
 			self.prompt = irafutils.removeEscapes(
 							irafutils.stripQuotes(fields[8]))
@@ -794,7 +819,7 @@ class IrafArrayPar(IrafPar):
 		# this parameter type (e.g. some do not allow choice list
 		# or min/max)
 		#
-		self.checkAttribs(strict)
+		self._checkAttribs(strict)
 		#
 		# check parameter value to see if it is correct
 		#
@@ -805,6 +830,10 @@ class IrafArrayPar(IrafPar):
 				strict, exception=ValueError)
 			# Set illegal values to None, just like IRAF
 			self.value = None
+
+	#--------------------------------------------
+	# public methods
+	#--------------------------------------------
 
 	def save(self):
 		"""Return .par format string for this parameter"""
@@ -843,28 +872,18 @@ class IrafArrayPar(IrafPar):
 		s = "%s = [%s]" % (self.name, string.join(sval, ', '))
 		return s
 
-	# array parameters can be subscripted
-	# note subscripts start at zero, unlike CL subscripts
-	# that start at one
-
-	def __getitem__(self, index):
-		return self.get(index=index,native=1)
-
-	def __setitem__(self, index, value):
-		self.set(value, index=index)
-
 	def get(self, field=None, index=None, lpar=0, prompt=1, native=0, mode="h"):
 		"""Return value of this parameter as a string (or in native format
 		if native is non-zero.)"""
 
-		if field: return self.getField(field,native=native,prompt=prompt)
+		if field: return self._getField(field,native=native,prompt=prompt)
 
 		# may prompt for value if prompt flag is set
-		#XXX should change optionalPrompt so we prompt for each element of
+		#XXX should change _optionalPrompt so we prompt for each element of
 		#XXX the array separately?  I think array parameters are
 		#XXX not useful as non-hidden params.
 
-		if prompt: self.optionalPrompt(mode)
+		if prompt: self._optionalPrompt(mode)
 
 		if index is not None:
 			try:
@@ -885,10 +904,6 @@ class IrafArrayPar(IrafPar):
 				sval[i] = self.toString(self.value[i])
 			return string.join(sval,' ')
 
-	def getPType(self):
-		"""Get underlying datatype for this parameter (strip off 'a' array params)"""
-		return self.type[1:]
-
 	def set(self, value, field=None, index=None, check=1):
 		"""Set value of this parameter from a string or other value.
 		Field is optional parameter field (p_prompt, p_minimum, etc.)
@@ -897,7 +912,7 @@ class IrafArrayPar(IrafPar):
 		the min-max range or in the choice list."""
 		if index is not None:
 			try:
-				value = self.coerceOneValue(value)
+				value = self._coerceOneValue(value)
 				if check:
 					self.value[index] = self.checkOneValue(value)
 				else:
@@ -907,12 +922,12 @@ class IrafArrayPar(IrafPar):
 				raise SyntaxError("Illegal index [" + `index` +
 					"] for array parameter " + self.name)
 		if field:
-			self.setField(value,field,check=check)
+			self._setField(value,field,check=check)
 		else:
 			if check:
 				self.value = self.checkValue(value)
 			else:
-				self.value = self.coerceValue(value)
+				self.value = self._coerceValue(value)
 			self.setChanged()
 
 	def checkValue(self,value,strict=0):
@@ -922,22 +937,23 @@ class IrafArrayPar(IrafPar):
 		parameter.  Otherwise returns the value (converted to the
 		right type.)
 		"""
-		v = self.coerceValue(value,strict)
+		v = self._coerceValue(value,strict)
 		for i in xrange(self.dim): self.checkOneValue(v[i],strict=strict)
 		return v
 
-	def coerceValue(self,value,strict=0):
-		"""Coerce parameter to appropriate type
-		
-		Should accept None or null string.  Must be an array.
-		"""
-		if (type(value) not in [ListType,TupleType]) or len(value) != self.dim:
-			raise ValueError("Value must be a " + `self.dim` +
-				"-element array for " + self.name)
-		v = self.dim*[0]
-		for i in xrange(self.dim):
-			v[i] = self.coerceOneValue(value[i],strict)
-		return v
+	#--------------------------------------------
+	# special methods
+	#--------------------------------------------
+
+	# array parameters can be subscripted
+	# note subscripts start at zero, unlike CL subscripts
+	# that start at one
+
+	def __getitem__(self, index):
+		return self.get(index=index,native=1)
+
+	def __setitem__(self, index, value):
+		self.set(value, index=index)
 
 	def __str__(self):
 		"""Return readable description of parameter"""
@@ -953,6 +969,27 @@ class IrafArrayPar(IrafPar):
 		s = s + ' "' + self.prompt + '">'
 		return s
 
+	#--------------------------------------------
+	# private methods
+	#--------------------------------------------
+
+	def _getPType(self):
+		"""Get underlying datatype for this parameter (strip off 'a' array params)"""
+		return self.type[1:]
+
+	def _coerceValue(self,value,strict=0):
+		"""Coerce parameter to appropriate type
+		
+		Should accept None or null string.  Must be an array.
+		"""
+		if (type(value) not in [ListType,TupleType]) or len(value) != self.dim:
+			raise ValueError("Value must be a " + `self.dim` +
+				"-element array for " + self.name)
+		v = self.dim*[0]
+		for i in xrange(self.dim):
+			v[i] = self._coerceOneValue(value[i],strict)
+		return v
+
 # -----------------------------------------------------
 # IRAF string parameter mixin class
 # -----------------------------------------------------
@@ -961,38 +998,9 @@ class _StringMixin:
 
 	"""IRAF string parameter mixin class"""
 
-	def checkAttribs(self, strict):
-		"""Check initial attributes to make sure they are legal"""
-		if self.min:
-			warning("Minimum value not allowed for string-type parameter " +
-				self.name, strict)
-		self.min = None
-		if self.max:
-			if not self.prompt:
-				warning("Maximum value not allowed for string-type parameter " +
-						self.name + " (probably missing comma)",
-						strict)
-				# try to recover by assuming max string is prompt
-				self.prompt = self.max
-			else:
-				warning("Maximum value not allowed for string-type parameter " +
-					self.name, strict)
-		self.max = None
-		# If not in strict mode, allow file (f) to act just like string (s).
-		# Otherwise choice is also forbidden for file type
-		if strict and self.type == "f" and self.choice:
-			warning("Illegal choice value for type '" +
-				self.type + "' for parameter " + self.name,
-				strict)
-			self.choice = None
-
-	def setChoice(self,s,strict=0):
-		"""Set choice parameter and min-match dictionary from string"""
-		self.choice = _getChoice(self,s,strict)
-		# minimum-match dictionary for choice list
-		# value is full name of choice parameter
-		self.__dict__['mmchoice'] = minmatch.MinMatchDict()
-		for c in self.choice: self.mmchoice.add(c, c)
+	#--------------------------------------------
+	# public methods
+	#--------------------------------------------
 
 	def toString(self, value, quoted=0):
 		"""Convert a single (non-array) value of the appropriate type for
@@ -1003,24 +1011,6 @@ class _StringMixin:
 			return `value`
 		else:
 			return value
-
-	def nullPrompt(self):
-		"""Returns value to use when answer to prompt is null string"""
-		# for string, null string is a legal value
-		# keep current default unless it is None
-		if self.value is None:
-			return ""
-		else:
-			return self.value
-
-	def coerceOneValue(self,value,strict=0):
-		if value is None:
-			return value 
-		elif type(value) is StringType:
-			# strip double quotes and remove escapes before quotes
-			return irafutils.removeEscapes(irafutils.stripQuotes(value))
-		else:
-			return str(value)
 
 	# slightly modified checkOneValue allows minimum match for
 	# choice strings and permits null string as value
@@ -1045,6 +1035,61 @@ class _StringMixin:
 			raise ValueError("Value `%s' for %s is greater than maximum %s" %
 				(str(v), self.name, str(self.max)))
 		return v
+
+	#--------------------------------------------
+	# private methods
+	#--------------------------------------------
+
+	def _checkAttribs(self, strict):
+		"""Check initial attributes to make sure they are legal"""
+		if self.min:
+			warning("Minimum value not allowed for string-type parameter " +
+				self.name, strict)
+		self.min = None
+		if self.max:
+			if not self.prompt:
+				warning("Maximum value not allowed for string-type parameter " +
+						self.name + " (probably missing comma)",
+						strict)
+				# try to recover by assuming max string is prompt
+				self.prompt = self.max
+			else:
+				warning("Maximum value not allowed for string-type parameter " +
+					self.name, strict)
+		self.max = None
+		# If not in strict mode, allow file (f) to act just like string (s).
+		# Otherwise choice is also forbidden for file type
+		if strict and self.type == "f" and self.choice:
+			warning("Illegal choice value for type '" +
+				self.type + "' for parameter " + self.name,
+				strict)
+			self.choice = None
+
+	def _setChoice(self,s,strict=0):
+		"""Set choice parameter and min-match dictionary from string"""
+		self.choice = _getChoice(self,s,strict)
+		# minimum-match dictionary for choice list
+		# value is full name of choice parameter
+		self.__dict__['mmchoice'] = minmatch.MinMatchDict()
+		for c in self.choice: self.mmchoice.add(c, c)
+
+	def _nullPrompt(self):
+		"""Returns value to use when answer to prompt is null string"""
+		# for string, null string is a legal value
+		# keep current default unless it is None
+		if self.value is None:
+			return ""
+		else:
+			return self.value
+
+	def _coerceOneValue(self,value,strict=0):
+		if value is None:
+			return value 
+		elif type(value) is StringType:
+			# strip double quotes and remove escapes before quotes
+			return irafutils.removeEscapes(irafutils.stripQuotes(value))
+		else:
+			return str(value)
 
 # -----------------------------------------------------
 # IRAF string parameter class
@@ -1086,7 +1131,7 @@ class IrafParPset(IrafParS):
 		if index:
 			raise SyntaxError("Parameter " + self.name +
 				" is pset, cannot use index")
-		if field: return self.getField(field)
+		if field: return self._getField(field)
 		if lpar: return str(self.value)
 
 		# assume there are not query pset parameters
@@ -1115,11 +1160,9 @@ class IrafParL(_StringMixin, IrafPar):
 		# omitted list parameters default to null string
 		if self.value is None: self.value = ""
 
-	# Use getNextValue() method to implement a particular type
-
-	def getNextValue(self):
-		"""Return a string with next value"""
-		raise RuntimeError("Bug: base class IrafParL cannot be used directly")
+	#--------------------------------------------
+	# public methods
+	#--------------------------------------------
 
 	def set(self, value, field=None, index=None, check=1):
 		"""Set value of this parameter from a string or other value.
@@ -1132,12 +1175,12 @@ class IrafParL(_StringMixin, IrafPar):
 			raise SyntaxError("Parameter "+self.name+" is not an array")
 
 		if field:
-			self.setField(value,field,check=check)
+			self._setField(value,field,check=check)
 		else:
 			if check:
 				self.value = self.checkValue(value)
 			else:
-				self.value = self.coerceValue(value)
+				self.value = self._coerceValue(value)
 			self.setChanged()
 			# close file if it is open
 			if self.fh:
@@ -1152,7 +1195,7 @@ class IrafParL(_StringMixin, IrafPar):
 		"""Return value of this parameter as a string (or in native format
 		if native is non-zero.)"""
 
-		if field: return self.getField(field,native=native,prompt=prompt)
+		if field: return self._getField(field,native=native,prompt=prompt)
 		if lpar:
 			if self.value is None and native == 0:
 				return ""
@@ -1183,23 +1226,36 @@ class IrafParL(_StringMixin, IrafPar):
 					# only print message one time
 					self.errMsg = 1
 				# fall back on default behavior if file is not readable
-				value = self.getNextValue()
+				value = self._getNextValue()
 		else:
-			# if self.value is null, use the special getNextValue method
+			# if self.value is null, use the special _getNextValue method
 			# (which should always return a string)
-			value = self.getNextValue()
+			value = self._getNextValue()
 		if native:
-			return self.coerceValue(value)
+			return self._coerceValue(value)
 		else:
 			return value
 
-	def getPFilename(self,native,prompt):
+	#--------------------------------------------
+	# private methods
+	#--------------------------------------------
+
+	# Use _getNextValue() method to implement a particular type
+
+	def _getNextValue(self):
+		"""Return a string with next value"""
+		raise RuntimeError("Bug: base class IrafParL cannot be used directly")
+
+	def _getPFilename(self,native,prompt):
 		"""Get p_filename field for this parameter (returns filename)"""
 		#XXX is this OK? should we check for self.value==None?
 		return self.value
 
-	def getPType(self):
-		"""Get underlying datatype for this parameter (strip off '*' from list params)"""
+	def _getPType(self):
+		"""Get underlying datatype for this parameter
+		
+		Strip off '*' from list params
+		"""
 		return self.type[1:]
 
 # -----------------------------------------------------
@@ -1213,7 +1269,7 @@ class IrafParLS(IrafParL):
 	def __init__(self,fields,filename,strict=0):
 		IrafParL.__init__(self,fields,filename,strict)
 
-	def getNextValue(self):
+	def _getNextValue(self):
 		"""Return next string value"""
 		# save current values (in case this got called
 		# because filename was in error)
@@ -1241,7 +1297,7 @@ class IrafParGCur(IrafParL):
 	def __init__(self,fields,filename,strict=0):
 		IrafParL.__init__(self,fields,filename,strict)
 
-	def getNextValue(self):
+	def _getNextValue(self):
 		"""Return next graphics cursor value"""
 		return irafgcur.gcur()
 
@@ -1256,7 +1312,7 @@ class IrafParImCur(IrafParL):
 	def __init__(self,fields,filename,strict=0):
 		IrafParL.__init__(self,fields,filename,strict)
 
-	def getNextValue(self):
+	def _getNextValue(self):
 		"""Return next image display cursor value"""
 		return irafimcur.imcur()
 
@@ -1271,7 +1327,7 @@ class IrafParUKey(IrafParL):
 	def __init__(self,fields,filename,strict=0):
 		IrafParL.__init__(self,fields,filename,strict)
 
-	def getNextValue(self):
+	def _getNextValue(self):
 		"""Return next typed character"""
 		return irafukey.ukey()
 
@@ -1283,7 +1339,28 @@ class _BooleanMixin:
 
 	"""IRAF boolean parameter mixin class"""
 
-	def checkAttribs(self, strict):
+	#--------------------------------------------
+	# public methods
+	#--------------------------------------------
+
+	def toString(self, value, quoted=0):
+		if value in [None, INDEF]:
+			return ""
+		elif type(value) is StringType:
+			# presumably an indirection value ')task.name'
+			if quoted:
+				return `value`
+			else:
+				return value
+		else:
+			strval = ["no", "yes"]
+			return strval[value]
+
+	#--------------------------------------------
+	# private methods
+	#--------------------------------------------
+
+	def _checkAttribs(self, strict):
 		"""Check initial attributes to make sure they are legal"""
 		if self.min:
 			warning("Minimum value not allowed for boolean-type parameter " +
@@ -1305,21 +1382,8 @@ class _BooleanMixin:
 				self.name, strict)
 			self.choice = None
 
-	def toString(self, value, quoted=0):
-		if value in [None, INDEF]:
-			return ""
-		elif type(value) is StringType:
-			# presumably an indirection value ')task.name'
-			if quoted:
-				return `value`
-			else:
-				return value
-		else:
-			strval = ["no", "yes"]
-			return strval[value]
-
 	# accepts integer values 0,1 or string 'yes','no' and variants
-	def coerceOneValue(self,value,strict=0):
+	def _coerceOneValue(self,value,strict=0):
 		if value in [None,INDEF,0,1]:
 			return value
 		elif value == "":
@@ -1368,14 +1432,22 @@ class _IntMixin:
 
 	"""IRAF integer parameter mixin class"""
 
+	#--------------------------------------------
+	# public methods
+	#--------------------------------------------
+
 	def toString(self, value, quoted=0):
 		if value is None:
 			return ""
 		else:
 			return str(value)
 
+	#--------------------------------------------
+	# private methods
+	#--------------------------------------------
+
 	# coerce value to integer
-	def coerceOneValue(self,value,strict=0):
+	def _coerceOneValue(self,value,strict=0):
 		tval = type(value)
 		if value in [None, INDEF] or tval is IntType:
 			return value
@@ -1449,12 +1521,9 @@ class _RealMixin:
 
 	"""IRAF real parameter mixin class"""
 
-	def checkAttribs(self, strict):
-		"""Check initial attributes to make sure they are legal"""
-		if self.choice:
-			warning("Choice values not allowed for real-type parameter " +
-				self.name, strict)
-			self.choice = None
+	#--------------------------------------------
+	# public methods
+	#--------------------------------------------
 
 	def toString(self, value, quoted=0):
 		if value is None:
@@ -1462,8 +1531,19 @@ class _RealMixin:
 		else:
 			return str(value)
 
+	#--------------------------------------------
+	# private methods
+	#--------------------------------------------
+
+	def _checkAttribs(self, strict):
+		"""Check initial attributes to make sure they are legal"""
+		if self.choice:
+			warning("Choice values not allowed for real-type parameter " +
+				self.name, strict)
+			self.choice = None
+
 	# coerce value to real
-	def coerceOneValue(self,value,strict=0):
+	def _coerceOneValue(self,value,strict=0):
 		tval = type(value)
 		if value in [None, INDEF] or tval is FloatType:
 			return value

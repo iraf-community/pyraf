@@ -77,10 +77,14 @@ class IrafTask:
 			self._initParpath()
 			self._initParList()
 
+	#=========================================================
 	# public accessor methods for attributes
+	#=========================================================
 
+	#---------------------------------------------------------
 	# first set returns current values (which may be None if
 	# initTask has not been executed yet)
+	#---------------------------------------------------------
 
 	def getName(self):      return self._name
 	def getPkgname(self):   return self._pkgname
@@ -91,8 +95,10 @@ class IrafTask:
 	def getForeign(self):   return self._foreign
 	def getFilename(self):  return self._filename
 
+	#---------------------------------------------------------
 	# second set initializes task variables (which were deferred to
 	# speed up initial instance creation)
+	#---------------------------------------------------------
 
 	def getFullpath(self):
 		"""Return full path name of executable"""
@@ -119,7 +125,9 @@ class IrafTask:
 		self.initTask()
 		return self._currentParList.getParObject(param)
 
+	#---------------------------------------------------------
 	# modify attributes
+	#---------------------------------------------------------
 
 	def addPkgbinary(self, pkgbinary):
 		"""Add another entry in list of possible package binary locations
@@ -143,7 +151,9 @@ class IrafTask:
 		"""
 		self._hidden = value
 
+	#---------------------------------------------------------
 	# run the task
+	#---------------------------------------------------------
 
 	def run(self,*args,**kw):
 		"""Execute this task with the specified arguments"""
@@ -251,7 +261,9 @@ class IrafTask:
 				p.mode = string.replace(p.mode,"a",mode)
 		return newParList
 
+	#---------------------------------------------------------
 	# task parameter access
+	#---------------------------------------------------------
 
 	def setParam(self,qualifiedName,newvalue,check=1):
 		"""Set parameter specified by qualifiedName to newvalue.
@@ -397,7 +409,9 @@ class IrafTask:
 			raise iraf.IrafError("Unknown parameter requested: " +
 				qualifiedName)
 
+	#---------------------------------------------------------
 	# task parameter utility methods
+	#---------------------------------------------------------
 
 	def lpar(self,verbose=0):
 		"""List the task parameters"""
@@ -474,9 +488,9 @@ class IrafTask:
 			s = s + self._name[-1:]
 		return s
 
-	#---------------------------------------------------------
+	#=========================================================
 	# special methods to give desired object syntax
-	#---------------------------------------------------------
+	#=========================================================
 
 	# parameters are accessible as attributes
 
@@ -518,10 +532,10 @@ class IrafTask:
 		if self._tbflag: s = s + ' .tb'
 		return s + '>'
 
-	#---------------------------------------------------------
+	#=========================================================
 	# private methods -- may be used by subclasses, but should
 	# not be needed outside this module
-	#---------------------------------------------------------
+	#=========================================================
 
 	def _updateParList(self, newParList, save=0):
 		"""Update parameter list after successful task completion
@@ -825,9 +839,9 @@ class IrafCLTask(IrafTask):
 			# initialization now
 			self.initTask(filehandle=fh)
 
-	#---------------------------------------------------------
+	#=========================================================
 	# new public methods for CL task
-	#---------------------------------------------------------
+	#=========================================================
 
 	def getCode(self):
 		"""Return a string with the Python code for this task"""
@@ -841,9 +855,9 @@ class IrafCLTask(IrafTask):
 			cl2py.codeCache.remove(self)
 		self.initTask(force=1)
 
-	#---------------------------------------------------------
+	#=========================================================
 	# other public methods
-	#---------------------------------------------------------
+	#=========================================================
 
 	def initTask(self,filehandle=None,force=0):
 		"""Fill in full pathnames of files, read par file, compile CL code
@@ -949,9 +963,9 @@ class IrafCLTask(IrafTask):
 								self._currentParList.getParDict())
 		if iraf.Verbose>1: print 'Successful task termination'
 
-	#---------------------------------------------------------
+	#=========================================================
 	# private methods
-	#---------------------------------------------------------
+	#=========================================================
 
 	def _runCode(self, parList=None, kw={}):
 		"""Run the procedure with current parameters"""
@@ -987,9 +1001,9 @@ class IrafPkg(IrafCLTask):
 		self._tasks = minmatch.MinMatchDict()
 		self._pkgs = minmatch.MinMatchDict()
 
-	#---------------------------------------------------------
+	#=========================================================
 	# new public methods for package
-	#---------------------------------------------------------
+	#=========================================================
 
 	def isLoaded(self):
 		"""Returns true if this package has already been loaded"""
@@ -1005,9 +1019,9 @@ class IrafPkg(IrafCLTask):
 		# sub-packages get added to a separate list
 		if isinstance(task, IrafPkg): self._pkgs.add(name, name)
 
-	#---------------------------------------------------------
+	#=========================================================
 	# other public methods
-	#---------------------------------------------------------
+	#=========================================================
 
 	def __getattr__(self, name, triedpkgs=None):
 		"""Return the task 'name' from this package (if it exists).
