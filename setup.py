@@ -23,7 +23,7 @@ tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
 tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
 tk_lib = os.path.join((tk.getvar('tk_library')), '../')
 tkv = str(Tkinter.TkVersion)[:3]
-if sys.platform == 'darwin':
+if sys.platform == 'darwin' or sys.platform.startswith('linux'):
     x_lib_dirs = '/usr/X11R6/lib'
     x_inc_dirs = '/usr/X11R6/include'
 else:
