@@ -10,7 +10,7 @@ from types import *
 from tkMessageBox import askokcancel
 import os, sys, string
 
-# PyRAF modules
+#PyRAF modules
 import iraf, irafpar, irafhelp, cStringIO, wutil
 from irafglobals import pyrafDir, userWorkingHome, IrafError
 
