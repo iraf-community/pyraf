@@ -60,11 +60,11 @@ def IrafParFactory(fields,filename=None,strict=0):
 		return IrafParS(fields,filename,strict)
 	elif type in _string_list_types:
 		return IrafParLS(fields,filename,strict)
-	elif type == "*gcur":
+	elif type == "*gcur" or type == "gcur":
 		return IrafParGCur(fields,filename,strict)
-	elif type == "*imcur":
+	elif type == "*imcur" or type == "imcur":
 		return IrafParImCur(fields,filename,strict)
-	elif type == "*ukey":
+	elif type == "*ukey" or type == "ukey":
 		return IrafParUKey(fields,filename,strict)
 	elif type == "pset":
 		return IrafParPset(fields,filename,strict)
@@ -148,7 +148,7 @@ class IrafPar:
 			# XXX could also check for missing comma (null prompt, prompt in max field)
 			if fields[4]: self.min = self.coerceValue(fields[4],strict)
 			if fields[5]: self.max = self.coerceValue(fields[5],strict)
-		if self.min != None and self.max != None and self.max < self.min:
+		if self.min is not None and self.max is not None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
 				strict, irafparam=self)
@@ -191,11 +191,11 @@ class IrafPar:
 			for i in xrange(len(self.choice)):
 				schoice[i] = self.toString(self.choice[i])
 			pstring = pstring + " (" + string.join(schoice,"|") + ")"
-		elif self.min != None or self.max != None:
+		elif self.min is not None or self.max is not None:
 			pstring = pstring + " ("
-			if self.min != None: pstring = pstring + self.toString(self.min)
+			if self.min is not None: pstring = pstring + self.toString(self.min)
 			pstring = pstring + ":"
-			if self.max != None: pstring = pstring + self.toString(self.max)
+			if self.max is not None: pstring = pstring + self.toString(self.max)
 			pstring = pstring + ")"
 		# add current value as default
 		if self.value: pstring = pstring + " (" + self.toString(self.value) + ")"
@@ -209,8 +209,8 @@ class IrafPar:
 					# null input means use current value as default
 					# null default is acceptable only if no min, max or choice
 					if (self.value or self.value == 0) or \
-							(self.choice == None and self.min == None and \
-							self.max == None):
+							(self.choice is None and self.min is None and \
+							self.max is None):
 						return
 				else:
 					self.set(value)
@@ -229,7 +229,7 @@ class IrafPar:
 		# prompt for query parameters unless prompt is set to zero
 		if prompt and self.mode == "q": self.getPrompt()
 
-		if index != None:
+		if index is not None:
 			raise SyntaxError("Parameter "+self.name+" is not an array")
 
 		if native:
@@ -262,7 +262,7 @@ class IrafPar:
 			else:
 				return self.toString(self.max)
 		elif field == "p_minimum":
-			if self.choice != None:
+			if self.choice is not None:
 				if native:
 					return self.choice
 				else:
@@ -297,7 +297,7 @@ class IrafPar:
 		assign the value without checking to see if it is within
 		the min-max range or in the choice list."""
 
-		if index != None:
+		if index is not None:
 			raise SyntaxError("Parameter "+self.name+" is not an array")
 
 		if field:
@@ -356,14 +356,14 @@ class IrafPar:
 		coerceOneValue.  Returns value if OK, or raises
 		ValueError if not OK.
 		"""
-		if v == None or v == "" or \
+		if v is None or v == "" or \
 				((type(v) is StringType) and (v[0] == ")")):
 			return v
-		elif self.choice != None and not (v in self.choice):
+		elif self.choice is not None and not (v in self.choice):
 			raise ValueError("Value '" + str(v) +
 				"' is not in choice list for " + self.name)
-		elif (self.min != None and v < self.min) or \
-			 (self.max != None and v > self.max):
+		elif (self.min is not None and v < self.min) or \
+			 (self.max is not None and v > self.max):
 			raise ValueError("Value '" + str(v) + "' is out of min-max range for " +
 				self.name)
 		return v
@@ -397,7 +397,7 @@ class IrafPar:
 						self.get(prompt=0,lpar=1), plines)
 		if not verbose: return s
 
-		if self.choice != None:
+		if self.choice is not None:
 			s = s + "\n" + 32*" " + "|"
 			nline = 33
 			for i in xrange(len(self.choice)):
@@ -407,12 +407,12 @@ class IrafPar:
 				if nline > 80:
 					s = s + "\n" + 32*" " + "|"
 					nline = 33
-		elif self.min != None or self.max != None:
+		elif self.min is not None or self.max is not None:
 			s = s + "\n" + 32*" "
-			if self.min != None:
+			if self.min is not None:
 				s = s + str(self.min) + " <= "
 			s = s + self.name
-			if self.max != None:
+			if self.max is not None:
 				s = s + " <= " + str(self.max)
 		return s
 
@@ -420,7 +420,7 @@ class IrafPar:
 		"""Return readable description of parameter"""
 		s = "<" + self.__class__.__name__ + " " + self.name + " " + self.type
 		s = s + " " + self.mode + " " + `self.value`
-		if self.choice != None:
+		if self.choice is not None:
 			s = s + " |"
 			for i in xrange(len(self.choice)):
 				s = s + str(self.choice[i]) + "|"
@@ -488,7 +488,7 @@ class IrafArrayPar(IrafPar):
 			self.min = self.coerceOneValue(fields[6],strict)
 			self.max = self.coerceOneValue(fields[7],strict)
 		self.prompt = irafutils.removeEscapes(fields[8])
-		if self.min != None and self.max != None and self.max < self.min:
+		if self.min is not None and self.max is not None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
 				strict, irafparam=self)
@@ -519,7 +519,7 @@ class IrafArrayPar(IrafPar):
 		# prompt for query parameters unless prompt is set to zero
 		if prompt and self.mode == "q": self.getPrompt()
 
-		if index != None:
+		if index is not None:
 			try:
 				if native:
 					return self.value[index]
@@ -548,7 +548,7 @@ class IrafArrayPar(IrafPar):
 		Index is optional array index (zero-based).  Set check=0 to
 		assign the value without checking to see if it is within
 		the min-max range or in the choice list."""
-		if index != None:
+		if index is not None:
 			try:
 				value = self.coerceOneValue(value)
 				if check:
@@ -597,7 +597,7 @@ class IrafArrayPar(IrafPar):
 		s = "<" + self.__class__.__name__ + " " + self.name + " " + \
 			self.type + "[" + str(self.dim) + "]"
 		s = s + " " + self.mode + " " + `self.value`
-		if self.choice != None:
+		if self.choice is not None:
 			s = s + " |"
 			for i in xrange(len(self.choice)):
 				s = s + str(self.choice[i]) + "|"
@@ -650,13 +650,13 @@ class _StringMixin:
 	def toString(self, value):
 		"""Convert a single (non-array) value of the appropriate type for
 		this parameter to a string"""
-		if value == None:
+		if value is None:
 			return ""
 		else:
 			return value
 
 	def coerceOneValue(self,value,strict=0):
-		if value == None:
+		if value is None:
 			return ""
 		elif type(value) is StringType:
 			# strip double quotes
@@ -667,10 +667,10 @@ class _StringMixin:
 	# slightly modified checkOneValue allows minimum match for
 	# choice strings
 	def checkOneValue(self,v):
-		if v == None or v == "" or \
+		if v is None or v == "" or \
 				((type(v) is StringType) and (v[0] == ")")):
 			return v
-		elif self.choice != None:
+		elif self.choice is not None:
 			try:
 				v = self.mmchoice[v]
 			except minmatch.AmbiguousKeyError, e:
@@ -681,8 +681,8 @@ class _StringMixin:
 				raise ValueError("Value '" + str(v) +
 					"' is not in choice list for " + self.name +
 					"\nChoices are " + string.join(self.choice,"|"))
-		elif (self.min != None and v < self.min) or \
-			 (self.max != None and v > self.max):
+		elif (self.min is not None and v < self.min) or \
+			 (self.max is not None and v > self.max):
 			raise ValueError("Value '" + str(v) +
 				"' is out of min-max range for " + self.name)
 		return v
@@ -748,7 +748,7 @@ class IrafParL(_StringMixin, IrafPar):
 		assign the value without checking to see if it is within
 		the min-max range or in the choice list."""
 
-		if index != None:
+		if index is not None:
 			raise SyntaxError("Parameter "+self.name+" is not an array")
 
 		if field:
@@ -774,7 +774,7 @@ class IrafParL(_StringMixin, IrafPar):
 		# (I hope there are no query list parameters!)
 		if prompt and self.mode == "q": self.getPrompt()
 
-		if index != None:
+		if index is not None:
 			raise SyntaxError("Parameter "+self.name+" is not an array")
 
 		if self.value:
@@ -898,7 +898,7 @@ class _BooleanMixin:
 			self.choice = None
 
 	def toString(self, value):
-		if value == None:
+		if value is None:
 			return ""
 		elif type(value) == StringType:
 			# presumably an indirection value ')task.name'
@@ -909,7 +909,7 @@ class _BooleanMixin:
 
 	# accepts integer values 0,1 or string 'yes','no' and variants
 	def coerceOneValue(self,value,strict=0):
-		if value == None or value == 0 or value == 1: return value
+		if value is None or value == 0 or value == 1: return value
 		tval = type(value)
 		if tval is StringType:
 			v2 = string.strip(value)
@@ -955,14 +955,14 @@ class _IntMixin:
 	"""IRAF integer parameter mixin class"""
 
 	def toString(self, value):
-		if value == None:
+		if value is None:
 			return "INDEF"
 		else:
 			return str(value)
 
 	# coerce value to integer
 	def coerceOneValue(self,value,strict=0):
-		if value == None: return None
+		if value is None: return None
 		tval = type(value)
 		if tval is IntType:
 			return value
@@ -1031,14 +1031,14 @@ class _RealMixin:
 			self.choice = None
 
 	def toString(self, value):
-		if value == None:
+		if value is None:
 			return "INDEF"
 		else:
 			return str(value)
 
 	# coerce value to real
 	def coerceOneValue(self,value,strict=0):
-		if value == None: return None
+		if value is None: return None
 		tval = type(value)
 		if tval is FloatType:
 			return value
@@ -1059,13 +1059,13 @@ class _RealMixin:
 				vsign = 1
 				i1 = 0
 				mm = _re_colon.search(s2)
-				if mm != None:
+				if mm is not None:
 					if s2[0] == "-":
 						i1 = 1
 						vsign = -1
 					elif s2[0] == "+":
 						i1 = 1
-					while mm != None:
+					while mm is not None:
 						i2 = mm.start()
 						value = value + int(s2[i1:i2])/vscale
 						i1 = i2+1
@@ -1073,7 +1073,7 @@ class _RealMixin:
 						mm = _re_colon.search(s2,i1)
 				# special handling for d exponential notation
 				mm = _re_d.search(s2,i1)
-				if mm == None:
+				if mm is None:
 					return vsign*(value + float(s2[i1:])/vscale)
 				else:
 					return vsign*(value + \
@@ -1109,17 +1109,24 @@ class IrafParList:
 
 	"""List of Iraf parameters"""
 
-	def __init__(self, taskname, filename=""):
-		"""Create a parameter list for task taskname by reading a .par file"""
+	def __init__(self, taskname, filename="", parlist=None):
+		"""Create a parameter list for task taskname
+		
+		If parlist is specified, uses it as a list of IrafPar objects.
+		Else if filename is specified, reads a .par file.
+		If neither is specified, generates a default list.
+		"""
 		self.__filename = filename
 		self.__name = taskname
-		if filename:
+
+		if parlist is not None:
+			self.__pars = parlist
+		elif filename:
 			self.__pars = _readpar(filename)
 		else:
-			# create default list if no filename is specified
-			self.__pars = [
-				IrafParFactory(["mode","s","h","al"]),
-				IrafParFactory(["$nargs","i","h","0"]) ]
+			# create empty list if no filename is specified
+			self.__pars = []
+
 		# build minmatch dictionary of all parameters, including
 		# those in psets
 		self.__pardict = minmatch.MinMatchDict()
@@ -1127,6 +1134,17 @@ class IrafParList:
 		for p in self.__pars:
 			self.__pardict.add(p.name, p)
 			if isinstance(p, IrafParPset): psetlist.append(p)
+
+		# add mode, $nargs to parameter list if not already present
+		if not self.__pardict.has_exact_key("mode"):
+			p = IrafParFactory(["mode","s","h","al"])
+			self.__pars.append(p)
+			self.__pardict.add(p.name, p)
+		if not self.__pardict.has_exact_key("$nargs"):
+			p = IrafParFactory(["$nargs","i","h","0"])
+			self.__pars.append(p)
+			self.__pardict.add(p.name, p)
+
 		# Now add the pset parameters
 		# Work from the pset's pardict because then we get
 		# parameters from nested psets too
@@ -1223,7 +1241,7 @@ class IrafParList:
 
 	def __str__(self):
 		s = '<IrafParList ' + self.__name + ' (' + self.__filename + ') ' + \
-			len(self.__pars) + ' parameters>'
+			str(len(self.__pars)) + ' parameters>'
 		return s
 
 # -----------------------------------------------------
@@ -1307,12 +1325,12 @@ def _readpar(filename,strict=0):
 			i1 = 0
 			while len(line) > i1:
 				mm = re_field.match(line,i1)
-				if mm == None:
+				if mm is None:
 					# Failure occurs only for unmatched leading quote.
 					# Append more lines to get quotes to match.  (Probably
 					# want to restrict this behavior to only the description
 					# field.)
-					while mm == None:
+					while mm is None:
 						nline = fh.readline()
 						if nline == "":
 							# serious error, run-on quote consumed entire file 
@@ -1320,18 +1338,18 @@ def _readpar(filename,strict=0):
 								line)
 						line = line + '\n' + string.rstrip(nline)
 						mm = re_field.match(line,i1)
-				if mm.group('comma') != None:
+				if mm.group('comma') is not None:
 					g = mm.group('comma')
 					# check for trailing quote in unquoted string
 					if g[-1:] == '"' or g[-1:] == "'":
 						warning("Unquoted string has trailing quote\n" +
 								line, strict, filename=filename)
-				elif mm.group('double') != None:
+				elif mm.group('double') is not None:
 					if mm.group('djunk'):
 						warning("Non-blank follows quoted string\n" + \
 								line, strict, filename=filename)
 					g = mm.group('double')
-				elif mm.group('single') != None:
+				elif mm.group('single') is not None:
 					if mm.group('sjunk'):
 						warning("Non-blank follows quoted string\n" + \
 								line, strict, filename=filename)
@@ -1355,16 +1373,6 @@ def _readpar(filename,strict=0):
 				param_dict[par.name] = par
 				param_list.append(par)
 		line = fh.readline()
-	# add special $nargs parameter
-	if not param_dict.has_key("$nargs"):
-		try:
-			flist = ["$nargs","i","h","0"]
-			par = IrafParFactory(flist,strict=strict)
-		except StandardError, exc:
-			raise SyntaxError(filename + "\n" + 
-				"Error creating $nargs parameter\n" + str(exc))
-		param_dict[par.name] = par
-		param_list.append(par)
 	return param_list
 
 # -----------------------------------------------------
@@ -1383,7 +1391,7 @@ def _getChoice(self, s, strict):
 		i1 = 0
 	clist = []
 	mm = _re_choice.search(s,i1)
-	while mm != None:
+	while mm is not None:
 		i2 = mm.start()
 		clist.append(s[i1:i2])
 		i1 = mm.end()
