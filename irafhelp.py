@@ -185,7 +185,7 @@ def _valueString(value):
 	return vstr
 
 _HelpURL = "http://ra.stsci.edu/cgi-bin/gethelp.cgi?task="
-_Netscape = "/opt/X11R5/lib/X11/netscape/v451/netscape"
+_Netscape = "netscape"
 
 def _htmlHelp(taskname):
 	"""Display HTML help for given IRAF task in Netscape.
