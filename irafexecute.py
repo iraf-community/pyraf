@@ -120,7 +120,7 @@ def IrafIO(process,task):
 							(txdata[0:5] == "\033-rAw")):
 							# ignore IRAF io escape sequences for now
 							continue
-					print txdata
+					print txdata,
 				elif chan == 5:
 					sys.stderr.write(Iraf2AscString(xdata))
 				elif chan == 6:
