@@ -548,7 +548,7 @@ class IrafTask:
 			return
 		if self._defaultParList is not None:
 			# update defaultParList from file if necessary
-			self._defaultParList.update()
+			self._defaultParList.Update()
 			if self._scrunchParpath and \
 			  (self._scrunchParpath == self._currentParpath):
 				try:
@@ -1093,6 +1093,7 @@ class IrafCLTask(IrafTask):
 		# placeholder for Python translation of CL code
 		# (lazy instantiation)
 		self.__dict__['_pycode'] = None
+		self.__dict__['_codeObject'] = None
 		self.__dict__['_clFunction'] = None
 		if fh is not None:
 			# if filehandle was specified, go ahead and do the
@@ -1145,57 +1146,60 @@ class IrafCLTask(IrafTask):
 		if filehandle is None:
 			filehandle = self._fullpath
 
-		if self._pycode is not None:
-			# Python code already exists, but make sure file has not changed
-			if cl2py.checkCache(filehandle, self._pycode):
-				# make sure function pointer is defined (it may not be
-				# if this object has been reconstituted from pickle file)
-				if self._clFunction is None:
-					clDict = {}
-					exec self._codeObject in clDict
-					self._clFunction = clDict[self._pycode.vars.proc_name]
-				return
+		if not cl2py.checkCache(filehandle, self._pycode):
+			# File has changed, force recompilation
+			self._pycode = None
 			if iraf.Verbose>1:
 				print "Cached version of %s is out-of-date" % (self._name,)
 
-		# translate code to python, compile it, and execute it (to define
-		# the Python function in clDict)
-		if iraf.Verbose>1:
-			print "Compiling CL task %s" % (self._name,)
+		if self._pycode is None:
+			# translate code to python
+			if iraf.Verbose>1:
+				print "Compiling CL task %s" % (self._name,)
+			self._codeObject = None
+			self._pycode = cl2py.cl2py(filehandle,
+				parlist=self._defaultParList, parfile=self._defaultParpath)
 
-		self._pycode = cl2py.cl2py(filehandle,
-			parlist=self._defaultParList, parfile=self._defaultParpath)
-		if self._pkgname:
-			scriptname = '<CL script %s.%s>' % (self._pkgname, self._name)
-		else:
-			# null pkgname -- just use task in name
-			scriptname = '<CL script %s>' % self._name
-		self._codeObject = compile(self._pycode.code, scriptname, 'exec')
-		clDict = {}
-		exec self._codeObject in clDict
-		self._clFunction = clDict[self._pycode.vars.proc_name]
+		if self._codeObject is None:
+			# No code object, which can happen if function has not
+			# been compiled or if compilation failed.  Try compiling
+			# again in any case.
+			self._clFunction = None
+			if self._pkgname:
+				scriptname = '<CL script %s.%s>' % (self._pkgname, self._name)
+			else:
+				# null pkgname -- just use task in name
+				scriptname = '<CL script %s>' % self._name
+			self._codeObject = compile(self._pycode.code, scriptname, 'exec')
 
-		# get parameter list from CL code
-		# This may replace an existing list -- that's OK since
-		# the cl2py code has already checked it for consistency.
-		self._defaultParList = self._pycode.vars.parList
-		# use currentParList from .par file if exists and consistent
-		if self._currentParpath:
-			if not self._defaultParList.isConsistent(self._currentParList):
-				sys.stderr.write("uparm parameter list `%s' inconsistent "
-				  "with default parameters for %s `%s'\n" %
-				  (self._currentParpath, self.__class__.__name__, self._name,))
-				sys.stderr.flush()
-				print 'default'
-				self._defaultParList.lParam()
-				print 'current'
-				self._currentParList.lParam()
-				#XXX just toss it for now -- later can try to merge new,old
+		if self._clFunction is None:
+			# Execute the code to define the Python function in clDict
+			clDict = {}
+			exec self._codeObject in clDict
+			self._clFunction = clDict[self._pycode.vars.proc_name]
+
+			# get parameter list from CL code
+			# This may replace an existing list -- that's OK since
+			# the cl2py code has already checked it for consistency.
+			self._defaultParList = self._pycode.vars.parList
+			# use currentParList from .par file if exists and consistent
+			if self._currentParpath:
+				if not self._defaultParList.isConsistent(self._currentParList):
+					sys.stderr.write("uparm parameter list `%s' inconsistent "
+					  "with default parameters for %s `%s'\n" %
+					  (self._currentParpath, self.__class__.__name__,
+						self._name,))
+					sys.stderr.flush()
+					print 'default'
+					self._defaultParList.lParam()
+					print 'current'
+					self._currentParList.lParam()
+					#XXX just toss it for now -- later can try to merge new,old
+					self._currentParpath = self._defaultParpath
+					self._currentParList = copy.deepcopy(self._defaultParList)
+			else:
+				self._currentParList = copy.deepcopy(self._pycode.vars.parList)
 				self._currentParpath = self._defaultParpath
-				self._currentParList = copy.deepcopy(self._defaultParList)
-		else:
-			self._currentParList = copy.deepcopy(self._pycode.vars.parList)
-			self._currentParpath = self._defaultParpath
 
 	#=========================================================
 	# special methods

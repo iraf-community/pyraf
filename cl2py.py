@@ -143,6 +143,8 @@ def checkCache(filename, pycode):
 	"""Returns true if pycode is up-to-date"""
 
 	global codeCache
+	if pycode is None:
+		return 0
 	index = codeCache.getIndex(filename)
 	return (index is not None) and (pycode.index == index)
 

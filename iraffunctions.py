@@ -1357,7 +1357,7 @@ def time(**kw):
 		rv = redirReset(resetList, closeFHList)
 	return rv
 
-def sleep(seconds, **kw):
+def sleep(seconds=0, **kw):
 	"""Sleep for specified time"""
 	# handle redirection and save keywords
 	redirKW, closeFHList = redirProcess(kw)

@@ -1780,9 +1780,9 @@ class IrafParList:
 		self.__name = taskname
 		self.__filecache = ParCache(filename, parlist)
 		# initialize parameter list
-		self.update()
+		self.Update()
 
-	def update(self):
+	def Update(self):
 		"""Check to make sure this list is in sync with parameter file"""
 		self.__pars, self.__pardict, self.__psetlist = \
 			self.__filecache.get()
