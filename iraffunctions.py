@@ -2011,14 +2011,19 @@ def _badConv(w, d, c, args, i):
 	return "%%%ss" % w
 
 def _hConv(w, d, c, args, i):
-	"""Handle %h and %m dd:mm:ss.s formats"""
+	"""Handle %h %m %H %M dd:mm:ss.s formats"""
 	if i<len(args):
 		try:
 			if d[1:]:
 				digits = int(d[1:])
 			else:
 				digits = 1
-			args[i] = clDms(args[i], digits=digits, deg=c!="m")
+			if c in "HM":
+				# capital letters convert from degrees to hours (undocumented)
+				value = args[i]/15.0
+			else:
+				value = args[i]
+			args[i] = clDms(value, digits=digits, deg=c not in "mM")
 		except ValueError:
 			pass
 	return "%%%ss" % w
@@ -2052,7 +2057,7 @@ def _wConv(w, d, c, args, i):
 	return "%%%ss" % w
 
 # pattern matching %w.dc where c is single letter format code
-_reFormat = _re.compile(r"%(?P<w>-?\d*)(?P<d>(?:\.\d*)?)(?P<c>[a-z])")
+_reFormat = _re.compile(r"%(?P<w>-?\d*)(?P<d>(?:\.\d*)?)(?P<c>[a-zHM])")
 
 # dispatch table for format conversions
 _fDispatch = {}
@@ -2071,6 +2076,8 @@ _fDispatch["r"] = _rConv
 _fDispatch["w"] = _wConv
 _fDispatch["h"] = _hConv
 _fDispatch["m"] = _hConv
+_fDispatch["H"] = _hConv
+_fDispatch["M"] = _hConv
 
 del badList, b
 
