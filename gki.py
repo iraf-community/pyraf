@@ -595,7 +595,7 @@ class GkiKernel:
     def gcur(self):
         # a default gcur routine to handle all the kernels that aren't
         # interactive
-        raise iraf.IrafError("The specified graphics device is not interactive")
+        raise EOFError("The specified graphics device is not interactive")
 
     # some special routines for getting and setting stdin/out/err attributes
 

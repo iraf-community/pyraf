@@ -172,11 +172,19 @@ class Gcursor:
     def getKey(self, event):
 
         # The main character handling routine where no special keys
-        # are used (e.g., control or arrow keys)
+        # are used (e.g., arrow keys)
         key = event.char
         if not key:
             # ignore keypresses of non printable characters
             return
+        elif key == '\004':
+            # control-D causes immediate EOF
+            self.eof = "EOF from `^D'"
+            self.top.quit()
+        elif key == '\003':
+            # control-C causes interrupt
+            self.window.gcurTerminate("interrupted by `^C'")
+
         x,y = self.getNDCCursorPos()
         if self.markcur and key not in 'q?:=UR':
             metacode = openglcmd.markCross(x,y)
