@@ -1707,7 +1707,6 @@ class IrafParList:
 		for p in self.__pars:
 			self.__pardict.add(p.name, p)
 			if isinstance(p, IrafParPset): psetlist.append(p)
-
 		# add mode, $nargs to parameter list if not already present
 		if not self.__pardict.has_exact_key("mode"):
 			p = makeIrafPar("al", name="mode", datatype="string", mode="h")
@@ -1718,16 +1717,24 @@ class IrafParList:
 			self.__pars.append(p)
 			self.__pardict.add(p.name, p)
 
-		# Now add the pset parameters
+		# save the list of pset parameters
+		# Defer adding the parameters until later because saved parameter
+		# sets may not be defined yet when restoring from save file.
+		self.__psetlist = psetlist
+
+	def __addPsetParams(self):
+		"""Merge pset parameters into the parameter lists"""
+		# return immediately if they have already been added
+		if self.__psetlist is None: return
 		# Work from the pset's pardict because then we get
 		# parameters from nested psets too
-		for p in psetlist:
-			# silently ignore parameters from this pset
-			# that already are defined
+		for p in self.__psetlist:
+			# silently ignore parameters from psets that already are defined
 			psetdict = p.get().getParDict()
 			for pname in psetdict.keys():
 				if not self.__pardict.has_exact_key(pname):
 					self.__pardict.add(pname, psetdict[pname])
+		self.__psetlist = None
 
 	def addParam(self, p):
 		"""Add a parameter to the list"""
@@ -1762,12 +1769,14 @@ class IrafParList:
 		self.__pars.insert(len(self.__pars)+j+1, p)
 		self.__pardict.add(p.name, p)
 		if isinstance(p, IrafParPset):
-			# add parameters from this pset too
-			# silently ignore parameters that already are defined
-			psetdict = p.get().getParDict()
-			for pname in psetdict.keys():
-				if not self.__pardict.has_exact_key(pname):
-					self.__pardict.add(pname, psetdict[pname])
+			# parameters from this pset will be added too
+			if self.__psetlist is None:
+				# add immediately
+				self.__psetlist = [p]
+				self.__addPsetParams()
+			else:
+				# just add to the pset list
+				self.__psetlist.append(p)
 
 	def isConsistent(self, other):
 		"""Compare two IrafParLists for consistency
@@ -1821,14 +1830,18 @@ class IrafParList:
 
 	def hasPar(self,param):
 		"""Test existence of parameter named param"""
+		if self.__psetlist: self.__addPsetParams()
 		param = irafutils.untranslateName(param)
 		return self.__pardict.has_key(param)
 
 	def getFilename(self): return self.__filename
 	def getParList(self): return self.__pars
-	def getParDict(self): return self.__pardict
+	def getParDict(self):
+		if self.__psetlist: self.__addPsetParams()
+		return self.__pardict
 
 	def getParObject(self,param):
+		if self.__psetlist: self.__addPsetParams()
 		try:
 			param = irafutils.untranslateName(param)
 			return self.__pardict[param]

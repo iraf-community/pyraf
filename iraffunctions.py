@@ -259,10 +259,7 @@ def saveToFile(savefile, **kw):
 	dict['Verbose'] = Verbose.get()
 	# open binary pickle file
 	fh = open(savefile,'wb')
-	# p = _pickle.Pickler(fh,1)
-	#PPP
-	p = _pickle.Pickler(fh)
-	#PPP
+	p = _pickle.Pickler(fh,1)
 	p.dump(dict)
 	fh.close()
 
@@ -1428,13 +1425,22 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
 	if redirKW.has_key('stdin'):
 		stdin = redirKW['stdin']
 		del redirKW['stdin']
+		if hasattr(stdin,'name'):
+			filename = _string.split(stdin.name,'.')[0]
+		else:
+			filename = 'tmp'
 	elif input is not None:
 		if type(input) == _types.StringType:
 			# input is a string -- stick it in a StringIO buffer
 			stdin = _StringIO.StringIO(input)
+			filename = input
 		elif hasattr(input,'read'):
 			# input is a filehandle
 			stdin = input
+			if hasattr(stdin,'name'):
+				filename = _string.split(stdin.name,'.')[0]
+			else:
+				filename = 'tmp'
 		else:
 			raise TypeError("Input must be a string or input filehandle")
 	else:
@@ -1444,8 +1450,8 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
 	resetList = redirApply(redirKW)
 	# create and run the task
 	try:
-		newtask = _iraftask.IrafCLTask('', 'tmp', '', stdin,
-			curpack(), curPkgbinary())
+		# create task object with no package
+		newtask = _iraftask.IrafCLTask('', filename, '', stdin, '', '')
 		newtask.run()
 	finally:
 		# reset the I/O redirections
@@ -1707,7 +1713,7 @@ def back(**kw):
 	try:
 		global _backDir
 		if _backDir is None:
-			raise IrafError("ERROR: no previous directory for back()")
+			raise IrafError("no previous directory for back()")
 		_newBack = _os.getcwd()
 		_os.chdir(_backDir)
 		print _backDir

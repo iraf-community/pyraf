@@ -912,7 +912,11 @@ class IrafCLTask(IrafTask):
 
 		self._pycode = cl2py.cl2py(filehandle,
 			parlist=self._defaultParList, parfile=self._defaultParpath)
-		scriptname = '<CL script %s.%s>' % (self._pkgname, self._name)
+		if self._pkgname:
+			scriptname = '<CL script %s.%s>' % (self._pkgname, self._name)
+		else:
+			# null pkgname -- just use task in name
+			scriptname = '<CL script %s>' % self._name
 		self._codeObject = compile(self._pycode.code, scriptname, 'exec')
 		clDict = {}
 		exec self._codeObject in clDict

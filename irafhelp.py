@@ -74,7 +74,8 @@ except:
 
 _MODULE = 0
 _FUNCTION = 1
-_OTHER = 2
+_METHOD = 2
+_OTHER = 3
 
 # set up minimum-match dictionary with function keywords
 
@@ -130,27 +131,40 @@ def help(object=__main__, variables=1, functions=1, modules=1,
 
 		# look inside the object
 
-		tasklist, pkglist, functionlist, modulelist, otherlist = \
+		tasklist, pkglist, functionlist, methodlist, modulelist, otherlist = \
 			_getContents(vlist, regexp)
 
-		if modules: _printValueList(modulelist, hidden, padchars)
-		if functions: _printValueList(functionlist, hidden, padchars)
-		if variables: _printValueList(otherlist, hidden, padchars)
+		if modules and modulelist:
+			# modules get listed in simple column format
+			print "Modules:"
+			irafutils.printCols(map(lambda x: x[0], modulelist))
+			print
+
+		if functions and functionlist:
+			_printValueList(functionlist, hidden, padchars)
+
+		if functions and methodlist:
+			_printValueList(methodlist, hidden, padchars)
+
+		if variables and otherlist:
+			_printValueList(otherlist, hidden, padchars)
 
 		# IRAF packages and tasks get listed in simple column format
 		if packages and pkglist:
 			print "IRAF Packages:"
 			irafutils.printCols(pkglist)
+			print
 
 		if tasks and tasklist:
 			print "IRAF Tasks:"
 			irafutils.printCols(tasklist)
+			print
 
-		# XXX Need to modify this to look at all parents of this class
-		# XXX too.  That's tricky because want to sort all methods/attributes
-		# XXX together and, to be completely correct, need to resolve
-		# XXX name clashes using the same scheme as Python does for multiple
-		# XXX inheritance and multiply-overridden attributes.
+		#XXX Need to modify this to look at all parents of this class
+		#XXX too.  That's tricky because want to sort all methods/attributes
+		#XXX together and, to be completely correct, need to resolve
+		#XXX name clashes using the same scheme as Python does for multiple
+		#XXX inheritance and multiply-overridden attributes.
 		if (type(object) == types.InstanceType) and functions:
 			# for instances, call recursively to list class methods
 			help(object.__class__, functions=functions, tasks=tasks,
@@ -192,10 +206,12 @@ def _getContents(vlist, regexp):
 	pkglist = []
 	# lists for functions, modules, other types
 	functionlist = []
+	methodlist = []
 	modulelist = []
 	otherlist = []
-	sortlist = 3*[None]
+	sortlist = 4*[None]
 	sortlist[_FUNCTION] = functionlist
+	sortlist[_METHOD] = methodlist
 	sortlist[_MODULE] = modulelist
 	sortlist[_OTHER] = otherlist
 	names = vlist.keys()
@@ -214,9 +230,10 @@ def _getContents(vlist, regexp):
 	tasklist.sort()
 	pkglist.sort()
 	functionlist.sort()
+	methodlist.sort()
 	modulelist.sort()
 	otherlist.sort()
-	return tasklist, pkglist, functionlist, modulelist, otherlist
+	return tasklist, pkglist, functionlist, methodlist, modulelist, otherlist
 
 def _printValueList(varlist, hidden, padchars):
 	for vname, value in varlist:
@@ -228,17 +245,24 @@ def _printValueList(varlist, hidden, padchars):
 			print vname, ":", vstr
 
 
-_functionTypes = (types.BuiltinFunctionType, types.BuiltinMethodType,
-				types.FunctionType, types.LambdaType, types.MethodType,
+_functionTypes = (types.BuiltinFunctionType,
+				types.FunctionType,
+				types.LambdaType)
+_methodTypes = (types.BuiltinMethodType,
+				types.MethodType,
 				types.UnboundMethodType)
 _numericTypes = (types.FloatType, types.IntType, types.LongType,
 				types.ComplexType)
+
+_listTypes = (types.ListType, types.TupleType, types.DictType)
 
 def _sortOrder(type):
 	if type == types.ModuleType:
 		v = _MODULE
 	elif type in _functionTypes:
 		v = _FUNCTION
+	elif type in _methodTypes:
+		v = _METHOD
 	else:
 		v = _OTHER
 	return v
@@ -253,6 +277,8 @@ def _valueString(value,verbose=0):
 			vstr = vstr + ", value = "+ `value[:39]` + '...'
 		else:
 			vstr = vstr + ", value = "+ `value`
+	elif t in _listTypes:
+		return "%s [%d entries]" % (vstr, len(value))
 	elif t == types.FileType:
 		vstr = vstr + ", "+ `value`
 	elif t in _numericTypes:
@@ -277,7 +303,7 @@ def _valueString(value,verbose=0):
 			pass
 	elif t == _NumericArrayType:
 		vstr = vstr + " " + _NumericTypeName[value.typecode()] + "["
-		for k in xrange(len(value.shape)):
+		for k in range(len(value.shape)):
 			if k:
 				vstr = vstr + "," + `value.shape[k]`
 			else:

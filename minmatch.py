@@ -20,10 +20,11 @@ for ambiguous matches.
 
 $Id$
 
-R. White, 2000 January 19
+R. White, 2000 January 28
 """
 
-import types, copy
+import copy
+from types import StringType
 from UserDict import UserDict
 
 class AmbiguousKeyError(KeyError):
@@ -33,11 +34,14 @@ class MinMatchDict(UserDict):
 
 	def __init__(self,dict=None,minkeylength=1):
 		self.data = {}
-		self.mmkeys = {}
+		# use lazy instantiation for min-match dictionary
+		# it may never be created if full keys are always used
+		self.mmkeys = None
 		if minkeylength<1: minkeylength = 1
 		self.minkeylength = minkeylength
 		if dict:
-			for key in dict.keys(): self.add(key,dict[key])
+			add = self.add
+			for key in dict.keys(): add(key,dict[key])
 
 	def __deepcopy__(self, memo=None):
 		"""Deep copy of dictionary"""
@@ -57,9 +61,33 @@ class MinMatchDict(UserDict):
 		"""Restore state info from pickle"""
 		pass
 
+	def _mmInit(self):
+		"""Create the minimum match dictionary of keys"""
+		# cache references to speed up loop a bit
+		mmkeys = {}
+		mmkeysGet = mmkeys.get
+		minkeylength = self.minkeylength
+		for key in self.data.keys():
+			# add abbreviations as short as minkeylength
+			# always add at least one entry (even for key="")
+			start = min(minkeylength,len(key))
+			for i in xrange(start,len(key)+1):
+				s = key[0:i]
+				value = mmkeysGet(s)
+				if value is None:
+					mmkeys[s] = [key]
+				else:
+					value.append(key)
+		self.mmkeys = mmkeys
+
 	def getfullkey(self, key, new=0):
-		if type(key) != types.StringType:
+		if type(key) != StringType:
 			raise KeyError("MinMatchDict keys must be strings")
+		# check for exact match first
+		# ambiguous key is ok if there is exact match
+		if self.data.has_key(key): return key
+		# no exact match, so look for unique minimum match
+		if self.mmkeys is None: self._mmInit()
 		keylist = self.mmkeys.get(key)
 		if keylist is None:
 			# no such key -- ok only if new flag is set
@@ -68,9 +96,6 @@ class MinMatchDict(UserDict):
 		elif len(keylist) == 1:
 			# unambiguous key
 			return keylist[0]
-		elif key in keylist:
-			# ambiguous key is ok if there is exact match
-			return key
 		else:
 			return self.resolve(key,keylist)
 
@@ -82,15 +107,18 @@ class MinMatchDict(UserDict):
 	def add(self, key, item):
 		"""Add a new key/item pair to the dictionary.  Resets an existing
 		key value only if this is an exact match to a known key."""
-		if not self.has_exact_key(key):
+		mmkeys = self.mmkeys
+		if mmkeys is not None and not self.data.has_key(key):
 			# add abbreviations as short as minkeylength
 			# always add at least one entry (even for key="")
 			start = min(self.minkeylength,len(key))
-			for i in range(start,len(key)+1):
+			# cache references to speed up loop a bit
+			mmkeysGet = mmkeys.get
+			for i in xrange(start,len(key)+1):
 				s = key[0:i]
-				value = self.mmkeys.get(s)
+				value = mmkeysGet(s)
 				if value is None:
-					self.mmkeys[s] = [key]
+					mmkeys[s] = [key]
 				else:
 					value.append(key)
 		self.data[key] = item
@@ -119,18 +147,19 @@ class MinMatchDict(UserDict):
 	def __delitem__(self, key):
 		key = self.getfullkey(key)
 		del self.data[key]
-		start = max(min(self.minkeylength,len(key)),0)-1
-		for i in xrange(start,len(key)):
-			s = key[0:i+1]
-			value = self.mmkeys.get(s)
-			value.remove(key)
-			if not value:
-				# delete entry from mmkeys if that was last value
-				del self.mmkeys[s]
+		if self.mmkeys is not None:
+			start = min(self.minkeylength,len(key))
+			for i in xrange(start,len(key)+1):
+				s = key[0:i]
+				value = self.mmkeys.get(s)
+				value.remove(key)
+				if not value:
+					# delete entry from mmkeys if that was last value
+					del self.mmkeys[s]
 
 	def clear(self):
-		self.mmkeys.clear()
-		return self.data.clear()
+		self.mmkeys = None
+		self.data.clear()
 
 	def has_key(self, key):
 		"""Raises an exception if key is ambiguous"""
@@ -153,19 +182,18 @@ class MinMatchDict(UserDict):
 		"""Returns a list of all the matching values for key,
 		containing a single entry for unambiguous matches and
 		multiple entries for ambiguous matches."""
+		if self.mmkeys is None: self._mmInit()
 		k = self.mmkeys.get(key)
 		if not k: return failobj
-		v = len(k)*[None]
-		for i in xrange(len(k)):
-			v[i] = self.data[k[i]]
-		return v
+		return map(self.data.get, k)
 
 	def getallkeys(self, key, failobj=None):
 		"""Returns a list of the full key names (not the items)
 		for all the matching values for key.  The list will
 		contain a single entry for unambiguous matches and
 		multiple entries for ambiguous matches."""
-		return self.mmkeys.get(key)
+		if self.mmkeys is None: self._mmInit()
+		return self.mmkeys.get(key, failobj)
 
 # some simple tests
 
