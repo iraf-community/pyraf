@@ -132,8 +132,6 @@ __version__ = "$Revision$"
 yes = 1
 no = 0
 INDEF = iraf.INDEF
-flpr = "This is not the IRAF cl!  Forget those old bad habits!"
-retall = "This is not IDL..."
 
 def usage():
 	print __doc__
