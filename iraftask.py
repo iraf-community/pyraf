@@ -51,7 +51,6 @@ class IrafTask:
 		if filename[0] == '$':
 			# this is a foreign task
 			self.__cl = 0
-			self.__pset = 0
 			self.__foreign = 1
 			self.__filename = filename[1:]
 			# handle weird syntax for names
@@ -62,17 +61,12 @@ class IrafTask:
 		else:
 			self.__foreign = 0
 			self.__filename = filename
-			# flag .cl scripts and psets
+			# flag .cl scripts
 			root, ext = os.path.splitext(filename)
 			if ext == ".cl":
 				self.__cl = 1
-				self.__pset = 0
-			elif ext == ".par":
-				self.__pset = 1
-				self.__cl = 0
 			else:
 				self.__cl = 0
-				self.__pset = 0
 
 	# parameters are accessible as attributes
 
@@ -97,7 +91,6 @@ class IrafTask:
 	def getHasparfile(self): return self.__hasparfile
 	def getTbflag(self):     return self.__tbflag
 	def getCl(self):         return self.__cl
-	def getPset(self):       return self.__pset
 	def getForeign(self):    return self.__foreign
 	def getFilename(self):   return self.__filename
 
@@ -126,7 +119,7 @@ class IrafTask:
 
 	def setHidden(self,value):     self.__hidden = value
 
-	def getParObject(self,param):
+	def getParObject(self,param,ttype='task'):
 		"""Get the IrafPar object for a parameter"""
 		if self.__fullpath == None: self.initTask()
 		if not self.__hasparfile:
@@ -135,10 +128,6 @@ class IrafTask:
 			return self.__pardict[param]
 		except minmatch.AmbiguousKeyError, e:
 			# ambiguous parameter name is always an error
-			if self.__pset:
-				ttype = 'pset'
-			else:
-				ttype = 'task'
 			raise minmatch.AmbiguousKeyError("Error in parameter '" +
 				param + "' for " + ttype + " " + self.__name +
 				"\n" + str(e))
@@ -156,10 +145,6 @@ class IrafTask:
 			except KeyError, e:
 				pass
 
-		if self.__pset:
-			ttype = 'pset'
-		else:
-			ttype = 'task'
 		raise KeyError("Error in parameter '" +
 			param + "' for " + ttype + " " + self.__name +
 			"\n" + str(e))
@@ -544,12 +529,44 @@ class IrafTask:
 		s = '<IrafTask ' + self.__name + ' (' + self.__filename + ')' + \
 			' Pkg: ' + self.__pkgname + ' Bin: ' + self.__pkgbinary
 		if self.__cl: s = s + ' Cl'
-		if self.__pset: s = s + ' Pset'
 		if self.__foreign: s = s + ' Foreign'
 		if self.__hidden: s = s + ' Hidden'
 		if self.__hasparfile == 0: s = s + ' No parfile'
 		if self.__tbflag: s = s + ' .tb'
 		return s + '>'
+
+# -----------------------------------------------------
+# IRAF Pset class
+# -----------------------------------------------------
+
+class IrafPset(IrafTask):
+
+	"""IRAF pset class (special case of IRAF task)"""
+
+	def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
+		IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
+		# check that parameters are consistent with for pset:
+		# - not a foreign task
+		# - has a parameter file
+		if self.getForeign():
+			raise iraf.IrafError("Bad filename for pset " +
+				self.getName() + ": " + filename)
+		if not self.getHasparfile():
+			raise KeyError("Pset "+self.getName()+" has no parameter file")
+
+	def getParObject(self,param):
+		"""Get the IrafPar object for a parameter"""
+		IrafTask.getParObject(self,param,ttype='pset')
+
+	def run(self,*args,**kw):
+		raise iraf.IrafError("Cannot execute Pset " + self.getName())
+
+	def __str__(self):
+		s = '<IrafPset ' + self.getName() + ' (' + self.getFilename() + ')' + \
+			' Pkg: ' + self.getPkgname()
+		if self.getHidden(): s = s + ' Hidden'
+		return s + '>'
+
 
 # -----------------------------------------------------
 # IRAF package class
@@ -561,11 +578,10 @@ class IrafPkg(IrafTask):
 
 	def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
 		IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
-		# a package cannot be a foreign task or be a pset (both of which get
-		# specified through the filename)
-		if self.getForeign() or self.getPset():
+		# a package cannot be a foreign task
+		if self.getForeign():
 			raise iraf.IrafError("Bad filename for package " +
-				pkgname + ": " + filename)
+				self.__name + ": " + filename)
 		self.__loaded = 0
 		self.__tasks = minmatch.MinMatchDict()
 		self.__pkgs = minmatch.MinMatchDict()

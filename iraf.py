@@ -8,7 +8,7 @@ R. White, 1999 Jan 25
 
 import sys, os, string, re, types, time
 import irafpar, irafexecute, minmatch
-from iraftask import IrafTask, IrafPkg
+from iraftask import *
 import irafnames
 
 class IrafError(Exception):
@@ -95,7 +95,7 @@ def init(doprint=1):
 
 		# define clpackage
 
-		clpkg = IrafPkgFactory('', 'clpackage', '.pkg', 'hlib$clpackage.cl',
+		clpkg = IrafTaskFactory('', 'clpackage', '.pkg', 'hlib$clpackage.cl',
 			'clpackage', 'bin$')
 
 		# add the cl as a task, because its parameters are sometimes needed,
@@ -117,7 +117,7 @@ def init(doprint=1):
 
 		if fname:
 			# define and load user package
-			userpkg = IrafPkgFactory('', 'user', '.pkg', fname,
+			userpkg = IrafTaskFactory('', 'user', '.pkg', fname,
 							'clpackage', 'bin$')
 			userpkg.run(_doprint=0)
 		else:
@@ -347,7 +347,7 @@ def listtasks(pkglist=None,hidden=0):
 			if hidden or not tobj.getHidden():
 				if isinstance(tobj,IrafPkg):
 					task = task + '/'
-				elif tobj.getPset():
+				elif isinstance(tobj,IrafPset):
 					task = task + '@'
 				if pkg == lastpkg:
 					tlist.append(task)
@@ -1412,15 +1412,18 @@ def _printcols(strlist,cols=5,width=80):
 
 def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 
-	"""Returns a new or existing IrafTask or IrafPkg object
+	"""Returns a new or existing IrafTask, IrafPset, or IrafPkg object
 	
-	Type of returned object depends on value of suffix.  Returns a new
+	Type of returned object depends on value of suffix and value.  Returns a new
 	object unless this task or package is already defined, in which case
 	a warning is printed and a reference to the existing task is returned.
 	"""
 
 	if suffix == '.pkg':
 		return IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary)
+	root, ext = os.path.splitext(value)
+	if ext == '.par':
+		return IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary)
 
 	fullname = pkgname + '.' + taskname
 	task = _tasks.get(fullname)
@@ -1433,6 +1436,27 @@ def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 		   task.getHasparfile() != newtask.getHasparfile() or \
 		   task.getForeign()    != newtask.getForeign() or \
 		   task.getTbflag()     != newtask.getTbflag():
+			print 'Warning: ignoring attempt to redefine task',fullname
+		return task
+	# add it to the task list
+	addTask(newtask)
+	return newtask
+
+def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
+
+	"""Returns a new or existing IrafPset object
+	
+	Returns a new object unless this package is already defined, in which case
+	a warning is printed and a reference to the existing task is returned.
+	"""
+
+	fullname = pkgname + '.' + taskname
+	task = _tasks.get(fullname)
+	newtask = IrafPset(prefix,taskname,suffix,value,pkgname,pkgbinary)
+	if task:
+		# check for consistency of definition by comparing to the new
+		# object (which will be discarded)
+		if task.getFilename() != newtask.getFilename():
 			print 'Warning: ignoring attempt to redefine task',fullname
 		return task
 	# add it to the task list
