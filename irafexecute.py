@@ -51,10 +51,16 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 			# append new exception text to previous one (right thing to do?)
 			exc.args = exc.args + exc2.args
 		raise exc
-	if not firstPlotDone:
+	# this next bit is really a hack to prevent the double redraw on first
+	# plots (when they are not interactive plots). This should be done
+	# better, but it appears to work.
+	if not firstPlotDone and wutil.hasGraphics:
 		gwin = gwm.getActiveWindow()
 		if gwin:
-			gwin.ignoreNextNRedraws = 2
+			if gwin.interactive:
+				interactive = 0
+			else:
+				gwin.ignoreNextNRedraws = 2
 			firstPlotDone = 1
 	return
 
@@ -360,7 +366,11 @@ class IrafProcess:
 				# pass through to current kernel, use braindead
 				# interpretation to look for openws
 				if stdgraph is None:
-					stdgraph = gkiopengl.GkiOpenGlKernel()
+					if wutil.hasGraphics:
+						stdgraph = gkiopengl.GkiOpenGlKernel()
+					else:
+						# install the "do nothing" kernel
+						stdgraph = gki.GkiNull()
 				if (sdata[2] == -1) and (sdata[3] == 1):
 					length = sdata[4]
 					device = sdata[5:length+2].astype('b').tostring()

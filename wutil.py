@@ -234,6 +234,14 @@ class FocusController:
 		if self.focusInFamily():
 			self.focusStack[-1].forceFocus()
 
+	def setCurrent(self):
+		
+		"""This is to be used in cases where focus has been lost to
+		a window not part of this scheme (dialog boxes for example)
+		and it is desired to return focus to the entity currently considered
+		active."""
+		self.focusStack[-1].forceFocus()
+
 	def resetFocusHistory(self):
 		self.focusStack = [self.focusEntities['terminal']]
 
@@ -373,6 +381,15 @@ def getScreenDepth():
 terminal = TerminalFocusEntity()
 terminalWindowID = terminal.getWindowID()
 focusController = FocusController(terminal)
+hasGraphics = terminalWindowID > 1
+if not hasGraphics:
+	print ""
+	print "No graphics display available for this session " + \
+			  "(Xwindow unavailable)."
+	print "Graphics tasks that attempt to plot to an interactive " + \
+			  "screen will fail."
+	print ""
+
 
 
 

@@ -40,7 +40,7 @@ class GraphicsWindowManager:
 	def __init__(self):
 	
 		self.windows = {}
-#		self.terminalWindowID = wutil.terminalWindowID
+		self.initialized = 0
 		self.lastTermPos = (0, 0)
 		self.activeWindow = None
 		self.irafGkiConfig = gkiopengl.IrafGkiConfig()
@@ -53,16 +53,18 @@ class GraphicsWindowManager:
 			number = 1
 			while not done:
 				trialName = 'graphics'+str(number)
+				self.windows.has_key(trialName)
 				if not self.windows.has_key(trialName):
 					self.windows[trialName] = GraphicsWindow(trialName,
 											  self.colorManager.rgbamode)
 					self.activeWindow = self.windows[trialName]
 					done = 1
 					windowName = trialName
-				number = number +1
+				number = number + 1
 		else:
 			if not self.windows.has_key(windowName):
-				self.windows[windowName] = GraphicsWindow(windowName)
+				self.windows[windowName] = GraphicsWindow(windowName,
+											  self.colorManager.rgbamode)
 			self.activeWindow = self.windows[windowName]
 		self.activeWindow.gwidget.activate()
 		# The following attaches to the new window a reference to the
@@ -73,7 +75,8 @@ class GraphicsWindowManager:
 		# register with focus manager
 		wutil.focusController.addFocusEntity(windowName,self.activeWindow)
 		# if the new window is the only one, initialize and allocate colors
-		if len(self.windows) <= 1:
+		if not self.initialized:
+			self.initialized = 1
 			cset = self.irafGkiConfig.defaultColors
 			for cind in xrange(nIrafColors):
 				self.colorManager.defineColor(cind,
@@ -93,6 +96,8 @@ class GraphicsWindowManager:
 			window = self.windows[windowName]
 			window.top.destroy()
 			del self.windows[windowName]
+			if len(self.windows) < 1:
+				self.initialized = 0
 			if changeActiveWindow:
 				if len(self.windows):
 					self.activeWindow = self.windows.keys()[0]
@@ -130,6 +135,7 @@ class GraphicsWindow:
 					 fill=Tkinter.X, padx=2, pady=1, ipady=1)
 		self.gwidget.pack(side = 'top', expand=1, fill='both')
 		self.top.protocol("WM_DELETE_WINDOW", self.gwdestroy)
+		self.gwidget.interactive = 0
 		windowID = self.gwidget.winfo_id()
 		wutil.setBackingStore(windowID)
 
@@ -350,9 +356,12 @@ class gColor:
 # object intended to be instantiated only once and be accessible from
 # the module.
 
-_g = GraphicsWindowManager()
-wutil.isGwmStarted = 1
-
+if wutil.hasGraphics:
+	_g = GraphicsWindowManager()
+	wutil.isGwmStarted = 1
+else:
+	_g = None
+	wutil.isGwmStarted = 0
 
 #
 # Public routines to access windows managed by _g
@@ -367,13 +376,16 @@ def getColorManager():
 
 	return _g.colorManager
 
-def createWindow():
+def window(windowName=None):
 
-	"""Create a new graphics window and make it the active one"""
+	"""Create a new graphics window if the named one doesn't exist or
+	make it the active one if it does. If no argument is given a new
+	name is constructed."""
 	_g.window()
 
-def deleteWindow(windowName):
+def delete(windowName):
 
+	"""delete the named window"""
 	_g.delete(windowName)
 
 def getActiveWindow():

@@ -45,6 +45,7 @@ class Gcursor:
 			self.top = gwm.getActiveWindowTop()
 		self.win = gwm.getActiveWindow()
 		gwm.raiseActiveWindow()
+		self.win.interactive = 1
 		self.top.update()
 		wutil.focusController.setFocusTo(gwm.getActiveGraphicsWindow())
 		self.win.activateSWCursor(
@@ -154,7 +155,11 @@ class Gcursor:
 			wutil.focusController.setFocusTo('terminal')
 		if key == ':':
 			# pop up text entry dialog
+			wutil.focusController.saveCursorPos()
 			colonString = tkSimpleDialog.askstring("Gcur colon command","")
+			# This is needed for openwindows which doesn't automatically
+			# return focus to the graphics window.
+			wutil.focusController.setCurrent()
 			# Explicitly return focus to graphics window since some
 			# window managers apparently don't do this automatically
 			# (e.g. openwindows)
@@ -178,7 +183,11 @@ class Gcursor:
 			if   key == 'R':
 				gkicommand.redrawOriginal()
 			elif key == 'T':
+				wutil.focusController.saveCursorPos()
 				textstring = tkSimpleDialog.askstring("Annotation string","")
+				# This is needed for openwindows which doesn't automatically
+				# return focus to the graphics window.
+				wutil.focusController.setCurrent()
 				metacode = gkicommand.text(textstring,x,y)
 				gkicommand.appendMetacode(metacode)
 			elif key == 'U':

@@ -57,7 +57,7 @@ void moveCursorTo(int win, int x, int y) {
   int s;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    printf("could not open display!\n");
+    /* printf("could not open XWindow display\n"); */
     return; 
   }
   w = (Window) win;
@@ -86,7 +86,7 @@ int getWindowID() {
    /*  Display *XOpenDisplay(char *); */
    d = XOpenDisplay(NULL);
    if (d == NULL) {
-     printf("could not open display!\n");
+     /* printf("could not open XWindow display\n"); */
      return -1;
 	}
    XGetInputFocus(d,&w,&revert);
@@ -137,7 +137,7 @@ void setFocusTo(int win) {
   w = (Window) win;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    printf("could not open display!\n");
+    /* printf("could not open XWindow display\n"); */
     return;
   }
   XSetInputFocus(d,w,0,CurrentTime);
@@ -167,7 +167,7 @@ void setBackingStore(int win) {
   w = (Window) win;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    printf("could not open display!\n");
+    /* printf("could not open XWindow display\n"); */
     return;
   }
   XGetWindowAttributes(d, w, &wa);
@@ -208,7 +208,7 @@ void getWindowAttributes(int win, XWindowAttributes *winAttr, char **visual) {
   w = (Window) win;
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    printf("could not open display!\n");
+    /* printf("could not open XWindow display\n"); */
     return;
   }
   XGetWindowAttributes(d, w, winAttr);
@@ -262,7 +262,7 @@ PyObject *wrap_getPointerPosition(PyObject *self, PyObject *args) {
 	TrapXlibErrors /* macro code to handle xlib exceptions */
 	d = XOpenDisplay(NULL);
 	if (d == NULL) {
-		printf("could not open display!\n");
+		printf("could not open XWindow display\n");
 		RestoreOldXlibErrorHandlers /* macro */
 		return;
 	}
@@ -299,7 +299,7 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
 	TrapXlibErrors /* macro code to handle xlib exceptions */
 	d = XOpenDisplay(NULL);
 	if (d == NULL) {
-		printf("could not open display!\n");
+		printf("could not open XWindow display\n");
 		RestoreOldXlibErrorHandlers /* macro */
 		return;
 	}
@@ -328,7 +328,7 @@ long getColorCell(long red, long green, long blue) {
   d = XOpenDisplay(NULL);
 
   if (d == NULL) {
-    printf("could not open display!\n");
+    /* printf("could not open XWindow display\n"); */
     return; 
   }
   screen_num = DefaultScreen(d);
@@ -373,7 +373,7 @@ void getColor(long colorindex, long *red, long *green, long *blue) {
 
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    printf("could not open display!\n");
+    /* printf("could not open XWindow display\n"); */
     return; 
   }
   screen_num = DefaultScreen(d);
@@ -412,7 +412,7 @@ void freeColor(long colorindex) {
 
   d = XOpenDisplay(NULL);
   if (d == NULL) {
-    printf("could not open display!\n");
+    /* printf("could not open XWindow display\n"); */
     return; 
   }
   colorindicies[0] = (unsigned long) colorindex;

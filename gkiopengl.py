@@ -110,7 +110,7 @@ class GkiOpenGlKernel(GkiKernel):
 		# first see if there are any graphics windows, if not, create one 
 		win = gwm.getActiveWindow()
 		if win == None:
-			gwm.createWindow()
+			gwm.window()
 			win = gwm.getActiveWindow()
 		win.redraw = self.redraw
 		if not hasattr(win,"iplot"):
@@ -199,7 +199,6 @@ class GkiOpenGlKernel(GkiKernel):
 
 		ta = o.iplot.textAttributes
 		ta.setFontSize()
-		# xxx fix this (should use Color interface)!!
 		cm = gwm.getColorManager()
 		if cm.rgbamode:
 			glClearColor(0,0,0,0)
@@ -393,10 +392,8 @@ def gl_polyline(vertices):
 	glBegin(GL_LINE_STRIP)
 	if not clear:
 		gwm.setGraphicsDrawingColor(la.color)
-#		apply(glColor3f,win.iplot.colors.toRGB(la.color))
 	else:
 		gwm.setGraphicsDrawingColor(0)
-#		glColor3f(0.,0.,0.)
 	glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
 	glEnd()
 	if stipple:

@@ -5,7 +5,7 @@ $Id$
 
 import Numeric
 from types import *
-import gwm
+import gwm, iraf
 
 BOI = -1  # beginning of instruction sentinel
 NOP = 0	  # no op value
@@ -47,19 +47,25 @@ GKI_ILLEGAL_LIST = (21,22,23,24)
 class EditHistory:
 	"""keeps track of where undoable appends are made so they can be
 	removed from the buffer on request. All it needs to know is
-	how much as been added to the metacode stream for each edit."""
+	how much as been added to the metacode stream for each edit.
+	Since the process may add more gki, we distinguish specific edits
+	with a marker, and those are used when undoing."""
 
 	def __init__(self):
 		self.editinfo = []
-	def NEdits(self):
-		return len(self.editinfo)
-	def add(self, size):
-		self.editinfo.append(size)
+	def add(self, size, undomarker=0):
+		self.editinfo.append((undomarker,size))
 	def popLastSize(self):
 		if len(self.editinfo) > 0:
-			size = self.editinfo[-1]
-			del self.editinfo[-1]
-			return size
+			done = 0
+			tsize = 0
+			while not done and len(self.editinfo) > 0:
+				marker, size = self.editinfo[-1]
+				del self.editinfo[-1]
+				tsize = tsize + size
+				if marker:
+					done = 1
+			return tsize
 		else:
 			return 0
 
@@ -122,7 +128,7 @@ class GkiBuffer:
 		self.buffer[self.bufferEnd:self.bufferEnd+len(metacode)] = metacode
 		self.bufferEnd = self.bufferEnd + len(metacode)
 		if self.undoable:
-			self.editHistory.add(len(metacode))
+			self.editHistory.add(len(metacode), isUndoable)
 
 	def undoN(self, nUndo=1):
 
@@ -299,6 +305,49 @@ def gkiTranslate(metacode, functionTable):
 	while opcode != None:
 		apply(functionTable[opcode], (arg,))
 		opcode, arg = gkiBuffer.getNextCode()
+
+"""A version of the graphics kernel that does nothing except warn the
+user that does nothing. Used when graphics display isn't possible"""
+
+class GkiNull(GkiKernel):
+
+	def __init__(self):
+
+		print "No graphics display available for this session " + \
+			  "(Xwindow unavailable)"
+		print "Graphics tasks that attempt to plot to an interactive " + \
+			  "screen will fail"
+		GkiKernel.__init__(self)
+		self.functionTable = []
+		self.controlFunctionTable = [self.controlDefault]*(GKI_MAX_OP_CODE+1)
+		self.controlFunctionTable[GKI_OPENWS] = self.openWS
+		self.controlFunctionTable[GKI_CLOSEWS] = self.closeWS
+		self.controlFunctionTable[GKI_REACTIVATEWS] = self.reactivateWS
+		self.controlFunctionTable[GKI_DEACTIVATEWS] = self.deactivateWS
+		self.controlFunctionTable[GKI_CLEARWS] = self.clearWS
+		self.controlFunctionTable[GKI_SETWCS] = self.setWCS
+		self.controlFunctionTable[GKI_GETWCS] = self.getWCS
+
+	def control(self, gkiMetacode):
+
+		gkiTranslate(gkiMetacode, self.controlFunctionTable)
+		return self.returnData
+
+	def translate(self, gkiMetacode, fTable): pass
+	def controlDefault(self, arg): pass
+	def controlDoNothing(self, arg): pass
+	def openWS(self, arg):
+		print "Unable to plot graphics to screen"
+		raise iraf.IrafError
+	def clearWS(self, arg): pass
+	def reactivateWS(self, arg):
+		raise iraf.IrafError
+	def deactivateWS(self, arg): pass
+	def setWCS(self, arg): pass
+	def getWCS(self, arg):
+		print "Attempt to access graphics when it isn't available"
+		raise iraf.IrafError
+	def closeWS(self, arg): pass
 
 
 #********************************

@@ -14,6 +14,7 @@ from OpenGL.GLU import *
 from Tkinter import _default_root
 from Tkinter import *
 import gwm
+import time
 #import gki
 
 # XBM file for cursor is in same directory as this module
@@ -88,11 +89,12 @@ class RawOpengl(Widget, Misc):
 		self.tk.call(self._w, 'makecurrent')
 		glPushMatrix()
 		self.update_idletasks()
+		# need to indicate cursor is not visible before redraw, since
+		# cursor sleeps are now issued by redraw. The presumption is that
+		# redraw will wipe out cursor visibility, so we set it first
+		if self.__isSWCursorActive: # and not self.__isSWCursorSleeping:
+			self.__SWCursor.isVisible = 0 # after all, it's going to be erased!
 		self.redraw(self)
-		# If software cursor exists, render it.
-		if self.__isSWCursorActive and not self.__isSWCursorSleeping:
-			self.__SWCursor.isVisible = 0 # after all, it's just been erased!
-#			self.__SWCursor.draw()
 		glFlush()
 		glPopMatrix()
    		self.tk.call(self._w, 'swapbuffers')
@@ -148,10 +150,9 @@ class RawOpengl(Widget, Misc):
 			self['cursor'] = 'arrow'
 
 	def SWCursorSleep(self):
-		global cursorEventCount
 		self.__isSWCursorSleeping = 1
 		self.__SWCursor.erase()
-		cursorEventCount = 0 # reset
+
 
 	def SWCursorWake(self):
 		global cursorEventCount
@@ -163,6 +164,8 @@ class RawOpengl(Widget, Misc):
 		self.after(CURSOR_DELAY, self.SWCursorDelayedWake, cursorEventCount)
 		
 	def SWCursorImmediateWake(self):
+		global cursorEventCount
+		cursorEventCount = 0 # reset
 		self.__isSWCursorSleeping = 0
 		if self.__isSWCursorActive:
 			self.__SWCursor.draw()
@@ -185,9 +188,11 @@ class RawOpengl(Widget, Misc):
 		self.__SWCursor.moveTo(ndcX,ndcY,self.__isSWCursorSleeping)
 	
 	def tkMap(self, *dummy):
+		print "tkMap called"
 		self.tkExpose()
 
 	def tkExpose(self, *dummy):
+		print "tkExpose called"
 		self.tkRedraw()
 
 class Ptogl(RawOpengl):
@@ -309,7 +314,6 @@ class FullWindowCursor:
 			glLogicOp(GL_XOR)
 			glIndex(1)
 		glBegin(GL_LINES)
-#		glColor3f(1,1,1)
 		glVertex2f(0,self.lasty)
 		glVertex2f(1,self.lasty)
 		glVertex2f(self.lastx,0)
