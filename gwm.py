@@ -214,7 +214,7 @@ class gColor:
 		self.colorset = [None]*nIrafColors
 		self.indexmap = [None]*nIrafColors
 		depth = wutil.getScreenDepth()
-		print "screen depth =", depth
+		# print "screen depth =", depth
 		if depth <=8:
 			self.rgbamode = 0
 		else:
