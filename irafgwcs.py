@@ -47,7 +47,8 @@ class IrafGWcs:
 			iarr = Numeric.array(x[8:],Numeric.Int32)
 			wcsStruct[WCS_RECORD_SIZE*i:
 				  WCS_RECORD_SIZE*(i+1)] = \
-				  Numeric.fromstring(farr.tostring() + iarr.tostring())
+				  Numeric.fromstring(farr.tostring() + iarr.tostring(),
+									 Numeric.Int16)
 		return wcsStruct.tostring()
 
 	

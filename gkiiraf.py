@@ -27,6 +27,7 @@ class GkiIrafKernel(gki.GkiKernel):
 		self.controlFunctionTable = [self.noAction]*(gki.GKI_MAX_OP_CODE+1)
 		self._gkiAction = self._irafAction
 		self.executable = executable
+		self.device = device
 		self.taskname = taskname
 		self.stdout = sys.__stdout__
 		self.stderr = sys.__stderr__
@@ -44,9 +45,10 @@ class GkiIrafKernel(gki.GkiKernel):
 	def _irafAction(self, opcode, arg):
 
 		"""Look for a gki_flush, otherwise, do nothing"""
-		if opcode == gki.GKI_FLUSH:
-			self.flush()
-
+		#if opcode == gki.GKI_FLUSH:
+		#	self.flush()
+		pass
+	
 	def flush(self):
 
 		# only plot if buffer contains something
@@ -58,7 +60,13 @@ class GkiIrafKernel(gki.GkiKernel):
 			fout.close()
 			try:
 				task = iraf.getTask(self.taskname)
-				task(tmpfn)
+				if self.taskname == "stdgraph":
+					# this is to allow users to specify via the
+					# stdgraph device parameter the device they really
+					# want to display to
+					task(tmpfn,generic="yes")
+				else:
+					task(tmpfn,device=self.device,generic='yes')
 			finally:
 				os.remove(tmpfn)
 		

@@ -311,7 +311,25 @@ def gl_polyline(vertices):
 	if cursorActive:
 		win.SWCursorWake()
 
-def gl_polymarker(arg): pass
+def gl_polymarker(vertices):
+
+	# IRAF only implements points for poly marker, that makes it real simple
+	win = gwm.getActiveWindow()
+	cursorActive = win.isSWCursorActive()
+	ma = win.iplot.markerAttributes
+	clear = 0
+	glPointSize(1)
+	if not clear:
+		gwm.setGraphicsDrawingColor(ma.color)
+	else:
+		gwm.setGraphicsDrawingColor(0)
+	if cursorActive:
+		win.SWCursorSleep()
+	glBegin(GL_POINTS)
+	glVertex(Numeric.reshape(vertices, (len(vertices)/2,2)))
+	glEnd()
+	if cursorActive:
+		win.SWCursorWake()
 
 def gl_text(x,y,text):
 
@@ -382,7 +400,10 @@ def gl_plset(linestyle, linewidth, color):
 	win = gwm.getActiveWindow()
 	win.iplot.lineAttributes.set(linestyle, linewidth, color)
 	
-def gl_pmset(marktype, marksize, color): pass
+def gl_pmset(marktype, marksize, color):
+
+	win = gwm.getActiveWindow()
+	win.iplot.markerAttributes.set(marktype, marksize, color)
 
 def gl_txset(charUp, charSize, charSpace, textPath, textHorizontalJust,
 			 textVerticalJust, textFont, textQuality, textColor):
@@ -686,5 +707,12 @@ class FillAttributes:
 
 class MarkerAttributes:
 
-	def __init__(self): pass
+	def __init__(self):
+
+		# the first two attributes are not currently used in IRAF, so ditch'em
+		self.color = 1
+
+	def set(self, markertype, size, color):
+
+		self.color = color
 

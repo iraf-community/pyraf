@@ -430,6 +430,10 @@ class IrafProcess:
 			elif msg5 == 'xmit(':
 				xmit()
 			elif msg[:4] == 'bye\n':
+				# this part is the way used to signal it is time to actually
+				# feed a file for an iraf kernel, for others, it has no effect.
+				if gki.kernel:
+					gki.kernel.flush()
 				return
 			elif msg5 in ['error','ERROR']:
 				raise IrafProcessError("IRAF task terminated abnormally\n"+msg)

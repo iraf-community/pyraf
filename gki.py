@@ -340,9 +340,8 @@ def gki_flush(applyfunc, arg): apply(applyfunc,(GKI_FLUSH,(arg,)))
 def gki_polyline(applyfunc, arg): apply(applyfunc,(GKI_POLYLINE,
 														 (ndc(arg[1:]),)))
 
-def gki_polymarker(applyfunc, arg): 
-
-	errorMessage(standardWarning)
+def gki_polymarker(applyfunc, arg):	apply(applyfunc, (GKI_POLYMARKER,
+													  (ndc(arg[1:]),)))
 		
 def gki_text(applyfunc, arg):
 	
@@ -376,12 +375,11 @@ def gki_plset(applyfunc, arg):
 	
 def gki_pmset(applyfunc, arg):
 
-#	marktype = arg[0]
-#	marksize = arg[1]/GKI_MAX
-#	color = arg[2]
-#	print "GKI_PMSET", marktype, marksize, color
-#	apply(applyfunc,(gl_pmset, (marktype, marksize, color)))
-	errorMessage(standardWarning)
+	marktype = arg[0]
+	marksize = arg[1]/GKI_MAX
+	color = arg[2]
+	apply(applyfunc,(GKI_PMSET, (marktype, marksize, color)))
+
 
 def gki_txset(applyfunc, arg):
 
@@ -494,16 +492,27 @@ class GkiController(GkiKernel):
 		self.controlFunctionTable[GKI_OPENWS] = self.openWS
 		self.devices = graphcap.GraphCap(iraf.osfn('dev$graphcap'))
 		self.lastDevName = None
+		self.gcount = 0 # an activity counter
+		self.lastFlushCount = 0
 
 	def append(self, arg):
 
+		self.gcount = self.gcount + 1     # used by self.flush()
+		if self.gcount >= 30000000:
+			self.gcount = 0
 		if self.stdgraph:
 			self.stdgraph.append(arg)
 			
-
 	def noAction(self, dummy, arg): pass
 
-	def flush(self): pass
+	def flush(self):
+
+		if self.stdgraph.__class__.__name__ == "GkiIrafKernel":
+			if self.gcount != self.lastFlushCount:
+				# this is to prevent flushes when no graphics activity
+				# occurred since the last time a task finished.
+				self.lastFlushCount = self.gcount
+				self.stdgraph.flush()
 
 	def gcur(self):
 		if not self.stdgraph:
@@ -534,7 +543,7 @@ class GkiController(GkiKernel):
 			# get the current value of stdgraph
 			device = iraf.envget('stdgraph')
 		kernel = self.devices[device]['kf']
-		if kernel == 'cl':
+  		if kernel == 'cl':
 			self.openInteractiveKernel()
 		else:
 			task = self.devices[device]['tn']
