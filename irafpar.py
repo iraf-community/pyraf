@@ -6,7 +6,7 @@ $Id$
 R. White, 1999 May 28
 """
 
-import os, sys, string, re, irafgcur, irafukey, minmatch
+import os, sys, string, re, irafgcur, irafimcur, irafukey, minmatch
 from types import *
 
 # -----------------------------------------------------
@@ -39,7 +39,7 @@ def warning(msg, strict=0, exception=SyntaxError,
 # IRAF parameter factory
 # -----------------------------------------------------
 
-_string_types = [ 's', 'f', 'struct', '*imcur', '*struct', '*s', '*i']
+_string_types = [ 's', 'f', 'struct', '*struct', '*s', '*i']
 _real_types = [ 'r', 'd' ]
 
 def IrafParFactory(fields,filename=None,strict=0):
@@ -57,6 +57,8 @@ def IrafParFactory(fields,filename=None,strict=0):
 		return IrafParS(fields,filename,strict)
 	elif type == "*gcur":
 		return IrafParGCur(fields,filename,strict)
+	elif type == "*imcur":
+		return IrafParImCur(fields,filename,strict)
 	elif type == "*ukey":
 		return IrafParUKey(fields,filename,strict)
 	elif type == "pset":
@@ -583,6 +585,23 @@ class IrafParGCur(IrafParS):
 		if lpar: return str(self.value)
 		return irafgcur.gcur()
 
+# -----------------------------------------------------
+# IRAF imcur (image display cursor) parameter class
+# -----------------------------------------------------
+
+class IrafParImCur(IrafParS):
+	"""IRAF image cursor parameter class"""
+	def __init__(self,fields,filename,strict=0):
+		IrafParS.__init__(self,fields,filename,strict)
+	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
+		"""return image display cursor value"""
+		if index:
+			raise SyntaxError("Parameter "+self.name +
+				" is image cursor, cannot use index")
+		if field: return self.getField(field)
+		if lpar: return str(self.value)
+		return irafimcur.imcur()
+				
 # -----------------------------------------------------
 # IRAF ukey (user typed key) parameter class
 # -----------------------------------------------------
