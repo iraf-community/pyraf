@@ -61,16 +61,25 @@ class EparDialog:
 
         # Set up a color for the background to differeniate parent and child
         if (self.isChild == "yes"):
-            self.bkgColor  = "LightSteelBlue"
+        #    self.bkgColor  = "LightSteelBlue"
             self.iconLabel = "EPAR Child"
         else:
-            self.bkgColor  = "SlateGray3"
+        #    self.bkgColor  = "SlateGray3"
             self.iconLabel = "EPAR Parent"
+        self.bkgColor = None
 
         # Generate the top epar window
         self.top = Toplevel(self.parent, bg = self.bkgColor) 
         self.top.title(title)
         self.top.iconname(self.iconLabel)
+
+        # Read in the epar options database file
+        try:
+             # User's file
+             self.top.option_readfile("./epar.optionDB")
+        except TclError:
+             # PyRAF file
+             self.top.option_readfile(os.path.dirname(sys.argv[0]) + "/epar.optionDB")
 
         # Disable interactive resizing
         self.top.resizable(width = FALSE, height = FALSE)
@@ -326,46 +335,6 @@ class EparDialog:
               anchor = W)
         textbox.pack(side = LEFT, anchor = W)
 
-        """
-        # Set up the menu for the HELP viewing choice
-        self.helpChoice = StringVar()
-        self.helpChoice.set("WINDOW")
-
-        # Generate the a Help button with a menu.  Choice of help page
-        # displayed in another window or in a browser
-        buttonHelpView = Menubutton(helpbox,
-                                    relief       = RAISED,           
-                                    text         = self.helpChoice.get(),
-                                    textvariable = self.helpChoice,
-                                    padx         = 6,
-                                    pady         = 6,
-                                    indicatoron  = 1) 
-
-        buttonHelpView.menu = Menu(buttonHelpView,  
-                                   tearoff    = 0,
-                                   background = "white",
-                                   activebackground = "gainsboro")
-
-        # Set up the menu options
-        buttonHelpView.menu.add_radiobutton(label = "Display Help in a window",
-                                            value    = "WINDOW",
-                                            variable = self.helpChoice,
-                                            indicatoron = 0)
-        buttonHelpView.menu.add_radiobutton(label = "Display Help in a browser",
-                                            value    = "BROWSER",
-                                            variable = self.helpChoice,
-                                            indicatoron = 0)
-
-        # set up a pointer from the menubutton back to the menu
-        buttonHelpView['menu'] = buttonHelpView.menu
-
-        buttonHelpView.pack(side = RIGHT, anchor = E, padx = 5, pady = 5)
-        helpbox.pack(side = RIGHT, anchor = E)
-        topbox.pack(side = TOP, expand = TRUE, fill = X)
-
-        buttonHelpView.bind("<Enter>", self.printHelpViewInfo)
-        """
-
         topbox.pack(side = TOP, expand = TRUE, fill = X)
 
     # Method to set up the parent menu bar
@@ -420,13 +389,11 @@ class EparDialog:
         optionButton.menu = Menu(optionButton, tearoff = 0)
 
         optionButton.menu.add_radiobutton(label = "Display Help in a Window",
-                                          value       = "WINDOW",
-                                          selectcolor = "black",
-                                          variable    = self.helpChoice)
+                                          value    = "WINDOW",
+                                          variable = self.helpChoice)
         optionButton.menu.add_radiobutton(label = "Display Help in a Browser",
-                                          value       = "BROWSER",
-                                          selectcolor = "black",
-                                          variable    = self.helpChoice)
+                                          value    = "BROWSER",
+                                          variable = self.helpChoice)
 
         # Associate the menu with the menu button
         optionButton["menu"] = optionButton.menu
@@ -447,32 +414,32 @@ class EparDialog:
         # Determine if the EXECUTE button should be present
         if (self.isChild == "no"):
             # Execute the task
-            buttonExecute = Button(box, text = "EXECUTE", fg = "black",
+            buttonExecute = Button(box, text = "EXECUTE", 
                                    relief = RAISED, command = self.execute)
             buttonExecute.pack(side = LEFT, padx = 5, pady = 7)
             buttonExecute.bind("<Enter>", self.printExecuteInfo)
 
         # Save the parameter settings and exit from epar
-        buttonQuit = Button(box, text = "SAVE", fg = "black",
+        buttonQuit = Button(box, text = "SAVE", 
                             relief = RAISED, command = self.quit)
         buttonQuit.pack(side = LEFT, padx = 5, pady = 7)
         buttonQuit.bind("<Enter>", self.printQuitInfo)
 
         # Unlearn all the parameter settings (set back to the defaults)
-        buttonUnlearn = Button(box, text = "UNLEARN", fg = "black", 
+        buttonUnlearn = Button(box, text = "UNLEARN",
                             relief = RAISED, command = self.unlearn)
         buttonUnlearn.pack(side = LEFT, padx = 5, pady = 7)
         buttonUnlearn.bind("<Enter>", self.printUnlearnInfo)
 
         # Abort this edit session.  Currently, if an UNLEARN has already
         # been done, the UNLEARN is kept.
-        buttonAbort = Button(box, text = "ABORT", fg = "black",
+        buttonAbort = Button(box, text = "ABORT",
                               relief = RAISED, command = self.abort) 
         buttonAbort.pack(side = LEFT, padx = 5, pady = 7)
         buttonAbort.bind("<Enter>", self.printAbortInfo)
 
         # Generate the a Help button
-        buttonHelp = Button(box, text = "HELP", fg = "black",
+        buttonHelp = Button(box, text = "HELP",
                             relief = RAISED, command = self.setHelpViewer)
         buttonHelp.pack(side = RIGHT, padx = 5, pady = 7)
         buttonHelp.bind("<Enter>", self.printHelpInfo)
@@ -697,19 +664,6 @@ class EparDialog:
     # Get the IRAF help in a string (RLW)
     def getHelpString(self, taskname):
 
-        """
-        # Old method from RLW - still works
-        buffer = cStringIO.StringIO()
-        sys.stdout = buffer
-        try:
-            iraf.system.help(taskname)
-        finally:
-            sys.stdout = sys.__stdout__
-        result = buffer.getvalue()
-        buffer.close()
-        return result
-        """
-
         fh = cStringIO.StringIO()
         iraf.system.help(taskname, page = 0, Stdout = fh, Stderr = fh)
         result = fh.getvalue()
@@ -720,7 +674,8 @@ class EparDialog:
     def helpBrowser(self, helpString):
 
         # Generate a new Toplevel window for the browser
-        self.hb = Toplevel(self.top, bg = "SlateGray3")
+        #self.hb = Toplevel(self.top, bg = "SlateGray3")
+        self.hb = Toplevel(self.top, bg = None)
         self.hb.title("IRAF Help Browser")
 
         # Set up the Menu Bar
@@ -736,17 +691,16 @@ class EparDialog:
 
         # Attach a vertical Scrollbar to the Frame
         self.hb.frame.vscroll = Scrollbar(self.hb.frame, orient = VERTICAL,
-                 width = 11, relief = SUNKEN, activerelief = SUNKEN)
+                 width = 11, relief = SUNKEN, activerelief = RAISED,
+                 takefocus = FALSE)
  
         # Define the Listbox and setup the Scrollbar
         self.hb.frame.list = Listbox(self.hb.frame, 
                                      relief            = FLAT,
                                      height            = 25,
                                      width             = 80,
-                                     background        = "white",
                                      selectmode        = SINGLE,
-                                     selectborderwidth = 0,
-                                     selectbackground  = "white")
+                                     selectborderwidth = 0)
         self.hb.frame.list['yscrollcommand']  = self.hb.frame.vscroll.set
 
         self.hb.frame.vscroll['command'] = self.hb.frame.list.yview

@@ -204,10 +204,7 @@ class EnumEparOption(EparOption):
                                  takefocus    = 1,
                                  highlightthickness = 1)
 
-        self.button.menu = Menu(self.button,  
-                                tearoff = 0,
-                                background = "WhiteSmoke",
-                                activebackground = "gainsboro")
+        self.button.menu = Menu(self.button, tearoff = 0)
 
         # Generate the menu options
         for option in (self.paramInfo.choice):
@@ -230,8 +227,7 @@ class EnumEparOption(EparOption):
 
     def popupChoices(self, event):
  
-        self.menu = Menu(self.button, tearoff = 0, background = "WhiteSmoke",
-                         activebackground = "gainsboro")
+        self.menu = Menu(self.button, tearoff = 0)
         self.menu.add_command(label   = "File Browser",
                               state   = DISABLED)
         self.menu.add_separator()
@@ -280,15 +276,13 @@ class BooleanEparOption(EparOption):
                                  variable    = self.choice,
                                  value       = "yes",  
                                  anchor      = E,
-                                 takefocus   = 0,
-                                 selectcolor = "black")
+                                 takefocus   = 0)
         self.rbyes.pack(side = LEFT, ipadx = self.padWidth)
         self.rbno  = Radiobutton(self.frame, text = "No", 
                                  variable    = self.choice,
                                  value       = "no",  
                                  anchor      = W,
-                                 takefocus   = 0,
-                                 selectcolor = "black")
+                                 takefocus   = 0)
         self.rbno.pack(side = RIGHT, ipadx = self.padWidth)
         self.frame.pack(side = LEFT)
 
@@ -323,7 +317,6 @@ class StringEparOption(EparOption):
 
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
-                     background   = "WhiteSmoke",
                      textvariable = self.choice)
         self.entry.pack(side = LEFT, fill = X, expand = TRUE)
 
@@ -337,8 +330,7 @@ class StringEparOption(EparOption):
 
     def popupChoices(self, event):
  
-        self.menu = Menu(self.entry, tearoff = 0, background = "WhiteSmoke",
-                         activebackground = "gainsboro")
+        self.menu = Menu(self.entry, tearoff = 0)
         self.menu.add_command(label   = "File Browser",
                               command = self.fileBrowser)
         self.menu.add_separator()
@@ -410,7 +402,6 @@ class IntEparOption(EparOption):
 
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
-                     background   = "WhiteSmoke",
                      textvariable = self.choice)
         self.entry.pack(side = LEFT)
 
@@ -428,8 +419,7 @@ class IntEparOption(EparOption):
 
     def popupChoices(self, event):
  
-        self.menu = Menu(self.entry, tearoff = 0, background = "WhiteSmoke",
-                         activebackground = "gainsboro")
+        self.menu = Menu(self.entry, tearoff = 0)
         self.menu.add_command(label   = "File Browser",
                               state   = DISABLED)
         self.menu.add_separator()
@@ -561,7 +551,6 @@ class RealEparOption(EparOption):
 
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
-                     background   = "WhiteSmoke",
                      textvariable = self.choice)
         self.entry.pack(side = LEFT)
 
@@ -579,8 +568,7 @@ class RealEparOption(EparOption):
 
     def popupChoices(self, event):
  
-        self.menu = Menu(self.entry, tearoff = 0, background = "WhiteSmoke",
-                         activebackground = "gainsboro")
+        self.menu = Menu(self.entry, tearoff = 0)
         self.menu.add_command(label   = "File Browser",
                               state   = DISABLED)
         self.menu.add_separator()
@@ -705,16 +693,16 @@ class PsetEparOption(EparOption):
         self.valueWidth = self.valueWidth - 3
 
         # Generate the button
-        self.button = Button(self.master.frame, background = "SlateGray3",
+        self.psetButton = Button(self.master.frame,
                                  width   = self.valueWidth,
                                  text    = "PSET " + self.buttonText,
                                  relief  = RAISED,           
                                  command = self.childEparDialog)
-        self.button.pack(side = LEFT)
+        self.psetButton.pack(side = LEFT)
 
         if (self.isScrollable == "yes"):
             # Piggyback additional functionality to the Tab key
-            self.button.bind('<Tab>', self.scrollDown, "+")
+            self.psetButton.bind('<Tab>', self.scrollDown, "+")
 
     def childEparDialog(self):
         
