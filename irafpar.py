@@ -197,7 +197,6 @@ def isParField(s):
 # IrafPar's are protected in setattr against adding arbitrary attributes,
 # and this dictionary is used as a helper in instance initialization
 _IrafPar_attr_dict = {
-	"filename" : None,
 	"name" : None,
 	"type" : None,
 	"mode" : None,
@@ -231,7 +230,6 @@ class IrafPar:
 		# all the attributes that are going to get defined
 		#
 		self.__dict__.update(_IrafPar_attr_dict)
-		self.filename = filename
 		self.name   = fields[0]
 		self.type   = fields[1]
 		self.mode   = fields[2]
@@ -381,10 +379,24 @@ class IrafPar:
 		if self.value is not None:
 			pstring = pstring + " (" + self.toString(self.value,quoted=1) + ")"
 		pstring = pstring + ": "
+		# don't redirect stdin/out unless redirected filehandles are also ttys
+		# or unless originals are NOT ttys
+		stdout = sys.__stdout__
+		try:
+			if sys.stdout.isatty() or not stdout.isatty():
+				stdout = sys.stdout
+		except AttributeError:
+			pass
+		stdin = sys.__stdin__
+		try:
+			if sys.stdin.isatty() or not stdin.isatty():
+				stdin = sys.stdin
+		except AttributeError:
+			pass
 		# print prompt, suppressing both newline and following space
-		sys.stdout.write(pstring)
-		sys.stdout.flush()
-		ovalue = sys.stdin.readline()
+		stdout.write(pstring)
+		stdout.flush()
+		ovalue = stdin.readline()
 		value = string.strip(ovalue)
 		# loop until we get an acceptable value
 		while (1):
@@ -397,14 +409,14 @@ class IrafPar:
 				if self.value is not None: return
 				# if not EOF, keep looping
 				if ovalue == "":
-					sys.stdout.flush()
+					stdout.flush()
 					raise EOFError("EOF on parameter prompt")
 				print "Error: specify a value for the parameter"
 			except ValueError, e:
 				print str(e)
-			sys.stdout.write(pstring)
-			sys.stdout.flush()
-			ovalue = sys.stdin.readline()
+			stdout.write(pstring)
+			stdout.flush()
+			ovalue = stdin.readline()
 			value = string.strip(ovalue)
 
 	def get(self, field=None, index=None, lpar=0, prompt=1, native=0, mode="h"):
@@ -485,10 +497,15 @@ class IrafPar:
 				(self.name, str(v), str(self.max)))
 		return v
 
-	def dpar(self):
-		"""Return dpar-style executable assignment for parameter"""
+	def dpar(self, cl=1):
+		"""Return dpar-style executable assignment for parameter
+		
+		Default is to write CL version of code; if cl parameter is
+		false, writes Python executable code instead.
+		"""
 		sval = self.toString(self.value, quoted=1)
-		if sval == "": sval = "None"
+		if not cl:
+			if sval == "": sval = "None"
 		s = "%s = %s" % (self.name, sval)
 		return s
 
@@ -813,7 +830,6 @@ class IrafArrayPar(IrafPar):
 		# all the attributes that are going to get defined
 		#
 		self.__dict__.update(_IrafPar_attr_dict)
-		self.filename = filename
 		self.name   = fields[0]
 		self.type   = fields[1]
 		self.mode   = fields[2]
@@ -933,10 +949,16 @@ class IrafArrayPar(IrafPar):
 			fields[9] = '\\\n' + fields[9]
 			return string.join(fields, ',')
 
-	def dpar(self):
-		"""Return dpar-style executable assignment for parameter"""
+	def dpar(self, cl=1):
+		"""Return dpar-style executable assignment for parameter
+		
+		Default is to write CL version of code; if cl parameter is
+		false, writes Python executable code instead.  Note that
+		dpar doesn't even work for arrays in the CL, so we just use
+		Python syntax here.
+		"""
 		sval = map(self.toString, self.value, self.dim*[1])
-		for i in self.dim:
+		for i in range(self.dim):
 			if sval[i] == "": sval[i] = "None"
 		s = "%s = [%s]" % (self.name, string.join(sval, ', '))
 		return s
@@ -1787,6 +1809,33 @@ class IrafParList:
 		self.__pars, self.__pardict, self.__psetlist = \
 			self.__filecache.get()
 
+	def setFilename(self, filename):
+		"""Change filename and create ParCache object
+		
+		Retains current parameter values until an unlearn is done
+		"""
+		if hasattr(filename, 'name') and hasattr(filename, 'read'):
+			filename = filename.name
+		if type(filename) == types.StringType:
+			root, ext = os.path.splitext(filename)
+			if ext != ".par":
+				# Only .par files are used as basis for parameter cache -- see if there
+				# is one
+				# Note that parameters specified in CL scripts are automatically updated
+				# when the script changes
+				filename = root + ".par"
+				if not os.path.exists(filename):
+					filename = ""
+		else:
+			filename = ""
+		if self.__filename != filename:
+			self.__filename = filename
+			if filename:
+				self.__filecache = ParCache(filename, None)
+			else:
+				# for null filename, default parameter list is fixed
+				self.__filecache = ParCache(filename, self.__pars)
+
 	def __addPsetParams(self):
 		"""Merge pset parameters into the parameter lists"""
 		# return immediately if they have already been added
@@ -2039,13 +2088,18 @@ class IrafParList:
 			if Verbose>0 or p.name != '$nargs':
 				print p.pretty(verbose=verbose or Verbose>0)
 
-	def dParam(self, taskname=""):
-		"""Dump the task parameters in executable form"""
+	def dParam(self, taskname="", cl=1):
+		"""Dump the task parameters in executable form
+		
+		Default is to write CL version of code; if cl parameter is
+		false, writes Python executable code instead.
+		"""
 		if taskname and taskname[-1:] != ".": taskname = taskname + "."
 		for i in xrange(len(self.__pars)):
 			p = self.__pars[i]
 			if p.name != '$nargs':
-				print "%s%s" % (taskname,p.dpar())
+				print "%s%s" % (taskname,p.dpar(cl=cl))
+		if cl: print "# EOF"
 
 	def saveList(self, filename):
 		"""Write .par file data to filename (string or filehandle)"""

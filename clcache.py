@@ -63,7 +63,6 @@ class _CodeCache:
 	"""
 
 	def __init__(self, cacheFileList):
-		# 
 		cacheList = []
 		flist = []
 		nwrite = 0
@@ -90,6 +89,15 @@ class _CodeCache:
 
 		Returns tuple (writeflag, shelve-object) on success or None on failure.
 		"""
+		#YYY YYY YYY YYY
+		# Fix error in previous clcache naming scheme
+		# Remove this code after a little while (and before release)
+		try:
+			import fixcache
+			fixcache.fixit([filename])
+		except OSError:
+			pass
+		#YYY YYY YYY YYY
 		# first try opening the cache read-write
 		try:
 			fh = dirshelve.open(filename)
@@ -224,7 +232,15 @@ class _CodeCache:
 			writeflag, cache = self.cacheList[i]
 			if cache.has_key(index):
 				pycode = cache[index]
+				#XXX
+				# kluge for backward compatibility -- force type of object
+				# eliminate this eventually
+				if not hasattr(pycode, 'setFilename'):
+					import cl2py
+					pycode.__class__ = cl2py.Pycode
+				#XXX
 				pycode.index = index
+				pycode.setFilename(filename)
 				return index, pycode
 		return index, None
 

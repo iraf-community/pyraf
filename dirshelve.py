@@ -22,7 +22,14 @@ class Shelf(shelve.Shelf):
 
 	def __getitem__(self, key):
 		f = shelve.StringIO(self.dict[key])
-		return shelve.Unpickler(f).load()
+		try:
+			return shelve.Unpickler(f).load()
+		except EOFError:
+			# apparently file is truncated; delete it and raise
+			# and exception
+			del self.dict[key]
+			raise KeyError("Corrupted or truncated file for key %s "
+				"(bad file has been deleted)" % (`key`,))
 
 	def __setitem__(self, key, value):
 		f = shelve.StringIO()

@@ -156,20 +156,29 @@ class Container:
 	pass
 
 
-def Pycode(tree2python):
+class Pycode:
 
-	"""Returns simple container instance with relevant fields"""
+	"""Container for Python CL translation"""
 
-	rv = Container()
-	rv.code = tree2python.code
-	rv.vars = Container()
-	rv.vars.filename        = tree2python.vars.filename
-	rv.vars.local_vars_dict = tree2python.vars.local_vars_dict
-	rv.vars.local_vars_list = tree2python.vars.local_vars_list
-	rv.vars.parList         = tree2python.vars.parList
-	rv.vars.proc_name       = tree2python.vars.proc_name
-	rv.vars.has_proc_stmt   = tree2python.vars.has_proc_stmt
-	return rv
+	def __init__(self, tree2python):
+
+		self.code = tree2python.code
+		self.vars = Container()
+		self.vars.local_vars_dict = tree2python.vars.local_vars_dict
+		self.vars.local_vars_list = tree2python.vars.local_vars_list
+		self.vars.parList         = tree2python.vars.parList
+		self.vars.proc_name       = tree2python.vars.proc_name
+		self.vars.has_proc_stmt   = tree2python.vars.has_proc_stmt
+
+	def setFilename(self, filename):
+
+		"""Set the filename used for parameter list
+		
+		This is used by codeCache, which needs to be able to read a Pycode
+		object created from some other file and attach it to the current file.
+		"""
+
+		self.vars.parList.setFilename(filename)
 
 
 def _checkVars(vars, parlist, parfile):
@@ -1581,7 +1590,12 @@ class Tree2Python(GenericASTTraversal):
 
 	def n_inspect_stmt(self, node):
 		self.write("print ")
-		self.preorder(node[1])
+		if node[0].type == "=":
+			# '= expr' version of inspect
+			self.preorder(node[1])
+		else:
+			# 'IDENT =' version of inspect
+			self.preorder(node[0])
 		self.prune()
 
 	def n_switch_stmt(self, node):

@@ -244,10 +244,13 @@ del unsavedVars, v
 #   of any possible problems.
 
 def saveToFile(savefile, **kw):
-	"""Save IRAF environment to pickle file"""
+	"""Save IRAF environment to pickle file
+	
+	Set clobber keyword (or CL environment variable) to overwrite an existing file
+	"""
 	# if clobber is not set, do not overwrite file
 	savefile = Expand(savefile)
-	if envget("clobber") != yes and _os.path.exists(savefile):
+	if (not kw.get('clobber')) and envget("clobber") != yes and _os.path.exists(savefile):
 		raise IOError("Output file `%s' already exists" % savefile)
 	# make a shallow copy of the dictionary and edit out
 	# functions, modules, and objects named in _unsavedVarsDict
@@ -1501,13 +1504,19 @@ def dparam(*args, **kw):
 	# handle redirection and save keywords
 	redirKW, closeFHList = redirProcess(kw)
 	if kw.has_key('_save'): del kw['_save']
+	# pyraf-specific cl keyword used to specify CL or Python syntax
+	if kw.has_key('cl'):
+		cl = kw['cl']
+		del kw['cl']
+	else:
+		cl = 1
 	if len(kw):
 		raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
 	resetList = redirApply(redirKW)
 	try:
 		for taskname in args:
 			try:
-				getTask(taskname).dpar()
+				getTask(taskname).dpar(cl=cl)
 			except KeyError, e:
 				_writeError("Warning: Could not find task %s for dpar\n" %
 					taskname)
@@ -2646,6 +2655,9 @@ def redirProcess(kw):
 				'Stderr': (1, "stderr", "w"),
 				'StderrAppend': (1, "stderr", "a"),
 				}
+	# Magic values that trigger special behavior
+	magicValues = { "STDIN": 1, "STDOUT": 1, "STDERR": 1}
+
 	PipeOut = None
 	for key in redirDict.keys():
 		if kw.has_key(key):
@@ -2654,21 +2666,35 @@ def redirProcess(kw):
 			# otherwise assume it is a filehandle
 			value = kw[key]
 			if isinstance(value, _types.StringType):
-				# expand IRAF variables
-				value = Expand(value)
-				if outputFlag:
-					# output file
-					# check to see if it is dev$null
-					if isNullFile(value):
-						value = '/dev/null'
-					elif "w" in openArgs and \
-					  envget("clobber") != yes and \
-					  _os.path.exists(value):
-						# don't overwrite unless clobber is set
-						raise IOError("Output file `%s' already exists" % value)
-				fh = open(value,openArgs)
-				# close this when we're done
-				closeFHList.append(fh)
+				if magicValues.has_key(value):
+					if outputFlag and value == "STDOUT":
+						fh = _sys.__stdout__
+					elif outputFlag and value == "STDERR":
+						fh = _sys.__stderr__
+					elif (not outputFlag) and value == "STDIN":
+						fh = _sys.__stdin__
+					else:
+						# IRAF doesn't raise an exception here (e.g., on
+						# input redirection from "STDOUT"), but it should
+						raise IOError("Illegal value `%s' for %s redirection" %
+							(value, key))
+				else:
+					# expand IRAF variables
+					value = Expand(value)
+					if outputFlag:
+						# output file
+						# check to see if it is dev$null
+						if isNullFile(value):
+							value = '/dev/null'
+						elif "w" in openArgs and \
+						  envget("clobber") != yes and \
+						  _os.path.exists(value):
+							# don't overwrite unless clobber is set
+							raise IOError("Output file `%s' already exists" %
+								value)
+					fh = open(value,openArgs)
+					# close this when we're done
+					closeFHList.append(fh)
 			elif isinstance(value, _types.IntType):
 				# integer is OK for output keywords -- it indicates
 				# that output should be captured and returned as

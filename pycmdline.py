@@ -193,6 +193,9 @@ class PyCmdLine(CmdConsole):
 				self.write('logfile ignored -- not string or filehandle\n')
 		# turn command completion on or off as requested
 		self.do_complete(default=self.complete)
+		# install special error handler for Tk tracebacks
+		import pyrafTk
+		pyrafTk.setTkErrorHandler(self.showtraceback)
 
 	def runsource(self, source, filename="<input>", symbol="single"):
 		"""Compile and run some source in the interpreter.

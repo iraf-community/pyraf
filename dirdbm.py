@@ -59,8 +59,8 @@ class _Database:
 		except OSError:
 			raise IOError("Directory "+directory+" is not readable")
 		for fname in flist:
-			# replace hyphens and add trailing characters in base64
-			key = _string.replace(fname, '-', '/') + '==\n'
+			# replace hyphens and add newline in base64
+			key = _string.replace(fname, '-', '/') + '\n'
 			key = _binascii.a2b_base64(key)
 			self._dict[key] = None
 
@@ -69,8 +69,8 @@ class _Database:
 		"""Return filename equivalent to this key"""
 
 		filename = _binascii.b2a_base64(key)
-		# get rid of trailing characters in base64 and replace slashes
-		filename = _string.replace(filename[:-3], '/', '-')
+		# get rid of trailing newline in base64 and replace slashes
+		filename = _string.replace(filename[:-1], '/', '-')
 		return _os.path.join(self._directory, filename)
 
 	def __getitem__(self, key):
@@ -92,9 +92,19 @@ class _Database:
 		# use just in-memory dictionary if directory is not writable
 		self._dict[key] = value
 		if self._writable:
-			fh = __builtin__.open(self._getFilename(key),'wb')
-			fh.write(value)
-			fh.close()
+			try:
+				fname = self._getFilename(key)
+				fh = __builtin__.open(fname,'wb')
+				fh.write(value)
+				fh.close()
+			except IOError, e:
+				# clean up on IO error (e.g., if disk fills up)
+				try:
+					if _os.path.exists(fname):
+						_os.remove(fname)
+				except IOError:
+					pass
+				raise e
 
 	def __delitem__(self, key):
 		del self._dict[key]

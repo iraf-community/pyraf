@@ -319,10 +319,13 @@ class CLParser(CLStrictParser):
 			program ::= statement_block END NEWLINE
 			task_arglist ::= ( comma_arglist
 			task_arglist ::= comma_arglist )
+			inspect_stmt ::= IDENT =
 		'''
 		# - end without matching begin
 		# - task argument list with missing closing parenthesis
 		# - task argument list with missing opening parenthesis
+		# - peculiar 'var =' form of inspect statement (as opposed to
+		#   normal '= var' form.)
 		#
 		#   Note that the missing parentheses versions of
 		#   argument lists also permit parsing of 'pipe args'

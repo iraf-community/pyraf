@@ -505,12 +505,20 @@ class IrafTask:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
 
-	def dpar(self):
-		"""Dump the task parameters"""
+	def dpar(self, cl=1):
+		"""Dump the task parameters
+		
+		Default is to write CL version of code; if cl parameter is
+		false, writes Python executable code instead.
+		"""
 		self.initTask(force=1)
 		plist = self._runningParList or self._currentParList
 		if plist:
-			plist.dParam(self._name)
+			if cl:
+				taskname = self._name
+			else:
+				taskname = "iraf.%s" % self._name
+			plist.dParam(taskname, cl=cl)
 		else:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()

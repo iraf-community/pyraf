@@ -11,11 +11,7 @@ from tkMessageBox import askokcancel
 import os, sys, string
 
 # PyRAF modules
-# For some reason I do not understand, it is necessary to import
-# openglgcur here even though it is not used.  If omitted it dies during
-# startup. (rlw)
-# import iraf, irafpar, iraftask, irafhelp, cStringIO
-import iraf, irafpar, iraftask, irafhelp, openglgcur, cStringIO
+import iraf, irafpar, iraftask, irafhelp, cStringIO
 from irafglobals import pyrafDir, userWorkingHome
 
 from eparoption import *

@@ -50,6 +50,7 @@ taskArgDict = minmatch.MinMatchDict({
 				'unlearn': 1,
 				'eparam': 1,
 				'lparam': 1,
+				'dparam': 1,
 				'update': 1,
 				'help': 1,
 				'prcache': 1,
