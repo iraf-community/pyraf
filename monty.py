@@ -367,36 +367,37 @@ be interpreted by python as a python string"""
 	
 		"""Start the front end interpreter"""
 	
-		sys.stdout.write(self.primary_prompt)
+#		sys.stdout.write(self.primary_prompt)
 	
 		while not self.exit:
+			currentPrompt = self.primary_prompt
 			try:
 				# get line from user and parse
-				line = raw_input()
+				line = raw_input(currentPrompt)
 				status = self.parse_line(line)
 				if status[0] == "execute":
 					self.execute()
 					self.reset()
-					sys.stdout.write(self.primary_prompt)
+					currentPrompt = self.primary_prompt
 				elif self.python_continuation or self.system_continuation:
 					if self.python_continuation:
-						sys.stdout.write(self.secondary_prompt)
+						currentPrompt = self.secondary_prompt
 					else: # may differ in future versions
-						sys.stdout.write(self.secondary_prompt)
+						currentPrompt = self.secondary_prompt
 				elif status[0] == "error":
 					print status[1]
-					sys.stdout.write(self.primary_prompt)
+					currentPrompt = self.primary_prompt
 				else: # start over
 					self.reset()
-					sys.stdout.write(self.primary_prompt)
+					currentPrompt = self.primary_prompt
 			except KeyboardInterrupt: 
 				print "<KeyboardInterrupt>"
 				self.reset()
-				sys.stdout.write(self.primary_prompt)
+				currentPrompt = self.primary_prompt
 			except:
 				print sys.exc_type
 				self.reset()
-				sys.stdout.write(self.primary_prompt)
+				currentPrompt = self.primary_prompt
 		print "\n quitting Monty"
 		if self.logfile:
 			self.logfile.close()
