@@ -323,14 +323,15 @@ class Variable:
 		"""Return a string usable as parameter declaration with
 		default value in the function definition statement"""
 
+		name = irafutils.translateName(self.name)
 		if self.array_size is None:
 			if self.init_value is None:
-				return self.name + "=None"
+				return name + "=None"
 			else:
-				return self.name + "=" + `self.init_value`
+				return name + "=" + `self.init_value`
 		else:
 			# array
-			arg = self.name + "=["
+			arg = name + "=["
 			arglist = []
 			for iv in self.init_value:
 				arglist.append(`iv`)
@@ -339,7 +340,8 @@ class Variable:
 	def parDefLine(self, filename=None, strict=0):
 		"""Return a list of string arguments for makeIrafPar"""
 
-		arglist = [self.name,
+		name = irafutils.translateName(self.name)
+		arglist = [name,
 			"datatype=" + `self.type`,
 			"name=" + `self.getName()` ]
 		if self.array_size is not None:
