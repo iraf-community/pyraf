@@ -288,8 +288,10 @@ class IrafTask:
 			parDictList.append( (pkg.getName(),pkg.getParDict()) )
 		self.__parDictList = parDictList
 
-	def setParam(self,qualifiedName,newvalue):
-		"""Set parameter specified by qualifiedName to newvalue."""
+	def setParam(self,qualifiedName,newvalue,check=1):
+		"""Set parameter specified by qualifiedName to newvalue.
+		If check is set to zero, does not check value to make sure it
+		satisfies min-max range or choice list."""
 
 		if self.__parDictList == None: self.setParDictList()
 
@@ -304,7 +306,8 @@ class IrafTask:
 				for dictname, paramdict in self.__parDictList:
 					if dictname == task:
 						if paramdict.has_key(paramname):
-							paramdict[paramname].set(newvalue,index=pindex,field=field)
+							paramdict[paramname].set(newvalue,index=pindex,
+								field=field,check=check)
 							return
 						else:
 							raise IrafError("Attempt to set unknown parameter " +
@@ -316,19 +319,20 @@ class IrafTask:
 				# reattach the index and/or field
 				if pindex: paramname = paramname + '[' + `pindex+1` + ']'
 				if field: paramname = paramname + '.' + field
-				tobj.setParam(paramname,newvalue)
+				tobj.setParam(paramname,newvalue,check=check)
 				return
 			except KeyError:
 				raise IrafError("Could not find task " + task +
 					" to get parameter " + qualifiedName)
 			except IrafError, e:
-				raise IrafError(e + "\nFailed to get parameter " +
+				raise IrafError(e + "\nFailed to set parameter " +
 					qualifiedName)
 
 		# no task specified, just search the standard dictionaries
 		for dictname, paramdict in self.__parDictList:
 			if paramdict.has_key(paramname):
-				paramdict[paramname].set(newvalue,index=pindex,field=field)
+				paramdict[paramname].set(newvalue,index=pindex,
+					field=field,check=check)
 				return
 		else:
 			raise IrafError("Attempt to set unknown parameter " +

@@ -166,24 +166,35 @@ class IrafPar:
 			#    .par file)?
 			raise RuntimeError("Program bug in IrafPar.getField()")
 
-	def set(self, value, field=None, index=None):
-		"""Set value of this parameter from a string or other value"""
+	def set(self, value, field=None, index=None, check=1):
+		"""Set value of this parameter from a string or other value.
+		Field is optional parameter field (p_prompt, p_minimum, etc.)
+		Index is optional array index (zero-based).  Set check=0 to
+		assign the value without checking to see if it is within
+		the min-max range or in the choice list."""
 		if index != None:
 			if self.dim < 2:
 				raise SyntaxError("Parameter "+self.name+" is not an array")
 			try:
 				value = self.coerceOneValue(value)
-				self.value[index] = self.checkOneValue(value)
+				if check:
+					self.value[index] = self.checkOneValue(value)
+				else:
+					self.value[index] = value
 				return
 			except IndexError:
 				raise SyntaxError("Illegal index [" + `index` +
 					"] for array parameter " + self.name)
 		if field:
-			self.setField(value,field)
+			self.setField(value,field,check=check)
 		else:
-			self.value = self.checkValue(value)
+			if check:
+				self.value = self.checkValue(value)
+			else:
+				self.value = self.coerceValue(value)
+			return
 
-	def setField(self, value, field):
+	def setField(self, value, field, check=1):
 		ffield = minMatch(field,_setFieldList)
 		if not ffield:
 			raise SyntaxError("Cannot set field " + field +
@@ -196,7 +207,7 @@ class IrafPar:
 		if field == "p_prompt":
 			self.prompt = _stripQuote(value)
 		elif field == "p_value":
-			self.set(value)
+			self.set(value,check=check)
 		elif field == "p_filename":
 			# this is only relevant for list parameters (*imcur, *gcur, etc.)
 			self.value = _stripQuote(value)
