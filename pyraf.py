@@ -158,7 +158,7 @@ flpr = "This is not the IRAF cl!  Forget those old bad habits!"
 retall = "This is not IDL..."
 
 if __name__ == "__main__":
-	print "Pyraf, Python front end to IRAF, version", __version__, "(copyright AURA 1999)"
+	print "Pyraf, Python front end to IRAF,", __version__, "(copyright AURA 1999)"
 	print "Python: " + sys.copyright
 	if doMonty:
 		#

@@ -3,7 +3,7 @@ IrafPar objects
 
 $Id$
 
-R. White, 1999 March 4
+R. White, 1999 May 28
 """
 
 import os, sys, string, re, irafgcur, irafukey, minmatch
@@ -24,10 +24,10 @@ from types import *
 import iraf
 
 def warning(msg, strict=0, exception=SyntaxError,
-		filename=None, irafpar=None):
+		filename=None, irafparam=None):
 	# prepend filename to message if known
-	if irafpar:
-		prefix = irafpar.filename + ":\n"
+	if irafparam:
+		prefix = irafparam.filename + ":\n"
 	elif filename:
 		prefix = filename + ":\n"
 	if strict:
@@ -166,8 +166,12 @@ class IrafPar:
 	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
 		"""Return value of this parameter as a string (or in native format
 		if native is non-zero.)"""
+
+		if field: return self.getField(field,native=native,prompt=prompt)
+
 		# prompt for query parameters unless prompt is set to zero
 		if prompt and self.mode == "q": self.getPrompt()
+
 		if index != None:
 			if self.dim < 2:
 				raise SyntaxError("Parameter "+self.name+" is not an array")
@@ -179,8 +183,6 @@ class IrafPar:
 			except IndexError:
 				raise SyntaxError("Illegal index [" + `index` +
 					"] for array parameter " + self.name)
-
-		if field: return self.getField(field,native=native)
 
 		if self.dim == 1:
 			if native:
@@ -205,7 +207,7 @@ class IrafPar:
 		else:
 			return str(value)
 
-	def getField(self, field, native=0):
+	def getField(self, field, native=0, prompt=1):
 		"""Get a parameter field value"""
 		try:
 			field = _getFieldDict[field]
@@ -217,18 +219,28 @@ class IrafPar:
 		elif field == "p_xtype": return self.type
 		elif field == "p_mode": return self.mode
 		elif field == "p_prompt": return self.prompt
-		elif field == "p_value": return self.get(native=native)
+		elif field == "p_value": return self.get(native=native,prompt=prompt)
 		elif field == "p_filename": return str(self.value)
-		elif field == "p_maximum": return self.toString(self.maximum)
+		elif field == "p_maximum":
+			if native:
+				return self.max
+			else:
+				return self.toString(self.max)
 		elif field == "p_minimum":
 			if self.choice != None:
-				schoice = [None]*len(self.choice)
-				for i in xrange(len(self.choice)):
-					schoice[i] = self.toString(self.choice[i])
-				schoice = "|" + string.join(schoice,"|") + "|"
-				return schoice
+				if native:
+					return self.choice
+				else:
+					schoice = [None]*len(self.choice)
+					for i in xrange(len(self.choice)):
+						schoice[i] = self.toString(self.choice[i])
+					schoice = "|" + string.join(schoice,"|") + "|"
+					return schoice
 			else:
-				return self.toString(self.minimum)
+				if native:
+					return self.min
+				else:
+					return self.toString(self.min)
 		else:
 			# XXX unimplemented fields:
 			# p_type: different than p_xtype?
@@ -281,12 +293,12 @@ class IrafPar:
 			# this is only relevant for list parameters (*imcur, *gcur, etc.)
 			self.value = _stripQuote(value)
 		elif field == "p_maximum":
-			self.maximum = self.coerceOneValue(value)
+			self.max = self.coerceOneValue(value)
 		elif field == "p_minimum":
 			if type(value) == StringType and '|' in value:
 				self.setChoice(_stripQuote(value))
 			else:
-				self.minimum = self.coerceOneValue(value)
+				self.min = self.coerceOneValue(value)
 		else:
 			raise RuntimeError("Program bug in IrafPar.setField()" +
 				"Requested field " + field + " for parameter " + self.name)
@@ -420,34 +432,34 @@ class IrafParS(IrafPar):
 				if orig_len < 7:
 					warning("Illegal max value for string-type parameter " + 
 							self.name + " (probably missing comma)",
-							strict, irafpar=self)
+							strict, irafparam=self)
 					# try to recover by assuming this string is prompt
 					fields[6] = fields[5]
 					fields[5] = ""
 				else:
 					warning("Illegal max value for string-type parameter " +
-						self.name, strict, irafpar=self)
+						self.name, strict, irafparam=self)
 		else:
 			# otherwise, min & max must be blank
 			if fields[4] != "" or fields[5] != "":
 				if orig_len < 7:
 					warning("Illegal min/max/choice values for type '" +
 							self.type + "' for parameter " + self.name +
-							" (probably missing comma)", strict, irafpar=self)
+							" (probably missing comma)", strict, irafparam=self)
 					# try to recover by assuming max string is prompt
 					fields[6] = fields[5]
 					fields[5] = ""
 				else:
 					warning("Illegal min/max/choice values for type '" +
 						self.type + "' for parameter " + self.name,
-						strict, irafpar=self)
+						strict, irafparam=self)
 		self.prompt = _removeEscapes(fields[6])
 		# check parameter to see if it is correct
 		try:
 			self.checkValue(self.value,strict)
 		except ValueError, e:
 			warning("Illegal initial value for parameter\n" + str(e),
-				strict, irafpar=self, exception=ValueError)
+				strict, irafparam=self, exception=ValueError)
 			# Set to null string, just like IRAF
 			self.value = ""
 
@@ -606,14 +618,14 @@ class IrafParB(IrafPar):
 				warning("Illegal min/max/choice values for type '" +
 						self.type + "' for parameter " + self.name +
 						" (probably missing comma)",
-						strict, irafpar=self)
+						strict, irafparam=self)
 				# try to recover by assuming max string is prompt
 				fields[6] = fields[5]
 				fields[5] = ""
 			else:
 				warning("Illegal min/max/choice values for type '" + \
 					self.type + "' for parameter " + self.name,
-					strict, irafpar=self)
+					strict, irafparam=self)
 		self.prompt = _removeEscapes(fields[6])
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
@@ -676,13 +688,13 @@ class IrafParI(IrafPar):
 					warning("Max value illegal when choice list given" +
 							" for parameter " + self.name +
 							" (probably missing comma)",
-							strict, irafpar=self)
+							strict, irafparam=self)
 					# try to recover by assuming max string is prompt
 					fields[6] = fields[5]
 					fields[5] = ""
 				else:
 					warning("Max value illegal when choice list given" +
-						" for parameter " + self.name, strict, irafpar=self)
+						" for parameter " + self.name, strict, irafparam=self)
 		else:
 			self.min = self.coerceOneValue(fields[4],strict)
 			self.max = self.coerceOneValue(fields[5],strict)
@@ -690,7 +702,7 @@ class IrafParI(IrafPar):
 		if self.min != None and self.max != None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
-				strict, irafpar=self)
+				strict, irafparam=self)
 			self.min, self.max = self.max, self.min
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
@@ -761,13 +773,13 @@ class IrafParAI(IrafParI):
 					warning("Max value illegal when choice list given" +
 							" for parameter " + self.name +
 							" (probably missing comma)",
-							strict, irafpar=self)
+							strict, irafparam=self)
 					# try to recover by assuming max string is prompt
 					fields[8] = fields[7]
 					fields[7] = ""
 				else:
 					warning("Max value illegal when choice list given" +
-						" for parameter " + self.name, strict, irafpar=self)
+						" for parameter " + self.name, strict, irafparam=self)
 		else:
 			self.min = self.coerceOneValue(fields[6],strict)
 			self.max = self.coerceOneValue(fields[7],strict)
@@ -775,7 +787,7 @@ class IrafParAI(IrafParI):
 		if self.min != None and self.max != None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
-				strict, irafpar=self)
+				strict, irafparam=self)
 			self.min, self.max = self.max, self.min
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
@@ -798,7 +810,7 @@ class IrafParR(IrafPar):
 		s = string.strip(fields[4])
 		if '|' in s:
 			warning("Choice list not allowed for float parameter " +
-					self.name, strict, irafpar=self)
+					self.name, strict, irafparam=self)
 		else:
 			self.min = self.coerceOneValue(fields[4],strict)
 			self.max = self.coerceOneValue(fields[5],strict)
@@ -806,7 +818,7 @@ class IrafParR(IrafPar):
 		if self.min != None and self.max != None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " +
 				" for parameter " + self.name + str(self.min),
-				strict, irafpar=self)
+				strict, irafparam=self)
 			self.min, self.max = self.max, self.min
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
@@ -887,7 +899,7 @@ class IrafParAR(IrafParR):
 		s = string.strip(fields[6])
 		if '|' in s:
 			warning("Choice list not allowed for float parameter " +
-					self.name, strict, irafpar=self)
+					self.name, strict, irafparam=self)
 		else:
 			self.min = self.coerceOneValue(fields[6],strict)
 			self.max = self.coerceOneValue(fields[7],strict)
@@ -895,7 +907,7 @@ class IrafParAR(IrafParR):
 		if self.min != None and self.max != None and self.max < self.min:
 			warning("Max " + str(self.max) + " is less than min " + \
 				str(self.min) + " for parameter " + self.name,
-				strict, irafpar=self)
+				strict, irafparam=self)
 			self.min, self.max = self.max, self.min
 		# check parameter to see if it is correct
 		self.checkValue(self.value,strict)
@@ -909,7 +921,7 @@ _re_choice = re.compile(r'\|')
 def _getChoice(self, s, strict):
 	if (s[0] != "|") or (s[-1] != "|"):
 		warning("Choice string does not start and end with '|'" +
-			" for parameter " + self.name, strict, irafpar=self)
+			" for parameter " + self.name, strict, irafparam=self)
 	if s[0] == "|":
 		i1 = 1
 	else:
@@ -926,6 +938,129 @@ def _getChoice(self, s, strict):
 	return clist
 
 # -----------------------------------------------------
+# IRAF parameter list class
+# -----------------------------------------------------
+
+class IrafParList:
+	"""List of Iraf parameters"""
+	def __init__(self, taskname, filename=""):
+		"""Create a parameter list for task taskname by reading a .par file"""
+		self.__filename = filename
+		self.__name = taskname
+		if filename:
+			self.__pars = _readpar(filename)
+		else:
+			# create default list if no filename is specified
+			self.__pars = [
+				IrafParFactory(["mode","s","h","al"]),
+				IrafParFactory(["$nargs","i","h","0"]) ]
+		# build minmatch dictionary of all parameters, including
+		# those in psets
+		self.__pardict = minmatch.MinMatchDict()
+		psetlist = []
+		for p in self.__pars:
+			self.__pardict.add(p.name, p)
+			if isinstance(p, IrafParPset): psetlist.append(p)
+		# Now add the pset parameters
+		# Work from the pset's pardict because then we get
+		# parameters from nested psets too
+		for p in psetlist:
+			# silently ignore parameters from this pset
+			# that already are defined
+			psetdict = p.get().getParDict()
+			for pname in psetdict.keys():
+				if not self.__pardict.has_exact_key(pname):
+					self.__pardict.add(pname, psetdict[pname])
+
+	# parameters are accessible as attributes
+
+	def __getattr__(self,name):
+		if name[:1] == '_': raise AttributeError(name)
+		return self.get(name,native=1)
+
+	def __setattr__(self,name,value):
+		# hidden Python parameters go into the standard dictionary
+		# (hope there are none of these in IRAF tasks)
+		if name[:1] == '_':
+			self.__dict__[name] = value
+		else:
+			self.set(name,value)
+
+	def __len__(self): return len(self.__pars)
+
+	# public accessor functions for attributes
+
+	def getFilename(self): return self.__filename
+	def getParList(self): return self.__pars
+	def getParDict(self): return self.__pardict
+	def getParObject(self,param):
+		try:
+			return self.__pardict[param]
+		except KeyError, e:
+			raise e.__class__("Error in parameter '" +
+				param + "' for task " + self.__name + "\n" + str(e))
+
+	def get(self,param,native=0):
+		"""Return value for task parameter 'param' (with min-match)
+		
+		If native is non-zero, returns native format for value.  Default is
+		to return a string.
+		"""
+		return self.getParObject(param).get(native=native)
+
+	def set(self,param,value):
+		"""Set task parameter 'param' to value (with minimum-matching)"""
+		self.getParObject(param).set(value)
+
+	def setParList(self,*args,**kw):
+		"""Set value of multiple parameters from list"""
+		# first expand all keywords to their full names
+		fullkw = {}
+		for key in kw.keys():
+			param = self.getParObject(key).name
+			if fullkw.has_key(param):
+				raise SyntaxError("Multiple values given for parameter " + 
+					param + " in task " + self.__name)
+			fullkw[param] = kw[key]
+
+		# add positional parameters to the keyword list, checking
+		# for duplicates
+		ipar = 0
+		for value in args:
+			while ipar < len(self.__pars):
+				if self.__pars[ipar].mode != "h": break
+				ipar = ipar+1
+			else:
+				# executed if we run out of non-hidden parameters
+				raise SyntaxError("Too many positional parameters for task " +
+					self.__name)
+			param = self.__pars[ipar].name
+			if fullkw.has_key(param):
+				raise SyntaxError("Multiple values given for parameter " + 
+					param + " in task " + self.__name)
+			fullkw[param] = value
+			ipar = ipar+1
+
+		# now set all keyword parameters
+		for param in fullkw.keys(): self.set(param,fullkw[param])
+
+		# Number of arguments on command line, $nargs, is used by some IRAF
+		# tasks (e.g. imheader).
+		self.set('$nargs',len(args))
+
+	def lpar(self,verbose=0):
+		"""List the task parameters"""
+		for i in xrange(len(self.__pars)):
+			p = self.__pars[i]
+			if iraf.verbose or p.name != '$nargs':
+				print p.pretty(verbose=verbose or iraf.verbose)
+
+	def __str__(self):
+		s = '<IrafParList ' + self.__name + ' (' + self.__filename + ') ' + \
+			len(self.__pars) + ' parameters>'
+		return s
+
+# -----------------------------------------------------
 # Read IRAF .par file and return list of parameters
 # -----------------------------------------------------
 
@@ -933,7 +1068,7 @@ def _getChoice(self, s, strict):
 # with some messy variations involving embedded quotes
 # and the ability to break the final field across lines.
 
-def readpar(filename,strict=0):
+def _readpar(filename,strict=0):
 	"""Read IRAF .par file and return list of parameters"""
 
 	# Patterns that match a quoted string with embedded \" or \'
@@ -1065,5 +1200,4 @@ def readpar(filename,strict=0):
 		param_dict[par.name] = par
 		param_list.append(par)
 	return param_list
-
 

@@ -346,7 +346,7 @@ def listtasks(pkglist=None,hidden=0):
 		for tname in keylist:
 			pkg, task = string.split(tname,'.')
 			tobj = _tasks[tname]
-			if hidden or not tobj.getHidden():
+			if hidden or not tobj.isHidden():
 				if isinstance(tobj,IrafPkg):
 					task = task + '/'
 				elif isinstance(tobj,IrafPset):
@@ -1433,12 +1433,12 @@ def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 	if task:
 		# check for consistency of definition by comparing to the new
 		# object (which will be discarded)
-		if task.getFilename()   != newtask.getFilename() or \
-		   task.getHasparfile() != newtask.getHasparfile() or \
-		   task.getForeign()    != newtask.getForeign() or \
-		   task.getTbflag()     != newtask.getTbflag():
+		if task.getFilename() != newtask.getFilename() or \
+		   task.hasParfile()  != newtask.hasParfile() or \
+		   task.getForeign()  != newtask.getForeign() or \
+		   task.getTbflag()   != newtask.getTbflag():
 			print 'Warning: ignoring attempt to redefine task',fullname
-		if task.getPkgbinary()  != newtask.getPkgbinary():
+		if task.getPkgbinary() != newtask.getPkgbinary():
 			# only package binary differs -- add it to search path
 			if verbose>1: print 'Adding',pkgbinary,'to',task,'path'
 			task.addPkgbinary(pkgbinary)
@@ -1481,8 +1481,8 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 	pkg = _pkgs.data.get(taskname)
 	newpkg = IrafPkg(prefix,taskname,suffix,value,pkgname,pkgbinary)
 	if pkg:
-		if pkg.getFilename()   != newpkg.getFilename() or \
-		   pkg.getHasparfile() != newpkg.getHasparfile():
+		if pkg.getFilename() != newpkg.getFilename() or \
+		   pkg.hasParfile()  != newpkg.hasParfile():
 			print 'Warning: ignoring attempt to redefine package',taskname
 		if pkg.getPkgbinary() != newpkg.getPkgbinary():
 			# only package binary differs -- add it to search path
