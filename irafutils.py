@@ -194,13 +194,13 @@ class _TkRead:
         else:
             self.nbytes = nbytes
             self.value = []
-            Tkinter.tkinter.createfilehandler(fd,
+            self.widget.tk.createfilehandler(fd,
                                     Tkinter.tkinter.READABLE | Tkinter.tkinter.EXCEPTION,
                                     self._read)
             try:
                 self.widget.mainloop()
             finally:
-                Tkinter.tkinter.deletefilehandler(fd)
+                self.widget.tk.deletefilehandler(fd)
             return "".join(self.value)
 
     def _read(self, fd, mask):
