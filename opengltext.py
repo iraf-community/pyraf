@@ -83,7 +83,6 @@ class TextAttributes:
         self.textFont = textFont
         self.textQuality = textQuality
         self.textColor = textColor
-#               self.font = fontdata.font1
         # Place to keep font size and aspect for current window dimensions
 
     def setFontSize(self, win):
@@ -195,7 +194,6 @@ def softText(win,x,y,textstr):
         glTranslatef(-fsize*hsize/2.,-fsize*vsize/2.,0)
         glLineWidth(1.0)
         win.colorManager.setDrawingColor(ta.textColor)
-        #apply(glColor3f,win.colors.toRGB(ta.textColor))
         # The main event!
         for char in textstr:
             drawchar(char,ta.font,fsize*hsize,fontAspect)

@@ -55,9 +55,13 @@ toglcolors.init() # posts the togl widget create callback function
 
 # visuals that use true colors
 truevis = {
-                'truecolor' : 1,
-                'directcolor' : 1,
-                }
+          'truecolor' : 1,
+          'directcolor' : 1,
+          }
+
+# crosshair cursor color (only has an effect in indexed color mode)
+# this is global so that it applies to all Ptogl widgets
+cursorColor = 1
 
 class RawOpengl(Widget, Misc):
     """Widget without any sophisticated bindings by Tom Schwaller
@@ -291,7 +295,7 @@ class FullWindowCursor:
         else:
             glEnable(GL_INDEX_LOGIC_OP)
             glLogicOp(GL_XOR)
-            glIndex(1)
+            glIndex(cursorColor)
         glBegin(GL_LINES)
         glVertex2f(0,self.lasty)
         glVertex2f(1,self.lasty)

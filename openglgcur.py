@@ -226,7 +226,7 @@ class Gcursor:
         """Returns x,y,gwcs converted to physical units using current WCS"""
         wcs = self.window.wcs
         if wcs:
-            return self.window.wcs.get(x,y)
+            return wcs.get(x,y)
         else:
             return (x,y,0)
 

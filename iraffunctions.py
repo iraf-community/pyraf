@@ -553,9 +553,12 @@ def getTask(taskname, found=0):
             if name != sp[-1]:
                 if len(fullname)>3:
                     fullname[3:] = ['...']
-                raise _minmatch.AmbiguousKeyError(
-                        "Task `%s' is ambiguous, could be %s" %
-                        (taskname, _string.join(fullname,', ')))
+                if found:
+                    return None
+                else:
+                    raise _minmatch.AmbiguousKeyError(
+                            "Task `%s' is ambiguous, could be %s" %
+                            (taskname, _string.join(fullname,', ')))
             pkglist.append(sp[0])
         trylist = fullname
 

@@ -30,9 +30,9 @@ in the Pyraf graphics kernel (%s)."""
 
 helpString = """\
 PyRAF graphics windows provide the capability to recall previous plots, print
-the current plot, save metacode to a file, undo/redo edits to plots, and create
-new graphics windows.  The windows are active at all times (not just in
-interactive cursor mode) and can be resized.
+the current plot, save and load metacode to a file, undo/redo edits to plots,
+and create new graphics windows.  The windows are active at all times (not just
+in interactive cursor mode) and can be resized.
 
 The status bar at the bottom of the window displays messages from the task and
 is used for input.  Note that it has a scroll bar so that old messages can be
@@ -43,6 +43,8 @@ File menu:
              Print the current plot to the IRAF stdplot device.
     Save...
              Save metacode for the current plot to a user-specified file.
+    Load...
+             Load metacode from to a user-specified file.
     Close Window
              Close (iconify) the window.
     Quit Window
@@ -169,7 +171,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
         gki.GkiKernel.__init__(self)
         self.name = 'OpenGL'
         self._errorMessageCount = 0
-        self.irafGkiConfig = IrafGkiConfig()
+        self.irafGkiConfig = _irafGkiConfig
         self.windowName = windowName
 
         # redraw table ignores control functions
@@ -203,7 +205,6 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 
         self.colorManager.setColors(self.gwidget)
         self.wcs = irafgwcs.IrafGWcs()
-        self.colors = IrafColors(self)
         self.linestyles = IrafLineStyles()
         self.hatchfills = IrafHatchFills()
         self.textAttributes = opengltext.TextAttributes()
@@ -253,6 +254,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
         button.menu = Tkinter.Menu(button, tearoff=0)
         button.menu.add_command(label="Print", command=self.doprint)
         button.menu.add_command(label="Save...", command=self.save)
+        button.menu.add_command(label="Load...", command=self.load)
         button.menu.add_command(label="Close Window", command=self.iconify)
         button.menu.add_command(label="Quit Window", command=self.gwdestroy)
         button["menu"] = button.menu
@@ -280,6 +282,23 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
         fh = open(fname, 'w')
         fh.write(self.gkibuffer.get().tostring())
         fh.close()
+
+    def load(self, fname=None):
+
+        """Load metacode from a file"""
+
+        if fname is None:
+            fd = filedlg.PersistLoadFileDialog(self.top, "Load Metacode", "*")
+            if fd.Show() != 1:
+                fd.DialogCleanup()
+                return
+            fname = fd.GetFileName()
+            fd.DialogCleanup()
+        fh = open(fname, 'r')
+        metacode = Numeric.fromstring(fh.read(), Numeric.Int16)
+        fh.close()
+        self.clear(name=fname)
+        self.append(metacode,isUndoable=1)
 
     def iconify(self):
 
@@ -616,6 +635,10 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 
         self.colorManager.setDrawingColor(irafColorIndex)
 
+    def setCursorColor(self, irafColorIndex):
+
+        self.colorManager.setCursorColor(irafColorIndex)
+
     def getWindowName(self):
 
         return self.windowName
@@ -675,7 +698,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
     # -----------------------------------------------
     # GkiKernel methods
 
-    def clear(self):
+    def clear(self, name=None):
 
         """Clear the plot and start a new page"""
 
@@ -686,10 +709,11 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
             self.gkibuffer = self.gkibuffer.split()
             self.wcs = irafgwcs.IrafGWcs()
             self.startNewPage()
-            if gki.tasknameStack:
-                name = gki.tasknameStack[-1]
-            else:
-                name = ""
+            if name is None:
+                if gki.tasknameStack:
+                    name = gki.tasknameStack[-1]
+                else:
+                    name = ""
             self.history.append(
                     (self.gkibuffer, self.wcs, name, self.getHistory()) )
             self.pageVar.set(len(self.history)-1)
@@ -769,6 +793,16 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
 
         self.wcs.set(arg)
 
+    def gki_setwcs(self, arg):
+
+        # Ordinarily the control_setwcs opcode sets the WCS, but
+        # when we are loading saved metacode only the gki_setwcs
+        # code remains.  (I think that sometimes the gki_setwcs
+        # metacode is absent.)  But doing this redundant operation
+        # doesn't cost much.
+
+        self.wcs.set(arg)
+
     def control_getwcs(self, arg):
 
         if not self.wcs:
@@ -811,8 +845,8 @@ class GkiOpenGlKernel(GkiInteractiveBase):
         import Ptogl
         self.gwidget = Ptogl.Ptogl(self.top,width=width,height=height)
         self.gwidget.firstPlotDone = 0
-        self.colorManager = glColorManager(self.irafGkiConfig.defaultColors,
-                        self.gwidget.rgbamode)
+        self.colorManager = glColorManager(self.irafGkiConfig,
+                                self.gwidget.rgbamode)
         self.startNewPage()
         self._gcursorObject = openglgcur.Gcursor(self)
         self.gRedraw()
@@ -1095,14 +1129,16 @@ class GkiOpenGlKernel(GkiInteractiveBase):
             stipple = 1
             glLineStipple(1,self.linestyles.patterns[la.linestyle])
         glBegin(GL_LINE_STRIP)
-        if not clear:
-            self.colorManager.setDrawingColor(la.color)
-        else:
-            self.colorManager.setDrawingColor(0)
-        glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
-        glEnd()
-        if stipple:
-            glDisable(GL_LINE_STIPPLE)
+        try:
+            if not clear:
+                self.colorManager.setDrawingColor(la.color)
+            else:
+                self.colorManager.setDrawingColor(0)
+            glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
+        finally:
+            glEnd()
+            if stipple:
+                glDisable(GL_LINE_STIPPLE)
 
     def gl_polymarker(self, vertices):
 
@@ -1115,8 +1151,10 @@ class GkiOpenGlKernel(GkiInteractiveBase):
         else:
             self.colorManager.setDrawingColor(0)
         glBegin(GL_POINTS)
-        glVertex(Numeric.reshape(vertices, (len(vertices)/2,2)))
-        glEnd()
+        try:
+            glVertex(Numeric.reshape(vertices, (len(vertices)/2,2)))
+        finally:
+            glEnd()
 
     def gl_text(self, x, y, text):
 
@@ -1154,10 +1192,12 @@ class GkiOpenGlKernel(GkiInteractiveBase):
             # glColor3f(0.,0.,0.)
         # not a simple rectangle
         glBegin(GL_POLYGON)
-        glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
-        glEnd()
-        if polystipple:
-            glDisable(GL_POLYGON_STIPPLE)
+        try:
+            glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
+        finally:
+            glEnd()
+            if polystipple:
+                glDisable(GL_POLYGON_STIPPLE)
 
     def gl_setcursor(self, cursornumber, x, y):
 
@@ -1187,9 +1227,7 @@ class GkiOpenGlKernel(GkiInteractiveBase):
 
         self.fillAttributes.set(fillstyle, color)
 
-
 #-----------------------------------------------
-
 
 class glColorManager:
 
@@ -1200,44 +1238,39 @@ class glColorManager:
     mode being used. The current design applies the same colors to all
     graphics windows for color index mode (but it isn't required).
     An 8-bit display depth results in color index mode, otherwise rgba
-    mode is used. In color index mode we attempt to allocate pairs of
-    color indices (even, odd) so that xor mode on the least sig bit of
-    the index results in ideal color flipping. If no new colors are
-    available, we take what we can get. We do not attempt to get a
-    private colormap.
+    mode is used.  If no new colors are available, we take what we can
+    get. We do not attempt to get a private colormap.
     """
 
-    def __init__(self, defaultColors, rgbamode):
+    def __init__(self, config, rgbamode):
 
-        self.colorset = [None]*nIrafColors
-        self.indexmap = [None]*nIrafColors
+        self.config = config
         self.rgbamode = rgbamode
-        for cind in xrange(len(defaultColors)):
-            self.defineColor(cind,
-                    defaultColors[cind][0],
-                    defaultColors[cind][1],
-                    defaultColors[cind][2])
+        self.indexmap = len(self.config.defaultColors)*[None]
         # call setColors to allocate colors after widget is created
-
-    def defineColor(self, colorindex, red, green, blue):
-
-        """Color list consists of color triples. This method only
-        sets up the desired color set, it doesn't allocate any colors
-        from the colormap in color index mode."""
-
-        self.colorset[colorindex] = (red, green, blue)
 
     def setColors(self, widget):
 
         """Does nothing in rgba mode, allocates colors in index mode"""
 
-        if self.rgbamode:
-            return
-        for i in xrange(len(self.indexmap)):
-            self.indexmap[i] = toglcolors.AllocateColor(widget.toglStruct,
-                                               self.colorset[i][0],
-                                               self.colorset[i][1],
-                                               self.colorset[i][2])
+        if not self.rgbamode:
+            colorset = self.config.defaultColors
+            for i in xrange(len(self.indexmap)):
+                self.indexmap[i] = toglcolors.AllocateColor(widget.toglStruct,
+                                                   colorset[i][0],
+                                                   colorset[i][1],
+                                                   colorset[i][2])
+        self.setCursorColor()
+
+    def setCursorColor(self, irafColorIndex=None):
+
+        """Set crosshair cursor color to given index
+
+        Only has an effect in index color mode."""
+        import Ptogl
+        if irafColorIndex is not None:
+            self.config.setCursorColor(irafColorIndex)
+        Ptogl.cursorColor = self.indexmap[self.config.cursorColor]
 
     def setDrawingColor(self, irafColorIndex):
 
@@ -1245,7 +1278,7 @@ class glColorManager:
 
         state using the appropriate mode."""
         if self.rgbamode:
-            color = self.colorset[irafColorIndex]
+            color = self.config.defaultColors[irafColorIndex]
             glColor3f(color[0], color[1], color[2])
         else:
             glIndex(self.indexmap[irafColorIndex])
@@ -1345,6 +1378,7 @@ class FilterStderr:
     def close(self):
         pass
 
+#-----------------------------------------------
 
 class StatusLine:
 
@@ -1382,10 +1416,15 @@ class StatusLine:
     def isatty(self):
         return 1
 
+#-----------------------------------------------
 
 class IrafGkiConfig:
 
-    """Holds configurable aspects of IRAF plotting behavior"""
+    """Holds configurable aspects of IRAF plotting behavior
+
+    This gets instantiated as a singleton instance so all windows
+    can share the same configuration.
+    """
 
     def __init__(self):
 
@@ -1436,16 +1475,26 @@ class IrafGkiConfig:
                 (1.,1.,1.),  # white
                 (1.,1.,1.),  # white
         ]
+        self.cursorColor = 2  # red
+        if len(self.defaultColors) != nIrafColors:
+            raise ValueError("defaultColors should have %d elements (has %d)" %
+                (nIrafColors, len(self.defaultColors)))
 
-# old colors
-#                       (1.,0.5,0.), # coral
-#                       (0.7,0.19,0.38), # maroon
-#                       (1.,0.65,0.), # orange
-#                       (0.94,0.9,0.55), # khaki
-#                       (0.85,0.45,0.83), # orchid
-#                       (0.25,0.88,0.82), # turquoise
-#                       (0.91,0.53,0.92), # violet
-#                       (0.96,0.87,0.72) # wheat
+        # old colors
+        #       (1.,0.5,0.),      # coral
+        #       (0.7,0.19,0.38),  # maroon
+        #       (1.,0.65,0.),     # orange
+        #       (0.94,0.9,0.55),  # khaki
+        #       (0.85,0.45,0.83), # orchid
+        #       (0.25,0.88,0.82), # turquoise
+        #       (0.91,0.53,0.92), # violet
+        #       (0.96,0.87,0.72)  # wheat
+
+    def setCursorColor(self, color):
+        if not 0 <= color < len(self.defaultColors):
+            raise ValueError("Bad cursor color (%d) should be >=0 and <%d" %
+                (color, len(self.defaultColors)-1))
+        self.cursorColor = color
 
     def fontSize(self, gwidget):
 
@@ -1487,20 +1536,11 @@ class IrafGkiConfig:
 
         return self.defaultColors
 
+# create the singleton instance
 
-class IrafColors:
+_irafGkiConfig = IrafGkiConfig()
 
-    def __init__(self, win):
-
-        self.defaultColors = win.irafGkiConfig.getIrafColors()
-
-    def toRGB(self, irafcolor):
-
-        if not (0 <= irafcolor < len(self.defaultColors)):
-            print "WARNING: Iraf color out of legal range (1-%d)" % \
-                    (len(self.defaultColors),)
-            irafcolor = 1
-        return self.defaultColors[irafcolor]
+#-----------------------------------------------
 
 class IrafLineStyles:
 
@@ -1548,7 +1588,6 @@ class IrafHatchFills:
             p[(i+1)*12:(i+2)*12] = p[0:12]
         p[120:128] = p[0:8]
         self.patterns[6] = p
-
 
 class LineAttributes:
 

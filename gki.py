@@ -80,51 +80,63 @@ GKI_GETWCS = 27
 
 GKI_ILLEGAL_LIST = (21,22,23,24)
 
+CONTROL_OPENWS = 1
+CONTROL_CLOSEWS = 2
+CONTROL_REACTIVATEWS = 3
+CONTROL_DEACTIVATEWS = 4
+CONTROL_CLEARWS = 6
+CONTROL_SETWCS = 26
+CONTROL_GETWCS = 27
+
 # Names of methods in GkiKernel that handle the various opcodes
 # This also can be useful for debug prints of opcode values.
 
-opcode2name = {
-    0: 'gki_eof',
-    1: 'gki_openws',
-    2: 'gki_closews',
-    3: 'gki_reactivatews',
-    4: 'gki_deactivatews',
-    5: 'gki_mftitle',
-    6: 'gki_clearws',
-    7: 'gki_cancel',
-    8: 'gki_flush',
-    9: 'gki_polyline',
-    10: 'gki_polymarker',
-    11: 'gki_text',
-    12: 'gki_fillarea',
-    13: 'gki_putcellarray',
-    14: 'gki_setcursor',
-    15: 'gki_plset',
-    16: 'gki_pmset',
-    17: 'gki_txset',
-    18: 'gki_faset',
-    19: 'gki_getcursor',
-    20: 'gki_getcellarray',
-    21: 'gki_unknown',
-    22: 'gki_unknown',
-    23: 'gki_unknown',
-    24: 'gki_unknown',
-    25: 'gki_escape',
-    26: 'gki_setwcs',
-    27: 'gki_getwcs',
-    }
+# Initial dictionaries with all opcodes unknown
+
+opcode2name = {}
+control2name = {}
+for i in range(GKI_MAX_OP_CODE+1):
+    opcode2name[i] = 'gki_unknown'
+    control2name[i] = 'control_unknown'
+
+opcode2name.update({
+    GKI_EOF: 'gki_eof',
+    GKI_OPENWS: 'gki_openws',
+    GKI_CLOSEWS: 'gki_closews',
+    GKI_REACTIVATEWS: 'gki_reactivatews',
+    GKI_DEACTIVATEWS: 'gki_deactivatews',
+    GKI_MFTITLE: 'gki_mftitle',
+    GKI_CLEARWS: 'gki_clearws',
+    GKI_CANCEL: 'gki_cancel',
+    GKI_FLUSH: 'gki_flush',
+    GKI_POLYLINE: 'gki_polyline',
+    GKI_POLYMARKER: 'gki_polymarker',
+    GKI_TEXT: 'gki_text',
+    GKI_FILLAREA: 'gki_fillarea',
+    GKI_PUTCELLARRAY: 'gki_putcellarray',
+    GKI_SETCURSOR: 'gki_setcursor',
+    GKI_PLSET: 'gki_plset',
+    GKI_PMSET: 'gki_pmset',
+    GKI_TXSET: 'gki_txset',
+    GKI_FASET: 'gki_faset',
+    GKI_GETCURSOR: 'gki_getcursor',
+    GKI_GETCELLARRAY: 'gki_getcellarray',
+    GKI_ESCAPE: 'gki_escape',
+    GKI_SETWCS: 'gki_setwcs',
+    GKI_GETWCS: 'gki_getwcs',
+    })
 
 # control channel opcodes
 
-control2name = {
-    1: 'control_openws',
-    2: 'control_closews',
-    3: 'control_reactivatews',
-    4: 'control_deactivatews',
-    6: 'control_clearws',
-    26: 'control_setwcs',
-    27: 'control_getwcs',
-    }
+control2name.update({
+    CONTROL_OPENWS: 'control_openws',
+    CONTROL_CLOSEWS: 'control_closews',
+    CONTROL_REACTIVATEWS: 'control_reactivatews',
+    CONTROL_DEACTIVATEWS: 'control_deactivatews',
+    CONTROL_CLEARWS: 'control_clearws',
+    CONTROL_SETWCS: 'control_setwcs',
+    CONTROL_GETWCS: 'control_getwcs',
+    })
 
 class EditHistory:
     """Keeps track of where undoable appends are made so they can be
@@ -473,23 +485,21 @@ class GkiKernel:
         self.controlFunctionTable =  [None]*(GKI_MAX_OP_CODE+1)
 
         # to protect against typos, make list of all gki_ & control_ methods
-        gkilist, gkidict, classlist = [], {}, [self.__class__]
+        gkidict, classlist = {}, [self.__class__]
         for c in classlist:
             for b in c.__bases__:
                 classlist.append(b)
             for name in dir(c):
-                if (name[:4] == "gki_" or name[:8] == "control_") and \
-                  not gkidict.has_key(name):
-                    gkilist.append(name)
+                if name[:4] == "gki_" or name[:8] == "control_":
                     gkidict[name] = 0
         # now loop over all methods that might be present
         for opcode, name in opcode2name.items():
-            if hasattr(self, name):
+            if gkidict.has_key(name):
                 self.functionTable[opcode] = getattr(self, name)
                 gkidict[name] = 1
         # do same for control methods
         for opcode, name in control2name.items():
-            if hasattr(self, name):
+            if gkidict.has_key(name):
                 self.controlFunctionTable[opcode] = getattr(self, name)
                 gkidict[name] = 1
         # did we use all the gkidict methods?
@@ -793,7 +803,7 @@ class GkiController(GkiProxy):
 
         GkiProxy.__init__(self)
         self.interactiveKernel = None
-        self.lastDevName = None
+        self.lastDevice = None
 
     def taskStart(self, name):
 
@@ -811,11 +821,6 @@ class GkiController(GkiProxy):
         if self.stdgraph:
             self.stdgraph.taskDone(name)
 
-    def append(self, arg, isUndoable=0):
-
-        if self.stdgraph:
-            self.stdgraph.append(arg,isUndoable)
-
     def control(self, gkiMetacode):
 
         # some control functions get executed here because they can
@@ -825,89 +830,66 @@ class GkiController(GkiProxy):
         if not self.stdgraph: self.openKernel()
         return self.stdgraph.control(gkiMetacode)
 
-    def flush(self):
-
-        if self.stdgraph:
-            self.stdgraph.flush()
-
-    def openKernel(self, device=None):
-
-        """This is a generic open function that determines which kernel
-        should become active based on the current value of stdgraph (this
-        will be generalized to allow other means of selecting graphics
-        kernels)"""
-        if not device:
-            device = self.getDevice()
-        devices = getGraphcap()
-        executable = devices[device]['kf']
-        if executable == 'cl':
-            self.openInteractiveKernel()
-        else:
-            self.stdgraph = gkiiraf.GkiIrafKernel(device)
-            self.stdin = self.stdgraph.stdin
-            self.stdout = self.stdgraph.stdout
-            self.stderr = self.stdgraph.stderr
-
-    def openInteractiveKernel(self):
-        """Used so that an existing opened interactive session persists"""
-
-        if not self.interactiveKernel:
-            if wutil.hasGraphics:
-                self.interactiveKernel = gwm.getGraphicsWindowManager()
-            else:
-                self.interactiveKernel = GkiNull()
-        self.stdgraph = self.interactiveKernel
-        self.stdin = self.stdgraph.stdin
-        self.stdout = self.stdgraph.stdout
-        self.stderr = self.stdgraph.stderr
-
     def control_openws(self, arg):
 
         mode = arg[0]
         device = string.strip(arg[2:].astype(Numeric.Int8).tostring())
+        self.openKernel(device)
+
+    def openKernel(self, device=None):
+
+        """Open kernel specified by device or by current value of stdgraph"""
         device = self.getDevice(device)
         graphcap = getGraphcap()
-        if self.lastDevName is None or \
-                (graphcap[device] != graphcap[self.lastDevName]):
+        if graphcap[device] != graphcap.get(self.lastDevice):
             self.flush()
-            self.openKernel(device)
-            self.lastDevName = device
+            executable = graphcap[device]['kf']
+            if executable == 'cl':
+                # open (persistent) interactive kernel
+                if not self.interactiveKernel:
+                    if wutil.hasGraphics:
+                        self.interactiveKernel = gwm.getGraphicsWindowManager()
+                    else:
+                        self.interactiveKernel = GkiNull()
+                self.stdgraph = self.interactiveKernel
+            else:
+                self.stdgraph = gkiiraf.GkiIrafKernel(device)
+            self.stdin = self.stdgraph.stdin
+            self.stdout = self.stdgraph.stdout
+            self.stderr = self.stdgraph.stderr
+            self.lastDevice = device
 
     def getDevice(self, device=None):
         """Starting with stdgraph, drill until a device is found in
         the graphcap or isn't"""
         if not device:
             device = iraf.envget("stdgraph","")
-        devices = getGraphcap()
+        graphcap = getGraphcap()
         # protect against circular definitions
         devstr = device
         tried = {devstr: None}
-        while 1:
-            if devices.has_key(devstr):
-                device = devstr
-                break
-            else:
-                pdevstr = devstr
-                devstr = iraf.envget(pdevstr,"")
-                if not devstr:
-                    raise iraf.IrafError(
-                        "No entry found for specified stdgraph device `%s'" %
-                        device)
-                elif tried.has_key(devstr):
-                    # track back through circular definition
-                    s = [devstr]
-                    next = pdevstr
-                    while next and (next != devstr):
-                        s.append(next)
-                        next = tried[next]
-                    if next: s.append(next)
-                    s.reverse()
-                    raise iraf.IrafError(
+        while not graphcap.has_key(devstr):
+            pdevstr = devstr
+            devstr = iraf.envget(pdevstr,"")
+            if not devstr:
+                raise iraf.IrafError(
+                    "No entry found for specified stdgraph device `%s'" %
+                    device)
+            elif tried.has_key(devstr):
+                # track back through circular definition
+                s = [devstr]
+                next = pdevstr
+                while next and (next != devstr):
+                    s.append(next)
+                    next = tried[next]
+                if next: s.append(next)
+                s.reverse()
+                raise iraf.IrafError(
                     "Circular definition in graphcap for device\n%s"
-                        % (string.join(s,' -> '),))
-                else:
-                    tried[devstr] = pdevstr
-        return device
+                    % (string.join(s,' -> '),))
+            else:
+                tried[devstr] = pdevstr
+        return devstr
 
 class GkiNull(GkiKernel):
 
@@ -1007,11 +989,11 @@ def printPlot(window=None):
         if window is None: return
     gkibuff = window.gkibuffer.get()
     if gkibuff:
-        devices = getGraphcap()
+        graphcap = getGraphcap()
         stdplot = iraf.envget('stdplot','')
         if not stdplot:
             msg = "No hardcopy device defined in stdplot"
-        elif not devices.has_key(stdplot):
+        elif not graphcap.has_key(stdplot):
             msg = "Unknown hardcopy device stdplot=`%s'" % stdplot
         else:
             printer = gkiiraf.GkiIrafKernel(stdplot)
