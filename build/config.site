@@ -12,7 +12,7 @@ PYTHONVERSION=2.3
 #OpenGLIncludePath=/opt/X11R5/include
 
 #path to Tcl/Tk header files
-TclIncludePath=/opt/X11R5/include
+#TclIncludePath=/opt/X11R5/include
 
 #path to Tcl/Tk lib files (files libtcl.so and libtk.so)
 TclLibPath=/opt/X11R5/lib
