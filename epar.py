@@ -97,7 +97,14 @@ Text Entry Fields
         either use the left mouse button to do a slow "scroll" through the
         entry or use the middle mouse button to "pull" the value in the entry
         back and forth quickly.  In either case, just click in the entry widget
-        with the mouse and then drag to the left or right.
+        with the mouse and then drag to the left or right.  If there is a
+        selection highlighted, the middle mouse button may paste it in when
+        clicked.  It may be necessary to click once with the left mouse
+        button to undo the selection before using the middle button.
+
+        You can also use the left and right arrow keys to scroll through the
+        selection.  Control-A jumps to the beginning of the entry, and
+        Control-E jumps to the end of the entry.
 
 
 The Menu Bar
