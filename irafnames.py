@@ -1,21 +1,27 @@
 """module irafnames.py -- define how names of IRAF packages and tasks get
-included in the user's namespace
+included in the user's namespace.  Uses a plug-in strategy so behavior can
+be changed.
 
 $Id$
 
-R. White, 1999 March 25
+R. White, 1999 March 26
 """
 
 import __main__
 import iraf
 
-# base implementation does nothing with either tasks or packages
+# base class for namespace strategy
 
 class IrafNameStrategy:
 	def addTask(self,task):
 		pass
 	def addPkg(self,pkg):
 		pass
+
+# NameClean implementation does nothing with either tasks or packages
+
+class IrafNameClean(IrafNameStrategy):
+	pass
 
 # IrafNamePkg adds packages to name space
 
@@ -47,9 +53,9 @@ class IrafNameTask(IrafNamePkg):
 				print "Warning: variable " +  taskname + \
 					" was not redefined as IrafTask"
 
-# define the default behavior
+# define adding package names as the default behavior
 
-strategy = IrafNameStrategy()
+strategy = IrafNamePkg()
 
 def setPkgStrategy():
 	global strategy
@@ -59,7 +65,7 @@ def setTaskStrategy():
 	global strategy
 	strategy = IrafNameTask()
 
-def setDefaultStrategy():
+def setCleanStrategy():
 	global strategy
-	strategy = IrafNameStrategy()
+	strategy = IrafNameClean()
 

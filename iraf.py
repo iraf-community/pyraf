@@ -65,27 +65,10 @@ def getVerbose():
 
 
 # -----------------------------------------------------
-# help: HTML help
+# help: implemented in irafhelp.py
 # -----------------------------------------------------
 
-_HelpURL = "http://ra.stsci.edu/cgi-bin/gethelp.cgi?task="
-
-def help(taskname):
-	"""Display HTML help for given IRAF task in Netscape.
-	Task can be either a name or an IrafTask object.
-	Tries using 'netscape -remote' command to load the page in
-	a running Netscape.  If that fails, starts a new netscape."""
-
-	if isinstance(taskname,IrafTask): taskname = taskname.getName()
-	pid = os.fork()
-	if pid == 0:
-		url = _HelpURL + taskname
-		cmd = "netscape -remote 'openURL(" + url + ")' 1> /dev/null 2>&1"
-		status = os.system(cmd)
-		if status != 0:
-			print "Starting Netscape for HTML help..."
-			os.execvp("netscape",["netscape",url])
-		os._exit(0)
+from irafhelp import help
 
 # -----------------------------------------------------
 # init: basic initialization

@@ -23,9 +23,9 @@ Brief help:
 	using either getTask() or getPkg(), while tasks are available only
 	through getTask().
 
-	If the -p option is used, packages are defined as objects with
-	the package name.  E.g. after startup you can load stsdas by
-	saying
+	If the -p option is used (the default), packages are defined as
+	objects with the package name.  E.g. after startup you can load
+	stsdas by saying
 		stsdas()
 	Note there is no minimum match in this case, you must type the
 	entire package name.  Tasks are available as attributes of the
@@ -42,6 +42,10 @@ Brief help:
 		stsdas()
 		restore()
 		lucy.lpar()
+
+	If you set the -n option, neither tasks nor packages are defined
+	as variables in your namespace (maximally clean but maximally
+	inconvenient too.)
 
 	To set task parameters there are various syntaxes:
 		imhead.long = "yes"
@@ -64,15 +68,17 @@ R. White, 1999 March 4
 
 import os, sys, iraf
 
+help = iraf.help
+
 __version__ = "$Revision$"
 
 def usage():
 	print "Usage: %s [options]" % sys.argv[0]
 	print """ where options are one or more of:
-	-n  Keep user namespace clean, don't define tasks or packages
-	    as variables (default)
-	-p  Packages are defined as variables
+	-p  Packages are defined as variables (default)
 	-t  Both tasks and packages are defined as variables
+	-n  Keep user namespace clean, don't define tasks or packages
+	    as variables
 	-v  Set verbosity level (may be repeated to increase verbosity)
 	-h  Print this message"""
 	sys.exit()
@@ -88,9 +94,9 @@ if __name__ == "__main__":
 		execfile(os.environ["PYTHONSTARTUP"])
 
 	# use command-line options to define behavior for iraf namespaces
-	# -n  Don't add anything to namespace (default)
-	# -p  Add packages to namespace
+	# -p  Add packages to namespace (default)
 	# -t  Add tasks (and packages) to namespace
+	# -n  Don't add anything to namespace
 	# -v  Increment verbosity (note can use multiple times to make
 	#     more verbose, e.g. -v -v)
 
@@ -108,7 +114,7 @@ if __name__ == "__main__":
 			elif opt == "-t":
 				irafnames.setTaskStrategy()
 			elif opt == "-n":
-				irafnames.setDefaultStrategy()
+				irafnames.setCleanStrategy()
 			elif opt == "-v":
 				verbose = verbose + 1
 			elif opt == "-h":
