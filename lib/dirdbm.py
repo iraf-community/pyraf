@@ -61,8 +61,12 @@ class _Database:
         for fname in flist:
             # replace hyphens and add newline in base64
             key = _string.replace(fname, '-', '/') + '\n'
-            key = _binascii.a2b_base64(key)
-            self._dict[key] = None
+            try:
+                key = _binascii.a2b_base64(key)
+                self._dict[key] = None
+            except _binascii.Error:
+                # just ignore files with names that do not look like keys
+                pass
 
     def _getFilename(self, key):
 
