@@ -150,7 +150,31 @@ def IrafIO(process,task):
 				else:
 					print "data for channel", chan
 		elif msg[0:4] == 'xfer':
-			# XXX Is setting msg to '' the right thing to do?
+			mo = _re_chan_len.match(msg,4)
+			if not mo:
+				raise IrafProcessError("Illegal xfer command format\n" + msg)
+			chan = int(mo.group(1))
+			nbytes = int(mo.group(2))
+			if chan == 3:
+				# read a line from stdin
+				# flush output to make sure prompts without newlines appear
+				sys.stdout.flush()
+				# send two messages, the first with the number of characters
+				# in the line and the second with the line itself
+				line = sys.stdin.readline()
+				WriteStringToIrafProc(process, str(len(line)))
+				# for very long lines, may need multiple messages
+				# XXX not really tested yet -- e.g. is message
+				# limit in bytes or characters?  I'm assuming bytes
+				nchars = nbytes/2
+				i = 0
+				while i<len(line):
+					WriteStringToIrafProc(process, line[i:i+nchars])
+					i = i + nchars
+			else:
+				raise IrafProcessError("xfer request for unknown channel " +
+					msg)
+			# this is always the last command in a message
 			msg = ''
 		elif msg[0] == '=':
 			# param get request
