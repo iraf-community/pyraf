@@ -33,7 +33,18 @@ class DbfilenameShelf(Shelf):
 		Shelf.__init__(self, anydbm.open(filename, flag))
 
 
+class GdbfilenameShelf(Shelf):
+	"""Shelf implementation using the gdbm interface."""
+
+	def __init__(self, filename, flag='c'):
+		import gdbm
+		Shelf.__init__(self, gdbm.open(filename, flag))
+
+
 def open(filename, flag='c'):
 	"""Open a persistent dictionary for reading and writing."""
 
-	return DbfilenameShelf(filename, flag)
+	try:
+		return GdbfilenameShelf(filename, flag)
+	except:
+		return DbfilenameShelf(filename, flag)
