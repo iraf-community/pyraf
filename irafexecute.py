@@ -9,6 +9,7 @@ import subproc
 import gki
 import gkiopengl
 import gwm
+import iraf
 
 # for debugging purposes (for generating a tk window for listing
 # subprocess communication events
@@ -23,17 +24,25 @@ stdgraph = None
 class IrafProcessError(Exception):
 	pass
 
-def IrafExecute(task, executable, envdict, paramDictList):
+def IrafExecute(task, envdict):
 
-	"""Execute IRAF task in the given executable (full path included)
-	using the provided envionmental variables and parameters.
-	paramDictList is a list of parameter dictionaries."""
+	"""Execute IRAF task (defined by the IrafTask object task)
+	using the provided envionmental variables.  The IrafTask object
+	must have these methods:
+
+	getName(): return the name of the task
+	getFullpath(): return the full path name of the executable
+	getParam(param): get parameter value
+	setParam(param,value): set parameter value
+	"""
 
 	# Start'er up
 	try:
+		executable = task.getFullpath()
 		process = subproc.Subprocess(executable+' -c')
-	except subproc.SubprocessError, value:
+	except (iraf.IrafError, subproc.SubprocessError), value:
 		raise IrafProcessError("problems starting IRAF executable\n" + value)
+
 	try:
 		keys = envdict.keys()
 		if len(keys) > 0:
@@ -43,15 +52,15 @@ def IrafExecute(task, executable, envdict, paramDictList):
 		# terminate set up mode
 		WriteStringToIrafProc(process,'_go_\n')
 		# start IRAF logical task
-		WriteStringToIrafProc(process,task+'\n')
+		WriteStringToIrafProc(process,task.getName()+'\n')
 		# begin slave mode
-		IrafIO(process,paramDictList)
+		IrafIO(process,task)
 		# kill the damn thing, process caches are for weenies
 		IrafTerminate(process)
 	except KeyboardInterrupt:
 		# On keyboard interrupt (^c), kill the subprocess
 		IrafKill(process)
-	except IrafProcessError, exc:
+	except (iraf.IrafError, IrafProcessError), exc:
 		# on error, kill the subprocess, then re-raise the original exception
 		try:
 			IrafKill(process)
@@ -61,14 +70,10 @@ def IrafExecute(task, executable, envdict, paramDictList):
 		raise exc
 	return
 
-# XXX is _re_chan_len supposed to match to end of string?  I added
-# a '$' at end of pattern.  Since we always read some binary
-# data after this, I assume it is never in a combined message.
-
 _re_chan_len = re.compile(r'\((\d+),(\d+)\)$')
 _re_parmset = re.compile(r'([a-zA-Z_][a-zA-Z0-9_.]*)\s*=\s*(.*)\n')
 
-def IrafIO(process,paramDictList):
+def IrafIO(process,task):
 
 	"""Talk to the IRAF process in slave mode. Raises an IrafProcessError
 	if an error occurs."""
@@ -153,92 +158,17 @@ def IrafIO(process,paramDictList):
 			# If so, need to match to end of line
 			value = msg[1:-1]
 			msg = ''
-			WriteStringToIrafProc(process, _getParam(paramDictList,value) + '\n')
+			WriteStringToIrafProc(process, task.getParam(value) + '\n')
 		else:
 			# last possibility: set value of parameter
 			mo = _re_parmset.match(msg)
 			if mo:
 				msg = msg[mo.end():]
 				paramname, newvalue = mo.groups()
-				_setParam(paramDictList,paramname,newvalue)
+				task.setParam(paramname,newvalue)
 			else:
 				print "Warning, unrecognized IRAF pipe protocol"
 				print msg
-
-def _setParam(paramDictList,paramname,newvalue):
-	"""Set parameter specified by paramname to newvalue."""
-	# XXX need to add capability to set field (e.g. x1.p_maximum
-	# is set in iraf/pkg/plot/t_pvector.x)
-	for dictname, paramdict in paramDictList:
-		if paramdict.has_key(paramname):
-			paramdict[paramname].set(newvalue)
-			return
-	else:
-		raise IrafProcessError(
-			"Task attempts to set unknown parameter " + paramname)
-
-def _getParam(paramDictList,value):
-
-	"""Return parameter specified by value, which can be a simple parameter
-	name or can be [[package.]task.]paramname[.field]"""
-
-	slist = string.split(value,'.')
-	field = None
-	package = None
-	task = None
-	ip = len(slist)-1
-	if ip>0 and slist[ip][:2] == "p_":
-		field = slist[ip]
-		ip = ip-1
-	paramname = slist[ip]
-	if ip > 0:
-		ip = ip-1
-		task = slist[ip]
-	if ip > 0:
-		ip = ip-1
-		package = slist[ip]
-	if ip > 0:
-		raise IrafProcessError(
-			"Illegal parameter request from IRAF task: " + value)
-
-	# array parameters may have subscript
-
-	pstart = string.find(paramname,'[')
-	if pstart < 0:
-		pindex = None
-	else:
-		try:
-			pend = string.rindex(paramname,']')
-			pindex = int(paramname[pstart+1:pend])-1
-			paramname = paramname[:pstart]
-		except:
-			raise IrafProcessError(
-				"IRAF task asking for illegal array parameter: " + value)
-
-	if task and (not package):
-		# maybe this task is the name of one of the dictionaries?
-		for dictname, paramdict in paramDictList:
-			if dictname == task:
-				if paramdict.has_key(paramname):
-					return paramdict[paramname].get(index=pindex,field=field)
-				else:
-					raise IrafProcessError(
-						"IRAF task asking for parameter not in list: " +
-						value)
-
-	# XXX still need to add full-blown package and package.task handling
-	if package or task:
-		raise IrafProcessError(
-			"Cannot yet handle parameter request with task and/or package: " +
-			value)
-
-	for dictname, paramdict in paramDictList:
-		if paramdict.has_key(paramname):
-			return paramdict[paramname].get(index=pindex,field=field)
-	else:
-		raise IrafProcessError(
-			"IRAF task asking for parameter not in list: " +
-			value)
 
 def IrafKill(process):
 	"""Try stopping process in IRAF approved way first; if that fails
@@ -288,7 +218,8 @@ def WriteStringToIrafProc(process, astring):
 
 	istring = Asc2IrafString(astring)
 	#     IRAF magic number    number of following bytes
-	# XXX In these calls, should we check for len(istring) > 65535?
+	# XXX In these calls, should we check for len(istring) > 32767?
+	# or maybe len(istring) > 4096?
 	record = '\002\120'    + struct.pack('>h',len(istring)) + istring
 	process.write(record)
 	return

@@ -273,6 +273,11 @@ class IrafParS(IrafPar):
 		if value == None:
 			return ""
 		elif type(value) is StringType:
+			# strip double quotes
+			if value[:1] == '"':
+				value = value[1:]
+				if value[-1:] == '"':
+					value = value[:-1]
 			return value
 		else:
 			return str(value)

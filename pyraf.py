@@ -51,6 +51,9 @@ imstat = iraf.getTask("imstatistics")
 imhead = iraf.getTask("imheader")
 disp = iraf.getTask("display")
 
+flpr = "This is not the IRAF cl!  Forget those old bad habits!"
+retall = "This is not IDL..."
+
 if __name__ == "__main__":
 	#
 	# start up monty keeping definitions in local name space

@@ -119,6 +119,7 @@ class IrafTask:
 		self.__parpath = None
 		self.__pars = None
 		self.__pardict = None
+		self.__parDictList = None
 		if filename[0] == '$':
 			# this is a foreign task
 			self.__cl = 0
@@ -220,35 +221,10 @@ class IrafTask:
 					"("+self.__fullpath+")"
 				self.lpar()
 			try:
-				# Parameter dictionaries for execution consist of this
-				# task's parameters, any psets referenced, and all the parameters
-				# for packages that have been loaded.  Each dictionary has
-				# an associated name (because parameters could be asked for
-				# as task.parname as well as just parname).
-
-				# XXX This is getting fairly complicated -- probably want to
-				# move this out of irafexecute.py and just provide an
-				# accessor function here that gets called from irafexecute.py
-
-				parDictList = [(self.__name,self.__pardict)]
-				# look for any psets
-				for param in self.__pars:
-					if param.type == "pset":
-						# pset name is from either parameter value (if not null)
-						# or from parameter name (XXX I'm just guessing at this)
-						try:
-							psetname = param.get() or param.name
-							pset = getTask(psetname)
-							parDictList.append( (param.name,pset.getParDict()) )
-						except KeyError:
-							raise IrafError("Cannot get pset " +
-								param.name + " for task " + self.__name)
-				# package parameters
-				for i in xrange(len(_loadedPath)):
-					pkg = _loadedPath[-1-i]
-					parDictList.append( (pkg.getName(),pkg.getParDict()) )
-				irafexecute.IrafExecute(self.__name, self.__fullpath,
-					vars, parDictList)
+				# create the list of parameter dictionaries to use
+				self.setParDictList()
+				# run the task
+				irafexecute.IrafExecute(self, vars)
 				if _verbose: print 'Successful task termination'
 			except irafexecute.IrafProcessError, value:
 				raise IrafError("Error running IRAF task " + self.__name +
@@ -273,12 +249,118 @@ class IrafTask:
 			kw[param] = value
 			ipar = ipar+1
 		# now set all keyword parameters
+		# XXX Need to add ability to set pset parameters using keywords too
 		keys = kw.keys()
 		for param in keys: self.set(param,kw[param])
-		# Number of arguments on command line is used by some IRAF tasks
-		# (e.g. imheader).  Emulate same behavior by setting $nargs.
-		# XXX Are there any other weird parameter conventions?
+		# Number of arguments on command line, $nargs, is used by some IRAF
+		# tasks (e.g. imheader).
 		self.set('$nargs',len(args))
+
+	def setParDictList(self):
+		"""Parameter dictionaries for execution consist of this
+		task's parameters, any psets referenced, and all the
+		parameters for packages that have been loaded.  Each
+		dictionary has an associated name (because parameters
+		could be asked for as task.parname as well as just parname).
+
+		Create this list anew for each execution in case the
+		list of loaded packages has changed.  It is stored as
+		an attribute of this object so it can be accessed by
+		the getParam() and setParam() methods."""
+
+		if self.__fullpath == None: self.initTask()
+		parDictList = [(self.__name,self.__pardict)]
+		# look for any psets
+		for param in self.__pars:
+			if param.type == "pset":
+				# pset name is from either parameter value (if not null)
+				# or from parameter name (XXX I'm just guessing at this)
+				try:
+					psetname = param.get() or param.name
+					pset = getTask(psetname)
+					parDictList.append( (param.name,pset.getParDict()) )
+				except KeyError:
+					raise IrafError("Cannot get pset " +
+						param.name + " for task " + self.__name)
+		# package parameters
+		for i in xrange(len(_loadedPath)):
+			pkg = _loadedPath[-1-i]
+			parDictList.append( (pkg.getName(),pkg.getParDict()) )
+		self.__parDictList = parDictList
+
+	def setParam(self,qualifiedName,newvalue):
+		"""Set parameter specified by qualifiedName to newvalue."""
+
+		if self.__parDictList == None: self.setParDictList()
+
+		package, task, paramname, pindex, field = _splitName(qualifiedName)
+
+		# XXX need to add capability to set field (e.g. x1.p_maximum
+		# is set in iraf/pkg/plot/t_pvector.x), use task qualifier, etc.
+		if package or task or pindex or field:
+			raise IrafError("Cannot yet set parameter with qualified name: " +
+				qualifiedName)
+			
+		for dictname, paramdict in self.__parDictList:
+			if paramdict.has_key(paramname):
+				paramdict[paramname].set(newvalue)
+				return
+		else:
+			raise IrafError("Attempt to set unknown parameter " +
+				qualifiedName)
+
+	def getParam(self,qualifiedName):
+		"""Return parameter specified by qualifiedName, which can be a simple
+		parameter name or can be [[package.]task.]paramname[.field].
+		Paramname can also have an optional subscript, "param[1]".
+		"""
+
+		if self.__parDictList == None: self.setParDictList()
+		package, task, paramname, pindex, field = _splitName(qualifiedName)
+
+		# special syntax for package parameters
+		if task == "_": task = self.__pkgname
+				
+		if task and (not package):
+			# maybe this task is the name of one of the dictionaries?
+			for dictname, paramdict in self.__parDictList:
+				if dictname == task:
+					if paramdict.has_key(paramname):
+						v = paramdict[paramname].get(index=pindex,field=field)
+						if v[:1] == ")":
+							# parameter indirection: call getParam recursively
+							return self.getParam(v[1:])
+						else:
+							return v
+					else:
+						raise IrafError("Unknown parameter requested: " +
+							qualifiedName)
+
+		if package or task:
+			# Not one of our dictionaries, so must find the relevant task
+			if package: task = package + '.' + task
+			try:
+				tobj = getTask(task)
+				return tobj.getParam(paramname)
+			except KeyError:
+				raise IrafError("Could not find task " + task +
+					" to get parameter " + qualifiedName)
+			except IrafError, e:
+				raise IrafError(e + "\nFailed to get parameter " +
+					qualifiedName)
+
+		for dictname, paramdict in self.__parDictList:
+			if paramdict.has_key(paramname):
+				v = paramdict[paramname].get(index=pindex,field=field)
+				if v[:1] == ")":
+					# parameter indirection: call getParam recursively
+					return self.getParam(v[1:])
+				else:
+					return v
+		else:
+			raise IrafError("Unknown parameter requested: " +
+				qualifiedName)
+
 	def lpar(self,verbose=0):
 		if self.__fullpath == None: self.initTask()
 		if not self.__hasparfile:
@@ -390,6 +472,49 @@ class IrafTask:
 		if self.__hasparfile == 0: s = s + ' No parfile'
 		if self.__tbflag: s = s + ' .tb'
 		return s + '>'
+
+# -----------------------------------------------------
+# Utility function to split qualified names into components
+# -----------------------------------------------------
+
+def _splitName(qualifiedName):
+	"""qualifiedName looks like [[package.]task.]paramname[subscript][.field],
+	where subscript is an index in brackets.  Returns a tuple with
+	(package, task, paramname, subscript, field). IRAF one-based subscript
+	is changed to Python zero-based subscript.
+	"""
+	slist = string.split(qualifiedName,'.')
+	package = None
+	task = None
+	pindex = None
+	field = None
+	ip = len(slist)-1
+	if ip>0 and slist[ip][:2] == "p_":
+		field = slist[ip]
+		ip = ip-1
+	paramname = slist[ip]
+	if ip > 0:
+		ip = ip-1
+		task = slist[ip]
+		if ip > 0:
+			ip = ip-1
+			package = slist[ip]
+			if ip > 0:
+				raise IrafError("Illegal syntax for parameter: " +
+					qualifiedName)
+
+	# parse possible subscript
+
+	pstart = string.find(paramname,'[')
+	if pstart >= 0:
+		try:
+			pend = string.rindex(paramname,']')
+			pindex = int(paramname[pstart+1:pend])-1
+			paramname = paramname[:pstart]
+		except:
+			raise IrafError("Illegal syntax for array parameter: " +
+				qualifiedName)
+	return (package, task, paramname, pindex, field)
 
 # -----------------------------------------------------
 # IRAF package class
@@ -977,3 +1102,4 @@ def listvars():
 		keylist.sort()
 		for word in keylist:
 			print word + '	= ' + vars[word]
+
