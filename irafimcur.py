@@ -9,9 +9,9 @@ $Id$
 
 import os, sys, wutil
 from irafglobals import Verbose, IrafError
+
 try:
 	import cdl
-	import gwm
 	try:
 		import threading
 		def imcur(): return  _imcur(_threadedReadCursor)
@@ -27,7 +27,7 @@ prevDisplayHandle = None
 def _readCursor(displayHandle, retlist=None):
 	"""Reads image cursor and returns tuple with key, position"""
 	# Require keystroke to read cursor position (0 arg)
-	win = gwm.getActiveWindow()
+	win = _getActiveWindow()
 	if win is not None: win.update()
 	rv = cdl.cdl_readCursor(displayHandle, 0)
 	if retlist is not None: retlist.append(rv)
@@ -48,11 +48,11 @@ def _threadedReadCursor(displayHandle):
 	timeout = 0.5
 	# messy -- I wish I could just sleep until thread is done, letting
 	# Python's implicit mainloop run.  That doesn't work though.
-	win = gwm.getActiveWindow()
+	win = _getActiveWindow()
 	while th.isAlive():
 		th.join(timeout)
 		if win is None:
-			win = gwm.getActiveWindow()
+			win = _getActiveWindow()
 		if win is not None:
 			win.update()
 	if Verbose>1:
@@ -86,3 +86,19 @@ def _imcur(readCursor=_readCursor):
 	else:
 		key = `key`[1:-1]
 	return "%f %f %d %s %s" % (xpos, ypos, wcs, key, colonString)
+
+def _getActiveWindow():
+	"""Returns active graphics window (or None if there is none)"""
+	if gwm:
+		return gwm.getActiveWindow()
+	else:
+		return None
+
+# import this last in case it fails
+
+try:
+	import gwm
+except ImportError:
+	gwm = None
+	raise
+

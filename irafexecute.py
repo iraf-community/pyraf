@@ -323,7 +323,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 # they write to the task rather than to stdout
 # 'param=value' is special because it allows errors
 
-_p_par_get = r' *= *(?P<gname>[a-zA-Z_$][\w.]*(?:\[\d+\])?) *\n'
+_p_par_get = r'\s*=\s*(?P<gname>[a-zA-Z_$][\w.]*(?:\[\d+\])?)\s*\n'
 _p_par_set = r'(?P<sname>[a-zA-Z_][\w.]*(?:\[\d+\])?)\s*=\s*(?P<svalue>.*)\n'
 _re_msg = re.compile(
 			r'(?P<par_get>' + _p_par_get + ')|' +
