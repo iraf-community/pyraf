@@ -181,11 +181,10 @@ class IrafTask:
 				try:
 					apply(irafexecute.IrafExecute,
 						(self, iraf.getVarDict()), redirKW)
-					if save==1:
-						changed = self.updateParList(self._runningParList)
-						if changed:
-							rv = self.save()
-							if iraf.Verbose>1: print rv
+					changed = self.updateParList(self._runningParList, save)
+					if changed:
+						rv = self.save()
+						if iraf.Verbose>1: print rv
 					if iraf.Verbose>1: print 'Successful task termination'
 				finally:
 					iraf.redirReset([], closeFHList)
@@ -258,16 +257,20 @@ class IrafTask:
 				p.mode = string.replace(p.mode,"a",mode)
 		return newParList
 
-	def updateParList(self, newParList):
+	def updateParList(self, newParList, save=0):
 		"""Update parameter list after successful task completion
 
-		Returns true if any parameters change
+		Returns true if any parameters change.  If save flag is
+		set, all changes are saved; if save flag is false, only
+		explicit parameter changes requested by the task are saved.
 		"""
 		mode = self.getMode(newParList)
 		changed = 0
 		for par in newParList.getParList():
-			if par.name != "$nargs" and \
-			 (par.isChanged() or (par.isCmdline() and par.isLearned(mode))):
+			if par.name != "$nargs" and (
+				 (save and par.isChanged() or
+					(par.isCmdline() and par.isLearned(mode))) or
+				 ((not save) and par.isChanged()) ):
 				changed = 1
 				# get task parameter object
 				tpar = self._currentParList.getParObject(par.name)
@@ -275,12 +278,11 @@ class IrafTask:
 				# the new and old parameters must be identical
 				tpar.value = par.value
 				# propagate other mutable fields too
+				# don't propagate modes since I changed them
 				# (note IRAF does not propagate prompt, which I consider a bug)
 				tpar.min = par.min
 				tpar.max = par.max
 				tpar.choice = par.choice
-				# don't propagate modes since I changed them
-				# tpar.mode = par.mode
 				tpar.prompt = par.prompt
 				tpar.setChanged()
 		return changed
@@ -834,11 +836,10 @@ class IrafCLTask(IrafTask):
 		try:
 			# run the task
 			self.runCode(self._runningParList.getParList())
-			if save==1:
-				changed = self.updateParList(self._runningParList)
-				if changed:
-					rv = self.save()
-					if iraf.Verbose>1: print rv
+			changed = self.updateParList(self._runningParList, save)
+			if changed:
+				rv = self.save()
+				if iraf.Verbose>1: print rv
 		finally:
 			# restore I/O
 			iraf.redirReset(resetList, closeFHList)
@@ -1041,11 +1042,10 @@ class IrafPkg(IrafCLTask):
 			resetList = iraf.redirApply(redirKW)
 			try:
 				self.runCode(self._runningParList.getParList())
-				if save==1:
-					changed = self.updateParList(self._runningParList)
-					if changed:
-						rv = self.save()
-						if iraf.Verbose>1: print rv
+				changed = self.updateParList(self._runningParList, save)
+				if changed:
+					rv = self.save()
+					if iraf.Verbose>1: print rv
 			finally:
 				iraf.cl.menus = menus
 				iraf.redirReset(resetList, closeFHList)
