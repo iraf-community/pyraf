@@ -165,7 +165,7 @@ def _help(object, variables, functions, modules,
 		if _printIrafHelp(object, html, irafkw): return
 
 	if type(object) == types.StringType and \
-			(re.match(r'[a-z_][a-z0-9_]*$',object) or
+			(re.match(r'[a-z_][a-z0-9_.]*$',object) or
 			 os.path.exists(iraf.Expand(object))):
 		if _printIrafHelp(object, html, irafkw): return
 
