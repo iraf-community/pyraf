@@ -83,6 +83,17 @@ _kwdict = minmatch.MinMatchDict()
 for key in kwnames: _kwdict.add(key,key)
 del kwnames, key
 
+# additional keywords for IRAF help task
+
+irafkwnames = ( 'file_template', 'all',
+		'parameter', 'section', 'option', 'page', 'nlpp', 'lmargin',
+		'rmargin', 'curpack', 'device', 'helpdb', 'mode' )
+_irafkwdict = {}
+for key in irafkwnames:
+	_kwdict.add(key,key)
+	_irafkwdict[key] = 1
+del irafkwnames, key
+
 def help(object=__main__, variables=1, functions=1, modules=1,
 		tasks=0, packages=0, hidden=0, padchars=16, regexp=None, html=0,
 		**kw):
@@ -109,6 +120,8 @@ html=0      Use HTML help instead of standard IRAF help for tasks
 regexp=None Specify a regular expression that matches the names of variables of
             interest.  E.g., help(sys, regexp='std') will give help on all attr-
             ibutes of sys that start with std.  All the re patterns can be used.
+
+Other keywords are passed on to the IRAF help task if it is called.
     """
 
 	# handle I/O redirection keywords
@@ -116,10 +129,16 @@ regexp=None Specify a regular expression that matches the names of variables of
 	if kw.has_key('_save'): del kw['_save']
 
 	# get the keywords using minimum-match
+	irafkw = {}
 	for key in kw.keys():
 		try:
 			fullkey = _kwdict[key]
-			exec fullkey + ' = ' + `kw[key]`
+			if _irafkwdict.has_key(fullkey):
+				# this is an IRAF help keyword
+				irafkw[fullkey] = kw[key]
+			else:
+				# this is a Python help function keyword
+				exec fullkey + ' = ' + `kw[key]`
 		except KeyError, e:
 			raise e.__class__("Error in keyword "+key+"\n"+str(e))
 
@@ -129,13 +148,13 @@ regexp=None Specify a regular expression that matches the names of variables of
 
 	try:
 		_help(object, variables, functions, modules,
-			tasks, packages, hidden, padchars, regexp, html)
+			tasks, packages, hidden, padchars, regexp, html, irafkw)
 	finally:
 		rv = iraf.redirReset(resetList, closeFHList)
 	return rv
 
 def _help(object, variables, functions, modules,
-		tasks, packages, hidden, padchars, regexp, html):
+		tasks, packages, hidden, padchars, regexp, html, irafkw):
 
 	# for IrafTask object, display help and also print info on the object
 	# for string parameter, if it looks like a task name try getting help
@@ -143,11 +162,11 @@ def _help(object, variables, functions, modules,
 	# often be asking for help with simple strings as an argument...)
 
 	if isinstance(object,iraftask.IrafTask):
-		if _printIrafHelp(object, html): return
+		if _printIrafHelp(object, html, irafkw): return
 
 	if type(object) == types.StringType and \
 			re.match(r'[a-z_][a-z0-9_]*$',object):
-		if _printIrafHelp(object, html): return
+		if _printIrafHelp(object, html, irafkw): return
 
 	try:
 		vlist = vars(object)
@@ -203,12 +222,12 @@ def _help(object, variables, functions, modules,
 
 # return 1 if they handle the object, 0 if they don't
 
-def _printIrafHelp(object, html):
+def _printIrafHelp(object, html, irafkw):
 	if html:
 		_htmlHelp(object)
 		return 0
 	else:
-		return _irafHelp(object)
+		return _irafHelp(object, irafkw)
 
 def _valueHelp(object, padchars):
 	# just print info on the object itself
@@ -355,14 +374,15 @@ def _valueString(value,verbose=0):
 	return vstr
 
 
-def _irafHelp(taskname):
+def _irafHelp(taskname, irafkw):
 	"""Display IRAF help for given task.
 	Task can be either a name or an IrafTask object.
 	Returns 1 on success or 0 on failure."""
 
 	if isinstance(taskname,iraftask.IrafTask): taskname = taskname.getName()
 	try:
-		iraf.system.help(taskname,page=1)
+		if not irafkw.has_key('page'): irafkw['page'] = 1
+		apply(iraf.system.help, (taskname,), irafkw)
 		return 1
 	except iraf.IrafError:
 		return 0
