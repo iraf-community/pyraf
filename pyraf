@@ -65,10 +65,15 @@ __version__ = "$Revision$"
 
 import sys, os
 
-# set search path to include directory containing this script
-# and current directory
+# set search path to include directory above this script and current directory
+# ... but do not want the pyraf package directory itself in the path, that messes things up
 
 pyrafDir = os.path.dirname(sys.argv[0])
+try:
+	sys.path.remove(pyrafDir)
+except ValueError:
+	pass
+
 absPyrafDir = os.path.abspath(os.path.join(pyrafDir,'..'))
 if absPyrafDir not in sys.path: sys.path.insert(0, absPyrafDir)
 del absPyrafDir, pyrafDir
