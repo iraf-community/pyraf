@@ -375,6 +375,7 @@ class IrafTask:
 		If names are strings then already did it.
 		"""
 
+		basedir = None
 		if not self.__fullpath:
 			# This follows the search strategy used by findexe in
 			# cl/exec.c: first it checks in the BIN directory for the
@@ -425,6 +426,17 @@ class IrafTask:
 						self.__name + "\nTried "+exename1+" and "+exename2)
 
 		if self.__hasparfile and (not self.__parpath):
+			if basedir == None:
+				try:
+					exename1 = iraf.expand(self.__filename)
+					basedir, basename = os.path.split(exename1)
+				except iraf.IrafError, e:
+					if iraf.verbose:
+						print "Error searching for executable for task " + \
+							self.__name
+						print str(e)
+					exename1 = ""
+					basedir = ""
 			pfile = os.path.join(basedir,self.__name + ".par")
 			# check uparm first for scrunched version of par filename
 			# with saved parameters
