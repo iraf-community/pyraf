@@ -52,6 +52,8 @@ imhead = iraf.getTask("imheader")
 disp = iraf.getTask("display")
 implot = iraf.getTask("implot")
 
+yes = 1
+no = 0
 flpr = "This is not the IRAF cl!  Forget those old bad habits!"
 retall = "This is not IDL..."
 
