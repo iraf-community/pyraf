@@ -138,6 +138,7 @@ class PyrafSplash(SplashScreen):
         self.destroy()
         # disable future writes
         self.text = None
+        self.update_idletasks()
 
 class IrafMonitorSplash(PyrafSplash):
 
@@ -180,7 +181,7 @@ class IrafMonitorSplash(PyrafSplash):
     def Destroy(self, event=None):
         """Shut down window and disable monitor"""
         import iraftask
-        if iraftask.executionMonitor is self.monitor:
+        if iraftask.executionMonitor == self.monitor:
             iraftask.executionMonitor = None
         PyrafSplash.Destroy(self, event)
 
