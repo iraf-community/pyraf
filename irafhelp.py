@@ -47,8 +47,6 @@ try:
 	_NumericArrayType = Numeric.ArrayType
 except:
 	# no Numeric available, so we won't encounter arrays
-	import traceback
-	traceback.print_exc()
 	_NumericArrayType = None
 
 try:
