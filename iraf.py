@@ -6,7 +6,7 @@ $Id$
 R. White, 1999 Jan 25
 """
 
-import sys, os, string, re, types, time
+import sys, os, string, re, types, time, struct
 import irafpar, irafexecute, minmatch
 from iraftask import *
 import irafnames
@@ -1495,3 +1495,13 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 	addPkg(newpkg)
 	return newpkg
 
+def isBigEndian():
+
+	"""Determine if processor is big endian or little endian"""
+
+	i = 1
+	tup = struct.unpack('hh',struct.pack('=i',i))
+	if tup[1] == 1:
+		return 1
+	else:
+		return 0
