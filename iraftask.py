@@ -369,10 +369,22 @@ class IrafTask:
 			# "installed" version of the executable, and if that is not
 			# found it tries the pathname given in the TASK declaration.
 			#
-			# expand iraf variables
-			exename1 = iraf.expand(self.__filename)
-			# get name of executable file without path
-			basedir, basename = os.path.split(exename1)
+			# Expand iraf variables.  We will try both paths if the expand fails.
+			try:
+				exename1 = iraf.expand(self.__filename)
+				# get name of executable file without path
+				basedir, basename = os.path.split(exename1)
+			except iraf.IrafError, e:
+				if iraf.verbose:
+					print "Error searching for executable for task " + \
+						self.__name
+					print str(e)
+				exename1 = ""
+				# make our best guess that the basename is what follows the
+				# last '$' in __filename
+				basedir = ""
+				s = string.split(self.__filename, "$")
+				basename = s[-1]
 			if basename == "":
 				self.__fullpath = ""
 				raise iraf.IrafError("No filename in task " + self.__name + \
@@ -383,7 +395,14 @@ class IrafTask:
 				self.__fullpath = self.__filename
 			else:
 				# first look in the task binary directory
-				exename2 = iraf.expand(self.__pkgbinary + basename)
+				try:
+					exename2 = iraf.expand(self.__pkgbinary + basename)
+				except iraf.IrafError, e:
+					if iraf.verbose:
+						print "Error searching for executable for task " + \
+							self.__name
+						print str(e)
+					exename2 = ""
 				if os.path.exists(exename2):
 					self.__fullpath = exename2
 				elif os.path.exists(exename1):
@@ -391,7 +410,7 @@ class IrafTask:
 				else:
 					self.__fullpath = ""
 					raise iraf.IrafError("Cannot find executable for task " +
-						self.__name)
+						self.__name + "\nTried "+exename1+" and "+exename2)
 			if self.__hasparfile:
 				pfile = os.path.join(basedir,self.__name + ".par")
 				# check uparm first for scrunched version of par filename
