@@ -31,6 +31,8 @@ except AttributeError:
         isBigEndian = 0
     del i, tup
 
+# Create an instance of the stdimage kernel
+stdimagekernel = gki.GkiController()
 
 class IrafProcessError(Exception):
     pass
@@ -717,6 +719,7 @@ class IrafProcess:
         elif chan == 6:
             gki.kernel.append(Numeric.fromstring(xdata,'s'))
         elif chan == 7:
+            stdimagekernel.append(Numeric.fromstring(xdata,'s'))
             self.stdout.write("data for STDIMAGE\n")
             self.stdout.flush()
         elif chan == 8:
@@ -744,12 +747,14 @@ class IrafProcess:
                     self.write(wcs)
                     gki.kernel.clearReturnData()
                 self.setStdio()
+            elif forChan == 7:
+                # STDIMAGE control, see previous block for comments on details
+                wcs = stdimagekernel.control(sdata[2:])
+                if wcs:
+                    self.write(wcs)
+                    stdimagekernel.clearReturnData()
             else:
                 self.stdout.write("GRAPHICS control data for channel %d\n" % (forChan,))
-                self.stdout.write(str(sdata[2:])) ###
-                if sdata[3] == 27:                ###
-                    wcs = irafgwcs.IrafGWcs()     ###
-                    self.write(wcs.pack())        ###
                 self.stdout.flush()
         else:
             self.stdout.write("data for channel %d\n" % (chan,))

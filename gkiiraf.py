@@ -51,7 +51,7 @@ class GkiIrafKernel(gki.GkiKernel):
 
     def control_getwcs(self, arg):
         if not self.wcs:
-            raise iraf.IrafError("Can't append to a nonexistent plot!")
+            self.wcs = irafgwcs.IrafGWcs()
         if self.returnData:
             self.returnData = self.returnData + self.wcs.pack()
         else:
