@@ -804,6 +804,10 @@ def frac(x):
 	frac_part, int_part = _math.modf(x)
 	return frac_part
 
+def mod(a, b):
+	"""Return a modulo b"""
+	return (a % b)
+
 _radixDigits = list(_string.digits+_string.uppercase)
 
 def radix(value, base=10):
