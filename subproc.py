@@ -180,9 +180,9 @@ class Subprocess:
 		if not self.pid:
 			raise SubprocessError, ("no child")							# ===>
 		# See if subprocess is ready for write.
-		# Add a one-second wait in case subprocess is still starting up.
+		# Add a 2-second wait in case subprocess is still starting up.
 		# (XXX Is that long enough?)
-		if select.select([],self.toChild_fdlist,[],1.0)[1]:
+		if select.select([],self.toChild_fdlist,[],2.0)[1]:
 			self.toChild.write(str)
 			self.toChild.flush()
 		else:
