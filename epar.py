@@ -2,7 +2,7 @@
 
 $Id$
 
-M.D. De La Pena, 1999 June 07
+M.D. De La Pena, 2000 January 11
 """
 # System level modules
 from Tkinter import *
@@ -196,8 +196,8 @@ class EparDialog:
         # Force an update of the Canvas
         self.top.f.canvas.update()
 
-        # Associate deletion of the main window to a Cancel
-        #self.top.protocol("WM_DELETE_WINDOW", self.cancel)
+        # Associate deletion of the main window to a Abort
+        self.top.protocol("WM_DELETE_WINDOW", self.abort)
 
         #self.initial_focus = self.top
         #self.initial_focus.focus_set()
