@@ -174,6 +174,9 @@ def _help(object, variables, functions, modules,
     try:
         vlist = vars(object)
     except Exception:
+        # make compatible with Python 2.2
+        vlist = None
+    if vlist is None:
         # simple object with no vars()
         _valueHelp(object, padchars)
         return
