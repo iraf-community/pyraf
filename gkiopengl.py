@@ -30,6 +30,7 @@ class IrafPlot:
 		self.glBuffer = GLBuffer()
 		self.gkiBuffer = GkiBuffer()
 		self.wcs = None
+		self.kernel = None
 		self.colors = IrafColors()
 		self.linestyles = IrafLineStyles()
 		self.hatchfills = IrafHatchFills()
@@ -130,6 +131,8 @@ class GkiOpenGlKernel(GkiKernel):
 		# opened from an interactive session with an image display
 		# window, in which case we should try to move focus back to it.
 		self.restorePreviousFocus()
+		win = gwm.getActiveWindow()
+		win.deactivateSWCursor() # turn off software cursor
 		
 	def setWCS(self, arg):
 
@@ -151,6 +154,8 @@ class GkiOpenGlKernel(GkiKernel):
 	def closeWS(self, arg):
 
 		self.restorePreviousFocus()
+		win = gwm.getActiveWindow()
+		win.deactivateSWCursor()  # turn off software cursor
 		
 	def redraw(self, o):
 
@@ -708,3 +713,4 @@ class FillAttributes:
 class MarkerAttributes:
 
 	def __init__(self): pass
+

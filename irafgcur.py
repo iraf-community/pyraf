@@ -54,6 +54,9 @@ class Gcursor:
 				wutil.moveCursorTo(self.win.winfo_id(),
 							   self.win.lastX, self.win.lastY)
 		self.win.focus_set()
+		self.win.activateSWCursor(
+			float(self.win.lastX)/self.win.winfo_width(),
+			float(self.win.lastY)/self.win.winfo_height())
 		self.bind()
 		self.win.ignoreNextRedraw = 1
 		self.top.mainloop()
@@ -64,13 +67,11 @@ class Gcursor:
 	
 		self.win.bind("<Button-1>",self.getMousePosition)
 		self.win.bind("<Key>",self.getKey)
-		# self.win.bind("q",self.getKey)
 			
 	def unbind(self):
 	
 		self.win.unbind("<Button-1>")
 		self.win.unbind("<Key>")
-		self.win.unbind("q")
 		
 	def getNDCCursorPos(self):
 
