@@ -9,6 +9,7 @@ import Tkinter, msgiobuffer
 from OpenGL.GL import *
 import toglcolors
 import gki, openglgcur, opengltext, irafgwcs
+import openglutil
 from irafglobals import IrafError, pyrafDir, userWorkingHome
 import tkMessageBox, tkSimpleDialog
 import filedlg
@@ -745,8 +746,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
         self.stdin = self.stdout
         # disable stderr while graphics is active (to supress xgterm gui
         # messages)
-        #self.stderr = FilterStderr()
-        self.stderr = FilterStderrStatus(self.top.status,self.windowName)
+        self.stderr = FilterStderr()
         if mode == 5:
             # clear the display
             self.clear()
@@ -777,8 +777,7 @@ class GkiInteractiveBase(gki.GkiKernel, wutil.FocusEntity):
             self.stdout = self.StatusLine
             self.stdin = self.stdout
         if not self.stderr:
-            #self.stderr = FilterStderr()
-            self.stderr = FilterStderrStatus(self.top.status,self.windowName)
+            self.stderr = FilterStderr()
 
     def control_deactivatews(self, arg):
 
@@ -1090,6 +1089,8 @@ class GkiOpenGlKernel(GkiInteractiveBase):
         else:
             glClearIndex(cm.indexmap[0])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        if not openglutil.oldpyopengl:
+            glEnableClientState(GL_VERTEX_ARRAY) ## for pyOpenGL V2
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glOrtho(0,1,0,1,-1,1)
@@ -1121,6 +1122,7 @@ class GkiOpenGlKernel(GkiInteractiveBase):
         glLineWidth(la.linewidth)
         stipple = 0
         clear = 0
+        npts = len(vertices)/2
         if la.linestyle == 0:
             clear = 1 # "clear" linestyle, don't draw!
         elif la.linestyle == 1:
@@ -1129,33 +1131,26 @@ class GkiOpenGlKernel(GkiInteractiveBase):
             glEnable(GL_LINE_STIPPLE)
             stipple = 1
             glLineStipple(1,self.linestyles.patterns[la.linestyle])
-        glBegin(GL_LINE_STRIP)
-        try:
-            if not clear:
-                self.colorManager.setDrawingColor(la.color)
-            else:
-                self.colorManager.setDrawingColor(0)
-            glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
-        finally:
-            glEnd()
-            if stipple:
-                glDisable(GL_LINE_STIPPLE)
+        if not clear:
+            self.colorManager.setDrawingColor(la.color)
+        else:
+            self.colorManager.setDrawingColor(0)
+        openglutil.glPlot(vertices, GL_LINE_STRIP)
+        if stipple:
+            glDisable(GL_LINE_STIPPLE)
 
     def gl_polymarker(self, vertices):
 
         # IRAF only implements points for poly marker, that makes it simple
         ma = self.markerAttributes
         clear = 0
+        npts = len(vertices)/2
         glPointSize(1)
         if not clear:
             self.colorManager.setDrawingColor(ma.color)
         else:
             self.colorManager.setDrawingColor(0)
-        glBegin(GL_POINTS)
-        try:
-            glVertex(Numeric.reshape(vertices, (len(vertices)/2,2)))
-        finally:
-            glEnd()
+        openglutil.glPlot(vertices, GL_POINTS)
 
     def gl_text(self, x, y, text):
 
@@ -1166,6 +1161,7 @@ class GkiOpenGlKernel(GkiInteractiveBase):
         fa = self.fillAttributes
         clear = 0
         polystipple = 0
+        npts = len(vertices)/2
         if fa.fillstyle == 0: # clear region
             clear = 1
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
@@ -1190,15 +1186,9 @@ class GkiOpenGlKernel(GkiInteractiveBase):
             self.colorManager.setDrawingColor(fa.color)
         else:
             self.colorManager.setDrawingColor(0)
-            # glColor3f(0.,0.,0.)
-        # not a simple rectangle
-        glBegin(GL_POLYGON)
-        try:
-            glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
-        finally:
-            glEnd()
-            if polystipple:
-                glDisable(GL_POLYGON_STIPPLE)
+        openglutil.glPlot(vertices, GL_POLYGON)
+        if polystipple:
+            glDisable(GL_POLYGON_STIPPLE)
 
     def gl_setcursor(self, cursornumber, x, y):
 
@@ -1388,39 +1378,6 @@ class FilterStderr:
 
 #-----------------------------------------------
 
-class FilterStderrStatus:
-
-    """Filter GUI messages out of stderr during plotting
-       yet still send the rest to the Status buffer.
-       Based on write methods from StatusLine class.
-    """
-
-    pat = re.compile('\031[^\035]*\035\037')
-
-    def __init__(self, status, name):
-        self.status = status
-        self.windowName = name
-
-    def write(self, text):
-        # remove GUI junk
-        edit = self.pat.sub('',text)
-        if edit:
-            self.status.updateIO(text=edit)
-        else:
-            self.status.updateIO(text=text)
-
-    def flush(self):
-        self.status.update_idletasks()
-
-    def close(self):
-        # clear status line
-        self.status.updateIO(text="")
-
-    def isatty(self):
-        return 1
-
-#-----------------------------------------------
-
 class StatusLine:
 
     def __init__(self, status, name):
@@ -1445,7 +1402,7 @@ class StatusLine:
             return s
 
     def write(self, text):
-        self.status.updateIO(text=text)
+        self.status.updateIO(text=string.strip(text))
 
     def flush(self):
         self.status.update_idletasks()
