@@ -30,7 +30,7 @@ if test "$gcc_ok" = "no"; then
 fi
 
 if test "$CC" = "gcc"; then
-    SHLIB_CFLAGS=-fPIC
+    SHLIB_CFLAGS="-fPIC"
     AC_SUBST(SHLIB_CFLAGS)
 fi
 
