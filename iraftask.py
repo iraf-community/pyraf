@@ -162,46 +162,44 @@ class IrafTask:
 	def run(self,*args,**kw):
 		"""Execute this task with the specified arguments"""
 		self.initTask()
-		if self._foreign:
-			print "No run yet for foreign task '" + self._name + "'"
+		# special _save keyword turns on parameter-saving
+		# default is *not* to save parameters (so it is necessary
+		# to use _save=1 to get parameter changes to be persistent.)
+		if kw.has_key('_save'):
+			save = kw['_save']
+			del kw['_save']
 		else:
-			# special _save keyword turns on parameter-saving
-			# default is *not* to save parameters (so it is necessary
-			# to use _save=1 to get parameter changes to be persistent.)
-			if kw.has_key('_save'):
-				save = kw['_save']
-				del kw['_save']
-			else:
-				save = 0
-			# Special Stdout, Stdin, Stderr keywords are used to redirect IO
-			redirKW, closeFHList = iraf.redirProcess(kw)
-			# set parameters
-			kw['_setMode'] = 1
-			self._runningParList = apply(self.setParList,args,kw)
-			if iraf.Verbose>1:
-				print "Connected subproc run ", self._name, \
-					"("+self._fullpath+")"
-				self._runningParList.lParam()
+			save = 0
+		# Special Stdout, Stdin, Stderr keywords are used to redirect IO
+		redirKW, closeFHList = iraf.redirProcess(kw)
+		# set parameters
+		kw['_setMode'] = 1
+		self._runningParList = apply(self.setParList,args,kw)
+		if iraf.Verbose>1:
+			print "Connected subproc run ", self._name, \
+				"("+self._fullpath+")"
+			self._runningParList.lParam()
+		try:
+			# delete list of param dictionaries so it will be
+			# recreated in up-to-date version if needed
+			self._parDictList = None
 			try:
-				# delete list of param dictionaries so it will be
-				# recreated in up-to-date version if needed
-				self._parDictList = None
-				try:
-					apply(irafexecute.IrafExecute,
-						(self, iraf.getVarDict()), redirKW)
-					changed = self._updateParList(self._runningParList, save)
-					if changed:
-						rv = self.save()
-						if iraf.Verbose>1: print rv
-					if iraf.Verbose>1: print 'Successful task termination'
-				finally:
-					iraf.redirReset([], closeFHList)
-					self._runningParList = None
-					if self._parDictList: self._parDictList[0] = (self._name,
-										self._currentParList.getParDict())
-			except irafexecute.IrafProcessError, value:
-				raise iraf.IrafError("Error running IRAF task " + self._name +
-					"\n" + str(value))
+				apply(irafexecute.IrafExecute,
+					(self, iraf.getVarDict()), redirKW)
+				changed = self._updateParList(self._runningParList, save)
+				if changed:
+					rv = self.save()
+					if iraf.Verbose>1: print rv
+				if iraf.Verbose>1: print 'Successful task termination'
+			finally:
+				rv = iraf.redirReset([], closeFHList)
+				self._runningParList = None
+				if self._parDictList: self._parDictList[0] = (self._name,
+									self._currentParList.getParDict())
+		except irafexecute.IrafProcessError, value:
+			raise iraf.IrafError("Error running IRAF task " + self._name +
+				"\n" + str(value))
+		return rv
 
 	def getMode(self, parList=None):
 		"""Returns mode string for this task
@@ -519,7 +517,7 @@ class IrafTask:
 	# parameters as arguments, including keyword=value form.
 
 	def __call__(self,*args,**kw):
-		apply(self.run,args,kw)
+		return apply(self.run,args,kw)
 
 	def __repr__(self):
 		return '<%s %s at %s>' % (self.__class__.__name__, self._name,
@@ -975,11 +973,12 @@ class IrafCLTask(IrafTask):
 				if iraf.Verbose>1: print rv
 		finally:
 			# restore I/O
-			iraf.redirReset(resetList, closeFHList)
+			rv = iraf.redirReset(resetList, closeFHList)
 			self._runningParList = None
 			if self._parDictList: self._parDictList[0] = (self._name,
 								self._currentParList.getParDict())
 		if iraf.Verbose>1: print 'Successful task termination'
+		return rv
 
 	#=========================================================
 	# special methods
@@ -1148,19 +1147,20 @@ class IrafPkg(IrafCLTask):
 				if changed:
 					rv = self.save()
 					if iraf.Verbose>1: print rv
+				# if other packages were loaded, put this on the
+				# loadedPath list one more time
+				if iraf.loadedPath[-1] != self:
+					iraf.loadedPath.append(self)
+				if doprint: iraf.listTasks(self)
 			finally:
 				iraf.cl.menus = menus
-				iraf.redirReset(resetList, closeFHList)
+				rv = iraf.redirReset(resetList, closeFHList)
 				self._runningParList = None
 				if self._parDictList: self._parDictList[0] = (self._name,
 									self._currentParList.getParDict())
-			# if other packages were loaded, put this on the
-			# loadedPath list one more time
-			if iraf.loadedPath[-1] != self:
-				iraf.loadedPath.append(self)
-			if doprint: iraf.listTasks(self)
 			if iraf.Verbose>1:
 				print "Done loading",self.getName()
+			return rv
 
 # -----------------------------------------------------
 # Turn an IrafCLTask into an IrafPkg
@@ -1258,8 +1258,9 @@ class IrafForeignTask(IrafTask):
 			# create and run the subprocess
 			subproc.subshellRedir(cmdline)
 		finally:
-			iraf.redirReset(resetList, closeFHList)
+			rv = iraf.redirReset(resetList, closeFHList)
 		if iraf.Verbose>1: print 'Successful task termination'
+		return rv
 
 	def _parSub(self, mo):
 		"""Substitute an argument for this match object"""

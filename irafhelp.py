@@ -111,67 +111,74 @@ def help(object=__main__, variables=1, functions=1, modules=1,
 	# try block for I/O redirection
 
 	try:
-		# for IrafTask object, display help and also print info on the object
-		# for string parameter, if it looks like a task name try getting help
-		# on it too (XXX this is a bit risky, but I suppose people will not
-		# often be asking for help with simple strings as an argument...)
-
-		if isinstance(object,iraftask.IrafTask):
-			if _printIrafHelp(object, html): return
-
-		if type(object) == types.StringType and re.match(r'_?[a-z]+$',object):
-			if _printIrafHelp(object, html): return
-
-		try:
-			vlist = vars(object)
-		except Exception:
-			# simple object with no vars()
-			_valueHelp(object, padchars)
-			return
-
-		# look inside the object
-
-		tasklist, pkglist, functionlist, methodlist, modulelist, otherlist = \
-			_getContents(vlist, regexp)
-
-		if modules and modulelist:
-			# modules get listed in simple column format
-			print "Modules:"
-			irafutils.printCols(map(lambda x: x[0], modulelist))
-			print
-
-		if functions and functionlist:
-			_printValueList(functionlist, hidden, padchars)
-
-		if functions and methodlist:
-			_printValueList(methodlist, hidden, padchars)
-
-		if variables and otherlist:
-			_printValueList(otherlist, hidden, padchars)
-
-		# IRAF packages and tasks get listed in simple column format
-		if packages and pkglist:
-			print "IRAF Packages:"
-			irafutils.printCols(pkglist)
-			print
-
-		if tasks and tasklist:
-			print "IRAF Tasks:"
-			irafutils.printCols(tasklist)
-			print
-
-		#XXX Need to modify this to look at all parents of this class
-		#XXX too.  That's tricky because want to sort all methods/attributes
-		#XXX together and, to be completely correct, need to resolve
-		#XXX name clashes using the same scheme as Python does for multiple
-		#XXX inheritance and multiply-overridden attributes.
-		if (type(object) == types.InstanceType) and functions:
-			# for instances, call recursively to list class methods
-			help(object.__class__, functions=functions, tasks=tasks,
-				packages=packages, variables=variables, hidden=hidden,
-				padchars=padchars, regexp=regexp)
+		_help(object, variables, functions, modules,
+			tasks, packages, hidden, padchars, regexp, html)
 	finally:
-		iraf.redirReset(resetList, closeFHList)
+		rv = iraf.redirReset(resetList, closeFHList)
+	return rv
+
+def _help(object, variables, functions, modules,
+		tasks, packages, hidden, padchars, regexp, html):
+
+	# for IrafTask object, display help and also print info on the object
+	# for string parameter, if it looks like a task name try getting help
+	# on it too (XXX this is a bit risky, but I suppose people will not
+	# often be asking for help with simple strings as an argument...)
+
+	if isinstance(object,iraftask.IrafTask):
+		if _printIrafHelp(object, html): return
+
+	if type(object) == types.StringType and re.match(r'_?[a-z]+$',object):
+		if _printIrafHelp(object, html): return
+
+	try:
+		vlist = vars(object)
+	except Exception:
+		# simple object with no vars()
+		_valueHelp(object, padchars)
+		return
+
+	# look inside the object
+
+	tasklist, pkglist, functionlist, methodlist, modulelist, otherlist = \
+		_getContents(vlist, regexp)
+
+	if modules and modulelist:
+		# modules get listed in simple column format
+		print "Modules:"
+		irafutils.printCols(map(lambda x: x[0], modulelist))
+		print
+
+	if functions and functionlist:
+		_printValueList(functionlist, hidden, padchars)
+
+	if functions and methodlist:
+		_printValueList(methodlist, hidden, padchars)
+
+	if variables and otherlist:
+		_printValueList(otherlist, hidden, padchars)
+
+	# IRAF packages and tasks get listed in simple column format
+	if packages and pkglist:
+		print "IRAF Packages:"
+		irafutils.printCols(pkglist)
+		print
+
+	if tasks and tasklist:
+		print "IRAF Tasks:"
+		irafutils.printCols(tasklist)
+		print
+
+	#XXX Need to modify this to look at all parents of this class
+	#XXX too.  That's tricky because want to sort all methods/attributes
+	#XXX together and, to be completely correct, need to resolve
+	#XXX name clashes using the same scheme as Python does for multiple
+	#XXX inheritance and multiply-overridden attributes.
+	if (type(object) == types.InstanceType) and functions:
+		# for instances, call recursively to list class methods
+		help(object.__class__, functions=functions, tasks=tasks,
+			packages=packages, variables=variables, hidden=hidden,
+			padchars=padchars, regexp=regexp)
 
 #------------------------------------
 # helper functions

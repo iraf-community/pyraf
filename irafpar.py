@@ -287,18 +287,6 @@ class IrafPar:
 	# public accessor methods
 	#--------------------------------------------
 
-	def isConsistent(self, other):
-		"""Check two IrafPar parameters for consistency
-		
-		Returns true if parameters are consistent, false if inconsistent.
-		Only checks immutable param characteristics (name & type).
-		"""
-		if (type(other) != types.InstanceType) or \
-		   (other.__class__ != self.__class__): return 0
-		# check the fields
-		# returns 1 if all agree, else 0
-		return (self.name == other.name and self.type == other.type)
-
 	def isLegal(self):
 		"""Returns true if current parameter value is legal"""
 		try:
@@ -1800,25 +1788,32 @@ class IrafParList:
 		
 		Returns true if lists are consistent, false if inconsistent.
 		Only checks immutable param characteristics (name & type).
+		Allows hidden parameters to be in any order, but requires
+		non-hidden parameters to be in identical order.
 		"""
-		if (type(other) != types.InstanceType) or \
-		   (other.__class__ != self.__class__):
+		if not isinstance(other, self.__class__):
 			if Verbose>0:
-				print 'Classes inconsistent %s %s' % \
-					(self.__class__, other.__class__)
+				print 'Comparison list is not a %s' % self.__class__.__name__
 			return 0
-		if len(self) != len(other):
-			if Verbose>0:
-				print 'Lengths inconsistent %d %d' % \
-					(len(self),len(other))
-			return 0
-		for i in range(len(self)):
-			if not self.__pars[i].isConsistent(other.__pars[i]):
-				if Verbose>0:
-					print 'Parameter %d mismatch %s %s' % \
-						(i, self.__pars[i].name, other.__pars[i].name)
-				return 0
-		return 1
+		if len(self) != len(other): return 0
+		# compare dictionaries of parameters
+		return self._getConsistentList() == other._getConsistentList()
+
+	def _getConsistentList(self):
+		"""Return simplified parameter dictionary used for consistency check
+		
+		Dictionary is keyed by param name, with value of type and
+		(for non-hidden parameters) sequence number.
+		"""
+		dpar = {}
+		j = 0
+		for par in self.__pars:
+			if par.mode == "h":
+				dpar[par.name] = par.type
+			else:
+				dpar[par.name] = (par.type, j)
+				j = j+1
+		return dpar
 
 	def clearFlags(self):
 		"""Clear all status flags for all parameters"""

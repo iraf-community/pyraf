@@ -68,7 +68,9 @@ class CmdConsole(code.InteractiveConsole):
 		neofs = 0
 		while 1:
 			try:
-				if more:
+				if not sys.stdin.isatty():
+					prompt = ""
+				elif more:
 					prompt = self.ps2
 				else:
 					prompt = self.ps1

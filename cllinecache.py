@@ -7,8 +7,7 @@ $Id$
 
 import linecache, string, os, sys
 from stat import *
-import pyraf
-import iraf
+import pyraf, iraf, clcache
 
 # Discard cache entries that are out of date.
 # (This is not checked upon each call!)
@@ -20,7 +19,9 @@ def checkcache():
 			# special CL script case
 			try:
 				taskobj = iraf.getTask(fullname)
-				newsize, newctime, newmtime = taskobj._pycode.attributes
+				filename = taskobj.getFullpath()
+				newsize, newctime, newmtime = \
+					clcache.codeCache.getAttributes(filename)
 			except iraf.IrafError:
 				del linecache.cache[filename]
 				continue
@@ -83,9 +84,9 @@ def updateCLscript(filename):
 	try:
 		taskname = filename[11:-1]
 		taskobj = iraf.getTask(taskname)
-		pycode = taskobj._pycode
-		size, ctime, mtime = pycode.attributes
-		lines = string.split(pycode.code,'\n')
+		filename = taskobj.getFullpath()
+		size, ctime, mtime = clcache.codeCache.getAttributes(filename)
+		lines = string.split(taskobj.getCode(),'\n')
 		linecache.cache[filename] = size, mtime, lines, taskname
 		return lines
 	except (iraf.IrafError, KeyError, AttributeError):

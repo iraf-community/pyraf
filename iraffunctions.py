@@ -552,7 +552,8 @@ def listAll(hidden=0, **kw):
 		print 'Variables:'
 		listVars()
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def listPkgs(**kw):
 	"""List IRAF packages"""
@@ -572,7 +573,8 @@ def listPkgs(**kw):
 			for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
 			_irafutils.printCols(keylist)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def listLoaded(**kw):
 	"""List loaded IRAF packages"""
@@ -592,7 +594,8 @@ def listLoaded(**kw):
 			for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
 			_irafutils.printCols(keylist)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def listTasks(pkglist=None, hidden=0, **kw):
 	"""List IRAF tasks, optionally specifying a list of packages to include
@@ -656,7 +659,8 @@ def listTasks(pkglist=None, hidden=0, **kw):
 			print lastpkg + '/:'
 			_irafutils.printCols(tlist)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def listCurrent(n=1, hidden=0, **kw):
 	"""List IRAF tasks in current package (equivalent to '?' in the cl)
@@ -678,7 +682,8 @@ def listCurrent(n=1, hidden=0, **kw):
 		else:
 			print 'No IRAF tasks defined'
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def listVars(prefix="", equals="\t= ", **kw):
 	"""List IRAF variables"""
@@ -697,7 +702,8 @@ def listVars(prefix="", equals="\t= ", **kw):
 			for word in keylist:
 				print "%s%s%s%s" % (prefix, word, equals, envget(word))
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 # -----------------------------------------------------
 # IRAF utility functions
@@ -1054,7 +1060,8 @@ def scan(locals, *namelist, **kw):
 		else:
 			return apply(fscan, (locals, `line`) + namelist, kw)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def nscan():
 	"""Return number of items read in last scan function"""
@@ -1105,7 +1112,8 @@ def set(*args, **kw):
 					type(args[0]) != _types.StringType or args[0][:1] != '@':
 				raise SyntaxError("set requires name=value pairs")
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 # currently do not distinguish set from reset
 # this will change when keep/bye/unloading are implemented
@@ -1124,7 +1132,8 @@ def show(*args, **kw):
 		for arg in args:
 			print envget(arg)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def time(**kw):
 	"""Print current time and date"""
@@ -1137,7 +1146,8 @@ def time(**kw):
 	try:
 		print _time.ctime(_time.time())
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def sleep(seconds, **kw):
 	"""Sleep for specified time"""
@@ -1150,7 +1160,8 @@ def sleep(seconds, **kw):
 	try:
 		_time.sleep(float(seconds))
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def beep(**kw):
 	"""Beep to terminal (even if output is redirected)"""
@@ -1184,7 +1195,8 @@ def clOscmd(s, **kw):
 		return status
 
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 _sttyArgs = _minmatch.MinMatchDict({
 			'terminal': None,
@@ -1240,7 +1252,8 @@ def stty(terminal=None, **kw):
 			return ("set ttyncols="  + str(ncols)  + "\n" +
 					"set ttynlines=" + str(nlines) + "\n")
 	finally:
-		redirReset(resetList, closeFHList)
+		# note return value not used here
+		rv = redirReset(resetList, closeFHList)
 
 def eparam(*args, **kw):
 	"""Edit parameters for tasks.  Starts up epar GUI."""
@@ -1259,7 +1272,8 @@ def eparam(*args, **kw):
 				_writeError("Warning: Could not find task %s for epar\n" %
 					taskname)
 	finally:
-		redirReset(resetList, closeFHList)
+		# note return value not used here
+		rv = redirReset(resetList, closeFHList)
 
 def lparam(*args, **kw):
 	"""List parameters for tasks"""
@@ -1277,7 +1291,8 @@ def lparam(*args, **kw):
 				_writeError("Warning: Could not find task %s for lpar\n" %
 					taskname)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def dparam(*args, **kw):
 	"""Dump parameters for task in executable form"""
@@ -1295,7 +1310,8 @@ def dparam(*args, **kw):
 				_writeError("Warning: Could not find task %s for dpar\n" %
 					taskname)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def update(*args, **kw):
 	"""Update task parameters on disk"""
@@ -1313,7 +1329,8 @@ def update(*args, **kw):
 				_writeError("Warning: Could not find task %s for update" %
 					taskname)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def unlearn(*args, **kw):
 	"""Unlearn task parameters -- restore to defaults"""
@@ -1331,7 +1348,8 @@ def unlearn(*args, **kw):
 				_writeError("Warning: Could not find task %s to unlearn" %
 					taskname)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def edit(*args, **kw):
 	"""Edit text files"""
@@ -1346,7 +1364,8 @@ def edit(*args, **kw):
 		margs = map(Expand, args)
 		_os.system(_string.join([editor,]+margs,' '))
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 _clearString = None
 
@@ -1371,7 +1390,8 @@ def clear(*args, **kw):
 			_sys.stdout.write(_clearString)
 			_sys.stdout.flush()
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 # dummy routines
 
@@ -1387,7 +1407,8 @@ def clNoHistory(*args, **kw):
 		print 'History commands not required: Use arrow keys to recall commands'
 		print 'or ctrl-R to search for a string in the command history.'
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 history = ehistory = clNoHistory
 
@@ -1402,7 +1423,8 @@ def clNoBackground(*args, **kw):
 	try:
 		_writeError('Background jobs not implemented')
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 jobs = service = kill = wait = clNoBackground
 
@@ -1426,7 +1448,8 @@ def flprcache(*args, **kw):
 	try:
 		if Verbose>0: print "No process cache in Pyraf"
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 cache = prcache = clDummy
 
@@ -1439,7 +1462,8 @@ def _notImplemented(cmd, args, kw):
 		if Verbose>0:
 			_writeError("The %s task has not been implemented" % cmd)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def putlog(*args, **kw):
 	_notImplemented('putlog',args,kw)
@@ -1476,7 +1500,8 @@ def pkgHelp(pkgname=None, **kw):
 		else:
 			listTasks(pkgname)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def allPkgHelp(**kw):
 	"""Give help on all packages (equivalent to CL '??')"""
@@ -1489,7 +1514,8 @@ def allPkgHelp(**kw):
 	try:
 		listTasks()
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
 	"""Run CL commands from a file (cl < input)"""
@@ -1532,7 +1558,8 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
 		newtask.run()
 	finally:
 		# reset the I/O redirections
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def hidetask(*args, **kw):
 	"""Hide the CL task in package listings"""
@@ -1550,7 +1577,8 @@ def hidetask(*args, **kw):
 				_writeError("Warning: Could not find task %s to hide" %
 					taskname)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 # pattern matching single task name, possibly with $ prefix and/or
 # .pkg or .tb suffix
@@ -1628,7 +1656,8 @@ def task(*args, **kw):
 			newtask = IrafTaskFactory(prefix,name,suffix,value,
 					pkgname,pkgbinary,redefine=redefine)
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def redefine(*args, **kw):
 	"""Redefine an existing task"""
@@ -1681,7 +1710,8 @@ def package(pkgname, bin=None, PkgName='', PkgBinary='', **kw):
 
 		return (pkgname, bin or PkgBinary)
 	finally:
-		redirReset(resetList, closeFHList)
+		# note return value not used
+		rv = redirReset(resetList, closeFHList)
 
 def clPrint(*args, **kw):
 	"""CL print command -- emulates CL spacing and uses redirection keywords"""
@@ -1698,7 +1728,8 @@ def clPrint(*args, **kw):
 			if type(arg) is _types.StringType: _sys.stdout.softspace=0
 		print
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 _badFormats = ["%h", "%m", "%b", "%r", "%t", "%u", "%w", "%z"]
 		
@@ -1724,7 +1755,8 @@ def printf(format, *args, **kw):
 		except ValueError, e:
 			raise IrafError(str(e))
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 # _backDir is previous working directory
 
@@ -1741,7 +1773,8 @@ def pwd(**kw):
 	try:
 		print _os.getcwd()
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def chdir(directory=None, **kw):
 	"""Change working directory"""
@@ -1775,7 +1808,8 @@ def chdir(directory=None, **kw):
 		except (IrafError, OSError):
 			raise IrafError("Cannot change directory to `%s'" % (directory,))
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 cd = chdir
 
@@ -1796,7 +1830,8 @@ def back(**kw):
 		print _backDir
 		_backDir = _newBack
 	finally:
-		redirReset(resetList, closeFHList)
+		rv = redirReset(resetList, closeFHList)
+	return rv
 
 def error(errnum=0, errmsg=''):
 	"""Print error message"""
@@ -1841,7 +1876,9 @@ def clCompatibilityMode(verbose=0, _save=0):
 	prompt2 = '>>>'
 	while (1):
 		try:
-			if loadedPath:
+			if not _sys.stdin.isatty():
+				prompt = ''
+			elif loadedPath:
 				prompt = loadedPath[-1].getName()[:2] + '>'
 			else:
 				prompt = 'cl>'
@@ -1924,7 +1961,8 @@ def clExecute(s, locals=None, mode="proc",
 			exec pycode.vars.proc_name+"()" in locals
 		return code
 	finally:
-		redirReset(resetList, closeFHList)
+		# note return value not used
+		rv = redirReset(resetList, closeFHList)
 
 
 # -----------------------------------------------------
@@ -2168,13 +2206,14 @@ def redirProcess(kw):
 				'Stderr': (1, "stderr", "w"),
 				'StderrAppend': (1, "stderr", "a"),
 				}
+	PipeOut = None
 	for key in redirDict.keys():
 		if kw.has_key(key):
 			outputFlag, standardName, openArgs = redirDict[key]
 			# if it is a string, open as a file
 			# otherwise assume it is a filehandle
 			value = kw[key]
-			if type(value) == _types.StringType:
+			if isinstance(value, _types.StringType):
 				# expand IRAF variables
 				value = Expand(value)
 				if outputFlag:
@@ -2184,7 +2223,47 @@ def redirProcess(kw):
 				fh = open(value,openArgs)
 				# close this when we're done
 				closeFHList.append(fh)
+			elif isinstance(value, _types.IntType):
+				# integer is OK for output keywords -- it indicates
+				# that output should be captured and returned as
+				# function value
+				if not outputFlag:
+					raise IrafError("%s redirection must "
+						"be from a file handle or string\n"
+						"Value is `%s'" %
+						(key, value))
+				if not value:
+					fh = None
+				else:
+					if PipeOut is None:
+						# several outputs can be written to same buffer
+						# (e.g. Stdout=1, Stderr=1 is legal)
+						PipeOut = _StringIO.StringIO()
+						# stick this in the close list too so we know that
+						# output should be returned
+						# wrap it in a tuple to make it easy to recognize
+						closeFHList.append((PipeOut,))
+					fh = PipeOut
+			elif type(value) in (_types.ListType, _types.TupleType):
+				# list/tuple of strings is OK for input
+				if outputFlag:
+					raise IrafError("%s redirection must "
+						"be to a file handle or string\n"
+						"Value is type " %
+						(key, type(value)))
+				try:
+					if value and value[0][-1:] == '\n':
+						s = _string.join(value,'')
+					else:
+						s = _string.join(value,'\n')
+					fh = _StringIO.StringIO(s)
+					# close this when we're done
+					closeFHList.append(fh)
+				except TypeError:
+					raise IrafError("%s redirection must "
+						"be from a sequence of strings\n" % key)
 			else:
+				# must be a file handle
 				if outputFlag:
 					if not hasattr(value, 'write'):
 						raise IrafError("%s redirection must "
@@ -2197,7 +2276,7 @@ def redirProcess(kw):
 						"Value is `%s'" %
 						(key, value))
 				fh = value
-			redirKW[standardName] = fh
+			if fh is not None: redirKW[standardName] = fh
 			del kw[key]
 	return redirKW, closeFHList
 
@@ -2222,10 +2301,23 @@ def redirReset(resetList, closeFHList):
 
 	"""Restore _sys.stdin, stdout, stderr to their original values
 
-	Also closes the filehandles in closeFHList
+	Also closes the filehandles in closeFHList.  If a tuple with a
+	StringIO pipe is included in closeFHList, that means the value
+	should be returned as the return value of the function.
+	Returns an array of lines (without newlines.)
 	"""
-
+	PipeOut = None
 	for fh in closeFHList:
-		fh.close()
+		if isinstance(fh, _types.TupleType):
+			PipeOut = fh[0]
+		else:
+			fh.close()
 	for key, value in resetList:
 		setattr(_sys,key,value)
+	if PipeOut is not None:
+		# unfortunately cStringIO.StringIO has no readlines method:
+		# PipeOut.seek(0)
+		# rv = PipeOut.readlines()
+		rv = _string.split(PipeOut.getvalue(),'\n')
+		PipeOut.close()
+		return rv
