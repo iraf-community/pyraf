@@ -202,7 +202,7 @@ int cdl_setCursor(CDLPtr cdl, int x, int y, int wcs);
 int cdl_setWCS(CDLPtr cdl, char *imname, char *imtitle, float a, float b, float c, float d, float tx, float ty, float z1, float z2, int zt);
 int cdl_getWCS(CDLPtr cdl, char *name_out, char *title_out, float *a_out, float *b_out, float *c_out, float  *d_out, float *tx_out, float *ty_out, float *z1_out, float *z2_out, int *zt_out);
 int cdl_clearFrame(CDLPtr cdl);
-void cdl_selectFB(CDLPtr cdl, int nx, int ny, int *fb, int *w, int *h, int *nf, int reset);
+void cdl_selectFB(CDLPtr cdl, int nx, int ny, int *fb_out, int *w_out, int *h_out, int *nf_out, int reset);
 void cdl_close(CDLPtr cdl);
 void cdl_setFBConfig(CDLPtr cdl, int configno);
 void cdl_getFBConfig(CDLPtr cdl, int *configno_out, int *w_out, int *h_out, int *nframes_out);
