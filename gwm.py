@@ -22,7 +22,7 @@ def redraw(o):
 	# At the very least, clear the window.
 	glClearColor(0.5, 0.5, 0.5, 0)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
+	glEnable(GL_LINE_SMOOTH)
 
 class GraphicsWindowManager:
 
@@ -81,7 +81,7 @@ class GraphicsWindow:
 			Ptogl.createdRoot = 0   # clear so subsequent calls don't redo
 
 		self.top = Tkinter.Toplevel()
-		self.gwidget = Ptogl.Ptogl(self.top)
+		self.gwidget = Ptogl.Ptogl(self.top,width=700,height=500)
 		self.gwidget.redraw = redraw
 		self.top.title(windowName)
 		self.gwidget.pack(side = 'top', expand=1, fill='both')

@@ -28,6 +28,7 @@ by a gwm-wide configuration state. See gkiopengl.py
 import fontdata
 import Numeric
 import gwm
+import gkiopengl
 import math
 from OpenGL.GL import *
 from gki import *
@@ -55,7 +56,23 @@ class TextAttributes:
 
 	# Used as a structure definition basically, perhaps it should be made
 	# more sophisticated.
-	def __init__(self,charUp=90., charSize=1.,charSpace=0.,
+	def __init__(self):
+	
+		self.charUp = 90.
+		self.charSize = 1.
+		self.charSpace = 0.
+		self.textPath = CHARPATH_RIGHT
+		self.textHorizontalJust = JUSTIFIED_NORMAL
+		self.textVerticalJust = JUSTIFIED_NORMAL
+		self.textFont = FONT_ROMAN
+		self.textQuality = FQUALITY_NORMAL
+		self.textColor = 1
+		self.font = fontdata.font1
+		# Place to keep font size and aspect for current window dimensions
+		self.hFontSize = None
+		self.fontAspect = None
+		
+	def set(self,charUp=90., charSize=1.,charSpace=0.,
 		textPath=CHARPATH_RIGHT, textHorizontalJust=JUSTIFIED_NORMAL,
 		textVerticalJust=JUSTIFIED_NORMAL, textFont=FONT_ROMAN,
 		textQuality=FQUALITY_NORMAL, textColor=1):
@@ -69,7 +86,20 @@ class TextAttributes:
 		self.textFont = textFont
 		self.textQuality = textQuality
 		self.textColor = textColor
-		self.font = fontdata.font1
+#		self.font = fontdata.font1
+		# Place to keep font size and aspect for current window dimensions
+
+	def setFontSize(self):
+
+		"""Set the unit font size for a given window using the iraf
+		configuration parameters contained in a gwm attribute class"""
+
+		irafConfig = gwm.getIrafGkiConfig()
+		self.hFontSize, self.fontAspect = irafConfig.fontSize()
+		
+	def getFontSize(self):
+	
+		return self.hFontSize, self.fontAspect
 		
 def softText(x,y,textstr):
 
@@ -77,10 +107,9 @@ def softText(x,y,textstr):
 	# except for the input x,y, all coordinates are in units of pixels
 	
 	# get unit font size
-	irafGkiConfig = gwm.getIrafGkiConfig()
 	win = gwm.getActiveWindow()
 	ta = win.iplot.textAttributes
-	hsize, fontAspect = irafGkiConfig.fontSize()
+	hsize, fontAspect = ta.getFontSize()
 	vsize = hsize * fontAspect
 	# get current size in unit font units (!)
 	fsize = ta.charSize
@@ -167,10 +196,15 @@ def softText(x,y,textstr):
 	# Apply offset to take into account our fonts have origin 0 at bottom
 	#   left hand corner, not center as assumed above.
 	glTranslatef(-fsize*hsize/2.,-fsize*vsize/2.,0)
+	glLineWidth(1.0)
+	apply(glColor3f,win.iplot.colors.toRGB(ta.textColor))
 	# The main event!
 	for char in textstr:
+		if ta.textFont == FONT_BOLD: # This will need to be changed to
+			glLineWidth(2.0)          # handle font changes in text strings
 		drawchar(char,ta.font,fsize*hsize,fontAspect)
 		glTranslatef(dx,dy,0.)
+	
 	glPopMatrix()
 	# The End
 	

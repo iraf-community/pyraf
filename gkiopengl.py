@@ -28,7 +28,12 @@ class IrafPlot:
 		self.glBuffer = GLBuffer()
 		self.gkiBuffer = GkiBuffer()
 		self.wcs = None
+		self.colors = IrafColors()
+		self.linestyles = IrafLineStyles()
 		self.textAttributes = TextAttributes()
+		self.lineAttributes = LineAttributes()
+		self.fillAttributes = FillAttributes()
+		self.markerAttributes = MarkerAttributes()
 
 class GkiOpenGlKernel(GkiKernel):
 
@@ -83,6 +88,8 @@ class GkiOpenGlKernel(GkiKernel):
 		win.redraw = self.redraw
 		if not hasattr(win,"iplot"):
 			win.iplot = IrafPlot()
+		ta = win.iplot.textAttributes
+		ta.setFontSize()
 		if mode == 5:
 			# clear the display
 			print "clearing the display"
@@ -117,13 +124,16 @@ class GkiOpenGlKernel(GkiKernel):
 
 	def redraw(self, o):
 
+		ta = o.iplot.textAttributes
+		ta.setFontSize()
 		glClearColor(0,0,0,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
 		glOrtho(0,1,0,1,-1,1)
 		glDisable(GL_LIGHTING)
-
+		glShadeModel(GL_FLAT)
+		
 		for (function, args) in o.iplot.glBuffer.get():
 			apply(function, args)
 		glFlush()
@@ -155,18 +165,42 @@ def gki_polyline(arg): _glAppend((gl_polyline,(ndc(arg[1:]),)))
 def gki_polymarker(arg): print "GKI_POLYMARKER"
 def gki_text(arg):
 	
-	print "GKI_TEXT:", arg[3:].tostring()
+#	print "GKI_TEXT:", arg[3:].tostring()
 	x = ndc(arg[0])
 	y = ndc(arg[1])
 	text = arg[3:].astype(Numeric.Int8).tostring()
 	_glAppend((gl_text, (x, y, text)))
 
+def gki_fillarea(arg): 
 
-def gki_fillarea(arg): print "GKI_FILLAREA"
+	_glAppend((gl_fillarea,(ndc(arg[1:]),)))
+	print "GKI_FILLAREA"
+
 def gki_putcellarray(arg): print "GKI_PUTCELLARRAY"
-def gki_setcursor(arg): print "GKI_SETCURSOR"
-def gki_plset(arg): print "GKI_PLSET"
-def gki_pmset(arg): print "GKI_PMSET"
+def gki_setcursor(arg):
+
+	cursorNumber = arg[0]
+	x = arg[1]/GKI_MAX
+	y = arg[2]/GKI_MAX
+	print "GKI_SETCURSOR", cursorNumber, x, y
+	_glAppend((gl_setcursor, (cursorNumber, x, y)))
+	
+def gki_plset(arg):
+
+	linetype = arg[0]
+	linewidth = arg[1]/GKI_FLOAT_FACTOR
+	color = arg[2]
+	print "GKI_PLSET",linetype, linewidth, color
+	_glAppend((gl_plset, (linetype, linewidth, color)))
+	
+def gki_pmset(arg):
+
+	marktype = arg[0]
+	marksize = arg[1]/GKI_MAX
+	color = arg[2]
+	print "GKI_PMSET", marktype, marksize, color
+	_glAppend((gl_pmset, (marktype, marksize, color)))
+
 def gki_txset(arg):
 
 	charUp = float(arg[0])
@@ -184,7 +218,13 @@ def gki_txset(arg):
 		textHorizontalJust, textVerticalJust, textFont,
 		textQuality, textColor)))
 
-def gki_faset(arg): print "GKI_FASET"
+def gki_faset(arg):
+
+	fillstyle = arg[0]
+	color = arg[1]
+	print "GKI_FASET",fillstyle, color
+	_glAppend((gl_faset,(fillstyle, color)))
+
 def gki_getcursor(arg): print "GKI_GETCURSOR (GKI_CURSORVALUE)"
 def gki_getcellarray(arg): print "GKI_GETCELLARRAY"
 def gki_unknown(arg): print "GKI_UNKNOWN"
@@ -206,30 +246,78 @@ def gl_flush(arg): pass
 
 def gl_polyline(vertices):
 
+	# First, set all relevant attributes
+	win = gwm.getActiveWindow()
+	la = win.iplot.lineAttributes
+	glLineWidth(la.linewidth)
+	stipple = 0
+	clear = 0
+	if la.linestyle == 0: clear = 1 # "clear" linestyle, don't draw!
+	elif la.linestyle == 1: pass # solid line
+	elif 2 <= la.linestyle < len(win.iplot.linestyles.patterns):
+		glEnable(GL_LINE_STIPPLE)
+		stipple = 1
+		glLineStipple(1,win.iplot.linestyles.patterns[la.linestyle])
 	glBegin(GL_LINE_STRIP)
-	glColor3f(1,1,1)
+	if not clear:
+		apply(glColor3f,win.iplot.colors.toRGB(la.color))
+	else:
+		glColor3f(0.,0.,0.)
 	glVertex(Numeric.reshape(vertices,(len(vertices)/2,2)))
 	glEnd()
+	if stipple:
+		glDisable(GL_LINE_STIPPLE)
 
 def gl_polymarker(arg): pass
 def gl_text(x,y,text):
+
 	softText(x,y,text)
-#	drawchar(x,y,text)
-def gl_fillarea(arg): pass
+
+def gl_fillarea(vertices):
+
+	win = gwm.getActiveWindow()
+	fa = win.iplot.fillAttributes
+	clear = 0
+	if fa.fillstyle == 0: # clear region
+		clear = 1
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+	elif fa.fillstyle == 1: # hollow
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+	elif fa.fillstyle == 2: # solid
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+	elif fa.fillstyle > 2: # hatched
+		pass
+	if not clear:
+		apply(glColor3f,win.iplot.colors.toRGB(fa.color))
+	else:
+		glColor3f(0.,0.,0.)
+	# not a simple rectangle
+	glBegin(GL_POLYGON)
+	glVertex(Numeric.reshape(v,(len(v)/2,2)))
+	glEnd()
+
 def gl_putcellarray(arg): pass
-def gl_setcursor(arg): pass
-def gl_plset(arg): pass
-def gl_pmset(arg): pass
+def gl_setcursor(cursornumber, x, y): pass
+def gl_plset(linestyle, linewidth, color):
+
+	win = gwm.getActiveWindow()
+	win.iplot.lineAttributes.set(linestyle, linewidth, color)
+	
+def gl_pmset(marktype, marksize, color): pass
 
 def gl_txset(charUp, charSize, charSpace, textPath, textHorizontalJust,
 			 textVerticalJust, textFont, textQuality, textColor):
 	
 	win = gwm.getActiveWindow()
-	win.iplot.textAttributes =  TextAttributes(charUp, charSize, charSpace,
+	win.iplot.textAttributes.set(charUp, charSize, charSpace,
 		textPath, textHorizontalJust, textVerticalJust, textFont,
 		textQuality, textColor)
 
-def gl_faset(arg): pass
+def gl_faset(fillstyle, color):
+	
+	win = gwm.getActiveWindow()
+	win.iplot.fillAttributes.set(fillstyle, color)
+
 def gl_getcursor(arg): pass
 def gl_getcellarray(arg): pass
 def gl_unknown(arg): pass
@@ -364,7 +452,24 @@ class IrafGkiConfig:
 		self.isFixedAspectFont = 1
 		self.hasMinPixSizeUnitFont = 1
 		self.hasMaxPixSizeUnitFont = 1
-		
+		# The following is a list of rgb tuples (0.0-1.0 range) for the
+		# default IRAF set of colors
+		self.defaultColors = [
+			(0.,0.,0.), # black
+			(1.,1.,1.), # white
+			(1.,0.,0.), # red
+			(0.,1.,0.), # green
+			(0.,0.,1.), # blue
+			(1.,1.,0.), # yellow
+			(0.,1.,1.), # cyan
+			(1.,0.,1.), # magenta
+			(1.,0.5,0.), # coral
+			(0.7,0.19,0.38), # maroon
+			(1.,0.65,0.), # orange
+			(0.94,0.9,0.55), # khaki
+			(0.25,0.88,0.82), # turquoise
+			(0.96,0.87,0.7) # wheat
+		]
 	def fontSize(self):
 	
 		"""
@@ -402,3 +507,61 @@ class IrafGkiConfig:
 			vSize = hSize * self.fontAspect
 			fontAspect = self.fontAspect
 		return (hSize, fontAspect)
+
+	def getIrafColors(self):
+
+		return self.defaultColors
+
+class IrafColors:
+
+	def __init__(self):
+
+		self.setDefaults()
+
+	def setDefaults(self):
+
+		irafConfig = gwm.getIrafGkiConfig()
+		self.defaultColors = irafConfig.getIrafColors()
+
+	def toRGB(self, irafcolor):
+
+		if not (0 <= irafcolor < 16):
+			print "WARNING: Iraf color out of legal range (1-16)"
+			irafcolor = 1
+		return self.defaultColors[irafcolor]
+
+class IrafLineStyles:
+
+	def __init__(self):
+
+		self.patterns = [0x0000,0xFFFF,0x00FF,0x5555,0x33FF]
+		
+class LineAttributes:
+
+	def __init__(self):
+
+		self.linestyle = 1
+		self.linewidth = 1.0
+		self.color = 1
+
+	def set(self, linestyle, linewidth, color):
+
+		self.linestyle = linestyle
+		self.linewidth = linewidth
+		self.color = color
+
+class FillAttributes:
+
+	def __init__(self):
+	
+		self.fillstyle = 1
+		self.color = 1
+		
+	def set(self, fillstyle, color):
+	
+		self.fillstyle = fillstyle
+		self.color = color
+
+class MarkerAttributes:
+
+	def __init__(self): pass
