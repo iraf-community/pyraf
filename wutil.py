@@ -150,7 +150,7 @@ class ImageDisplay:
 			return
 		if not isViewable(self.winID):
 			return
-		if not self.lastX:
+		if self.lastX is not None:
 			moveCursorTo(self.winID,self.lastX,self.lastY)
 		setFocusTo(self.winID)
 
