@@ -99,6 +99,26 @@ class GraphicsWindow:
 # object intended to be instantiated only once and be accessible from
 # the module.
 
-g = GraphicsWindowManager()
+_g = GraphicsWindowManager()
 
+#
+# Public routines to access windows managed by _g
+#
 
+def createWindow():
+	"""Create a new graphics window and make it the active one"""
+	_g.window()
+
+def getActiveWindow():
+	"""Get the active window"""
+	if _g.activeWindow:
+		return _g.activeWindow.gwidget
+	else:
+		return None
+
+def getActiveWindowTop():
+	"""Get the top window"""
+	if _g.activeWindow:
+		return _g.activeWindow.top
+	else:
+		return None

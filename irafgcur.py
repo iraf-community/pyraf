@@ -33,14 +33,12 @@ class Gcursor:
 		
 		# Get reference to active graphics window and bind event handling
 		#  from it.
-		self.top = gwm.g.activeWindow.top
-		self.win = gwm.g.activeWindow.gwidget
+		self.top = gwm.getActiveWindowTop()
+		self.win = gwm.getActiveWindow()
 		self.bind()
 		self.top.mainloop()
 		self.unbind()
 		return self.retString
-
-#		return "0 0 0 q beep beep"
 
 	def bind(self):
 	
@@ -60,10 +58,9 @@ class Gcursor:
 		"""Do an immediate cursor read and return coordinates in
 		NDC coordinates"""
 
-		sx = gwm.g.activeWindow.gwidget.winfo_pointerx() - \
-			 gwm.g.activeWindow.gwidget.winfo_rootx()
-		sy = gwm.g.activeWindow.gwidget.winfo_pointery() - \
-			 gwm.g.activeWindow.gwidget.winfo_rooty()
+		win = gwm.getActiveWindow()
+		sx = win.winfo_pointerx() - win.winfo_rootx()
+		sy = win.winfo_pointery() - win.winfo_rooty()
 		self.x = sx
 		self.y = sy
 		# get current window size
@@ -80,14 +77,13 @@ class Gcursor:
 		print self.x, self.y
 
 	def getKey(self, event):
-		print "in getKey!"
 		# The main character handling routine (to be filled out)
 		key = event.char
 		x,y = self.getNDCCursorPos()
 		if key in string.lowercase:
-			wx,wy,gwcs = gwm.g.activeWindow.gwidget.iplot.wcs.get(x,y)
+			wx,wy,gwcs = gwm.getActiveWindow().iplot.wcs.get(x,y)
 			self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
-			print self.retString
+			print "getKey:", self.retString
 			self.top.quit() # time to go!
 		else:
 			# ignore for the time being
