@@ -313,7 +313,13 @@ class FocusController:
 	def removeFocusEntity(self, focusEntityName):
 
 		if self.focusEntities.has_key(focusEntityName):
+			entity = self.focusEntities[focusEntityName]
 			del self.focusEntities[focusEntityName]
+			try:
+				while 1:
+					self.focusStack.remove(entity)
+			except ValueError:
+				pass
 
 	def restoreLast(self):
 
