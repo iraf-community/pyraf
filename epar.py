@@ -383,6 +383,8 @@ class EparDialog:
         """Scroll the panel down to ensure widget with focus to be visible"""
         canvas = self.top.f.canvas
         widgetWithFocus = canvas.entries.focus_get()
+        if widgetWithFocus is None:
+            return
         # determine distance of widget from top & bottom edges of canvas
         y1 = widgetWithFocus.winfo_rooty()
         y2 = y1 + widgetWithFocus.winfo_height()
