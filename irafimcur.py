@@ -11,9 +11,9 @@ import os, sys, wutil
 from irafglobals import Verbose, IrafError
 try:
 	import cdl
+	import gwm
 	try:
 		import threading
-		import gwm
 		def imcur(): return  _imcur(_threadedReadCursor)
 	except ImportError:
 		def imcur(): return  _imcur()
