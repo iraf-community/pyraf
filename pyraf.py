@@ -1,65 +1,74 @@
 #! /usr/local/bin/python -i
 """
-Start up pyraf (Python IRAF front end)
+pyraf: Python IRAF front end
+
+Usage: pyraf [options]
+  where options are one or more of:
+  -p  Packages are defined as variables (default)
+  -t  Both tasks and packages are defined as variables
+  -n  Keep user namespace clean, don't define tasks or packages
+      as variables
+  -v  Set verbosity level (may be repeated to increase verbosity)
+  -h  Print this message
 
 Brief help:
 
-	To load a package:
-		iraf.load("images")
-		iraf.run("images")
-		pkg = iraf.getPkg("images")
-		pkg()
-	You can also do iraf.load("images",doprint=0) or just
-	iraf.load("images",0) to skip printing.  pkg(_doprint=0)
-	has the same effect (note the '_' in front of the keyword,
-	which is necessary because you can also include package
-	parameters as arguments.)
+To load a package, use any of:
+    iraf.load("images")
+    iraf.run("images")
+    pkg = iraf.getPkg("images")
+    pkg()
+You can also do iraf.load("images",doprint=0) or just
+iraf.load("images",0) to skip printing.  pkg(_doprint=0)
+has the same effect (note the '_' in front of the keyword,
+which is necessary because you can also include package
+parameters as arguments.)
 
-	To get short-hand task or package object:
-		imstat = iraf.getTask("imstat")
-		imhead = iraf.getTask("imheader")
-		sts = iraf.getPkg("stsdas")
-	Note minimum match is used for task names.  Packages are accessible
-	using either getTask() or getPkg(), while tasks are available only
-	through getTask().
+To get short-hand task or package object:
+    imstat = iraf.getTask("imstat")
+    imhead = iraf.getTask("imheader")
+    sts = iraf.getPkg("stsdas")
+Note minimum match is used for task names.  Packages are accessible
+using either getTask() or getPkg(), while tasks are available only
+through getTask().
 
-	If the -p option is used (the default), packages are defined as
-	objects with the package name.  E.g. after startup you can load
-	stsdas by saying
-		stsdas()
-	Note there is no minimum match in this case, you must type the
-	entire package name.  Tasks are available as attributes of the
-	package, e.g.
-		restore()
-		restore.lucy.lpar()
-	When accessed this way, minimum match is used for the task names.
-	Both tasks directly in the package and tasks in subpackages that
-	have already been loaded are accessible (so images.imhead() works
-	even though imheader is in the imutil package.)
+If the -p option is used (the default), packages are defined as
+objects with the package name.  E.g. after startup you can load
+stsdas by saying
+    stsdas()
+Note there is no minimum match in this case, you must type the
+entire package name.  Tasks are available as attributes of the
+package, e.g.
+    restore()
+    restore.lucy.lpar()
+When accessed this way, minimum match is used for the task names.
+Both tasks directly in the package and tasks in subpackages that
+have already been loaded are accessible (so images.imhead() works
+even though imheader is in the imutil package.)
 
-	Similarly, if you set the -t option then both tasks and packages are
-	defined as variables, so this will work:
-		stsdas()
-		restore()
-		lucy.lpar()
+Similarly, if you set the -t option then both tasks and packages are
+defined as variables, so this will work:
+    stsdas()
+    restore()
+    lucy.lpar()
 
-	If you set the -n option, neither tasks nor packages are defined
-	as variables in your namespace (maximally clean but maximally
-	inconvenient too.)
+If you set the -n option, neither tasks nor packages are defined
+as variables in your namespace (maximally clean but maximally
+inconvenient too.)
 
-	To set task parameters there are various syntaxes:
-		imhead.long = "yes"
-		imstat.image = "dev$pix"
-		imstat.set("images","dev$pix")
-		imhead.setParList("dev$pix",longhe="yes")
-	As usual, minimum match is used for parameter names (so we can
-	use just 'long' rather than 'longheader').
+To set task parameters there are various syntaxes:
+    imhead.long = "yes"
+    imstat.image = "dev$pix"
+    imstat.set("images","dev$pix")
+    imhead.setParList("dev$pix",longhe="yes")
+As usual, minimum match is used for parameter names (so we can
+use just 'long' rather than 'longheader').
 
-	To run tasks:
-		imstat()
-		imstat.run()
-		iraf.run("imstat")
-		imhead("dev$pix",long="yes")
+To run tasks, use one of these forms:
+    imstat()
+    imstat.run()
+    iraf.run("imstat")
+    imhead("dev$pix",long="yes")
 
 $Id$
 
@@ -73,14 +82,8 @@ help = iraf.help
 __version__ = "$Revision$"
 
 def usage():
-	print "Usage: %s [options]" % sys.argv[0]
-	print """ where options are one or more of:
-	-p  Packages are defined as variables (default)
-	-t  Both tasks and packages are defined as variables
-	-n  Keep user namespace clean, don't define tasks or packages
-	    as variables
-	-v  Set verbosity level (may be repeated to increase verbosity)
-	-h  Print this message"""
+	print __doc__
+	sys.stdout.flush()
 	sys.exit()
 
 # special initialization when this is the main program
