@@ -174,20 +174,32 @@ class Subprocess:
 
 	### Write input to subprocess ###
 
-	def write(self, str):
-		"""Write a STRING to the subprocess."""
+	def write(self, str, timeout=10, printtime=2):
+		"""Write a STRING to the subprocess.  Times out (and raises an
+		exception) if the process is not ready in timeout seconds.
+		Prints a message indicating that it is waiting every
+		printtime seconds."""
 
 		if not self.pid:
-			raise SubprocessError, ("no child")							# ===>
+			raise SubprocessError, ("no child process")				# ===>
+
 		# See if subprocess is ready for write.
-		# Add a 2-second wait in case subprocess is still starting up.
-		# (XXX Is that long enough?)
-		if select.select([],self.toChild_fdlist,[],2.0)[1]:
-			self.toChild.write(str)
-			self.toChild.flush()
-		else:
-			# XXX Can write-buffer full be handled better??
-			raise SubprocessError, "write to %s blocked" % self					# ===>
+		# Add a wait in case subprocess is still starting up or is
+		# otherwise temporarily unable to respond.
+		# Loop with message if wait takes longer than that, until wait
+		# exceeds the total timeout.
+
+		if timeout < 0: timeout = 0
+		if printtime>timeout: printtime = timeout
+		totalwait = 0
+		while totalwait <= timeout:
+			if totalwait: print "waiting for subprocess..."
+			totalwait = totalwait + printtime
+			if select.select([],self.toChild_fdlist,[],printtime)[1]:
+				self.toChild.write(str)
+				self.toChild.flush()
+				return												# ===>
+		raise SubprocessError, "write to %s blocked" % self			# ===>
 
 	def writeline(self, line=''):
 		"""Write STRING, with added newline termination, to subprocess."""
