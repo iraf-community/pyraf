@@ -2366,7 +2366,11 @@ def chdir(directory=None, **kw):
     resetList = redirApply(redirKW)
     try:
         global _backDir
-        _newBack = _os.getcwd()
+        try:
+            _newBack = _os.getcwd()
+        except OSError:
+            # OSError for getcwd() means current directory does not exist
+            _newBack = _backDir
         if directory is None:
             # use startup directory as home if argument is omitted
             directory = userWorkingHome
