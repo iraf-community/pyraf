@@ -18,7 +18,7 @@ LOG = 1
 ELOG = 2 # ??? won't implement, for now
 DEFINED = 1
 CLIP = 2 # needed for this?
-NEWFORMAT = 4 
+NEWFORMAT = 4
 
 class IrafGWcs:
 
@@ -79,14 +79,14 @@ class IrafGWcs:
 									 Numeric.Int16)
 		return wcsStruct.tostring()
 
-	
+
 	def transform(self, x, y, wcsID):
 
 		"""Transform x,y to wcs coordinates for the given
 		wcs (integer 0-16) and return as a 2-tuple"""
 
 		self.commit()
-		if wcsID == 0: return x, y
+		if wcsID == 0: return (x, y, wcsID)
 
 		# Since transformation is defined by a direct linear (or log) mapping
 		# between two rectangular windows, apply the usual linear
@@ -99,9 +99,9 @@ class IrafGWcs:
 		return (self.transform1d(coord=x,dimension='x',wcsID=wcsID),
 				self.transform1d(coord=y,dimension='y',wcsID=wcsID),
 				wcsID)
-	
+
 	def transform1d(self, coord, dimension, wcsID):
-		
+
 		wx1, wx2, wy1, wy2, sx1, sx2, sy1, sy2, xt, yt, flag = \
 			 self.wcs[wcsID-1]
 		if dimension == 'x':
@@ -120,9 +120,9 @@ class IrafGWcs:
 		else:
 			raise IrafError("Unknown or unsupported axis plotting type")
 		return val
-	
+
 	def _isWcsDefined(self, i):
-	
+
 		w = self.wcs[i]
 		if w[-1] & NEWFORMAT:
 			if w[-1] & DEFINED: return 1
@@ -130,13 +130,22 @@ class IrafGWcs:
 		else:
 			if w[4] or w[5] or w[6] or w[7]: return 0
 			else: return 1
-	
+
 	def get(self, x, y, wcsID=None):
 
-		"""Find the WCS (16 max possible) that should be used to
-		transform x and y. return as a tuple (wx,wy, wnum) where
-		wnum is the selected WCS (0 if none defined). The optional
-		parameter wcsID is used to force a wcs selection"""
+		"""Returned transformed values of x, y using given wcsID or
+		closest WCS if none given.  Return a tuple (wx,wy,wnum) where
+		wnum is the selected WCS (0 if none defined)."""
+
+		self.commit()
+		if wcsID is None:
+			wcsID = self._getWCS(x,y)
+		return self.transform(x,y,wcsID)
+
+	def _getWCS(self, x, y):
+
+		"""Return the WCS (16 max possible) that should be used to
+		transform x and y. Returns 0 if no WCS is defined."""
 
 		# The algorithm for determining which of multiple wcs's
 		# should be selected is thus (and is different in one
@@ -146,47 +155,55 @@ class IrafGWcs:
 		# 2 if more than one, the tie is broken by choosing the one
 		#   whose center is closer.
 		# 3 in case of ties, the higher number wcs is chosen.
-		# 4 if inside none, the distance is computed to the nearest part 
+		# 4 if inside none, the distance is computed to the nearest part
 		#   of the viewport border, the one that is closest is chosen
 		# 5 in case of ties, the higher number wcs is chosen.
-		
-		self.commit()
-		index = []
-		newindex = []
-		dist = []
-		if wcsID: return self.transform(x,y,wcsID)
+
+		indexlist = []
 		# select subset of those wcs slots which are defined
 		for i in xrange(len(self.wcs)):
-			if self._isWcsDefined(i): index.append(i)
+			if self._isWcsDefined(i):
+				indexlist.append(i)
 		# if 0 or 1 found, we're done!
-		if len(index) == 1: return self.transform(x,y,index[0]+1)
-		if len(index) == 0: return (x,y,0)
+		if len(indexlist) == 1:
+			return indexlist[0]+1
+		elif len(indexlist) == 0:
+			return 0
 		# look for viewports x,y is contained in
-		for i in index:
+		newindexlist = []
+		for i in indexlist:
 			x1,x2,y1,y2 = self.wcs[i][4:8]
-			if (x1 <= x <= x2) and (y1 <= y <= y2): newindex.append(i)
+			if (x1 <= x <= x2) and (y1 <= y <= y2):
+				newindexlist.append(i)
 		# handle 3 cases
-		if len(newindex) == 1: return self.transform(x,y,newindex[0]+1)
-		# unique, so done
-		elif len(newindex) == 0:
+		if len(newindexlist) == 1:
+			# unique, so done
+			return newindexlist[0]+1
+		# have to find minimum distance either to centers or to edge
+		dist = []
+		if len(newindexlist) > 1:
+			# multiple, find one with closest center
+			for i in newindexlist:
+				x1,x2,y1,y2 = self.wcs[i][4:8]
+				xcen = (x1+x2)/2
+				ycen = (y1+y2)/2
+				dist.append((xcen-x)**2 + (ycen-y)**2)
+		else:
 			# none, now look for closest border
-			for i in newindex:
-				x1,x2,y1,y2 = self.wcs[4:8]
+			newindexlist = indexlist
+			for i in newindexlist:
+				x1,x2,y1,y2 = self.wcs[i][4:8]
 				xdelt = min([abs(x-x1),abs(x-x2)])
 				ydelt = min([abs(y-y1),abs(y-y2)])
-				xout = not (x1 <= x <= x2)
-				yout = not (y1 <= y <= y2)
-				if xout and yout: dist.append(xdelt**2 + ydelt**2)
-				elif xout: dist.append(ydelt**2)
-				else: dist.append(xdelt**2)
-		else: 
-			# multiple, find one with closest center
-			for i in newindex:
-				x1,x2,y1,y2 = self.wcs[i][4:8]
-				xcen,ycen = (x1+x2)/2,(y1+y2)/2
-				dist.append((xcen-x)**2 + (ycen-y)**2)
-			minDist = min(dist)
-		# now return transform of minimum distance viewport
-		#  reverse is used to give priority to highest value 
-		return self.transform(x,y,dist.reverse.index(minDist)+1)
-
+				if x1 <= x <= x2:
+					dist.append(ydelt**2)
+				elif y1 <= y <= y2:
+					dist.append(xdelt**2)
+				else:
+					dist.append(xdelt**2 + ydelt**2)
+		# now return minimum distance viewport
+		# reverse is used to give priority to highest WCS value
+		newindexlist.reverse()
+		dist.reverse()
+		minDist = min(dist)
+		return newindexlist[dist.index(minDist)]+1

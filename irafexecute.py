@@ -630,7 +630,12 @@ class IrafProcess:
 				("(got %d, expected %d, chan %d)" %
 					(len(xdata), 2*nbytes, chan)))
 		if chan == 4:
-			txdata = Iraf2AscString(xdata)
+			if self.task.getTbflag():
+				# for tasks with .tb flag, stdout is binary data
+				txdata = xdata
+			else:
+				# normally stdout is translated text data
+				txdata = Iraf2AscString(xdata)
 			if checkForEscapeSeq:
 				if ((txdata[0:5] == "\033=rDw") or
 					(txdata[0:5] == "\033+rAw") or
