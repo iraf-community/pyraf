@@ -73,8 +73,11 @@ def IrafExecute(task, envdict):
 	return
 
 _re_chan_len = re.compile(r'\((\d+),(\d+)\)\n')
-_re_paramset = re.compile(r'([a-zA-Z_][a-zA-Z0-9_.]*)\s*=\s*(.*)\n')
-_re_paramrequest = re.compile(r'=([a-zA-Z_$][a-zA-Z0-9_.]*)\n')
+
+# _optsub is the pattern for an optional integer subscript in brackets
+_optsub = r'(?:\[\d+\])?'
+_re_paramset = re.compile(r'([a-zA-Z_][\w.]*' + _optsub + ')\s*=\s*(.*)\n')
+_re_paramrequest = re.compile(r'=([a-zA-Z_$][\w.]*' + _optsub + ')\n')
 
 def IrafIO(process,task):
 
@@ -197,7 +200,7 @@ def IrafIO(process,task):
 				msg = msg[mo.end():]
 			else:
 				raise IrafProcessError("Bad parameter request from task: " +
-					msg)
+					`msg`)
 		else:
 			# last possibility: set value of parameter
 			mo = _re_paramset.match(msg)
