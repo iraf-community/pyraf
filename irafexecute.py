@@ -4,10 +4,12 @@ subprocesses
 $Id$
 """
 
-import os, re, signal, string, struct, sys, time
+import os, re, signal, string, struct, sys, time, Numeric
 import subproc, iraf, gki, gkiopengl, gwm, wutil
 
 stdgraph = None
+
+IPC_PREFIX = Numeric.array([01120],Numeric.Int16).tostring()
 
 class IrafProcessError(Exception):
 	pass
@@ -131,7 +133,14 @@ def IrafIO(process,task):
 					print "data for STDPLOT"
 				elif chan == 9:
 					sdata = Numeric.fromstring(xdata,'s')
-					forChan = sdata[1] # a bit sloppy here
+					if iraf.isBigEndian():
+						# Actually, the channel destination is sent
+						# by the iraf process as a 4 byte int, the following
+						# code basically chooses the right two bytes to
+						# find it in.
+						forChan = sdata[1]
+					else:
+						forChan = sdata[0]
 					if forChan == 6:
 						# STDPLOT control
 						# first see if OPENWS to get device, otherwise
@@ -261,7 +270,6 @@ def IrafTerminate(process):
 		if not process.wait(0.5): process.die()
 
 # IRAF string conversions using Numeric module
-import Numeric
 
 def Asc2IrafString(ascii_string):
 	"""translate ascii to IRAF 16-bit string format"""
@@ -288,7 +296,7 @@ def WriteToIrafProc(process, data):
 	while i<len(data):
 		dsection = data[i:i+block]
 		#     IRAF magic number    number of following bytes      data
-		process.write('\002\120'+struct.pack('>h',len(dsection))+dsection)
+		process.write(IPC_PREFIX+struct.pack('=h',len(dsection))+dsection)
 		i = i + block
 
 def ReadFromIrafProc(process):
@@ -297,10 +305,11 @@ def ReadFromIrafProc(process):
 	
 	# read pipe header first
 	header = process.read(4)
-	if (header[0:2] != '\002\120'):
+	if (header[0:2] != IPC_PREFIX):
 		raise IrafProcessError("Not a legal IRAF pipe record")
-	ntemp = struct.unpack('>h',header[2:])
+	ntemp = struct.unpack('=h',header[2:])
 	nbytes = ntemp[0]
 	# read the rest
 	data = process.read(nbytes)
 	return data
+

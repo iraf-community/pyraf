@@ -39,20 +39,20 @@ class Gcursor:
 		gwm.raiseActiveWindow()
 		self.top.update()
 		if not gwm.isFocusElsewhere():
-			curWinID = wutil.getWindowID()
-			if curWinID == gwm.getTerminalWindowID():
-				# save terminal cursor position if in that window
-				gwm.saveTerminalCursorPosition()
-			if ((wutil.getTopID(self.win.winfo_id()) !=
-				   wutil.getTopID(curWinID))        and
-				wutil.isViewable(self.win.winfo_id())):
-				# if focus not in graphics window already
+			if wutil.isViewable(self.win.winfo_id()):
+				curWinID = wutil.getWindowID()
+				if curWinID == gwm.getTerminalWindowID():
+					# save terminal cursor position if in that window
+					gwm.saveTerminalCursorPosition()
+				if ((wutil.getTopID(self.win.winfo_id()) !=
+					   wutil.getTopID(curWinID))):
+					# if focus not in graphics window already
+					self.top.focus_force()
 				if not self.win.lastX:
 					self.win.lastX = self.win.winfo_width()/2
 					self.win.lastY = self.win.winfo_height()/2
 				wutil.moveCursorTo(self.win.winfo_id(),
-								   self.win.lastX, self.win.lastY)
-				self.top.focus_force()
+							   self.win.lastX, self.win.lastY)
 		self.win.focus_set()
 		self.bind()
 		self.win.ignoreNextRedraw = 1
@@ -126,6 +126,7 @@ class Gcursor:
 		self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
 		if cstring:
 			self.retString = self.retString +' '+cstring
+		gwm.saveGraphicsCursorPosition()
 		self.top.quit() # time to go!
 		
 # Eventually there may be multiple Gcursor classes that return a string
