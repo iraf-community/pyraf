@@ -396,13 +396,30 @@ class EparDialog:
         if not self.isChild:
             self.top.mainloop()
 
+# A bug appeared in Python 2.3 that caused tk_focusNext and
+# tk_focusPrev to fail. The follwoing two routines now will
+# trap this error and call "fixed" versions of these tk routines
+# instead in the event of such errors.
+
     def focusNext(self, event):
         """Set focus to next item in sequence"""
-        event.widget.tk_focusNext().focus_set()
+        try:
+            event.widget.tk_focusNext().focus_set()
+        except TypeError:
+            # see tkinter equivalent code for tk_focusNext to see
+            # commented original version
+            name = event.widget.tk.call('tk_focusNext', event.widget._w)
+            event.widget._nametowidget(str(name)).focus_set()
 
     def focusPrev(self, event):
         """Set focus to previous item in sequence"""
-        event.widget.tk_focusPrev().focus_set()
+        try:
+            event.widget.tk_focusPrev().focus_set()
+        except TypeError:
+            # see tkinter equivalent code for tk_focusPrev to see
+            # commented original version
+            name = event.widget.tk.call('tk_focusPrev', event.widget._w)
+            event.widget._nametowidget(str(name)).focus_set()
 
     def doScroll(self, event):
         """Scroll the panel down to ensure widget with focus to be visible
