@@ -22,15 +22,20 @@ tk.withdraw()
 tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
 tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
 tkv = str(Tkinter.TkVersion)[:3]
-tklib='libtk'+tkv+'.so'
-command = "ldd %s" % (os.path.join(tcl_lib, tklib))
-lib_list = string.split(commands.getoutput(command))
-for lib in lib_list:
-    if string.find(lib, 'libX11') == 0:
-        ind = lib_list.index(lib)
-        x_lib_dirs = os.path.dirname(lib_list[ind + 2])
-        break
-x_inc_dirs = os.path.join(x_lib_dirs, '../include')
+if sys.platform == 'darwin':
+    x_lib_dirs = '/usr/X11R6/lib'
+    x_inc_dirs = '/usr/X11R6/include'
+else:
+    suffix = '.so'
+    tklib='libtk'+tkv+suffix
+    command = "ldd %s" % (os.path.join(tcl_lib, tklib))
+    lib_list = string.split(commands.getoutput(command))
+    for lib in lib_list:
+        if string.find(lib, 'libX11') == 0:
+            ind = lib_list.index(lib)
+            x_lib_dirs = os.path.dirname(lib_list[ind + 2])
+            break
+    x_inc_dirs = os.path.join(x_lib_dirs, '../include')
 local_libs = parse_makefile(get_makefile_filename())['LOCALMODLIBS']
 py_includes = get_python_inc(plat_specific=1)
 py_libs =  get_python_lib(plat_specific=1, standard_lib = 1)
@@ -115,16 +120,6 @@ def dosetup(x_lib_dirs, x_inc_dirs, data_dir, ext):
 
 
 def main():
-#    x_lib_dirs = get_x_libraries(local_libs)
-#    if x_lib_dirs != None:
-#        x_inc_dirs  = os.path.normpath(os.path.join(x_lib_dirs, '../include'))
-#    else:
-#        ldpath = string.split(os.environ['LD_LIBRARY_PATH'], ':')
-#        for xdir in ldpath:
-#            if os.path.isfile(os.path.join(xdir, 'libX11.so')):
-#                x_lib_dirs = xdir
-#                x_inc_dirs = os.path.join(xdir, '/../include')
-#               break
     args = sys.argv
     data_dir = getDataDir(args)
     ext = getExtensions(args, x_inc_dirs, x_lib_dirs)
