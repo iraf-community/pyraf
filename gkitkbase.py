@@ -4,7 +4,7 @@ Tk gui implementation for the gki plot widget
 $Id$
 """
 
-import Numeric, os, sys, string, wutil
+import Numeric, os, sys, string, wutil, time
 import Tkinter, msgiobuffer
 import gki, textattrib, irafgwcs
 from irafglobals import IrafError, pyrafDir, userWorkingHome
@@ -158,6 +158,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         gki.GkiKernel.__init__(self)
         self.name = 'Tkplot'
         self._errorMessageCount = 0
+        self._slowraise = 0
         self.irafGkiConfig = gki._irafGkiConfig
         self.windowName = windowName
         self.manager = manager
@@ -758,7 +759,16 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
         if self.top.state() != Tkinter.NORMAL:
             self.top.deiconify()
-        self.top.tkraise()
+        if self._slowraise == 0:
+            # Get start time for tkraise...
+            _stime = time.time()
+
+            self.top.tkraise()
+            _etime = time.time()
+            # If it takes longer than 1 second to raise the window (ever),
+            # set _slowraise to 1 so that tkraise will never be called again
+            # during this session.
+            if int(_etime - _stime) > 1: self._slowraise = 1
 
     def control_clearws(self, arg):
 
