@@ -111,23 +111,21 @@ class Gcursor:
 				print "Please check back later."
 			else:
 				self._setRetString(key,colonString)
-		if key in string.lowercase+'?':
-			self._setRetString(key,"")
-		elif key in ('='):
-			if key == '=':
-				# snap command - print the plot
-				printPlot()
-		elif key in string.uppercase:
+		elif key == '=':
+			# snap command - print the plot
+			printPlot()
+		elif 'A' <= key <= 'Z':
 			print "Not quite ready to handle CL level gcur commands."
 			print "Please check back later."
 		else:
-			# ignore for the time being
-			pass
+			self._setRetString(key,"")
 
 	def _setRetString(self, key, cstring):
 
 		x,y = self.getNDCCursorPos()
 		wx,wy,gwcs = gwm.getActiveWindow().iplot.wcs.get(x,y)
+		if key <= ' ' or ord(key) >= 127:
+			key = '\\%03o' % (ord(key),)
 		self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
 		if cstring:
 			self.retString = self.retString +' '+cstring
