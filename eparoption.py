@@ -65,24 +65,24 @@ class EparOption:
                      prompt = 0) 
 
         # Generate the input label
-        self.inputLabel = Label(self.master.frame, anchor = W, 
-                                text  = self.name, 
-                                width = self.inputWidth)
+        if (self.paramInfo.get(field = "p_mode") == "h"):
+            self.inputLabel = Label(self.master.frame, anchor = W, 
+                                    text  = "(" + self.name + ")", 
+                                    width = self.inputWidth)
+        else:
+            self.inputLabel = Label(self.master.frame, anchor = W, 
+                                    text  = self.name, 
+                                    width = self.inputWidth)
         self.inputLabel.pack(side = LEFT, fill = X, expand = TRUE)
 
         # Get the prompt string and determine if special handling is needed
         self.prompt = self.paramInfo.get(field = "p_prompt", native = 0, 
                       prompt = 0) 
 
-        #self.promptLabel = Label(self.master.frame, anchor = W,
-        #    text = self.paramInfo.get(field = "p_prompt", native = 1, prompt = 0), 
-        #           width = self.promptWidth)
-        #self.promptLabel.pack(side = RIGHT)
-
         # Check the prompt to determine how many lines of valid text exist
         lines       = string.split(self.prompt, "\n")
         nlines      = len(lines)
-        promptLines = lines[0]
+        promptLines = " " + lines[0]
         infoLines   = ""
         blankLineNo = MAXLINES
         if (nlines > 1):
@@ -105,7 +105,7 @@ class EparOption:
         self.makeInputWidget()
 
         # Pack the parameter entry Frame
-        self.master.frame.pack(side = TOP)
+        self.master.frame.pack(side = TOP, ipady = 1)
 
         # If there is more text associated with this entry, join all the 
         # lines of text with the blank line.  This is the "special" text 
@@ -129,6 +129,11 @@ class EparOption:
             self.master.infoText.label.pack(side = LEFT)
             self.master.infoText.pack(side = TOP, anchor = W)
 
+
+    def makeInputWidget(self):
+        pass
+
+
     def unlearnOption(self, newParamInfo):
 
         self.newParamInfo = newParamInfo
@@ -140,6 +145,7 @@ class EparOption:
                                               prompt = 0) 
         self.choice.set(self.newValue)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
+                     background   = "WhiteSmoke",
                      textvariable = self.choice)
 
 
@@ -168,7 +174,7 @@ class EnumEparOption(EparOption):
 
         self.button.menu = Menu(self.button,  
                                 tearoff = 0,
-                                background = "white",
+                                background = "WhiteSmoke",
                                 activebackground = "gainsboro")
 
         # Generate the menu options
@@ -182,6 +188,7 @@ class EnumEparOption(EparOption):
         self.button['menu'] = self.button.menu
 
         self.button.pack(side = LEFT)
+
 
     def unlearnOption(self, newParamInfo):
 
@@ -215,13 +222,13 @@ class BooleanEparOption(EparOption):
                                  variable    = self.choice,
                                  value       = "yes",  
                                  anchor      = E,
-                                 selectcolor = "SpringGreen")
+                                 selectcolor = "black")
         self.rbyes.pack(side = LEFT, ipadx = self.padWidth)
         self.rbno  = Radiobutton(self.frame, text = "No", 
                                  variable    = self.choice,
                                  value       = "no",  
                                  anchor      = W,
-                                 selectcolor = "SpringGreen")
+                                 selectcolor = "black")
         self.rbno.pack(side = RIGHT, ipadx = self.padWidth)
         self.frame.pack(side = LEFT)
 
@@ -250,20 +257,25 @@ class StringEparOption(EparOption):
 
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
+                     background   = "WhiteSmoke",
                      textvariable = self.choice)
         self.entry.pack(side = LEFT, fill = X, expand = TRUE)
-        self.entry.bind('<Return>', self.entrySet)
         self.entry.bind('<Button-3>', self.popupChoices)
 
-    # Add code to handle other "strings"
+        # Piggyback additional functionality to the Tab key
+        self.entry.bind('<Tab>', self.scrollDown)
 
-    def entrySet(self, event):
+    # This is bad for windows without a scrollbar
+    def scrollDown(self, event):
 
         pass
+        #parentToplevel  = self.master.winfo_toplevel()
+        #parentToplevel.f.canvas.yview_scroll(1, "units") 
+
 
     def popupChoices(self, event):
  
-        self.menu = Menu(self.entry, tearoff = 0, background = "white",
+        self.menu = Menu(self.entry, tearoff = 0, background = "WhiteSmoke",
                          activebackground = "gainsboro")
         self.menu.add_command(label   = "File Browser",
                               command = self.fileBrowser)
@@ -306,9 +318,6 @@ class StringEparOption(EparOption):
 
 class IntEparOption(EparOption):
 
-    # Override base close option 
-    #choiceClass = IntVar
-
     def __init__(self, master, statusBar, paramInfo, fieldWidths):
         EparOption.__init__(self, master, statusBar, paramInfo, fieldWidths)
 
@@ -338,11 +347,14 @@ class IntEparOption(EparOption):
 
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
+                     background   = "WhiteSmoke",
                      textvariable = self.choice)
         self.entry.pack(side = LEFT)
 
         # Set up key bindings
         self.entry.bind('<Return>', self.entryCheck)
+        self.entry.bind('<Tab>', self.entryCheck)
+
 
     # Check the validity of the entry
     def entryCheck(self, event = None):
@@ -415,9 +427,6 @@ class IntEparOption(EparOption):
 
 class RealEparOption(EparOption):
 
-    # Override base close option 
-    #choiceClass = DoubleVar
-
     def __init__(self, master, statusBar, paramInfo, fieldWidths):
         EparOption.__init__(self, master, statusBar, paramInfo, fieldWidths)
 
@@ -447,11 +456,14 @@ class RealEparOption(EparOption):
 
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
+                     background   = "WhiteSmoke",
                      textvariable = self.choice)
         self.entry.pack(side = LEFT)
 
         # Set up key bindings
         self.entry.bind('<Return>', self.entryCheck)
+        self.entry.bind('<Tab>', self.entryCheck)
+
 
     # Check the validity of the entry
     def entryCheck(self, event = None):
@@ -556,9 +568,14 @@ class PsetEparOption(EparOption):
         self.button.pack(side = LEFT)
 
     def childEparDialog(self):
-        epar.EparDialog(self.buttonText, parent = self.master.frame, 
-                        child = "yes", 
-                        title = "PSET Parameter Editor") 
+        
+        # Get a reference to the parent TopLevel
+        parentToplevel  = self.master.winfo_toplevel()
+        childPsetHandle = epar.EparDialog(self.buttonText, 
+                                          parent  = self.master.frame, 
+                                          isChild = "yes", 
+                                          title   = "PSET Parameter Editor") 
+        parentToplevel.childList.append(childPsetHandle)
 
     def unlearnOption(self, newParamInfo):
 

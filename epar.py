@@ -2,7 +2,7 @@
 
 $Id$
 
-M.D. De La Pena, 2000 January 17
+M.D. De La Pena, 2000 February 04
 """
 # System level modules
 from Tkinter import *
@@ -14,8 +14,9 @@ import iraf, irafpar, iraftask, irafhelp, irafgcur, irafukey, cStringIO
 from eparoption import *
 
 # Constants 
+MINVIEW     = 500
 MINPARAMS   = 25
-INPUTWIDTH  = 12
+INPUTWIDTH  = 10
 VALUEWIDTH  = 21 
 PROMPTWIDTH = 55
 
@@ -32,14 +33,13 @@ CHILDY  = 0
 HELPX   = 300
 HELPY   = 0
 
-def epar(taskName, parent = None, child = "no"):
+def epar(taskName, parent = None, isChild = "no"):
 
-    EparDialog(taskName, parent, child) 
+    EparDialog(taskName, parent, isChild) 
 
 class EparDialog:
-    def __init__(self, taskName, parent = None, child = "no", 
-                 title = "PYTHON Parameter Editor"):
-                 #title = "PYTHON Parameter Editor v0.4"):
+    def __init__(self, taskName, parent = None, isChild = "no", 
+                 title = "PYRAF Parameter Editor"):
 
         # Declare the global variables so they can be updated
         global CHILDX
@@ -52,17 +52,32 @@ class EparDialog:
             root.withdraw()
 
         # Track whether this is a parent or child window
-        self.child = child
+        self.isChild = isChild
 
         # Set up a color for the background to differeniate parent and child
-        if (self.child == "yes"):
-            self.bkgColor = "SlateGray3"
+        if (self.isChild == "yes"):
+            self.bkgColor  = "LightSteelBlue"
+            self.iconLabel = "EPAR Child"
         else:
-            self.bkgColor = "SlateGray2"
+            self.bkgColor  = "SlateGray3"
+            self.iconLabel = "EPAR Parent"
 
         # Generate the top epar window
         self.top = Toplevel(self.parent, bg = self.bkgColor) 
         self.top.title(title)
+        self.top.iconname(self.iconLabel)
+
+        # Disable interactive resizing
+        self.top.resizable(width = FALSE, height = FALSE)
+
+        # Create an empty list to hold child EparDialogs
+        # *** Not a good way, REDESIGN with Mediator!
+        # Also, build the parent menu bar
+        if (self.parent == None):
+            self.top.childList = []
+
+        # Build the EPAR menu bar
+        self.makeMenuBar(self.top, self.isChild)
 
         # Get the Iraftask object to determine the package name
         if isinstance(taskName, iraftask.IrafTask):
@@ -79,19 +94,23 @@ class EparDialog:
         # Ignore the last parameter which is $nargs
         self.numParams  = len(self.paramList) - 1
 
-        # Create a spacer Frame beneath the Canvas
-        self.top.spacerA = Frame(self.top, bg = self.bkgColor, height = 8)
-        self.top.spacerA.pack (side = TOP, fill = X)
+        # Create a spacer 
+        Frame(self.top, bg = self.bkgColor, height = 10).pack(side = TOP, 
+              fill = X)
 
         # Print the package and task names
         self.printNames(self.top, self.taskName, self.pkgName)
 
-        # Create a spacer Frame beneath the Canvas
-        self.top.spacerB = Frame(self.top, bg = self.bkgColor, height = 8)
-        self.top.spacerB.pack (side = TOP, fill = X)
+        # Insert a spacer between the static text and the buttons
+        Frame(self.top, bg = self.bkgColor, height = 15).pack(side = TOP, 
+              fill = X)
 
         # Set control buttons at the top of the frame
-        self.buttonbox(self.top)
+        self.buttonBox(self.top)
+
+        # Insert a spacer between the static text and the buttons
+        Frame(self.top, bg = self.bkgColor, height = 15).pack(side = TOP, 
+              fill = X)
 
         # Set up a Frame to hold a scrollable Canvas
         self.top.f = Frame(self.top, relief = RIDGE, borderwidth = 1)
@@ -101,20 +120,15 @@ class EparDialog:
 
         # Only build the scrollbar, if there is something to scroll
         if (self.numParams > MINPARAMS):
+
             # Attach a vertical Scrollbar to the Frame/Canvas
             self.top.f.vscroll = Scrollbar(self.top.f, orient = VERTICAL, 
-                 width = 11, relief = SUNKEN, activerelief = SUNKEN)
+                 width = 11, relief = SUNKEN, activerelief = RAISED,
+                 takefocus = FALSE)
             self.top.f.canvas['yscrollcommand']  = self.top.f.vscroll.set
             self.top.f.vscroll['command'] = self.top.f.canvas.yview
 
-            # Attach a horizontal Scrollbar to the Canvas - may delete this
-            #self.top.f.hscroll = Scrollbar(self.top.f, orient = HORIZONTAL, 
-            #                                width = 11)
-            #self.top.f.canvas['xscrollcommand']  = self.top.f.hscroll.set
-            #self.top.f.hscroll['command'] = self.top.f.canvas.xview
-
-            # Pack the Scrollbar(s)
-            #self.top.f.hscroll.pack(side = BOTTOM, fill = X)
+            # Pack the Scrollbar
             self.top.f.vscroll.pack(side = RIGHT, fill = Y)
 
         # Pack the Frame and Canvas
@@ -129,9 +143,9 @@ class EparDialog:
                            anchor = NW, 
                            window = self.top.f.canvas.entries)
 
-        # Create a spacer Frame beneath the Canvas
-        self.top.spacerC = Frame(self.top, bg = self.bkgColor, height = 5)
-        self.top.spacerC.pack (side = TOP, fill = X)
+        # Insert a spacer between the Canvas and the information frame
+        Frame(self.top, bg = self.bkgColor, height = 4).pack(side = TOP, 
+              fill = X)
 
         # Set up an information Frame after the spacer
         self.top.status = Label(self.top, text = "", relief = SUNKEN,
@@ -172,23 +186,18 @@ class EparDialog:
         height = self.top.f.canvas.entries.winfo_height()
 
         # Reconfigure the Canvas size based on the Frame.  
-        # *** DO THIS A BETTER WAY
         if (self.numParams <= MINPARAMS):
             viewHeight = height
-        elif ((self.numParams > MINPARAMS) and (self.numParams <= (2*MINPARAMS))):
-            viewHeight = height / 2
-        elif ((self.numParams > (2*MINPARAMS)) and (self.numParams <= (3*MINPARAMS))):
-            viewHeight = height / 3
         else:
-            viewHeight = height / 4
 
-        if (self.numParams > MINPARAMS):
+            # Set the minimum display
+            viewHeight = MINVIEW
 
             # Scrollregion is based upon the full size of the entry Frame
             self.top.f.canvas.config(scrollregion = (0, 0, width, height))
 
             # Smooth scroll 
-            self.top.f.canvas.config(yscrollincrement = 1)
+            self.top.f.canvas.config(yscrollincrement = 15)
 
         # Set the actual viewable region for the Canvas
         self.top.f.canvas.config(width = width, height = viewHeight)
@@ -199,19 +208,27 @@ class EparDialog:
         # Associate deletion of the main window to a Abort
         self.top.protocol("WM_DELETE_WINDOW", self.abort)
 
-        #self.initial_focus = self.top
-        #self.initial_focus.focus_set()
-
         # run the mainloop
-        self.top.mainloop()
+        if (self.isChild == "no"):
+            self.top.mainloop()
 
 
     # Method to create the parameter entries
     def makeEntries(self, master, statusBar):
 
+        # Determine the size of the longest input string
+        inputLength = INPUTWIDTH
+        for i in range(self.numParams):
+            inputString = self.paramList[i].get(field = "p_name", 
+                          native = 0, prompt = 0)
+            if (len(inputString) > inputLength):
+                inputLength = len(inputString)
+
         # Set up the field widths
+        # Allow extra spaces for buffer and in case the longest parameter 
+        # has the hidden parameter indicator
         self.fieldWidths = {}
-        self.fieldWidths['inputWidth']  = INPUTWIDTH
+        self.fieldWidths['inputWidth']  = inputLength + 4
         self.fieldWidths['valueWidth']  = VALUEWIDTH
         self.fieldWidths['promptWidth'] = PROMPTWIDTH
 
@@ -276,15 +293,16 @@ class EparDialog:
         helpbox = Frame(topbox, bg = self.bkgColor)
     
         # Set up the information strings
-        packString = "Package = " + string.upper(pkgName)
+        packString = "  Package = " + string.upper(pkgName)
         Label(textbox, text = packString, bg = self.bkgColor).pack(side = TOP, 
               anchor = W)
 
-        taskString = "     Task = " + string.upper(taskName)
+        taskString = "       Task = " + string.upper(taskName)
         Label(textbox, text = taskString, bg = self.bkgColor).pack(side = TOP, 
               anchor = W)
         textbox.pack(side = LEFT, anchor = W)
 
+        """
         # Set up the menu for the HELP viewing choice
         self.helpChoice = StringVar()
         self.helpChoice.set("WINDOW")
@@ -322,48 +340,118 @@ class EparDialog:
         topbox.pack(side = TOP, expand = TRUE, fill = X)
 
         buttonHelpView.bind("<Enter>", self.printHelpViewInfo)
+        """
+
+        topbox.pack(side = TOP, expand = TRUE, fill = X)
+
+    # Method to set up the parent menu bar
+    def makeMenuBar(self, top, isChild):
+
+        menubar = Frame(top, bd = 1, relief = GROOVE)
+
+        # Generate the menus
+        fileMenu = self.makeFileMenu(menubar, isChild)
+
+        # When redesigned, optionsMenu should only be on the parent
+        #if (isChild == "no"):
+        #    optionsMenu = self.makeOptionsMenu(menubar)
+        optionsMenu = self.makeOptionsMenu(menubar)
+
+        menubar.pack(fill = X)
+
+
+    # Method to generate a "File" menu
+    def makeFileMenu(self, menubar, isChild):
+
+        fileButton = Menubutton(menubar, text = 'File')
+        fileButton.pack(side = LEFT, padx = 2)
+        
+        fileButton.menu = Menu(fileButton, tearoff = 0)
+
+        if (isChild == "no"):
+            fileButton.menu.add_command(label = "Execute", command=self.execute)
+
+        fileButton.menu.add_command(label = "Save",    command=self.quit)
+        fileButton.menu.add_command(label = "Unlearn", command=self.unlearn)
+        fileButton.menu.add_separator()
+        fileButton.menu.add_command(label = "Help",    command=self.setHelpViewer)
+        fileButton.menu.add_separator()
+        fileButton.menu.add_command(label = "Abort/Exit", command=self.abort)
+
+        # Associate the menu with the menu button
+        fileButton["menu"] = fileButton.menu
+
+        return fileButton
+
+    # Method to generate the "Options" menu for the parent EPAR only
+    def makeOptionsMenu(self, menubar):
+
+        # Set up the menu for the HELP viewing choice
+        self.helpChoice = StringVar()
+        self.helpChoice.set("WINDOW")
+
+        optionButton = Menubutton(menubar, text = "Options")
+        optionButton.pack(side = LEFT, padx = 2)
+
+        optionButton.menu = Menu(optionButton, tearoff = 0)
+
+        optionButton.menu.add_radiobutton(label = "Display Help in a Window",
+                                          value       = "WINDOW",
+                                          selectcolor = "black",
+                                          variable    = self.helpChoice)
+        optionButton.menu.add_radiobutton(label = "Display Help in a Browser",
+                                          value       = "BROWSER",
+                                          selectcolor = "black",
+                                          variable    = self.helpChoice)
+
+        # Associate the menu with the menu button
+        optionButton["menu"] = optionButton.menu
+
+        return optionButton
+
 
     # Method to set up the action buttons
-    def buttonbox(self, top):
+    # Create the buttons in an order for good navigation
+    def buttonBox(self, top):
 
-        box = Frame(top, bg = self.bkgColor)
+        box = Frame(top, bg = self.bkgColor, bd = 1, relief = SUNKEN)
 
         # When the Button is exited, the information clears, and the
         # Button goes back to the nonactive color.
         top.bind("<Leave>", self.clearInfo)
 
-        # Generate the a Help button
-        buttonHelp = Button(box, text = "HELP", fg = "black",
-                            relief = RAISED, command = self.setHelpViewer)
-        buttonHelp.pack(side = RIGHT, padx = 5, pady = 5)
-        buttonHelp.bind("<Enter>", self.printHelpInfo)
-
         # Determine if the EXECUTE button should be present
-        if (self.child == "no"):
+        if (self.isChild == "no"):
             # Execute the task
             buttonExecute = Button(box, text = "EXECUTE", fg = "black",
                                    relief = RAISED, command = self.execute)
-            buttonExecute.pack(side = LEFT, padx = 5, pady = 5)
+            buttonExecute.pack(side = LEFT, padx = 5, pady = 7)
             buttonExecute.bind("<Enter>", self.printExecuteInfo)
 
         # Save the parameter settings and exit from epar
         buttonQuit = Button(box, text = "SAVE", fg = "black",
                             relief = RAISED, command = self.quit)
-        buttonQuit.pack(side = LEFT, padx = 5, pady = 5)
+        buttonQuit.pack(side = LEFT, padx = 5, pady = 7)
         buttonQuit.bind("<Enter>", self.printQuitInfo)
 
         # Unlearn all the parameter settings (set back to the defaults)
         buttonUnlearn = Button(box, text = "UNLEARN", fg = "black", 
                             relief = RAISED, command = self.unlearn)
-        buttonUnlearn.pack(side = LEFT, padx = 5, pady = 5)
+        buttonUnlearn.pack(side = LEFT, padx = 5, pady = 7)
         buttonUnlearn.bind("<Enter>", self.printUnlearnInfo)
 
         # Abort this edit session.  Currently, if an UNLEARN has already
         # been done, the UNLEARN is kept.
         buttonAbort = Button(box, text = "ABORT", fg = "black",
                               relief = RAISED, command = self.abort) 
-        buttonAbort.pack(side = LEFT, padx = 5, pady = 5)
+        buttonAbort.pack(side = LEFT, padx = 5, pady = 7)
         buttonAbort.bind("<Enter>", self.printAbortInfo)
+
+        # Generate the a Help button
+        buttonHelp = Button(box, text = "HELP", fg = "black",
+                            relief = RAISED, command = self.setHelpViewer)
+        buttonHelp.pack(side = RIGHT, padx = 5, pady = 7)
+        buttonHelp.bind("<Enter>", self.printHelpInfo)
 
         box.pack(fill = X, expand = TRUE)
 
@@ -390,26 +478,26 @@ class EparDialog:
 
     def printHelpViewInfo(self, event):
         self.top.status.config(text = 
-             "Choice of display for the IRAF help page: a window or a browser")
+             " Choice of display for the IRAF help page: a window or a browser")
 
     def printHelpInfo(self, event):
         self.top.status.config(text = 
-             "Display the IRAF help page")
+             " Display the IRAF help page")
 
     def printUnlearnInfo(self, event):
         self.top.status.config(text = 
-             "Set all parameter values to system default settings")
+             " Set all parameter values to system default settings")
 
     def printQuitInfo(self, event):
         self.top.status.config(text = 
-             "Save the current entries and exit this edit session")
+             " Save the current entries and exit this edit session")
 
     def printAbortInfo(self, event):
-        self.top.status.config(text = "Abort this edit session")
+        self.top.status.config(text = " Abort this edit session")
 
     def printExecuteInfo(self, event):
         self.top.status.config(text = 
-             "Execute the task and exit this edit session")
+             " Execute the task and exit this edit session")
 
 
     # QUIT: save the parameter settings and exit epar
@@ -420,16 +508,16 @@ class EparDialog:
         #    return
 
         # Remove the main epar window
-        self.top.withdraw()
-
         self.top.focus_set()
+        self.top.withdraw()
         self.top.destroy()
 
         # save all the entries and verify them 
         try:
             self.saveEntries()
         finally:
-            self.top.quit()
+            if (self.isChild == "no"):
+                self.top.quit()
 
 
     # EXECUTE: save the parameter settings and run the task
@@ -440,17 +528,21 @@ class EparDialog:
         global CHILDY
 
         # Need to get all the entries and verify them 
+        # First save the parameter values of the children
+        for n in range(len(self.top.childList)):
+            self.top.childList[n].saveEntries()
+
+        # Now save the parameter values of the parent
         self.saveEntries()
 
         # Remove the main epar window
+        self.top.focus_set()
         self.top.withdraw()
+        self.top.destroy()
  
         # Reset to the start location
         CHILDX = 600
         CHILDY = 0
-
-        self.top.focus_set()
-        self.top.destroy()
 
         print "\nTask %s is running...\n" % self.taskName
 
@@ -473,10 +565,11 @@ class EparDialog:
         CHILDY = 0
 
         # Give focus back to parent window and abort
-        self.top.withdraw()
         self.top.focus_set()
+        self.top.withdraw()
         self.top.destroy()
-        self.top.quit()
+        if (self.isChild == "no"):
+            self.top.quit()
 
 
     # UNLEARN: unlearn all the parameters by setting their values
