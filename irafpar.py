@@ -92,7 +92,7 @@ flist = ("p_name", "p_xtype", "p_type", "p_mode", "p_prompt",
 _getFieldDict = minmatch.MinMatchDict()
 for field in flist: _getFieldDict.add(field, field)
 
-flist = ("p_prompt", "p_value", "p_filename", "p_maximum", "p_minimum")
+flist = ("p_prompt", "p_value", "p_filename", "p_maximum", "p_minimum", "p_mode")
 _setFieldDict = minmatch.MinMatchDict()
 for field in flist: _setFieldDict.add(field, field)
 
@@ -330,6 +330,10 @@ class IrafPar:
 				self.setChoice(irafutils.stripQuotes(value))
 			else:
 				self.min = self.coerceOneValue(value)
+		elif field == "p_mode":
+			# not doing any type or value checking here -- setting mode is
+			# rare, so assume that it is being done correctly
+			self.mode = value
 		else:
 			raise RuntimeError("Program bug in IrafPar.setField()" +
 				"Requested field " + field + " for parameter " + self.name)
