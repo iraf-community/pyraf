@@ -999,18 +999,25 @@ def clSexagesimal(d, m, s=0):
     """Convert d:m:s value to float"""
     return (d+(m+s/60.0)/60.0)
 
-def clDms(x,digits=1,deg=1):
+def clDms(x,digits=1,seconds=1,deg=None):
     """Convert float to d:m:s.s
 
     Number of decimal places on seconds is set by digits.
-    If deg is false, prints just m:s.s (omits degrees).
+    If seconds is false, prints just d:m.m (omits seconds).
+    deg keyword is same as seconds (for backward compatibility).
     """
     if x<0:
         sign = '-'
         x = -x
     else:
         sign = ''
-    if deg:
+    if deg is not None:
+        seconds = deg
+        # print deprecation warning
+        import warnings
+        warnings.warn("Use 'seconds' instead of deprecated keyword 'deg'",
+            DeprecationWarning, stacklevel=2)
+    if seconds:
         d = int(x)
         x = 60*(x-d)
     m = int(x)
@@ -1020,14 +1027,14 @@ def clDms(x,digits=1,deg=1):
     if s+0.5/10**digits >= 60:
         s = 0.0
         m = m+1
-        if deg and m==60:
+        if seconds and m==60:
             m = 0
             d = d+1
     if digits==0:
         secform = "%02d"
     else:
         secform = "%%0%d.%df" % (digits+3, digits)
-    if deg:
+    if seconds:
         return ("%s%02d:%02d:"+secform) % (sign, d, m, s)
     else:
         return ("%s%02d:"+secform) % (sign, m, s)
@@ -2266,7 +2273,7 @@ def _hConv(w, d, c, args, i):
                 value = args[i]/15.0
             else:
                 value = args[i]
-            args[i] = clDms(value, digits=digits, deg=c not in "mM")
+            args[i] = clDms(value, digits=digits, seconds=c not in "mM")
         except ValueError:
             pass
     return "%%%ss" % w
