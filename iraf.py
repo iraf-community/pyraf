@@ -295,15 +295,40 @@ class IrafTask:
 
 		package, task, paramname, pindex, field = _splitName(qualifiedName)
 
-		# XXX need to add capability to set field (e.g. x1.p_maximum
-		# is set in iraf/pkg/plot/t_pvector.x), use task qualifier, etc.
-		if package or task or pindex or field:
-			raise IrafError("Cannot yet set parameter with qualified name: " +
-				qualifiedName)
-			
+		# special syntax for package parameters
+		if task == "_": task = self.__pkgname
+				
+		if task or package:
+			if not package:
+				# maybe this task is the name of one of the dictionaries?
+				for dictname, paramdict in self.__parDictList:
+					if dictname == task:
+						if paramdict.has_key(paramname):
+							paramdict[paramname].set(newvalue,index=pindex,field=field)
+							return
+						else:
+							raise IrafError("Attempt to set unknown parameter " +
+								qualifiedName)
+			# Not one of our dictionaries, so must find the relevant task
+			if package: task = package + '.' + task
+			try:
+				tobj = getTask(task)
+				# reattach the index and/or field
+				if pindex: paramname = paramname + '[' + `pindex+1` + ']'
+				if field: paramname = paramname + '.' + field
+				tobj.setParam(paramname,newvalue)
+				return
+			except KeyError:
+				raise IrafError("Could not find task " + task +
+					" to get parameter " + qualifiedName)
+			except IrafError, e:
+				raise IrafError(e + "\nFailed to get parameter " +
+					qualifiedName)
+
+		# no task specified, just search the standard dictionaries
 		for dictname, paramdict in self.__parDictList:
 			if paramdict.has_key(paramname):
-				paramdict[paramname].set(newvalue)
+				paramdict[paramname].set(newvalue,index=pindex,field=field)
 				return
 		else:
 			raise IrafError("Attempt to set unknown parameter " +
