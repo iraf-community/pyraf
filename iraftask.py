@@ -621,7 +621,7 @@ class IrafTask:
 		# cl parameters
 		cl = iraf.cl
 		if cl is not None:
-			parDictList.append( (iraf.cl.getName(),iraf.cl.getParDict()) )
+			parDictList.append( (cl.getName(),cl.getParDict()) )
 		self._parDictList = parDictList
 
 	def _getParFromDict(self, paramdict, paramname, pindex, field,

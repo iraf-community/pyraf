@@ -1080,8 +1080,8 @@ def scan(locals, *namelist, **kw):
 		else:
 			return apply(fscan, (locals, `line`) + namelist, kw)
 	finally:
+		# note return value not used here
 		rv = redirReset(resetList, closeFHList)
-	return rv
 
 def nscan():
 	"""Return number of items read in last scan function"""
@@ -2262,7 +2262,9 @@ def redirProcess(kw):
 					# check to see if it is dev$null
 					if isNullFile(value):
 						value = '/dev/null'
-					elif envget("clobber") != yes and _os.path.exists(value):
+					elif "w" in openArgs and \
+					  envget("clobber") != yes and \
+					  _os.path.exists(value):
 						# don't overwrite unless clobber is set
 						raise IOError("Output file `%s' already exists" % value)
 				fh = open(value,openArgs)
