@@ -55,11 +55,6 @@ except TypeError:
 	# string based exceptions
 	SubprocessError = 'SubprocessError'
 
-# I have deleted this sleep because it does not seem to be necessary. rlw
-# You may need to increase execvp_grace_seconds, if you have a large or slow
-# path to search:
-# execvp_grace_seconds = 0.1
-
 class Subprocess:
 	"""Run and communicate asynchronously with a subprocess.
 
@@ -357,7 +352,7 @@ class Subprocess:
 		is dead (and was reaped), false if alive."""
 		# Try a few times to reap the process with waitpid:
 		totalwait = timeout
-		deltawait = timeout/10.0
+		deltawait = timeout/1000.0
 		if deltawait < 0.01: deltawait = 0.01
 		while totalwait >= 0:
 			pid, err = os.waitpid(self.pid, os.WNOHANG)

@@ -1406,7 +1406,7 @@ def clear(*args, **kw):
 		if _clearString is None:
 			# get the clear command by running system clear
 			fh = _StringIO.StringIO()
-			clOscmd('clear', Stdout=fh)
+			clOscmd('/usr/bin/tput clear', Stdout=fh)
 			_clearString = fh.getvalue()
 			fh.close()
 			del fh
