@@ -220,13 +220,33 @@ class IrafTask:
 					"("+self.__fullpath+")"
 				self.lpar()
 			try:
-				# parameter dictionaries for execution consist of this
+				# Parameter dictionaries for execution consist of this
 				# task's parameters, any psets referenced, and all the parameters
-				# for packages that have been loaded
-				parDictList = [self.__pardict]
-				# XXX psets not done yet
+				# for packages that have been loaded.  Each dictionary has
+				# an associated name (because parameters could be asked for
+				# as task.parname as well as just parname).
+
+				# XXX This is getting fairly complicated -- probably want to
+				# move this out of irafexecute.py and just provide an
+				# accessor function here that gets called from irafexecute.py
+
+				parDictList = [(self.__name,self.__pardict)]
+				# look for any psets
+				for param in self.__pars:
+					if param.type == "pset":
+						# pset name is from either parameter value (if not null)
+						# or from parameter name (XXX I'm just guessing at this)
+						try:
+							psetname = param.get() or param.name
+							pset = getTask(psetname)
+							parDictList.append( (param.name,pset.getParDict()) )
+						except KeyError:
+							raise IrafError("Cannot get pset " +
+								param.name + " for task " + self.__name)
+				# package parameters
 				for i in xrange(len(_loadedPath)):
-					parDictList.append(_loadedPath[-1-i].getParDict())
+					pkg = _loadedPath[-1-i]
+					parDictList.append( (pkg.getName(),pkg.getParDict()) )
 				irafexecute.IrafExecute(self.__name, self.__fullpath,
 					vars, parDictList)
 				if _verbose: print 'Successful task termination'
@@ -914,7 +934,11 @@ def listtasks(pkglist=None):
 		tlist = []
 		for tname in keylist:
 			pkg, task = string.split(tname,'.')
-			if isinstance(tasks[tname],IrafPkg): task = task + '/'
+			tobj = tasks[tname]
+			if isinstance(tobj,IrafPkg):
+				task = task + '/'
+			elif tobj.getPset():
+				task = task + '@'
 			if pkg == lastpkg:
 				tlist.append(task)
 			else:

@@ -66,7 +66,7 @@ def IrafExecute(task, executable, envdict, paramDictList):
 # data after this, I assume it is never in a combined message.
 
 _re_chan_len = re.compile(r'\((\d+),(\d+)\)$')
-_re_parmset = re.compile(r'([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*)\n')
+_re_parmset = re.compile(r'([a-zA-Z_][a-zA-Z0-9_.]*)\s*=\s*(.*)\n')
 
 def IrafIO(process,paramDictList):
 
@@ -156,8 +156,6 @@ def IrafIO(process,paramDictList):
 			WriteStringToIrafProc(process, _getParam(paramDictList,value) + '\n')
 		else:
 			# last possibility: set value of parameter
-			# XXX need to add capability to set field (e.g. x1.p_maximum
-			# is set in iraf/pkg/plot/t_pvector.x)
 			mo = _re_parmset.match(msg)
 			if mo:
 				msg = msg[mo.end():]
@@ -169,6 +167,8 @@ def IrafIO(process,paramDictList):
 
 def _setParam(paramDictList,paramname,newvalue):
 	"""Set parameter specified by paramname to newvalue."""
+	# XXX need to add capability to set field (e.g. x1.p_maximum
+	# is set in iraf/pkg/plot/t_pvector.x)
 	for paramdict in paramDictList:
 		if paramdict.has_key(paramname):
 			paramdict[paramname].set(newvalue)
@@ -201,34 +201,40 @@ def _getParam(paramDictList,value):
 		raise IrafProcessError(
 			"Illegal parameter request from IRAF task: " + value)
 
-	# XXX need to add package.task handling
+	# array parameters may have subscript
+
+	pstart = string.find(paramname,'[')
+	if pstart < 0:
+		pindex = None
+	else:
+		try:
+			pend = string.rindex(paramname,']')
+			pindex = int(paramname[pstart+1:pend])-1
+			paramname = paramname[:pstart]
+		except:
+			raise IrafProcessError(
+				"IRAF task asking for illegal array parameter: " + value)
+
+	if task and (not package):
+		# maybe this task is the name of one of the dictionaries?
+		for dictname, paramdict in paramDictList:
+			if dictname == task:
+				if paramdict.has_key(paramname):
+					return paramdict[paramname].get(index=pindex,field=field)
+				else:
+					raise IrafProcessError(
+						"IRAF task asking for parameter not in list: " +
+						value)
+
+	# XXX still need to add full-blown package and package.task handling
 	if package or task:
 		raise IrafProcessError(
 			"Cannot yet handle parameter request with task and/or package: " +
 			value)
 
-	pstart = string.find(paramname,'[')
-	if pstart<0:
-		for paramdict in paramDictList:
-			if paramdict.has_key(paramname):
-				return paramdict[paramname].get(field=field)
-		else:
-			raise IrafProcessError(
-				"IRAF task asking for parameter not in list: " +
-				paramname)
-
-	# special handling for array parameters
-	try:
-		pend = string.rindex(paramname,']')
-		pindex = int(paramname[pstart+1:pend])
-		paramname = paramname[:pstart]
-	except:
-		raise IrafProcessError(
-			"IRAF task asking for illegal array parameter: " +
-			paramname)
-	for paramdict in paramDictList:
+	for dictname, paramdict in paramDictList:
 		if paramdict.has_key(paramname):
-			return paramdict[paramname].get(index=pindex-1,field=field)
+			return paramdict[paramname].get(index=pindex,field=field)
 	else:
 		raise IrafProcessError(
 			"IRAF task asking for parameter not in list: " +
