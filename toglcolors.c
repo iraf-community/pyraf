@@ -25,6 +25,7 @@ void togl_callback( struct Togl *togl) {
 
 static PyObject *init(PyObject *self, PyObject *args) {
   Togl_CreateFunc( togl_callback );
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
@@ -54,6 +55,7 @@ static PyObject *FreeColorIndex(PyObject *self, PyObject *args) {
 	return NULL;
   sscanf(structstr, "%x", &togl_ptr);
   Togl_FreeColor(togl_ptr, (unsigned long) colorindex);
+  Py_INCREF(Py_None);
   return Py_None;
 }  
   

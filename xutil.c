@@ -81,6 +81,7 @@ PyObject *wrap_moveCursorTo(PyObject *self, PyObject *args) {
   TrapXlibErrors /* macro code to handle xlib exceptions */
   moveCursorTo(w,x,y);
   RestoreOldXlibErrorHandlers /* macro */
+  Py_INCREF(Py_None);
   return Py_None; 
 }
 
@@ -161,6 +162,7 @@ PyObject *wrap_setFocusTo(PyObject *self, PyObject *args) {
   TrapXlibErrors /* macro code to handle xlib exceptions */
   setFocusTo(win);
   RestoreOldXlibErrorHandlers /* macro */
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
@@ -195,6 +197,7 @@ PyObject *wrap_setBackingStore(PyObject *self, PyObject *args) {
   TrapXlibErrors /* macro code to handle xlib exceptions */
   setBackingStore(win);
   RestoreOldXlibErrorHandlers /* macro */
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
@@ -317,6 +320,7 @@ PyObject *wrap_getParentID(PyObject *self, PyObject *args) {
 	XCloseDisplay(d);
 	RestoreOldXlibErrorHandlers /* macro */
 	if (root == parent) {
+          Py_INCREF(Py_None);
 	  return Py_None;
 	} else {
 	  return Py_BuildValue("i", (int) parent);
@@ -441,6 +445,7 @@ PyObject *wrap_freeColor(PyObject *self, PyObject *args) {
   TrapXlibErrors /* macro code to handle xlib exceptions */
   freeColor(colorindex);
   RestoreOldXlibErrorHandlers /* macro */
+  Py_INCREF(Py_None);
   return Py_BuildValue(""); 
 }
 
