@@ -112,7 +112,7 @@ class GraphicsWindow:
 	def __init__(self, windowName, colormode):
 
 		import Ptogl # local substitute for OpenGL.Tk
-		             # (to remove goofy 3d cursor effects)
+					 # (to remove goofy 3d cursor effects)
 					 # import is placed here since it has the side effect
 					 # of creating a tk window, so delay import to
 					 # a time that a window is really needed. Subsequent
@@ -243,7 +243,8 @@ class gColor:
 		"""Color list consists of color triples. This method only
 		sets up the desired color set, it doesn't allocate any colors
 		from the colormap in color index mode."""
-   		self.colorset[colorindex] = (red, green, blue)
+		self.colorset[colorindex] = (red, green, blue)
+
 	def setColors(self):
 		"""Does nothing in rgba mode, attempts to get even, odd pairs
 		of color indices for each color in the color set. The even is
@@ -427,3 +428,25 @@ def getIrafGkiConfig():
 def setGraphicsDrawingColor(irafColorIndex):
 
 	_g.colorManager.setDrawingColor(irafColorIndex)
+
+
+firstPlotDone = 0
+
+def restoreLastFocus():
+	"""Restore focus to terminal window after first Tk plot"""
+	global firstPlotDone
+	if (not firstPlotDone) and wutil.hasGraphics:
+		gwin = getActiveWindow()
+		if gwin:
+			# this is a hack to prevent the double redraw on first plots
+			# (when they are not interactive plots). This should be done
+			# better, but it appears to work.
+			if not gwin.interactive:
+				gwin.ignoreNextNRedraws = 2
+			wutil.focusController.restoreLast()
+			firstPlotDone = 1
+
+def resetFocusHistory():
+	"""Reset focus history after an error occurs"""
+	wutil.focusController.resetFocusHistory()
+

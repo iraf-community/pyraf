@@ -3,9 +3,10 @@
 #	The file "" is deemed to not exist
 #
 
+from posixpath import exists
+from string import strip
+
 def file_exists(file_name):
-	from posixpath import exists
-	import string
 	if len(file_name) == 0:
 		return 0
 	else:
@@ -16,7 +17,6 @@ def file_exists(file_name):
 #
 
 def readlines(fd):
-	from string import strip
 	return map(lambda s, f=strip: f(s), fd.readlines())
 
 #

@@ -320,9 +320,9 @@ class PyCmdLine(CmdConsole):
 			# if CL emulation is turned off then just return
 			return line
 		elif keyword.iskeyword(cmd) or \
-		  (os.__builtins__.has_key(cmd) and cmd != 'dir'):
+		  (os.__builtins__.has_key(cmd) and cmd not in ['type', 'dir']):
 			# don't mess with Python keywords or built-in functions
-			# except allow 'dir' to be used for directory listings
+			# except allow 'type', 'dir' to be used in simple syntax
 			return line
 		elif line[i:i+1] != "" and line[i] in '=,[':
 			# don't even try if it doesn't look like a procedure call
@@ -335,7 +335,8 @@ class PyCmdLine(CmdConsole):
 				# If it could be a Python expression, check to see
 				# if the function exists in the local namespace
 				if line[i:i+1] == '(':
-					if self.isLocal(cmd) or cmd == 'dir': return line
+					if self.isLocal(cmd) or cmd in ['type', 'dir']:
+						return line
 					# Not a local function, so user presumably intends to
 					# call IRAF task.  Force Python mode but add the 'iraf.'
 					# string to the task name for convenience.

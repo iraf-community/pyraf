@@ -17,6 +17,7 @@
 #	action = F.Show()
 ####
 
+import string
 from dialog import *
 
 class AlertDialog(ModalDialog):
@@ -27,7 +28,6 @@ class AlertDialog(ModalDialog):
 		Dialog.__init__(self, widget)
 
 	def SetupDialog(self):
-		import string
 		upperFrame = Frame(self.top)
 		upperFrame['relief'] = 'raised'
 		upperFrame['bd']	 = 1

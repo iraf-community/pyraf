@@ -200,14 +200,14 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 	# Run it
 	try:
 		irafprocess.run(task, stdin=stdin,stdout=stdout,stderr=stderr)
-		wutil.focusController.restoreLast()
+		gwm.restoreLastFocus()
 		if stdgraph:
 			stdgraph.stdout = None
 			stdgraph.stderr = None
 	except KeyboardInterrupt:
 		# On keyboard interrupt (^C), kill the subprocess
 		processCache.kill(irafprocess)
-		wutil.focusController.resetFocusHistory()
+		gwm.resetFocusHistory()
 		if stdgraph:
 			stdgraph.stdout = None
 			stdgraph.stderr = None
@@ -223,17 +223,6 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
 	else:
 		# add to the process cache on successful exit
 		processCache.add(irafprocess)
-	# this next bit is really a hack to prevent the double redraw on first
-	# plots (when they are not interactive plots). This should be done
-	# better, but it appears to work.
-	if not firstPlotDone and wutil.hasGraphics:
-		gwin = gwm.getActiveWindow()
-		if gwin:
-			if gwin.interactive:
-				interactive = 0
-			else:
-				gwin.ignoreNextNRedraws = 2
-			firstPlotDone = 1
 	return
 
 # patterns for matching messages from process
