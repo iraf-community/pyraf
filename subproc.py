@@ -105,6 +105,7 @@ class Subprocess:
 			cmd = string.split(self.cmd)
 		else:
 			cmd = self.cmd
+			self.cmd = string.join(cmd, " ")
 		# Create pipes
 		self.parentPipes = []
 		childPipes = []

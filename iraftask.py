@@ -49,6 +49,7 @@ class IrafTask:
 		# parameters have a current set of values and a default set
 		self._currentParList = None
 		self._defaultParList = None
+		self._runningParList = None
 		# parameter file has a current value and a default value
 		self._currentParpath = None
 		self._defaultParpath = None
@@ -165,28 +166,28 @@ class IrafTask:
 			# Special Stdout, Stdin, Stderr keywords are used to redirect IO
 			redirKW, closeFHList = iraf.redirProcess(kw)
 			# set parameters
-			newParList = apply(self.setParList,args,kw)
+			self._runningParList = apply(self.setParList,args,kw)
 			if iraf.Verbose>1:
 				print "Connected subproc run ", self._name, \
 					"("+self._fullpath+")"
-				newParList.lpar()
+				self._runningParList.lpar()
 			try:
-				# create the list of parameter dictionaries to use
-				self.setParDictList()
-				# run the task using new par list
-				oldValue = self._parDictList[0]
-				self._parDictList[0] = (self._name,newParList.getParDict())
+				# delete list of param dictionaries so it will be
+				# recreated in up-to-date version if needed
+				self._parDictList = None
 				try:
 					apply(irafexecute.IrafExecute,
 						(self, iraf.varDict), redirKW)
-					changed = self.updateParList(newParList)
+					changed = self.updateParList(self._runningParList)
 					if changed and (nosave==0):
 						rv = self.save()
 						if iraf.Verbose>1: print rv
 					if iraf.Verbose>1: print 'Successful task termination'
 				finally:
 					iraf.redirReset([], closeFHList)
-					self._parDictList[0] = oldValue
+					self._runningParList = None
+					if self._parDictList: self._parDictList[0] = (self._name,
+										self._currentParList.getParDict())
 			except irafexecute.IrafProcessError, value:
 				raise iraf.IrafError("Error running IRAF task " + self._name +
 					"\n" + str(value))
@@ -198,12 +199,14 @@ class IrafTask:
 		"""
 		if parList is not None:
 			mode = parList.get('mode',prompt=0)
-		else:
-			# get parameter from first element of parDictList in case
-			# we are currently running the task
-			if self._parDictList is None: self.setParDictList()
-			name, pdict = self._parDictList[0]
+		elif self._runningParList:
+			pdict = self._runningParList.getParDict()
 			mode = pdict['mode'].get(prompt=0)
+		elif self._currentParList:
+			pdict = self._currentParList.getParDict()
+			mode = pdict['mode'].get(prompt=0)
+		else:
+			mode = "a"
 		if mode[:1] != "a": return mode
 
 		# cl is the court of last resort, don't look at its packages
@@ -287,7 +290,11 @@ class IrafTask:
 		"""
 
 		self.initTask()
-		if self._currentParList:
+		if self._runningParList:
+			# use the dictionary for the currently running task if exists
+			parDictList = [(self._name,self._runningParList.getParDict())]
+		elif self._currentParList:
+			# else use current task parameter values
 			parDictList = [(self._name,self._currentParList.getParDict())]
 		else:
 			parDictList = [(self._name,{})]
@@ -317,8 +324,6 @@ class IrafTask:
 		satisfies min-max range or choice list.
 		"""
 
-		if self._parDictList is None: self.setParDictList()
-
 		package, task, paramname, pindex, field = _splitName(qualifiedName)
 
 		# special syntax for package parameters
@@ -327,6 +332,7 @@ class IrafTask:
 		if task or package:
 			if not package:
 				# maybe this task is the name of one of the dictionaries?
+				if self._parDictList is None: self.setParDictList()
 				for dictname, paramdict in self._parDictList:
 					if dictname == task:
 						if paramdict.has_key(paramname):
@@ -353,6 +359,23 @@ class IrafTask:
 					qualifiedName)
 
 		# no task specified, just search the standard dictionaries
+		# most of the time it will be in the active task dictionary
+
+		if self._runningParList:
+			paramdict = self._runningParList.getParDict()
+		elif self._currentParList:
+			paramdict = self._currentParList.getParDict()
+		else:
+			paramdict = {}
+		if paramdict.has_key(paramname):
+			paramdict[paramname].set(newvalue,index=pindex,
+				field=field,check=check)
+			return
+
+		# OK, the easy case didn't work -- now initialize the
+		# complete parDictList (if necessary) and search them all
+
+		if self._parDictList is None: self.setParDictList()
 		for dictname, paramdict in self._parDictList:
 			if paramdict.has_key(paramname):
 				paramdict[paramname].set(newvalue,index=pindex,
@@ -372,35 +395,24 @@ class IrafTask:
 		floating point parameter.)  Default is return string value.
 		"""
 
-		if self._parDictList is None: self.setParDictList()
 		package, task, paramname, pindex, field = _splitName(qualifiedName)
 
 		# special syntax for package parameters
 		if task == "_": task = self._pkgname
 
 		# get mode (used for prompting behavior)
+		#XXX Is this necessary now?
+
 		if mode is None: mode = self.getMode()
 
 		if task and (not package):
 			# maybe this task is the name of one of the dictionaries?
+			if self._parDictList is None: self.setParDictList()
 			for dictname, paramdict in self._parDictList:
 				if dictname == task:
 					if paramdict.has_key(paramname):
-						v = paramdict[paramname].get(index=pindex,field=field,
-								native=native,mode=mode)
-						if type(v) is types.StringType and v[:1] == ")":
-							# parameter indirection: call getParam recursively
-							# I'm making the assumption that indirection in a
-							# field (e.g. in the min or max value) is allowed
-							# and that it uses exactly the same syntax as
-							# the argument to getParam, i.e. ')task.param'
-							# refers to the p_value of the parameter,
-							# ')task.param.p_min' refers to the min or
-							# choice string, etc.
-							return self.getParam(v[1:],native=native,
-									mode=mode)
-						else:
-							return v
+						return self._getParValue(paramdict, paramname, pindex,
+										field, native, mode)
 					else:
 						raise iraf.IrafError("Unknown parameter requested: " +
 							qualifiedName)
@@ -422,18 +434,50 @@ class IrafTask:
 				raise iraf.IrafError(e + "\nFailed to get parameter " +
 					qualifiedName)
 
+		# no task specified, just search the standard dictionaries
+		# most of the time it will be in the active task dictionary
+
+		if self._runningParList:
+			paramdict = self._runningParList.getParDict()
+		elif self._currentParList:
+			paramdict = self._currentParList.getParDict()
+		else:
+			paramdict = None
+		if paramdict and paramdict.has_key(paramname):
+			return self._getParValue(paramdict, paramname, pindex,
+							field, native, mode)
+
+		# OK, the easy case didn't work -- now initialize the
+		# complete parDictList (if necessary) and search them all
+
+		if self._parDictList is None: self.setParDictList()
 		for dictname, paramdict in self._parDictList:
 			if paramdict.has_key(paramname):
-				v = paramdict[paramname].get(index=pindex,field=field,
-						native=native,mode=mode)
-				if type(v) is types.StringType and v[:1] == ")":
-					# parameter indirection: call getParam recursively
-					return self.getParam(v[1:],native=native,mode=mode)
-				else:
-					return v
+				return self._getParValue(paramdict, paramname, pindex,
+								field, native, mode)
 		else:
 			raise iraf.IrafError("Unknown parameter requested: " +
 				qualifiedName)
+
+	def _getParValue(self, paramdict, paramname, pindex, field, native, mode):
+		# helper function for getting parameter value (with indirection)
+		# once we find a dictionary that contains it
+		v = paramdict[paramname].get(index=pindex,field=field,
+				native=native,mode=mode)
+		if type(v) is types.StringType and v[:1] == ")":
+
+			# parameter indirection: call getParam recursively
+			# I'm making the assumption that indirection in a
+			# field (e.g. in the min or max value) is allowed
+			# and that it uses exactly the same syntax as
+			# the argument to getParam, i.e. ')task.param'
+			# refers to the p_value of the parameter,
+			# ')task.param.p_min' refers to the min or
+			# choice string, etc.
+
+			return self.getParam(v[1:],native=native,mode=mode)
+		else:
+			return v
 
 	def lpar(self,verbose=0):
 		"""List the task parameters"""
@@ -485,7 +529,7 @@ class IrafTask:
 			self._currentParpath = filename.name
 		return rv
 
-	def initTask(self):
+	def initTask(self, force=0):
 		"""Fill in full pathnames of files and read parameter file(s)"""
 		if self._filename and not self._fullpath: self.initFullpath()
 		if self._currentParList is None:
@@ -754,7 +798,8 @@ class IrafCLTask(IrafTask):
 
 	def run(self,*args,**kw):
 		"""Execute this task with the specified arguments"""
-		self.initTask()
+		# force check to make sure source code is up-to-date
+		self.initTask(force=1)
 		if kw.has_key('_nosave'):
 			nosave = kw['_nosave']
 			del kw['_nosave']
@@ -763,28 +808,28 @@ class IrafCLTask(IrafTask):
 		# Special Stdout, Stdin, Stderr keywords are used to redirect IO
 		redirKW, closeFHList = iraf.redirProcess(kw)
 		# set parameters
-		newParList = apply(self.setParList,args,kw)
+		self._runningParList = apply(self.setParList,args,kw)
 		if iraf.Verbose>1:
 			print "CL task run ", self.getName(), "("+self.getFullpath()+")"
-			newParList.lpar()
-		# create the list of parameter dictionaries to use
-		self.setParDictList()
-		# run the task using new par list
-		oldValue = self._parDictList[0]
-		self._parDictList[0] = (self._name,newParList.getParDict())
+			self._runningParList.lpar()
+		# delete list of param dictionaries so it will be
+		# recreated in up-to-date version if needed
+		self._parDictList = None
 		try:
 			# redirect the I/O
 			resetList = iraf.redirApply(redirKW)
 			# run the task
-			self.runCode(newParList.getParList())
-			changed = self.updateParList(newParList)
+			self.runCode(self._runningParList.getParList())
+			changed = self.updateParList(self._runningParList)
 			if changed and (nosave==0):
 				rv = self.save()
 				if iraf.Verbose>1: print rv
 		finally:
 			# restore I/O
 			iraf.redirReset(resetList, closeFHList)
-			self._parDictList[0] = oldValue
+			self._runningParList = None
+			if self._parDictList: self._parDictList[0] = (self._name,
+								self._currentParList.getParDict())
 		if iraf.Verbose>1: print 'Successful task termination'
 
 	def runCode(self, parList=None, kw={}):
@@ -799,11 +844,15 @@ class IrafCLTask(IrafTask):
 		self.initTask()
 		return self._pycode.code
 
-	def initTask(self,filehandle=None):
+	def initTask(self,filehandle=None,force=0):
 		"""Fill in full pathnames of files, read par file, compile CL code
 
 		If filehandle is specified, reads CL code from there
 		"""
+
+		if (not force) and (self._pycode is not None):
+			# quick return if recheck of source code is not forced
+			return
 
 		if filehandle is not None and self._filename:
 			self._fullpath = iraf.Expand(self._filename)
@@ -916,7 +965,7 @@ class IrafPkg(IrafCLTask):
 
 	def run(self,*args,**kw):
 		"""Load this package with the specified parameters"""
-		self.initTask()
+		self.initTask(force=1)
 
 		if kw.has_key('_nosave'):
 			nosave = kw['_nosave']
@@ -956,29 +1005,29 @@ class IrafPkg(IrafCLTask):
 						"["+`len(self.getParList())`+"] parameters",
 				print
 			# set parameters
-			newParList = apply(self.setParList,args,kw)
+			self._runningParList = apply(self.setParList,args,kw)
 			#XXX more args to add?
 			#XXX redirKW['PkgName'] = self.getPkgname()
 			#XXX redirKW['PkgBinary'] = self.getPkgbinary()
 			menus = iraf.cl.menus
 			iraf.cl.menus = 0
-			# create the list of parameter dictionaries to use
-			self.setParDictList()
-			# run the task using new par list
-			oldValue = self._parDictList[0]
-			self._parDictList[0] = (self._name,newParList.getParDict())
+			# delete list of param dictionaries so it will be
+			# recreated in up-to-date version if needed
+			self._parDictList = None
 			try:
 				# redirect the I/O
 				resetList = iraf.redirApply(redirKW)
-				self.runCode(newParList.getParList())
-				changed = self.updateParList(newParList)
+				self.runCode(self._runningParList.getParList())
+				changed = self.updateParList(self._runningParList)
 				if changed and (nosave==0):
 					rv = self.save()
 					if iraf.Verbose>1: print rv
 			finally:
 				iraf.cl.menus = menus
 				iraf.redirReset(resetList, closeFHList)
-				self._parDictList[0] = oldValue
+				self._runningParList = None
+				if self._parDictList: self._parDictList[0] = (self._name,
+									self._currentParList.getParDict())
 			# if other packages were loaded, put this on the
 			# loadedPath list one more time
 			if iraf.loadedPath[-1] != self:
@@ -1037,7 +1086,7 @@ class IrafForeignTask(IrafTask):
 			# redirect the I/O
 			resetList = iraf.redirApply(redirKW)
 			# create and run the subprocess
-			subproc.systemRedir(cmdline)
+			subproc.systemRedir(("/bin/sh","-c",cmdline))
 		finally:
 			iraf.redirReset(resetList, closeFHList)
 		if iraf.Verbose>1: print 'Successful task termination'

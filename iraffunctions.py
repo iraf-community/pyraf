@@ -731,7 +731,8 @@ def clOscmd(s, **kw):
 	resetList = redirApply(redirKW)
 
 	try:
-		status = _subproc.systemRedir(s)
+		# use shell to execute command so wildcards, etc. are handled
+		status = _subproc.systemRedir(("/bin/sh", "-c", s))
 	finally:
 		redirReset(resetList, closeFHList)
 	return status
@@ -922,7 +923,8 @@ def osfn(filename):
 
 def clNoHistory(*args):
 	"""Dummy history function"""
-	print 'history not required: Use arrow keys to recall commands'
+	print 'History commands not required: Use arrow keys to recall commands'
+	print 'or ctrl-R to search for a string in the command history.'
 
 history = ehistory = clNoHistory
 

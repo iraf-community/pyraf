@@ -392,6 +392,8 @@ class IrafPar:
 				self.set(value)
 				# None (no value) is not acceptable value after prompt
 				if self.value is not None: return
+				#XXX for string parameter, should accept "" input
+				#XXX unless choice parameter forbids it
 				# if not EOF, keep looping
 				if ovalue == "":
 					sys.stdout.flush()
@@ -563,6 +565,8 @@ class IrafPar:
 		"""
 		if v in [None, INDEF] or (type(v) is StringType and v[:1] == ")"):
 			return v
+		elif v == "":
+			return None
 		elif self.choice is not None and v not in self.choice:
 			raise ValueError("Value '" + str(v) +
 				"' is not in choice list for " + self.name)
@@ -998,6 +1002,8 @@ class _StringMixin:
 	def checkOneValue(self,v,strict=0):
 		if v is None or v[:1] == ")":
 			return v
+		elif v == "":
+			return None
 		elif self.choice is not None:
 			try:
 				v = self.mmchoice[v]
