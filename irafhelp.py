@@ -165,7 +165,8 @@ def _help(object, variables, functions, modules,
 		if _printIrafHelp(object, html, irafkw): return
 
 	if type(object) == types.StringType and \
-			re.match(r'[a-z_][a-z0-9_]*$',object):
+			(re.match(r'[a-z_][a-z0-9_]*$',object) or
+			 os.path.exists(iraf.Expand(object))):
 		if _printIrafHelp(object, html, irafkw): return
 
 	try:
@@ -379,12 +380,17 @@ def _irafHelp(taskname, irafkw):
 	Task can be either a name or an IrafTask object.
 	Returns 1 on success or 0 on failure."""
 
-	if isinstance(taskname,iraftask.IrafTask): taskname = taskname.getName()
+	if isinstance(taskname,iraftask.IrafTask):
+		taskname = taskname.getName()
+	else:
+		# expand IRAF variables in case this is name of a help file
+		taskname = iraf.Expand(taskname)
 	try:
 		if not irafkw.has_key('page'): irafkw['page'] = 1
 		apply(iraf.system.help, (taskname,), irafkw)
 		return 1
-	except iraf.IrafError:
+	except iraf.IrafError, e:
+		print str(e)
 		return 0
 
 _HelpURL = "http://ra.stsci.edu/cgi-bin/gethelp.cgi?task="
