@@ -330,7 +330,7 @@ class IrafPar:
 		elif field == "p_mode":
 			# not doing any type or value checking here -- setting mode is
 			# rare, so assume that it is being done correctly
-			self.mode = value
+			self.mode = irafutils.stripQuotes(value)
 		else:
 			raise RuntimeError("Program bug in IrafPar.setField()" +
 				"Requested field " + field + " for parameter " + self.name)
@@ -507,6 +507,15 @@ class IrafArrayPar(IrafPar):
 				strict, exception=ValueError)
 			# Set illegal values to null string, just like IRAF
 			self.value = ""
+
+	# array parameters can be subscripted
+	# IRAF subscripts start at one rather than zero
+
+	def __getitem__(self, index):
+		return self.get(index=index-1,native=1)
+
+	def __setitem__(self, index, value):
+		self.set(value, index=index-1)
 
 	def get(self, field=None, index=None, lpar=0, prompt=1, native=0):
 		"""Return value of this parameter as a string (or in native format
@@ -912,7 +921,7 @@ class _BooleanMixin:
 		tval = type(value)
 		if tval is StringType:
 			v2 = string.strip(value)
-			if v2 == "":
+			if v2 == "" or v2 == "INDEF":
 				return INDEF
 			elif v2[0] == ")":
 				# assume this is indirection -- for now just save it as a string
