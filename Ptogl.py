@@ -13,9 +13,6 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from Tkinter import _default_root
 from Tkinter import *
-import gwm
-import time
-#import gki
 
 # XBM file for cursor is in same directory as this module
 _blankcursor = 'blankcursor.xbm'
@@ -97,7 +94,7 @@ class RawOpengl(Widget, Misc):
 		self.redraw(self)
 		glFlush()
 		glPopMatrix()
-   		self.tk.call(self._w, 'swapbuffers')
+		self.tk.call(self._w, 'swapbuffers')
 
 	def delayedRedraw(self, eventNumber):
 		if self.ignoreNextRedraw:
@@ -157,7 +154,7 @@ class RawOpengl(Widget, Misc):
 	def SWCursorWake(self):
 		global cursorEventCount
 		cursorEventCount = cursorEventCount + 1 # Assumes that we don't have
-		                                        # > 2**31 drawing operations
+												# > 2**31 drawing operations
 												# before reset, should be ok
 												# since user will die of old
 												# age by then.
@@ -297,7 +294,7 @@ class FullWindowCursor:
 		self.lasty = y
 		self.isVisible = 0
 		self.rgbamode = rgbamode
- 		self.draw()
+		self.draw()
 
 	def setPosition(self, x, y):
 

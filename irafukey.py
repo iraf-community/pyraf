@@ -5,7 +5,7 @@ $Id$
 """
 
 import sys
-import wutil, gwm
+import wutil
 import termios, TERMIOS, sys, os, string
 
 # This class emulates the IRAF ukey parameter mechanism. IRAF calls for

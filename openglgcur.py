@@ -5,10 +5,8 @@ $Id$
 """
 
 import string, os
-import gwm, wutil, iraf, gkiopengl, openglcmd, gki
-import irafgwcs
+import gwm, wutil, iraf, openglcmd, gki
 import tkSimpleDialog
-import graphcap
 
 # The following class attempts to emulate the standard IRAF gcursor
 # mode of operation. That is to say, it is basically a keyboard driven

@@ -7,7 +7,7 @@ $Id$
 from OpenGL.GL import *
 #from gki import *
 import gki
-import iraf
+from irafglobals import IrafError
 import Numeric
 import gwm
 import openglgcur
@@ -15,7 +15,8 @@ import irafgwcs
 import wutil
 import sys
 import string
-from  opengltext import *
+# from  opengltext import *
+import opengltext
 
 # open /dev/null for general availability
 devNull = open('/dev/null','w')
@@ -53,7 +54,7 @@ class IrafPlot:
 		self.colors = IrafColors()
 		self.linestyles = IrafLineStyles()
 		self.hatchfills = IrafHatchFills()
-		self.textAttributes = TextAttributes()
+		self.textAttributes = opengltext.TextAttributes()
 		self.lineAttributes = LineAttributes()
 		self.fillAttributes = FillAttributes()
 		self.markerAttributes = MarkerAttributes()
@@ -65,7 +66,7 @@ class GkiOpenGlKernel(gki.GkiKernel):
 	def __init__(self):
 
 		gki.GkiKernel.__init__(self)
-		self.controlFunctionTable = [self.controlDefault]*(GKI_MAX_OP_CODE+1)
+		self.controlFunctionTable = [self.controlDefault]*(gki.GKI_MAX_OP_CODE+1)
 		self.controlFunctionTable[gki.GKI_OPENWS] = self.openWS
 		self.controlFunctionTable[gki.GKI_CLOSEWS] = self.closeWS
 		self.controlFunctionTable[gki.GKI_REACTIVATEWS] = self.reactivateWS
@@ -86,7 +87,7 @@ class GkiOpenGlKernel(gki.GkiKernel):
 	   		return win.iplot.gkiBuffer
 		else:
 			print "ERROR: no IRAF plot window active"
-			raise IrafProcessError
+			raise IrafError
 	
 	def control(self, gkiMetacode):
 
@@ -190,7 +191,7 @@ class GkiOpenGlKernel(gki.GkiKernel):
 		win = gwm.getActiveWindow()
 		if not win.iplot.wcs:
 			self.errorMessage("Error: can't append to a nonexistent plot!")
-			raise iraf.IrafError
+			raise IrafError
 		if self.returnData:
 			self.returnData = self.returnData + win.iplot.wcs.pack()
 		else:
@@ -337,7 +338,7 @@ def gl_text(x,y,text):
 	cursorActive =  win.isSWCursorActive()
 	if cursorActive:
 		win.SWCursorSleep()
-	softText(x,y,text)
+	opengltext.softText(x,y,text)
 	if cursorActive:
 		win.SWCursorWake()
 

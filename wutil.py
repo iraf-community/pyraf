@@ -7,6 +7,7 @@ $Id$
 """
 
 import struct, fcntl, sys, os, cdl
+from irafglobals import IrafError
 
 def getWindowID(): return None
 def moveCursorTo(WindowID, x, y): pass
@@ -112,7 +113,7 @@ def openImageDisplay():
 	# must open the display only once in the CDL!
 	displayHandle = cdl.cdl_open(imtdev)
 	if displayHandle == "NULL":
-		raise iraf.IrafProcessError("Unable to open image display")
+		raise IrafError("Unable to open image display")
 	# Create image FocusEntity object for the FocusController
 	imageFocusEntity = ImageDisplay(displayHandle)
 	focusController.addFocusEntity("image",imageFocusEntity)

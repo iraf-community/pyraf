@@ -7,7 +7,8 @@ parameter.
 $Id$
 """
 
-import os, iraf, wutil
+import os, wutil
+from irafglobals import Verbose, IrafError
 try:
 	import cdl
 	try:
@@ -17,7 +18,7 @@ try:
 		def imcur(): return  _imcur()
 except ImportError:
 	def imcur():
-		raise iraf.IrafError(
+		raise IrafError(
 		"image display library (cdlmodule.so) not available")
 
 prevDisplayHandle = None
@@ -27,14 +28,14 @@ def _readCursor(displayHandle, retlist=None):
 	# Require keystroke to read cursor position (0 arg)
 	rv = cdl.cdl_readCursor(displayHandle, 0)
 	if retlist is not None: retlist.append(rv)
-	if iraf.Verbose>1: print rv
+	if Verbose>1: print rv
 	return rv
 
 def _threadedReadCursor(displayHandle):
 	"""Reads image cursor in a thread so Tk windows can remain active"""
 	result = []
 	th = threading.Thread(target=_readCursor, args=(displayHandle, result))
-	if iraf.Verbose>1: print "starting imcur thread"
+	if Verbose>1: print "starting imcur thread"
 	th.start()
 	timeout = 0.5
 	# messy -- I wish I could just sleep until thread is done, letting
@@ -48,7 +49,7 @@ def _threadedReadCursor(displayHandle):
 			if win is not None: win.update()
 		else:
 			win.update()
-	if iraf.Verbose>1: print "finished imcur thread"
+	if Verbose>1: print "finished imcur thread"
 	return result[0]
 
 
