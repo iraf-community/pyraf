@@ -49,11 +49,12 @@ class GkiOpenGlKernel(GkiKernel):
 		self.controlFunctionTable[GKI_DEACTIVATEWS] = self.controlDoNothing
 		self.controlFunctionTable[GKI_CLEARWS] = self.clearWS
 		self.controlFunctionTable[GKI_SETWCS] = self.setWCS
-		self.controlFunctionTable[GKI_GETWCS] = self.controlDoNothing
+		self.controlFunctionTable[GKI_GETWCS] = self.getWCS
 
 	def control(self, gkiMetacode):
 
 		gkiTranslate(gkiMetacode, self.controlFunctionTable)
+		return self.returnData
 
 	def translate(self, gkiMetacode, fTable):
 
@@ -109,7 +110,6 @@ class GkiOpenGlKernel(GkiKernel):
 
 		# apparently this control routine is not used???
 
-		print "clearws"
 		win = gwm.getActiveWindow()
 		win.iplot.gkiBuffer.reset()
 		win.iplot.glBuffer.reset()
@@ -122,6 +122,15 @@ class GkiOpenGlKernel(GkiKernel):
 		__main__.wcs = arg # pass it up to play with
 		win = gwm.getActiveWindow()
 		win.iplot.wcs = irafgwcs.IrafGWcs(arg)
+
+	def getWCS(self, arg):
+
+		print 'getwcs'
+		win = gwm.getActiveWindow()
+		if self.returnData:
+			self.returnData = self.returnData + win.iplot.wcs.pack()
+		else:
+			self.returnData = win.iplot.wcs.pack()
 
 	def redraw(self, o):
 
@@ -145,25 +154,42 @@ def _glAppend(arg):
 	win = gwm.getActiveWindow()
 	win.iplot.glBuffer.append(arg)
 
-def gki_eof(arg): print "GKI_EOF"
-def gki_openws(arg): print "GKI_OPENWS"
-def gki_closews(arg): print "GKI_CLOSEWS"
-def gki_reactivatews(arg): print "GKI_REACTIVATEWS"
-def gki_deactivatews(arg): print "GKI_DEACTIVATEWS"
-def gki_mftitle(arg): print "GKI_MFTITLE"
+#***********************************************************
+
+standardWarning = """
+The graphics kernel for IRAF tasks has just recieved a metacode
+instruction it never expected to see. Please inform the STSDAS
+group of this occurance"""
+
+standardNotImplemented = """
+You have tried to run an IRAF task which requires graphics kernel
+facility not implemented in the Python graphics kernel for IRAF tasks"""
+
+def gki_eof(arg): pass # ignored
+def gki_openws(arg): pass	# handled in control channel
+def gki_closews(arg): pass # handled in control channel
+def gki_reactivatews(arg): pass # ignored
+def gki_deactivatews(arg): pass # ignored
+def gki_mftitle(arg): pass # ignored
 def gki_clearws(arg):
 
-#	print "GKI_CLEARWS"
 	win = gwm.getActiveWindow()
 	win.iplot.gkiBuffer.reset()
 	win.iplot.glBuffer.reset()
 	win.iplot.wcs = None
 	win.tkRedraw()
 
-def gki_cancel(arg): print "GKI_CANCEL"
-def gki_flush(arg): print "GKI_FLUSH"
+def gki_cancel(arg): gki_clearws(arg)
+
+def gki_flush(arg): _glAppend((gl_flush,(arg,)))
+
 def gki_polyline(arg): _glAppend((gl_polyline,(ndc(arg[1:]),)))
-def gki_polymarker(arg): print "GKI_POLYMARKER"
+
+def gki_polymarker(arg): 
+
+	print standardWarning
+	# throw exception here xxx
+		
 def gki_text(arg):
 	
 #	print "GKI_TEXT:", arg[3:].tostring()
@@ -175,9 +201,12 @@ def gki_text(arg):
 def gki_fillarea(arg): 
 
 	_glAppend((gl_fillarea,(ndc(arg[1:]),)))
-	print "GKI_FILLAREA"
 
-def gki_putcellarray(arg): print "GKI_PUTCELLARRAY"
+def gki_putcellarray(arg): 
+	
+	print standardNotImplented
+	# throw exception here xxxx
+	
 def gki_setcursor(arg):
 
 	cursorNumber = arg[0]
@@ -196,11 +225,12 @@ def gki_plset(arg):
 	
 def gki_pmset(arg):
 
-	marktype = arg[0]
-	marksize = arg[1]/GKI_MAX
-	color = arg[2]
-	print "GKI_PMSET", marktype, marksize, color
-	_glAppend((gl_pmset, (marktype, marksize, color)))
+#	marktype = arg[0]
+#	marksize = arg[1]/GKI_MAX
+#	color = arg[2]
+#	print "GKI_PMSET", marktype, marksize, color
+#	_glAppend((gl_pmset, (marktype, marksize, color)))
+	print standardWarning
 
 def gki_txset(arg):
 
@@ -226,9 +256,24 @@ def gki_faset(arg):
 	print "GKI_FASET",fillstyle, color
 	_glAppend((gl_faset,(fillstyle, color)))
 
-def gki_getcursor(arg): print "GKI_GETCURSOR (GKI_CURSORVALUE)"
-def gki_getcellarray(arg): print "GKI_GETCELLARRAY"
-def gki_unknown(arg): print "GKI_UNKNOWN"
+def gki_getcursor(arg):
+
+	print "GKI_GETCURSOR"
+	print standardNotImplemented
+	# Throw exception here xxxx
+	 
+def gki_getcellarray(arg):
+
+	print "GKI_GETCELLARRAY"
+	print standardNotImplemented
+	# Throw exception here xxxx
+	
+def gki_unknown(arg): 
+	
+	print "GKI_UNKNOWN"
+	print standardWarning
+	# Throw exception here xxxx
+	
 def gki_escape(arg): print "GKI_ESCAPE"
 def gki_setwcs(arg): pass #print "GKI_SETWCS"
 def gki_getwcs(arg): print "GKI_GETWCS"
@@ -243,7 +288,8 @@ def gl_deactivatews(arg): pass
 def gl_mftitle(arg): pass
 def gl_clearws(arg): pass
 def gl_cancel(arg): pass
-def gl_flush(arg): pass
+
+def gl_flush(arg): glFlush()
 
 def gl_polyline(vertices):
 
@@ -312,7 +358,10 @@ def gl_fillarea(vertices):
 		glDisable(GL_POLYGON_STIPPLE)
 
 def gl_putcellarray(arg): pass
-def gl_setcursor(cursornumber, x, y): pass
+def gl_setcursor(cursornumber, x, y):
+
+	sx = win.winfo_pointerx() - win.winfo_rootx()
+	sy = win.winfo_pointery() - win.winfo_rooty()
 
 def gl_plset(linestyle, linewidth, color):
 

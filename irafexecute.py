@@ -143,8 +143,15 @@ def IrafIO(process,task):
 							if stdgraph == None:
 								stdgraph = gkiopengl.GkiOpenGlKernel()
 						
-						# pass it to the kernel to deal with
-						stdgraph.control(sdata[2:])
+						# Pass it to the kernel to deal with
+						# Only in the case of a GETWCS command will
+						# stdgraph.control return a value.
+						wcs = stdgraph.control(sdata[2:])
+						if wcs:
+							# Write directly to stdin of subprocess;
+							# strangely enough, it doesn't use the
+							# STDGRAPH I/O channel.
+							WriteToIrafProc(process ,wcs)
  					else:
 						print "GRAPHICS control data for channel",forChan
 						

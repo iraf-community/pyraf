@@ -57,6 +57,7 @@ class GkiBuffer:
 
 	def __init__(self, metacode=None):
 	
+		getwcs = None  # Used to indicate a getwcs instruction was encountered
 		if metacode:
 			self.buffer = metacode
 			self.bufferSize = len(metacode)
@@ -158,6 +159,33 @@ class GkiBuffer:
 		if j > self.bufferEnd: j = self.bufferEnd
 		return self.buffer[i:j]
 
+class GkiReturnBuffer:
+
+	"""A fifo buffer used to queue up metacode to be returned to
+	the IRAF subprocess"""
+
+	# Only needed for getcursor and getcellarray, neither of which are
+	# currently implemented.
+	def __init__(self):
+	
+		self.fifo = []
+		
+	def reset(self):
+	
+		self.fifo = []
+	
+	def put(self, metacode):
+	
+		self.fifo[:0] = metacode
+	
+	def get(self):
+
+		if len(self.fifo):
+			metacode = self.fifo[-1]
+			del self.fifo[-1]
+		else:
+			raise Exception("Attempted read on empty gki input buffer")
+	
 class GkiKernel:
 
 	"""Abstract class intended to be subclassed by implementations of GKI
@@ -167,6 +195,9 @@ class GkiKernel:
 	def __init__(self):
 	
 		self.functionTable = []
+		self.returnData = None
+#		self.return = GkiReturnBuffer()
+
 	
 	def control(self, gkiMetacode):
 
@@ -179,7 +210,7 @@ class GkiKernel:
 	
 		# if input parameter is string, assume it is a filename and read into
 		# a numeric array
-#		try:
+		try:
 			if type(gkiMetacode) == StringType:
 				gkiMetacode = getdata(gkiMetacode)
 			win = gwm.getActiveWindow()
@@ -188,8 +219,8 @@ class GkiKernel:
 			# a hook for acting on the metacode, but is only a stub routine
 			# that must be overridden in the subclass (or not, depending)
 			self.translate(buffer, self.functionTable)
-#		except AttributeError:
-#			print "ERROR: no IRAF plot window active"
+		except AttributeError:
+			print "ERROR: no IRAF plot window active"
 
 	def translate(self, gkiBuffer, functionTable):
 

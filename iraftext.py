@@ -200,8 +200,6 @@ def softText(x,y,textstr):
 	apply(glColor3f,win.iplot.colors.toRGB(ta.textColor))
 	# The main event!
 	for char in textstr:
-		if ta.textFont == FONT_BOLD: # This will need to be changed to
-			glLineWidth(2.0)          # handle font changes in text strings
 		drawchar(char,ta.font,fsize*hsize,fontAspect)
 		glTranslatef(dx,dy,0.)
 	
