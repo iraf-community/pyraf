@@ -1,4 +1,4 @@
-"""__init__.py: main Pyraf package initialization
+""" __init__.py: main Pyraf package initialization
 
 Checks sys.argv[0] == 'pyraf' to determine whether IRAF initialization
 is done verbosely or quietly.
