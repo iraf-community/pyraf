@@ -8,35 +8,39 @@ from distutils.command.install import install
 
 try:
     import Tkinter
-
+    tk=Tkinter.Tk()
+    tk.withdraw()
+    tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
+    tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
+    tk_lib = os.path.join((tk.getvar('tk_library')), '../')
+    tkv = str(Tkinter.TkVersion)[:3]
+    if Tkinter.TkVersion < 8.3:
+        print "Tcl/Tk v8.3 or later required\n"
+        sys.exit(1)
+    else:
+        suffix = '.so'
+        tklib='libtk'+tkv+suffix
+        command = "ldd %s" % (os.path.join(tk_lib, tklib))
+        lib_list = string.split(commands.getoutput(command))
+        for lib in lib_list:
+            if string.find(lib, 'libX11') == 0:
+                ind = lib_list.index(lib)
+                x_lib_dirs = os.path.dirname(lib_list[ind + 2])
+                break
+        x_inc_dirs = os.path.join(x_lib_dirs, '../include')
 except:
-    print "Tkinter not properly installed\n"
-    exit(1)
+    for a in sys.argv:
+        if a.startswith("--with-x="):
+            dir = a.split("=")[1]
+            x_lib_dirs = os.path.join(dir,'lib')
+            x_inc_dirs = os.path.join(dir,'include')
+            sys.argv.remove(a)
 
-if Tkinter.TkVersion < 8.3:
-    print "Tcl/Tk v8.3 or later required\n"
-    exit(1)
-
-tk=Tkinter.Tk()
-tk.withdraw()
-tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
-tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
-tk_lib = os.path.join((tk.getvar('tk_library')), '../')
-tkv = str(Tkinter.TkVersion)[:3]
 if sys.platform == 'darwin' or sys.platform.startswith('linux'):
     x_lib_dirs = '/usr/X11R6/lib'
     x_inc_dirs = '/usr/X11R6/include'
-else:
-    suffix = '.so'
-    tklib='libtk'+tkv+suffix
-    command = "ldd %s" % (os.path.join(tk_lib, tklib))
-    lib_list = string.split(commands.getoutput(command))
-    for lib in lib_list:
-        if string.find(lib, 'libX11') == 0:
-            ind = lib_list.index(lib)
-            x_lib_dirs = os.path.dirname(lib_list[ind + 2])
-            break
-    x_inc_dirs = os.path.join(x_lib_dirs, '../include')
+
+
 #local_libs = parse_makefile(get_makefile_filename())['LOCALMODLIBS']
 py_includes = get_python_inc(plat_specific=1)
 py_libs =  get_python_lib(plat_specific=1, standard_lib = 1)
