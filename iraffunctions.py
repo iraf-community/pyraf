@@ -2460,10 +2460,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
 	if task is not None:
 		# check for consistency of definition by comparing to the
 		# new object
-		if task.getFilename() != newtask.getFilename() or \
-		   task.hasParfile()  != newtask.hasParfile() or \
-		   task.getForeign()  != newtask.getForeign() or \
-		   task.getTbflag()   != newtask.getTbflag():
+		if not task.isConsistent(newtask):
 			# looks different -- print warning and continue
 			if not redefine:
 				_writeError("Warning: `%s' is a task redefinition" %

@@ -89,7 +89,9 @@ class _ProcessCache:
 	def setenv(self, msg):
 		"""Update process value of environment variable by sending msg"""
 		for rank, process in self._data.values():
-			process.writeString(msg)
+			# just save messages in a list, they all get sent at
+			# once when a task is run
+			process.appendEnv(msg)
 
 	def setSize(self, limit):
 		"""Set number of processes allowed in cache"""
@@ -269,9 +271,22 @@ class IrafProcess:
 			outenvstr.append("set %s=%s\n" % (key, str(value)))
 		outenvstr.append("chdir %s\n" % os.getcwd())
 		if outenvstr: self.writeString(string.join(outenvstr,""))
+		self.envVarList = []
+		self.running = 0
 
 		# end set up mode
 		self.writeString('_go_\n')
+
+	def appendEnv(self, msg):
+
+		"""Append environment variable set command to list"""
+
+		if self.running:
+			# send change immediately for running task
+			self.writeString(msg)
+		else:
+			# cache change for idle task
+			self.envVarList.append(msg)
 
 	def run(self, task, stdin=None, stdout=None, stderr=None):
 
@@ -309,6 +324,11 @@ class IrafProcess:
 		if stdin != sys.__stdin__: redir_info = '<'
 		if stdout != sys.__stdout__: redir_info = redir_info+'>'
 
+		# update IRAF environment variables if necessary
+		if self.envVarList:
+			self.writeString(string.join(self.envVarList,''))
+			self.envVarList = []
+
 		# if stdout is a terminal, set the lines & columns sizes
 		# this ensures that they are up-to-date at the start of the task
 		# (which is better than the CL does)
@@ -316,14 +336,17 @@ class IrafProcess:
 			nlines, ncols = wutil.getTermWindowSize()
 			self.writeString('set ttynlines=%d\nset ttyncols=%d\n' %
 				(nlines, ncols))
-			# iraf.stty('resize')
 
 		taskname = self.task.getName()
 		# remove leading underscore, which is just a convention for CL
 		if taskname[:1]=='_': taskname = taskname[1:]
 		self.writeString(taskname+redir_info+'\n')
 		# begin slave mode
-		self.slave()
+		try:
+			self.running = 1
+			self.slave()
+		finally:
+			self.running = 0
 
 	def terminate(self):
 

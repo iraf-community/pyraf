@@ -2,7 +2,7 @@
 
 $Id$
 
-R. White, 1999 December 20
+R. White, 2000 June 26
 """
 
 import os, sys, string, types, copy, re
@@ -121,16 +121,18 @@ class IrafTask:
 	def getParList(self):
 		"""Return list of all parameter objects"""
 		self.initTask(force=1)
-		if self._currentParList:
-			return self._currentParList.getParList()
+		plist = self._runningParList or self._currentParList
+		if plist:
+			return plist.getParList()
 		else:
 			return []
 
 	def getParDict(self):
 		"""Return (min-match) dictionary of all parameter objects"""
 		self.initTask(force=1)
-		if self._currentParList:
-			return self._currentParList.getParDict()
+		plist = self._runningParList or self._currentParList
+		if plist:
+			return plist.getParDict()
 		else:
 			return minmatch.MinMatchDict()
 
@@ -145,14 +147,9 @@ class IrafTask:
 
 		# search the standard dictionaries for the parameter
 		# most of the time it will be in the active task dictionary
-		if self._runningParList is not None:
-			paramdict = self._runningParList.getParDict()
-		elif self._currentParList is not None:
-			paramdict = self._currentParList.getParDict()
-		else:
-			paramdict = None
 		try:
-			if paramdict and paramdict.has_key(paramname,exact=exact):
+			paramdict = self.getParDict()
+			if paramdict.has_key(paramname,exact=exact):
 				return paramdict[paramname]
 		except minmatch.AmbiguousKeyError, e:
 			# re-raise the error with a bit more info
@@ -173,13 +170,14 @@ class IrafTask:
 	def getAllMatches(self,param):
 		"""Return list of names of all parameters that may match param"""
 		self.initTask(force=1)
-		if self._currentParList:
-			return self._currentParList.getAllMatches(param)
+		plist = self._runningParList or self._currentParList
+		if plist:
+			return plist.getAllMatches(param)
 		else:
 			return []
 
 	#---------------------------------------------------------
-	# modify attributes
+	# modify and test attributes
 	#---------------------------------------------------------
 
 	def addPkgbinary(self, pkgbinary):
@@ -204,52 +202,65 @@ class IrafTask:
 		"""
 		self._hidden = value
 
+	def isConsistent(self, other):
+		"""Returns true if this task is consistent with another task object"""
+		return  self.__class__ == other.__class__ and \
+			self.getFilename() == other.getFilename() and \
+			self.hasParfile()  == other.hasParfile() and \
+			self.getForeign()  == other.getForeign() and \
+			self.getTbflag()   == other.getTbflag()
+
 	#---------------------------------------------------------
 	# run the task
 	#---------------------------------------------------------
 
 	def run(self,*args,**kw):
 		"""Execute this task with the specified arguments"""
+
 		self.initTask(force=1)
-		# special _save keyword turns on parameter-saving
-		# default is *not* to save parameters (so it is necessary
+
+		# Special _save keyword turns on parameter-saving.
+		# Default is *not* to save parameters (so it is necessary
 		# to use _save=1 to get parameter changes to be persistent.)
 		if kw.has_key('_save'):
 			save = kw['_save']
 			del kw['_save']
 		else:
 			save = 0
+
+		# Handle other special keywords
+		specialKW = self._specialKW(kw)
+
 		# Special Stdout, Stdin, Stderr keywords are used to redirect IO
 		redirKW, closeFHList = iraf.redirProcess(kw)
+
 		# set parameters
 		kw['_setMode'] = 1
 		self._runningParList = apply(self.setParList,args,kw)
+
 		if iraf.Verbose>1:
-			print "Connected subproc run ", self._name, \
-				"("+self._fullpath+")"
+			print "run %s (%s: %s)" % (self._name,
+				self.__class__.__name__, self._fullpath)
 			if self._runningParList:
 				self._runningParList.lParam()
+
+		# delete list of param dictionaries so it will be
+		# recreated in up-to-date version if needed
+		self._parDictList = None
+		# apply IO redirection
+		resetList = self._applyRedir(redirKW)
 		try:
-			# delete list of param dictionaries so it will be
-			# recreated in up-to-date version if needed
-			self._parDictList = None
-			try:
-				apply(irafexecute.IrafExecute,
-					(self, iraf.getVarDict()), redirKW)
-				changed = self._updateParList(self._runningParList, save)
-				if changed:
-					rv = self.save()
-					if iraf.Verbose>1: print rv
-				if iraf.Verbose>1: print 'Successful task termination'
-			finally:
-				rv = iraf.redirReset([], closeFHList)
-				self._runningParList = None
-				if self._parDictList and self._currentParList:
-					self._parDictList[0] = (self._name,
-									self._currentParList.getParDict())
-		except irafexecute.IrafProcessError, value:
-			raise iraf.IrafError("Error running IRAF task " + self._name +
-				"\n" + str(value))
+			self._run(redirKW, specialKW)
+			changed = self._updateParList(self._runningParList, save)
+			if changed:
+				rv = self.save()
+				if iraf.Verbose>1: print rv
+			if iraf.Verbose>1: print 'Successful task termination'
+		finally:
+			rv = self._resetRedir(resetList, closeFHList)
+			self._runningParList = None
+			if self._parDictList:
+				self._parDictList[0] = (self._name, self.getParDict())
 		return rv
 
 	def getMode(self, parList=None):
@@ -259,14 +270,12 @@ class IrafTask:
 		"""
 		if parList is not None:
 			mode = parList.getValue('mode',prompt=0)
-		elif self._runningParList is not None:
-			pdict = self._runningParList.getParDict()
-			mode = pdict['mode'].get(prompt=0)
-		elif self._currentParList is not None:
-			pdict = self._currentParList.getParDict()
-			mode = pdict['mode'].get(prompt=0)
 		else:
-			mode = "a"
+			pdict = self.getParDict()
+			if pdict:
+				mode = pdict['mode'].get(prompt=0)
+			else:
+				mode = "a"
 		if mode[:1] != "a": return mode
 
 		# cl is the court of last resort, don't look at its packages
@@ -296,7 +305,7 @@ class IrafTask:
 		copy with parameters set.  It is up to subsequent code (in
 		the run method) to propagate these changes to the persistent
 		parameter list.
-		
+
 		Special arguments: _setMode=1 to set modes of automatic parameters
 		"""
 		self.initTask(force=1)
@@ -366,13 +375,8 @@ class IrafTask:
 		# no task specified, just search the standard dictionaries
 		# most of the time it will be in the active task dictionary
 
-		if self._runningParList is not None:
-			paramdict = self._runningParList.getParDict()
-		elif self._currentParList is not None:
-			paramdict = self._currentParList.getParDict()
-		else:
-			paramdict = None
-		if paramdict and paramdict.has_key(paramname,exact=exact):
+		paramdict = self.getParDict()
+		if paramdict.has_key(paramname,exact=exact):
 			paramdict[paramname].set(newvalue,index=pindex,
 				field=field,check=check)
 			return
@@ -441,14 +445,9 @@ class IrafTask:
 	def _getParValue(self, paramname, pindex, field, native, mode, exact=0):
 		# search the standard dictionaries for the parameter
 		# most of the time it will be in the active task dictionary
-		if self._runningParList is not None:
-			paramdict = self._runningParList.getParDict()
-		elif self._currentParList is not None:
-			paramdict = self._currentParList.getParDict()
-		else:
-			paramdict = None
+		paramdict = self.getParDict()
 		try:
-			if paramdict and paramdict.has_key(paramname,exact=exact):
+			if paramdict.has_key(paramname,exact=exact):
 				return self._getParFromDict(paramdict, paramname, pindex,
 								field, native, mode)
 		except minmatch.AmbiguousKeyError, e:
@@ -475,8 +474,9 @@ class IrafTask:
 	def lpar(self,verbose=0):
 		"""List the task parameters"""
 		self.initTask(force=1)
-		if self._currentParList:
-			self._currentParList.lParam(verbose=verbose)
+		plist = self._runningParList or self._currentParList
+		if plist:
+			plist.lParam(verbose=verbose)
 		else:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
@@ -484,6 +484,7 @@ class IrafTask:
 	def epar(self):
 		"""Edit the task parameters"""
 		self.initTask(force=1)
+		#XXX always runs on current par list, not running par list?
 		if self._currentParList:
 			epar.epar(self)
 		else:
@@ -493,8 +494,9 @@ class IrafTask:
 	def dpar(self):
 		"""Dump the task parameters"""
 		self.initTask(force=1)
-		if self._currentParList:
-			self._currentParList.dParam(self._name)
+		plist = self._runningParList or self._currentParList
+		if plist:
+			plist.dParam(self._name)
 		else:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
@@ -506,6 +508,7 @@ class IrafTask:
 		Returns a string with the results.
 		"""
 		self.initTask()
+		#XXX always runs on current par list, not running par list?
 		if not self._currentParList:
 			return "No parameters to save for task %s" % (self._name,)
 		if filename is None:
@@ -526,6 +529,7 @@ class IrafTask:
 	def unlearn(self):
 		"""Reset task parameters to their default values"""
 		self.initTask(force=1)
+		#XXX always runs on current par list, not running par list?
 		if not self._currentParList:
 			return
 		if self._defaultParList is not None:
@@ -604,6 +608,33 @@ class IrafTask:
 	# not be needed outside this module
 	#=========================================================
 
+	def _specialKW(self, kw):
+		"""Return dictionary of any special keywords (subclass hook)"""
+		return {}
+
+	def _applyRedir(self, redirKW):
+		"""Apply I/O redirection (irafexecute does this for executables)
+		
+		Return a list of redirections that need to be restored when done.
+		"""
+		return []
+
+	def _resetRedir(self, resetList, closeFHList):
+		"""Restore redirected I/O and close files"""
+		return iraf.redirReset(resetList, closeFHList)
+
+	def _run(self, redirKW, specialKW):
+		"""Execute task after parameters, I/O redirection are prepared.
+
+		The implementation of this can differ for each type of task.
+		"""
+		try:
+			apply(irafexecute.IrafExecute,
+				(self, iraf.getVarDict()), redirKW)
+		except irafexecute.IrafProcessError, value:
+			raise iraf.IrafError("Error running IRAF task " + self._name +
+				"\n" + str(value))
+
 	def _updateParList(self, newParList, save=0):
 		"""Update parameter list after successful task completion
 
@@ -651,14 +682,7 @@ class IrafTask:
 		"""
 
 		self.initTask()
-		if self._runningParList is not None:
-			# use the dictionary for the currently running task if exists
-			parDictList = [(self._name,self._runningParList.getParDict())]
-		elif self._currentParList is not None:
-			# else use current task parameter values
-			parDictList = [(self._name,self._currentParList.getParDict())]
-		else:
-			parDictList = [(self._name,{})]
+		parDictList = [(self._name,self.getParDict())]
 		# package parameters
 		# only include each pkg once
 		pinc = {}
@@ -880,57 +904,10 @@ class IrafPythonTask(IrafTask):
 				(self.getName(), filename))
 		self.__dict__['_pyFunction'] = function
 
-	#=========================================================
-	# public methods
-	#=========================================================
-
-	def run(self,*args,**kw):
-		"""Execute this task with the specified arguments"""
-		self.initTask(force=1)
-		if kw.has_key('_save'):
-			save = kw['_save']
-			del kw['_save']
-		else:
-			save = 0
-		# Special Stdout, Stdin, Stderr keywords are used to redirect IO
-		redirKW, closeFHList = iraf.redirProcess(kw)
-		# set parameters
-		kw['_setMode'] = 1
-		self._runningParList = apply(self.setParList,args,kw)
-		if iraf.Verbose>1:
-			print "Python task run ", self.getName(), "("+self.getFullpath()+")"
-			if self._runningParList:
-				self._runningParList.lParam()
-		# delete list of param dictionaries so it will be
-		# recreated in up-to-date version if needed
-		self._parDictList = None
-		# redirect the I/O
-		resetList = iraf.redirApply(redirKW)
-		try:
-			# extract all parameters
-			if self._runningParList:
-				parList = self._runningParList.getParList()
-			else:
-				parList = []
-			pl = []
-			for par in parList:
-				if par.name not in ['mode', '$nargs']:
-					pl.append(par.get(native=1))
-			# run the task
-			apply(self._pyFunction, pl)
-			changed = self._updateParList(self._runningParList, save)
-			if changed:
-				rv = self.save()
-				if iraf.Verbose>1: print rv
-		finally:
-			# restore I/O
-			rv = iraf.redirReset(resetList, closeFHList)
-			self._runningParList = None
-			if self._parDictList and self._currentParList:
-				self._parDictList[0] = (self._name,
-								self._currentParList.getParDict())
-		if iraf.Verbose>1: print 'Successful task termination'
-		return rv
+	def isConsistent(self, other):
+		"""Returns true if this task is consistent with another task object"""
+		return IrafTask.isConsistent(self, other) and \
+			self._pyFunction == other._pyFunction
 
 	#=========================================================
 	# special methods
@@ -938,8 +915,8 @@ class IrafPythonTask(IrafTask):
 
 	def __getstate__(self):
 		"""Return state for pickling"""
-		raise RuntimeError("save not implemented for %s object" %
-			self.__class__.__name__)
+		#XXXraise RuntimeError("save not implemented for %s object" %
+		#XXX	self.__class__.__name__)
 		# Dictionary is OK except for function pointer
 		# Note that __setstate__ is not needed because
 		# returned state is a dictionary
@@ -950,6 +927,24 @@ class IrafPythonTask(IrafTask):
 		dict['_pyFunction'] = None
 		return dict
 
+	#=========================================================
+	# private methods
+	#=========================================================
+
+	def _applyRedir(self, redirKW):
+		"""Apply I/O redirection"""
+		return iraf.redirApply(redirKW)
+
+	def _run(self, redirKW, specialKW):
+		"""Execute task after parameters, I/O redirection are prepared."""
+		# extract all parameters
+		parList = self.getParList()
+		pl = []
+		for par in parList:
+			if par.name not in ['mode', '$nargs']:
+				pl.append(par.get(native=1))
+		# run function on the parameters
+		apply(self._pyFunction, pl)
 
 
 # -----------------------------------------------------
@@ -1151,44 +1146,6 @@ class IrafCLTask(IrafTask):
 			self._currentParList = copy.deepcopy(self._pycode.vars.parList)
 			self._currentParpath = self._defaultParpath
 
-	def run(self,*args,**kw):
-		"""Execute this task with the specified arguments"""
-		# force check to make sure source code is up-to-date
-		self.initTask(force=1)
-		if kw.has_key('_save'):
-			save = kw['_save']
-			del kw['_save']
-		else:
-			save = 0
-		# Special Stdout, Stdin, Stderr keywords are used to redirect IO
-		redirKW, closeFHList = iraf.redirProcess(kw)
-		# set parameters
-		kw['_setMode'] = 1
-		self._runningParList = apply(self.setParList,args,kw)
-		if iraf.Verbose>1:
-			print "CL task run ", self.getName(), "("+self.getFullpath()+")"
-			self._runningParList.lParam()
-		# delete list of param dictionaries so it will be
-		# recreated in up-to-date version if needed
-		self._parDictList = None
-		# redirect the I/O
-		resetList = iraf.redirApply(redirKW)
-		try:
-			# run the task
-			self._runCode(self._runningParList.getParList())
-			changed = self._updateParList(self._runningParList, save)
-			if changed:
-				rv = self.save()
-				if iraf.Verbose>1: print rv
-		finally:
-			# restore I/O
-			rv = iraf.redirReset(resetList, closeFHList)
-			self._runningParList = None
-			if self._parDictList: self._parDictList[0] = (self._name,
-								self._currentParList.getParDict())
-		if iraf.Verbose>1: print 'Successful task termination'
-		return rv
-
 	#=========================================================
 	# special methods
 	#=========================================================
@@ -1208,6 +1165,14 @@ class IrafCLTask(IrafTask):
 	#=========================================================
 	# private methods
 	#=========================================================
+
+	def _applyRedir(self, redirKW):
+		"""Apply I/O redirection"""
+		return iraf.redirApply(redirKW)
+
+	def _run(self, redirKW, specialKW):
+		"""Execute task after parameters, I/O redirection are prepared."""
+		self._runCode()
 
 	def _runCode(self, parList=None, kw={}):
 		"""Run the procedure with current parameters"""
@@ -1269,8 +1234,9 @@ class IrafPkg(IrafCLTask):
 	def getAllMatches(self, name, triedpkgs=None):
 		"""Return list of names of all parameters/tasks that may match name"""
 		self.initTask(force=1)
-		if self._currentParList is not None:
-			matches = self._currentParList.getAllMatches(name)
+		plist = self._runningParList or self._currentParList
+		if plist:
+			matches = plist.getAllMatches(name)
 		else:
 			matches = []
 		if self._loaded:
@@ -1300,8 +1266,9 @@ class IrafPkg(IrafCLTask):
 			raise AttributeError(name)
 		self.initTask()
 		# return package parameter if it exists
-		if self._currentParList.hasPar(name):
-			return self._currentParList.getValue(name,native=1,mode=self.getMode())
+		plist = self._runningParList or self._currentParList
+		if plist and plist.hasPar(name):
+			return plist.getValue(name,native=1,mode=self.getMode())
 		# else search for task with the given name
 		if not self._loaded:
 			raise AttributeError("Package " + self.getName() +
@@ -1311,6 +1278,10 @@ class IrafPkg(IrafCLTask):
 			return iraf.getTask(fullname)
 		else:
 			raise AttributeError("Parameter %s not found" % name)
+
+	#=========================================================
+	# private methods
+	#=========================================================
 
 	def _getTaskFullname(self, name, triedpkgs=None):
 		"""Return the full name (pkg.task) of task 'name' from this package
@@ -1348,24 +1319,8 @@ class IrafPkg(IrafCLTask):
 					return task
 		return None
 
-	def run(self,*args,**kw):
-		"""Load this package with the specified parameters"""
-		self.initTask(force=1)
-
-		if kw.has_key('_save'):
-			save = kw['_save']
-			del kw['_save']
-		else:
-			save = 0
-
-		# Special _doprint keyword is used to control whether tasks are listed
-		# after package has been loaded.  Default is to list them if cl.menus
-		# is set, or not to list them if it is not set.
-		if kw.has_key('_doprint'):
-			doprint = kw['_doprint']
-			del kw['_doprint']
-		else:
-			doprint = iraf.cl.menus
+	def _specialKW(self, kw):
+		"""Handle special _doprint, _hush keywords"""
 
 		# Special _hush keyword is used to suppress most output when loading
 		# packages.  Default is to print output.
@@ -1376,8 +1331,19 @@ class IrafPkg(IrafCLTask):
 			  not (kw.has_key('Stdout') or kw.has_key('StdoutAppend')):
 				kw['Stdout'] = '/dev/null'
 			del kw['_hush']
+		# Special _doprint keyword is used to control whether tasks are listed
+		# after package has been loaded.  Default is to list them if cl.menus
+		# is set, or not to list them if it is not set.
+		if kw.has_key('_doprint'):
+			doprint = kw['_doprint']
+			del kw['_doprint']
+		else:
+			doprint = iraf.cl.menus
+		return {'doprint': doprint}
 
-		redirKW, closeFHList = iraf.redirProcess(kw)
+	def _run(self, redirKW, specialKW):
+		"""Execute task after parameters, I/O redirection are prepared."""
+		doprint = specialKW['doprint']
 		# if already loaded, just add to iraf.loadedPath
 		iraf.loadedPath.append(self)
 		if not self._loaded:
@@ -1385,29 +1351,10 @@ class IrafPkg(IrafCLTask):
 			iraf.addLoaded(self)
 			if iraf.Verbose>1:
 				print "Loading pkg ",self.getName(), "("+self.getFullpath()+")",
-				if self.hasParfile():
-					print "par", self.getParpath(), \
-						"["+`len(self.getParList())`+"] parameters",
-				print
-			# set parameters
-			kw['_setMode'] = 1
-			self._runningParList = apply(self.setParList,args,kw)
-			#XXX more args to add?
-			#XXX redirKW['PkgName'] = self.getPkgname()
-			#XXX redirKW['PkgBinary'] = self.getPkgbinary()
 			menus = iraf.cl.menus
-			iraf.cl.menus = 0
-			# delete list of param dictionaries so it will be
-			# recreated in up-to-date version if needed
-			self._parDictList = None
-			# redirect the I/O
-			resetList = iraf.redirApply(redirKW)
 			try:
-				self._runCode(self._runningParList.getParList())
-				changed = self._updateParList(self._runningParList, save)
-				if changed:
-					rv = self.save()
-					if iraf.Verbose>1: print rv
+				iraf.cl.menus = 0
+				self._runCode()
 				# if other packages were loaded, put this on the
 				# loadedPath list one more time
 				if iraf.loadedPath[-1] is not self:
@@ -1415,13 +1362,6 @@ class IrafPkg(IrafCLTask):
 				if doprint: iraf.listTasks(self)
 			finally:
 				iraf.cl.menus = menus
-				rv = iraf.redirReset(resetList, closeFHList)
-				self._runningParList = None
-				if self._parDictList: self._parDictList[0] = (self._name,
-									self._currentParList.getParDict())
-			if iraf.Verbose>1:
-				print "Done loading",self.getName()
-			return rv
 
 # -----------------------------------------------------
 # Turn an IrafCLTask into an IrafPkg
@@ -1491,21 +1431,26 @@ class IrafForeignTask(IrafTask):
 					" cannot have a parameter file"
 			self._hasparfile = 0
 
-	def run(self,*args,**kw):
-		"""Run the task"""
-		# Special Stdout, Stdin, Stderr keywords are used to redirect IO
-		redirKW, closeFHList = iraf.redirProcess(kw)
-		# save key does not get used for foreign tasks, but keep it anyway
-		if kw.has_key('_save'):
-			save = kw['_save']
-			del kw['_save']
-		else:
-			save = 0
+	def setParList(self, *args, **kw):
+		"""Set arguments to task
+
+		Does not use IrafParList structure -- just keeps list of
+		the arguments
+		"""
+		if kw.has_key('_setMode'):
+			del kw['_setMode']
 		if len(kw)>0:
 			raise ValueError('Illegal keyword parameters %s for task %s' %
 				(kw.keys(), self._name,))
-		# set parameters
 		self._args = args
+
+	#=========================================================
+	# private methods
+	#=========================================================
+
+	def _run(self, redirKW, specialKW):
+		"""Execute task after parameters, I/O redirection are prepared."""
+		args = self._args
 		self._nsub = 0
 		# create command line
 		cmdline = _re_foreign_par.sub(self._parSub,self._filename)
@@ -1513,15 +1458,8 @@ class IrafForeignTask(IrafTask):
 			# no argument substitution, just append all args
 			cmdline = cmdline + ' ' + string.join(args,' ')
 		if iraf.Verbose>1: print "Running foreign task", cmdline
-		try:
-			# redirect the I/O
-			resetList = iraf.redirApply(redirKW)
-			# create and run the subprocess
-			subproc.subshellRedir(cmdline)
-		finally:
-			rv = iraf.redirReset(resetList, closeFHList)
-		if iraf.Verbose>1: print 'Successful task termination'
-		return rv
+		# create and run the subprocess
+		subproc.subshellRedir(cmdline)
 
 	def _parSub(self, mo):
 		"""Substitute an argument for this match object"""
