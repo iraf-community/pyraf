@@ -1,3 +1,5 @@
+#XXX some rlw notes
+
 """module 'eparoption.py' -- module for defining the various parameter display
    options to be used for the parameter editor task.  The widget that is used
    for entering the parameter value is the variant.
@@ -204,13 +206,9 @@ class BooleanEparOption(EparOption):
         self.valueWidth = self.valueWidth + 10
         self.padWidth   = self.valueWidth / 2
 
-        # Check as some boolean parameters have no default value
-        # This could happen if the parameter is a consequence of 
-        # an interactive mode query which must be answered.
-        if (self.value == ""):
-            self.choice.set("no")
-        else:
-            self.choice.set(self.value)
+        # If no default value, self.value == ""
+        # That's OK, just leave it with no choice
+        self.choice.set(self.value)
 
         self.frame = Frame(self.master.frame, relief = FLAT, width = self.valueWidth)
         self.rbyes = Radiobutton(self.frame, text = "Yes",
@@ -232,12 +230,16 @@ class BooleanEparOption(EparOption):
         self.newParamInfo = newParamInfo
         self.newValue = self.newParamInfo.get(field = "p_filename", native = 0, 
                                               prompt = 0) 
-        # Check if boolean is not set
-        if (self.newValue == ""):
-            self.choice.set("no")
-        else:
-            self.choice.set(self.newValue)
+        self.choice.set(self.newValue)
 
+#XXX For string parameters, we currently lose the information that
+#XXX a parameter is undefined.  The initialization gets the string
+#XXX value of the parameter, which is "" for an undefined value.
+#XXX But "" is also a legal string.  Somehow need to preserve the
+#XXX info that a value was None going in.
+#XXX Possible approaches -- store values in native format instead of
+#XXX as strings; do a special test when initializing strings to
+#XXX see if old value was None.
 
 class StringEparOption(EparOption):
 
@@ -310,6 +312,12 @@ class IntEparOption(EparOption):
     def __init__(self, master, statusBar, paramInfo, fieldWidths):
         EparOption.__init__(self, master, statusBar, paramInfo, fieldWidths)
 
+    def notNull(self, value):
+        return value not in ["", "INDEF"]
+        #XXX could also check for value[:1] == ')' here, which
+        #XXX indicates parameter indirection?  That check
+        #XXX should be done somewhere, at any rate
+
     def makeInputWidget(self):
 
         # Retain the original parameter value in case of bad entry
@@ -323,10 +331,10 @@ class IntEparOption(EparOption):
                                       prompt = 0)
 
         # If not INDEF, convert to an integer.
-        if (self.min != "INDEF"):
-            self.min = string.atoi(self.min)
-        if (self.max != "INDEF"):
-            self.max = string.atoi(self.max)
+        if self.notNull(self.min):
+            self.min = int(self.min)
+        if self.notNull(self.max):
+            self.max = int(self.max)
 
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
@@ -339,73 +347,68 @@ class IntEparOption(EparOption):
     # Check the validity of the entry
     def entryCheck(self, event = None):
 
+        #XXX better approach here would be to use the checkValue or
+        #XXX checkOneValue methods of the paramInfo object
+        #XXX I should clean up my error messages to match these first
+
         # Ensure any INDEF entry is uppercase
         if (self.choice.get() == "indef"):
             self.choice.set("INDEF")
-     
-        # Check the range if min and/or max are defined
-        if ((self.choice.get() != "INDEF") and 
-            (self.min != "INDEF" or self.max != "INDEF")):
+
+        # Make sure the input is legal
+        value = self.choice.get()
+        if not self.notNull(value):
+            return
+        else:
             try:
-                if ((self.min != "INDEF") and 
-                    (string.atoi(self.choice.get()) < self.min)):
-
-                    # Reset the entry to the previous (presumably valid) value
-                    self.choice.set(self.previousValue)
-
-                    # Set up the error message
-                    errorMsg = "Parameter " + `self.name` + ":" 
-
-                    if (self.max != "INDEF"):
-                        errorMsg = errorMsg + \
-                                   " Value is out of range.  Minimum: " + \
-                                   `self.min` + " Maximum: " + `self.max`
-                    else:
-                        errorMsg = errorMsg + \
-                                   " Value is out of range.  Minimum: " + \
-                                   `self.min` + " Maximum: -"
-                    self.status.bell()
-                    self.status.config(text = errorMsg)
-
-                if ((self.max != "INDEF") and 
-                    (string.atoi(self.choice.get()) > self.max)):
-
-                    # Reset the entry to the previous (presumably valid) value
-                    self.choice.set(self.previousValue)
-
-                    # Set up the error message
-                    errorMsg = "Parameter " + `self.name` + ":" 
-
-                    if (self.min != "INDEF"):
-                        errorMsg = errorMsg + \
-                                   " Value is out of range.  Minimum: " + \
-                                   `self.min` + " Maximum: " + `self.max`
-                    else:
-                        errorMsg = errorMsg + \
-                                   " Value is out of range.  Minimum: - " + \
-                                   " Maximum: " + `self.max`
-                    self.status.bell()
-                    self.status.config(text = errorMsg)
-
+                value = int(value)
             except ValueError:
                 # Reset the entry to the previous (presumably valid) value
                 self.choice.set(self.previousValue)
-
                 errorMsg = "Parameter " + `self.name` + \
                       ": Input value is the wrong data type."
                 self.status.bell()
                 self.status.config(text = errorMsg)
+                return
 
-        # Make sure the input is not a string
-        if (self.choice.get() != "INDEF"):
-            try:
-                string.atoi(self.choice.get())
-            except ValueError:
+        # Check the range if min and/or max are defined
+        if self.notNull(self.min) or self.notNull(self.max):
+            if self.notNull(self.min) and (value < self.min):
+
                 # Reset the entry to the previous (presumably valid) value
                 self.choice.set(self.previousValue)
 
-                errorMsg = "Parameter " + `self.name` + \
-                      ": Input value is the wrong data type."
+                # Set up the error message
+                errorMsg = "Parameter " + `self.name` + ":" 
+
+                if self.notNull(self.max):
+                    errorMsg = errorMsg + \
+                               " Value is out of range.  Minimum: " + \
+                               `self.min` + " Maximum: " + `self.max`
+                else:
+                    errorMsg = errorMsg + \
+                               " Value is out of range.  Minimum: " + \
+                               `self.min` + " Maximum: -"
+                self.status.bell()
+                self.status.config(text = errorMsg)
+                return
+
+            if self.notNull(self.max) and (value > self.max):
+
+                # Reset the entry to the previous (presumably valid) value
+                self.choice.set(self.previousValue)
+
+                # Set up the error message
+                errorMsg = "Parameter " + `self.name` + ":" 
+
+                if self.notNull(self.min):
+                    errorMsg = errorMsg + \
+                               " Value is out of range.  Minimum: " + \
+                               `self.min` + " Maximum: " + `self.max`
+                else:
+                    errorMsg = errorMsg + \
+                               " Value is out of range.  Minimum: - " + \
+                               " Maximum: " + `self.max`
                 self.status.bell()
                 self.status.config(text = errorMsg)
 
@@ -417,6 +420,12 @@ class RealEparOption(EparOption):
 
     def __init__(self, master, statusBar, paramInfo, fieldWidths):
         EparOption.__init__(self, master, statusBar, paramInfo, fieldWidths)
+
+    def notNull(self, value):
+        return value not in ["", "INDEF"]
+        #XXX could also check for value[:1] == ')' here, which
+        #XXX indicates parameter indirection?  That check
+        #XXX should be done somewhere, at any rate
 
     def makeInputWidget(self):
 
@@ -431,10 +440,10 @@ class RealEparOption(EparOption):
                                       prompt = 0)
 
         # If not INDEF, convert to a real.
-        if (self.min != "INDEF"):
-            self.min = string.atof(self.min)
-        if (self.max != "INDEF"):
-            self.max = string.atof(self.max)
+        if self.notNull(self.min):
+            self.min = float(self.min)
+        if self.notNull(self.max):
+            self.max = float(self.max)
 
         self.choice.set(self.value)
         self.entry = Entry(self.master.frame, width = self.valueWidth,
@@ -447,76 +456,72 @@ class RealEparOption(EparOption):
     # Check the validity of the entry
     def entryCheck(self, event = None):
 
+        #XXX better approach here would be to use the checkValue or
+        #XXX checkOneValue methods of the paramInfo object
+        #XXX It handles some other formats too (e.g. sexagesimal hh:mm:ss)
+        #XXX I should clean up my error messages to match these first
+
         # Ensure any INDEF entry is uppercase
         if (self.choice.get() == "indef"):
             self.choice.set("INDEF")
 
+        # Make sure the input is legal
+        value = self.choice.get()
+        if not self.notNull(value):
+            return
+        else:
+            try:
+                value = float(value)
+            except ValueError:
+                # Reset the entry to the previous (presumably valid) value
+                self.choice.set(self.previousValue)
+                errorMsg = "Parameter " + `self.name` + \
+                      ": Input value is the wrong data type."
+                self.status.bell()
+                self.status.config(text = errorMsg)
+                return
+
         # Check the range if min and/or max are defined
-        if ((self.choice.get() != "INDEF") and 
-            (self.min != "INDEF" or self.max != "INDEF")):
-            try:
-                if ((self.min != "INDEF") and 
-                    (string.atof(self.choice.get()) < self.min)):
+        if self.notNull(self.min) or self.notNull(self.max):
+            if self.notNull(self.min) and (value < self.min):
 
-                    # Reset the entry to the previous (presumably valid) value
-                    self.choice.set(self.previousValue)
-
-                    # Set up the error message
-                    errorMsg = "Parameter " + `self.name` + ":" 
-
-                    if (self.max != "INDEF"):
-                        errorMsg = errorMsg + \
-                                   " Value is out of range.  Minimum: " + \
-                                   `self.min` + " Maximum: " + `self.max`
-                    else:
-                        errorMsg = errorMsg + \
-                                   " Value is out of range.  Minimum: " + \
-                                   `self.min` + " Maximum: -"
-                    self.status.bell()
-                    self.status.config(text = errorMsg)
-
-                if ((self.max != "INDEF") and 
-                    (string.atof(self.choice.get()) > self.max)):
-
-                    # Reset the entry to the previous (presumably valid) value
-                    self.choice.set(self.previousValue)
-
-                    # Set up the error message
-                    errorMsg = "Parameter " + `self.name` + ":" 
-
-                    if (self.min != "INDEF"):
-                        errorMsg = errorMsg + \
-                                   " Value is out of range.  Minimum: " + \
-                                   `self.min` + " Maximum: " + `self.max`
-                    else:
-                        errorMsg = errorMsg + \
-                                   " Value is out of range.  Minimum: - " + \
-                                   " Maximum: " + `self.max`
-                    self.status.bell()
-                    self.status.config(text = errorMsg)
-
-            except ValueError:
                 # Reset the entry to the previous (presumably valid) value
                 self.choice.set(self.previousValue)
 
-                errorMsg = "Parameter " + `self.name` + \
-                      ": Input value is the wrong data type."
+                # Set up the error message
+                errorMsg = "Parameter " + `self.name` + ":" 
+
+                if self.notNull(self.max):
+                    errorMsg = errorMsg + \
+                               " Value is out of range.  Minimum: " + \
+                               `self.min` + " Maximum: " + `self.max`
+                else:
+                    errorMsg = errorMsg + \
+                               " Value is out of range.  Minimum: " + \
+                               `self.min` + " Maximum: -"
                 self.status.bell()
                 self.status.config(text = errorMsg)
+                return
 
-        # Make sure the input is not a string
-        if (self.choice.get() != "INDEF"):
-            try:
-                string.atof(self.choice.get())
-            except ValueError:
+            if self.notNull(self.max) and (value > self.max):
+
                 # Reset the entry to the previous (presumably valid) value
                 self.choice.set(self.previousValue)
 
-                errorMsg = "Parameter " + `self.name` + \
-                      ": Input value is the wrong data type."
+                # Set up the error message
+                errorMsg = "Parameter " + `self.name` + ":" 
+
+                if self.notNull(self.min):
+                    errorMsg = errorMsg + \
+                               " Value is out of range.  Minimum: " + \
+                               `self.min` + " Maximum: " + `self.max`
+                else:
+                    errorMsg = errorMsg + \
+                               " Value is out of range.  Minimum: - " + \
+                               " Maximum: " + `self.max`
                 self.status.bell()
                 self.status.config(text = errorMsg)
- 
+
 
 class PsetEparOption(EparOption):
 
@@ -527,6 +532,7 @@ class PsetEparOption(EparOption):
 
         # For a PSET self.value is actually an IrafTask object
         # Need to get the filename to label the button
+        #XXX No -- just use name to label button here too?
         fileName = self.value.getFilename()
 
         # Strip of any leading environment variable indicator and

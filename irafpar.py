@@ -1256,12 +1256,14 @@ class _BooleanMixin:
 	def coerceOneValue(self,value,strict=0):
 		if value in [None,INDEF,0,1]:
 			return value
+		elif value == "":
+			return None
 		tval = type(value)
 		if tval is StringType:
 			v2 = irafutils.stripQuotes(string.strip(value))
 			if v2 == "" or v2 == "INDEF":
 				return INDEF
-			elif v2[0] == ")":
+			elif v2[0:1] == ")":
 				# assume this is indirection -- for now just save it as a string
 				return v2
 			# even more strict would just accept lower-case "yes", "no"
@@ -1311,6 +1313,8 @@ class _IntMixin:
 		tval = type(value)
 		if value in [None, INDEF] or tval is IntType:
 			return value
+		elif value == "":
+			return None
 		elif tval is FloatType:
 			# try converting to integer
 			try:
@@ -1323,7 +1327,7 @@ class _IntMixin:
 			if s2 == "INDEF" or \
 			  ((not strict) and (string.upper(s2) == "INDEF")):
 				return INDEF
-			elif s2[0] == ")":
+			elif s2[0:1] == ")":
 				# assume this is indirection -- for now just save it as a string
 				return s2
 			elif s2[-1:] == "x":
@@ -1397,6 +1401,8 @@ class _RealMixin:
 		tval = type(value)
 		if value in [None, INDEF] or tval is FloatType:
 			return value
+		elif value == "":
+			return None
 		elif tval in [LongType,IntType]:
 			return float(value)
 		elif tval is StringType:
@@ -1404,7 +1410,7 @@ class _RealMixin:
 			if s2 == "INDEF" or \
 			  ((not strict) and (string.upper(s2) == "INDEF")):
 				return INDEF
-			elif s2[0] == ")":
+			elif s2[0:1] == ")":
 				# assume this is indirection -- just save it as a string
 				return s2
 			else:
@@ -1415,10 +1421,10 @@ class _RealMixin:
 				i1 = 0
 				mm = _re_colon.search(s2)
 				if mm is not None:
-					if s2[0] == "-":
+					if s2[0:1] == "-":
 						i1 = 1
 						vsign = -1
-					elif s2[0] == "+":
+					elif s2[0:1] == "+":
 						i1 = 1
 					while mm is not None:
 						i2 = mm.start()

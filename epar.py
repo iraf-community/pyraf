@@ -615,11 +615,12 @@ class EparDialog:
                 self.taskObject.setParam(self.paramList[i].get(field = "p_name",
                                     native = 1, prompt = 0), value)
 
-		# save results to the uparm directory
-		self.taskObject.save()
+        # save results to the uparm directory
+        self.taskObject.save()
 
     # Run the task
     def runTask(self):
 
         # Use the run method of the IrafTask class
-        self.taskObject.run()
+        # Set mode='h' so it does not prompt for parameters (like IRAF epar)
+        self.taskObject.run(mode='h')

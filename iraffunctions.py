@@ -218,7 +218,7 @@ from irafhelp import help
 
 def Init(doprint=1,hush=0):
 	"""Basic initialization of IRAF environment"""
-	global varDict, _pkgs, cl
+	global _pkgs, cl
 	if len(_pkgs) == 0:
 		set(iraf = _os.environ['iraf'])
 		set(host = _os.environ['host'])
@@ -592,7 +592,7 @@ def listCurrent(n=1,hidden=0):
 	else:
 		print 'No IRAF tasks defined'
 
-def listVars():
+def listVars(prefix="",equals="\t= "):
 	"""List IRAF variables"""
 	keylist = getVarList()
 	if len(keylist) == 0:
@@ -600,7 +600,7 @@ def listVars():
 	else:
 		keylist.sort()
 		for word in keylist:
-			print word + '	= ' + varDict[word]
+			print "%s%s%s%s" % (prefix, word, equals, envget(word))
 
 # -----------------------------------------------------
 # IRAF utility procedures
@@ -622,15 +622,12 @@ def set(*args, **kw):
 		if len(kw) != 0:
 			# normal case is only keyword,value pairs
 			for keyword, value in kw.items():
-				#XXX should this be coerced to a string??
-				varDict[keyword] = value
+				keyword = _irafutils.unreplaceReserved(keyword)
+				varDict[keyword] = str(value)
 		else:
 			# set with no arguments lists all variables (using same format
 			# as IRAF)
-			keys = kw.keys()
-			keys.sort()
-			for key in keys:
-				print "    "+key+"="+kw[key]
+			listVars(prefix="    ", equals="=")
 	else:
 		# The only other case allowed is the peculiar syntax 'set @filename',
 		# which only gets used in the zzsetenv.def file, where it reads
@@ -1378,14 +1375,14 @@ def _expand1(instring):
 	if mm is None:
 		mm = __re_var_paren.search(instring)
 		if mm is None: return instring
-		if varDict.has_key(mm.group('varname')):
+		if defvar(mm.group('varname')):
 			return instring[:mm.start()] + \
 				_expand1(mm.group('varname')+'$') + \
 				instring[mm.end():]
 	varname = mm.group('varname')
-	if varDict.has_key(varname):
+	if defvar(varname):
 		# recursively expand string after substitution
-		return _expand1(varDict[varname] + instring[mm.end():])
+		return _expand1(envget(varname) + instring[mm.end():])
 	else:
 		raise IrafError("Undefined variable " + varname + \
 			" in string " + instring)

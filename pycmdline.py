@@ -1,19 +1,26 @@
-"""pycmdline.py -- simply command line interface for Pyraf
+"""pycmdline.py -- Python/CL command line interface for Pyraf
 
-Eventually will have these functions:
+Provides this functionality:
 
 - Command directives:
 	.logfile [filename [append]]
-	.debug
 	.exit
+	.help
+	.clemulate
+	.debug
 - Shell escapes (!cmd, !!)
-- Normal Python mode execution
-- CL command-mode execution
+- CL command-mode execution, triggered by a line that starts with a
+  CL task token and is not followed by other characters indicating
+  it is some other kind of Python statement
+- Normal Python mode execution (when CL emulation and directives are
+  not triggered)
 
 Uses standard code module plus some ideas from cmd.py module
 (and of course Perry's Monty design.)
 
-R. White, 1999 December 12
+$Id$
+
+R. White, 1999 December 14
 """
 
 #XXX additional ideas:
@@ -47,7 +54,9 @@ class CmdConsole(code.InteractiveConsole):
 			")[ \t]*")
 
 	def interact(self, banner=None):
-		"""Emulate the interactive Python console, with extra commands."""
+		"""Emulate the interactive Python console, with extra commands.
+		
+		Also is modified so it does not catch EOFErrors."""
 		if banner is None:
 			self.write("Python %s on %s\n%s\n(%s)\n" %
 						(sys.version, sys.platform, sys.copyright,
@@ -61,17 +70,17 @@ class CmdConsole(code.InteractiveConsole):
 					prompt = self.ps2
 				else:
 					prompt = self.ps1
-				try:
-					line = self.raw_input(prompt)
-				except EOFError:
-					self.write("\n")
-					break
-				else:
-					# note that this forbids combination of python & CL
-					# code -- e.g. a for loop that runs CL tasks.
-					if not more:
-						line = self.cmd(line)
-					if line or more: more = self.push(line)
+				line = self.raw_input(prompt)
+				# note that this forbids combination of python & CL
+				# code -- e.g. a for loop that runs CL tasks.
+				if not more:
+					line = self.cmd(line)
+				if line or more: more = self.push(line)
+			except EOFError:
+				self.write("\nUse .exit to exit\n"
+					".help describes executive commands\n")
+				self.resetbuffer()
+				more = 0
 			except KeyboardInterrupt:
 				self.write("\nKeyboardInterrupt\n")
 				self.resetbuffer()
@@ -107,8 +116,10 @@ class CmdConsole(code.InteractiveConsole):
 # put the executive commands in a minimum match dictionary
 
 _cmdDict = minmatch.MinMatchDict({
-				'.exit': 'do_exit',
+				'.help': 'do_help',
+				'.clemulate': 'do_clemulate',
 				'.logfile': 'do_logfile',
+				'.exit': 'do_exit',
 				'.debug': 'do_debug',
 				})
 
@@ -135,11 +146,12 @@ class PyCmdLine(CmdConsole):
 
 	"""Simple Python interpreter with executive commands"""
 
-	def __init__(self, locals=None, logfile=None, debug=0):
+	def __init__(self, locals=None, logfile=None, debug=0, clemulate=1):
 		CmdConsole.__init__(self, locals=locals,
 			cmddict=_cmdDict, prompt1="--> ", prompt2="... ")
 		self.debug = debug
 		self.subshell = "/bin/sh"
+		self.clemulate = clemulate
 		self.logfile = None
 		if logfile is not None:
 			if hasattr(logfile,'write'):
@@ -147,7 +159,7 @@ class PyCmdLine(CmdConsole):
 			elif type(logfile) is types.StringType:
 				self.do_logfile(logfile, 0)
 			else:
-				print 'logfile ignored -- not string or filehandle'
+				self.write('logfile ignored -- not string or filehandle\n')
 
 	def runsource(self, source, filename="<input>", symbol="single"):
 		"""Compile and run some source in the interpreter.
@@ -172,49 +184,91 @@ class PyCmdLine(CmdConsole):
 			self.logfile.flush()
 		return 0
 
+	def do_help(self, line, i):
+		"""Print help on executive commands"""
+		if self.debug: self.write('do_help: %s\n' % line[i:])
+		self.write("""Executive commands:
+.logfile [filename [append|overwrite]]
+    If filename is specified, start logging commands to the file.  If filename
+    is omitted, turns off logging.  The optional append/overwrite argument
+    determines whether output is appended to (default) or overwrites an
+    existing file.
+.clemulate [0|1]
+    Set the CL emulation flag, which determines whether lines starting
+    with a CL task name are interpreted in CL mode rather than Python mode.
+    If argument is omitted, default is 1 (turn on CL emulation.)
+.exit
+    Exit from Pyraf.
+.help
+    Print this help message.
+.debug [1|0]
+    Set the debugging flag.  If argument is omitted, default value is 1
+    (turn on debugging.)
+
+Commands can be abbreviated.
+""")
+
 	def do_exit(self, line, i):
-		if self.debug: print 'do_exit:',line
+		"""Exit from Python"""
+		if self.debug: self.write('do_exit: %s\n' % line[i:])
 		raise SystemExit
 
 	def do_logfile(self, line, i):
-		if self.debug: print 'do_logfile:',line
+		"""Start or stop logging commands"""
+		if self.debug: self.write('do_logfile: %s\n' % line[i:])
 		args = string.split(line[i:])
 		if len(args) == 0:	# turn off logging (if on)
 			if self.logfile:
 				self.logfile.close()
 				self.logfile = None
 			else:
-				print "No log file currently open"
+				self.write("No log file currently open\n")
 		else:
 			filename = args[0]
-			oflag = 'w'
-			if len(args) > 1:
-				if string.strip(args[1]) == 'append':
-					oflag = 'a'
-				else:
-					print 'Ignoring unknown options', args[1:]
+			del args[0]
+			oflag = 'a'
+			if len(args) > 0:
+				sarg = string.strip(args[0])
+				if args[0] == 'overwrite':
+					oflag = 'w'
+					del args[0]
+				elif args[0] == 'append':
+					del args[0]
+			if args:
+				self.write('Ignoring unknown options: %s\n' %
+					string.join(args," "))
 			try:
 				oldlogfile = self.logfile
 				self.logfile = open(filename,oflag)
 				if oldlogfile: oldlogfile.close()
 			except IOError, e:
-				print "error opening logfile", filename
-				print str(e)
+				self.write("error opening logfile %s\n%s\n" % (filename,str(e)))
+		return ""
+
+	def do_clemulate(self, line, i):
+		"""Turn CL emulation on or off"""
+		if self.debug: self.write('do_clemulate: %s\n' % line[i:])
+		self.clemulate = 1
+		if line[i:] != "":
+			try:
+				self.clemulate = int(line[i:])
+			except ValueError, e:
+				if self.debug: self.write(str(e)+'\n')
+				pass
 		return ""
 
 	def do_debug(self, line, i):
-		if self.debug: print 'do_debug:', line
+		"""Turn debug output on or off"""
+		if self.debug: self.write('do_debug: %s\n' % line[i:])
 		self.debug = 1
 		if line[i:] != "":
 			try:
 				self.debug = int(line[i:])
 			except ValueError, e:
-				if self.debug: print str(e)
+				if self.debug: self.write(str(e)+'\n')
 				pass
 		return ""
 
-	def do_help(self):
-		print 'Executive commands:  .exit    .logfile [filename [append]]'
 
 	def default(self, cmd, line, i):
 		"""Check for IRAF task calls and use CL emulation mode if needed
@@ -223,22 +277,32 @@ class PyCmdLine(CmdConsole):
 		line = full line (including cmd, preceding blanks, etc.)
 		i = index in line of first non-blank character following cmd
 		"""
-		if self.debug: print 'default: %s - %s' % (cmd,line[i:])
+		if self.debug: self.write('default: %s - %s\n' % (cmd,line[i:]))
 		if len(cmd)==0:
-			# leading '?' or '!' will be handled by CL code
-			if line[i:i+1] not in ['?', '!']:
-				return line
-			elif line[i:i+2] == '!!':
+			if line[i:i+2] == '!!':
+				# '!!' spawns a sub-shell
 				os.system(self.subshell)
 				return ''
-		elif (len(cmd)<3 and not _shortCmdDict.has_key(cmd)) or \
-				keyword.iskeyword(cmd):
-			# don't mess with Python keywords
-			# require at least 3 characters in keywords to reduce chance
-			# of spurious matches (except for a few special cases:
-			# cd, cl, tv, etc.)
+			elif line[i:i+1] == '!':
+				# '!' is shell escape
+				# handle it here only if cl emulation is turned off
+				if not self.clemulate:
+					iraf.clOscmd(line[i+1:])
+					return ''
+			elif line[i:i+1] != '?':
+				# leading '?' will be handled by CL code -- else this is Python
+				return line
+		elif self.clemulate == 0:
+			# if CL emulation is turned off then just return
 			return line
-		elif line[i:i+1] in [ '=', ',', '[']:
+		#elif (len(cmd)<3 and not _shortCmdDict.has_key(cmd)) or \
+		#		keyword.iskeyword(cmd):
+		#	# don't mess with Python keywords
+		#	# require at least 3 characters in keywords to reduce chance
+		#	# of spurious matches (except for a few special cases:
+		#	# cd, cl, tv, etc.)
+		#	return line
+		elif line[i:i+1] != "" and line[i] in '=,[':
 			# don't even try if it doesn't look like a procedure call
 			return line
 		else:
@@ -246,21 +310,26 @@ class PyCmdLine(CmdConsole):
 			try:
 				t = getattr(iraf,cmd)
 				# OK, we found it in the iraf module
-				# If it could be a Python function call, check to see
+				# If it could be a Python expression, check to see
 				# if the function exists in the local namespace
 				if line[i:i+1] == '(':
-					ff = string.split(cmd,'.')
-					if self.locals.has_key(ff[0]): return line
+					if self.isLocal(cmd): return line
 					# Not a local function, so user presumably intends to
 					# call IRAF task.  Force Python mode but add the 'iraf.'
 					# string to the task name for convenience.
 					j = string.find(line,cmd)
 					return line[:j] + 'iraf.' + line[j:]
+				elif self.isLocal(cmd) and line[i:i+1] != "" and \
+				  line[i] not in string.digits and \
+				  line[i] not in string.letters:
+					# don't override local variable unless this really
+					# does not look like a legal Python command
+					return line
 			except AttributeError, e:
 				return line
 
-		# OK, it looks like CL code
-		if self.debug: print 'CL:',line
+		# if we get to here then it looks like CL code
+		if self.debug: self.write('CL: %s\n' % line)
 		try:
 			code = iraf.clExecute(line, locals=self.locals, mode='single')
 			if self.logfile is not None:
@@ -270,13 +339,20 @@ class PyCmdLine(CmdConsole):
 					self.logfile.write('# %s\n' % oneline)
 				self.logfile.write(code)
 				self.logfile.flush()
-			if line == 'help':
-				# print extra help on executive commands
-				self.do_help()
 		except:
 			self.showtraceback()
 		return ''
 
-	def start(self, banner="Python/CL command line wrapper"):
+	def isLocal(self, value):
+		"""Returns true if value is local variable"""
+		ff = string.split(value,'.')
+		if self.locals.has_key(ff[0]):
+			return 1
+		else:
+			return 0
+
+	def start(self, banner="Python/CL command line wrapper\n"
+			"  .help describes executive commands"):
+		"""Start interpreter"""
 		self.interact(banner=banner)
 

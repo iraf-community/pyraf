@@ -82,8 +82,9 @@ def removeEscapes(value):
 		i = string.find(value,"\\\n")
 	return value
 
-# Must Python keywords to make Python code legal.  I add 'PY' to beginning
-# of Python keywords -- it will be stripped off where appropriate
+# Must modify Python keywords to make Python code legal.  I add 'PY' to
+# beginning of Python keywords (and some other illegal Python identifiers).
+# It will be stripped off where appropriate.
 
 def replaceReserved(s, dot=0):
 
@@ -91,6 +92,7 @@ def replaceReserved(s, dot=0):
 
 	Translate embedded dollar signs to 'DOLLAR'
 	Add 'PY' prefix to components that are Python reserved words
+	Add 'PY' prefix to components start with a number
 	If dot != 0, also replaces '.' with 'DOT'
 	"""
 
@@ -100,7 +102,8 @@ def replaceReserved(s, dot=0):
 		i = string.find(s, '$', i+6)
 	sparts = string.split(s,'.')
 	for i in range(len(sparts)):
-		if keyword.iskeyword(sparts[i]):
+		if sparts[i] == "" or sparts[i][0] in string.digits or \
+		  keyword.iskeyword(sparts[i]):
 			sparts[i] = 'PY' + sparts[i]
 	if dot:
 		return string.join(sparts,'DOT')

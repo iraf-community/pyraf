@@ -262,14 +262,16 @@ class _CommandScanner_1(_BasicScanner_1):
 class _CommandScanner_2(_BasicScanner_2,_CommandScanner_1):
 
 	def t_keyval(self, s, m, parent):
-		r'(?P<KeyName>[a-zA-Z\$_][a-zA-Z\$_\d.]*) [ \t]* =(?!=)'
+		r'(?P<KeyName>[a-zA-Z\$_\d][a-zA-Z\$_\d.]*) [ \t]* =(?!=)'
+		# note that keywords can start with a number (!) in command mode
 		parent.addToken(type=parent.argsep)
 		parent.argsep = None
 		parent.addIdent(m.group('KeyName'), usekey=0)
 		parent.addToken(type='=')
 
 	def t_keybool(self, s, m, parent):
-		r'[a-zA-Z\$_][a-zA-Z\$_\d.]*[+\-]($|(?=[ \t\n<>\|]))'
+		r'[a-zA-Z\$_\d][a-zA-Z\$_\d.]*[+\-]($|(?=[ \t\n<>\|]))'
+		# note that keywords can start with a number (!) in command mode
 		parent.addToken(type=parent.argsep)
 		parent.argsep = ','
 		parent.addIdent(s[:-1], usekey=0)
