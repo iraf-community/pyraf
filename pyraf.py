@@ -143,6 +143,7 @@ iraf.init()
 
 yes = 1
 no = 0
+INDEF = "INDEF"
 flpr = "This is not the IRAF cl!  Forget those old bad habits!"
 retall = "This is not IDL..."
 
