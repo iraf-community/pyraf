@@ -1,5 +1,5 @@
-#! /usr/local/Python-2.0/bin/python2.0 -i
-
+#! /usr/ra/pyssg/Python-2.3/bin/python2.3 -i
+#Generated automatically from pyraf.in by configure.
 """
 Usage: pyraf [options] [savefile]
 
@@ -19,7 +19,6 @@ Long versions of options:
   -m  --commandwrapper=yes
   -i  --commandwrapper=no
   -h  --help
-
 """
 
 # $Id$

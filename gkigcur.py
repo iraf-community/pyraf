@@ -22,7 +22,6 @@ class Gcursor:
 
         self.x = 0
         self.y = 0
-        self.top = None
         self.window = window
         self.gwidget = window.gwidget
         self.top = window.top
@@ -70,16 +69,16 @@ class Gcursor:
         """Turn cross-hair cursor on"""
         if self.gwidget.lastX is not None:
             self.gwidget.activateSWCursor(
-                    (self.gwidget.lastX+0.5)/self.gwidget.winfo_width(),
-                    (self.gwidget.lastY+0.5)/self.gwidget.winfo_height())
+                    (self.gwidget.lastX+0.5)/self.gwidget.width,
+                    (self.gwidget.lastY+0.5)/self.gwidget.height)
         else:
             self.gwidget.activateSWCursor()
 
     def cursorOff(self):
         """Turn cross-hair cursor off"""
         self.gwidget.deactivateSWCursor()
-        self.gwidget.lastX = self.x/self.gwidget.winfo_width()
-        self.gwidget.lastY = self.y/self.gwidget.winfo_height()
+        self.gwidget.lastX = self.x/self.gwidget.width
+        self.gwidget.lastY = self.y/self.gwidget.height
 
     def bind(self):
 
@@ -113,16 +112,14 @@ class Gcursor:
         NDC coordinates"""
 
         gwidget = self.gwidget
-        width  = gwidget.winfo_width()
-        height = gwidget.winfo_height()
         if gwidget._SWCursor.isLastSWmove:
             ndcX = gwidget._SWCursor.lastx
             ndcY = gwidget._SWCursor.lasty
         else:
             sx = gwidget.winfo_pointerx() - gwidget.winfo_rootx()
             sy = gwidget.winfo_pointery() - gwidget.winfo_rooty()
-            ndcX = (sx+0.5)/width
-            ndcY = (height-0.5-sy)/height
+            ndcX = (sx+0.5)/self.gwidget.width
+            ndcY = (self.gwidget.height-0.5-sy)/self.gwidget.height
         return ndcX, ndcY
 
     def getMousePosition(self, event):
@@ -133,8 +130,8 @@ class Gcursor:
     def moveCursorRelative(self, event, deltaX, deltaY):
 
         gwidget = self.gwidget
-        width  = gwidget.winfo_width()
-        height = gwidget.winfo_height()
+        width = self.gwidget.width
+        height = self.gwidget.height
         # only force focus if window is viewable
         if not wutil.isViewable(self.top.winfo_id()):
             return
@@ -151,7 +148,7 @@ class Gcursor:
             newX = width - 1
         if newY >= height:
             newY = height - 1
-        gwidget.moveCursorTo(newX, newY, SWmove=1)
+        gwidget.moveCursorTo(newX, newY,  SWmove=1)
         self.x = newX
         self.y = newY
 

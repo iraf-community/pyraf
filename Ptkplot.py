@@ -76,6 +76,8 @@ class PyrafCanvas(Canvas):
         # to save last cursor position if switching to another window
         self.lastX = None
         self.lastY = None
+        self.width  = self.winfo_width() # to avoid repeated calls
+        self.height = self.winfo_height()
 
         # Basic bindings for the virtual trackball
         self.bind('<Expose>', self.tkExpose)
@@ -174,9 +176,9 @@ class PyrafCanvas(Canvas):
             y = 1.-(event.y+0.5)/self.winfo_height()
         self._SWCursor.moveTo(x,y,SWmove=0)
 
-    def moveCursorTo(self, x, y, SWmove=0):
-        self._SWCursor.moveTo(float(x)/self.winfo_width(),
-                              float(y)/self.winfo_height(),
+    def moveCursorTo(self, x, y, width, height, SWmove=0):
+        self._SWCursor.moveTo(float(x)/width,
+                              float(y)/height,
                               SWmove)
 
     def activate(self):
@@ -193,6 +195,8 @@ class PyrafCanvas(Canvas):
         Make it active, update tk events, call redraw procedure and
         swap the buffers.  Note: swapbuffers is clever enough to
         only swap double buffered visuals."""
+        self.width = self.winfo_width()
+        self.height = self.winfo_height()
         if self.ignoreNextRedraw:
             self.ignoreNextRedraw = 0
         else:
@@ -220,7 +224,8 @@ class FullWindowCursor:
 
     def xorDraw(self):
 
-        xutil.drawCursor(self.window.winfo_id(), self.lastx, self.lasty)
+        xutil.drawCursor(self.window.winfo_id(), self.lastx, self.lasty,
+                         self.window.width, self.window.height)
 
     def erase(self):
 

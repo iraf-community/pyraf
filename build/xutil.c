@@ -30,6 +30,12 @@ char IOError[] = "XWindows IO exception.";
 static GC cursorGC;
 static GC graphGC;
 static Display *d;
+static int screen_num;
+static GC gc;
+static XWindowAttributes wa;
+static int last_win = -1;
+static Colormap cmap;
+static XColor colorfg, colorbg, color; 
 
 #define TrapXlibErrors \
     oldIOErrorHandler = XSetIOErrorHandler(&MyXlibIOErrorHandler); \
@@ -315,6 +321,7 @@ void initXGraphics(void) {
     printf("could not open XWindow display\n");
     return;
   }
+  screen_num = DefaultScreen(d);
 }
 
 PyObject *wrap_initXGraphics(PyObject *self, PyObject *args) {
@@ -340,50 +347,44 @@ PyObject *wrap_closeXGraphics(PyObject *self, PyObject *args) {
   return Py_None;
 }
 
-void drawCursor(int win, double x, double y) {
+void drawCursor(int win, double x, double y, int width, int height) {
   /* plot cursor at x and y where x,y are normalized (range from 0 to 1) */
   Window w;
-  GC gc;
-  XWindowAttributes wa;
-  XColor colorfg, colorbg, color;
-  Colormap cmap;
-  int screen_num;
-  Window wroot;
-  int xr, yr;
-  unsigned int width, height, border, depth;
 
   w = (Drawable) win;
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return;
   }
-  screen_num = DefaultScreen(d);
-  /*default_cmap = DefaultColormap(d, screen_num);*/
-  if (!XGetWindowAttributes(d, w, &wa)) {
-    printf("Problem getting window attributes\n");
-    return;
-  }
-  cmap = wa.colormap;
-  if (!XParseColor(d, cmap, "red", &colorfg)) {
-     printf("could not parse color string\n");
-     return;
-  }
-  if (!XParseColor(d, cmap, "black", &colorbg)) {
-     printf("could not parse color string\n");
-     return;
-  }
-  if (!(XAllocColor(d, cmap, &colorfg) && XAllocColor(d, cmap, &colorbg))) {
-     printf("Problem allocating colors for cursor color determination\n");
-     return;
-  }
-  gc = XCreateGC(d, w, 0, NULL);
-  color.pixel = colorfg.pixel ^ colorbg.pixel;
-  XSetFunction(d, gc, GXxor);  
-  XSetForeground(d, gc, color.pixel);
-  if (!XGetGeometry(d,w,&wroot, &xr, &yr, &width, &height, &border, &depth)) {
+  /* only get a graphics context if the window id changes */
+  if (win != last_win) {
+    last_win = win;
+    gc = XCreateGC(d, w, 0, NULL);
+    if (!XGetWindowAttributes(d, w, &wa)) {
+      printf("Problem getting window attributes\n");
+      return;
+    }
+    cmap = wa.colormap;
+    if (!XParseColor(d, cmap, "red", &colorfg)) {
+      printf("could not parse color string\n");
+      return;
+    }
+    if (!XParseColor(d, cmap, "black", &colorbg)) {
+      printf("could not parse color string\n");
+      return;
+    }
+    if (!(XAllocColor(d, cmap, &colorfg) && XAllocColor(d, cmap, &colorbg))) {
+       printf("Problem allocating colors for cursor color determination\n");
+       return;
+    }
+    color.pixel = colorfg.pixel ^ colorbg.pixel;
+    XSetFunction(d, gc, GXxor);  
+    XSetForeground(d, gc, color.pixel);
+  }  
+  /*if (!XGetGeometry(d,w,&wroot, &xr, &yr, &width, &height, &border, &depth)) {
     printf("could not get window geometry\n");
     return;
-  }
+  }*/
   XDrawLine(d, w, gc, (int) (x*width), 0, (int) (x*width),  height);
   XDrawLine(d, w, gc, 0, (int) ((1.-y)*height),  width, (int) ((1.-y)*height));
   XFlush(d); 
@@ -392,12 +393,13 @@ void drawCursor(int win, double x, double y) {
 PyObject *wrap_drawCursor(PyObject *self, PyObject *args) {
 
   double x, y;
+  int width, height;
   int win;
 
-  if (!PyArg_ParseTuple(args, "idd", &win, &x, &y))
+  if (!PyArg_ParseTuple(args, "iddii", &win, &x, &y, &width, &height))
     return NULL;
   TrapXlibErrors /* macro code to handle xlib exceptions */
-  drawCursor(win, x, y);
+  drawCursor(win, x, y, width, height);
   RestoreOldXlibErrorHandlers /* macro */
   Py_INCREF(Py_None);
   return Py_None;
