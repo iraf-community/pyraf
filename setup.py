@@ -127,7 +127,7 @@ def copy_clcache(data_dir, args):
         clcache_dir = os.path.join(data_dir,'clcache')
         if os.path.exists(clcache_dir):
             shutil.rmtree(clcache_dir)
-            os.mkdir(clcache_dir)
+        os.mkdir(clcache_dir)
         for file in os.listdir('data/clcache'):
             if fnmatch.fnmatch(file, 'CVS'):
                 pass
