@@ -822,9 +822,9 @@ def readCl(filename,pkgname,pkgbinary,hush=0):
 
 	spkgname = _string.replace(pkgname, '.', '_')
 	if spkgname != pkgname:
-		print "Warning: '.' illegal in task name, changing", pkgname, \
+		print "Warning: `.' illegal in task name, changing", pkgname, \
 			"to", spkgname
-	pkgname = spkgname
+		pkgname = spkgname
 
 	# expand any IRAF variables in filename
 	expfile = Expand(filename)
@@ -1183,9 +1183,9 @@ def _execCl(filename,lines,qlist,blist,pkgname,pkgbinary,hush,offset=0):
 				pkgname = mm.group('packagename')
 				spkgname = _string.replace(pkgname, '.', '_')
 				if spkgname != pkgname:
-					print "Warning: `.' illegal in task name, changing", pkgname, \
-						"to", spkgname
-				pkgname = spkgname
+					print "Warning: `.' illegal in task name, changing", \
+						pkgname, "to", spkgname
+					pkgname = spkgname
 				if mm.group('packagebin') is not None:
 					pkgbinary = mm.group('packagebin')
 			elif mm.group('vartype') is not None:
@@ -1447,6 +1447,12 @@ def clTask(*args, **kw):
 		pkgbinary = defaultPkgbinary
 	else:
 		del kw['PkgBinary']
+	# fix illegal package names
+	spkgname = _string.replace(pkgname, '.', '_')
+	if spkgname != pkgname:
+		print "Warning: `.' illegal in task name, changing", pkgname, \
+			"to", spkgname
+		pkgname = spkgname
 
 	if len(kw) > 1:
 		raise SyntaxError("More than one `=' in task definition")
@@ -1480,7 +1486,12 @@ def clPackage(pkgname, bin=None, PkgName='', PkgBinary=''):
 	
 	PkgName, PkgBinary are old default values"""
 
-	return (pkgname or PkgName, bin or PkgBinary)
+	spkgname = _string.replace(pkgname, '.', '_')
+	if spkgname != pkgname:
+		print "Warning: `.' illegal in task name, changing", pkgname, \
+			"to", spkgname
+		pkgname = spkgname
+	return (pkgname, bin or PkgBinary)
 
 
 def clPrint(*args):
@@ -1833,6 +1844,19 @@ def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary):
 	object unless this task or package is already defined, in which case
 	a warning is printed and a reference to the existing task is returned.
 	"""
+
+	# fix illegal names
+	spkgname = _string.replace(pkgname, '.', '_')
+	if spkgname != pkgname:
+		print "Warning: `.' illegal in task name, changing", pkgname, \
+			"to", spkgname
+		pkgname = spkgname
+
+	staskname = _string.replace(taskname, '.', '_')
+	if staskname != taskname:
+		print "Warning: `.' illegal in task name, changing", taskname, \
+			"to", staskname
+		taskname = staskname
 
 	if suffix == '.pkg':
 		return IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary)
