@@ -239,10 +239,12 @@ _re_msg = re.compile(
 			)
 
 _p_curpack   = r'_curpack(?:\s.*|)\n'
+_p_stty      = r'stty.*\n'
 _p_sysescape = r'!(?P<sys_cmd>.*)\n'
 
 _re_clcmd = re.compile(
 			r'(?P<curpack>'   + _p_curpack   + ')|' +
+			r'(?P<stty>'      + _p_stty      + ')|' +
 			r'(?P<sysescape>' + _p_sysescape + ')'
 			)
 
@@ -310,7 +312,10 @@ class IrafProcess:
 		# this ensures that they are up-to-date at the start of the task
 		# (which is better than the CL does)
 		if stdout.isatty():
-			iraf.stty('resize')
+			nlines, ncols = wutil.getTermWindowSize()
+			self.writeString('set ttynlines=%d\nset ttyncols=%d\n' %
+				(nlines, ncols))
+			# iraf.stty('resize')
 
 		self.writeString(self.task.getName()+redir_info+'\n')
 		# begin slave mode
@@ -645,6 +650,17 @@ class IrafProcess:
 				cmd = self.msg
 				self.msg = ""
 			iraf.clExecute(cmd)
+		elif mcmd.group('stty'):
+			# terminal window size
+			if self.stdout.isatty():
+				nlines, ncols = wutil.getTermWindowSize()
+			else:
+				# a kluge -- if self.stdout is not a tty, assume it is a
+				# file and give a large number for the number of lines
+				nlines, ncols = 100000, 80
+			self.writeString('set ttynlines=%d\nset ttyncols=%d\n' %
+				(nlines, ncols))
+			self.msg = self.msg[mcmd.end():]
 		elif mcmd.group('curpack'):
 			# current package request
 			self.writeString(iraf.curpack() + '\n')

@@ -33,7 +33,7 @@ def redraw(o):
 	else:
 		glClearIndex(_g.colorManager.indexmap[1])
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-	glEnable(GL_LINE_SMOOTH)
+	# glEnable(GL_LINE_SMOOTH)
 
 class GraphicsWindowManager:
 
@@ -49,23 +49,16 @@ class GraphicsWindowManager:
 	def window(self, windowName=None):
 
 		if not windowName: # think up a default name!
-			done = 0
 			number = 1
-			while not done:
-				trialName = 'graphics'+str(number)
-				self.windows.has_key(trialName)
-				if not self.windows.has_key(trialName):
-					self.windows[trialName] = GraphicsWindow(trialName,
-											  self.colorManager.rgbamode)
-					self.activeWindow = self.windows[trialName]
-					done = 1
-					windowName = trialName
+			while 1:
+				windowname = 'graphics'+str(number)
+				if not self.windows.has_key(windowname):
+					break
 				number = number + 1
-		else:
-			if not self.windows.has_key(windowName):
-				self.windows[windowName] = GraphicsWindow(windowName,
-											  self.colorManager.rgbamode)
-			self.activeWindow = self.windows[windowName]
+		if not self.windows.has_key(windowName):
+			self.windows[windowName] = GraphicsWindow(windowName,
+										  self.colorManager.rgbamode)
+		self.activeWindow = self.windows[windowName]
 		self.activeWindow.gwidget.activate()
 		# The following attaches to the new window a reference to the
 		# window manager so that the window knows who to call to have
@@ -89,23 +82,20 @@ class GraphicsWindowManager:
 
 	def delete(self, windowName):
 
-		changeActiveWindow = 0
-		if self.windows.has_key(windowName):
-			if self.activeWindow.getWindowName() == windowName:
-				changeActiveWindow = 1
-			window = self.windows[windowName]
+		window = self.windows.get(windowName)
+		if window is None:
+			print "error: specified graphics window doesn't exist"
+		else:
+			changeActiveWindow = (self.activeWindow == window)
 			window.top.destroy()
 			del self.windows[windowName]
-			if len(self.windows) < 1:
+			if len(self.windows) == 0:
 				self.initialized = 0
-			if changeActiveWindow:
-				if len(self.windows):
-					self.activeWindow =self.windows[self.windows.keys()[0]]
-				else:
-					self.activeWindow = None
+				self.activeWindow = None
+			elif changeActiveWindow:
+				#XXX change to randomly selected active window
+				self.activeWindow =self.windows[self.windows.keys()[0]]
 			wutil.focusController.removeFocusEntity(windowName)
-		else:
-			print "error: specified graphics window doesn't exist"
 
 class GraphicsWindow:
 

@@ -78,7 +78,6 @@ def getTermWindowSize():
 	# define string to serve as memory area to recieve copy of structure
 	# created by IOCTL call
 	tstruct = ' '*20 # that should be more than enough memory
-	# xxx exception handling needed (but what exception to catch?)
 	try:
 		rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
 		ysize, xsize = struct.unpack('hh',rstruct[0:4])
@@ -372,10 +371,12 @@ class TerminalFocusEntity:
 		# define string to serve as memory area to recieve copy of structure
 		# created by IOCTL call
 		tstruct = ' '*20 # that should be more than enough memory
-		# xxx exception handling needed (but what exception to catch?)
-		rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
-		xsize, ysize = struct.unpack('hh',rstruct[0:4])
-		return xsize, ysize
+		try:
+			rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
+			ysize, xsize = struct.unpack('hh',rstruct[0:4])
+			return ysize, xsize
+		except IOError:
+			return (24,80) # assume generic size
 
 def getScreenDepth():
 

@@ -55,6 +55,8 @@ class EditHistory:
 		self.editinfo = []
 	def add(self, size, undomarker=0):
 		self.editinfo.append((undomarker,size))
+	def NEdits(self):
+		return len(self.editinfo)
 	def popLastSize(self):
 		if len(self.editinfo) > 0:
 			done = 0
@@ -78,7 +80,6 @@ class GkiBuffer:
 
 	def __init__(self, metacode=None):
 	
-		getwcs = None  # Used to indicate a getwcs instruction was encountered
 		self.editHistory = EditHistory()
 		self.undoable = 0
 		if metacode:

@@ -55,6 +55,7 @@ class Gcursor:
 		self.win.ignoreNextRedraw = 1
 		self.top.mainloop()
 		self.unbind()
+		self.win.deactivateSWCursor()
 		return self.retString
 
 	def bind(self):
