@@ -14,106 +14,14 @@ $Id$
 
 R. White, 1999 December 20
 """
-# define IRAF-like INDEF object
-# Do this first (even before any imports) to ensure that it is always defined
 
-class _INDEFClass:
-	"""Class of singleton INDEF (undefined) object"""
-	def __init__(self):
-		global INDEF
-		if INDEF is not None:
-			# only allow one to be created
-			raise RuntimeError("Use INDEF object, not _INDEFClass")
+# define INDEF, yes, no, Verbose, IrafError, userIrafHome
 
-	def __cmp__(self, other):
-		if other is INDEF:
-			# this probably never gets called since Python checks
-			# whether the objects are identical before calling __cmp__ 
-			return 0
-		else:
-			#XXX Note this implies INDEF is equivalent to +infinity
-			#XXX This is the only way to get the right answer
-			#XXX on tests of equality to INDEF
-			#XXX Replace this once rich comparisons (__gt__, __lt__, etc.)
-			#XXX are available (Python 1.6?)
-			return 1
-
-	def __repr__(self): return "INDEF"
-	def __str__(self): return "INDEF"
-
-	__oct__ = __str__
-	__hex__ = __str__
-
-	def __nonzero__(self): return 0
-
-	# all operations on INDEF return INDEF
-
-	def __add__(self, other): return self
-
-	__sub__    = __add__
-	__mul__    = __add__
-	__rmul__   = __add__
-	__div__    = __add__
-	__mod__    = __add__
-	__divmod__ = __add__
-	__pow__    = __add__
-	__lshift__ = __add__
-	__rshift__ = __add__
-	__and__    = __add__
-	__xor__    = __add__
-	__or__     = __add__
-
-	__radd__    = __add__
-	__rsub__    = __add__
-	__rmul__    = __add__
-	__rrmul__   = __add__
-	__rdiv__    = __add__
-	__rmod__    = __add__
-	__rdivmod__ = __add__
-	__rpow__    = __add__
-	__rlshift__ = __add__
-	__rrshift__ = __add__
-	__rand__    = __add__
-	__rxor__    = __add__
-	__ror__     = __add__
-
-	def __neg__(self): return self
-
-	__pos__    = __neg__
-	__abs__    = __neg__
-	__invert__ = __neg__
-
-	# it is a bit nasty having these functions not return
-	# the promised int, float, etc. -- but it is required that
-	# this object act just like an undefined value for one of
-	# those types, so I need to pretend it really is a legal
-	# int or float
-
-	__int__    = __neg__
-	__long__   = __neg__
-	__float__  = __neg__
-
-
-# initialize INDEF to None first so singleton scheme works
-
-INDEF = None
-INDEF = _INDEFClass()
+from irafglobals import *
 
 # -----------------------------------------------------
 # setVerbose: set verbosity level
 # -----------------------------------------------------
-
-# make Verbose an instance of a class so it can be imported
-# into other modules
-
-class _VerboseClass:
-	"""Container class for verbosity (or other) value"""
-	def __init__(self, value=0): self.value = value
-	def set(self, value): self.value = value
-	def get(self): return self.value
-	def __cmp__(self, other): return cmp(self.value, other)
-
-Verbose = _VerboseClass()
 
 def setVerbose(value=1, **kw):
 	"""Set verbosity level when running tasks
@@ -134,25 +42,6 @@ def _writeError(msg):
 	_sys.stdout.flush()
 	_sys.stderr.write(msg)
 	if msg[-1:] != "\n": _sys.stderr.write("\n")
-
-# -----------------------------------------------------
-# set location of user's IRAF home directory
-# -----------------------------------------------------
-
-# If login.cl exists here, use this directory as home.
-# Otherwise look for ~/iraf.
-
-import os
-_os = os
-del os
-
-if _os.path.exists('./login.cl'):
-	_userIrafHome = _os.path.join(_os.getcwd(),'')
-else:
-	_userIrafHome = _os.path.join(_os.environ['HOME'],'iraf','')
-	if not _os.path.exists(_userIrafHome):
-		# no ~/iraf, just use '.' as home
-		_userIrafHome = _os.path.join(_os.getcwd(),'')
 
 
 # -----------------------------------------------------
@@ -258,8 +147,8 @@ def Init(doprint=1,hush=0):
 		set(arch = '.'+_os.environ['IRAFARCH'])
 		if _os.environ.has_key('tmp'):
 			set(tmp = _os.environ['tmp'])
-		global _userIrafHome
-		set(home = _userIrafHome)
+		global userIrafHome
+		set(home = userIrafHome)
 
 		# define initial symbols
 		clProcedure(Stdin='hlib$zzsetenv.def')
@@ -827,9 +716,10 @@ def defvar(varname):
 def deftask(taskname):
 	"""Returns true if CL task is defined"""
 	try:
-		t = getTask(taskname)
+		import iraf
+		t = getattr(iraf, taskname)
 		return 1
-	except KeyError, e:
+	except AttributeError, e:
 		# ambiguous name is an error, not found is OK
 		value = str(e)
 		if _string.find(value, "ambiguous") >= 0:
@@ -906,7 +796,7 @@ def boolean(value):
 
 
 # -----------------------------------------------------
-# unimplemented IRAF functions (raise exception)
+# scan functions
 # -----------------------------------------------------
 
 _nscan = 0
@@ -967,6 +857,10 @@ def nscan():
 	"""Return number of items read in last scan function"""
 	global _nscan
 	return _nscan
+
+# -----------------------------------------------------
+# unimplemented IRAF functions (raise exception)
+# -----------------------------------------------------
 
 def imaccess(*args, **kw):
 	"""Error unimplemented function"""
@@ -1638,7 +1532,7 @@ def pwd(**kw):
 	finally:
 		redirReset(resetList, closeFHList)
 
-def chdir(directory, **kw):
+def chdir(directory=None, **kw):
 	"""Change working directory"""
 	# handle redirection and save keywords
 	redirKW, closeFHList = redirProcess(kw)
@@ -1649,6 +1543,9 @@ def chdir(directory, **kw):
 	try:
 		global _backDir
 		_newBack = _os.getcwd()
+		if directory is None:
+			# use startup directory as home if argument is omitted
+			directory = userWorkingHome
 		# Check for (1) local directory and (2) iraf variable
 		# when given an argument like 'dev'.  In IRAF 'cd dev' is
 		# the same as 'cd ./dev' if there is a local directory named
@@ -1729,7 +1626,7 @@ def clCompatibilityMode(verbose=0, _save=0):
 	# initialize environment
 	exec 'import pyraf, iraf, math, cStringIO' in locals
 	exec 'from irafpar import makeIrafPar' in locals
-	exec 'yes = 1; no = 0; INDEF = iraf.INDEF' in locals
+	exec 'from irafglobals import *' in locals
 	prompt2 = '>>>'
 	while (1):
 		try:
@@ -1873,10 +1770,16 @@ def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 
 	"""Returns a new or existing IrafTask, IrafPset, or IrafPkg object
 	
-	Type of returned object depends on value of suffix and value.  Returns a new
-	object unless this task or package is already defined, in which case
-	a warning is printed and a reference to the existing task is returned.
-	If redefine keyword is set, overwrites any existing task definition.
+	Type of returned object depends on value of suffix and value.
+
+	Returns a new object unless this task or package is already
+	defined. In that case if the old task appears consistent with
+	the new task, a reference to the old task is returned.
+	Otherwise a warning is printed and a reference to a new task is
+	returned.
+
+	If redefine keyword is set, the behavior is the same except
+	a warning is printed if it does *not* exist.
 	"""
 
 	# fix illegal names
@@ -1904,11 +1807,10 @@ def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 	# normal task definition
 
 	fullname = pkgname + '.' + taskname
-	if redefine:
-		task = None
-	else:
-		# existing task object (if any)
-		task = _tasks.get(fullname)
+	# existing task object (if any)
+	task = _tasks.get(fullname)
+	if task is None and redefine:
+		_writeError("Warning: `%s' is not a defined task" % taskname)
 
 	if ext == '.cl':
 		newtask = _iraftask.IrafCLTask(prefix,taskname,suffix,value,
@@ -1920,19 +1822,21 @@ def IrafTaskFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 		newtask = _iraftask.IrafTask(prefix,taskname,suffix,value,
 						pkgname,pkgbinary)
 	if task:
-		# check for consistency of definition by comparing to the new
-		# object (which will be discarded)
+		# check for consistency of definition by comparing to the
+		# new object
 		if task.getFilename() != newtask.getFilename() or \
 		   task.hasParfile()  != newtask.hasParfile() or \
 		   task.getForeign()  != newtask.getForeign() or \
 		   task.getTbflag()   != newtask.getTbflag():
-			_writeError("Warning: ignoring attempt to redefine task `%s'" %
-				fullname)
-		if task.getPkgbinary() != newtask.getPkgbinary():
+			# looks different -- print warning and continue
+			if not redefine:
+				_writeError("Warning: `%s' is a task redefinition" %
+					fullname)
+		elif task.getPkgbinary() != newtask.getPkgbinary():
 			# only package binary differs -- add it to search path
 			if Verbose>1: print 'Adding',pkgbinary,'to',task,'path'
 			task.addPkgbinary(pkgbinary)
-		return task
+			return task
 	# add it to the task list
 	_addTask(newtask)
 	return newtask
@@ -1942,23 +1846,32 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 
 	"""Returns a new or existing IrafPset object
 	
-	Returns a new object unless this package is already defined, in which case
-	a warning is printed and a reference to the existing task is returned.
+	Returns a new object unless this task is already
+	defined. In that case if the old task appears consistent with
+	the new task, a reference to the old task is returned.
+	Otherwise a warning is printed and a reference to a new task is
+	returned.
+
+	If redefine keyword is set, the behavior is the same except
+	a warning is printed if it does *not* exist.
 	"""
 
 	fullname = pkgname + '.' + taskname
-	if redefine:
-		task = None
-	else:
-		task = _tasks.get(fullname)
+	task = _tasks.get(fullname)
+	if task is None and redefine:
+		_writeError("Warning: `%s' is not a defined task" % taskname)
+
 	newtask = _iraftask.IrafPset(prefix,taskname,suffix,value,pkgname,pkgbinary)
 	if task:
 		# check for consistency of definition by comparing to the new
 		# object (which will be discarded)
 		if task.getFilename() != newtask.getFilename():
-			_writeError("Warning: ignoring attempt to redefine task `%s'" %
-				fullname)
-		return task
+			if redefine:
+				_writeError("Warning: `%s' is a task redefinition" %
+					fullname)
+		else:
+			# old version of task is same as new
+			return task
 	# add it to the task list
 	_addTask(newtask)
 	return newtask
@@ -1971,17 +1884,38 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
 	Returns a new object unless this package is already defined, in which case
 	a warning is printed and a reference to the existing task is returned.
 	Redefine parameter currently ignored.
+
+	Returns a new object unless this package is already
+	defined. In that case if the old package appears consistent with
+	the new package, a reference to the old package is returned.
+	Else if the old package has already been loaded, a warning
+	is printed and the redefinition is ignored.
+	Otherwise a warning is printed and a reference to a new package is
+	returned.
+
+	If redefine keyword is set, the behavior is the same except
+	a warning is printed if it does *not* exist.
 	"""
 
 	# does package with exactly this name exist in minimum-match
 	# dictionary _pkgs?
 	pkg = _pkgs.get_exact_key(taskname)
+	if pkg is None and redefine:
+		_writeError("Warning: `%s' is not a defined task" % taskname)
 	newpkg = _iraftask.IrafPkg(prefix,taskname,suffix,value,pkgname,pkgbinary)
 	if pkg:
 		if pkg.getFilename() != newpkg.getFilename() or \
 		   pkg.hasParfile()  != newpkg.hasParfile():
-			_writeError("Warning: ignoring attempt to redefine package `%s'" %
-				taskname)
+			if pkg.getLoaded():
+				_writeError("Warning: currently loaded package `%s' was not "
+					"redefined" % taskname)
+				return pkg
+			else:
+				if not redefine:
+					_writeError("Warning: `%s' is a task redefinition" %
+						taskname)
+				_addPkg(newpkg)
+				return newpkg
 		if pkg.getPkgbinary() != newpkg.getPkgbinary():
 			# only package binary differs -- add it to search path
 			if Verbose>1: print 'Adding',pkgbinary,'to',pkg,'path'

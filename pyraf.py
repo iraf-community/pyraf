@@ -85,6 +85,8 @@ $Id$
 R. White, 1999 May 27
 """
 
+from irafglobals import yes, no, INDEF, pyrafDir
+
 import os, sys
 
 # if this script is being executed as __main__, add it as module 'pyraf'
@@ -96,17 +98,7 @@ if __name__ == "__main__":
 # set search path to include directory containing this script
 # and current directory
 
-if __name__ == "__main__":
-	homeDir = os.path.dirname(sys.argv[0])
-else:
-	homeDir = os.path.dirname(__file__)
-
-if not homeDir: homeDir = os.getcwd()
-if not os.path.isabs(homeDir):
-	# change relative directory paths to absolute
-	homeDir = os.path.join(os.getcwd(), homeDir)
-
-if homeDir not in sys.path: sys.path.insert(0, homeDir)
+if pyrafDir not in sys.path: sys.path.insert(0, pyrafDir)
 if "." not in sys.path: sys.path.insert(0, ".")
 
 # The following is to grab the terminal window's id at the earliest
@@ -129,15 +121,10 @@ help = iraf.help
 
 __version__ = "$Revision$"
 
-yes = 1
-no = 0
-INDEF = iraf.INDEF
-
 def usage():
 	print __doc__
 	sys.stdout.flush()
 	sys.exit()
-
 
 if __name__ != "__main__":
 	# if not main program, just initialize iraf module

@@ -3,7 +3,8 @@
 $Id$
 """
 
-import struct, Numeric, math, iraf
+import struct, Numeric, math
+from irafglobals import IrafError
 
 WCS_SLOTS = 16
 WCS_RECORD_SIZE = 22  # (in 2 byte integers)
@@ -24,7 +25,7 @@ class IrafGWcs:
 		wcsStruct = arg[1:]
 		if arg[0] != len(wcsStruct):
 			print "Error: inconsistency in length of WCS graphics structure"
-			raise iraf.IrafError
+			raise IrafError
 		self.wcs = [None]*WCS_SLOTS
 		for i in xrange(WCS_SLOTS):
 			self.wcs[i] = struct.unpack('fffffffflll',

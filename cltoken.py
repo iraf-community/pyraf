@@ -28,7 +28,8 @@ $Id$
 #	Token class for IRAF CL parsing
 #
 
-import string, iraf
+import string
+from irafglobals import INDEF
 
 verbose = 0
 
@@ -102,7 +103,7 @@ class Token:
 		if self.type == "INTEGER":
 			return _str2int(self.attr)
 		elif self.type == "INDEF":
-			return iraf.INDEF
+			return INDEF
 		elif self.type == "FLOAT":
 			# allow floats as values if they are exact integers
 			f = self.__float__()
@@ -111,7 +112,7 @@ class Token:
 		elif self.type in ["STRING", "QSTRING"]:
 			try:
 				if self.attr == "":
-					return iraf.INDEF
+					return INDEF
 				elif self.attr[:1] == ')':
 					# indirection to another parameter
 					return self.attr
@@ -147,11 +148,11 @@ class Token:
 				value = float(v) + value/60.0
 			return value
 		elif self.type == "INDEF":
-			return iraf.INDEF
+			return INDEF
 		elif self.type in ["STRING", "QSTRING"]:
 			try:
 				if self.attr == "":
-					return iraf.INDEF
+					return INDEF
 				elif self.attr[:1] == ')':
 					# indirection to another parameter
 					return self.attr
@@ -167,7 +168,7 @@ class Token:
 		if self.type == "BOOL":
 			return self.attr
 		elif self.type == "INDEF":
-			return iraf.INDEF
+			return INDEF
 		elif self.type in ["STRING", "QSTRING"]:
 			keyword = string.lower(self.attr)
 			if keyword in ["yes", "y"]:
@@ -178,7 +179,7 @@ class Token:
 				# indirection to another parameter
 				return self.attr
 			elif keyword == "":
-				return iraf.INDEF
+				return INDEF
 		raise ValueError("Cannot convert " +
 			self.verboseRepr() + " to bool")
 

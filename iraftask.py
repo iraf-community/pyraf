@@ -173,7 +173,7 @@ class IrafTask:
 			if iraf.Verbose>1:
 				print "Connected subproc run ", self._name, \
 					"("+self._fullpath+")"
-				self._runningParList.lpar()
+				self._runningParList.lParam()
 			try:
 				# delete list of param dictionaries so it will be
 				# recreated in up-to-date version if needed
@@ -202,7 +202,7 @@ class IrafTask:
 		Searches up the task, package, cl hierarchy for automatic modes
 		"""
 		if parList is not None:
-			mode = parList.get('mode',prompt=0)
+			mode = parList.getValue('mode',prompt=0)
 		elif self._runningParList:
 			pdict = self._runningParList.getParDict()
 			mode = pdict['mode'].get(prompt=0)
@@ -498,7 +498,7 @@ class IrafTask:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
 		else:
-			self._currentParList.lpar(verbose=verbose)
+			self._currentParList.lParam(verbose=verbose)
 
 	def epar(self):
 		"""Edit the task parameters"""
@@ -516,7 +516,7 @@ class IrafTask:
 			sys.stderr.write("Task %s has no parameter file\n" % self._name)
 			sys.stderr.flush()
 		else:
-			self._currentParList.dpar(self._name)
+			self._currentParList.dParam(self._name)
 
 	def save(self,filename=None):
 		"""Write task parameters in .par format to filename (name or handle)
@@ -534,7 +534,7 @@ class IrafTask:
 					(self._name,)
 				if iraf.Verbose>0: print status
 				return status
-		rv = self._currentParList.save(filename)
+		rv = self._currentParList.saveList(filename)
 		if type(filename) is types.StringType:
 			self._currentParpath = filename
 		elif hasattr(filename,'name'):
@@ -670,9 +670,9 @@ class IrafTask:
 				  (self._currentParpath, self.__class__.__name__, self._name,))
 				sys.stderr.flush()
 				print 'default'
-				self._defaultParList.lpar(verbose=1)
+				self._defaultParList.lParam(verbose=1)
 				print 'current'
-				self._currentParList.lpar(verbose=1)
+				self._currentParList.lParam(verbose=1)
 				#XXX just toss it for now -- later can try to merge new,old
 				self._currentParpath = self._defaultParpath
 				self._currentParList = copy.deepcopy(self._defaultParList)
@@ -825,7 +825,7 @@ class IrafCLTask(IrafTask):
 		self._runningParList = apply(self.setParList,args,kw)
 		if iraf.Verbose>1:
 			print "CL task run ", self.getName(), "("+self.getFullpath()+")"
-			self._runningParList.lpar()
+			self._runningParList.lParam()
 		# delete list of param dictionaries so it will be
 		# recreated in up-to-date version if needed
 		self._parDictList = None
@@ -858,6 +858,13 @@ class IrafCLTask(IrafTask):
 		"""Return a string with the Python code for this task"""
 		self.initTask(force=1)
 		return self._pycode.code
+
+	def reCompile(self):
+		"""Force recompilation of CL code"""
+		if self._pycode is not None:
+			self._pycode.index = None
+			cl2py.codeCache.remove(self)
+		self.initTask(force=1)
 
 	def initTask(self,filehandle=None,force=0):
 		"""Fill in full pathnames of files, read par file, compile CL code
@@ -908,9 +915,9 @@ class IrafCLTask(IrafTask):
 				  (self._currentParpath, self.__class__.__name__, self._name,))
 				sys.stderr.flush()
 				print 'default'
-				self._defaultParList.lpar()
+				self._defaultParList.lParam()
 				print 'current'
-				self._currentParList.lpar()
+				self._currentParList.lParam()
 				#XXX just toss it for now -- later can try to merge new,old
 				self._currentParpath = self._defaultParpath
 				self._currentParList = copy.deepcopy(self._defaultParList)
@@ -949,7 +956,7 @@ class IrafPkg(IrafCLTask):
 		self.initTask()
 		# return package parameter if it exists
 		if self._currentParList.hasPar(name):
-			return self._currentParList.get(name,native=1,mode=self.getMode())
+			return self._currentParList.getValue(name,native=1,mode=self.getMode())
 		# else search for task with the given name
 		if not self._loaded:
 			raise AttributeError("Package " + self.getName() +

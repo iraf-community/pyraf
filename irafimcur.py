@@ -7,13 +7,14 @@ parameter.
 $Id$
 """
 
-import os, iraf, wutil
+import os, wutil
+from irafglobals import IrafError
 try:
 	import cdl
 	def imcur(): return  _imcur()
 except ImportError:
 	def imcur():
-		raise iraf.IrafError(
+		raise IrafError(
 		"image display library (cdlmodule.so) not available")
 
 prevDisplayHandle = None
@@ -33,7 +34,7 @@ def _imcur():
 			displayHandle = cdl.cdl_open(imtdev)
 			prevDisplayHandle = displayHandle
 			if displayHandle == "NULL":
-				raise iraf.IrafProcessError("Unable to open image display")
+				raise IrafError("Unable to open image display")
 		else:
 			displayHandle = prevDisplayHandle
 		wutil.imcurActive = 1

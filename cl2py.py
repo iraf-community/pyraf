@@ -12,8 +12,8 @@ from clast import AST
 from cltoken import Token
 import clscan, clparse
 
-import pyraf, irafpar, minmatch, iraftask, irafutils
-import iraffunctions
+from irafglobals import Verbose, userIrafHome, pyrafDir
+import pyraf, irafpar, minmatch, irafutils
 
 # The parser object can be constructed once and used many times.
 # The other classes have instance variables (e.g. lineno in CLScanner),
@@ -67,20 +67,20 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
 
 		if type(filename) == types.StringType:
 			efilename = os.path.expanduser(filename)
-			index, attributes, pycode = codeCache.get(efilename,mode=mode)
+			index, pycode = codeCache.get(efilename,mode=mode)
 			if pycode is not None:
-				if iraffunctions.Verbose>1:
-					print index,"found in CL script cache"
+				if Verbose>1:
+					print efilename,"found in CL script cache"
 				return pycode
 			fh = open(efilename)
 			clInput = fh.read()
 			fh.close()
 		elif hasattr(filename,'read'):
 			clInput = filename.read()
-			index, attributes, pycode = codeCache.get(filename,mode=mode)
+			index, pycode = codeCache.get(filename,mode=mode,source=clInput)
 			if pycode is not None:
-				if iraffunctions.Verbose>1:
-					print index,"found in CL script cache"
+				if Verbose>1:
+					print filename,"found in CL script cache"
 				return pycode
 			if hasattr(filename,'name'):
 				efilename = filename.name
@@ -95,7 +95,6 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
 		efilename = 'string_proc'
 		# don't cache scripts from strings
 		index = None
-		attributes = None
 	else:
 		raise ValueError('Either filename or str must be specified')
 
@@ -127,19 +126,20 @@ def cl2py(filename=None, str=None, parlist=None, parfile="", mode="proc",
 	# just keep the relevant fields of Tree2Python output
 	# attach tokens to the code object too
 
-	pycode = Pycode(tree2python,attributes)
+	pycode = Pycode(tree2python)
 
 	# add to cache
 	if index is not None: codeCache.add(index, pycode)
+	pycode.index = index
 	return pycode
 
 def checkCache(filename, pycode):
 
-	"""Returns true if pycode attributes are up-to-date"""
+	"""Returns true if pycode is up-to-date"""
 
 	global codeCache
-	index, curattr = codeCache.getIndex(filename)
-	return (pycode.attributes == curattr)
+	index = codeCache.getIndex(filename)
+	return (index is not None) and (pycode.index == index)
 
 
 class Container:
@@ -149,13 +149,12 @@ class Container:
 	pass
 
 
-def Pycode(tree2python, attributes):
+def Pycode(tree2python):
 
 	"""Returns simple container instance with relevant fields"""
 
 	rv = Container()
 	rv.code = tree2python.code
-	rv.attributes = attributes
 	rv.vars = Container()
 	rv.vars.filename        = tree2python.vars.filename
 	rv.vars.local_vars_dict = tree2python.vars.local_vars_dict
@@ -186,7 +185,7 @@ def _checkVars(vars, parlist, parfile):
 		#XXX Maybe could improve this by allowing certain types of
 		#XXX mismatches (e.g. additional parameters) but not others
 		#XXX (name or type disagreements for the same parameters.)
-		if iraffunctions.Verbose>0:
+		if Verbose>0:
 			sys.stdout.flush()
 			sys.stderr.write("Parameters from CL code inconsistent "
 				"with .par file for task %s\n" % vars.getProcName())
@@ -207,28 +206,13 @@ def _checkVars(vars, parlist, parfile):
 	vars.checkLocalConflict()
 	vars.parList = parlist
 
-class CleanupASTTraversal(GenericASTTraversal):
 
-	"""AST traversal class that can be garbage-collected"""
-	def __init__(self, ast):
-		GenericASTTraversal.__init__(self, ast)
-		# print 'Created object of type',self.__class__.__name__
-
-	#def cleanup(self):
-	#	"""Delete all tables of circular method references"""
-	#	# there don't seem to be any
-	#	pass
-
-	#def __del__(self):
-	#	print "Deleting object of type", self.__class__.__name__
-
-
-class ExtractProcInfo(CleanupASTTraversal):
+class ExtractProcInfo(GenericASTTraversal):
 
 	"""Extract name and args from procedure statement"""
 
 	def __init__(self, ast):
-		CleanupASTTraversal.__init__(self, ast)
+		GenericASTTraversal.__init__(self, ast)
 		self.preorder()
 
 	def n_proc_stmt(self, node):
@@ -337,13 +321,18 @@ class Variable:
 				arglist.append(`iv`)
 			return arg + string.join(arglist,",") + "]"
 
-	def parDefLine(self, filename=None, strict=0):
+	def parDefLine(self, filename=None, strict=0, local=0):
 		"""Return a list of string arguments for makeIrafPar"""
 
 		name = irafutils.translateName(self.name)
 		arglist = [name,
 			"datatype=" + `self.type`,
 			"name=" + `self.getName()` ]
+		# if local is set, use the default initial value instead of name
+		# also set mode="u" for locals so they never prompt
+		if local:
+			arglist[0] = `self.init_value`
+			self.options["mode"] = "u"
 		if self.array_size is not None:
 			arglist.append("array_size=" + `self.array_size`)
 		if self.list_flag:
@@ -374,21 +363,17 @@ class Variable:
 		return s
 
 
-class ExtractDeclInfo(CleanupASTTraversal):
+class ExtractDeclInfo(GenericASTTraversal):
 
 	"""Extract list of variable definitions from parameter block"""
 
 	def __init__(self, ast, var_list, var_dict, filename):
-		CleanupASTTraversal.__init__(self, ast)
+		GenericASTTraversal.__init__(self, ast)
 		self.var_list = var_list
 		n = len(var_list)
 		self.var_dict = var_dict
 		self.filename = filename
 		self.preorder()
-
-	def n_nonnull_stmt(self, node):
-		# skip executable statements
-		self.prune()
 
 	def n_declaration_stmt(self, node):
 		self.current_type = node[0].attr
@@ -495,12 +480,12 @@ _SpecialArgs = {
 	'taskObj': None,
 	}
 
-class VarList(CleanupASTTraversal):
+class VarList(GenericASTTraversal):
 
 	"""Scan tree and get info on procedure, parameters, and local variables"""
 
 	def __init__(self, ast, mode="proc", local_vars_list=None, local_vars_dict=None):
-		CleanupASTTraversal.__init__(self, ast)
+		GenericASTTraversal.__init__(self, ast)
 		self.mode = mode
 		self.proc_name = ""
 		self.proc_args_list = []
@@ -548,6 +533,15 @@ class VarList(CleanupASTTraversal):
 		self.parList = irafpar.IrafParList(self.getProcName(),
 					filename=self.filename, parlist=p)
 
+	def has_key(self, name):
+		"""Check both local and procedure dictionaries for this name"""
+		return self.proc_args_dict.has_key(name) or \
+				self.local_vars_dict.has_key(name)
+
+	def get(self, name):
+		"""Return entry from local or procedure dictionary (None if none)"""
+		return self.proc_args_dict.get(name) or self.local_vars_dict.get(name)
+
 	def setProcName(self, proc_name):
 		"""Set procedure name"""
 		# Procedure name is stored in translated form ('PY' added
@@ -594,6 +588,23 @@ class VarList(CleanupASTTraversal):
 			errmsg = string.join(errlist, "\n")
 			raise SyntaxError(errmsg)
 
+	def list(self):
+		"""List variables"""
+		print "Procedure arguments:"
+		for var in self.proc_args_list:
+			v =  self.proc_args_dict[var]
+			if _SpecialArgs.has_key(var):
+				print 'Special',var,'=',v
+			else:
+				print v
+		print "Local variables:"
+		for var in self.local_vars_list:
+			print self.local_vars_dict[var]
+
+	def getParList(self):
+		"""Return procedure arguments as IrafParList"""
+		return self.parList
+
 	def n_proc_stmt(self, node):
 		self.has_proc_stmt = 1
 		# get procedure name and list of argument names
@@ -626,23 +637,6 @@ class VarList(CleanupASTTraversal):
 		p = ExtractDeclInfo(node, self.local_vars_list, self.local_vars_dict,
 			self.ast.filename)
 		self.prune()
-
-	def list(self):
-		"""List variables"""
-		print "Procedure arguments:"
-		for var in self.proc_args_list:
-			v =  self.proc_args_dict[var]
-			if _SpecialArgs.has_key(var):
-				print 'Special',var,'=',v
-			else:
-				print v
-		print "Local variables:"
-		for var in self.local_vars_list:
-			print self.local_vars_dict[var]
-
-	def getParList(self):
-		"""Return procedure arguments as IrafParList"""
-		return self.parList
 
 
 # conversion between parameter types and data types
@@ -736,12 +730,12 @@ def _numberType(node):
 
 
 
-class TypeCheck(CleanupASTTraversal):
+class TypeCheck(GenericASTTraversal):
 
 	"""Determine types of all expressions"""
 
 	def __init__(self, ast, vars, filename):
-		CleanupASTTraversal.__init__(self, ast)
+		GenericASTTraversal.__init__(self, ast)
 		self.vars = vars
 		self.filename = filename
 		self.postorder()
@@ -775,13 +769,9 @@ class TypeCheck(CleanupASTTraversal):
 
 	def n_IDENT(self, node):
 		s = irafutils.translateName(node.attr)
-		if self.vars.proc_args_dict.has_key(s):
-			a = self.vars.proc_args_dict[s]
-			node.exprType = _typeDict[a.type]
-			node.requireType = node.exprType
-		elif self.vars.local_vars_dict.has_key(s):
-			a = self.vars.local_vars_dict[s]
-			node.exprType = _typeDict[a.type]
+		v = self.vars.get(s)
+		if v is not None:
+			node.exprType = _typeDict[v.type]
 			node.requireType = node.exprType
 		else:
 			# not a local variable
@@ -1045,9 +1035,9 @@ def _convFunc(var, value):
 	raise ValueError("unimplemented type `%s'" % (var.type,))
 
 
-class Tree2Python(CleanupASTTraversal):
+class Tree2Python(GenericASTTraversal):
 	def __init__(self, ast, vars, filename=''):
-		CleanupASTTraversal.__init__(self, ast)
+		GenericASTTraversal.__init__(self, ast)
 		self.filename = filename
 		self.column = 0
 		self.vars = vars
@@ -1174,9 +1164,9 @@ class Tree2Python(CleanupASTTraversal):
 		# parameters in the def statement
 
 		if not noHdr:
-			self.write("import pyraf, iraf, math")
+			self.write("import pyraf, iraf, irafpar, math")
 			self.writeIndent("from irafpar import makeIrafPar")
-			self.writeIndent("yes = 1; no = 0; INDEF = iraf.INDEF; EOF = 'EOF'")
+			self.writeIndent("from irafglobals import *")
 			self.write("\n")
 
 		if self.vars.proc_name:
@@ -1227,34 +1217,25 @@ class Tree2Python(CleanupASTTraversal):
 			wnewline = 1
 		if wnewline: self.write("\n")
 
-		if deflist:
-			# write procedure parameter definitions
-			for i in range(n):
-				if deflist[i]:
-					self.writeIndent(namelist[i] + " = makeIrafPar(")
-					self.writeChunks(deflist[i])
-					self.write(")")
-			self.write("\n")
+		# add local variables to deflist
+		for p in self.vars.local_vars_list[self.vars.local_vars_count:]:
+			v = self.vars.local_vars_dict[p]
+			try:
+				deflist.append(v.parDefLine(local=1))
+			except AttributeError, e:
+				raise AttributeError(self.filename + ':' + str(e))
 
-		# initialize new local variables
-		for v in self.vars.local_vars_list[self.vars.local_vars_count:]:
-			lvar = self.vars.local_vars_dict[v]
-			if lvar.array_size is not None:
-				self.writeIndent(lvar.name + " = " +
-					"iraf.clArray(" +
-					str(lvar.array_size) + "," +
-					`lvar.type` + "," +
-					"name=" + `lvar.name`)
-				if lvar.init_value is not None:
-					self.write(", init_value=[")
-					arglist = []
-					for iv in lvar.init_value:
-						arglist.append(`iv`)
-					self.writeChunks(arglist)
-					self.write("]")
-				self.write(")")
-			elif lvar.init_value is not None:
-				self.writeIndent(lvar.name + " = " + `lvar.init_value`)
+		if deflist:
+			# add local and procedure parameters to Vars list
+			if not noHdr:
+				self.writeIndent("Vars = irafpar.IrafParList(" +
+					`self.vars.proc_name` + ")")
+			for defargs in deflist:
+				if defargs:
+					self.writeIndent("Vars.addParam(makeIrafPar(")
+					self.writeChunks(defargs)
+					self.write("))")
+			self.write("\n")
 
 		# decrement indentation (which writes the pass if necessary)
 		self.decrIndent()
@@ -1327,35 +1308,40 @@ class Tree2Python(CleanupASTTraversal):
 
 	def n_IDENT(self, node, array_ref=0):
 		s = irafutils.translateName(node.attr)
-		if self.vars.proc_args_dict.has_key(s):
-			if not _SpecialArgs.has_key(s) and not array_ref:
-				# If this is a procedure parameter, append '.p_value' so sets
-				# and gets work correctly.  (Not needed for array references)
-				#XXX Note we are not doing minimum match on parameter names
-				s = s+'.p_value'
-			self.write(s, node.requireType, node.exprType)
-		elif self.vars.local_vars_dict.has_key(s):
-			self.write(s, node.requireType, node.exprType)
+		if self.vars.has_key(s) and not _SpecialArgs.has_key(s):
+
+			# Prepend 'Vars.' to all procedure and local variable references
+			# except for special args, which are normal Python variables.
+			# The main reason I do it this way is so the IRAF scan/fscan
+			# functions can work correctly, but it simplifies
+			# other code generation as well.  Vars does all the type
+			# conversions and applies constraints.
+			#XXX Note we are not doing minimum match on parameter names
+
+			self.write('Vars.'+s, node.requireType, node.exprType)
+
 		elif '.' in s:
-			# looks like a task.parameter or field reference
-			# look for special p_ extensions -- need to use task objects
-			# instead of task values if they are specified
+
+			# Looks like a task.parameter or field reference
+			# Add 'Vars.' or 'iraf.' prefix to name.
+			# Also look for special p_ extensions -- need to use parameter
+			# objects instead of parameter values if they are specified.
+
 			attribs = string.split(s,'.')
-			if len(attribs)==2 and \
-			  self.vars.proc_args_dict.has_key(attribs[0]) and \
-			  attribs[1][:2] == "p_":
-				# this is a reference to a field of a procedure parameter
-				# just write it directly
-				self.write(s, node.requireType, node.exprType)
+			if len(attribs)==2 and self.vars.has_key(attribs[0]):
+				attribs.insert(0, 'Vars')
 			else:
-				prefix = 'iraf.'
-				if attribs[-1][:2] == 'p_':
-					attribs[-2] = 'getParObject(' + `attribs[-2]` +  ')'
-					s = string.join(attribs,'.')
-				self.write(prefix+s, node.requireType, node.exprType)
+				attribs.insert(0, 'iraf')
+			if attribs[-1][:2] == 'p_':
+				attribs[-2] = 'getParObject(' + `attribs[-2]` +  ')'
+			self.write(string.join(attribs,'.'),
+					node.requireType, node.exprType)
+
 		else:
+
 			# not a local variable; use task object to search other
 			# dictionaries
+
 			if self.vars.mode == "single":
 				self.write('iraf.cl.'+s, node.requireType, node.exprType)
 			else:
@@ -1417,29 +1403,9 @@ class Tree2Python(CleanupASTTraversal):
 			i = 2
 		else:
 			i = 1
-		# if there are non-string local variables in the list, we have to
-		# coerce the types in the scan function
-		# non-local (parameter) type coercion happens automatically
-		nlocal = 0
-		localType = []
-		for varname in sargs[i:]:
-			ventry = self.vars.local_vars_dict.get(varname)
-			if ventry is None:
-				localType.append(None)
-			else:
-				vtype = _typeDict[ventry.type]
-				# this will be used as the name of the conversion function
-				# in the scan procedure
-				localType.append(_funcName(vtype,"string"))
-				if localType[-1] is not None:
-					nlocal = nlocal + 1
-		# add quotes to names (we're literally passing the names, not
+		# Add quotes to names (we're literally passing the names, not
 		# the values)
 		sargs[i:] = map(lambda x: `x`, sargs[i:])
-		# append the types list if it is not all zeros
-		if nlocal>0:
-			localType = map(repr, localType)
-			sargs.append("strconv=(" + string.join(localType,",") + ",)")
 		return sargs
 
 	def default(self, node):
@@ -1696,8 +1662,8 @@ class Tree2Python(CleanupASTTraversal):
 			# rewind the output pipe
 			self.writeIndent(self.pipeOut[-1] + ".seek(0)")
 
-		if taskname == "clbye":
-			# must do a return after clbye() if not in 'single' mode
+		if taskname == "clbye" or taskname == "bye":
+			# must do a return after clbye() or bye() if not in 'single' mode
 			if self.vars.mode != "single": self.writeIndent("return")
 		self.prune()
 
@@ -1837,26 +1803,40 @@ class Tree2Python(CleanupASTTraversal):
 		self.prune()
 
 # ------------- Python code cache -------------
-# Uses filename as key and size, creation/modification
-# dates, and Pycode as value
-# Uses shelve module to create persistent dictionaries
-# Allows a list of cache files
+# Implemented using a dictionary clFileDict and a list of
+# persistent dictionaries (shelves) in cacheList.
+#
+# - clFileDict uses CL filename as the key and has a tuple
+#   value with the md5 digest of the file contents and
+#	file attributes (file size, and file creation/modification
+#	dates)
+#
+# - the persistent cache has the md5 digest as the key
+#	and the Pycode object as the value.
+#
+# This scheme allows files with different path names to
+# be found in the cache (since the file contents, not the
+# name, determine the shelve key), and uses the size & dates
+# in clFileDict for a quick check to see whether the Pycode
+# is still up-to-date for the given file so the md5 digest
+# does not have to be recomputed.
 
-import shelve, stat
+import shelve, stat, md5
 
 class _CodeCache:
 
 	"""Python code cache class"""
 
-	def __init__(self, filelist):
-		cachelist = []
+	def __init__(self, cacheFileList):
+		# 
+		cacheList = []
 		flist = []
 		nwrite = 0
-		for file in filelist:
+		for file in cacheFileList:
 			# first try opening the cache read-write
 			# first argument of tuple is writeflag
 			try:
-				cachelist.append( (1, shelve.open(file)) )
+				cacheList.append( (1, shelve.open(file)) )
 				nwrite = nwrite+1
 				flist.append(file)
 			except:
@@ -1866,17 +1846,18 @@ class _CodeCache:
 				# on the underlying database.  Ideally I should modify
 				# shelve.open so it raises a standard error.
 				try:
-					cachelist.append( (0, shelve.open(file,"r")) )
+					cacheList.append( (0, shelve.open(file,"r")) )
 					flist.append(file)
 				except:
 					self.warning("Unable to open CL script cache file %s" %
 						(file,))
-		self.cachelist = cachelist
-		self.filelist = flist
+		self.clFileDict = {}
+		self.cacheList = cacheList
+		self.cacheFileList = flist
 		self.nwrite = nwrite
 		# flag indicating preference for system cache
 		self.useSystem = 0
-		if not cachelist:
+		if not cacheList:
 			self.warning("Unable to open any CL script cache, "
 				"performance will be slow")
 		elif nwrite == 0:
@@ -1886,7 +1867,7 @@ class _CodeCache:
 
 		"""Print warning message to stderr, using verbose flag"""
 
-		if iraffunctions.Verbose >= level:
+		if Verbose >= level:
 			sys.stdout.flush()
 			sys.stderr.write(msg + "\n")
 			sys.stderr.flush()
@@ -1897,8 +1878,8 @@ class _CodeCache:
 
 		if value==0:
 			self.useSystem = 0
-		elif self.cachelist:
-			writeflag, cache = self.cachelist[-1]
+		elif self.cacheList:
+			writeflag, cache = self.cacheList[-1]
 			if writeflag:
 				self.useSystem = 1
 			else:
@@ -1910,31 +1891,68 @@ class _CodeCache:
 
 		"""Close all cache files"""
 
-		for writeflag, cache in self.cachelist:
+		for writeflag, cache in self.cacheList:
 			cache.close()
-		self.cachelist = []
+		self.cacheList = []
 		self.nwrite = 0
+		# Note that this does not delete clFileDict since the
+		# in-memory info for files already read is still OK 
+		# (Just in case there is some reason to close cache files
+		# while keeping CodeCache object around for future use.)
 
 	def __del__(self):
 		self.close()
 
-	def getIndex(self, filename):
+	def getAttributes(self, filename):
 
-		"""Get cache key & file attributes for a file or filehandle"""
+		"""Get file attributes for a file or filehandle"""
 
 		if type(filename) is types.StringType:
 			st = os.stat(filename)
 		elif hasattr(filename, 'fileno') and hasattr(filename, 'name'):
 			fh = filename
 			st = os.fstat(fh.fileno())
-			filename = fh.name
 		else:
-			return None, None
-		# use filename as key
+			return None
 		# file attributes are size, creation, and modification times
-		key = filename
-		attributes = ( st[stat.ST_SIZE], st[stat.ST_CTIME], st[stat.ST_MTIME] )
-		return key, attributes
+		return st[stat.ST_SIZE], st[stat.ST_CTIME], st[stat.ST_MTIME]
+
+	def getIndex(self, filename, source=None):
+
+		"""Get cache key for a file or filehandle"""
+
+		attributes = self.getAttributes(filename)
+		if attributes is None: return None
+		# get key from clFileDict if file attributes are up-to-date
+		if self.clFileDict.has_key(filename):
+			oldkey, oldattr = self.clFileDict[filename]
+			if oldattr == attributes:
+				return oldkey
+			#XXX Note that old out-of-date cached code never gets
+			#XXX removed in this system.  That's because another CL
+			#XXX script might still exist with the same code.  Need a
+			#XXX utility to clean up the cache by looking for unused keys...
+		else:
+			oldkey = None
+		# use md5 digest as key
+		# read the source code if source is not defined
+		if hasattr(filename, 'fileno') and hasattr(filename, 'name'):
+			fh = filename
+			filename = fh.name
+		if source is None:
+			if type(filename) is types.StringType:
+				source = open(filename).read()
+			else:
+				source = fh.read()
+		key = md5.new(source).digest()
+		self.clFileDict[filename] = (key, attributes)
+		# print a warning if current file appears older than cached version
+		if oldkey is not None and oldkey != key and \
+		  (oldattr[1]>attributes[1] or oldattr[2]>attributes[2]):
+			self.warning("Warning: cached CL script (%s)"
+				" in %s was newer than current script"
+				 % (filename,self.cacheFileList[i]))
+		return key
 
 	def add(self, index, pycode):
 
@@ -1943,74 +1961,65 @@ class _CodeCache:
 		if index is None or self.nwrite==0: return
 		if self.useSystem:
 			# system cache is last in list
-			cachelist = self.cachelist[:]
-			cachelist.reverse()
+			cacheList = self.cacheList[:]
+			cacheList.reverse()
 		else:
-			cachelist = self.cachelist
-		for writeflag, cache in cachelist:
+			cacheList = self.cacheList
+		for writeflag, cache in cacheList:
 			if writeflag:
 				cache[index] = pycode
 				return
 
-	def get(self, filename, mode="proc"):
+	def get(self, filename, mode="proc", source=None):
 
 		"""Get pycode from cache for this file.
 		
-		Returns tuple (index, attributes, pycode).  Pycode=None if not found
+		Returns tuple (index, pycode).  Pycode=None if not found
 		in cache.  If mode != "proc", assumes that the code should not be
 		cached.
 		"""
 
-		if mode != "proc": return None, None, None
+		if mode != "proc": return None, None
 
-		index, attributes = self.getIndex(filename)
-		if index is None: return None, None, None
+		index = self.getIndex(filename, source=source)
+		if index is None: return None, None
 
-		for i in range(len(self.cachelist)):
-			writeflag, cache = self.cachelist[i]
+		for i in range(len(self.cacheList)):
+			writeflag, cache = self.cacheList[i]
 			if cache.has_key(index):
 				pycode = cache[index]
-				oldattr = pycode.attributes
-				if oldattr == attributes:
-					return index, attributes, pycode
-				elif writeflag:
-					del cache[index]
-					if oldattr[1]>attributes[1] or oldattr[2]>attributes[2]:
-						self.warning("Warning: cached CL script (%s)"
-							" in %s was newer than current script"
-							 % (filename,self.filelist[i]))
-				else:
-					self.warning("Warning: cached CL script (%s)"
-						"is out of date, but cache %s is read-only"
-						 % (filename,self.filelist[i]))
-		return index, attributes, None
+				pycode.index = index
+				return index, pycode
+		return index, None
 
 	def remove(self, filename):
 
 		"""Remove pycode from cache for this file or IrafTask object."""
 
-		if isinstance(filename, iraftask.IrafCLTask):
-			task = filename
-			filename = task.getFullpath()
-		elif type(filename) is not types.StringType:
-			raise TypeError("Filename parameter must be a string or IrafCLTask")
-		index, attributes = self.getIndex(filename)
+		if type(filename) is not types.StringType:
+			try:
+				task = filename
+				filename = task.getFullpath()
+			except (AttributeError, TypeError):
+				raise TypeError(
+					"Filename parameter must be a string or IrafCLTask")
+		index = self.getIndex(filename)
 		# system cache is last in list
-		irange = range(len(self.cachelist))
+		irange = range(len(self.cacheList))
 		if self.useSystem: irange.reverse()
 		nremoved = 0
 		for i in irange:
-			writeflag, cache = self.cachelist[i]
+			writeflag, cache = self.cacheList[i]
 			if cache.has_key(index):
 				if writeflag:
 					del cache[index]
 					self.warning("Removed %s from CL script cache %s" % \
-						(filename,self.filelist[i]), 2)
+						(filename,self.cacheFileList[i]), 2)
 					nremoved = nremoved+1
 				else:
 					self.warning("Cannot remove %s from read-only "
 						"CL script cache %s" % \
-						(filename,self.filelist[i]))
+						(filename,self.cacheFileList[i]))
 		if nremoved==0:
 			self.warning("Did not find %s in CL script cache" % filename, 2)
 
@@ -2048,20 +2057,20 @@ copy_reg.pickle(types.MethodType, dummy_pickler, dummy_unpickler)
 
 # create code cache
 
-userDir = os.path.join(iraffunctions._userIrafHome,'pyraf')
-if not os.path.exists(userDir):
+userCacheDir = os.path.join(userIrafHome,'pyraf')
+if not os.path.exists(userCacheDir):
 	try:
-		os.mkdir(userDir)
-		print 'Created directory %s for cache' % userDir
+		os.mkdir(userCacheDir)
+		print 'Created directory %s for cache' % userCacheDir
 	except OSError:
-		print 'Could not create directory %s' % userDir
+		print 'Could not create directory %s' % userCacheDir
 
 dbfile = 'pyraf.Database'
 codeCache = _CodeCache([
-	os.path.join(userDir,dbfile),
-	os.path.join(pyraf.homeDir,dbfile),
+	os.path.join(userCacheDir,dbfile),
+	os.path.join(pyrafDir,dbfile),
 	])
-del userDir, dbfile
+del userCacheDir, dbfile
 
 if __name__ == "__main__":
 

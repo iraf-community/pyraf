@@ -2,20 +2,20 @@
 
 $Id$
 
-R. White, 1999 July 16
+R. White, 2000 January 7
 """
 
 import os, sys, string, re
 import irafgcur, irafimcur, irafukey, irafutils, minmatch, epar
 from types import *
-from iraffunctions import INDEF
+from irafglobals import INDEF, Verbose
 
 # -----------------------------------------------------
 # Warning (non-fatal) error.  Raise an exception if in
-# strict mode, or print a message if iraf.Verbose is on.
+# strict mode, or print a message if Verbose is on.
 # -----------------------------------------------------
 
-# The iraf.py parameter verbose, set by iraf.setVerbose(), determines
+# Verbose, set by iraf.setVerbose(), determines
 # whether warning messages are printed when errors are found.  The
 # strict parameter to various methods and functions can be set to
 # raise an exception on errors; otherwise we do our best to work
@@ -27,7 +27,7 @@ import iraf
 def warning(msg, strict=0, exception=SyntaxError, level=0):
 	if strict:
 		raise exception(msg)
-	elif iraf.Verbose>level:
+	elif Verbose>level:
 		sys.stdout.flush()
 		sys.stderr.write('Warning: %s' % msg)
 		if msg[-1:] != '\n': sys.stderr.write('\n')
@@ -366,6 +366,30 @@ class IrafPar:
 		# most parameters just keep current default (even if None)
 		return self.value
 
+	def optionalPrompt(self, mode):
+		"""Interactively prompt for parameter if necessary
+		
+		Prompt for value if
+		(1) mode is hidden but value is undefined or bad, or
+		(2) mode is query and value was not set on command line
+		Never prompt for "u" mode parameters, which are local variables.
+		"""
+		if (self.mode == "h") or (self.mode == "a" and mode == "h"):
+			# hidden parameter
+			if not self.isLegal():
+				self.getPrompt()
+		elif self.mode == "u":
+			# "u" is a special mode used for local variables in CL scripts
+			# They should never prompt under any circumstances
+			if not self.isLegal():
+				raise ValueError(
+						"Attempt to access undefined local variable `%s'" %
+						self.name)
+		else:
+			# query parameter
+			if self.isCmdline()==0:
+				self.getPrompt()
+
 	def getPrompt(self):
 		"""Interactively prompt for parameter value"""
 		if self.prompt:
@@ -390,7 +414,9 @@ class IrafPar:
 		if self.value is not None:
 			pstring = pstring + " (" + self.toString(self.value,quoted=1) + ")"
 		pstring = pstring + ": "
-		print pstring,
+		# print prompt, suppressing both newline and following space
+		sys.stdout.write(pstring)
+		sys.stdout.flush()
 		ovalue = sys.stdin.readline()
 		value = string.strip(ovalue)
 		# loop until we get an acceptable value
@@ -421,18 +447,8 @@ class IrafPar:
 			# note p_value comes back to this routine, so shortcut that case
 			return self.getField(field,native=native,prompt=prompt)
 
-		# prompt for value if prompt flag is set and
-		# (1) mode is hidden but value is undefined or bad, or
-		# (2) mode is query and value was not set on command line
-		if prompt:
-			if (self.mode == "h") or (self.mode == "a" and mode == "h"):
-				# hidden parameter
-				if not self.isLegal():
-					self.getPrompt()
-			else:
-				# query parameter
-				if self.isCmdline()==0:
-					self.getPrompt()
+		# may prompt for value if prompt flag is set
+		if prompt: self.optionalPrompt(mode)
 
 		if index is not None:
 			raise SyntaxError("Parameter "+self.name+" is not an array")
@@ -843,21 +859,12 @@ class IrafArrayPar(IrafPar):
 
 		if field: return self.getField(field,native=native,prompt=prompt)
 
-		# prompt for value if prompt flag is set and
-		# (1) mode is hidden but value is undefined or bad, or
-		# (2) mode is query and value was not set on command line
-		#XXX should change this so we prompt for each element of
+		# may prompt for value if prompt flag is set
+		#XXX should change optionalPrompt so we prompt for each element of
 		#XXX the array separately?  I think array parameters are
 		#XXX not useful as non-hidden params.
-		if prompt:
-			if (self.mode == "h") or (self.mode == "a" and mode == "h"):
-				# hidden parameter
-				if not self.isLegal():
-					self.getPrompt()
-			else:
-				# query parameter
-				if self.isCmdline()==0:
-					self.getPrompt()
+
+		if prompt: self.optionalPrompt(mode)
 
 		if index is not None:
 			try:
@@ -1531,6 +1538,10 @@ class IrafParAR(_RealMixin,IrafArrayPar):
 # IRAF parameter list class
 # -----------------------------------------------------
 
+# Note that all methods are mixed case and all attributes are private
+# (start with __) to avoid conflicts with parameter names
+
+
 class IrafParList:
 
 	"""List of Iraf parameters"""
@@ -1582,6 +1593,46 @@ class IrafParList:
 				if not self.__pardict.has_exact_key(pname):
 					self.__pardict.add(pname, psetdict[pname])
 
+	def addParam(self, p):
+		"""Add a parameter to the list"""
+		if not isinstance(p, IrafPar):
+			t = type(p)
+			if t is InstanceType:
+				tname = p.__class__.__name__
+			else:
+				tname = t.__name__
+			raise TypeError("Parameter must be of type IrafPar (value is %s)" %
+				tname)
+		elif self.__pardict.has_exact_key(p.name):
+			if p.name in ["$nargs", "mode"]:
+				# allow substitution of these default parameters
+				self.__pardict[p.name] = p
+				for i in range(len(self.__pars)):
+					j = -i-1
+					if self.__pars[j].name == p.name:
+						self.__pars[j] = p
+						return
+				else:
+					raise RuntimeError("Bug: parameter `%s' is in dictionary "
+						"__pardict but not in list __pars??" % p.name)
+			raise ValueError("Parameter named `%s' is already defined" % p.name)
+		# add it just before the mode and $nargs parameters (if present)
+		j = -1
+		for i in range(len(self.__pars)):
+			j = -i-1
+			if self.__pars[j].name not in ["$nargs", "mode"]: break
+		else:
+			j = -len(self.__pars)-1
+		self.__pars.insert(len(self.__pars)+j+1, p)
+		self.__pardict.add(p.name, p)
+		if isinstance(p, IrafParPset):
+			# add parameters from this pset too
+			# silently ignore parameters that already are defined
+			psetdict = p.get().getParDict()
+			for pname in psetdict.keys():
+				if not self.__pardict.has_exact_key(pname):
+					self.__pardict.add(pname, psetdict[pname])
+
 	def isConsistent(self, other):
 		"""Compare two IrafParLists for consistency
 		
@@ -1590,18 +1641,18 @@ class IrafParList:
 		"""
 		if (type(other) != InstanceType) or \
 		   (other.__class__ != self.__class__):
-			if iraf.Verbose>0:
+			if Verbose>0:
 				print 'Classes inconsistent %s %s' % \
 					(self.__class__, other.__class__)
 			return 0
 		if len(self) != len(other):
-			if iraf.Verbose>0:
+			if Verbose>0:
 				print 'Lengths inconsistent %d %d' % \
 					(len(self),len(other))
 			return 0
 		for i in range(len(self)):
 			if not self.__pars[i].isConsistent(other.__pars[i]):
-				if iraf.Verbose>0:
+				if Verbose>0:
 					print 'Parameter %d mismatch %s %s' % \
 						(i, self.__pars[i].name, other.__pars[i].name)
 				return 0
@@ -1616,7 +1667,7 @@ class IrafParList:
 	def __getattr__(self,name):
 		if name[:1] == '_': raise AttributeError(name)
 		try:
-			return self.get(name,native=1)
+			return self.getValue(name,native=1)
 		except SyntaxError, e:
 			raise AttributeError(str(e))
 
@@ -1626,24 +1677,30 @@ class IrafParList:
 		if name[:1] == '_':
 			self.__dict__[name] = value
 		else:
-			self.set(name,value)
+			self.setValue(name,value)
 
 	def __len__(self): return len(self.__pars)
 
 	# public accessor functions for attributes
 
-	def hasPar(self,param): return self.__pardict.has_key(param)
+	def hasPar(self,param):
+		"""Test existence of parameter named param"""
+		param = irafutils.untranslateName(param)
+		return self.__pardict.has_key(param)
+
 	def getFilename(self): return self.__filename
 	def getParList(self): return self.__pars
 	def getParDict(self): return self.__pardict
+
 	def getParObject(self,param):
 		try:
+			param = irafutils.untranslateName(param)
 			return self.__pardict[param]
 		except KeyError, e:
 			raise e.__class__("Error in parameter '" +
 				param + "' for task " + self.__name + "\n" + str(e))
 
-	def get(self,param,native=0,prompt=1,mode="h"):
+	def getValue(self,param,native=0,prompt=1,mode="h"):
 		"""Return value for task parameter 'param' (with min-match)
 		
 		If native is non-zero, returns native format for value.  Default is
@@ -1654,7 +1711,7 @@ class IrafParList:
 		return self.getParObject(param).get(native=native, mode=mode,
 						prompt=prompt)
 
-	def set(self,param,value):
+	def setValue(self,param,value):
 		"""Set task parameter 'param' to value (with minimum-matching)"""
 		self.getParObject(param).set(value)
 
@@ -1705,19 +1762,19 @@ class IrafParList:
 
 		# Number of arguments on command line, $nargs, is used by some IRAF
 		# tasks (e.g. imheader).
-		self.set('$nargs',len(args))
+		self.setValue('$nargs',len(args))
 
-	def epar(self):
+	def eParam(self):
 		epar.epar(self.__name)
 
-	def lpar(self,verbose=0):
+	def lParam(self,verbose=0):
 		"""List the task parameters"""
 		for i in xrange(len(self.__pars)):
 			p = self.__pars[i]
-			if iraf.Verbose>0 or p.name != '$nargs':
-				print p.pretty(verbose=verbose or iraf.Verbose>0)
+			if Verbose>0 or p.name != '$nargs':
+				print p.pretty(verbose=verbose or Verbose>0)
 
-	def dpar(self, taskname=""):
+	def dParam(self, taskname=""):
 		"""Dump the task parameters in executable form"""
 		if taskname and taskname[-1:] != ".": taskname = taskname + "."
 		for i in xrange(len(self.__pars)):
@@ -1725,7 +1782,7 @@ class IrafParList:
 			if p.name != '$nargs':
 				print "%s%s" % (taskname,p.dpar())
 
-	def save(self, filename):
+	def saveList(self, filename):
 		"""Write .par file data to filename (string or filehandle)"""
 		if hasattr(filename,'write'):
 			fh = filename

@@ -6,7 +6,7 @@ $Id$
 
 from OpenGL.GL import *
 from gki import *
-import iraf
+from irafglobals import IrafError
 import Numeric
 import gwm
 import irafgcur
@@ -150,7 +150,7 @@ class GkiOpenGlKernel(GkiKernel):
 		win = gwm.getActiveWindow()
 		if not win.iplot.wcs:
 			print "Error: can't append to a nonexistent plot!"
-			raise iraf.IrafError
+			raise IrafError
 		if self.returnData:
 			self.returnData = self.returnData + win.iplot.wcs.pack()
 		else:

@@ -8,7 +8,7 @@ R. White, 1999 March 26
 """
 
 import __main__
-import iraf, iraftask
+import iraf, irafglobals, iraftask
 
 def _addName(task, module):
 	"""Add a task object to the module namespace
@@ -21,7 +21,7 @@ def _addName(task, module):
 	if (not p) or isinstance(p, iraftask.IrafTask):
 		d[name] = task
 	else:
-		if iraf.Verbose>0:
+		if irafglobals.Verbose>0:
 			print "Warning: " + module.__name__ + "." + \
 				name + " was not redefined as Iraf Task"
 
