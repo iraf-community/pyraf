@@ -7,6 +7,7 @@ $Id$
 
 from OpenGL.GL import *
 import Tkinter
+import gkiopengl
 
 # for the moment this is a really crude implementation. It leaves out
 # lots of useful methods for managing these windows as well as handling
@@ -29,7 +30,8 @@ class GraphicsWindowManager:
 	
 		self.windows = {}
 		self.activeWindow = None
-
+		self.irafGkiConfig = gkiopengl.IrafGkiConfig()
+		
 	def window(self, windowName=None):
 
 		if not windowName: # think up a default name!
@@ -106,10 +108,12 @@ _g = GraphicsWindowManager()
 #
 
 def createWindow():
+
 	"""Create a new graphics window and make it the active one"""
 	_g.window()
 
 def getActiveWindow():
+
 	"""Get the active window"""
 	if _g.activeWindow:
 		return _g.activeWindow.gwidget
@@ -117,8 +121,14 @@ def getActiveWindow():
 		return None
 
 def getActiveWindowTop():
+
 	"""Get the top window"""
 	if _g.activeWindow:
 		return _g.activeWindow.top
 	else:
 		return None
+
+def getIrafGkiConfig():
+
+	"""return configuration object"""
+	return _g.irafGkiConfig

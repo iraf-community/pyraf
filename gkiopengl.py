@@ -10,11 +10,11 @@ import Numeric
 import gwm
 import irafgcur
 import irafgwcs
+from  iraftext import *
 
 # debugging purposes only
 
 import __main__
-import time
 
 class IrafPlot:
 
@@ -28,6 +28,7 @@ class IrafPlot:
 		self.glBuffer = GLBuffer()
 		self.gkiBuffer = GkiBuffer()
 		self.wcs = None
+		self.textAttributes = TextAttributes()
 
 class GkiOpenGlKernel(GkiKernel):
 
@@ -127,6 +128,12 @@ class GkiOpenGlKernel(GkiKernel):
 			apply(function, args)
 		glFlush()
 
+def _glAppend(arg):
+
+	"""append a 2-tuple (gl_function, args) to the glBuffer"""
+	win = gwm.getActiveWindow()
+	win.iplot.glBuffer.append(arg)
+
 def gki_eof(arg): print "GKI_EOF"
 def gki_openws(arg): print "GKI_OPENWS"
 def gki_closews(arg): print "GKI_CLOSEWS"
@@ -144,20 +151,40 @@ def gki_clearws(arg):
 
 def gki_cancel(arg): print "GKI_CANCEL"
 def gki_flush(arg): print "GKI_FLUSH"
-
-def gki_polyline(arg):
-	win = gwm.getActiveWindow()
-	win.iplot.glBuffer.append( (gl_polyline,(ndc(arg[1:]),)) )
-
+def gki_polyline(arg): _glAppend((gl_polyline,(ndc(arg[1:]),)))
 def gki_polymarker(arg): print "GKI_POLYMARKER"
 def gki_text(arg):
+	
 	print "GKI_TEXT:", arg[3:].tostring()
+	x = ndc(arg[0])
+	y = ndc(arg[1])
+	text = arg[3:].astype(Numeric.Int8).tostring()
+	_glAppend((gl_text, (x, y, text)))
+
+
 def gki_fillarea(arg): print "GKI_FILLAREA"
 def gki_putcellarray(arg): print "GKI_PUTCELLARRAY"
 def gki_setcursor(arg): print "GKI_SETCURSOR"
 def gki_plset(arg): print "GKI_PLSET"
 def gki_pmset(arg): print "GKI_PMSET"
-def gki_txset(arg): print "GKI_TXSET"
+def gki_txset(arg):
+
+	print "GKI_TXSET"
+	charUp = arg[0]/GKI_FLOAT_FACTOR
+	charSize = arg[1]/GKI_FLOAT_FACTOR
+	charSpace = arg[2]/GKI_FLOAT_FACTOR
+	textPath = arg[3]
+	textHorizontalJust = arg[4]
+	textVerticalJust = arg[5]
+	textFont = arg[6]
+	textQuality = arg[7]
+	textColor = arg[8]
+	print "txset",charUp, charSize, charSpace, textPath, textHorizontalJust, \
+		textVerticalJust, textFont, textQuality, textColor
+	_glAppend((gl_txset, (charUp, charSize, charSpace, textPath,
+		textHorizontalJust, textVerticalJust, textFont,
+		textQuality, textColor)))
+
 def gki_faset(arg): print "GKI_FASET"
 def gki_getcursor(arg): print "GKI_GETCURSOR (GKI_CURSORVALUE)"
 def gki_getcellarray(arg): print "GKI_GETCELLARRAY"
@@ -186,13 +213,24 @@ def gl_polyline(vertices):
 	glEnd()
 
 def gl_polymarker(arg): pass
-def gl_text(arg): pass
+def gl_text(x,y,text):
+	softText(x,y,text)
+#	drawchar(x,y,text)
 def gl_fillarea(arg): pass
 def gl_putcellarray(arg): pass
 def gl_setcursor(arg): pass
 def gl_plset(arg): pass
 def gl_pmset(arg): pass
-def gl_txset(arg): pass
+
+def gl_txset(charUp, charSize, charSpace, textPath, textHorizontalJust,
+			 textVerticalJust, textFont, textQuality, textColor):
+	
+	win = gwm.getActiveWindow()
+	# Ignore attributes for initial testing!!!!!   	
+	win.iplot.textAttributes =  TextAttributes(charUp, charSize, charSpace,
+		textPath, textHorizontalJust, textVerticalJust, textFont,
+		textQuality, textColor)
+
 def gl_faset(arg): pass
 def gl_getcursor(arg): pass
 def gl_getcellarray(arg): pass
@@ -241,7 +279,7 @@ class GLBuffer:
 	"""implement a buffer for GL commands which allocates memory in blocks so that 
 	a new memory allocation is not needed everytime functions are appended"""
 
-	INCREMENT = 10000
+	INCREMENT = 500
 
 	def __init__(self):
 	
@@ -295,3 +333,79 @@ class GLBuffer:
 			return retval
 		else:
 			return (None, None)
+
+class IrafGkiConfig:
+
+	"""Holds configurable aspects of IRAF plotting behavior"""
+
+	def __init__(self):
+
+		# All set to constants for now, eventually allow setting other
+		# values
+		
+		# h = horizontal font dimension, v = vertical font dimension
+		
+		# ratio of font height to width
+		self.fontAspect = 42./27.
+		self.fontMax2MinSizeRatio = 4.
+		# Empirical constants for font sizes; try xterm fractions for now
+		self.UnitFontWindowFraction = 1./80
+		# minimum unit font size in pixels
+		self.minUnitHFontSize = 6.
+		self.minUnitVFontSize = self.minUnitHFontSize * self.fontAspect
+		# maximum unit font size in pixels
+		self.maxUnitHFontSize = \
+			self.minUnitHFontSize * self.fontMax2MinSizeRatio
+		self.maxUnitVFontSize = self.maxUnitHFontSize * self.fontAspect
+		# offset constants to match iraf's notion of where 0,0 is relative
+		# to the coordinates of a character
+		self.vFontOffset = 0.0
+		self.hFontOffset = 0.0
+		# font sizing switches
+		self.isFixedAspectFont = 1
+		self.hasMinPixSizeUnitFont = 1
+		self.hasMaxPixSizeUnitFont = 1
+		
+	def fontSize(self):
+	
+		"""
+	Determine the unit font size for the given setup in pixels.
+	The unit size refers to the horizonal size of fixed width characters
+	(allow for proportionally sized fonts later?).
+	
+	Basically, if font aspect is not fixed, the unit font size is proportional
+	to the window dimension (for v and h independently), with the exception
+	that if min or max pixel sizes are enabled, they are 'clipped' at the 
+	specified value. If font aspect is fixed, then the horizontal size is the
+	driver if the window is higher than wide and vertical size for the 
+	converse.
+	"""
+	
+		win = gwm.getActiveWindow()
+		hWin = win.winfo_width()
+		vWin = win.winfo_height()
+		hSize = hWin * self.UnitFontWindowFraction
+		vSize = vWin * self.UnitFontWindowFraction/self.fontAspect
+		if not self.isFixedAspectFont:
+			if self.hasMinPixSizeUnitFont:
+				hSize = max(hSize,self.minUnitHFontSize)
+				vSize = max(vSize,self.minUnitVFontSize)
+			if self.config.hasMaxPixSizeUnitFont:
+				hSize = min(hSize,self.maxUnitHFontSize)
+				vSize = min(hSize,self.maxUnitVFontSize)
+			fontAspect = vSize/hSize		
+		else:
+			if vWin >= hWin:
+				if self.hasMinPixSizeUnitFont:
+					hSize = max(hSize,self.minUnitHFontSize)
+				if self.hasMaxPixSizeUnitFont:
+					hSize = min(hSize,self.maxUnitHFontSize)
+				vSize = hSize * self.fontAspect
+			else:
+				if self.hasMinPixSizeUnitFont:
+					vSize = max(vSize,self.minUnitVFontSize)
+				if self.hasMaxPixSizeUnitFont:
+					vSize = min(vSize,self.maxUnitVFontSize)
+				hSize = vSize/self.fontAspect
+			fontAspect = self.fontAspect
+		return (hSize, fontAspect)
