@@ -1911,7 +1911,8 @@ def _clProcedure(*args, **kw):
     exec 'from pyraf.irafpar import makeIrafPar' in locals
     exec 'from pyraf.irafglobals import *' in locals
     # feed the input to clExecute
-    clExecute(_sys.stdin.read(), locals=locals, mode="single")
+    # redirect input to sys.__stdin__ after reading the CL script from sys.stdin
+    clExecute(_sys.stdin.read(), locals=locals, mode="single", Stdin=_sys.__stdin__)
 
 def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     """Run CL commands from a file (cl < input) -- OBSOLETE
