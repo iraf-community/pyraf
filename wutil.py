@@ -76,7 +76,7 @@ def getTopID(WindowID):
         oid = wid
         while 1:
             pid = getParentID(wid)
-            if not pid:
+            if (not pid) or (pid==wid):
                 topIDmap[oid] = wid
                 return wid
             else:
