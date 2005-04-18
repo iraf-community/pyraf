@@ -122,36 +122,56 @@ def makeIrafPar(init_value, datatype=None, name="<anonymous>", mode="h",
     if datatype is None: raise ValueError("datatype must be specified")
 
     shorttype = _typedict[datatype]
-    if array_size is not None:
+    if array_size is None:
+        shape = None
+    else:
         shorttype = "a" + shorttype
+        # array_size can be an integer or a tuple
+        # get a tuple shape and make array_size the
+        # combined size of all dimensions
+        try:
+            shape = tuple(array_size)
+        except TypeError:
+            shape = (array_size,)
+        array_size = 1
+        for d in shape:
+            array_size = array_size*d
     if list_flag:
         shorttype = "*" + shorttype
 
     # messy stuff -- construct strings like we would read
     # from .par file for this parameter
-    if array_size is None:
+    if shape is None:
         # scalar parameter
         fields = [ name,
-                                shorttype,
-                                mode,
-                                init_value,
-                                min,
-                                max,
-                                prompt ]
+                   shorttype,
+                   mode,
+                   init_value,
+                   min,
+                   max,
+                   prompt ]
         if fields[4] is None: fields[4] = enum
     else:
-        # 1-dimensional array parameter
+        # N-dimensional array parameter
         fields = [ name,
-                                shorttype,
-                                mode,
-                                "1",                                    # number of dims
-                                array_size,                             # dimension
-                                "1",                                    # apparently always 1
-                                min,
-                                max,
-                                prompt ]
-        if fields[6] is None: fields[6] = enum
+                   shorttype,
+                   mode,
+                   str(len(shape)),  # number of dims
+                 ]
+        for d in shape:
+            fields.extend([d,              # dimension
+                           "1"])           # apparently always 1
+        if min is None:
+            fields.extend([ enum,
+                            max,
+                            prompt ])
+        else:
+            fields.extend([ min,
+                            max,
+                            prompt ])
         if init_value is not None:
+            if len(init_value) != array_size:
+                raise ValueError("Initial value list does not match array size for parameter `%s'" % name)
             for iv in init_value:
                 fields.append(iv)
         else:
@@ -233,11 +253,6 @@ class IrafPar:
         self.name   = fields[0]
         self.type   = fields[1]
         self.mode   = fields[2]
-        self.value  = None
-        self.min    = None
-        self.max    = None
-        self.choice = None
-        self.prompt = None
         #
         # put fields into appropriate attributes
         #
@@ -837,50 +852,51 @@ class IrafArrayPar(IrafPar):
         self.name   = fields[0]
         self.type   = fields[1]
         self.mode   = fields[2]
-        self.value  = None
-        self.min    = None
-        self.max    = None
-        self.choice = None
-        self.prompt = None
-        self.__dict__['dim'] = None
+        self.__dict__['shape'] = None
         #
-        while len(fields) < 7: fields.append("")
-        # for array parameter, get dimensions from normal values field
-        # and get values from fields after prompt
-        if fields[3] is None or fields[4] is None or fields[5] is None:
-            raise ValueError("Fields 4-6 must be specified for array parameter")
+        # for array parameters, dimensions follow mode field
+        # and values come from fields after prompt
+        #
+        if len(fields)<4 or fields[3] is None:
+            raise ValueError("Missing dimension field for array parameter")
         ndim = int(fields[3])
-        if ndim != 1:
-            raise SyntaxError("Cannot handle multi-dimensional array" +
-                    " for parameter " + self.name)
-        self.dim = int(fields[4])
-        while len(fields) < 9+self.dim: fields.append(None)
-        if len(fields) > 9+self.dim:
+        if len(fields) < 4+2*ndim:
+            raise ValueError("Missing array shape fields for array parameter")
+        shape = []
+        array_size = 1
+        for i in range(ndim):
+            shape.append(int(fields[4+2*i]))
+            array_size = array_size*shape[-1]
+        self.shape = tuple(shape)
+        nvstart = 7+2*ndim
+        fields.extend([""]*(nvstart-len(fields)))
+        fields.extend([None]*(nvstart+array_size-len(fields)))
+        if len(fields) > nvstart+array_size:
             raise SyntaxError("Too many values for array" +
                     " for parameter " + self.name)
         #
-        self.value = self._coerceValue(fields[9:9+self.dim],strict)
-        if fields[6] is not None and '|' in fields[6]:
-            self._setChoice(string.strip(fields[6]),strict)
-            if fields[7] is not None:
-                if orig_len < 9:
+        self.value = self._coerceValue(fields[nvstart:nvstart+array_size],strict)
+        if fields[nvstart-3] is not None and '|' in fields[nvstart-3]:
+            self._setChoice(string.strip(fields[nvstart-3]),strict)
+            if fields[nvstart-2] is not None:
+                if orig_len < nvstart:
                     warning("Max value illegal when choice list given" +
                                     " for parameter " + self.name +
                                     " (probably missing comma)",
                                     strict)
                     # try to recover by assuming max string is prompt
                     #XXX risky -- all init values might be off by one
-                    fields[8] = fields[7]
-                    fields[7] = None
+                    fields[nvstart-1] = fields[nvstart-2]
+                    fields[nvstart-2] = None
                 else:
                     warning("Max value illegal when choice list given" +
                             " for parameter " + self.name, strict)
         else:
-            self.min = self._coerceOneValue(fields[6],strict)
-            self.max = self._coerceOneValue(fields[7],strict)
-        if fields[8] is not None:
+            self.min = self._coerceOneValue(fields[nvstart-3],strict)
+            self.max = self._coerceOneValue(fields[nvstart-2],strict)
+        if fields[nvstart-1] is not None:
             self.prompt = irafutils.removeEscapes(
-                                            irafutils.stripQuotes(fields[8]))
+                                            irafutils.stripQuotes(fields[nvstart-1]))
         else:
             self.prompt = ''
         if self.min not in [None, INDEF] and \
@@ -917,24 +933,30 @@ class IrafArrayPar(IrafPar):
         is to return a single string appropriate for writing to a file.
         """
         quoted = not dolist
-        fields = (9+self.dim)*[""]
+        array_size = 1
+        for d in self.shape:
+            array_size = d*array_size
+        ndim = len(self.shape)
+        fields = (7+2*ndim+len(self.value))*[""]
         fields[0] = self.name
         fields[1] = self.type
         fields[2] = self.mode
-        fields[3] = '1'
-        fields[4] = str(self.dim)
-        fields[5] = '1'
+        fields[3] = str(ndim)
+        for d in self.shape:
+            fields.extend([str(d),'1'])
+        nvstart = 7+2*ndim
         if self.choice is not None:
             schoice = map(self.toString, self.choice)
             schoice.insert(0,'')
             schoice.append('')
-            fields[6] = repr(string.join(schoice,'|'))
+            fields[nvstart-3] = repr(string.join(schoice,'|'))
         elif self.min not in [None,INDEF]:
-            fields[6] = self.toString(self.min,quoted=quoted)
+            fields[nvstart-3] = self.toString(self.min,quoted=quoted)
         # insert an escaped line break before min field
-        if quoted: fields[6] = '\\\n' + fields[6]
+        if quoted:
+            fields[nvstart-3] = '\\\n' + fields[nvstart-3]
         if self.max not in [None,INDEF]:
-            fields[7] = self.toString(self.max,quoted=quoted)
+            fields[nvstart-2] = self.toString(self.max,quoted=quoted)
         if self.prompt:
             if quoted:
                 sprompt = repr(self.prompt)
@@ -943,14 +965,14 @@ class IrafArrayPar(IrafPar):
             # prompt can have embedded newlines (which are printed)
             sprompt = string.replace(sprompt, r'\012', '\n')
             sprompt = string.replace(sprompt, r'\n', '\n')
-            fields[8] = sprompt
-        for i in range(self.dim):
-            fields[9+i] = self.toString(self.value[i],quoted=quoted)
+            fields[nvstart-1] = sprompt
+        for i in range(len(self.value)):
+            fields[nvstart+i] = self.toString(self.value[i],quoted=quoted)
         # insert an escaped line break before value fields
         if dolist:
             return fields
         else:
-            fields[9] = '\\\n' + fields[9]
+            fields[nvstart] = '\\\n' + fields[nvstart]
             return string.join(fields, ',')
 
     def dpar(self, cl=1):
@@ -961,9 +983,10 @@ class IrafArrayPar(IrafPar):
         dpar doesn't even work for arrays in the CL, so we just use
         Python syntax here.
         """
-        sval = map(self.toString, self.value, self.dim*[1])
-        for i in range(self.dim):
-            if sval[i] == "": sval[i] = "None"
+        sval = map(self.toString, self.value, len(self.value)*[1])
+        for i in range(len(sval)):
+            if sval[i] == "":
+                sval[i] = "None"
         s = "%s = [%s]" % (self.name, string.join(sval, ', '))
         return s
 
@@ -981,23 +1004,23 @@ class IrafArrayPar(IrafPar):
         if prompt: self._optionalPrompt(mode)
 
         if index is not None:
+            sumindex = self._sumindex(index)
             try:
                 if native:
-                    return self.value[index]
+                    return self.value[sumindex]
                 else:
-                    return self.toString(self.value[index])
+                    return self.toString(self.value[sumindex])
             except IndexError:
-                raise SyntaxError("Illegal index [" + `index` +
+                # should never happen
+                raise SyntaxError("Illegal index [" + `sumindex` +
                         "] for array parameter " + self.name)
-        if native:
-            # return list of values for array
-            return self.value
+        elif native:
+            # return object itself for an array because it is
+            # indexable, can have values assigned, etc.
+            return self
         else:
             # return blank-separated string of values for array
-            sval = self.dim*[None]
-            for i in xrange(self.dim):
-                sval[i] = self.toString(self.value[i])
-            return string.join(sval,' ')
+            return str(self)
 
     def set(self, value, field=None, index=None, check=1):
         """Set value of this parameter from a string or other value.
@@ -1006,15 +1029,17 @@ class IrafArrayPar(IrafPar):
         assign the value without checking to see if it is within
         the min-max range or in the choice list."""
         if index is not None:
+            sumindex = self._sumindex(index)
             try:
                 value = self._coerceOneValue(value)
                 if check:
-                    self.value[index] = self.checkOneValue(value)
+                    self.value[sumindex] = self.checkOneValue(value)
                 else:
-                    self.value[index] = value
+                    self.value[sumindex] = value
                 return
             except IndexError:
-                raise SyntaxError("Illegal index [" + `index` +
+                # should never happen
+                raise SyntaxError("Illegal index [" + `sumindex` +
                         "] for array parameter " + self.name)
         if field:
             self._setField(value,field,check=check)
@@ -1033,7 +1058,8 @@ class IrafArrayPar(IrafPar):
         right type.)
         """
         v = self._coerceValue(value,strict)
-        for i in xrange(self.dim): self.checkOneValue(v[i],strict=strict)
+        for i in range(len(v)):
+            self.checkOneValue(v[i],strict=strict)
         return v
 
     #--------------------------------------------
@@ -1052,20 +1078,52 @@ class IrafArrayPar(IrafPar):
 
     def __str__(self):
         """Return readable description of parameter"""
-        s = "<" + self.__class__.__name__ + " " + self.name + " " + \
-                self.type + "[" + str(self.dim) + "]"
-        s = s + " " + self.mode + " " + `self.value`
-        if self.choice is not None:
-            schoice = map(str, self.choice)
-            s = s + " |" + string.join(schoice,"|") + "|"
-        else:
-            s = s + " " + `self.min` + " " + `self.max`
-        s = s + ' "' + self.prompt + '">'
-        return s
+        # This differs from non-arrays in that it returns a
+        # print string with jus tthe values.  That's because
+        # the object itself is returned as the native value.
+        sv = map(str, self.value)
+        for i in range(len(sv)):
+            if self.value[i] is None:
+                sv[i] = "INDEF"
+        return ' '.join(sv)
+
+        #s = "<" + self.__class__.__name__ + " " + self.name + " " + \
+        #        self.type + "[" + (','.join(map(str,self.shape))) + "]"
+        #s = s + " " + self.mode + " " + `self.value`
+        #if self.choice is not None:
+        #    schoice = map(str, self.choice)
+        #    s = s + " |" + string.join(schoice,"|") + "|"
+        #else:
+        #    s = s + " " + `self.min` + " " + `self.max`
+        #s = s + ' "' + self.prompt + '">'
+        #return s
+
+    def __len__(self):
+        return len(self.value)
 
     #--------------------------------------------
     # private methods
     #--------------------------------------------
+
+    def _sumindex(self, index=None):
+        """Convert tuple index to 1-D index into value"""
+        try:
+            ndim = len(index)
+        except TypeError:
+            # turn index into a 1-tuple
+            index = (index,)
+            ndim = 1
+        if len(self.shape) != ndim:
+            raise ValueError("Index to %d-dimensional array %s has too %s dimensions" %
+                (len(self.shape), self.name, ["many","few"][len(self.shape) > ndim]))
+        sumindex = 0
+        for i in range(ndim-1,-1,-1):
+            index1 = index[i]
+            if index1 < 0 or index1 >= self.shape[i]:
+                raise ValueError("Dimension %d index for array %s is out of bounds (value=%d)" %
+                    (i+1, self.name, index1))
+            sumindex = index1 + sumindex*self.shape[i]
+        return sumindex
 
     def _getPType(self):
         """Get underlying datatype for this parameter (strip off 'a' array params)"""
@@ -1076,14 +1134,19 @@ class IrafArrayPar(IrafPar):
 
         Should accept None or null string.  Must be an array.
         """
-        if (type(value) not in [types.ListType,types.TupleType]) or \
-                        len(value) != self.dim:
-            raise ValueError("Value must be a " + `self.dim` +
+        try:
+            if type(value) is types.StringType:
+                # allow single blank-separated string as input
+                value = string.split(value)
+            if len(value) != len(self.value):
+                raise IndexError
+            v = len(self.value)*[0]
+            for i in range(len(v)):
+                v[i] = self._coerceOneValue(value[i],strict)
+            return v
+        except (IndexError, TypeError):
+            raise ValueError("Value must be a " + `len(self.value)` +
                     "-element array for " + self.name)
-        v = self.dim*[0]
-        for i in xrange(self.dim):
-            v[i] = self._coerceOneValue(value[i],strict)
-        return v
 
 # -----------------------------------------------------
 # IRAF string parameter mixin class
@@ -2440,6 +2503,9 @@ def _readpar(filename,strict=0):
             except Exception, exc:
                 #XXX Shouldn't catch all exceptions here -- this could
                 #XXX screw things up
+                if Verbose:
+                    import traceback
+                    traceback.print_exc()
                 raise SyntaxError(filename + "\n" + line + "\n" + \
                         str(flist) + "\n" + str(exc))
             if param_dict.has_key(par.name):

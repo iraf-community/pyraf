@@ -474,11 +474,13 @@ class StringEparOption(EparOption):
                      textvariable = self.choice)
         self.entry.pack(side = LEFT, fill = X, expand = TRUE)
 
+# widget class that works for numbers and arrays of numbers
 
-class IntEparOption(EparOption):
+class NumberEparOption(EparOption):
 
     def notNull(self, value):
-        return value not in ["", "INDEF"]
+        vsplit = value.split()
+        return vsplit.count("INDEF") != len(vsplit)
 
     def makeInputWidget(self):
 
@@ -501,52 +503,7 @@ class IntEparOption(EparOption):
     def entryCheck(self, event = None):
 
         # Ensure any INDEF entry is uppercase
-        if (self.choice.get() == "indef"):
-            self.choice.set("INDEF")
-
-        # Make sure the input is legal
-        value = self.choice.get()
-        try:
-            if value != self.previousValue:
-                self.paramInfo.set(value)
-            return None
-        except ValueError, e:
-            # Reset the entry to the previous (presumably valid) value
-            self.choice.set(self.previousValue)
-            errorMsg = str(e)
-            self.status.bell()
-            if (event != None):
-                self.status.config(text = errorMsg)
-            # highlight the text again and terminate processing so
-            # focus stays in this widget
-            self.focusIn(event)
-            return "break"
-
-class RealEparOption(EparOption):
-
-    def notNull(self, value):
-        return value not in ["", "INDEF"]
-
-    def makeInputWidget(self):
-
-        self.clearEnabled = NORMAL
-        self.unlearnEnabled = NORMAL
-
-        # Retain the original parameter value in case of bad entry
-        self.previousValue = self.value
-
-        self.choice.set(self.value)
-        self.entry = Entry(self.master.frame, width = self.valueWidth,
-                     textvariable = self.choice)
-        self.entry.pack(side = LEFT)
-
-
-    # Check the validity of the entry
-    def entryCheck(self, event = None):
-
-        # Ensure any INDEF entry is uppercase
-        if (self.choice.get() == "indef"):
-            self.choice.set("INDEF")
+        self.choice.set(self.choice.get().upper())
 
         # Make sure the input is legal
         value = self.choice.get()
@@ -612,10 +569,12 @@ class PsetEparOption(EparOption):
 
 # EparOption values for non-string types
 _eparOptionDict = { "b": BooleanEparOption,
-                    "r": RealEparOption,
-                    "d": RealEparOption,
-                    "i": IntEparOption,
+                    "r": NumberEparOption,
+                    "d": NumberEparOption,
+                    "i": NumberEparOption,
                     "pset": PsetEparOption,
+                    "ar": NumberEparOption,
+                    "ai": NumberEparOption,
                   }
 
 def eparOptionFactory(master, statusBar, param, defaultParam,

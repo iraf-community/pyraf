@@ -29,13 +29,12 @@ _ACCEPT_REDIR_MODE = 6          # mode at points where redirection allowed
 # Regular Expressions for additional string replacement
 #---------------------------------------------------------------------
 #
-# Recognize comments in a multi-line string
-#    - comment can start with any amount of white-space
-#    - comment can also be in-line, starting on a new line is optional
-#    - comment ends on new line after optional line-continuation '\'
-#    - comment can end with any amount of white-space prior to optional '\'
-#
-comment_pat = re.compile(r'[\\\s*\n]?(\s*#.*\s*)*\n\s*')
+# Match embedded comments in a multi-line string
+# Matches escaped newline followed by line with free-standing comment,
+# which we ignore to match unusual (ahem) IRAF behavior.
+
+comment_pat = re.compile(r'\\\s*\n\s*#.*\n\s*')
+
 #---------------------------------------------------------------------
 # Scanners for various contexts
 #---------------------------------------------------------------------

@@ -30,6 +30,7 @@ class CLStrictParser(GenericASTBuilder):
                 'var_name': 1,
                 'decl_init_list': 1,
                 'decl_init_value': 1,
+                'decl_array_dims': 1,
                 'list_flag': 1,
                 'body_block': 1,
                 'statement_block': 1,
@@ -71,9 +72,9 @@ class CLStrictParser(GenericASTBuilder):
 
     def error(self, token, value=None):
         if hasattr(token, 'lineno'):
-            errmsg = "Syntax error at `%s' (line %d)" % (token, token.lineno)
+            errmsg = "CL syntax error at `%s' (line %d)" % (token, token.lineno)
         else:
-            errmsg = "Syntax error at `%s'" % (token,)
+            errmsg = "CL syntax error at `%s'" % (token,)
         if value is not None: errmsg = errmsg + "\n" + str(value)
         raise SyntaxError(errmsg)
 
@@ -102,8 +103,10 @@ class CLStrictParser(GenericASTBuilder):
                 decl_spec ::= list_flag var_name opt_init_val declaration_options
                 list_flag ::= *
                 list_flag ::=
+                decl_array_dims ::= INTEGER
+                decl_array_dims ::= decl_array_dims , INTEGER
                 var_name ::= IDENT
-                var_name ::= IDENT [ INTEGER ]
+                var_name ::= IDENT [ decl_array_dims ]
                 opt_init_val ::= = decl_init_list
                 opt_init_val ::=
                 decl_init_list ::= tdecl_init_list
@@ -269,7 +272,9 @@ class CLStrictParser(GenericASTBuilder):
                 number ::= SEXAGESIMAL
                 number ::= INDEF
 
-                array_ref ::= IDENT [ expr ]
+                array_subscript ::= expr
+                array_subscript ::= array_subscript , expr
+                array_ref ::= IDENT [ array_subscript ]
 
                 function_call ::= IDENT ( fn_arglist )
 

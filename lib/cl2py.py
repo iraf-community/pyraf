@@ -286,9 +286,9 @@ class Variable:
                 self.type = _longTypeName[ipo.type]
                 self.list_flag = 0
             if isinstance(ipo, irafpar.IrafArrayPar):
-                self.array_size = ipo.dim
+                self.shape = ipo.shape
             else:
-                self.array_size = None
+                self.shape = None
             self.init_value = ipo.value
             self.options = minmatch.MinMatchDict({
                                             "mode":   ipo.mode,
@@ -301,7 +301,7 @@ class Variable:
             # define from the parameters
             self.name = name
             self.type = type
-            self.array_size = array_size
+            self.shape = array_size
             self.list_flag = list_flag
             self.options = minmatch.MinMatchDict({
                                             "mode":   mode,
@@ -321,7 +321,7 @@ class Variable:
         return irafpar.makeIrafPar(self.init_value,
                         datatype=self.type,
                         name=self.getName(),
-                        array_size=self.array_size,
+                        array_size=self.shape,
                         list_flag=self.list_flag,
                         mode=self.options["mode"],
                         min=self.options["min"],
@@ -336,7 +336,7 @@ class Variable:
         default value in the function definition statement"""
 
         name = irafutils.translateName(self.name)
-        if self.array_size is None:
+        if self.shape is None:
             if self.init_value is None:
                 return name + "=None"
             else:
@@ -344,10 +344,13 @@ class Variable:
         else:
             # array
             arg = name + "=["
-            arglist = []
-            for iv in self.init_value:
-                arglist.append(`iv`)
-            return arg + string.join(arglist,",") + "]"
+            if self.init_value is None:
+                arglist = ["INDEF"]*len(self)
+            else:
+                arglist = []
+                for iv in self.init_value:
+                    arglist.append(`iv`)
+            return arg + string.join(arglist,", ") + "]"
 
     def parDefLine(self, filename=None, strict=0, local=0):
         """Return a list of string arguments for makeIrafPar"""
@@ -361,8 +364,8 @@ class Variable:
         if local:
             arglist[0] = `self.init_value`
             self.options["mode"] = "u"
-        if self.array_size is not None:
-            arglist.append("array_size=" + `self.array_size`)
+        if self.shape is not None:
+            arglist.append("array_size=" + `self.shape`)
         if self.list_flag:
             arglist.append("list_flag=" + `self.list_flag`)
         keylist = self.options.keys()
@@ -390,6 +393,12 @@ class Variable:
             s = s + " " + optstring + " }"
         return s
 
+    def __len__(self):
+        array_size = 1
+        if self.shape:
+            for d in self.shape:
+                array_size = array_size*d
+        return array_size
 
 class ExtractDeclInfo(GenericASTTraversal):
 
@@ -406,16 +415,23 @@ class ExtractDeclInfo(GenericASTTraversal):
     def n_declaration_stmt(self, node):
         self.current_type = node[0].attr
 
+    def _get_dims(self, node, rv=None):
+        # expand array shape declaration
+        if len(node)>1:
+            return self._get_dims(node[0]) + (int(node[2]),)
+        else:
+            return (int(node[0]),)
+
     def n_decl_spec(self, node):
         var_name = node[1]
         name = irafutils.translateName(var_name[0].attr)
         if len(var_name) > 1:
             # array declaration
-            array_size = int(var_name[2])
+            shape = tuple(self._get_dims(var_name[2]))
         else:
             # apparently not an array (but this may change later
             # if multiple initial values are found)
-            array_size = None
+            shape = None
         if self.var_dict.has_key(name):
             if self.var_dict[name]:
                 errmsg = "Variable `%s' is multiply declared" % (name,)
@@ -424,11 +440,11 @@ class ExtractDeclInfo(GenericASTTraversal):
                 # existing but undefined entry comes from procedure line
                 # set mode = "a" by default
                 self.var_dict[name] = Variable(name, self.current_type,
-                                                array_size = array_size, mode="a")
+                                                array_size=shape, mode="a")
         else:
             self.var_list.append(name)
             self.var_dict[name] = Variable(name, self.current_type,
-                                            array_size = array_size)
+                                            array_size=shape)
         self.current_var = self.var_dict[name]
         self.preorder(node[0])  # list flag
         self.preorder(node[2])  # initialization
@@ -455,16 +471,16 @@ class ExtractDeclInfo(GenericASTTraversal):
         # also convert all the initial values from tokens to native form
         v = self.current_var
         ilist = v.init_value
-        if len(ilist) == 1 and v.array_size is None:
+        if len(ilist) == 1 and v.shape is None:
             v.init_value = _convFunc(v, ilist[0])
         else:
             # it is an array, set size or pad initial values
-            if v.array_size is None:
-                v.array_size = len(ilist)
-            elif v.array_size > len(ilist):
-                for i in range(v.array_size-len(ilist)):
+            if v.shape is None:
+                v.shape = (len(ilist),)
+            elif len(v) > len(ilist):
+                for i in range(len(v)-len(ilist)):
                     v.init_value.append(None)
-            elif v.array_size < len(ilist):
+            elif len(v) < len(ilist):
                 errmsg = "Variable `%s' has too many initial values" % (v.name,)
                 raise SyntaxError(errmsg)
             for i in range(len(v.init_value)):
@@ -1394,6 +1410,19 @@ class Tree2Python(GenericASTTraversal):
             else:
                 self.write('taskObj.'+s, node.requireType, node.exprType)
 
+    def _print_subscript(self, node):
+        # subtract one from IRAF subscripts to get Python subscripts
+        if len(node) == 0:
+            if node.type == "INTEGER":
+                self.write(str(int(node)-1))
+            else:
+                self.preorder(node)
+                self.write("-1")
+        else:
+            self._print_subscript(node[0])
+            self.write(", ")
+            self._print_subscript(node[2])
+
     def n_array_ref(self, node):
         # in array reference, do not add .p_value to parameter identifier
         # because we can index the parameter directly
@@ -1402,13 +1431,23 @@ class Tree2Python(GenericASTTraversal):
         if cf: self.write(cf + "(")
         self.n_IDENT(node[0], array_ref=1)
         self.write("[")
-        # subtract one from IRAF subscripts to get Python subscripts
-        if node[2].type == "INTEGER":
-            self.write(str(int(node[2])-1) + "]")
-        else:
-            self.preorder(node[2])
-            self.write("-1]")
+        self._print_subscript(node[2])
+        self.write("]")
         if cf: self.write(")")
+        # check for correct number of subscripts for local arrays
+        s = irafutils.translateName(node[0].attr)
+        if self.vars.has_key(s):
+            # count subscripts in reference
+            nn = node[2]
+            nsub = 1
+            while len(nn) > 0:
+                nn = nn[0]
+                nsub = nsub+1
+            v = self.vars.get(s)
+            if nsub < len(v.shape):
+                self.error("Too few subscripts for array %s" % s, node[0])
+            elif nsub > len(v.shape):
+                self.error("Too many subscripts for array %s" % s, node[0])
         self.prune()
 
     def n_param_name(self, node):
