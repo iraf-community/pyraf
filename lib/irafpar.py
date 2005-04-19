@@ -875,7 +875,8 @@ class IrafArrayPar(IrafPar):
             raise SyntaxError("Too many values for array" +
                     " for parameter " + self.name)
         #
-        self.value = self._coerceValue(fields[nvstart:nvstart+array_size],strict)
+        self.value = [None]*array_size
+        self.value = self._coerceValue(fields[nvstart:],strict)
         if fields[nvstart-3] is not None and '|' in fields[nvstart-3]:
             self._setChoice(string.strip(fields[nvstart-3]),strict)
             if fields[nvstart-2] is not None:
