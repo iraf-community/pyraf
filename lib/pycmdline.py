@@ -344,7 +344,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             # if CL emulation is turned off then just return
             return line
         elif keyword.iskeyword(cmd) or \
-          (os.__builtins__.has_key(cmd) and cmd not in ['type', 'dir', 'help']):
+          (os.__builtins__.has_key(cmd) and cmd not in ['type', 'dir', 'help', 'set']):
             # don't mess with Python keywords or built-in functions
             # except allow 'type', 'dir, 'help' to be used in simple syntax
             return line
@@ -372,7 +372,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             if mm.group() in ["is","in","and","or","not"]:
                 return line
         elif line[i:i+1] == '(':
-            if cmd in ['type', 'dir']:
+            if cmd in ['type', 'dir', 'set']:
                 # assume a standalone call of Python type, dir functions
                 # rather than IRAF task
                 #XXX Use IRAF help function in every case (may want to
