@@ -1,12 +1,13 @@
 #! /usr/bin/env python
 
-"""compileall.py: Load all the packages in IRAF and compile all the CL scripts
+"""compileallcl.py: Load all the packages in IRAF and compile all
+the CL scripts
 
-The results are stored in the system cache.  The system cache
-must be writable for this script to run.
+The results are stored in the user cache.  The old user cache
+is moved to ~/iraf/pyraf/clcache.old.
 
-Set the -r flag to recompile (default is to rename the system cache so
-that everything gets compiled from scratch.)
+Set the -r flag to recompile (default is to close the system cache
+and move the user cache so that everything gets compiled from scratch.)
 
 $Id$
 """
@@ -28,8 +29,24 @@ def compileall():
 
     # now do the IRAF startup
 
-    from pyraf import iraf, cl2py
+    from pyraf import iraf, cl2py, clcache, irafglobals
     from pyraf.iraftask import IrafCLTask, IrafPkg
+
+    # close the old code cache and reopen without system cache
+
+    cl2py.codeCache.close()
+    del clcache.codeCache
+
+    userCacheDir = os.path.join(irafglobals.userIrafHome,'pyraf')
+    if not os.path.exists(userCacheDir):
+        try:
+            os.mkdir(userCacheDir)
+            print 'Created directory %s for cache' % userCacheDir
+        except OSError:
+            print 'Could not create directory %s' % userCacheDir
+    dbfile = 'clcache'
+    clcache.codeCache = clcache._CodeCache([ os.path.join(userCacheDir,dbfile) ])
+    cl2py.codeCache = clcache.codeCache
 
     iraf.setVerbose()
 
@@ -133,18 +150,11 @@ def usage():
     sys.exit()
 
 
-# set search path to include directory containing this script
-
-scriptDir = os.path.dirname(sys.argv[0])
-absPyrafDir = os.path.abspath(os.path.join(scriptDir,'..'))
-if absPyrafDir not in sys.path: sys.path.insert(0, absPyrafDir)
-del scriptDir
-
 if __name__ == '__main__':
     # command-line options
     import getopt
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], "r")
+        optlist, args = getopt.getopt(sys.argv[1:], "rh")
         if len(args) > 0:
             print "Error: no positional arguments accepted"
             usage()
@@ -155,30 +165,28 @@ if __name__ == '__main__':
     for opt, value in optlist:
         if opt == "-r":
             clearcache = 0
-        elif opt == "-r":
+        elif opt == "-h":
             usage()
         else:
-            print "Program bug, uninterpreted option", opt
+            print "Program bug, unknown option", opt
             raise SystemExit
 
-    sysCache = os.path.join(absPyrafDir, 'pyraf', 'clcache')
+    # find pyraf directory
+    for p in sys.path:
+        absPyrafDir = os.path.join(p,'pyraf')
+        if os.path.exists(os.path.join(absPyrafDir,'__init__.py')):
+            break
+    else:
+        raise Exception('pyraf module not found')
+
     usrCache = os.path.expanduser('~/iraf/pyraf/clcache')
 
     if clearcache:
-        # move the old system cache
-        if os.path.exists(sysCache): os.rename(sysCache, sysCache + '.old')
+        # move the old user cache
+        if os.path.exists(usrCache):
+            os.rename(usrCache, usrCache + '.old')
+            print "Pyraf user cache %s renamed to %s.old" % (usrCache, usrCache)
+        else:
+            print "Warning: pyraf user cache %s was not found" % usrCache
 
-    # lock user cache so that it is not readable or writable
-    # this forces all compiled code to go into the system cache
-
-    if not os.path.exists(usrCache):
-        os.mkdir(usrCache)
-    os.chmod(usrCache,0)
-    print 'Locked user cache to force updates into system cache'
-    sys.stdout.flush()
-
-    try:
-        compileall()
-    finally:
-        # restore user cache permissions
-        os.chmod(usrCache,0755)
+    compileall()
