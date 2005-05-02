@@ -5,7 +5,7 @@ $Id$
 R. White, 2000 January 19
 """
 
-import os, sys, types, string
+import os, sys
 import filecache
 from irafglobals import Verbose, userIrafHome, pyrafDir
 
@@ -45,7 +45,7 @@ copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
 import dirshelve, stat, md5
 
 _versionKey = 'CACHE_VERSION'
-_currentVersion = "v1"
+_currentVersion = "v2"
 
 class _FileContentsCache(filecache.FileCacheDict):
     def __init__(self):
@@ -69,9 +69,9 @@ class _CodeCache:
         for file in cacheFileList:
             db = self._cacheOpen(file)
             if db is not None:
-                cacheList.append(db)
+                cacheList.append(db[0:2])
                 nwrite = nwrite+db[0]
-                flist.append(file)
+                flist.append(db[2])
         self.clFileDict = _FileContentsCache()
         self.cacheList = cacheList
         self.cacheFileList = flist
@@ -87,7 +87,10 @@ class _CodeCache:
     def _cacheOpen(self, filename):
         """Open shelve database in filename and check version
 
-        Returns tuple (writeflag, shelve-object) on success or None on failure.
+        Returns tuple (writeflag, shelve-object, filename) on success or
+        None on failure.
+        This may modify the filename if necessary to open the correct version of
+        the cache.
         """
         # first try opening the cache read-write
         try:
@@ -111,32 +114,63 @@ class _CodeCache:
         else:
             oldVersion = 'v0'
         if oldVersion == _currentVersion:
-            return (writeflag, fh)
-        # open succeeded, but version looks out-of-date
-        fh.close()
-        rv = None
-        msg = ["CL script cache file is obsolete version (old %s, current %s)" %
+            # normal case -- cache version is as expected
+            return (writeflag, fh, filename)
+
+        if oldVersion > _currentVersion:
+            msg = ["CL script cache was created by a newer version of pyraf (cache %s, this pyraf %s)" %
                 (`oldVersion`, `_currentVersion`)]
-        if not writeflag:
-            # we can't replace it if we couldn't open it read-write
-            msg.append("Ignoring obsolete cache file %s" % filename)
-        else:
-            # try renaming the old file and creating a new one
-            rfilename = filename + "." + oldVersion
-            try:
-                os.rename(filename, rfilename)
-                msg.append("Renamed old cache to %s" % rfilename)
+            # maybe another version of cache is there
+            rfilename = filename + "." + _currentVersion
+            fhcur = None
+            if os.path.exists(rfilename):
                 try:
-                    # create new cache file
-                    fh = dirshelve.open(filename)
-                    fh[_versionKey] = _currentVersion
-                    msg.append("Created new cache file %s" % filename)
-                    rv = (writeflag, fh)
+                    fhcur = dirshelve.open(rfilename)
+                    writeflag = 1
                 except dirshelve.error:
-                    msg.append("Could not create new cache file %s" % filename)
-            except OSError:
-                msg.append("Could not rename old cache file %s" % filename)
-        self.warning(string.join(msg,"\n"))
+                    # initial open failed -- try opening the cache read-only
+                    try:
+                        fhcur = dirshelve.open(rfilename,"r")
+                        writeflag = 0
+                    except dirshelve.error:
+                        pass
+            if fhcur:
+                msg.append("Using old cache file %s" % rfilename)
+                fh.close()
+                fh = fhcur
+                filename = rfilename
+            else:
+                msg.append("It will be used but not updated")
+                if writeflag:
+                    fh.close()
+                    fh = dirshelve.open(filename,"r")
+                    writeflag = 0
+            rv = (writeflag, fh, filename)
+        else:
+            msg = ["CL script cache file is obsolete version (old %s, current %s)" %
+                    (`oldVersion`, `_currentVersion`)]
+            fh.close()
+            rv = None
+            if not writeflag:
+                # we can't replace it if we couldn't open it read-write
+                msg.append("Ignoring obsolete cache file %s" % filename)
+            else:
+                # try renaming the old file and creating a new one
+                rfilename = filename + "." + oldVersion
+                try:
+                    os.rename(filename, rfilename)
+                    msg.append("Renamed old cache to %s" % rfilename)
+                    try:
+                        # create new cache file
+                        fh = dirshelve.open(filename)
+                        fh[_versionKey] = _currentVersion
+                        msg.append("Created new cache file %s" % filename)
+                        rv = (writeflag, fh, filename)
+                    except dirshelve.error:
+                        msg.append("Could not create new cache file %s" % filename)
+                except OSError:
+                    msg.append("Could not rename old cache file %s" % filename)
+        self.warning("\n".join(msg))
         return rv
 
     def warning(self, msg, level=0):
@@ -223,18 +257,6 @@ class _CodeCache:
             writeflag, cache = self.cacheList[i]
             if cache.has_key(index):
                 pycode = cache[index]
-                #XXX
-                # kluge for backward compatibility -- force type of object
-                # eliminate this eventually
-                if not hasattr(pycode, 'setFilename'):
-                    import cl2py
-                    pycode.__class__ = cl2py.Pycode
-                    if hasattr(pycode, 'filename'):
-                        del pycode.filename
-                    # replace outmoded object in the cache
-                    if writeflag:
-                        cache[index] = pycode
-                #XXX
                 pycode.index = index
                 pycode.setFilename(filename)
                 return index, pycode
@@ -250,7 +272,7 @@ class _CodeCache:
         the Python code around.)
         """
 
-        if type(filename) is not types.StringType:
+        if not isinstance(filename,str):
             try:
                 task = filename
                 filename = task.getFullpath()

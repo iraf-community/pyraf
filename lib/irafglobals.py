@@ -24,11 +24,10 @@ $Id$
 R. White, 2000 January 5
 """
 
-import os, sys, types
+import os, sys
 _os = os
 _sys = sys
-_types = types
-del os, sys, types
+del os, sys
 
 class IrafError(Exception):
     pass
@@ -113,9 +112,7 @@ class _Boolean:
         return self
 
     def __cmp__(self, other):
-        if isinstance(other, self.__class__):
-            return cmp(self.__value, other.__value)
-        elif type(other) is _types.StringType:
+        if isinstance(other,str):
             # If a string, compare with string value of this parameter
             # Allow uppercase "YES", "NO" as well as lowercase
             # Also allows single letter abbrevation "y" or "n"
@@ -124,11 +121,10 @@ class _Boolean:
                 return cmp(self.__strvalue[0], ovalue)
             else:
                 return cmp(self.__strvalue, ovalue)
-        elif type(other) in (_types.IntType, _types.FloatType):
-            # If a number, compare with this value
-            return cmp(self.__value, other)
         else:
-            return 1
+            # for all other types (int, float, bool, etc) treat this
+            # value like an integer
+            return cmp(self.__value, other)
 
     def __nonzero__(self): return self.__value
     def __repr__(self): return self.__strvalue
@@ -171,10 +167,10 @@ class _EOFClass:
             # Despite trying to create only one EOF object, there
             # could be more than one.  All EOFs are equal.
             return 0
-        elif type(other) is _types.StringType:
+        elif isinstance(other,str):
             # If a string, compare with 'EOF'
             return cmp("EOF", other)
-        elif type(other) in (_types.IntType, _types.FloatType):
+        elif ininstance(other,(int,float,long)):
             # If a number, compare with -2
             return cmp(-2, other)
         else:
@@ -194,13 +190,18 @@ EOF = _EOFClass()
 # define IRAF-like INDEF object
 # -----------------------------------------------------
 
-class _INDEFClass:
+class _INDEFClass(object):
     """Class of singleton INDEF (undefined) object"""
-    def __init__(self):
-        global INDEF
-        if INDEF is not None:
-            # only allow one to be created
-            raise RuntimeError("Use INDEF object, not _INDEFClass")
+
+    def __new__(cls):
+        # Guido's example Singleton pattern
+        it = cls.__dict__.get("__it__")
+        if it is not None:
+            return it
+        # this use of super gets the correct version of __new__ for the
+        # int and float subclasses too
+        cls.__it__ = it = super(_INDEFClass, cls).__new__(cls)
+        return it
 
     def __copy__(self):
         """Not allowed to make a copy"""
@@ -210,18 +211,18 @@ class _INDEFClass:
         """Not allowed to make a copy"""
         return self
 
-    def __cmp__(self, other):
-        if isinstance(other, self.__class__):
-            # Despite trying to create only one INDEF object, there
-            # could be more than one.  All INDEFs are equal.
-            return 0
-        else:
-            #XXX Note this implies INDEF is equivalent to +infinity
-            #XXX This is the only way to get the right answer
-            #XXX on tests of equality to INDEF
-            #XXX Replace this once rich comparisons (__gt__, __lt__, etc.)
-            #XXX are available (Python 1.6?)
-            return 1
+    def __lt__(self, other): return INDEF
+    def __le__(self, other): return INDEF
+    def __gt__(self, other): return INDEF
+    def __ge__(self, other): return INDEF
+
+    def __eq__(self, other):
+        # Despite trying to create only one INDEF object, there
+        # could be more than one.  All INDEFs are equal.
+        return isinstance(other, _INDEFClass)
+
+    def __ne__(self, other):
+        return not isinstance(other, _INDEFClass)
 
     def __repr__(self): return "INDEF"
     def __str__(self): return "INDEF"
@@ -229,11 +230,18 @@ class _INDEFClass:
     __oct__ = __str__
     __hex__ = __str__
 
+    # type conversions return various types of INDEF objects
+    # this is necessary for Python 2.4
+
+    def __int__(self): return _INDEF_int
+    def __long__(self): return _INDEF_int
+    def __float__(self): return _INDEF_float
+
     def __nonzero__(self): return 0
 
     # all operations on INDEF return INDEF
 
-    def __add__(self, other): return self
+    def __add__(self, other): return INDEF
 
     __sub__    = __add__
     __mul__    = __add__
@@ -262,27 +270,25 @@ class _INDEFClass:
     __rxor__    = __add__
     __ror__     = __add__
 
-    def __neg__(self): return self
+    def __neg__(self): return INDEF
 
     __pos__    = __neg__
     __abs__    = __neg__
     __invert__ = __neg__
 
-    # it is a bit nasty having these functions not return
-    # the promised int, float, etc. -- but it is required that
-    # this object act just like an undefined value for one of
-    # those types, so I need to pretend it really is a legal
-    # int or float
-
-    __int__    = __neg__
-    __long__   = __neg__
-    __float__  = __neg__
-
-
-# initialize INDEF to None first so singleton scheme works
-
-INDEF = None
 INDEF = _INDEFClass()
+
+# Classes that inherit from built-in types are required for Python 2.4
+# so that int and float conversion functions work correctly.
+# Unfortunately, if you call int(_INDEF_int) it ignores the
+# __int__ method and returns zero, so these objects should be
+# used sparingly and replaced with standard INDEF whereever
+# possible.
+
+class _INDEFClass_int(_INDEFClass, int): pass
+class _INDEFClass_float(_INDEFClass, float): pass
+_INDEF_int = _INDEFClass_int()
+_INDEF_float = _INDEFClass_float()
 
 # -----------------------------------------------------
 # tag classes

@@ -5,10 +5,10 @@ $Id$
 M.D. De La Pena, 2000 February 04
 """
 #System level modules
+from Tkinter import _default_root
 from Tkinter import *
-from types import *
 from tkMessageBox import askokcancel
-import os, sys, string
+import os, sys
 
 # PyRAF modules
 import iraf, irafpar, irafhelp, cStringIO, wutil
@@ -195,8 +195,14 @@ class EparDialog:
         # Create the root window as required, but hide it
         self.parent = parent
         if (self.parent == None):
-            root = Tk()
-            root.withdraw()
+            global _default_root
+            if _default_root is None:
+                import Tkinter
+                if not Tkinter._default_root:
+                    _default_root = Tkinter.Tk()
+                    _default_root.withdraw()
+                else:
+                    _default_root = Tkinter._default_root
 
         # Track whether this is a parent or child window
         self.isChild = isChild
@@ -517,11 +523,11 @@ class EparDialog:
                   anchor=W)
         else:
             # labels for Iraf task
-            packString = "  Package = " + string.upper(pkgName)
+            packString = "  Package = " + pkgName.upper()
             Label(textbox, text=packString, bg=self.bkgColor).pack(side=TOP,
                   anchor=W)
 
-            taskString = "       Task = " + string.upper(taskName)
+            taskString = "       Task = " + taskName.upper()
             Label(textbox, text=taskString, bg=self.bkgColor).pack(side=TOP,
                   anchor=W)
         textbox.pack(side=LEFT, anchor=W)
@@ -696,7 +702,7 @@ class EparDialog:
     # Process invalid input values and invoke a query dialog
     def processBadEntries(self, badEntriesList, taskname):
 
-        badEntriesString = "Task " + string.upper(taskname) + " --\n" \
+        badEntriesString = "Task " + taskname.upper() + " --\n" \
             "Invalid values have been entered.\n\n" \
             "Parameter   Bad Value   Reset Value\n"
 
@@ -917,13 +923,13 @@ class EparDialog:
         hb.frame.pack(side=TOP, fill=BOTH, expand=TRUE)
 
         # Insert each line of the helpString onto the Frame
-        listing = string.split(helpString, '\n')
+        listing = helpString.split('\n')
         for line in listing:
 
             # Filter the text *** DO THIS A BETTER WAY ***
-            line = string.replace(line, "\x0e", "")
-            line = string.replace(line, "\x0f", "")
-            line = string.replace(line, "\f", "")
+            line = line.replace("\x0e", "")
+            line = line.replace("\x0f", "")
+            line = line.replace("\f", "")
 
             # Insert the text into the Listbox
             hb.frame.list.insert(END, line)

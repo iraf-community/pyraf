@@ -25,7 +25,7 @@ $Id$
 R. White, 2000 February 20
 """
 
-import string, re, os, sys, code, types, keyword, traceback, linecache
+import string, re, os, sys, code, keyword, traceback, linecache
 import minmatch, iraf, irafcompleter
 import wutil
 from irafglobals import pyrafDir
@@ -101,7 +101,7 @@ class CmdConsole(code.InteractiveConsole):
                     needtermid = 0
                 neofs = 0
                 # add non-null lines to history
-                if string.strip(line): self.addHistory(line)
+                if line.strip(): self.addHistory(line)
                 # note that this forbids combination of python & CL
                 # code -- e.g. a for loop that runs CL tasks.
                 if not more:
@@ -176,7 +176,7 @@ class PyCmdLine(CmdConsole):
         if logfile is not None:
             if hasattr(logfile,'write'):
                 self.logfile = logfile
-            elif type(logfile) is types.StringType:
+            elif isinstance(logfile,str):
                 self.do_logfile(logfile)
             else:
                 self.write('logfile ignored -- not string or filehandle\n')
@@ -246,7 +246,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
     def do_logfile(self, line='', i=0):
         """Start or stop logging commands"""
         if self.debug>1: self.write('do_logfile: %s\n' % line[i:])
-        args = string.split(line[i:])
+        args = line[i:].split()
         if len(args) == 0:      # turn off logging (if on)
             if self.logfile:
                 self.logfile.close()
@@ -265,7 +265,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                     del args[0]
             if args:
                 self.write('Ignoring unknown options: %s\n' %
-                        string.join(args," "))
+                        " ".join(args))
             try:
                 oldlogfile = self.logfile
                 self.logfile = open(filename,oflag)
@@ -384,13 +384,13 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                 # call IRAF task.  Force Python mode but add the 'iraf.'
                 # string to the task name for convenience.
                 #XXX this find() may be improved with latest Python readline features
-                j = string.find(line,cmd)
+                j = line.find(cmd)
                 return line[:j] + 'iraf.' + line[j:]
         elif not callable(getattr(iraf,cmd)):
             # variable from iraf module is not callable task (e.g.,
             # yes, no, INDEF, etc.) -- add 'iraf.' so it can be used
             # as a variable and execute as Python
-            j = string.find(line,cmd)
+            j = line.find(cmd)
             return line[:j] + 'iraf.' + line[j:]
 
         # if we get to here then it looks like CL code
@@ -399,7 +399,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             code = iraf.clExecute(line, locals=self.locals, mode='single')
             if self.logfile is not None:
                 # log CL code as comment
-                cllines = string.split(line,'\n')
+                cllines = line.split('\n')
                 for oneline in cllines:
                     self.logfile.write('# %s\n' % oneline)
                 self.logfile.write(code)
@@ -410,7 +410,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
 
     def isLocal(self, value):
         """Returns true if value is local variable"""
-        ff = string.split(value,'.')
+        ff = value.split('.')
         return self.locals.has_key(ff[0])
 
     def start(self, banner="Python/CL command line wrapper\n"

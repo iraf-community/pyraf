@@ -76,6 +76,22 @@ _FUNCTION = 1
 _METHOD = 2
 _OTHER = 3
 
+_functionTypes = (types.BuiltinFunctionType,
+                  types.FunctionType,
+                  types.LambdaType)
+
+_methodTypes = (types.BuiltinMethodType,
+                types.MethodType,
+                types.UnboundMethodType)
+
+_listTypes = (list, tuple, dict)
+
+_numericTypes = (float, int, long, complex)
+if globals().has_key('bool'):
+    _numericTypes = _numericTypes + (bool,)
+
+_allSingleTypes = _functionTypes + _methodTypes + _listTypes + _numericTypes
+
 # set up minimum-match dictionary with function keywords
 
 kwnames = ( 'variables', 'functions', 'modules',
@@ -96,8 +112,8 @@ for key in irafkwnames:
 del irafkwnames, key
 
 def help(object=__main__, variables=1, functions=1, modules=1,
-                tasks=0, packages=0, hidden=0, padchars=16, regexp=None, html=0,
-                **kw):
+         tasks=0, packages=0, hidden=0, padchars=16, regexp=None, html=0,
+         **kw):
 
     """List the type and value of all the variables in the specified object.
 
@@ -165,17 +181,18 @@ def _help(object, variables, functions, modules,
     if isinstance(object,IrafTask):
         if _printIrafHelp(object, html, irafkw): return
 
-    if type(object) == types.StringType:
+    if isinstance(object,str):
         if re.match(r'[a-z_][a-z0-9_.]*$',object) or \
           (re.match(r'[^\0]*$',object) and \
                     os.path.exists(iraf.Expand(object, noerror=1))):
             if _printIrafHelp(object, html, irafkw): return
 
-    try:
-        vlist = vars(object)
-    except Exception:
-        # make compatible with Python 2.2
-        vlist = None
+    vlist = None
+    if not isinstance(object, _allSingleTypes):
+        try:
+            vlist = vars(object)
+        except TypeError:
+            pass
     if vlist is None:
         # simple object with no vars()
         _valueHelp(object, padchars)
@@ -186,7 +203,7 @@ def _help(object, variables, functions, modules,
     tasklist, pkglist, functionlist, methodlist, modulelist, otherlist = \
             _getContents(vlist, regexp, object)
 
-    if type(object) == types.InstanceType:
+    if isinstance(object, types.InstanceType):
         # for instances, print a help line for the object itself first
         _valueHelp(object, padchars=0)
 
@@ -216,7 +233,7 @@ def _help(object, variables, functions, modules,
         irafutils.printCols(tasklist)
         print
 
-    if (type(object) == types.InstanceType) and functions:
+    if isinstance(object, types.InstanceType) and functions:
         # for instances, call recursively to list class methods
         help(object.__class__, functions=functions, tasks=tasks,
                 packages=packages, variables=variables, hidden=hidden,
@@ -242,8 +259,7 @@ def _valueHelp(object, padchars):
         name = object.__name__
     except AttributeError:
         name = ''
-    if len(name) < padchars:
-        name = name + (padchars-len(name))*" "
+    name = name + (padchars-len(name))*" "
     if name:
         print name, ":", vstr
     else:
@@ -282,7 +298,7 @@ def _getContents(vlist, regexp, object):
                 sortlist[vorder].append((vname,value))
                 namedict[vname] = 1
     # add methods from base classes if this is a class
-    if type(object) is types.ClassType:
+    if isinstance(object, types.ClassType):
         classlist = list(object.__bases__)
         for c in classlist:
             classlist.extend(list(c.__bases__))
@@ -313,23 +329,13 @@ def _printValueList(varlist, hidden, padchars):
             print vname, ":", vstr
 
 
-_functionTypes = (types.BuiltinFunctionType,
-                                types.FunctionType,
-                                types.LambdaType)
-_methodTypes = (types.BuiltinMethodType,
-                                types.MethodType,
-                                types.UnboundMethodType)
-_numericTypes = (types.FloatType, types.IntType, types.LongType,
-                                types.ComplexType)
-
-_listTypes = (types.ListType, types.TupleType, types.DictType)
 
 def _sortOrder(type):
-    if type == types.ModuleType:
+    if issubclass(type, types.ModuleType):
         v = _MODULE
-    elif type in _functionTypes:
+    elif issubclass(type, _functionTypes):
         v = _FUNCTION
-    elif type in _methodTypes:
+    elif issubclass(type, _methodTypes):
         v = _METHOD
     else:
         v = _OTHER
@@ -340,24 +346,24 @@ def _valueString(value,verbose=0):
 
     t = type(value)
     vstr = t.__name__
-    if t == types.StringType:
+    if issubclass(t, str):
         if len(value)>42:
             vstr = vstr + ", value = "+ `value[:39]` + '...'
         else:
             vstr = vstr + ", value = "+ `value`
-    elif t in _listTypes:
+    elif issubclass(t, _listTypes):
         return "%s [%d entries]" % (vstr, len(value))
-    elif t == types.FileType:
+    elif issubclass(t, file):
         vstr = vstr + ", "+ `value`
-    elif t in _numericTypes:
+    elif issubclass(t, _numericTypes):
         vstr = vstr + ", value = "+ `value`
-    elif t == types.InstanceType:
+    elif issubclass(t, types.InstanceType):
         cls = value.__class__
         if cls.__module__ == '__main__':
             vstr = 'instance of class ' + cls.__name__
         else:
             vstr = 'instance of class ' + cls.__module__ + '.' + cls.__name__
-    elif t in _functionTypes:
+    elif issubclass(t, _functionTypes+_methodTypes):
         # try using Fredrik Lundh's describe on functions
         try:
             vstr = vstr + ' ' + describe.describe(value)
@@ -369,7 +375,7 @@ def _valueString(value,verbose=0):
         except (AttributeError, TypeError):
             # oh well, just have to live with type string alone
             pass
-    elif t == _NumericArrayType:
+    elif issubclass(t, _NumericArrayType):
         vstr = vstr + " " + _NumericTypeName[value.typecode()] + "["
         for k in range(len(value.shape)):
             if k:

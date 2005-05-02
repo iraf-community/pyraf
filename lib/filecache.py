@@ -29,7 +29,7 @@ $Id$
 R. White, 2000 October 1
 """
 
-import os, stat, sys, types, md5
+import os, stat, sys, md5
 
 class FileCache:
 
@@ -98,7 +98,7 @@ class FileCache:
 
         if filename==None:
             filename = self.filename
-        if type(filename) is types.StringType:
+        if isinstance(filename,str):
             fh = open(filename, 'r')
         elif hasattr(filename, 'read'):
             fh = filename
@@ -117,7 +117,7 @@ class FileCache:
             filename = self.filename
         if not filename:
             return None
-        elif type(filename) is types.StringType:
+        elif isinstance(filename,str):
             st = os.stat(filename)
         elif hasattr(filename, 'fileno') and hasattr(filename, 'name'):
             fh = filename
@@ -173,7 +173,7 @@ class FileCacheDict:
             self.data[abspath] = self.__Class(abspath)
 
     def abspath(self, filename):
-        if type(filename) is types.StringType:
+        if isinstance(filename,str):
             return os.path.abspath(filename)
         elif hasattr(filename, 'name') and hasattr(filename, 'read'):
             return os.path.abspath(filename.name)

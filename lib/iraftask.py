@@ -5,7 +5,7 @@ $Id$
 R. White, 2000 June 26
 """
 
-import os, sys, string, types, copy, re
+import os, sys, copy, re
 import minmatch, subproc
 import irafglobals, iraf, irafpar, irafexecute, epar, cl2py, irafutils
 
@@ -50,11 +50,11 @@ class IrafTask(irafglobals.IrafTask):
         objdict = self.__dict__
         # stuff all the parameters into the object
         objdict.update(_IrafTask_attr_dict)
-        sname = string.replace(name, '.', '_')
+        sname = name.replace('.', '_')
         if sname != name:
             print "Warning: '.' illegal in task name, changing", name, \
                     "to", sname
-        spkgname = string.replace(pkgname, '.', '_')
+        spkgname = pkgname.replace('.', '_')
         if spkgname != pkgname:
             print "Warning: '.' illegal in pkgname, changing", pkgname, \
                     "to", spkgname
@@ -202,7 +202,7 @@ class IrafTask(irafglobals.IrafTask):
 
         if not pkgbinary:
             return
-        elif type(pkgbinary) == types.StringType:
+        elif isinstance(pkgbinary,str):
             if pkgbinary and (pkgbinary not in self._pkgbinary):
                 self._pkgbinary.append(pkgbinary)
         else:
@@ -336,7 +336,7 @@ class IrafTask(irafglobals.IrafTask):
         if kw.has_key('ParList'):
             parList = kw['ParList']
             del kw['ParList']
-            if isinstance(parList, types.StringType):
+            if isinstance(parList, str):
                 # must be a .par filename
                 filename = parList
                 parList = irafpar.IrafParList(self.getName(), filename)
@@ -368,7 +368,7 @@ class IrafTask(irafglobals.IrafTask):
             # set mode of automatic parameters
             mode = self.getMode(newParList)
             for p in newParList.getParList():
-                p.mode = string.replace(p.mode,"a",mode)
+                p.mode = p.mode.replace("a",mode)
         if parList:
             #XXX Set all command-line flags for parameters when a
             #XXX parlist is supplied so that it does not prompt for
@@ -654,7 +654,7 @@ class IrafTask(irafglobals.IrafTask):
     def __repr__(self):
         s = '<%s %s (%s) Pkg: %s Bin: %s' % \
                 (self.__class__.__name__, self._name, self._filename,
-                self._pkgname, string.join(self._pkgbinary,':'))
+                self._pkgname, ':'.join(self._pkgbinary))
         if self._foreign: s = s + ' Foreign'
         if self._hidden: s = s + ' Hidden'
         if self._hasparfile == 0: s = s + ' No parfile'
@@ -787,7 +787,7 @@ class IrafTask(irafglobals.IrafTask):
             pmode = mode or self.getMode()
         v = par.get(index=pindex,field=field,
                                 native=native,mode=pmode,prompt=prompt)
-        if type(v) is types.StringType and v[:1] == ")":
+        if isinstance(v,str) and v[:1] == ")":
 
             # parameter indirection: call getParam recursively
             # I'm making the assumption that indirection in a
@@ -824,7 +824,7 @@ class IrafTask(irafglobals.IrafTask):
             # make our best guess that the basename is what follows the
             # last '$' in _filename
             basedir = ""
-            s = string.split(self._filename, "$")
+            s = self._filename.split("$")
             basename = s[-1]
         if basename == "":
             self._fullpath = ""
@@ -857,7 +857,7 @@ class IrafTask(irafglobals.IrafTask):
                     exelist.append(exename1)
                     raise iraf.IrafError(
                             "Cannot find executable for task %s\nTried %s" %
-                            (self._name, string.join(exelist,", ")))
+                            (self._name, ", ".join(exelist)))
 
     def _initParpath(self):
         """Initialize parameter file paths"""
@@ -1150,7 +1150,7 @@ class IrafCLTask(IrafTask):
 
     def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
         # allow filename to be a filehandle or a filename
-        if type(filename) == types.StringType:
+        if isinstance(filename,str):
             fh = None
         else:
             if not hasattr(filename,'read'):
@@ -1189,7 +1189,7 @@ class IrafCLTask(IrafTask):
         """Force recompilation of CL code"""
         if self._pycode is not None:
             self._pycode.index = None
-            cl2py.codeCache.remove(self)
+        cl2py.codeCache.remove(self)
         self.initTask(force=1)
 
     #=========================================================
@@ -1595,7 +1595,7 @@ class IrafForeignTask(IrafTask):
     # private methods
     #=========================================================
     def _str_escape(self, arg):
-        if not isinstance(arg, types.StringType):
+        if not isinstance(arg, str):
             _arg = re.escape(str(arg))
         else: _arg = arg
         return _arg
@@ -1612,7 +1612,7 @@ class IrafForeignTask(IrafTask):
         cmdline = _re_foreign_par.sub(self._parSub,self._filename)
         if self._nsub==0 and args:
             # no argument substitution, just append all args
-            cmdline = cmdline + ' ' + string.join(args,' ')
+            cmdline = cmdline + ' ' + ' '.join(args)
         if iraf.Verbose>1: print "Running foreign task", cmdline
         # create and run the subprocess
         subproc.subshellRedir(cmdline)
@@ -1643,11 +1643,11 @@ class IrafForeignTask(IrafTask):
         n = mo.group('all')
         if n is not None:
             # $* -- append all arguments
-            return string.join(self._args,' ')
+            return ' '.join(self._args)
         n = mo.group('allparen')
         if n is not None:
             # $(*) -- append all arguments with virtual filenames converted
-            return string.join(map(iraf.Expand,self._args),' ')
+            return ' '.join(map(iraf.Expand,self._args))
         raise iraf.IrafError("Cannot handle foreign string `%s' "
                 "for task %s" % (self._filename, self._name))
 
@@ -1665,7 +1665,7 @@ def _splitName(qualifiedName):
     is changed to Python zero-based subscript.
     """
     # name components may have had 'PY' appended if they match Python keywords
-    slist = map(irafutils.untranslateName, string.split(qualifiedName,'.'))
+    slist = map(irafutils.untranslateName, qualifiedName.split('.'))
 
     # add field=None if not present
 
@@ -1679,10 +1679,10 @@ def _splitName(qualifiedName):
     # parse possible subscript and insert into list
 
     paramname = slist[2]
-    pstart = string.find(paramname,'[')
+    pstart = paramname.find('[')
     if pstart >= 0:
         try:
-            pend = string.rindex(paramname,']')
+            pend = paramname.rindex(']')
             pindex = int(paramname[pstart+1:pend])-1
             slist[2:3] = [paramname[:pstart], pindex]
         except (TypeError, ValueError):

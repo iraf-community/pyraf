@@ -31,7 +31,7 @@ def setVerbose(value=1, **kw):
     Level 1 prints warnings.
     Level 2 prints info on progress.
     """
-    if type(value) is _types.StringType:
+    if isinstance(value,str):
         try:
             value = int(value)
         except ValueError:
@@ -342,7 +342,7 @@ def saveToFile(savefile, **kw):
     dict = globals().copy()
     for key in dict.keys():
         item = dict[key]
-        if type(item) in (_types.FunctionType, _types.ModuleType) or \
+        if isinstance(item, (_types.FunctionType, _types.ModuleType)) or \
                         _unsavedVarsDict.has_key(key):
             del dict[key]
     # save just the value of Verbose, not the object
@@ -507,7 +507,7 @@ def getTask(taskname, found=0):
 
     if isinstance(taskname,_iraftask.IrafTask):
         return taskname
-    elif not isinstance(taskname, _types.StringType):
+    elif not isinstance(taskname, str):
         raise TypeError("Argument to getTask is not a string or IrafTask instance")
 
     # undo any modifications to the taskname
@@ -741,8 +741,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
             pkgdict = _pkgs
         else:
             pkgdict = {}
-            if type(pkglist) == _types.StringType or \
-                            isinstance(pkglist,_iraftask.IrafPkg):
+            if isinstance(pkglist, (str,_iraftask.IrafPkg)):
                 pkglist = [ pkglist ]
             for p in pkglist:
                 try:
@@ -903,23 +902,28 @@ def isNullFile(s):
 
 def substr(s,first,last):
     """Return sub-string using IRAF 1-based indexing"""
+    if s == INDEF: return INDEF
     return s[first-1:last]
 
 def stridx(test, s):
     """Return location of string s in test using IRAF 1-based indexing"""
+    if INDEF in (s,test): return INDEF
     return s.find(test)+1
 
 def strlen(s):
     """Return length of string"""
+    if s == INDEF: return INDEF
     return len(s)
 
 def frac(x):
     """Return fractional part of x"""
+    if x == INDEF: return INDEF
     frac_part, int_part = _math.modf(x)
     return frac_part
 
 def real(x):
     """Return real/float representation of x"""
+    if x == INDEF: return INDEF
     try:
         return float(x)
     except ValueError:
@@ -932,12 +936,21 @@ def real(x):
             sign = 1
         return sign*clSexagesimal(*f)
 
+def integer(x):
+    """Return integer representation of x"""
+    if x==INDEF:
+        return INDEF
+    else:
+        return int(x)
+
 def mod(a, b):
     """Return a modulo b"""
+    if INDEF in (a,b): return INDEF
     return (a % b)
 
 def nint(x):
     """Return nearest integer of x"""
+    if x == INDEF: return INDEF
     return int(round(x))
 
 _radixDigits = list(_string.digits+_string.uppercase)
@@ -950,6 +963,7 @@ def radix(value, base=10, length=0):
     bit-pattern of the twos-complement integer (even for base 10) rather
     than a signed value.  This is consistent with IRAF's behavior.
     """
+    if INDEF in (value,base,length): return INDEF
     if not (2 <= base <= 36):
         raise ValueError("base must be between 2 and 36 (inclusive)")
     ivalue = int(value)
@@ -969,6 +983,83 @@ def radix(value, base=10, length=0):
     outdigits.reverse()
     return ''.join(outdigits)
 
+def sin(value):
+    """Trigonometric sine function"""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.sin(value)
+
+def cos(value):
+    """Trigonometric cosine function"""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.cos(value)
+
+def tan(value):
+    """Trigonometric tangent function"""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.tan(value)
+
+def atan2(x,y):
+    """Trigonometric 2-argument arctangent function"""
+    if INDEF in (x,y):
+        return INDEF
+    else:
+        return _math.atan2(x,y)
+
+def exp(value):
+    """Exponential function"""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.exp(value)
+
+def log(value):
+    """Natural log function"""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.log(value)
+
+def log10(value):
+    """Base 10 log function"""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.log10(value)
+
+def sqrt(value):
+    """Square root function"""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.sqrt(value)
+
+def absvalue(value):
+    """Absolute value function"""
+    if value==INDEF:
+        return INDEF
+    else:
+        return abs(value)
+
+def minimum(*args):
+    """Minimum of list of arguments"""
+    if INDEF in args:
+        return INDEF
+    else:
+        return min(*args)
+
+def maximum(*args):
+    """Maximum of list of arguments"""
+    if INDEF in args:
+        return INDEF
+    else:
+        return max(*args)
+
 def osfn(filename):
     """Convert IRAF virtual path name to OS pathname"""
 
@@ -979,6 +1070,7 @@ def osfn(filename):
     # - if no slashes or relative paths, return relative pathname
     # - otherwise return absolute pathname
 
+    if filename == INDEF: return INDEF
     ename = Expand(filename)
     dlist = ename.split(_os.sep)
     dlist = map(_string.strip, dlist)
@@ -1041,6 +1133,7 @@ def clDms(x,digits=1,seconds=1,deg=None):
 
 def defpar(paramname):
     """Returns true if parameter is defined"""
+    if paramname == INDEF: return INDEF
     try:
         value = clParGet(paramname,prompt=0)
         return 1
@@ -1051,6 +1144,7 @@ def defpar(paramname):
 
 def access(filename):
     """Returns true if file exists"""
+    if filename == INDEF: return INDEF
     filename = _denode(filename)
     return _os.path.exists(Expand(filename))
 
@@ -1108,6 +1202,7 @@ def _searchext(root, extlist):
 
 def imaccess(filename):
     """Returns true if image matching name exists and is readable"""
+    if filename == INDEF: return INDEF
     extlist = _imextn()
     filename = _denode(filename)
     # strip off any image sections (just ignore them)
@@ -1130,10 +1225,12 @@ def imaccess(filename):
 
 def defvar(varname):
     """Returns true if CL variable is defined"""
+    if varname == INDEF: return INDEF
     return _varDict.has_key(varname) or _os.environ.has_key(varname)
 
 def deftask(taskname):
     """Returns true if CL task is defined"""
+    if taskname == INDEF: return INDEF
     try:
         import iraf
         t = getattr(iraf, taskname)
@@ -1144,6 +1241,7 @@ def deftask(taskname):
 
 def defpac(pkgname):
     """Returns true if CL package is defined and loaded"""
+    if pkgname == INDEF: return INDEF
     try:
         t = getPkg(pkgname)
         return t.isLoaded()
@@ -1183,12 +1281,11 @@ def boolean(value):
     Accepts integer/float values 0,1 or string 'yes','no'
     Also allows INDEF as value
     """
-    if value in [INDEF,0,1]:
+    if value in [0,1]:
         return value
-    elif value in ["", None]:
+    elif value in [INDEF, "", None]:
         return INDEF
-    tval = type(value)
-    if tval is _types.StringType:
+    if isinstance(value, str):
         v2 = _irafutils.stripQuotes(value.strip())
         if v2 == "INDEF":
             return INDEF
@@ -1197,7 +1294,7 @@ def boolean(value):
             return 0
         elif ff == "yes":
             return 1
-    elif tval is _types.FloatType:
+    elif isinstance(value,float):
         # try converting to integer
         try:
             ival = int(value)
@@ -1455,7 +1552,7 @@ def set(*args, **kw):
             #
             # Flag any other syntax as an error.
             if len(args) != 1 or len(kw) != 0 or \
-                            type(args[0]) != _types.StringType or args[0][:1] != '@':
+                            (not isinstance(args[0],str)) or args[0][:1] != '@':
                 raise SyntaxError("set requires name=value pairs")
     finally:
         rv = redirReset(resetList, closeFHList)
@@ -2011,7 +2108,6 @@ def _clProcedure(*args, **kw):
         return
     # initialize environment
     locals = {}
-    exec 'import math' in locals
     exec 'from pyraf import iraf' in locals
     exec 'from pyraf.irafpar import makeIrafPar' in locals
     exec 'from pyraf.irafglobals import *' in locals
@@ -2042,7 +2138,7 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
         else:
             filename = 'tmp'
     elif input is not None:
-        if type(input) == _types.StringType:
+        if isinstance(input,str):
             # input is a string -- stick it in a StringIO buffer
             stdin = _StringIO.StringIO(input)
             filename = input
@@ -2242,7 +2338,7 @@ def clPrint(*args, **kw):
         for arg in args:
             print arg,
             # don't put spaces after string arguments
-            if type(arg) is _types.StringType: _sys.stdout.softspace=0
+            if isinstance(arg,str): _sys.stdout.softspace=0
         print
     finally:
         rv = redirReset(resetList, closeFHList)
@@ -2426,6 +2522,8 @@ def chdir(directory=None, **kw):
         if directory is None:
             # use startup directory as home if argument is omitted
             directory = userWorkingHome
+        if not isinstance(directory,str):
+            raise IrafError("Illegal non-string value for directory")
         # Check for (1) local directory and (2) iraf variable
         # when given an argument like 'dev'.  In IRAF 'cd dev' is
         # the same as 'cd ./dev' if there is a local directory named
@@ -2515,7 +2613,6 @@ def clCompatibilityMode(verbose=0, _save=0):
     local_vars_dict = {}
     local_vars_list = []
     # initialize environment
-    exec 'import math' in locals
     exec 'from pyraf import iraf' in locals
     exec 'from pyraf.irafpar import makeIrafPar' in locals
     exec 'from pyraf.irafglobals import *' in locals
@@ -2602,7 +2699,7 @@ def clExecute(s, locals=None, mode="proc",
     try:
         global _clExecuteCount
         _clExecuteCount = _clExecuteCount + 1
-        pycode = _cl2py.cl2py(str=s, mode=mode, local_vars_dict=local_vars_dict,
+        pycode = _cl2py.cl2py(string=s, mode=mode, local_vars_dict=local_vars_dict,
                 local_vars_list=local_vars_list)
         # use special scriptname
         taskname = "CL%s" % (_clExecuteCount,)
@@ -2900,7 +2997,7 @@ def redirProcess(kw):
             # if it is a string, open as a file
             # otherwise assume it is a filehandle
             value = kw[key]
-            if isinstance(value, _types.StringType):
+            if isinstance(value, str):
                 if magicValues.has_key(value):
                     if outputFlag and value == "STDOUT":
                         fh = _sys.__stdout__
@@ -2930,7 +3027,7 @@ def redirProcess(kw):
                     fh = open(value,openArgs)
                     # close this when we're done
                     closeFHList.append(fh)
-            elif isinstance(value, _types.IntType):
+            elif isinstance(value, int):
                 # integer is OK for output keywords -- it indicates
                 # that output should be captured and returned as
                 # function value
@@ -2951,7 +3048,7 @@ def redirProcess(kw):
                         # wrap it in a tuple to make it easy to recognize
                         closeFHList.append((PipeOut,))
                     fh = PipeOut
-            elif type(value) in (_types.ListType, _types.TupleType):
+            elif isinstance(value, (list,tuple)):
                 # list/tuple of strings is OK for input
                 if outputFlag:
                     raise IrafError("%s redirection must "
@@ -3020,7 +3117,7 @@ def redirReset(resetList, closeFHList):
     """
     PipeOut = None
     for fh in closeFHList:
-        if isinstance(fh, _types.TupleType):
+        if isinstance(fh, tuple):
             PipeOut = fh[0]
         else:
             fh.close()

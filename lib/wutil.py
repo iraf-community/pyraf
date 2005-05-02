@@ -35,12 +35,12 @@ try:
     # Successful intialization. Reset dummy methods with
     # those from 'xutil' now.
     from xutil import *
-    hasXWindow = True # Flag to mark successful initialization of XWindow
+    hasXWindow = 1 # Flag to mark successful initialization of XWindow
     closeGraphics = closeXGraphics
 except ImportError:
-    hasXWindow = False # Unsuccessful init of XWindow
+    hasXWindow = 0 # Unsuccessful init of XWindow
 except EnvironmentError:
-    hasXWindow = False # Unsuccessful init of XWindow
+    hasXWindow = 0 # Unsuccessful init of XWindow
 
 # Clean up the namespace a bit...
 del xutil

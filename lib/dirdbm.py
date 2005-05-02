@@ -37,7 +37,10 @@ class _Database:
         if not _os.path.exists(directory):
             if flag == 'c':
                 # create directory if it doesn't exist
-                _os.mkdir(directory)
+                try:
+                    _os.mkdir(directory)
+                except OSError, e:
+                    raise IOError(str(e))
             else:
                 raise IOError("Directory "+directory+" does not exist")
         elif not _os.path.isdir(directory):

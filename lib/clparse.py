@@ -31,6 +31,7 @@ class CLStrictParser(GenericASTBuilder):
                 'decl_init_list': 1,
                 'decl_init_value': 1,
                 'decl_array_dims': 1,
+                'array_subscript': 1,
                 'list_flag': 1,
                 'body_block': 1,
                 'statement_block': 1,
@@ -129,6 +130,8 @@ class CLStrictParser(GenericASTBuilder):
                 statement ::= declaration_stmt end_of_line
                 statement ::= nonnull_stmt end_of_line
                 statement ::= end_of_line
+                statement ::= label_stmt statement
+                label_stmt ::= IDENT :
                 end_of_line ::= NEWLINE
                 end_of_line ::= ;
 
@@ -142,7 +145,6 @@ class CLStrictParser(GenericASTBuilder):
                 nonnull_stmt ::= next_stmt
                 nonnull_stmt ::= return_stmt
                 nonnull_stmt ::= goto_stmt
-                nonnull_stmt ::= label_stmt
                 nonnull_stmt ::= inspect_stmt
                 nonnull_stmt ::= task_call_stmt
                 nonnull_stmt ::= task_pipe_stmt
@@ -174,7 +176,6 @@ class CLStrictParser(GenericASTBuilder):
                 next_stmt ::= NEXT
                 return_stmt ::= RETURN
                 goto_stmt ::= GOTO IDENT
-                label_stmt ::= IDENT :
                 inspect_stmt ::= = expr
 
                 for_stmt ::= FOR ( opt_assign_stmt ; opt_bool ; opt_assign_stmt ) compound_stmt

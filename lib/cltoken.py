@@ -103,7 +103,7 @@ class Token:
         if self.type == "INTEGER":
             return _str2int(self.attr)
         elif self.type == "INDEF":
-            return INDEF
+            return int(INDEF)
         elif self.type == "FLOAT":
             # allow floats as values if they are exact integers
             f = self.__float__()
@@ -112,7 +112,7 @@ class Token:
         elif self.type in ["STRING", "QSTRING"]:
             try:
                 if self.attr == "":
-                    return INDEF
+                    return int(INDEF)
                 elif self.attr[:1] == ')':
                     # indirection to another parameter
                     return self.attr
@@ -148,11 +148,11 @@ class Token:
                 value = float(v) + value/60.0
             return value
         elif self.type == "INDEF":
-            return INDEF
+            return float(INDEF)
         elif self.type in ["STRING", "QSTRING"]:
             try:
                 if self.attr == "":
-                    return INDEF
+                    return float(INDEF)
                 elif self.attr[:1] == ')':
                     # indirection to another parameter
                     return self.attr

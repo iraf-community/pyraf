@@ -5,7 +5,7 @@ $Id$
 R. White, 2000 January 7
 """
 
-import os, sys, string, re, types
+import os, sys, re, types
 import irafimcur, irafukey, irafutils, minmatch, epar
 from irafglobals import INDEF, Verbose, yes, no
 import gki
@@ -260,7 +260,7 @@ class IrafPar:
         #
         self.value = self._coerceValue(fields[3],strict)
         if fields[4] is not None and '|' in fields[4]:
-            self._setChoice(string.strip(fields[4]),strict)
+            self._setChoice(fields[4].strip(),strict)
             if fields[5] is not None:
                 if orig_len < 7:
                     warning("Max value illegal when choice list given" +
@@ -379,12 +379,12 @@ class IrafPar:
     def getWithPrompt(self):
         """Interactively prompt for parameter value"""
         if self.prompt:
-            pstring = string.strip( string.split(self.prompt,"\n")[0] )
+            pstring = self.prompt.split("\n")[0].strip()
         else:
             pstring = self.name
         if self.choice:
             schoice = map(self.toString, self.choice)
-            pstring = pstring + " (" + string.join(schoice,"|") + ")"
+            pstring = pstring + " (" + "|".join(schoice) + ")"
         elif self.min not in [None, INDEF] or \
                  self.max not in [None, INDEF]:
             pstring = pstring + " ("
@@ -416,7 +416,7 @@ class IrafPar:
         stdout.write(pstring)
         stdout.flush()
         ovalue = irafutils.tkreadline(stdin)
-        value = string.strip(ovalue)
+        value = ovalue.strip()
         # loop until we get an acceptable value
         while (1):
             try:
@@ -436,7 +436,7 @@ class IrafPar:
             stdout.write(pstring)
             stdout.flush()
             ovalue = irafutils.tkreadline(stdin)
-            value = string.strip(ovalue)
+            value = ovalue.strip()
 
     def get(self, field=None, index=None, lpar=0, prompt=1, native=0, mode="h"):
         """Return value of this parameter as a string (or in native format
@@ -495,14 +495,14 @@ class IrafPar:
         _coerceOneValue.  Returns value if OK, or raises
         ValueError if not OK.
         """
-        if v in [None, INDEF] or (type(v) is types.StringType and v[:1] == ")"):
+        if v in [None, INDEF] or (isinstance(v,str) and v[:1] == ")"):
             return v
         elif v == "":
             # most parameters treat null string as omitted value
             return None
         elif self.choice is not None and not self.choiceDict.has_key(v):
             schoice = map(self.toString, self.choice)
-            schoice = string.join(schoice,"|")
+            schoice = "|".join(schoice)
             raise ValueError("Parameter %s: "
                     "value %s is not in choice list (%s)" %
                     (self.name, str(v), schoice))
@@ -531,9 +531,9 @@ class IrafPar:
     def pretty(self,verbose=0):
         """Return pretty list description of parameter"""
         # split prompt lines and add blanks in later lines to align them
-        plines = string.split(self.prompt,'\n')
+        plines = self.prompt.split('\n')
         for i in xrange(len(plines)-1): plines[i+1] = 32*' ' + plines[i+1]
-        plines = string.join(plines,'\n')
+        plines = '\n'.join(plines)
         if self.mode == "h":
             s = "%13s = %-15s %s" % ("("+self.name,
                                     self.get(prompt=0,lpar=1)+")", plines)
@@ -577,7 +577,7 @@ class IrafPar:
             schoice = map(self.toString, self.choice)
             schoice.insert(0,'')
             schoice.append('')
-            fields[4] = repr(string.join(schoice,'|'))
+            fields[4] = repr('|'.join(schoice))
         elif self.min not in [None,INDEF]:
             fields[4] = self.toString(self.min,quoted=quoted)
         if self.max not in [None,INDEF]:
@@ -588,8 +588,8 @@ class IrafPar:
             else:
                 sprompt = self.prompt
             # prompt can have embedded newlines (which are printed)
-            sprompt = string.replace(sprompt, r'\012', '\n')
-            sprompt = string.replace(sprompt, r'\n', '\n')
+            sprompt = sprompt.replace(r'\012', '\n')
+            sprompt = sprompt.replace(r'\n', '\n')
             fields[6] = sprompt
         # delete trailing null parameters
         for i in [6,5,4]:
@@ -598,7 +598,7 @@ class IrafPar:
         if dolist:
             return fields
         else:
-            return string.join(fields, ',')
+            return ','.join(fields)
 
     #--------------------------------------------
     # special methods to give desired object syntax
@@ -636,9 +636,9 @@ class IrafPar:
         # shallow copy of dictionary suffices for most attributes
         new.__dict__ = self.__dict__.copy()
         # value, choice may be lists of atomic items
-        if isinstance(self.value, types.ListType):
+        if isinstance(self.value, list):
             new.value = list(self.value)
-        if isinstance(self.choice, types.ListType):
+        if isinstance(self.choice, list):
             new.choice = list(self.choice)
         # choiceDict is OK with shallow copy because it will
         # always be reset if choices change
@@ -667,7 +667,7 @@ class IrafPar:
         s = s + " " + self.mode + " " + `self.value`
         if self.choice is not None:
             schoice = map(self.toString, self.choice)
-            s = s + " |" + string.join(schoice,"|") + "|"
+            s = s + " |" + "|".join(schoice) + "|"
         else:
             s = s + " " + `self.min` + " " + `self.max`
         s = s + ' "' + self.prompt + '">'
@@ -776,7 +776,7 @@ class IrafPar:
                     return self.choice
                 else:
                     schoice = map(self.toString, self.choice)
-                    return "|" + string.join(schoice,"|") + "|"
+                    return "|" + "|".join(schoice) + "|"
             else:
                 if native:
                     return self.min
@@ -806,7 +806,7 @@ class IrafPar:
         elif field == "p_maximum":
             self.max = self._coerceOneValue(value)
         elif field == "p_minimum":
-            if type(value) is types.StringType and '|' in value:
+            if isinstance(value,str) and '|' in value:
                 self._setChoice(irafutils.stripQuotes(value))
             else:
                 self.min = self._coerceOneValue(value)
@@ -878,7 +878,7 @@ class IrafArrayPar(IrafPar):
         self.value = [None]*array_size
         self.value = self._coerceValue(fields[nvstart:],strict)
         if fields[nvstart-3] is not None and '|' in fields[nvstart-3]:
-            self._setChoice(string.strip(fields[nvstart-3]),strict)
+            self._setChoice(fields[nvstart-3].strip(),strict)
             if fields[nvstart-2] is not None:
                 if orig_len < nvstart:
                     warning("Max value illegal when choice list given" +
@@ -950,7 +950,7 @@ class IrafArrayPar(IrafPar):
             schoice = map(self.toString, self.choice)
             schoice.insert(0,'')
             schoice.append('')
-            fields[nvstart-3] = repr(string.join(schoice,'|'))
+            fields[nvstart-3] = repr('|'.join(schoice))
         elif self.min not in [None,INDEF]:
             fields[nvstart-3] = self.toString(self.min,quoted=quoted)
         # insert an escaped line break before min field
@@ -964,8 +964,8 @@ class IrafArrayPar(IrafPar):
             else:
                 sprompt = self.prompt
             # prompt can have embedded newlines (which are printed)
-            sprompt = string.replace(sprompt, r'\012', '\n')
-            sprompt = string.replace(sprompt, r'\n', '\n')
+            sprompt = sprompt.replace(r'\012', '\n')
+            sprompt = sprompt.replace(r'\n', '\n')
             fields[nvstart-1] = sprompt
         for i in range(len(self.value)):
             fields[nvstart+i] = self.toString(self.value[i],quoted=quoted)
@@ -974,7 +974,7 @@ class IrafArrayPar(IrafPar):
             return fields
         else:
             fields[nvstart] = '\\\n' + fields[nvstart]
-            return string.join(fields, ',')
+            return ','.join(fields)
 
     def dpar(self, cl=1):
         """Return dpar-style executable assignment for parameter
@@ -988,7 +988,7 @@ class IrafArrayPar(IrafPar):
         for i in range(len(sval)):
             if sval[i] == "":
                 sval[i] = "None"
-        s = "%s = [%s]" % (self.name, string.join(sval, ', '))
+        s = "%s = [%s]" % (self.name, ', '.join(sval))
         return s
 
     def get(self, field=None, index=None, lpar=0, prompt=1, native=0, mode="h"):
@@ -1080,24 +1080,13 @@ class IrafArrayPar(IrafPar):
     def __str__(self):
         """Return readable description of parameter"""
         # This differs from non-arrays in that it returns a
-        # print string with jus tthe values.  That's because
+        # print string with just the values.  That's because
         # the object itself is returned as the native value.
         sv = map(str, self.value)
         for i in range(len(sv)):
             if self.value[i] is None:
                 sv[i] = "INDEF"
         return ' '.join(sv)
-
-        #s = "<" + self.__class__.__name__ + " " + self.name + " " + \
-        #        self.type + "[" + (','.join(map(str,self.shape))) + "]"
-        #s = s + " " + self.mode + " " + `self.value`
-        #if self.choice is not None:
-        #    schoice = map(str, self.choice)
-        #    s = s + " |" + string.join(schoice,"|") + "|"
-        #else:
-        #    s = s + " " + `self.min` + " " + `self.max`
-        #s = s + ' "' + self.prompt + '">'
-        #return s
 
     def __len__(self):
         return len(self.value)
@@ -1136,9 +1125,9 @@ class IrafArrayPar(IrafPar):
         Should accept None or null string.  Must be an array.
         """
         try:
-            if type(value) is types.StringType:
+            if isinstance(value,str):
                 # allow single blank-separated string as input
-                value = string.split(value)
+                value = value.split()
             if len(value) != len(self.value):
                 raise IndexError
             v = len(self.value)*[0]
@@ -1183,11 +1172,11 @@ class _StringMixin:
                 clist = self.choiceDict.getall(v)
                 raise ValueError("Parameter %s: "
                         "ambiguous value `%s', could be %s" %
-                        (self.name, str(v), string.join(clist,"|")))
+                        (self.name, str(v), "|".join(clist)))
             except KeyError, e:
                 raise ValueError("Parameter %s: "
                         "value `%s' is not in choice list (%s)" %
-                        (self.name, str(v), string.join(self.choice,"|")))
+                        (self.name, str(v), "|".join(self.choice)))
         elif (self.min is not None and v<self.min):
             raise ValueError("Parameter %s: "
                     "value `%s' is less than minimum `%s'" %
@@ -1245,7 +1234,7 @@ class _StringMixin:
     def _coerceOneValue(self,value,strict=0):
         if value is None:
             return value
-        elif type(value) is types.StringType:
+        elif isinstance(value,str):
             # strip double quotes and remove escapes before quotes
             return irafutils.removeEscapes(irafutils.stripQuotes(value))
         else:
@@ -1297,7 +1286,7 @@ class IrafParPset(IrafParS):
         # assume there are no query or indirection pset parameters
 
         # if parameter value has .par extension, it is a file name
-        f = string.split(self.value,'\.')
+        f = self.value.split('\.')
         if len(f) <= 1 or f[-1] != 'par':
             # must be a task name
             return iraf.getTask(self.value or self.name)
@@ -1524,7 +1513,7 @@ class _BooleanMixin:
     def toString(self, value, quoted=0):
         if value in [None, INDEF]:
             return ""
-        elif type(value) is types.StringType:
+        elif isinstance(value,str):
             # presumably an indirection value ')task.name'
             if quoted:
                 return `value`
@@ -1564,19 +1553,20 @@ class _BooleanMixin:
     # string 'yes','no' and variants
     # internal value is yes, no, None/INDEF, or indirection string
     def _coerceOneValue(self,value,strict=0):
-        if value in [None,INDEF]:
-            return value
-        elif value == "":
+        if value == INDEF:
+            return INDEF
+        elif value is None or value == "":
             return None
-        elif value==yes or value==True:
-            # this handles 1, 1.0, yes, "yes", "YES", "y", "Y"
+        elif value==yes:
+            # this handles 1, 1.0, yes, "yes", "YES", "y", "Y", True
             return yes
-        elif value==no or value==False:
-            # this handles 0, 0.0, no, "no", "NO", "n", "N"
+        elif value==no:
+            # this handles 0, 0.0, no, "no", "NO", "n", "N", False
             return no
-        if type(value) is types.StringType:
-            v2 = irafutils.stripQuotes(string.strip(value))
-            if v2 == "" or v2 == "INDEF":
+        elif isinstance(value,str):
+            v2 = irafutils.stripQuotes(value.strip())
+            if v2 == "" or v2 == "INDEF" or \
+                    ((not strict) and (v2.upper() == "INDEF")):
                 return INDEF
             elif v2[0:1] == ")":
                 # assume this is indirection -- just save it as a string
@@ -1619,35 +1609,33 @@ class _IntMixin:
 
     # coerce value to integer
     def _coerceOneValue(self,value,strict=0):
-        tval = type(value)
-        if value in [None, INDEF] or tval is types.IntType:
+        if value == INDEF:
+            return INDEF
+        elif value is None or isinstance(value,int):
             return value
         elif value == "":
             return None
-        elif tval is types.FloatType:
+        elif isinstance(value,float):
             # try converting to integer
             try:
-                ival = int(value)
-                if (ival == value): return ival
+                return int(value)
             except (ValueError, OverflowError):
                 pass
-        elif tval is types.StringType:
-            s2 = irafutils.stripQuotes(string.strip(value))
+        elif isinstance(value,str):
+            s2 = irafutils.stripQuotes(value.strip())
             if s2 == "INDEF" or \
-              ((not strict) and (string.upper(s2) == "INDEF")):
+              ((not strict) and (s2.upper() == "INDEF")):
                 return INDEF
             elif s2[0:1] == ")":
                 # assume this is indirection -- just save it as a string
                 return s2
             elif s2[-1:] == "x":
                 # hexadecimal
-                return string.atoi(s2[:-1],16)
-            elif (not strict) and ("." in s2):
+                return int(s2[:-1],16)
+            elif "." in s2:
                 # try interpreting as a float and converting to integer
                 try:
-                    fval = float(s2)
-                    ival = int(fval)
-                    if ival == fval: return ival
+                    return int(float(s2))
                 except (ValueError, OverflowError):
                     pass
             else:
@@ -1721,17 +1709,18 @@ class _RealMixin:
 
     # coerce value to real
     def _coerceOneValue(self,value,strict=0):
-        tval = type(value)
-        if value in [None, INDEF] or tval is types.FloatType:
+        if value == INDEF:
+            return INDEF
+        elif value is None or isinstance(value,float):
             return value
         elif value == "":
             return None
-        elif tval in [types.LongType,types.IntType]:
+        elif isinstance(value, (int,long)):
             return float(value)
-        elif tval is types.StringType:
-            s2 = irafutils.stripQuotes(string.strip(value))
+        elif isinstance(value,str):
+            s2 = irafutils.stripQuotes(value.strip())
             if s2 == "INDEF" or \
-              ((not strict) and (string.upper(s2) == "INDEF")):
+              ((not strict) and (s2.upper() == "INDEF")):
                 return INDEF
             elif s2[0:1] == ")":
                 # assume this is indirection -- just save it as a string
@@ -1910,7 +1899,7 @@ class IrafParList:
         """
         if hasattr(filename, 'name') and hasattr(filename, 'read'):
             filename = filename.name
-        if type(filename) == types.StringType:
+        if isinstance(filename,str):
             root, ext = os.path.splitext(filename)
             if ext != ".par":
                 # Only .par files are used as basis for parameter cache -- see if there
@@ -1949,7 +1938,7 @@ class IrafParList:
         """Add a parameter to the list"""
         if not isinstance(p, IrafPar):
             t = type(p)
-            if t is types.InstanceType:
+            if issubclass(t, types.InstanceType):
                 tname = p.__class__.__name__
             else:
                 tname = t.__name__
@@ -2105,7 +2094,7 @@ class IrafParList:
         """
         par = self.getParObject(param)
         value = par.get(native=native, mode=mode, prompt=prompt)
-        if type(value) is types.StringType and value[:1] == ")":
+        if isinstance(value,str) and value[:1] == ")":
             # parameter indirection: ')task.param'
             try:
                 task = iraf.getTask(self.__name)
@@ -2138,13 +2127,13 @@ class IrafParList:
                 param = (self.getParObject(key).name, '')
             except KeyError, e:
                 # maybe it is pset.param
-                i = string.find(key, '.')
+                i = key.find('.')
                 if i<=0:
                     raise e
                 param = (self.getParObject(key[:i]).name, key[i+1:])
             if fullkw.has_key(param):
                 if param[1]:
-                    pname = string.join(param,'.')
+                    pname = '.'.join(param)
                 else:
                     pname = param[0]
                 raise SyntaxError("Multiple values given for parameter " +
@@ -2361,7 +2350,7 @@ def _printDiff(pd1, pd2, label):
                 mm.append("order disagreement")
             if type1 != type2:
                 mm.append("type disagreement (`%s' vs. `%s')" % (type1, type2))
-            print "Parameter `%s': %s" % (key, string.join(mm,", "))
+            print "Parameter `%s': %s" % (key, ", ".join(mm))
 
 
 # -----------------------------------------------------
@@ -2434,7 +2423,7 @@ def _readpar(filename,strict=0):
     lines.reverse()
     while lines:
         # strip whitespace (including newline) off both ends
-        line = string.strip(lines.pop())
+        line = lines.pop().strip()
         # skip comments and blank lines
         # "..." is weird line that occurs in cl.par
         if len(line)>0 and line[0] != '#' and line != "...":
@@ -2443,7 +2432,7 @@ def _readpar(filename,strict=0):
                 # odd number of trailing backslashes means this is continuation
                 if (len(_re_bstrail.search(line).group()) % 2 == 1):
                     try:
-                        line = line[:-1] + string.rstrip(lines.pop())
+                        line = line[:-1] + lines.pop().rstrip()
                     except IndexError:
                         raise SyntaxError(filename + ": Continuation on last line\n" +
                                         line)
@@ -2463,10 +2452,10 @@ def _readpar(filename,strict=0):
                             nline = lines.pop()
                         except IndexError:
                             # serious error, run-on quote consumed entire file
-                            sline = string.split(line,'\n')
+                            sline = line.split('\n')
                             raise SyntaxError(filename + ": Unmatched quote\n" +
                                     sline[0])
-                        line = line + '\n' + string.rstrip(nline)
+                        line = line + '\n' + nline.rstrip()
                         mm = _re_field.match(line,i1)
                 if mm.group('comma') is not None:
                     g = mm.group('comma')
@@ -2525,7 +2514,7 @@ def _readpar(filename,strict=0):
 _re_choice = re.compile(r'\|')
 
 def _getChoice(s, strict):
-    clist = string.split(s, "|")
+    clist = s.split("|")
     # string is allowed to start and end with "|", so ignore initial
     # and final empty strings
     if not clist[0]: del clist[0]
