@@ -92,86 +92,46 @@ class _CodeCache:
         This may modify the filename if necessary to open the correct version of
         the cache.
         """
-        # first try opening the cache read-write
-        try:
-            fh = dirshelve.open(filename)
-            writeflag = 1
-        except dirshelve.error:
-            # initial open failed -- try opening the cache read-only
+        # filenames to try, open flags to use
+        filelist = [(filename, "w"),
+                    ('%s.%s' % (filename, _currentVersion), "c")]
+        msg = []
+        for fname, flag in filelist:
+            # first try opening the cache read-write
             try:
-                fh = dirshelve.open(filename,"r")
-                writeflag = 0
+                fh = dirshelve.open(fname, flag)
+                writeflag = 1
             except dirshelve.error:
-                self.warning("Unable to open CL script cache file %s" %
-                        (filename,))
-                return None
-        # check version of cache -- don't use it if out-of-date
-        if fh.has_key(_versionKey):
-            oldVersion = fh[_versionKey]
-        elif len(fh) == 0:
-            fh[_versionKey] = _currentVersion
-            oldVersion = _currentVersion
-        else:
-            oldVersion = 'v0'
-        if oldVersion == _currentVersion:
-            # normal case -- cache version is as expected
-            return (writeflag, fh, filename)
-
-        if oldVersion > _currentVersion:
-            msg = ["CL script cache was created by a newer version of pyraf (cache %s, this pyraf %s)" %
-                (`oldVersion`, `_currentVersion`)]
-            # maybe another version of cache is there
-            rfilename = filename + "." + _currentVersion
-            fhcur = None
-            if os.path.exists(rfilename):
+                # initial open failed -- try opening the cache read-only
                 try:
-                    fhcur = dirshelve.open(rfilename)
-                    writeflag = 1
-                except dirshelve.error:
-                    # initial open failed -- try opening the cache read-only
-                    try:
-                        fhcur = dirshelve.open(rfilename,"r")
-                        writeflag = 0
-                    except dirshelve.error:
-                        pass
-            if fhcur:
-                msg.append("Using old cache file %s" % rfilename)
-                fh.close()
-                fh = fhcur
-                filename = rfilename
-            else:
-                msg.append("It will be used but not updated")
-                if writeflag:
-                    fh.close()
-                    fh = dirshelve.open(filename,"r")
+                    fh = dirshelve.open(fname,"r")
                     writeflag = 0
-            rv = (writeflag, fh, filename)
-        else:
-            msg = ["CL script cache file is obsolete version (old %s, current %s)" %
-                    (`oldVersion`, `_currentVersion`)]
-            fh.close()
-            rv = None
-            if not writeflag:
-                # we can't replace it if we couldn't open it read-write
-                msg.append("Ignoring obsolete cache file %s" % filename)
+                except dirshelve.error:
+                    # give up on this file and try the next one
+                    msg.append("Unable to open CL script cache %s" % fname)
+                    continue
+            # check version of cache -- don't use it if version mismatch
+            if len(fh) == 0:
+                fh[_versionKey] = _currentVersion
+            oldVersion = fh.get(_versionKey, 'v0')
+            if oldVersion == _currentVersion:
+                # normal case -- cache version is as expected
+                return (writeflag, fh, fname)
+            elif fname.endswith(_currentVersion):
+                # uh-oh, something is seriously wrong
+                msg.append("CL script cache %s has version mismatch, may be corrupt?" %
+                    fname)
+            elif oldVersion > _currentVersion:
+                msg.append(("CL script cache %s was created by " +
+                    "a newer version of pyraf (cache %s, this pyraf %s)") %
+                    (fname, `oldVersion`, `_currentVersion`))
             else:
-                # try renaming the old file and creating a new one
-                rfilename = filename + "." + oldVersion
-                try:
-                    os.rename(filename, rfilename)
-                    msg.append("Renamed old cache to %s" % rfilename)
-                    try:
-                        # create new cache file
-                        fh = dirshelve.open(filename)
-                        fh[_versionKey] = _currentVersion
-                        msg.append("Created new cache file %s" % filename)
-                        rv = (writeflag, fh, filename)
-                    except dirshelve.error:
-                        msg.append("Could not create new cache file %s" % filename)
-                except OSError:
-                    msg.append("Could not rename old cache file %s" % filename)
+                msg.append("CL script cache %s is obsolete version (old %s, current %s)" %
+                        (fname, `oldVersion`, `_currentVersion`))
+            fh.close()
+        # failed to open either cache
         self.warning("\n".join(msg))
-        return rv
+        return None
 
     def warning(self, msg, level=0):
 

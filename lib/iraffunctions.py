@@ -2616,15 +2616,15 @@ def clCompatibilityMode(verbose=0, _save=0):
     exec 'from pyraf import iraf' in locals
     exec 'from pyraf.irafpar import makeIrafPar' in locals
     exec 'from pyraf.irafglobals import *' in locals
-    prompt2 = '>>>'
+    prompt2 = '>>> '
     while (1):
         try:
             if not _sys.stdin.isatty():
                 prompt = ''
             elif loadedPath:
-                prompt = loadedPath[-1].getName()[:2] + '>'
+                prompt = loadedPath[-1].getName()[:2] + '> '
             else:
-                prompt = 'cl>'
+                prompt = 'cl> '
             line = raw_input(prompt)
             # simple continuation escape handling
             while line[-1:] == '\\':
