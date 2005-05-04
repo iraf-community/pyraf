@@ -260,17 +260,19 @@ class ImageDisplayProxy(ImageDisplay):
     """
 
     def __init__(self, imtdev=None):
+        # if imtdev is specified, it becomes the default for the
+        # life of this instance
+        self._display = None
+        self.imtdev = imtdev
         if imtdev:
-            self.open(imtdev)
-        else:
-            self._display = None
+            self.open()
 
     def open(self, imtdev=None):
 
         """Open image display connection, closing any active connection"""
 
         self.close()
-        self._display = _open(imtdev)
+        self._display = _open(imtdev or self.imtdev)
 
     def close(self):
 
