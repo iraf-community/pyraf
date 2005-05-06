@@ -170,7 +170,7 @@ class _EOFClass:
         elif isinstance(other,str):
             # If a string, compare with 'EOF'
             return cmp("EOF", other)
-        elif ininstance(other,(int,float,long)):
+        elif isinstance(other,(int,float,long)):
             # If a number, compare with -2
             return cmp(-2, other)
         else:
