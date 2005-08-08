@@ -5,7 +5,7 @@ $Id$
 
 import os, re, signal, string, struct, sys, time, types, Numeric, cStringIO
 import subproc, filecache, wutil
-import iraf, gki, irafutils
+import iraf, gki, irafutils, irafukey
 from irafglobals import IrafTask
 import irafgwcs
 
@@ -435,6 +435,10 @@ class IrafProcess:
                 self.stdin == sys.__stdin__
         self.stdoutIsatty = hasattr(stdout,'isatty') and stdout.isatty()
 
+        # stdinIsraw flag is used in xfer to decide whether to
+        # read inputs as RAW input or not.
+        self.stdinIsraw = False
+
         # redir_info tells task that IO has been redirected
 
         redir_info = ''
@@ -692,6 +696,7 @@ class IrafProcess:
 
         checkForEscapeSeq = (chan == 4 and (nbytes==6 or nbytes==5))
         xdata = self.read()
+
         if len(xdata) != 2*nbytes:
             raise IrafProcessError(
                     "Error, wrong number of bytes read\n" +
@@ -704,12 +709,23 @@ class IrafProcess:
             else:
                 # normally stdout is translated text data
                 txdata = Iraf2AscString(xdata)
+
             if checkForEscapeSeq:
-                if ((txdata[0:5] == "\033=rDw") or
-                        (txdata[0:5] == "\033+rAw") or
-                        (txdata[0:5] == "\033-rAw")):
-                    # ignore IRAF io escape sequences for now
+                if (txdata[0:5] == "\033+rAw"):
+                    # Turn on RAW mode for STDIN
+                    self.stdinIsraw = True
                     return
+
+                if (txdata[0:5] == "\033-rAw"):
+                    # Turn off RAW mode for STDIN
+                    self.stdinIsraw = False
+                    return
+
+                if (txdata[0:5] == "\033=rDw"):
+                    # ignore IRAF io escape sequences for now
+                    # This mode enables screen redraw code
+                    return
+
             self.stdout.write(txdata)
             self.stdout.flush()
         elif chan == 5:
@@ -772,9 +788,16 @@ class IrafProcess:
             line = self.xferline
             if not line:
                 if self.stdinIsatty:
-                    self.setStdio()
-                    # tty input, read a single line
-                    line = irafutils.tkreadline(self.stdin)
+                    if not self.stdinIsraw:
+                        self.setStdio()
+                        # tty input, read a single line
+                        line = irafutils.tkreadline(self.stdin)
+                    else:
+                        # Raw input requested
+                        # Input character needs to be converted
+                        # to its ASCII integer code.
+                        #line = raw_input()
+                        line = irafukey.getSingleTTYChar()
                 else:
                     # file input, read a big chunk of data
 
@@ -792,23 +815,27 @@ class IrafProcess:
 
                     line = self.stdin.read(nchars)
                 self.xferline = line
-
             # Send two messages, the first with the number of characters
             # in the line and the second with the line itself.
             # For very long lines, may need multiple messages.  Task
             # will keep sending xfer requests until it gets the
             # newline.
 
-            if len(line)<=nchars:
-                # short line
+            if not self.stdinIsraw:
+                if len(line)<=nchars:
+                    # short line
+                    self.writeString(str(len(line)))
+                    self.writeString(line)
+                    self.xferline = ''
+                else:
+                    # long line
+                    self.writeString(str(nchars))
+                    self.writeString(line[:nchars])
+                    self.xferline = line[nchars:]
+            else:
                 self.writeString(str(len(line)))
                 self.writeString(line)
                 self.xferline = ''
-            else:
-                # long line
-                self.writeString(str(nchars))
-                self.writeString(line[:nchars])
-                self.xferline = line[nchars:]
         else:
             raise IrafProcessError("xfer request for unknown channel %d" % chan)
 
@@ -914,3 +941,4 @@ def Iraf2AscString(iraf_string):
     """translate 16-bit IRAF characters to ascii"""
     inarr = Numeric.fromstring(iraf_string, Numeric.Int16)
     return inarr.astype(Numeric.Int8).tostring()
+
