@@ -1146,7 +1146,9 @@ def access(filename):
     """Returns true if file exists"""
     if filename == INDEF: return INDEF
     filename = _denode(filename)
-    return _os.path.exists(Expand(filename))
+    # Magic values that trigger special behavior
+    magicValues = { "STDIN": 1, "STDOUT": 1, "STDERR": 1}
+    return magicValues.has_key(filename) or _os.path.exists(Expand(filename))
 
 _denode_pat = _re.compile(r'[^/]*!')
 
