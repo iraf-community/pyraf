@@ -123,7 +123,7 @@ def dolocal():
 
 def dosetup(data_dir, ext):
     r = setup(name = "PyRAF",
-     version = "1.1",
+     version = "1.2",
      description = "A Python based CL for IRAF",
      author = "Rick White, Perry Greenfield",
      maintainer_email = "help@stsci.edu",
