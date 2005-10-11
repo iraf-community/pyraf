@@ -31,28 +31,29 @@ def find_x(xdir=""):
     else:
         try:
             import Tkinter
-            tk=Tkinter.Tk()
-            tk.withdraw()
-            tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
-            tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
-            tk_lib = os.path.join((tk.getvar('tk_library')), '../')
-            tkv = str(Tkinter.TkVersion)[:3]
-            if Tkinter.TkVersion < 8.3:
-                print "Tcl/Tk v8.3 or later required\n"
-                sys.exit(1)
-            else:
-                suffix = '.so'
-                tklib='libtk'+tkv+suffix
-                command = "ldd %s" % (os.path.join(tk_lib, tklib))
-                lib_list = string.split(commands.getoutput(command))
-                for lib in lib_list:
-                    if string.find(lib, 'libX11') == 0:
-                        ind = lib_list.index(lib)
-                        add_lib_dirs.append(os.path.dirname(lib_list[ind + 2]))
-                        break
-                add_inc_dirs.append(os.path.join(x_lib_dirs, '../include'))
         except:
             raise ImportError("Tkinter is not installed")
+        tk=Tkinter.Tk()
+        tk.withdraw()
+    	tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
+        tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
+        tk_lib = os.path.join((tk.getvar('tk_library')), '../')
+        tkv = str(Tkinter.TkVersion)[:3]
+        if Tkinter.TkVersion < 8.3:
+            print "Tcl/Tk v8.3 or later required\n"
+            sys.exit(1)
+        else:
+            suffix = '.so'
+            tklib='libtk'+tkv+suffix
+            command = "ldd %s" % (os.path.join(tk_lib, tklib))
+            lib_list = string.split(commands.getoutput(command))
+            for lib in lib_list:
+                if string.find(lib, 'libX11') == 0:
+                    ind = lib_list.index(lib)
+                    add_lib_dirs.append(os.path.dirname(lib_list[ind + 2]))
+                    #break
+            	    add_inc_dirs.append(os.path.join(os.path.dirname(lib_list[ind + 2]), '../include'))
+
 
 
 def getExtensions(args, add_inc_dirs, add_lib_dirs):
