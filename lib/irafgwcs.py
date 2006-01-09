@@ -65,7 +65,7 @@ class IrafGWcs:
             self.pending = None
             #print "Default WCS set for plotting window. Plot may not display properly."
             return
-        wcsStruct = arg[1:]
+        wcsStruct = arg[1:].astype(Numeric.Int16)
         if arg[0] != len(wcsStruct):
             raise IrafError("Inconsistency in length of WCS graphics structure")
         self.pending = [None]*WCS_SLOTS

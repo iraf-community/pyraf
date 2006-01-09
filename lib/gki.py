@@ -419,7 +419,7 @@ changed."""
                 if (ip+arglen) > lenMC: break
                 self.lastTranslate = ip
                 self.lastOpcode = opcode
-                arg = buffer[ip+3:ip+arglen].astype(Numeric.Int32)
+                arg = buffer[ip+3:ip+arglen].astype(Numeric.Int)
                 ip = ip + arglen
                 if ((opcode < 0) or
                     (opcode > GKI_MAX_OP_CODE) or
