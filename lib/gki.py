@@ -326,8 +326,7 @@ class GkiBuffer:
 
     def undoN(self, nUndo=1):
 
-        """Undo last nUndo edits and replot.  Returns true if plot
-changed."""
+        """Undo last nUndo edits and replot.  Returns true if plot changed."""
 
         changed = 0
         while nUndo>0:
@@ -357,8 +356,7 @@ changed."""
 
     def redoN(self, nRedo=1):
 
-        """Redo last nRedo edits and replot.  Returns true if plot
-changed."""
+        """Redo last nRedo edits and replot.  Returns true if plot changed."""
 
         changed = 0
         while self.redoBuffer and nRedo>0:
@@ -588,8 +586,7 @@ class GkiKernel:
             self.translate(buffer,1)
 
     def prepareToRedraw(self):
-        """Hook for things that need to be done before redraw from
-metacode"""
+        """Hook for things that need to be done before redraw from metacode"""
         pass
 
     def redrawOriginal(self):
@@ -936,8 +933,7 @@ class GkiController(GkiProxy):
 
     def openKernel(self, device=None):
 
-        """Open kernel specified by device or by current value of
-stdgraph"""
+        """Open kernel specified by device or by current value of stdgraph"""
         device = self.getDevice(device)
         graphcap = getGraphcap()
         if graphcap[device] != graphcap.get(self.lastDevice):
