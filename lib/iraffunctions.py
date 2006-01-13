@@ -52,6 +52,7 @@ def _writeError(msg):
 import sys, os, string, re, math, types, time, fnmatch, glob, linecache
 import sscanf, minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
+import iraf
 
 try:
     import cPickle
@@ -1204,26 +1205,26 @@ def _searchext(root, extlist):
 
 def imaccess(filename):
     """Returns true if image matching name exists and is readable"""
+
     if filename == INDEF: return INDEF
-    extlist = _imextn()
-    filename = _denode(filename)
-    # strip off any image sections (just ignore them)
-    i = filename.find('[')
-    if i>=0: filename = filename[:i]
-    filename = Expand(filename)
-    # first see if filename is fully specified and exists
-    if _os.path.exists(filename):
-        root, ext = _os.path.splitext(filename)
-        if _checkext(ext, extlist):
-            return 1
-        else:
-            # doesn't look like an image
-            return 0
-    # file is not there, so try appending extensions
-    if _searchext(filename, extlist):
-        return 1
-    else:
+    # See if the filename contains any wildcard characters.
+    # First strip any extension or section specification.
+    tfilename = filename
+    i = tfilename.find('[')
+    if i>=0: tfilename = filename[:i]
+    if '*' in tfilename or '?' in tfilename:
         return 0
+    # If we get this far, use imheader to test existence.
+    # Any error output is taken to mean failure.
+    sout = _StringIO.StringIO()
+    serr = _StringIO.StringIO()
+    iraf.imhead(filename, Stdout=sout, Stderr=serr)
+    if serr.getvalue():
+	    print `serr.getvalue()`
+	    return 0
+    else:
+        return 1
+
 
 def defvar(varname):
     """Returns true if CL variable is defined"""
