@@ -1220,7 +1220,6 @@ def imaccess(filename):
     serr = _StringIO.StringIO()
     iraf.imhead(filename, Stdout=sout, Stderr=serr)
     if serr.getvalue():
-	    print `serr.getvalue()`
 	    return 0
     else:
         return 1
