@@ -101,10 +101,8 @@ for a in args:
         data_dir = os.path.join(pythonlib, 'pyraf')
 
     
-PYRAF_CLCACHE_DIR = os.path.join(data_dir, 'pyraf', 'clcache')
+PYRAF_CLCACHE_DIR = os.path.join(data_dir, 'clcache')
 DATA_FILES = [(data_dir, PYRAF_DATA_FILES), (PYRAF_CLCACHE_DIR, PYRAF_CLCACHE)]
-
-print 'args', sys.argv
 
 
 def dosetup():
@@ -133,13 +131,7 @@ def main():
             x_dir = a.split("=")[1]
             sys.argv.remove(a)
     find_x(x_dir)
-    #dolocal()
-    print add_lib_dirs, add_inc_dirs
-    #data_dir = getDataDir(args)
-
     dosetup()
-    #copy_clcache(data_dir, args)
-
 
 if __name__ == "__main__":
     main()
