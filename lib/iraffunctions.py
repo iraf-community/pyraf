@@ -53,6 +53,7 @@ import sys, os, string, re, math, types, time, fnmatch, glob, linecache
 import sscanf, minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 import iraf
+import gki
 
 try:
     import cPickle
@@ -2988,6 +2989,8 @@ def redirProcess(kw):
                             'StdoutAppend': (1, "stdout", "a"),
                             'Stderr': (1, "stderr", "w"),
                             'StderrAppend': (1, "stderr", "a"),
+                            'StdoutG': (1, "stdgraph", "w"),
+                            'StdoutAppendG': (1, "stdgraph", "a")
                             }
     # Magic values that trigger special behavior
     magicValues = { "STDIN": 1, "STDOUT": 1, "STDERR": 1}
@@ -3105,6 +3108,9 @@ def redirApply(redirKW):
         if sysDict.has_key(key):
             resetList.append((key, getattr(_sys,key)))
             setattr(_sys,key,value)
+        elif key == 'stdgraph':
+            resetList.append((key, gki.kernel))
+            gki.kernel = gki.GkiRedirection(value)
     return resetList
 
 
@@ -3124,7 +3130,10 @@ def redirReset(resetList, closeFHList):
         else:
             fh.close()
     for key, value in resetList:
-        setattr(_sys,key,value)
+        if key == 'stdgraph':
+            gki.kernel = value
+        else:
+            setattr(_sys,key,value)
     if PipeOut is not None:
         # unfortunately cStringIO.StringIO has no readlines method:
         # PipeOut.seek(0)

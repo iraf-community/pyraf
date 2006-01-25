@@ -1014,6 +1014,33 @@ class GkiNull(GkiKernel):
     def translate(self, gkiMetacode, redraw=0):
         pass
 
+class GkiRedirection(GkiKernel):
+    """A graphics kernel whose only responsibility is to redirect
+    metacode to a file-like object. Currently doesn't handle WCS
+    get or set commands. Unclear how important this is."""
+
+    def __init__(self, filehandle):
+        # Differs from all other constructors in that it takes a
+        # file-like object as an argument.
+        self.filehandle = filehandle
+
+    def append(self, metacode):
+        # Overloads the baseclass implementation.
+        self.filehandle.write(metacode.tostring())
+
+    # It's possible, even likely that control will nee dto deal with
+    # setwcs and getwcs cases eventually. Crassly, we'll leave it to
+    # users to find a good case that illustrates this. For now control
+    # does nothing
+    def control(self, metacode): pass
+        
+    def getStdin(self, default=None): return default
+
+    def getStdout(self, default=None): return default
+ 
+    def getStderr(self, default=None): return default
+     
+
 class GkiNoisy(GkiKernel):
 
     """Print metacode stream information"""

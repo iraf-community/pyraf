@@ -291,7 +291,8 @@ class _ProcessCache:
 
 processCache = _ProcessCache()
 
-def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
+def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
+       stdgraph=None):
 
     """Execute IRAF task (defined by the IrafTask object task)
     using the provided envionmental variables."""
@@ -306,17 +307,28 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None):
     # Run it
     try:
         taskname = task.getName()
-        # do graphics task initialization
-        gki.kernel.taskStart(taskname)
-        focusMark = wutil.focusController.getCurrentMark()
-        gki.kernel.pushStdio(None,None,None)
+        if stdgraph:
+            # Redirect graphics
+            prevkernel = gki.kernel
+            gki.kernel = gki.GkiRedirection(stdgraph)
+        else:
+            # do graphics task initialization
+            gki.kernel.taskStart(taskname)
+            focusMark = wutil.focusController.getCurrentMark()
+            gki.kernel.pushStdio(None,None,None)
         try:
             irafprocess.run(task, pstdin=stdin, pstdout=stdout, pstderr=stderr)
-        finally:
-            wutil.focusController.restoreToMark(focusMark)
-            gki.kernel.popStdio()
+        finally:        
+            if stdgraph:
+                # undo graphics redirection
+                gki.kernel = prevkernel
+            else:
+                # for interactive graphics restore previous stdio
+                wutil.focusController.restoreToMark(focusMark)
+                gki.kernel.popStdio()
         # do any cleanup needed on task completion
-        gki.kernel.taskDone(taskname)
+        if not stdgraph:
+            gki.kernel.taskDone(taskname)
     except KeyboardInterrupt:
         # On keyboard interrupt (^C), kill the subprocess
         processCache.kill(irafprocess)
@@ -622,6 +634,7 @@ class IrafProcess:
                     # should never get here
                     raise RuntimeError("Program bug: uninterpreted message `%s'"
                                     % (msg,))
+        
 
     def setStdio(self):
         """Set self.stdin/stdout based on current state
@@ -629,6 +642,7 @@ class IrafProcess:
         If in graphics mode, I/O is done through status line.
         Else I/O is done through normal streams.
         """
+
         self.stdout = gki.kernel.getStdout(default=self.default_stdout)
         self.stderr = gki.kernel.getStderr(default=self.default_stderr)
         self.stdin = gki.kernel.getStdin(default=self.default_stdin)
