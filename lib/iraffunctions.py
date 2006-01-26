@@ -3063,13 +3063,11 @@ def redirProcess(kw):
                 try:
                     if value and value[0][-1:] == '\n':
                         s = ''.join(value)
+                    elif value:
+                       s = '\n'.join(value) + '\n'
                     else:
-                        # ensure there is a newline at the end
-                        value.append('')
-                        try:
-                            s = '\n'.join(value)
-                        finally:
-                            value.pop()
+                        # empty value means null input
+                        s = ''
                     fh = _StringIO.StringIO(s)
                     # close this when we're done
                     closeFHList.append(fh)
@@ -3141,6 +3139,6 @@ def redirReset(resetList, closeFHList):
         rv = PipeOut.getvalue().split('\n')
         PipeOut.close()
         # delete trailing null value
-        if len(rv)>1 and rv[-1] == '':
+        if rv[-1] == '':
             del rv[-1]
         return rv
