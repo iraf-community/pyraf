@@ -1212,7 +1212,8 @@ def imaccess(filename):
     # First strip any extension or section specification.
     tfilename = filename
     i = tfilename.find('[')
-    if i>=0: tfilename = filename[:i]
+    if i>=0: 
+        tfilename = filename[:i]
     if '*' in tfilename or '?' in tfilename:
         return 0
     # If we get this far, use imheader to test existence.
@@ -1220,8 +1221,19 @@ def imaccess(filename):
     sout = _StringIO.StringIO()
     serr = _StringIO.StringIO()
     iraf.imhead(filename, Stdout=sout, Stderr=serr)
-    if serr.getvalue():
-	    return 0
+    errstr = serr.getvalue().lower()
+    if errstr:
+        # Handle exceptional cases:
+        # 1) ambiguous files (imaccess accepts this)
+        # 2) non specification of extension # for multi-extension fits files
+        #    (imaccess doesn't require)
+        # This approach, while adaptable, is brittle in its dependency on 
+        # IRAF error strings
+        if ((errstr.find('must specify which fits extension') >= 0) or
+            (errstr.find('ambiguous')) >= 0):
+            return 1
+        else:
+            return 0
     else:
         return 1
 
