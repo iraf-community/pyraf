@@ -5,21 +5,16 @@ from distutils.core import setup,Extension
 from distutils.command.build_ext import build_ext
 from distutils.sysconfig import *
 from distutils.command.install import install
+from distutils.command.install_data import install_data
 
-
-#local_libs = parse_makefile(get_makefile_filename())['LOCALMODLIBS']
 py_includes = get_python_inc(plat_specific=1)
 py_libs =  get_python_lib(plat_specific=1, standard_lib = 1)
-#py_bin = parse_makefile(get_makefile_filename())['BINDIR']
 x_libraries = 'X11'
-#scripts = parse_makefile(get_makefile_filename())['SCRIPTDIR']
-#ver = sys.version_info
-#python_exec = 'python' + str(ver[0]) + '.' + str(ver[1])
 pythonlib = get_python_lib(plat_specific=1)
 pythoninc = get_python_inc()
 ver = get_python_version()
 pythonver = 'python' + ver
-data_dir = pythonlib
+#data_dir = pythonlib
 
 PYRAF_DATA_FILES = ['data/blankcursor.xbm', 'data/epar.optionDB', 'data/pyraflogo_rgb_web.gif', 'lib/LICENSE.txt']
 
@@ -75,51 +70,46 @@ PYRAF_EXTENSIONS = [Extension('pyraf/sscanfmodule', ['src/sscanfmodule.c'],
                               libraries = [x_libraries])]
 
 
-args = sys.argv
+args = sys.argv[:]
 for a in args:
-    if string.find(a, '--home=') == 0:
-        dir = os.path.abspath(string.split(a, '=')[1])
-        data_dir = os.path.join(dir, 'lib', 'python', 'pyraf')
-    elif string.find(a, '--prefix=') == 0:
-        dir = os.path.abspath(string.split(a, '=')[1])
-        data_dir = os.path.join(dir, 'lib', pythonver, 'site-packages', 'pyraf')
-    elif a.startswith('--install-data='):
-        dir = os.path.abspath(string.split(a, '=')[1])
-        data_dir = dir
-    elif a.startswith("--local="):
+    if a.startswith("--local="):
          """Adds a command line option --local=<install-dir> which is an abbreviation for
          'put all of pyraf in <install-dir>/pyraf'."""
          dir = os.path.abspath(a.split("=")[1])
          sys.argv.extend([
-                "--install-lib="+dir,
-                "--install-headers="+os.path.join(dir,"pyraf"),
-                "--install-scripts=%s" % os.path.join(dir,"pyraf"),
-                "--install-data="+os.path.join(dir,"pyraf")
+                "--install-lib="+dir,                
                 ])
          sys.argv.remove(a)
-    else:
-        data_dir = os.path.join(pythonlib, 'pyraf')
+         args.remove(a)
 
     
-PYRAF_CLCACHE_DIR = os.path.join(data_dir, 'clcache')
-DATA_FILES = [(data_dir, PYRAF_DATA_FILES), (PYRAF_CLCACHE_DIR, PYRAF_CLCACHE)]
+PYRAF_CLCACHE_DIR = os.path.join('pyraf', 'clcache')
+DATA_FILES = [('pyraf', PYRAF_DATA_FILES), (PYRAF_CLCACHE_DIR, PYRAF_CLCACHE)]
+
+class smart_install_data(install_data):
+    def run(self):
+        #need to change self.install_dir to the library dir
+        install_cmd = self.get_finalized_command('install')
+        self.install_dir = getattr(install_cmd, 'install_lib')
+        return install_data.run(self)
 
 
 def dosetup():
     r = setup(name = "PyRAF",
-     version = "1.2",
-     description = "A Python based CL for IRAF",
-     author = "Rick White, Perry Greenfield",
-     maintainer_email = "help@stsci.edu",
-     url = "http://www.stsci.edu/resources/software_hardware/pyraf",
-     license = "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
-     platforms = ["unix"],
-     packages = ['pyraf'],
-     package_dir = {'pyraf':'lib'},
-     data_files = DATA_FILES,
-     scripts = ['lib/pyraf'],
-     ext_modules = PYRAF_EXTENSIONS)
-
+              version = "1.2",
+              description = "A Python based CL for IRAF",
+              author = "Rick White, Perry Greenfield",
+              maintainer_email = "help@stsci.edu",
+              url = "http://www.stsci.edu/resources/software_hardware/pyraf",
+              license = "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
+              platforms = ["unix"],
+              packages = ['pyraf'],
+              package_dir = {'pyraf':'lib'},
+              cmdclass = {'install_data':smart_install_data},
+              data_files = DATA_FILES,
+              scripts = ['lib/pyraf'],
+              ext_modules = PYRAF_EXTENSIONS)
+    
     return r
 
 
