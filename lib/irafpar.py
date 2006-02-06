@@ -1247,10 +1247,8 @@ class _StringMixin:
 class IrafParS(_StringMixin, IrafPar):
 
     """IRAF string parameter class"""
-
-    def __init__(self,fields,filename,strict=0):
-        IrafPar.__init__(self,fields,filename,strict)
-
+    pass
+    
 # -----------------------------------------------------
 # IRAF string array parameter class
 # -----------------------------------------------------
@@ -1258,9 +1256,7 @@ class IrafParS(_StringMixin, IrafPar):
 class IrafParAS(_StringMixin,IrafArrayPar):
 
     """IRAF string array parameter class"""
-
-    def __init__(self,fields,filename,strict=0):
-        IrafArrayPar.__init__(self,fields,filename,strict)
+    pass
 
 # -----------------------------------------------------
 # IRAF pset parameter class
@@ -1433,9 +1429,6 @@ class IrafParLS(IrafParL):
 
     """IRAF string list parameter class"""
 
-    def __init__(self,fields,filename,strict=0):
-        IrafParL.__init__(self,fields,filename,strict)
-
     def _getNextValue(self):
         """Return next string value"""
         # save current values (in case this got called
@@ -1454,15 +1447,25 @@ class IrafParLS(IrafParL):
             self.errMsg = saveErr
 
 # -----------------------------------------------------
+# IRAF cursor parameter class
+# -----------------------------------------------------
+
+class IrafParCursor(IrafParL):
+    """Base class for cursor parameters"""
+    
+    def _coerceOneValue(self,value,strict=0):
+        if isinstance(value,IrafParCursor):
+            return value.p_filename
+        else:
+            return IrafParL._coerceOneValue(self,value,strict)
+
+# -----------------------------------------------------
 # IRAF gcur (graphics cursor) parameter class
 # -----------------------------------------------------
 
-class IrafParGCur(IrafParL):
+class IrafParGCur(IrafParCursor):
 
     """IRAF graphics cursor parameter class"""
-
-    def __init__(self,fields,filename,strict=0):
-        IrafParL.__init__(self,fields,filename,strict)
 
     def _getNextValue(self):
         """Return next graphics cursor value"""
@@ -1472,12 +1475,9 @@ class IrafParGCur(IrafParL):
 # IRAF imcur (image display cursor) parameter class
 # -----------------------------------------------------
 
-class IrafParImCur(IrafParL):
+class IrafParImCur(IrafParCursor):
 
     """IRAF image display cursor parameter class"""
-
-    def __init__(self,fields,filename,strict=0):
-        IrafParL.__init__(self,fields,filename,strict)
 
     def _getNextValue(self):
         """Return next image display cursor value"""
@@ -1490,9 +1490,6 @@ class IrafParImCur(IrafParL):
 class IrafParUKey(IrafParL):
 
     """IRAF user typed key parameter class"""
-
-    def __init__(self,fields,filename,strict=0):
-        IrafParL.__init__(self,fields,filename,strict)
 
     def _getNextValue(self):
         """Return next typed character"""
@@ -1581,9 +1578,7 @@ class _BooleanMixin:
 class IrafParB(_BooleanMixin,IrafPar):
 
     """IRAF boolean parameter class"""
-
-    def __init__(self,fields,filename,strict=0):
-        IrafPar.__init__(self,fields,filename,strict)
+    pass
 
 # -----------------------------------------------------
 # IRAF integer parameter mixin class
@@ -1660,9 +1655,7 @@ class _IntMixin:
 class IrafParI(_IntMixin,IrafPar):
 
     """IRAF integer parameter class"""
-
-    def __init__(self,fields,filename,strict=0):
-        IrafPar.__init__(self,fields,filename,strict)
+    pass
 
 # -----------------------------------------------------
 # IRAF integer array parameter class
@@ -1671,9 +1664,7 @@ class IrafParI(_IntMixin,IrafPar):
 class IrafParAI(_IntMixin,IrafArrayPar):
 
     """IRAF integer array parameter class"""
-
-    def __init__(self,fields,filename,strict=0):
-        IrafArrayPar.__init__(self,fields,filename,strict)
+    pass
 
 # -----------------------------------------------------
 # IRAF real parameter mixin class
@@ -1769,9 +1760,7 @@ class _RealMixin:
 class IrafParR(_RealMixin,IrafPar):
 
     """IRAF real parameter class"""
-
-    def __init__(self,fields,filename,strict=0):
-        IrafPar.__init__(self,fields,filename,strict)
+    pass
 
 # -----------------------------------------------------
 # IRAF real array parameter class
@@ -1780,10 +1769,8 @@ class IrafParR(_RealMixin,IrafPar):
 class IrafParAR(_RealMixin,IrafArrayPar):
 
     """IRAF real array parameter class"""
-
-    def __init__(self,fields,filename,strict=0):
-        IrafArrayPar.__init__(self,fields,filename,strict)
-
+    pass
+    
 # -----------------------------------------------------
 # IRAF parameter list synchronized to disk file
 # -----------------------------------------------------

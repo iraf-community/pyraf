@@ -1661,9 +1661,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             # other code generation as well.  Vars does all the type
             # conversions and applies constraints.
             #XXX Note we are not doing minimum match on parameter names
-
+            
             self.write('Vars.'+s, node.requireType, node.exprType)
-
         elif '.' in s:
 
             # Looks like a task.parameter or field reference
@@ -2079,6 +2078,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
                 self.warning("Missing opening parenthesis", node)
                 i = 0
 
+        # tag argument list with parent for context analysis in case of
+        # keyword args later
+        node[i].parent = node
         # get the list of arguments
 
         sargs = self.captureArgs(node[i])
@@ -2190,6 +2192,24 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             redir = _RedirDict[s] + ''.join(tail)
         self.write(redir + '=')
         self.preorder(node[1])
+        self.prune()
+        
+    def n_keyword_arg(self, node):
+        # This is needed to handle cursor parameters, which should
+        # be passed as objects rather than by value.
+        assert len(node)==3
+        self.preorder(node[0])
+        self.preorder(node[1])
+        # only the value needs special handling
+        if node[2].type == 'IDENT':
+            s = irafutils.translateName(node[2].attr)
+            v = self.vars.get(s)
+            if v and v.type in ['gcur','imcur']:
+                # pass cursors by value
+                self.write('Vars.getParObject("'+s+'")')
+                self.prune()
+                return
+        self.preorder(node[2])
         self.prune()
 
 if __name__ == "__main__":
