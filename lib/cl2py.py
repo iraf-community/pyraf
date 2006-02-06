@@ -874,7 +874,7 @@ def _funcName(requireType, exprType):
 # set their required times and return the result type
 # (using standard promotion rules)
 
-_numberTypes = ['float', 'int']
+_numberTypes = ['float', 'int', 'unknown']
 
 def _arithType(node1, node2):
     if node1.exprType in _numberTypes:
@@ -886,6 +886,8 @@ def _arithType(node1, node2):
             # determine result type
             if 'float' in [node1.exprType, node2.exprType]:
                 rv = 'float'
+            elif 'unknown' in [node1.exprType, node2.exprType]:
+                rv = 'unknown'
             else:
                 rv = node1.exprType
     else:
@@ -907,6 +909,30 @@ def _numberType(node):
         node.requireType = 'float'
         return node.requireType
 
+_CLVarDict = {}
+
+def _getCLVarType(name):
+    """Returns CL parameter data type if this is a CL variable, "unknown" if not
+
+    Note that this can be incorrect about the data type for CL variables
+    that are masked by package level variables.  Too bad, that is just
+    too ugly to be believed anyway.  Don't do that.
+    """
+    global _CLVarDict
+    try:
+        if not _CLVarDict:
+            import iraf
+            d = iraf.cl.getParDict()
+            # construct type dictionary for all variables
+            # don't use minimum matching -- require exact match
+            for pname, pobj in d.items():
+                iraftype = pobj.type
+                if iraftype[:1] == "*":
+                    iraftype = iraftype[1:]
+                _CLVarDict[pname] = _typeDict[_longTypeName[iraftype]]
+    except AttributeError:
+        pass
+    return _CLVarDict.get(name, "unknown")
 
 class TypeCheck(GenericASTTraversal):
 
@@ -953,7 +979,8 @@ class TypeCheck(GenericASTTraversal):
             node.requireType = node.exprType
         else:
             # not a local variable
-            node.exprType = 'unknown'
+            # try CL as a common case
+            node.exprType = _getCLVarType(node.attr)
             node.requireType = node.exprType
 
     def n_array_ref(self, node):
