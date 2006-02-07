@@ -14,7 +14,7 @@ pythonlib = get_python_lib(plat_specific=1)
 pythoninc = get_python_inc()
 ver = get_python_version()
 pythonver = 'python' + ver
-#data_dir = pythonlib
+
 
 PYRAF_DATA_FILES = ['data/blankcursor.xbm', 'data/epar.optionDB', 'data/pyraflogo_rgb_web.gif', 'lib/LICENSE.txt']
 
@@ -77,7 +77,8 @@ for a in args:
          'put all of pyraf in <install-dir>/pyraf'."""
          dir = os.path.abspath(a.split("=")[1])
          sys.argv.extend([
-                "--install-lib="+dir,                
+                "--install-lib="+dir,
+                "--install-scripts=%s" % os.path.join(dir,"pyraf"),
                 ])
          sys.argv.remove(a)
          args.remove(a)
