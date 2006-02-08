@@ -3001,8 +3001,9 @@ def redirProcess(kw):
     Returns (redirKW, closeFHList) which are a dictionary of
     the filehandles for stdin, stdout, stderr and a list of
     filehandles to close after execution.
-
-    XXX Still need to do graphics redirection keywords
+    
+    Image and Stdplot redirection not handled (but it isn't clear that these
+    are ever used anyway)
     """
 
     redirKW = {}
@@ -3117,6 +3118,10 @@ def redirProcess(kw):
                 fh = value
             if fh is not None: redirKW[standardName] = fh
             del kw[key]
+    # Now handle IRAF semantics for redirection of stderr to mean stdout
+    # also redirects to stderr file handle if Stdout not also specified
+    if redirKW.has_key('stderr') and not redirKW.has_key('stdout'):
+        redirKW['stdout'] = redirKW['stderr']
     return redirKW, closeFHList
 
 def redirApply(redirKW):

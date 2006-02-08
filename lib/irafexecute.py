@@ -431,7 +431,7 @@ class IrafProcess:
         self.task = task
         # set IO streams
         stdin = pstdin or sys.stdin
-        stdout = pstdout or pstderr or sys.stdout
+        stdout = pstdout or sys.stdout
         stderr = pstderr or sys.stderr
         self.stdin = stdin
         self.stdout = stdout
