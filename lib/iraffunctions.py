@@ -922,15 +922,61 @@ def substr(s,first,last):
     if s == INDEF: return INDEF
     return s[first-1:last]
 
-def stridx(test, s):
-    """Return location of string s in test using IRAF 1-based indexing"""
-    if INDEF in (s,test): return INDEF
-    return s.find(test)+1
-
 def strlen(s):
     """Return length of string"""
     if s == INDEF: return INDEF
     return len(s)
+
+def isindef(s):
+    """Returns true if argument is INDEF"""
+    if s == INDEF:
+        return 1
+    else:
+        return 0
+
+def stridx(test, s):
+    """Return index of first occurrence of any of the characters in 'test'
+    that are in 's' using IRAF 1-based indexing"""
+    if INDEF in (s,test): return INDEF
+    _r1 = _re.compile('['+_re.escape(test)+']')
+    _m1 = _r1.search(_re.escape(s))
+    if _m1:
+        return _m1.start()+1
+    else:
+        return 0
+
+def strldx(test, s):
+    """Return index of last occurrence of any of the characters in 'test'
+    that are in 's' using IRAF 1-based indexing"""
+    if INDEF in (s,test): return INDEF
+    _r1 = _re.compile('['+_re.escape(test)+']')
+    _m1 = _r1.search(_re.escape(s[::-1]))
+    if _m1:
+        return len(s) - _m1.start()
+    else:
+        return 0
+    
+def strlwr(s):
+    """Return string converted to lower case"""
+    if s == INDEF: return INDEF
+    return s.lower()
+
+def strupr(s):
+    """Return string converted to upper case"""
+    if s == INDEF: return INDEF
+    return s.upper()
+
+def strstr(str1,str2):
+    """Search for first occurrence of 'str1' in 'str2', returns index
+    of the start of 'str1' or zero if not found.  IRAF 1-based indexing"""
+    if INDEF in (str1,str2): return INDEF
+    return str2.find(str1)+1
+
+def strlstr(str1,str2):
+    """Search for last occurrence of 'str1' in 'str2', returns index
+    of the start of 'str1' or zero if not found.  IRAF 1-based indexing"""
+    if INDEF in (str1, str2): return INDEF
+    return str2.rfind(str1)+1
 
 def frac(x):
     """Return fractional part of x"""
