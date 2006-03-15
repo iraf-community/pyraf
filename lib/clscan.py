@@ -35,6 +35,19 @@ _ACCEPT_REDIR_MODE = 6          # mode at points where redirection allowed
 
 comment_pat = re.compile(r'\\\s*\n\s*#.*\n\s*')
 
+# needed to prevent certain escapes to be protected to match IRAF 
+# string behavior (only \\, \b, \n, \r, \t, \digits are converted into
+# special characters, all other's are left as is)
+
+special_escapes = re.compile(r'[\\\\]*(\\[^fnrt\\"\'"\d])')
+
+def filterEscapes(instr):
+    """Turn all backslashes that aren't special character for IRAF into 
+    double backslashes"""
+   
+    return special_escapes.sub(r'\\\1', instr)
+    
+    
 #---------------------------------------------------------------------
 # Scanners for various contexts
 #---------------------------------------------------------------------
@@ -160,7 +173,8 @@ class _BasicScanner_3:
         # Recognize and remove any embedded comments
         s = comment_pat.sub('',s)
 
-        s = irafutils.removeEscapes(irafutils.stripQuotes(s),quoted=1)
+        s = filterEscapes(irafutils.removeEscapes(
+                     irafutils.stripQuotes(s),quoted=1))
         # We use a different type for quoted strings to protect them
         # against conversion to other token types by enterComputeEqnMode
         parent.addToken(type='QSTRING', attr=s)
@@ -177,7 +191,8 @@ class _BasicScanner_3:
         # Recognize and remove any embedded comments
         s = comment_pat.sub('',s)
 
-        s = irafutils.removeEscapes(irafutils.stripQuotes(s),quoted=1)
+        s = filterEscapes(irafutils.removeEscapes(
+                     irafutils.stripQuotes(s),quoted=1))
         parent.addToken(type='QSTRING', attr=s)
         parent.lineno = parent.lineno + nline
 
@@ -258,7 +273,11 @@ class _CommandScanner_1(_BasicScanner_1):
         parent.addToken(type=parent.argsep)
         parent.argsep = ','
         nline = _countNewlines(s)
-        s = irafutils.removeEscapes(s)
+        # Handle special escapes then, escape all remaining backslashes
+        # since IRAF doesn't deal with special characters in this mode.
+        # Thus PyRAF should leave them as literal backslashes within its
+        # strings. Why IRAF does this I have no idea.
+        s = irafutils.removeEscapes(s).replace('\\','\\\\')
         parent.addToken(type='STRING', attr=s)
         parent.lineno = parent.lineno + nline
 
