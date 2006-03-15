@@ -665,6 +665,7 @@ class IrafProcess:
         try:
             try:
                 pmsg = self.task.getParam(paramname)
+                pobj = self.task.getParObject(paramname)
                 if type(pmsg) != types.StringType:
                     # Only psets should return a non-string type (they
                     # return the task object).
@@ -673,8 +674,10 @@ class IrafProcess:
                     # where it is necessary to return the task object
                     # for a pset that this seems like a small price to
                     # pay.)
-                    param = self.task.getParObject(paramname)
-                    pmsg = param.get(lpar=1)
+                    pmsg = pobj.get(lpar=1)
+                if pobj.type == 's':
+                    # replace all newlines in strings with "\n"
+                    pmsg = pmsg.replace('\n','\\n')
                 pmsg = pmsg + '\n'
             except EOFError:
                 pmsg = 'EOF\n'
@@ -943,6 +946,7 @@ class IrafProcess:
             raise RuntimeError(
                             "Program bug: uninterpreted message `%s'"
                             % (self.msg,))
+
 
 # IRAF string conversions using Numeric module
 
