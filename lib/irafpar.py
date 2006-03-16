@@ -81,6 +81,8 @@ def IrafParFactory(fields,filename=None,strict=0):
         return IrafParAI(fields,filename,strict)
     elif type == "as":
         return IrafParAS(fields,filename,strict)
+    elif type == "ab":
+        return IrafParAB(fields,filename,strict)
     elif type[:1] == "a":
         raise SyntaxError("Cannot handle arrays of type %s" % type)
     else:
@@ -1579,6 +1581,15 @@ class IrafParB(_BooleanMixin,IrafPar):
 
     """IRAF boolean parameter class"""
     pass
+    
+# -----------------------------------------------------
+# IRAF boolean array parameter class
+# ----------------------------------------------------- 
+   
+class IrafParAB(_BooleanMixin,IrafArrayPar):
+
+        """IRAF boolean array parameter class"""
+        pass
 
 # -----------------------------------------------------
 # IRAF integer parameter mixin class
