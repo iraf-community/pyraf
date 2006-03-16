@@ -39,7 +39,7 @@ comment_pat = re.compile(r'\\\s*\n\s*#.*\n\s*')
 # string behavior (only \\, \b, \n, \r, \t, \digits are converted into
 # special characters, all other's are left as is)
 
-special_escapes = re.compile(r'[\\\\]*(\\[^fnrt\\"\'"\d])')
+special_escapes = re.compile(r'[\\\\]*(\\[^fnrt\\\'"\d])')
 
 def filterEscapes(instr):
     """Turn all backslashes that aren't special character for IRAF into 

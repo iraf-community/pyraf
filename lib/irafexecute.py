@@ -664,8 +664,7 @@ class IrafProcess:
         sys.stderr = gki.kernel.getStderr(default=sys.__stderr__)
         try:
             try:
-                pmsg = self.task.getParam(paramname)
-                pobj = self.task.getParObject(paramname)
+                pmsg = self.task.getParam(paramname)          
                 if type(pmsg) != types.StringType:
                     # Only psets should return a non-string type (they
                     # return the task object).
@@ -674,8 +673,9 @@ class IrafProcess:
                     # where it is necessary to return the task object
                     # for a pset that this seems like a small price to
                     # pay.)
+                    pobj = self.task.getParObject(paramname)
                     pmsg = pobj.get(lpar=1)
-                if pobj.type == 's':
+                else:
                     # replace all newlines in strings with "\n"
                     pmsg = pmsg.replace('\n','\\n')
                 pmsg = pmsg + '\n'
