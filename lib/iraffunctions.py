@@ -343,6 +343,7 @@ def saveToFile(savefile, **kw):
     """
     if hasattr(savefile, 'write'):
         fh = savefile
+
         if hasattr(savefile, 'name'):
             savefile = fh.name
         doclose = 0
@@ -371,6 +372,7 @@ def saveToFile(savefile, **kw):
         fh.close()
 
 
+
 def restoreFromFile(savefile, doprint=1, **kw):
     """Initialize IRAF environment from pickled save file (or file handle)"""
     if hasattr(savefile, 'read'):
@@ -388,6 +390,7 @@ def restoreFromFile(savefile, doprint=1, **kw):
         fh.close()
 
     # restore the value of Verbose
+
     global Verbose
     Verbose.set(dict['Verbose'])
     del dict['Verbose']
@@ -514,7 +517,8 @@ def getAllPkgs(pkgname):
 def getTask(taskname, found=0):
     """Find an IRAF task by name using minimum match
 
-    Returns an IrafTask object.  Name may be either fully qualified
+    Returns an IrafTask object.  Name may be
+ either fully qualified
     (package.taskname) or just the taskname.  taskname is also allowed
     to be an IrafTask object, in which case it is simply returned.
     Does minimum match to allow abbreviated names.  If found is set,
@@ -543,6 +547,7 @@ def getTask(taskname, found=0):
     fullname = _mmtasks.getall(taskname)
     if not fullname:
         if found:
+
             return None
         else:
             raise KeyError("Task "+taskname+" is not defined")
@@ -816,6 +821,7 @@ def listCurrent(n=1, hidden=0, **kw):
             if n > len(loadedPath): n = len(loadedPath)
             plist = n*[None]
             for i in xrange(n):
+
                 plist[i] = loadedPath[-1-i].getName()
             listTasks(plist,hidden=hidden)
         else:
@@ -938,24 +944,27 @@ def stridx(test, s):
     """Return index of first occurrence of any of the characters in 'test'
     that are in 's' using IRAF 1-based indexing"""
     if INDEF in (s,test): return INDEF
-    _r1 = _re.compile('['+_re.escape(test)+']')
-    _m1 = _r1.search(_re.escape(s))
-    if _m1:
-        return _m1.start()+1
-    else:
+    _pos2 = len(s)
+    for _char in test:
+        _pos = s.find(_char)
+        if _pos != -1:
+            _pos2 = min(_pos2, _pos)
+    if _pos2 == len(s):
         return 0
+    else:
+        return _pos2+1
 
 def strldx(test, s):
     """Return index of last occurrence of any of the characters in 'test'
     that are in 's' using IRAF 1-based indexing"""
     if INDEF in (s,test): return INDEF
-    _r1 = _re.compile('['+_re.escape(test)+']')
-    _m1 = _r1.search(_re.escape(s[::-1]))
-    if _m1:
-        return len(s) - _m1.start()
-    else:
-        return 0
-    
+    _pos2 = -1
+    for _char in test:
+        _pos = s.rfind(_char)
+        if _pos != -1:
+            _pos2 = max(_pos2, _pos)
+    return _pos2+1
+
 def strlwr(s):
     """Return string converted to lower case"""
     if s == INDEF: return INDEF
