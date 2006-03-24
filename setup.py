@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, os.path, sys, shutil, commands, fnmatch, glob
+import os, os.path, sys, shutil, commands, fnmatch, glob, string
 from distutils.core import setup,Extension
 from distutils.command.build_ext import build_ext
 from distutils.sysconfig import *
