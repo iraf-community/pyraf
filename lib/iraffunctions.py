@@ -2805,6 +2805,16 @@ def clExecute(s, locals=None, mode="proc",
         rv = redirReset(resetList, closeFHList)
 
 
+def clLineToPython(line):
+    """Returns the Python code corresponding to a single cl statement."""
+    pycode = _cl2py.cl2py(string=line, mode='single',
+                          local_vars_dict={},
+                          local_vars_list=[])
+    code = pycode.code
+    if pycode.vars.proc_name:
+        code += pycode.vars.proc_name+"(taskObj=iraf.cl)\n"
+    return code.lstrip()
+
 # -----------------------------------------------------
 # Expand: Expand a string with embedded IRAF variables
 # (IRAF virtual filename)
