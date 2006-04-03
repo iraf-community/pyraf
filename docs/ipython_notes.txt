@@ -3,9 +3,9 @@ with the IPython shell.  This is accomplished using IPython's profile mechanism
 and input prefilter hook.  So,  initiating a PyRAF session using IPython is
 accomplished by:
 
-1. Copying ipythonrc-pyraf to your $HOME directory:
+1. Copying ipythonrc-pyraf to your $HOME/.ipython directory:
 
-% cp ipython/data/ipython-pyraf $HOME
+% cp ipython/data/ipython-pyraf $HOME/.ipython
 
 2. Running IPython using the pyraf profile:
 
