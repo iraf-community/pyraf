@@ -1,0 +1,64 @@
+IPython support for PyRAF works by replacing the PyRAF command line interpreter
+with the IPython shell.  This is accomplished using IPython's profile mechanism
+and input prefilter hook.  So,  initiating a PyRAF session using IPython is
+accomplished by:
+
+1. Copying ipythonrc-pyraf to your $HOME directory:
+
+% cp ipython/data/ipython-pyraf $HOME
+
+2. Running IPython using the pyraf profile:
+
+% ipython -p pyraf
+PyRAF 1.3dev (2006Mar24) Copyright (c) 2002 AURA
+Python 2.4.2 (#2, Oct 19 2005, 17:07:05)
+Type "copyright", "credits" or "license" for more information.
+
+IPython 0.7.2.svn -- An enhanced Interactive Python.
+?       -> Introduction to IPython's features.
+%magic  -> Information about IPython's 'magic' % functions.
+help    -> Python's own help system.
+object? -> Details about 'object'. ?object also works, ?? prints more.
+
+IPython profile: pyraf
+
+In [1]:
+
+3. Compared to the standard PyRAF command line shell, running PyRAF
+under IPython has these differences:
+
+a. PyRAF's "." directives are rendered obsolete and are not supported.
+There are IPython equivalents
+
+b. As a result of all the "magic" in IPython and PyRAF, there is the
+potential for overlap and conflict between the two.  By default,
+IPython's magic commands are executed ahead of PyRAF commands, so if
+you type "history" you get the IPython command logging system, not the
+PyRAF system.  This is a little counter-intuitive since PyRAF support
+is added as an input pre-filter and you might expect it to get
+precedence by default.  IPython magic gets precedence but this
+behavior can be fine tuned using two IPython "magic" commands:
+
+In[2]: use_ipython <command>
+
+In[3]: use_pyraf <command>
+
+This can be further disambiguated by saying "%<command>" which means
+use the IPython version of <command>.  There is currently no
+equivalent prefix for declaring "use PyRAF".
+
+c. There is an option to choose between default IPython exception
+handling and PyRAF exception handling.  PyRAF exception handling has
+the benefit that it hides the traceback from shell interpreter itself;
+this keeps a user within the realm of their own application rather
+than debugging IPython or PyRAF.
+
+In[4]: use_pyraf_traceback
+
+If you prefer the ipython exception handling system,  you can that instead
+with the following command:
+
+In[5]: use_ipython_traceback
+
+
+
