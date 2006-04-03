@@ -17,43 +17,20 @@ from IPython import Release
 __author__  = '%s <%s>' % Release.authors['Fernando']
 __license__ = Release.license
 
-import sys, os
-import keyword
-
 # set search path to include directory above this script and current directory
 # ... but do not want the pyraf package directory itself in the path, since
 # that messes things up by allowing direct imports of pyraf submodules
 # (bypassing the __init__ mechanism.)
 
-# follow links to get to the real executable filename
-executable = sys.argv[0]
-while os.path.islink(executable):
-    executable = os.readlink(executable)
-pyrafDir = os.path.dirname(executable)
-del executable
-try:
-    sys.path.remove(pyrafDir)
-except ValueError:
-    pass
-
-absPyrafDir = os.path.abspath(os.path.join(pyrafDir,'..'))
-if absPyrafDir not in sys.path: sys.path.insert(0, absPyrafDir)
-del absPyrafDir, pyrafDir
-
-if "." not in sys.path: sys.path.insert(0, ".")
-
 from pyraf import iraf, __version__
 from pyraf.irafpar import makeIrafPar
 from pyraf.irafglobals import yes, no, INDEF, EOF
-logout = quit = exit = 'Use ".exit" to exit'
 
 _locals = globals()
 
 # del iraf, __version__, makeIrafPar, yes, no, INDEF, EOF, logout, quit, exit
 
 print "PyRAF", __version__, "Copyright (c) 2002 AURA"
-# just print first line of Python copyright (long in v2.0)
-print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
 
 # Start up command line wrapper keeping definitions in main name space
 # Keep the command-line object in namespace too for access to history
@@ -69,7 +46,7 @@ import IPython.ipapi
 
 _ipython_shell = IPython.ipapi.get()
 
-class Pyraf_CL_line_translator(object):
+class PyRAF_CL_line_translator(object):
     """This class is a PyRAF CL line translator.  It is derived from
     from the standalone pyraf shell in pycmdline.py.
     """
@@ -77,7 +54,7 @@ class Pyraf_CL_line_translator(object):
     
     def __init__(self, clemulate=1, cmddict={},
                  cmdchars=("a-zA-Z_.","0-9")):
-        import re
+        import re, sys, os
         self.reword = re.compile('[a-z]*')       
         self.clemulate = clemulate
         self.cmddict = cmddict
@@ -87,6 +64,24 @@ class Pyraf_CL_line_translator(object):
             ")[ \t]*")
         self.locals = _locals
         self.ipython_magic = _ipython_shell.IP.lsmagic() # skip %
+
+        # follow links to get to the real executable filename
+
+        import pyraf
+        executable = pyraf.__file__
+        while os.path.islink(executable):
+            executable = os.readlink(executable)
+        pyrafDir = os.path.dirname(executable)
+        del executable
+        try:
+            sys.path.remove(pyrafDir)
+        except ValueError:
+            pass
+    
+        absPyRAFDir = os.path.abspath(os.path.join(pyrafDir,'..'))
+        if absPyRAFDir not in sys.path: sys.path.insert(0, absPyRAFDir)
+        if "." not in sys.path: sys.path.insert(0, ".")
+        self.pyrafDir = pyrafDir
 
     def isLocal(self, value):
         """Returns true if value is local variable"""
@@ -120,6 +115,7 @@ class Pyraf_CL_line_translator(object):
         line = full line (including cmd, preceding blanks, etc.)
         i = index in line of first non-blank character following cmd
         """
+        import os, keyword
         if len(cmd)==0:
             if line[i:i+1] == '!':
                 # '!' is shell escape
@@ -192,9 +188,41 @@ class Pyraf_CL_line_translator(object):
         # print "pyraf code:",code
         if code is None:
             code = ""
-        return code        
+        return code
+    
+    def showtraceback(self, shell, type, value, tb):
+        """Display the exception that just occurred.
 
-_pyraf = Pyraf_CL_line_translator()
+        We remove the first stack item because it is our own code.
+        Strip out references to modules within pyraf unless reprint
+        or debug is set.
+        """
+        try:
+            import linecache, traceback, sys, os
+            linecache.checkcache()
+            sys.last_type = type
+            sys.last_value = value
+            sys.last_traceback = tb
+            tblist = traceback.extract_tb(tb)
+            del tblist[:1]
+            self.lasttrace = type, value, tblist
+            tbmod = []
+            for tb1 in tblist:
+                path, filename = os.path.split(tb1[0])
+                path = os.path.normpath(os.path.join(os.getcwd(), path))
+                if path[:len(self.pyrafDir)] != self.pyrafDir:
+                    tbmod.append(tb1)
+            list = traceback.format_list(tbmod)
+            if list:
+                list.insert(0, "Traceback (innermost last):\n")
+            list[len(list):] = traceback.format_exception_only(type, value)
+            for l in list:
+                print >>sys.stderr, l.rstrip()
+        except:
+            print >>sys.stderr, "PyRAF IPython exception handling failed."
+            print >>sys.stderr, "type:", type, "value:", value, "traceback:", tb
+
+_pyraf = PyRAF_CL_line_translator()
 
 def prefilter_PyRAF(self, line, continuation):
     """Alternate prefilter for input of PhysicalQuantityInteractive objects.
@@ -219,8 +247,15 @@ def use_pyraf_magic(shell, magic):
     while magic in _pyraf.ipython_magic:  # should only be one
         _pyraf.ipython_magic.remove(magic)
 
+def use_pyraf_traceback(shell, *args):
+    shell.set_custom_exc((Exception,), _pyraf.showtraceback)
+
+def use_ipython_traceback(shell, *args):
+    shell.custom_exceptions = ((), None)
+
 def clemulate(shell, value="1"):
     """Turns PyRAF CL emulation on (1) or off (0)"""
+    import sys
     try:
         _pyraf.clemulate = int(value)
     except:
@@ -228,12 +263,16 @@ def clemulate(shell, value="1"):
         print >>sys.stderr, "clemulate [0 or 1]"
         _pyraf.clemulate = 1
 
+use_pyraf_traceback(_ipython_shell)
+
 _ipython_shell.expose_magic("use_ipython", use_ipython_magic)
 _ipython_shell.expose_magic("use_pyraf", use_pyraf_magic)
+_ipython_shell.expose_magic("use_ipython_traceback", use_ipython_traceback)
+_ipython_shell.expose_magic("use_pyraf_traceback", use_pyraf_traceback)
 _ipython_shell.expose_magic("clemulate", clemulate)
 
-del InteractiveShell, prefilter_PyRAF, use_ipython_magic, use_pyraf_magic
+del InteractiveShell, prefilter_PyRAF, PyRAF_CL_line_translator
+del use_ipython_magic, use_pyraf_magic
+del use_pyraf_traceback, use_ipython_traceback
 del clemulate
 
-# Just a heads up at the console
-print 'PyRAF input pre-filtering activated.'
