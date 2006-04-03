@@ -16,7 +16,7 @@ ver = get_python_version()
 pythonver = 'python' + ver
 
 
-PYRAF_DATA_FILES = ['data/blankcursor.xbm', 'data/epar.optionDB', 'data/pyraflogo_rgb_web.gif', 'lib/LICENSE.txt']
+PYRAF_DATA_FILES = ['data/blankcursor.xbm', 'data/epar.optionDB', 'data/pyraflogo_rgb_web.gif', 'data/ipythonrc-pyraf', 'lib/LICENSE.txt', ]
 
 PYRAF_CLCACHE = glob.glob(os.path.join('data', 'clcache', '*'))
 
