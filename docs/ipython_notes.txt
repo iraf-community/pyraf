@@ -3,9 +3,8 @@ with the IPython shell.  This is accomplished using IPython's profile mechanism
 and input prefilter hook.  So,  initiating a PyRAF session using IPython is
 accomplished by:
 
-1. Copying ipythonrc-pyraf to your $HOME/.ipython directory:
-
-% cp ipython/data/ipython-pyraf $HOME/.ipython
+1. Installing pyraf.  This automatically installs the ipythonrc-pyraf
+profile in your $HOME/.ipython directory.
 
 2. Running IPython using the pyraf profile:
 
@@ -24,8 +23,8 @@ IPython profile: pyraf
 
 In [1]:
 
-3. Compared to the standard PyRAF command line shell, running PyRAF
-under IPython has these differences:
+Compared to the standard PyRAF command line shell, running PyRAF under
+IPython has these differences:
 
 a. PyRAF's "." directives are rendered obsolete and are not supported.
 There are IPython equivalents
@@ -59,6 +58,4 @@ If you prefer the ipython exception handling system,  you can that instead
 with the following command:
 
 In[5]: use_ipython_traceback
-
-
 
