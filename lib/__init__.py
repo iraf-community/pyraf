@@ -72,7 +72,7 @@ else:
     import getopt
     try:
         optlist, args = getopt.getopt(sys.argv[1:], "imvhsn",
-            ["commandwrapper=", "verbose", "help", "silent", "nosplash"])
+            ["commandwrapper=", "verbose", "help", "silent", "nosplash","ipython"])
         if len(args) > 1:
             print 'Error: more than one savefile argument'
             usage()
@@ -83,6 +83,7 @@ else:
     doCmdline = 1
     _silent = 0
     _dosplash = 1
+    _use_ipython_shell = 0
     if optlist:
         for opt, value in optlist:
             if opt == "-i":
@@ -104,6 +105,8 @@ else:
                 _silent = 1
             elif opt in ("-n", "--nosplash"):
                 _dosplash = 0
+            elif opt == "--ipython":
+                _use_ipython_shell = 1
             else:
                 print "Program bug, uninterpreted option", opt
                 raise SystemExit

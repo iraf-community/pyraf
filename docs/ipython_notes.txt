@@ -1,12 +1,19 @@
-IPython support for PyRAF works by replacing the PyRAF command line interpreter
-with the IPython shell.  This is accomplished using IPython's profile mechanism
-and input prefilter hook.  So,  initiating a PyRAF session using IPython is
-accomplished by:
+IPython support for PyRAF works by replacing the PyRAF command line
+interpreter with the IPython shell.  This is accomplished using
+IPython's profile mechanism and input prefilter hook.  Initiating a
+PyRAF session using IPython can be accomplished two ways:
 
-1. Installing pyraf.  This automatically installs the ipythonrc-pyraf
-profile in your $HOME/.ipython directory.
+1. Run PyRAF with the --ipython switch
+
+% pyraf --ipython
+
+This has the advantage that it installs the ipythonrc-pyraf profile
+in your $HOME/.ipython if needed before running ipython.
 
 2. Running IPython using the pyraf profile:
+
+After IPython, PyRAF, and $HOME/.ipython/ipythonrc-pyraf are
+installed, you can just run ipython using the pyraf profile.
 
 % ipython -p pyraf
 PyRAF 1.3dev (2006Mar24) Copyright (c) 2002 AURA
@@ -27,7 +34,7 @@ Compared to the standard PyRAF command line shell, running PyRAF under
 IPython has these differences:
 
 a. PyRAF's "." directives are rendered obsolete and are not supported.
-There are IPython equivalents
+There are IPython equivalents.
 
 b. As a result of all the "magic" in IPython and PyRAF, there is the
 potential for overlap and conflict between the two.  By default,

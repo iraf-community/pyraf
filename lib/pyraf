@@ -29,7 +29,7 @@ Long versions of options:
 #
 # R. White, 2000 January 21
 
-import sys, os
+import sys, os, shutil
 
 # set search path to include directory above this script and current directory
 # ... but do not want the pyraf package directory itself in the path, since
@@ -59,7 +59,7 @@ if os.environ.has_key("PYTHONSTARTUP") and \
                 os.path.isfile(os.environ["PYTHONSTARTUP"]):
     execfile(os.environ["PYTHONSTARTUP"])
 
-from pyraf import doCmdline, iraf, __version__
+from pyraf import doCmdline, _use_ipython_shell, iraf, __version__
 from pyraf.irafpar import makeIrafPar
 from pyraf.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
@@ -68,12 +68,29 @@ print "PyRAF", __version__, "Copyright (c) 2002 AURA"
 # just print first line of Python copyright (long in v2.0)
 print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
 
+# IPython Pyraf profile RC installation
+if _use_ipython_shell:
+    home = os.getenv("HOME") or ""
+    ip = os.path.join(home, ".ipython")
+    pyrafrc_dest = os.path.join(ip,"ipythonrc-pyraf")
+    pyrafrc_source = os.path.join("data","ipythonrc-pyraf")
+    if os.path.exists(ip):
+        if not os.path.exists(pyrafrc_dest):
+            shutil.copy(pyrafrc_source, pyrafrc_dest)
+    else:
+        os.mkdir(ip)
+        shutil.copy(pyrafrc_source, pyrafrc_dest)
+
 if doCmdline:
     del doCmdline
     # Start up command line wrapper keeping definitions in main name space
     # Keep the command-line object in namespace too for access to history
-    import pyraf.pycmdline
-    _pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
-    _pycmdline.start()
+    if _use_ipython_shell:
+        os.execlp("ipython","-p","pyraf")
+    else:
+        import pyraf.pycmdline
+        del _use_ipython_shell
+        _pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
+        _pycmdline.start()
 else:
     del doCmdline

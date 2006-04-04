@@ -84,19 +84,6 @@ for a in args:
          args.remove(a)
 
 
-# IPython Pyraf profile RC installation
-if "install" in sys.argv:
-    home = os.getenv("HOME") or ""
-    ip = os.path.join(home, ".ipython")
-    pyrafrc_dest = os.path.join(ip,"ipythonrc-pyraf")
-    pyrafrc_source = os.path.join("data","ipythonrc-pyraf")
-    if os.path.exists(ip):
-        if not os.path.exists(pyrafrc_dest):
-            shutil.copy(pyrafrc_source, pyrafrc_dest)
-    else:
-        os.mkdir(ip)
-        shutil.copy(pyrafrc_source, pyrafrc_dest)
-
 PYRAF_CLCACHE_DIR = os.path.join('pyraf', 'clcache')
 DATA_FILES = [('pyraf', PYRAF_DATA_FILES), (PYRAF_CLCACHE_DIR, PYRAF_CLCACHE)]
 
