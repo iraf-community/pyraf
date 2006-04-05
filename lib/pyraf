@@ -70,16 +70,19 @@ print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
 
 # IPython Pyraf profile RC installation
 if _use_ipython_shell:
+    import pyraf
     home = os.getenv("HOME") or ""
     ip = os.path.join(home, ".ipython")
     pyrafrc_dest = os.path.join(ip,"ipythonrc-pyraf")
-    pyrafrc_source = os.path.join("data","ipythonrc-pyraf")
+    pyrafrc_source = os.path.join(os.path.split(pyraf.__file__)[0],
+                                  "ipythonrc-pyraf")
     if os.path.exists(ip):
         if not os.path.exists(pyrafrc_dest):
             shutil.copy(pyrafrc_source, pyrafrc_dest)
     else:
         os.mkdir(ip)
         shutil.copy(pyrafrc_source, pyrafrc_dest)
+    del pyraf, home, ip, pyrafrc_dest, pyrafrc_source
 
 if doCmdline:
     del doCmdline
