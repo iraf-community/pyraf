@@ -65,23 +65,13 @@ class PyRAF_CL_line_translator(object):
         self.locals = _locals
         self.ipython_magic = _ipython_shell.IP.lsmagic() # skip %
 
-        # follow links to get to the real executable filename
-
         import pyraf
-        executable = pyraf.__file__
-        while os.path.islink(executable):
-            executable = os.readlink(executable)
-        pyrafDir = os.path.dirname(executable)
-        del executable
-        try:
-            sys.path.remove(pyrafDir)
-        except ValueError:
-            pass
-    
-        absPyRAFDir = os.path.abspath(os.path.join(pyrafDir,'..'))
-        if absPyRAFDir not in sys.path: sys.path.insert(0, absPyRAFDir)
-        if "." not in sys.path: sys.path.insert(0, ".")
-        self.pyrafDir = pyrafDir
+        self.pyrafDir = os.path.dirname(pyraf.__file__)
+
+        import IPython
+        self.ipythonDir = os.path.dirname(IPython.__file__)
+
+        self.traceback_mode = "Context"
 
     def isLocal(self, value):
         """Returns true if value is local variable"""
@@ -183,11 +173,13 @@ class PyRAF_CL_line_translator(object):
         return iraf.clLineToPython(line)
 
     def default(self, cmd, line, i):
-        # print "input line:",cmd,"line:",line,"i:",i
+        # print "input line:",repr(cmd),"line:",line,"i:",i
         code = self._default(cmd, line, i)
-        # print "pyraf code:",code
         if code is None:
             code = ""
+        else:
+            code = code.strip()
+        # print "pyraf code:", repr(code)
         return code
     
     def showtraceback(self, shell, type, value, tb):
@@ -197,30 +189,21 @@ class PyRAF_CL_line_translator(object):
         Strip out references to modules within pyraf unless reprint
         or debug is set.
         """
-        try:
-            import linecache, traceback, sys, os
-            linecache.checkcache()
-            sys.last_type = type
-            sys.last_value = value
-            sys.last_traceback = tb
-            tblist = traceback.extract_tb(tb)
-            del tblist[:1]
-            self.lasttrace = type, value, tblist
-            tbmod = []
-            for tb1 in tblist:
-                path, filename = os.path.split(tb1[0])
-                path = os.path.normpath(os.path.join(os.getcwd(), path))
-                if path[:len(self.pyrafDir)] != self.pyrafDir:
-                    tbmod.append(tb1)
-            list = traceback.format_list(tbmod)
-            if list:
-                list.insert(0, "Traceback (innermost last):\n")
-            list[len(list):] = traceback.format_exception_only(type, value)
-            for l in list:
-                print >>sys.stderr, l.rstrip()
-        except:
-            print >>sys.stderr, "PyRAF IPython exception handling failed."
-            print >>sys.stderr, "type:", type, "value:", value, "traceback:", tb
+        import linecache, traceback, sys, os
+        import IPython.ultraTB
+        linecache.checkcache()
+        tblist = traceback.extract_tb(tb)
+        tbskip = 0
+        for tb1 in tblist:
+            path, filename = os.path.split(tb1[0])
+            path = os.path.normpath(os.path.join(os.getcwd(), path))
+            if path[:len(self.pyrafDir)] == self.pyrafDir or \
+               path[:len(self.ipythonDir)] == self.ipythonDir or \
+               filename == "<ipython console>":
+                tbskip += 1
+        color_tb = IPython.ultraTB.AutoFormattedTB(
+            mode=self.traceback_mode, tb_offset=tbskip)
+        color_tb(type, value, tb)
 
 _pyraf = PyRAF_CL_line_translator()
 
