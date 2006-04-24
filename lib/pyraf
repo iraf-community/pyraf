@@ -64,10 +64,6 @@ from pyraf.irafpar import makeIrafPar
 from pyraf.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
 
-print "PyRAF", __version__, "Copyright (c) 2002 AURA"
-# just print first line of Python copyright (long in v2.0)
-print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
-
 # IPython Pyraf profile RC installation
 if _use_ipython_shell:
     import pyraf
@@ -83,6 +79,11 @@ if _use_ipython_shell:
         os.mkdir(ip)
         shutil.copy(pyrafrc_source, pyrafrc_dest)
     del pyraf, home, ip, pyrafrc_dest, pyrafrc_source
+else:
+    print "PyRAF", __version__, "Copyright (c) 2002 AURA"
+    # just print first line of Python copyright (long in v2.0)
+    print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
+
 
 if doCmdline:
     del doCmdline
