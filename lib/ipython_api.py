@@ -41,11 +41,8 @@ import IPython.ipapi
 
 # ---------------------------------------------------------------------------
 
-# import pyraf.pycmdline
-# _pyraf = pyraf.pycmdline.PyCmdLine(locals=globals())
-
-_ipython_shell = IPython.ipapi.get()
-
+_ipython_shell = IPython.ipapi.get() 
+    
 class PyRAF_CL_line_translator(object):
     """This class is a PyRAF CL line translator.  It is derived from
     from the standalone pyraf shell in pycmdline.py.
@@ -220,6 +217,42 @@ InteractiveShell.prefilter = prefilter_PyRAF
 
 # --------------------------------------------------------------------------
 
+def use_pyraf_completer(shell, value="1"):
+
+    import sys
+
+    from pyraf.irafcompleter import IrafCompleter
+    from IPython.completer import IPCompleter
+
+    def activate_hybrid_completer(IP):
+        
+        def completer(C, text):
+            return C._pyraf_completer.global_matches(text)
+            
+        IP.init_readline()
+        # print >>sys.stderr, "activating pyraf readline completer", IP.Completer
+        deactivate_hybrid_completer(IP)
+        IP.Completer._pyraf_completer = IrafCompleter()
+        IP.set_custom_completer(completer)
+
+    def deactivate_hybrid_completer(IP):
+        if hasattr(IP, "Completer") and \
+           hasattr(IP.Completer, "_pyraf_completer"):
+            # print >>sys.stderr, "deactivating pyraf readline completer"
+            if IP.Completer._pyraf_completer in IP.Completer.matchers:
+                IP.Completer.matchers.remove(IP.Completer._pyraf_completer)
+            del IP.Completer._pyraf_completer
+            
+    if value.strip() == "":
+        value = "1"
+    if int(value):
+        activate_hybrid_completer(shell)
+    else:
+        deactivate_hybrid_completer(shell)
+        
+
+# --------------------------------------------------------------------------
+
 def use_ipython_magic(shell, magic):
     """Enables IPython to interpret a magic identifier before PyRAF."""
     if magic not in _pyraf.ipython_magic:
@@ -236,7 +269,7 @@ def use_pyraf_traceback(shell, *args):
 def use_ipython_traceback(shell, *args):
     shell.custom_exceptions = ((), None)
 
-def clemulate(shell, value="1"):
+def use_clemulate(shell, value="1"):
     """Turns PyRAF CL emulation on (1) or off (0)"""
     import sys
     try:
@@ -246,16 +279,18 @@ def clemulate(shell, value="1"):
         print >>sys.stderr, "clemulate [0 or 1]"
         _pyraf.clemulate = 1
 
-use_pyraf_traceback(_ipython_shell)
+use_pyraf_traceback(_ipython_shell.IP)
+use_pyraf_completer(_ipython_shell.IP)
 
-_ipython_shell.expose_magic("use_ipython", use_ipython_magic)
-_ipython_shell.expose_magic("use_pyraf", use_pyraf_magic)
+_ipython_shell.expose_magic("use_ipython_magic", use_ipython_magic)
+_ipython_shell.expose_magic("use_pyraf_magic", use_pyraf_magic)
 _ipython_shell.expose_magic("use_ipython_traceback", use_ipython_traceback)
 _ipython_shell.expose_magic("use_pyraf_traceback", use_pyraf_traceback)
-_ipython_shell.expose_magic("clemulate", clemulate)
+_ipython_shell.expose_magic("use_clemulate", use_clemulate)
+_ipython_shell.expose_magic("use_pyraf_completer", use_pyraf_completer)
 
 del InteractiveShell, prefilter_PyRAF, PyRAF_CL_line_translator
 del use_ipython_magic, use_pyraf_magic
 del use_pyraf_traceback, use_ipython_traceback
-del clemulate
+del use_clemulate, use_pyraf_completer
 
