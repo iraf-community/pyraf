@@ -102,7 +102,7 @@ class IPython_PyRAF_Integrator(object):
                  cmdchars=("a-zA-Z_.","0-9")):
         import re, sys, os
         self.reword = re.compile('[a-z]*')       
-        self._cl_emulate = clemulate
+        self._cl_emulation = clemulate
         self.cmddict = cmddict
         self.recmd = re.compile(
             "[ \t]*(?P<cmd>" +
@@ -127,9 +127,9 @@ class IPython_PyRAF_Integrator(object):
         self._ipython_api.expose_magic(
             "use_pyraf_traceback", self.use_pyraf_traceback)
         self._ipython_api.expose_magic(
-            "use_pyraf_cl_emulate", self.use_pyraf_cl_emulate)
+            "use_pyraf_cl_emulation", self.use_pyraf_cl_emulation)
         self._ipython_api.expose_magic(
-            "use_pyraf_completer", self.use_pyraf_completer)
+            "use_pyraf_readline_completer", self.use_pyraf_completer)
 
         self._pyraf_completer = IPythonIrafCompleter(self._ipython_api.IP)
 
@@ -175,13 +175,13 @@ class IPython_PyRAF_Integrator(object):
             if line[i:i+1] == '!':
                 # '!' is shell escape
                 # handle it here only if cl emulation is turned off
-                if not self._cl_emulate:
+                if not self._cl_emulation:
                     iraf.clOscmd(line[i+1:])
                     return ''
             elif line[i:i+1] != '?':
                 # leading '?' will be handled by CL code -- else this is Python
                 return line
-        elif self._cl_emulate == 0:
+        elif self._cl_emulation == 0:
             # if CL emulation is turned off then just return
             return line
         elif keyword.iskeyword(cmd) or \
@@ -281,7 +281,7 @@ class IPython_PyRAF_Integrator(object):
 
     def _evaluate_flag(self, flag, usage):
         try:
-            if flag in [None,"on","ON", "On", "True","TRUE","true"]:
+            if flag in [None,"", "on","ON", "On", "True","TRUE","true"]:
                 return True
             elif flag in ["off","OFF","Off","False","FALSE","false"]:
                 return False
@@ -327,16 +327,16 @@ class IPython_PyRAF_Integrator(object):
             self._debug("PyRAF exception traceback off")
             IP.custom_exceptions = ((), None)
 
-    def use_pyraf_cl_emulate(self, IP=None, flag=None):
+    def use_pyraf_cl_emulation(self, IP=None, flag=None):
         """Turns PyRAF CL emulation on (1) or off (0)"""
-        self._cl_emulate = self._evaluate_flag(flag, "use_pyraf_cl_emulate")
-        if self._cl_emulate:
+        self._cl_emulation = self._evaluate_flag(flag, "use_pyraf_cl_emulation")
+        if self._cl_emulation:
             self._debug("PyRAF CL emulation on")
         else:
             self._debug("PyRAF CL emulation off")
 
     def use_pyraf_completer(self, IP=None, flag=None):        
-        if self._evaluate_flag(flag, "use_pyraf_completer"):
+        if self._evaluate_flag(flag, "use_pyraf_readline_completer"):
             self._debug("PyRAF readline completion on")
             self._pyraf_completer.activate()
         else:
@@ -345,7 +345,7 @@ class IPython_PyRAF_Integrator(object):
 
 __PyRAF = IPython_PyRAF_Integrator()
 # __PyRAF.use_pyraf_completer()  Can't do this yet... but it's hooked.
-# __PyRAF.use_pyraf_cl_emulate()
+# __PyRAF.use_pyraf_cl_emulation()
 __PyRAF.use_pyraf_traceback()
 
 del IPythonIrafCompleter, IPython_PyRAF_Integrator, IrafCompleter
