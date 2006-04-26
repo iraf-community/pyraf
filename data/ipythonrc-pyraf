@@ -21,10 +21,6 @@
 include ipythonrc
 
 # import ...
+
 import_mod pyraf.ipython_api
 import_mod iraf
-
-import_all pyraf.ipython_api.pyraf_globals
-
-execute pyraf.ipython_api.init_ipython()
-
