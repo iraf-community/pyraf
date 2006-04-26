@@ -15,16 +15,16 @@
 # ipythonrc-pyraf, it can be loaded by calling passing the '-profile
 # pyraf' (or '-p pyraf') option to IPython.
 
-# A simple alias numpy -> 'ipython -p pyraf' makes life very convenient.
+# A simple alias pyraf -> 'ipython -p pyraf' makes life very convenient.
 
 # Load the user's basic configuration
 include ipythonrc
 
 # import ...
-
-# Load Numeric by itself so that 'help Numeric' works
 import_mod pyraf.ipython_api
 import_mod iraf
 
-import_all pyraf.ipython_api
+import_all pyraf.ipython_api.pyraf_globals
+
+execute pyraf.ipython_api.init_ipython()
 

@@ -7,8 +7,10 @@ PyRAF session using IPython can be accomplished two ways:
 
 % pyraf --ipython
 
-This has the advantage that it installs the ipythonrc-pyraf profile
-in your $HOME/.ipython if needed before running ipython.
+This has the advantage that it installs the ipythonrc-pyraf profile in
+your $HOME/.ipython if needed before running ipython.  IPython needs
+to be installed first or it will not install IPython's own rc files in
+~/.ipython.
 
 2. Running IPython using the pyraf profile:
 
@@ -45,9 +47,9 @@ is added as an input pre-filter and you might expect it to get
 precedence by default.  IPython magic gets precedence but this
 behavior can be fine tuned using two IPython "magic" commands:
 
-In[2]: use_ipython <command>
+In[2]: set_pyraf_magic <magic_function> on
 
-In[3]: use_pyraf <command>
+In[3]: set_pyraf_magic <magic_function> off
 
 This can be further disambiguated by saying "%<command>" which means
 use the IPython version of <command>.  There is currently no
@@ -55,14 +57,29 @@ equivalent prefix for declaring "use PyRAF".
 
 c. There is an option to choose between default IPython exception
 handling and PyRAF exception handling.  PyRAF exception handling has
-the benefit that it hides the traceback from shell interpreter itself;
-this keeps a user within the realm of their own application rather
-than debugging IPython or PyRAF.
+the benefit that it hides the traceback from PyRAF itself; this keeps
+a user within the realm of their own application rather than debugging
+IPython or PyRAF.
 
-In[4]: use_pyraf_traceback
+In[4]: use_pyraf_traceback on
 
 If you prefer the ipython exception handling system,  you can that instead
 with the following command:
 
-In[5]: use_ipython_traceback
+In[5]: use_pyraf_traceback off
+
+
+d. PyRAF's support for IPython includes CL emulation which is on by default.
+This can be turned on/off with the following commands:
+
+In[6]: use_pyraf_cl_emulation on
+
+In[7]: use_pyraf_cl_emulation off
+
+e. PyRAF's support for IPython includes PyRAF-enhanced readline completion
+which filters input before IPython.  It can be turned on and off using:
+
+In[8]: use_pyraf_completer on
+
+In[9]: use_pyraf_completer off
 
