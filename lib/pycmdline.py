@@ -26,7 +26,7 @@ R. White, 2000 February 20
 """
 
 import string, re, os, sys, code, keyword, traceback, linecache
-import minmatch, iraf, irafcompleter
+import minmatch, iraf
 import wutil
 from irafglobals import pyrafDir
 
@@ -55,6 +55,8 @@ class CmdConsole(code.InteractiveConsole):
         # history is a list of lines entered by user (allocated in blocks)
         self.history = 100*[None]
         self.nhistory = 0
+        import irafcompleter
+        self.completer = irafcompleter.IrafCompleter()
 
     def addHistory(self, line):
         """Append a line to history"""
@@ -298,10 +300,10 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                 pass
         if self.complete:
             # set list of executive commands
-            irafcompleter.completer.executive(_cmdDict.keys())
-            irafcompleter.activate()
+            self.completer.executive(_cmdDict.keys())
+            self.completer.activate()
         else:
-            irafcompleter.deactivate()
+            self.completer.deactivate()
         return ""
 
     def do_debug(self, line='', i=0):
