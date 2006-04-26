@@ -19,7 +19,7 @@ from rlcompleter import Completer
 import readline
 import __builtin__
 import __main__
-import string, re, keyword, glob, os
+import string, re, keyword, glob, os, sys
 import iraf, minmatch
 
 # dictionaries mapping between characters and readline names
@@ -55,9 +55,15 @@ taskArgDict = minmatch.MinMatchDict({
 # commands that take a package name as argument
 pkgArgDict = { '?': 1, }
 
+completer = None
+
 class IrafCompleter(Completer):
 
     def __init__(self):
+
+        global completer
+        completer = self
+
         if hasattr(Completer, '__init__'):
             Completer.__init__(self)
         self.completionChar = None
@@ -150,6 +156,8 @@ class IrafCompleter(Completer):
                 # use filename matches for quoted strings
                 return self.filename_matches(text, line[:lt])
             else:
+                if not hasattr(self, "namespace"):
+                    self.namespace = {}  
                 return Completer.global_matches(self,text)
         else:
             taskname = m.group(1)
@@ -298,13 +306,9 @@ class IrafCompleter(Completer):
         def addhead(s, head=head+"."): return head+s
         return map(addhead, matches)
 
-completer = IrafCompleter()
-
 def activate(c="\t"):
     completer.activate(c)
 
 def deactivate():
     completer.deactivate()
 
-# turn on completion on import
-activate()
