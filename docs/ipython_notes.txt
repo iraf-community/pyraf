@@ -79,7 +79,7 @@ In[7]: use_pyraf_cl_emulation off
 e. PyRAF's support for IPython includes PyRAF-enhanced readline completion
 which filters input before IPython.  It can be turned on and off using:
 
-In[8]: use_pyraf_completer on
+In[8]: use_pyraf_readline_completer on
 
-In[9]: use_pyraf_completer off
+In[9]: use_pyraf_readline_completer off
 
