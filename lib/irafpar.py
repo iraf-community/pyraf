@@ -1284,13 +1284,14 @@ class IrafParPset(IrafParS):
         # assume there are no query or indirection pset parameters
 
         # if parameter value has .par extension, it is a file name
-        f = self.value.split('\.')
+        f = self.value.split('.')
         if len(f) <= 1 or f[-1] != 'par':
             # must be a task name
             return iraf.getTask(self.value or self.name)
         else:
-            raise ValueError("Pset parameter `%s' is a .par file -- "
-                    " Pyraf cannot handle this yet" % self.name)
+            from iraffunctions import IrafTaskFactory
+            return IrafTaskFactory(taskname=self.value.split(".")[0],
+                                   value=self.value)
 
 
 # -----------------------------------------------------
