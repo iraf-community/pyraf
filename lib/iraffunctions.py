@@ -1286,6 +1286,9 @@ def imaccess(filename):
         tfilename = filename[:i]
     if '*' in tfilename or '?' in tfilename:
         return 0
+    # Edge case not handled below:
+    if filename.find('[]') != -1:
+        return 0
     # If we get this far, use imheader to test existence.
     # Any error output is taken to mean failure.
     sout = _StringIO.StringIO()
