@@ -2438,6 +2438,11 @@ def _quietConv(w, d, c, args, i):
     """Format codes that are quietly converted to %s"""
     return "%%%ss" % w
 
+def _boolConv(w, d, c, args, i):
+    """Boolean gets converted to upper case before printing"""
+    args[i] = str(args[i]).upper()
+    return "%%%ss" % w
+
 def _badConv(w, d, c, args, i):
     """Format codes that are converted to %s with warning"""
     _writeError("Warning: printf cannot handle format '%%%s', "
@@ -2497,9 +2502,9 @@ _reFormat = _re.compile(r"%(?P<w>-?\d*)(?P<d>(?:\.\d*)?)(?P<c>[a-zHM])")
 _fDispatch = {}
 for b in _string.lowercase: _fDispatch[b] = None
 
-# formats that get quietly translated to %s
+# formats that get quietly converted to uppercase and translated to %s
 badList = ["b"]
-for b in badList: _fDispatch[b] = _quietConv
+for b in badList: _fDispatch[b] = _boolConv
 
 # formats that get translated to %s with warning
 badList = ["t", "z"]
