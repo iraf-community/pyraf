@@ -1295,6 +1295,7 @@ def imaccess(filename):
     serr = _StringIO.StringIO()
     iraf.imhead(filename, Stdout=sout, Stderr=serr)
     errstr = serr.getvalue().lower()
+    outstr = sout.getvalue().lower()
     if errstr:
         # Handle exceptional cases:
         # 1) ambiguous files (imaccess accepts this)
@@ -1307,9 +1308,13 @@ def imaccess(filename):
             return 1
         else:
             return 0
-    else:
-        return 1
-
+    elif outstr:
+        # If the filename string is blank(s), imhead writes "no images found"
+        # to Stdout
+        if (outstr.find('no images found') >= 0):
+            return 0
+        else:
+            return 1
 
 def defvar(varname):
     """Returns true if CL variable is defined"""
