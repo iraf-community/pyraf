@@ -3,12 +3,13 @@
 tpar is curses based parameter editing similar to epar.  Tpar has the
 primary goal of simplicity similar to IRAF's CL epar and as such is
 missing many PyRAF epar features.  The primary advantage of tpar is
-that it works in a simple terminal window rather than requiring full
-X-11.
+that it works in a simple terminal window (rather than requiring full
+X-11 and Tk);  this is an improvement for low bandwidth network contexts
+or for people who prefer text interfaces to GUIs.
 
 $Id: $
 
-Todd Miller, 2006 May 30  derived from tpar.py
+Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
 
    Parameter types:
    string  - Entry widget
@@ -24,13 +25,13 @@ Todd Miller, 2006 May 30  derived from tpar.py
    Enumerated lists - Menubutton/Menu widget
 
 """
-import os, sys, string, commands
+import os, sys, string, commands, re
 
 import urwid.curses_display
 import urwid
 
 # PyRAF modules
-import iraf, irafpar, irafhelp, cStringIO, wutil
+import iraf, irafpar, irafhelp, cStringIO, wutil, iraffunctions
 from irafglobals import pyrafDir, userWorkingHome, IrafError
 		
 """
@@ -42,57 +43,6 @@ Feature todos:
 
 4. Colon commands
 
-
-Needed curses widgets:
-
-1. Menus: file, option, help
-
-2. Message area for package/task names.
-
-3. Message
-
-4. Text entry
-
-5. Yes / No radio button
-
-6. drop down enumeration selection with hotkeys.
-
-7. Buttons: execute, save, unlearn, cancel, task help
-
-8. Dynamic buttons (PSet refdata)
-
-9. y-scroll bars
-
-
-Problem: Tk launches a new window for epar and each PSet.  What should
-tpar do?
-
-
-Rescope:  tpar just needs to do what the CL epar could do:
-
-
-                                   I R A F
-                    Image Reduction and Analysis Facility
-
-PACKAGE = synphot
-   TASK = calcphot
-
-obsmode =                       Instrument observation mode
-spectrum=                       Synthetic spectrum to calculate
-form    =              photlam  Form for output data
-(func   =              effstim) Function of output data
-(vzero  =                     ) List of values for variable zero
-(output =                 none) Output table name
-(append =                   no) Append to existing table?
-(wavetab=                     ) Wavelength table name
-(result =                     ) Result of synphot calculation for form
-(refdata=                     ) Reference data
-(mode   =                    a)
-
-Psets are edited as independent tasks.
-
-
-Help Screen:
 """
 
 TPAR_HELP = """
@@ -115,14 +65,11 @@ TPAR_HELP = """
            MOVE_LEFT  = LEFT_ARROW             UNDEL_LINE = ESC-^K
            MOVE_LEFT  = ^B                     UNDEL_WORD = ESC-^W
 
-	   :e[!] [pset]         edit pset      "!" == no update
-	   :q[!]                exit tpar      "!" == no update
-	   :r! [pset]           read/merge from pset, always first resetting
-	   :w[!] [pset]         write to pset  "!" == no update current
-	   :g[o][!]             run task 
-	   
-
-           <press any key to exit help>
+           :e[!] [pset]         edit pset      "!" == no update
+           :q[!]                exit tpar      "!" == no update
+           :r! [pset]           read/merge from pset, always first resetting
+           :w[!] [pset]         write to pset  "!" == no update current
+           :g[!]                run task 
 """
 
 class Binder(object):
@@ -318,13 +265,12 @@ class StringTparOption(urwid.Columns):
 		self._help = "%-30s" % help
 		n = urwid.Text(self._name)
 		e = PyrafEdit("", self._value, wrap="clip", align="right", debug=debug)
-
 		e.verify = self.verify
 		h = urwid.Text(self._help)
 		self.cols = (n,e,h)
-		urwid.Columns.__init__( self, [('weight',0.15, n),
-					       ('weight',0.15, e),
-					       ('weight',0.30, h)],
+		urwid.Columns.__init__( self, [('weight',0.25, n),
+					       ('weight',0.25, e),
+					       ('weight',0.50, h)],
 					0, 1, 1)		
 	def get_name(self):
 		return self._args[0]
@@ -333,7 +279,7 @@ class StringTparOption(urwid.Columns):
 		return self.cols[1].get_edit_text().strip()
 
 	def set_result(self, r):
-		self.cols[1].set_edit_text( r ) 
+		self.cols[1].set_edit_text( str(r) ) 
 
 	def unlearn_value(self):
 		self.set_result(self._previousValue)
@@ -419,25 +365,14 @@ class TparDisplay(Binder):
                 ('buttnf','white','dark blue','bold'),
                 ]
 
-	MODE_KEYS = [ "esc", ":" ] 
+	MODE_KEYS = [ "esc"] 
 
-	def __init__(self,  taskName):
-		
+	def __init__(self,  taskName):		
 		TPAR_BINDINGS = {  # Page level bindings
-			": q"    : self.quit,
-			": Q"    : self.quit,
-			": e"    : self.edit_pset,
-			": E"    : self.edit_pset,
-			": r"    : self.read_pset,
-			": R"    : self.read_pset,
-			": w"    : self.write_pset,
-			": W"    : self.write_pset,
-			": g"    : self.go,
-			": G"    : self.go,
-			"ctrl c" : self.cancel,
-			"ctrl d" : self.quit,
-			"ctrl z" : self.quit,   # probably intercepted by unix shell
-			"ctrl Z" : self.quit,
+			"ctrl c" : self.quit,
+			"ctrl d" : self.exit,
+			"ctrl z" : self.exit,   # probably intercepted by unix shell
+			"ctrl Z" : self.exit,
 			"esc v"  : "page down",
 			"esc V"  : "page down",
 			"esc p"  : "page up",
@@ -472,14 +407,16 @@ class TparDisplay(Binder):
 			urwid.Button("Help",self.help),
 			align="center",	width=('fixed',8))
 		self.buttons = urwid.Columns([self.help_button])
-		self.listbox = urwid.ListBox(
-			[urwid.Divider(" ")] + 
-			self.entryNo +
-			[urwid.Divider(" ")] + 
-			[self.help_button])
+		self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", debug=self.debug)
+		self.listitems = [urwid.Divider(" ")] + self.entryNo + \
+				 [urwid.Divider(" "), self.colon_edit,
+				  self.help_button]
+		self.listbox = urwid.ListBox( self.listitems )
+
 		self.listbox.set_focus(1)
 		self.footer = urwid.Text("")
 		self.header = TparHeader(self.pkgName, self.taskName)
+
 		self.view = urwid.Frame(
 			self.listbox,
 			header=self.header,
@@ -520,6 +457,7 @@ class TparDisplay(Binder):
 		self.ui = urwid.curses_display.Screen()
 		self.ui.register_palette( self.palette )
 		self.ui.run_wrapper( self.run )
+		self.done()
 
 	def get_keys(self):
 		keys = []
@@ -537,152 +475,145 @@ class TparDisplay(Binder):
 		while not self.done:
                         canvas = self.view.render( size, focus=1 )
                         self.ui.draw_screen( size, canvas )
-			keys = self.get_keys()
-			for k in keys:
-                                if urwid.is_mouse_event(k):
+			for k in self.get_keys():
+				if k == ":":
+					self.colon_escape()
+					break
+                                elif urwid.is_mouse_event(k):
                                         event, button, col, row = k
                                         self.view.mouse_event(
 						size, event,
 						button, col, row, focus=True )
                                 elif k == 'window resize':
 					size = self.ui.get_cols_rows()
-				k = Binder.keypress(self, size, k)
-				widget, pos = self.listbox.get_focus()
+				k = self.keypress(size, k)
 				if k == "enter":
+					widget, pos = self.listbox.get_focus()
 					if hasattr(widget,'get_edit_text'):
 						widget.set_edit_pos(0)
 				self.view.keypress( size, k )
-
-	def get_results(self):
-		results = {}
-		for i in self.items:
-			results[i.get_name()] = i.get_result()
-		return results
-
-	def draw_screen(self, size):
-		canvas = self.view.render( size, focus=True )
-		self.ui.draw_screen( size, canvas )
-
-	def inform(self, s):
-		"""output any message to status bar"""
-		self.footer.set_text(s)
-
-	def debug(self, s):
-		"""output debug message to status bar... eventually disabled for normal users."""
-		return self.inform(s)
-
-	def info(self, msg, b):
-		self.exit_flag = False
-		size = self.ui.get_cols_rows()
-		exit_button = urwid.Padding(
-			urwid.Button("Exit", self.exit_info),
-			align="center",	width=('fixed',8))
-		frame = urwid.Frame( urwid.Filler(
-			urwid.AttrWrap(urwid.Text(msg), "help"),
-			valign="top"),
-				     header=self.header,
-				     footer=exit_button)
-		canvas = frame.render( size )
-		self.ui.draw_screen( size, canvas )
-		self.get_keys() # wait for keypress
 				
-	def exit_info(self, ehb):
-		self.exit_flag = True
-
-	def help(self):
-		self.info(TPAR_HELP, self.help_button)
-
-	def asknocancel(self, title, msg):
-		self.info(msg, None)
-
-	# Process invalid input values and invoke a query dialog
-	def process_bad_entries(self, badEntriesList, taskname):
-
-		badEntriesString = "Task " + taskname.upper() + " --\n" \
-				   "Invalid values have been entered.\n\n" \
-				   "Parameter   Bad Value   Reset Value\n"
-
-		for i in range (len(badEntriesList)):
-			badEntriesString = badEntriesString + \
-			   "%15s %10s %10s\n" % (badEntriesList[i][0], \
-			    badEntriesList[i][1], badEntriesList[i][2])
-
-			badEntriesString + "\nOK to continue using"\
-		  " the reset\nvalues or cancel to re-enter\nvalues?\n"
-
-		# Invoke the modal message dialog
-		return (self.askokcancel("Notice", badEntriesString))
-
-
-	# QUIT: save the parameter settings and exit epar
-	def quit(self, event=None):
-		self.debug("quit!")
-		self.done = True
-		return
+	def colon_escape(self):
+		w, pos0 = self.listbox.get_focus()
+		try:
+			default_file = w.get_result()
+		except:
+			default_file = ""
+		self.listbox.set_focus(len(self.listitems)-2)
+		size = self.ui.get_cols_rows()
+		self.colon_edit.set_edit_text("")
+		self.colon_edit.set_edit_pos(0)
+		self.view.keypress(size, ":")
+		done = False
+		while not done:
+                        canvas = self.view.render( size, focus=1 )
+                        self.ui.draw_screen( size, canvas )
+			for k in self.get_keys():
+				if urwid.is_mouse_event(k) or \
+				       k == "ctrl c" or k == "ctrl g":
+					self.colon_edit.set_edit_text("")
+					return
+                                elif k == 'window resize':
+					size = self.ui.get_cols_rows()
+				elif k == 'enter':
+					done = True
+					break
+				k = self.keypress(size, k)
+				self.view.keypress( size, k )
+		cmd = self.colon_edit.get_edit_text()
+		self.listbox.set_focus(pos0)
+		self.colon_edit.set_edit_text("")
+		self.process_colon(cmd)
 		
+	def process_colon(self, cmd):
+		# : <cmd_letter> [!] [<filename>]
+		groups = re.match("^:(?P<cmd>[a-z])"
+				  "(?P<emph>!?)"
+				  "(?P<file>\w*)",  cmd)
+		if not groups:
+			self.debug("bad command: " + cmd)
+		else:
+			letter    = groups.group("cmd")
+			emph = groups.group("emph") == "!"
+			file   = groups.group("file")
+			try:
+				{ "q" : self.quit,
+				  "g" : self.go,
+				  "r" : self.read_pset,
+				  "w" : self.write_pset,
+				  "e" : self.edit_pset
+				  }[letter](file, emph)
+			except KeyError:
+				self.info("bad command: " + cmd, None)
+		
+	def save(self, emph):
 		# Save all the entries and verify them, keeping track of the
 		# invalid entries which have been reset to their original input values
+		if emph:
+			return
 		self.badEntriesList = self.save_entries()
 
 		# If there were invalid entries, prepare the message dialog
+		ansOKCANCEL = True
 		if (self.badEntriesList):
 			ansOKCANCEL = self.process_bad_entries(
 				self.badEntriesList,
 				self.taskName)
-			if not ansOKCANCEL:
-				return
+		return ansOKCANCEL
+
+	# For the following routines,  event is either a urwid event *or*
+	# a Pset filename
+
+	def quit(self, event=None, emph=True):  # maybe save
+		self.save(emph)
+		def quit_continue():
+			pass
+		self.done = quit_continue
+
+	def exit(self, event=None):  # always save
+		self.quit(event, False)
 
 	# EXECUTE: save the parameter settings and run the task
-	def go(self, event=None):
-		self.debug("go!")
-		self.done = True
-		return
-		# Now save the parameter values of the parent
-		self.badEntriesList = self.save_entries()
-		
-		# If there were invalid entries in the parent epar dialog, prepare
-		# the message dialog
-		ansOKCANCEL = FALSE
-		if (self.badEntriesList):
-			ansOKCANCEL = self.process_bad_entries(
-				self.badEntriesList, self.taskName)
-			if not ansOKCANCEL:
-				return
+	def go(self, event=None, emph=False):
+		self.save(emph)
+		def go_continue():
+			print "\nTask %s is running...\n" % self.taskName
+			self.run_task()
+		self.done = go_continue
 
-		print "\nTask %s is running...\n" % self.taskName
-		
-		self.run_task()
+	def edit_pset(self, file, emph):
+		self.save(emph)
+		w, pos0 = self.listbox.get_focus()
+		try:
+			default_file = w.get_result()
+		except:
+			default_file = ""
+		if file == "":
+			iraffunctions.tparam(default_file)
+		else:
+			def edit_pset_continue():
+				self.__init__(file)
+			self.done = edit_pset_continue
 
-	# ABORT: abort this epar session
-	def cancel(self, event=None):
-		self.debug("abort!")
-		self.done = True
-		return
+ 	def read_pset(self, file, emph):
+		if file == "":
+			self.unlearn_all_entries()
+		else:
+			def new_pset():
+				self.__init__(file)
+			self.done = new_pset
 
-	# UNLEARN: unlearn all the parameters by setting their values
-	# back to the system default
-	def unlearn(self, event=None):
-		# Reset the values of the parameters
-		self.unlearn_all_entries()
-
-	def edit_pset(self):
-		self.debug("edit pset!")
-		return
-
-	def read_pset(self):
-		self.debug("read pset!")
-		return
-
-	def write_pset(self):
-		self.debug("write pset!")
-		return
+ 	def write_pset(self, file, overwrite):
+		if os.path.exists(file) and not overwrite:
+			self.info("File '%s' exists and overwrite (!) not used." % (file,))
+		# XXXX write out parameters to file
+ 		self.debug("write pset: %s" % (file,))
 
 	# Method to "unlearn" all the parameter entry values in the GUI
 	# and set the parameter back to the default value
 	def unlearn_all_entries(self):
 		for entry in self.entryNo:
 			entry.unlearn_value()
-
 
 	# Read, save, and verify the entries
 	def save_entries(self):
@@ -738,6 +669,65 @@ class TparDisplay(Binder):
 		# Also turn on parameter saving
 		self.taskObject.run(mode='h', _save=1)
 
+	def get_results(self):
+		results = {}
+		for i in self.items:
+			results[i.get_name()] = i.get_result()
+		return results
+
+	def draw_screen(self, size):
+		canvas = self.view.render( size, focus=True )
+		self.ui.draw_screen( size, canvas )
+
+	def inform(self, s):
+		"""output any message to status bar"""
+		self.footer.set_text(s)
+
+	def debug(self, s):
+		"""output debug message to status bar... eventually disabled for normal users."""
+		return self.inform(s)
+
+	def info(self, msg, b):
+		self.exit_flag = False
+		size = self.ui.get_cols_rows()
+		exit_button = urwid.Padding(
+			urwid.Button("Exit", self.exit_info),
+			align="center",	width=('fixed',8))
+		frame = urwid.Frame( urwid.Filler(
+			urwid.AttrWrap(urwid.Text(msg), "help"),
+			valign="top"),
+				     header=self.header,
+				     footer=exit_button)
+		canvas = frame.render( size )
+		self.ui.draw_screen( size, canvas )
+		self.get_keys() # wait for keypress
+				
+	def exit_info(self, ehb):
+		self.exit_flag = True
+
+	def help(self, event=None):
+		self.info(TPAR_HELP, self.help_button)
+
+	def asknocancel(self, title, msg):
+		self.info(msg, None)
+
+	# Process invalid input values and invoke a query dialog
+	def process_bad_entries(self, badEntriesList, taskname):
+
+		badEntriesString = "Task " + taskname.upper() + " --\n" \
+				   "Invalid values have been entered.\n\n" \
+				   "Parameter   Bad Value   Reset Value\n"
+
+		for i in range (len(badEntriesList)):
+			badEntriesString = badEntriesString + \
+			   "%15s %10s %10s\n" % (badEntriesList[i][0], \
+			    badEntriesList[i][1], badEntriesList[i][2])
+
+			badEntriesString + "\nOK to continue using"\
+		  " the reset\nvalues or cancel to re-enter\nvalues?\n"
+
+		# Invoke the modal message dialog
+		return (self.askokcancel("Notice", badEntriesString))
 
 	# TparOption values for non-string types
 	_tparOptionDict = { "b": BooleanTparOption,
