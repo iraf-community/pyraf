@@ -11,19 +11,6 @@ $Id: $
 
 Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
 
-   Parameter types:
-   string  - Entry widget
-   *gcur   - NOT IMPLEMENTED AT THIS TIME
-   ukey    - NOT IMPLEMENTED AT THIS TIME
-   pset    - Action button
-   real    - Entry widget
-   int     - Entry widget
-   boolean - Radiobutton widget
-   array real - NOT IMPLEMENTED AT THIS TIME
-   array int  - NOT IMPLEMENTED AT THIS TIME
-
-   Enumerated lists - Menubutton/Menu widget
-
 """
 import os, sys, string, commands, re
 
@@ -34,17 +21,6 @@ import urwid
 import iraf, irafpar, irafhelp, cStringIO, wutil, iraffunctions
 from irafglobals import pyrafDir, userWorkingHome, IrafError
 		
-"""
-Feature todos:
-
-2. Optional buttons for PyRAF functions.
-
-3. Validation.
-
-4. Colon commands
-
-"""
-
 TPAR_HELP = """
                                 EDIT COMMANDS (emacs)
 
@@ -67,12 +43,15 @@ TPAR_HELP = """
 
            :e[!] [pset]         edit pset      "!" == no update
            :q[!]                exit tpar      "!" == no update
-           :r! [pset]           read/merge from pset, always first resetting
-           :w[!] [pset]         write to pset  "!" == no update current
+           :r! [pset]           unlearn or load from pset
+           :w[!] [pset]         unsupported
            :g[!]                run task 
 """
 
 class Binder(object):
+	"""The Binder class manages keypresses for urwid and adds the
+	ability to bind specific inputs to actions.
+	"""
 	def __init__(self, bindings, debug, mode_keys=[]):
 		self.bindings = bindings
 		self.debug = debug
@@ -105,11 +84,20 @@ class Binder(object):
 		return key
 
 class PyrafEdit(urwid.Edit, Binder):
+	"""PyrafEdit is a text entry widget which has keybindings similar
+	to IRAF's CL epar command.
+	"""
 	def __init__(self, *args, **keys):
 		debug = keys["debug"]
 		del keys["debug"]
+		self._del_words = []
+		self._del_lines = []
+		self._del_chars = []
 		urwid.Edit.__init__(self, *args, **keys)
 		EDIT_BINDINGS  = {  # single field bindings
+
+			"delete" : self.DEL_CHAR,			
+			
 			"ctrl k": self.DEL_LINE,
 			"ctrl K": self.DEL_LINE,
 			
@@ -153,20 +141,36 @@ class PyrafEdit(urwid.Edit, Binder):
 			"esc ?": "help"
 		}
 		Binder.__init__(self, EDIT_BINDINGS, debug)
-		
+
+	def DEL_CHAR(self):
+		s = self.get_edit_text()
+		if len(s):
+			n = self.edit_pos
+			if n >= len(s):
+				n -= 1
+			c = s[n]
+			self.set_edit_text(s[:n] + s[n+1:])
+			self._del_chars += [c]
+			
 	def DEL_LINE(self):
 		s = self.get_edit_text()
+		line = s[self.edit_pos:]
 		self.set_edit_text(s[:self.edit_pos])
+		self._del_lines += [line]
 
 	def DEL_WORD(self):
 		s = self.get_edit_text()
 		i = self.edit_pos
-		while s and not s[i].isspace():
-			s = s[:i] + s[i+1:]
-			if i > 0:
-				i -= 1
-		if s and s[i].isspace():
-			s = s[:i] + s[i+1:]			
+		while i > 0 and not s[i].isspace():
+			i -= 1
+		if s[i].isspace():
+			i += 1
+		word = ""
+		while i < len(s) and not s[i].isspace():
+			word += s[i]
+			i += 1			
+		s = s[:i-len(word)] + s[i:]
+		self._del_words += [word]
 		self.edit_pos = i
 		self.set_edit_text(s)
 
@@ -216,14 +220,27 @@ class PyrafEdit(urwid.Edit, Binder):
 		if self.verify():
 			return "down"
 	
-	def UNDEL_CHAR(self):  # XXXX
-		return "undel char"
+	def UNDEL_CHAR(self):
+		try:
+			char = self._del_chars.pop()
+		except:
+			return
+		self.insert_text(char)
+		self.edit_pos -= 1
 
-	def UNDEL_WORD(self):  # XXXX
-		return "undel word"
+	def UNDEL_WORD(self):
+		try:
+			word = self._del_words.pop()
+		except:
+			return
+		self.insert_text(word)
 
-	def UNDEL_LINE(self):  # XXX
-		return "undel line"
+	def UNDEL_LINE(self):
+		try:
+			line = self._del_lines.pop()
+		except:
+			return
+		self.insert_text(line)
 
 	def keypress(self, pos, key):
 		key = Binder.keypress(self, pos, key)
@@ -234,6 +251,9 @@ class PyrafEdit(urwid.Edit, Binder):
 		
 	def get_result(self):
 		return self.get_edit_text().strip()
+
+	def verify(self):
+		return True
 
 class StringTparOption(urwid.Columns):
 	def __init__(self, paramInfo, defaultParamInfo, debug):
@@ -306,28 +326,15 @@ class BooleanTparOption(StringTparOption):
 	def __init__(self, *args, **keys):
 		StringTparOption.__init__(self, *args, **keys)
 		e = self.get_edit()
-		# e.bind("space", self.toggle_state())
-		# e.bind("n", self.set_no())
-		# e.bind("N", self.set_no())
-		# e.bind("y", self.set_yes())
-		# e.bind("Y", self.set_yes())
 
-	def toggle_state(self):
-		state = self.get_result()
-		if state == "yes":
+	def normalize(self):
+		if self.get_result() in ["n","N"]:
 			self.set_result("no")
-		elif state == "no":
+		elif self.get_result() in ["y","Y"]:
 			self.set_result("yes")
-		else:
-			self.set_result("no")
-
-	def set_yes(self):
-		self.set_result("yes")
-
-	def set_no(self):
-		self.set_result("no")
 
 	def verify(self):
+		self.normalize()
 		return self.get_result() in ["yes","no"]		
 
 class EnumTparOption(StringTparOption):
@@ -403,14 +410,32 @@ class TparDisplay(Binder):
 		self.make_entries()
 
 		self.escape = False
+
+		bwidth = ('fixed', 14)
+		
 		self.help_button = urwid.Padding(
 			urwid.Button("Help",self.help),
-			align="center",	width=('fixed',8))
-		self.buttons = urwid.Columns([self.help_button])
+			align="center",	width=('fixed', 8))
+		self.cancel_button = urwid.Padding(
+			urwid.Button("Cancel",self.quit),
+			align="center",	width=('fixed', 10))
+		self.save_button = urwid.Padding(
+			urwid.Button("Save",self.exit),
+			align="center",	width=('fixed', 8))
+		self.exec_button = urwid.Padding(
+			urwid.Button("Exec",self.go),
+			align="center",	width=('fixed', 8))
+		
+		self.buttons = urwid.Columns([
+			('weight', 0.2, self.exec_button),
+			('weight', 0.2, self.save_button),
+			('weight', 0.2, self.cancel_button),
+			('weight', 0.4, self.help_button)])
+
 		self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", debug=self.debug)
 		self.listitems = [urwid.Divider(" ")] + self.entryNo + \
 				 [urwid.Divider(" "), self.colon_edit,
-				  self.help_button]
+				  self.buttons]
 		self.listbox = urwid.ListBox( self.listitems )
 
 		self.listbox.set_focus(1)
@@ -422,8 +447,6 @@ class TparDisplay(Binder):
 			header=self.header,
 			footer=self.footer)
 		Binder.__init__(self, TPAR_BINDINGS, self.debug, self.MODE_KEYS)
-		self.main()
-
 	def get_default_param_list(self):
 		# Obtain the default parameter list
 		dlist = self.taskObject.getDefaultParList()
@@ -544,7 +567,7 @@ class TparDisplay(Binder):
 				  "e" : self.edit_pset
 				  }[letter](file, emph)
 			except KeyError:
-				self.info("bad command: " + cmd, None)
+				self.inform("bad command: " + cmd, None)
 		
 	def save(self, emph):
 		# Save all the entries and verify them, keeping track of the
@@ -575,6 +598,7 @@ class TparDisplay(Binder):
 
 	# EXECUTE: save the parameter settings and run the task
 	def go(self, event=None, emph=False):
+		"""Executes the task."""
 		self.save(emph)
 		def go_continue():
 			print "\nTask %s is running...\n" % self.taskName
@@ -582,6 +606,7 @@ class TparDisplay(Binder):
 		self.done = go_continue
 
 	def edit_pset(self, file, emph):
+		"""Edits the pset referred to by the specifiefd file or the current field."""
 		self.save(emph)
 		w, pos0 = self.listbox.get_focus()
 		try:
@@ -596,6 +621,7 @@ class TparDisplay(Binder):
 			self.done = edit_pset_continue
 
  	def read_pset(self, file, emph):
+		"""Unlearns the current changes *or* reads in the specified file."""
 		if file == "":
 			self.unlearn_all_entries()
 		else:
@@ -605,7 +631,7 @@ class TparDisplay(Binder):
 
  	def write_pset(self, file, overwrite):
 		if os.path.exists(file) and not overwrite:
-			self.info("File '%s' exists and overwrite (!) not used." % (file,))
+			self.inform("File '%s' exists and overwrite (!) not used." % (file,))
 		# XXXX write out parameters to file
  		self.debug("write pset: %s" % (file,))
 
@@ -644,10 +670,8 @@ class TparDisplay(Binder):
 				self.badEntries.append([
 					entry.paramInfo.name, value,
 					entry.get_result()])
-
-			# Update the task parameter (also does the conversion
-			# from string)
-			self.taskObject.setParam(par.name, entry.get_result())
+			else:
+				self.taskObject.setParam(par.name, entry.get_result())
 
 		# Save results to the uparm directory
 		# Skip the save if the thing being edited is an IrafParList without
@@ -708,7 +732,7 @@ class TparDisplay(Binder):
 	def help(self, event=None):
 		self.info(TPAR_HELP, self.help_button)
 
-	def asknocancel(self, title, msg):
+	def askokcancel(self, title, msg):
 		self.info(msg, None)
 
 	# Process invalid input values and invoke a query dialog
@@ -752,7 +776,7 @@ class TparDisplay(Binder):
 
 
 def tpar(taskName):
-	TparDisplay(taskName)
+	TparDisplay(taskName).main()
 
 if __name__ == "__main__":
 	main()
