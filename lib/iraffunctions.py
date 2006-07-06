@@ -1834,6 +1834,29 @@ def eparam(*args, **kw):
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
 
+def tparam(*args, **kw):
+    """Edit parameters for tasks.  Starts up epar GUI."""
+    # keywords are simply ignored here
+    # handle redirection and save keywords
+    redirKW, closeFHList = redirProcess(kw)
+    if kw.has_key('_save'): del kw['_save']
+    if len(kw):
+        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+    resetList = redirApply(redirKW)
+    try:
+        for taskname in args:
+            try:
+                taskname.tParam()
+            except AttributeError:
+                # try:
+                getTask(taskname).tParam()
+                # except (KeyError, TypeError):
+                #    _writeError("Warning: Could not find task %s for tpar\n" %
+                #            taskname)
+    finally:
+        # note return value not used here
+        rv = redirReset(resetList, closeFHList)
+
 def lparam(*args, **kw):
     """List parameters for tasks"""
     # handle redirection and save keywords

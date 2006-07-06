@@ -6,7 +6,7 @@ R. White, 2000 January 7
 """
 
 import os, sys, re, types
-import irafimcur, irafukey, irafutils, minmatch, epar
+import irafimcur, irafukey, irafutils, minmatch, epar, tpar
 from irafglobals import INDEF, Verbose, yes, no
 import gki
 
@@ -2181,6 +2181,9 @@ class IrafParList:
 
     def eParam(self):
         epar.epar(self)
+
+    def tParam(self):
+        tpar.tpar(self)
 
     def lParam(self,verbose=0):
         """List the task parameters"""

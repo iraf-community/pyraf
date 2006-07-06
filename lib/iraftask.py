@@ -7,7 +7,7 @@ R. White, 2000 June 26
 
 import os, sys, copy, re
 import minmatch, subproc
-import irafglobals, iraf, irafpar, irafexecute, epar, cl2py, irafutils
+import irafglobals, iraf, irafpar, irafexecute, epar, tpar, cl2py, irafutils
 
 # may be set to function to monitor task execution
 # function gets called for every task execution
@@ -538,11 +538,21 @@ class IrafTask(irafglobals.IrafTask):
             sys.stderr.flush()
 
     def eParam(self):
-        """Edit the task parameters"""
+        """Edit the task parameters,  PyRAF Tk style"""
         self.initTask(force=1)
         #XXX always runs on current par list, not running par list?
         if self._currentParList:
             epar.epar(self)
+        else:
+            sys.stderr.write("Task %s has no parameter file\n" % self._name)
+            sys.stderr.flush()
+
+    def tParam(self):
+        """Edit the task parameters, IRAF curses style"""
+        self.initTask(force=1)
+        #XXX always runs on current par list, not running par list?
+        if self._currentParList:
+            tpar.tpar(self)
         else:
             sys.stderr.write("Task %s has no parameter file\n" % self._name)
             sys.stderr.flush()
