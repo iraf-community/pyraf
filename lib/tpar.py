@@ -738,14 +738,16 @@ class TparDisplay(Binder):
 	# Process invalid input values and invoke a query dialog
 	def process_bad_entries(self, badEntriesList, taskname):
 
-		badEntriesString = "Task " + taskname.upper() + " --\n" \
-				   "Invalid values have been entered.\n\n" \
-				   "Parameter   Bad Value   Reset Value\n"
-
+		format = "%20s %20s %20s\n"
+		badEntriesString = "\nTask " + taskname.upper() + \
+				   " -- Invalid values have been entered.\n\n"
+		badEntriesString += format % \
+				    ("Parameter", "Bad Value", "Reset Value")
 		for i in range (len(badEntriesList)):
-			badEntriesString = badEntriesString + \
-			   "%15s %10s %10s\n" % (badEntriesList[i][0], \
-			    badEntriesList[i][1], badEntriesList[i][2])
+			badEntriesString += format % \
+					    (badEntriesList[i][0].strip(), \
+					     badEntriesList[i][1].strip(), \
+					     badEntriesList[i][2].strip())
 
 			badEntriesString + "\nOK to continue using"\
 		  " the reset\nvalues or cancel to re-enter\nvalues?\n"
