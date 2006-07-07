@@ -596,11 +596,11 @@ class TparDisplay(Binder):
 				  }[letter]
 			except KeyError:
 				self.inform("unknown command: " + cmd)
-			else:
-				try:
-					f(file, emph)
-				except Exception, e:
-					self.inform("command '%s' failed with exception '%s'" % (cmd, e))
+				return
+			try:
+				f(file, emph)
+			except Exception, e:
+				self.inform("command '%s' failed with exception '%s'" % (cmd, e))
 		
 	def save(self, emph):
 		# Save all the entries and verify them, keeping track of the
@@ -650,7 +650,7 @@ class TparDisplay(Binder):
 			iraffunctions.tparam(default_file)
 		else:
 			def edit_pset_continue():
-				self.__init__(file)
+				iraffunctions.tparam(file)
 			self.done = edit_pset_continue
 
  	def read_pset(self, file, emph):
