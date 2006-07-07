@@ -14,8 +14,21 @@ Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
 """
 import os, sys, string, commands, re
 
-import urwid.curses_display
-import urwid
+# Fake out import of urwid if it fails to keep tpar from bringing down
+# all of PyRAF.
+try:
+	import urwid.curses_display
+	import urwid
+except:
+	class FakeUrWidModule:
+		def __new__(*args, **keys):
+			pass
+		def __init__(*args, **keys):
+			pass	
+	urwid = FakeUrWidModule()
+	urwid.Edit = FakeUrWidModule()
+	urwid.Columns = FakeUrWidModule()
+	urwid.AttrWrap = FakeUrWidModule()
 
 # PyRAF modules
 import iraf, irafpar, irafhelp, cStringIO, wutil, iraffunctions
@@ -793,7 +806,11 @@ class TparDisplay(Binder):
 
 
 def tpar(taskName):
-	TparDisplay(taskName).main()
+	if isinstance(urwid, FakeUrWidModule):
+		print >>sys.stderr, "The urwid package isn't available on your Python system so tpar can't be used."
+		print >>sys.stderr, "Install urwid version >= 0.9.4 or use epar instead."
+	else:
+		TparDisplay(taskName).main()
 
 if __name__ == "__main__":
 	main()
