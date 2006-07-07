@@ -16,15 +16,16 @@ import os, sys, string, commands, re
 
 # Fake out import of urwid if it fails to keep tpar from bringing down
 # all of PyRAF.
+class FakeUrWidModule:
+	def __new__(*args, **keys):
+		pass
+	def __init__(*args, **keys):
+		pass
+	
 try:
 	import urwid.curses_display
 	import urwid
 except:
-	class FakeUrWidModule:
-		def __new__(*args, **keys):
-			pass
-		def __init__(*args, **keys):
-			pass	
 	urwid = FakeUrWidModule()
 	urwid.Edit = FakeUrWidModule()
 	urwid.Columns = FakeUrWidModule()
