@@ -52,9 +52,9 @@ class Binder(object):
 	"""The Binder class manages keypresses for urwid and adds the
 	ability to bind specific inputs to actions.
 	"""
-	def __init__(self, bindings, debug, mode_keys=[]):
+	def __init__(self, bindings, inform, mode_keys=[]):
 		self.bindings = bindings
-		self.debug = debug
+		self.inform = inform
 		self.mode_keys = mode_keys
 		self.chord = []
 
@@ -83,13 +83,20 @@ class Binder(object):
 			self.debug("pos: %s  chord: %s  oldkey: %s  key: %s mapping: %s" % (pos, self.chord, oldkey, key, f))
 		return key
 
+	def debug(self, s):
+		# return self.inform(s)
+		return None
+	
+	
+	
+
 class PyrafEdit(urwid.Edit, Binder):
 	"""PyrafEdit is a text entry widget which has keybindings similar
 	to IRAF's CL epar command.
 	"""
 	def __init__(self, *args, **keys):
-		debug = keys["debug"]
-		del keys["debug"]
+		inform = keys["inform"]
+		del keys["inform"]
 		self._del_words = []
 		self._del_lines = []
 		self._del_chars = []
@@ -140,7 +147,7 @@ class PyrafEdit(urwid.Edit, Binder):
 			
 			"esc ?": "help"
 		}
-		Binder.__init__(self, EDIT_BINDINGS, debug)
+		Binder.__init__(self, EDIT_BINDINGS, inform)
 
 	def DEL_CHAR(self):
 		s = self.get_edit_text()
@@ -196,6 +203,7 @@ class PyrafEdit(urwid.Edit, Binder):
 		self.edit_pos = 0
 
 	def MOVE_START(self):
+		self.check_entry()
 		self.MOVE_BOL()
 		
 	def MOVE_EOL(self):
@@ -213,12 +221,12 @@ class PyrafEdit(urwid.Edit, Binder):
 			self.edit_pos -= 1
 
 	def MOVE_UP(self):
-		if self.verify():
-			return "up"
+		self.check_entry()
+		return "up"
 
 	def MOVE_DOWN(self):
-		if self.verify():
-			return "down"
+		self.check_entry()
+		return "down"
 	
 	def UNDEL_CHAR(self):
 		try:
@@ -246,19 +254,23 @@ class PyrafEdit(urwid.Edit, Binder):
 		key = Binder.keypress(self, pos, key)
 		if key is not None:
 			key = urwid.Edit.keypress(self, pos, key)
-		# self.verify()
 		return key
 		
 	def get_result(self):
 		return self.get_edit_text().strip()
 
+	def check_entry(self):
+		if not self.verify():
+			self.inform("Bad field value: '%s'" % \
+				    (self.get_result(),))
+
 	def verify(self):
 		return True
 
 class StringTparOption(urwid.Columns):
-	def __init__(self, paramInfo, defaultParamInfo, debug):
+	def __init__(self, paramInfo, defaultParamInfo, inform):
 
-		self.debug = debug
+		self.inform = inform
 		self.paramInfo    = paramInfo
 		self.defaultParamInfo = defaultParamInfo
 		
@@ -284,7 +296,7 @@ class StringTparOption(urwid.Columns):
 		self._value = "%10s" % value
 		self._help = "%-30s" % help
 		n = urwid.Text(self._name)
-		e = PyrafEdit("", self._value, wrap="clip", align="right", debug=debug)
+		e = PyrafEdit("", self._value, wrap="clip", align="right", inform=inform)
 		e.verify = self.verify
 		h = urwid.Text(self._help)
 		self.cols = (n,e,h)
@@ -305,7 +317,7 @@ class StringTparOption(urwid.Columns):
 		self.set_result(self._previousValue)
 		
 	def alert(self, s):
-		self.debug(s)
+		self.inform(s)
 
 	def verify(self):
 		return True
@@ -432,7 +444,7 @@ class TparDisplay(Binder):
 			('weight', 0.2, self.cancel_button),
 			('weight', 0.4, self.help_button)])
 
-		self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", debug=self.debug)
+		self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
 		self.listitems = [urwid.Divider(" ")] + self.entryNo + \
 				 [urwid.Divider(" "), self.colon_edit,
 				  self.buttons]
@@ -446,7 +458,7 @@ class TparDisplay(Binder):
 			self.listbox,
 			header=self.header,
 			footer=self.footer)
-		Binder.__init__(self, TPAR_BINDINGS, self.debug, self.MODE_KEYS)
+		Binder.__init__(self, TPAR_BINDINGS, self.inform, self.MODE_KEYS)
 	def get_default_param_list(self):
 		# Obtain the default parameter list
 		dlist = self.taskObject.getDefaultParList()
@@ -517,6 +529,8 @@ class TparDisplay(Binder):
 				self.view.keypress( size, k )
 				
 	def colon_escape(self):
+		"""colon_escape switches the focus to the 'mini-buffer' and
+		accepts and executes a one line colon command."""
 		w, pos0 = self.listbox.get_focus()
 		try:
 			default_file = w.get_result()
@@ -550,24 +564,29 @@ class TparDisplay(Binder):
 		
 	def process_colon(self, cmd):
 		# : <cmd_letter> [!] [<filename>]
-		groups = re.match("^:(?P<cmd>[a-z])"
-				  "(?P<emph>!?)"
+		groups = re.match("^:(?P<cmd>[a-z])\s*"
+				  "(?P<emph>!?)\s*"
 				  "(?P<file>\w*)",  cmd)
 		if not groups:
-			self.debug("bad command: " + cmd)
+			self.inform("bad command: " + cmd)
 		else:
 			letter    = groups.group("cmd")
 			emph = groups.group("emph") == "!"
 			file   = groups.group("file")
 			try:
-				{ "q" : self.quit,
+				f = { "q" : self.quit,
 				  "g" : self.go,
 				  "r" : self.read_pset,
 				  "w" : self.write_pset,
 				  "e" : self.edit_pset
-				  }[letter](file, emph)
+				  }[letter]
 			except KeyError:
-				self.inform("bad command: " + cmd, None)
+				self.inform("unknown command: " + cmd)
+			else:
+				try:
+					f(file, emph)
+				except Exception, e:
+					self.inform("command '%s' failed with exception '%s'" % (cmd, e))
 		
 	def save(self, emph):
 		# Save all the entries and verify them, keeping track of the
@@ -633,7 +652,7 @@ class TparDisplay(Binder):
 		if os.path.exists(file) and not overwrite:
 			self.inform("File '%s' exists and overwrite (!) not used." % (file,))
 		# XXXX write out parameters to file
- 		self.debug("write pset: %s" % (file,))
+ 		self.inform("write pset: %s" % (file,))
 
 	# Method to "unlearn" all the parameter entry values in the GUI
 	# and set the parameter back to the default value
@@ -707,10 +726,6 @@ class TparDisplay(Binder):
 		"""output any message to status bar"""
 		self.footer.set_text(s)
 
-	def debug(self, s):
-		"""output debug message to status bar... eventually disabled for normal users."""
-		return self.inform(s)
-
 	def info(self, msg, b):
 		self.exit_flag = False
 		size = self.ui.get_cols_rows()
@@ -774,7 +789,7 @@ class TparDisplay(Binder):
 		else:
 			# Use String for types not in the dictionary
 			tparOption = self._tparOptionDict.get(param.type, StringTparOption)
-		return tparOption(param, defaultParam, self.debug)
+		return tparOption(param, defaultParam, self.inform)
 
 
 def tpar(taskName):
