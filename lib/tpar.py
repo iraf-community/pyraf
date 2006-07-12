@@ -591,18 +591,18 @@ class PsetTparOption(StringTparOption):
 	def klass(self):
 		return "pset"
 	
-
-class TparHeader(urwid.AttrWrap):
+class TparHeader(urwid.Pile):
         banner = """                                   I R A F
                     Image Reduction and Analysis Facility
-
 """
 	def __init__(self, package, task=None):
-		s = self.banner
-		s += "%8s= %-10s\n" %  ("PACKAGE", package)
+		top = urwid.AttrWrap( urwid.Text(self.banner), "header")
+		s = "%8s= %-10s\n" %  ("PACKAGE", package)
 		if task is not None:
 			s += "%8s= %-10s" % ("TASK", task)
-		urwid.AttrWrap.__init__(self, urwid.Text(s), "header")
+		info = urwid.AttrWrap(urwid.Text(s), "body")
+		urwid.Pile.__init__(self, [top, info])
+
 
 class TparDisplay(Binder):
         palette = [
