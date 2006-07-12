@@ -457,11 +457,16 @@ class StringTparOption(urwid.Columns, Binder):
 		self._edit.set_edit_text(s)
 		self._edit.edit_pos = len(s)
 
+	def normalize(self, v):
+		"""abstract method called to standardize equivalent values
+		when the 'result' is set."""
+		return v
+
 	def get_result(self):
 		return self._value.get_text()[0].strip()
 
 	def set_result(self, r):
-		self._value.set_text( str(r) ) 
+		self._value.set_text( self.normalize(str(r)) )
 
 	def unlearn_value(self):
 		self.set_result(self._previousValue)
@@ -505,14 +510,14 @@ class StringTparOption(urwid.Columns, Binder):
 	def linechange(self):
 		"""Updates this field when changing the field focus,
 		i.e. switching lines."""
-		s = self._edit.get_edit_text()
+		s = self.get_candidate()
 		if s != "":
 			if self.verify(s):
-				self._value.set_text(s)
-				self._edit.set_edit_text("")
+				self.set_result(s)
+				self.set_candidate("")
 			else:
-				self.inform("Bad value '%s' in field '%s'" % \
-					    (self.get_candidate(), self.get_name()))
+				self.inform("Bad value '%s' in field '%s' of type '%s'" % \
+					    (self.get_candidate(), self.get_name(), self.klass()))
 		self._edit.set_edit_pos(0)
 		self._edit.reset_del_buffers()
 		self._newline = True
@@ -524,22 +529,36 @@ class StringTparOption(urwid.Columns, Binder):
 			return
 		self._newline = False
 		if self._mode == "clear":
-			self._edit.set_edit_text("")
+			self.set_candidate("")
 		else:
 			s  = self.get_result()
-			self._edit.set_edit_text( s )
+			self.set_candidate( s )
 			self._edit.set_edit_pos( len(s) )
+
+	def klass(self):
+		return "string"
 
 
 class NumberTparOption(StringTparOption):
+	def normalize(self, v):
+		if v in ["INDEF","Indef","indef"]:
+			return "INDEF"
+		else:
+			return v
+	
 	def verify(self, v):
 		try:
-			f = float(v)
 			self.inform("")
+			if v.strip() == "INDEF":
+				return True
+			f = float(v)
 			return True
 		except:
 			self.inform("Not a valid floating point number.")
 			return False
+
+	def klass(self):
+		return "number"
 
 class BooleanTparOption(StringTparOption):
 	def __init__(self, *args, **keys):
@@ -561,12 +580,17 @@ class BooleanTparOption(StringTparOption):
 		else:
 			self.inform("Not a valid boolean value.")
 			return False
+	def klass(self):
+		return "boolean"
 
 class EnumTparOption(StringTparOption):
-	pass
+	def klass(self):
+		return "enumeration"
 
 class PsetTparOption(StringTparOption):
-	pass
+	def klass(self):
+		return "pset"
+	
 
 class TparHeader(urwid.AttrWrap):
         banner = """                                   I R A F
