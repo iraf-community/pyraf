@@ -248,7 +248,7 @@ class Binder(object):
 		return key
 
 	def debug(self, s):
-		return self.inform(s)
+		# return self.inform(s)
 		return None
 
 class PyrafEdit(urwid.Edit, Binder):
