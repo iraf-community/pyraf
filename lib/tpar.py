@@ -21,15 +21,23 @@ class FakeModule:
 		pass
 	def __init__(*args, **keys):
 		pass
+
+class FakeClass:
+	def __new__(*args, **keys):
+		pass
+	def __init__(*args, **keys):
+		pass
+	
 	
 try:
 	import urwid.curses_display
 	import urwid
 except:
 	urwid = FakeModule()
-	urwid.Edit = FakeModule()
-	urwid.Columns = FakeModule()
-	urwid.AttrWrap = FakeModule()
+	urwid.Edit = FakeClass()
+	urwid.Columns = FakeClass()
+	urwid.AttrWrap = FakeClass()
+	urwid.Pile = FakeClass()
 
 # PyRAF modules
 import iraf, irafpar, irafhelp, cStringIO, wutil, iraffunctions
@@ -1050,6 +1058,7 @@ def tpar(taskName):
 	if isinstance(urwid, FakeModule):
 		print >>sys.stderr, "The urwid package isn't available on your Python system so tpar can't be used."
 		print >>sys.stderr, "Install urwid version >= 0.9.4 or use epar instead."
+		return
 	TparDisplay(taskName).main()
 
 if __name__ == "__main__":
