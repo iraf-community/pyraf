@@ -526,6 +526,9 @@ class StringTparOption(urwid.Columns, Binder):
 			else:
 				self.inform("Bad value '%s' in field '%s' of type '%s'" % \
 					    (self.get_candidate(), self.get_name(), self.klass()))
+		else:  # clear old error messages
+			self.inform("")
+
 		self._edit.set_edit_pos(0)
 		self._edit.reset_del_buffers()
 		self._newline = True
@@ -776,6 +779,7 @@ class TparDisplay(Binder):
 						button, col, row, focus=True )
                                 elif k == 'window resize':
 					size = self.ui.get_cols_rows()
+					self.inform("resize %s" % (str(size)))
 				k = self.keypress(size, k)
 				self.view.keypress( size, k )
 
