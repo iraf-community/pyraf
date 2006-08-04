@@ -1424,7 +1424,7 @@ def fscan(locals, line, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        line = eval(line, locals)
+        line = eval(line, {'iraf': iraf}, locals)
     except EOFError:
         _weirdEOF(locals, namelist)
         _nscan = 0
@@ -1492,7 +1492,7 @@ def fscanf(locals, line, format, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        line = eval(line, locals)
+        line = eval(line, {'iraf': iraf}, locals)
         # format also needs to be evaluated
         format = eval(format, locals)
     except EOFError:
