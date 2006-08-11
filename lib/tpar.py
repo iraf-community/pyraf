@@ -164,11 +164,12 @@ TPAR_BINDINGS_VI = {
 	
 	"ctrl j"   : "down",
 	"ctrl J"   : "down",
-	"ctrl n"  : "down",
-	"ctrl N"  : "down",
 	
-	"ctrl p"  : "up",
-	"ctrl P"  : "up",
+	"ctrl n"  : "page down",
+	"ctrl N"  : "page down",
+	
+	"ctrl p"  : "page up",
+	"ctrl P"  : "page up",
 	
 #	"ctrl r" : "redraw",        # re-draw... just ignore
 #	"ctrl R" : "redraw",
