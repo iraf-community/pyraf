@@ -12,6 +12,9 @@ $Id: $
 Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
 
 """
+
+# XXXX Debugging tip:  uncomment self.inform() in the debug() method below
+
 import os, sys, string, commands, re
 
 # Fake out import of urwid if it fails to keep tpar from bringing down
@@ -571,6 +574,16 @@ class NumberTparOption(StringTparOption):
 class BooleanTparOption(StringTparOption):
 	def __init__(self, *args, **keys):
 		StringTparOption.__init__(self, *args, **keys)
+		self.bind(" ","space")
+		self.bind("space", self.TOGGLE)
+		self.bind("right", self.TOGGLE)
+		self.bind("left", self.TOGGLE)
+
+	def TOGGLE(self):
+		if self.get_result() == "yes":
+			self.set_result("no")
+		else:
+			self.set_result("yes")
 
 	def normalize(self, v):
 		if v in ["n","N"]:
@@ -593,6 +606,28 @@ class BooleanTparOption(StringTparOption):
 		return "boolean"
 
 class EnumTparOption(StringTparOption):
+	def __init__(self, *args, **keys):
+		StringTparOption.__init__(self, *args, **keys)
+		self.bind(" ","space")
+		self.bind("space", self.SPACE)
+		self.bind("right", self.SPACE)
+		self.bind("left", self.LEFT)
+
+	def adjust(self, delta, wrap):
+		choices = self.paramInfo.choice
+		try:
+			v = choices[ choices.index(self.get_result()) + delta ]
+		except IndexError:
+			v = choices[ wrap ]
+		self.set_result(v)
+
+	def SPACE(self):
+		return self.adjust(1, 0)
+
+	def LEFT(self):
+		return self.adjust(-1, -1)
+		
+	
 	def klass(self):
 		return "enumeration"
 
