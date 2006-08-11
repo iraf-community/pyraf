@@ -402,7 +402,7 @@ class StringTparOption(urwid.Columns, Binder):
 		MODE_KEYS = []
 
 		BINDINGS = {
-			"enter" : "down",
+			"enter" : self.ENTER,
 			"up"   : self.MOVE_UP,
 			"down" : self.MOVE_DOWN,
 			"page up"   : self.PAGE_UP,
@@ -479,7 +479,7 @@ class StringTparOption(urwid.Columns, Binder):
 
 	def unlearn_value(self):
 		self.set_result(self._previousValue)
-		
+
 	def verify(self, v):
 		self.inform("")
 		return True
@@ -492,31 +492,28 @@ class StringTparOption(urwid.Columns, Binder):
 		else:
 			return "undel_line"
 
+	def ENTER(self):
+		return self.linechange("down")
+
 	def MOVE_UP(self):
-		self.linechange()
-		return "up"
+		return self.linechange("up")
 
 	def MOVE_DOWN(self):
-		self.linechange()
-		return "down"
+		return self.linechange("down")
 
 	def PAGE_UP(self):
-		self.linechange()
-		return "page up"
+		return self.linechange("page up")
 
 	def PAGE_DOWN(self):
-		self.linechange()
-		return "page down"
+		return self.linechange("page down")
 
 	def MOVE_START(self):
-		self.linechange()
-		return "home"
+		return self.linechange("home")
 
 	def MOVE_END(self):
-		self.linechange()
-		return "end"
+		return self.linechange("end")
 
-	def linechange(self):
+	def linechange(self, rval):
 		"""Updates this field when changing the field focus,
 		i.e. switching lines."""
 		s = self.get_candidate()
@@ -525,14 +522,13 @@ class StringTparOption(urwid.Columns, Binder):
 				self.set_result(s)
 				self.set_candidate("")
 			else:
-				self.inform("Bad value '%s' in field '%s' of type '%s'" % \
-					    (self.get_candidate(), self.get_name(), self.klass()))
+				return None
 		else:  # clear old error messages
 			self.inform("")
-
 		self._edit.set_edit_pos(0)
 		self._edit.reset_del_buffers()
 		self._newline = True
+		return rval
 				
 	def READY_LINE(self):
 		"""Prepares this field for editing in the current
@@ -560,13 +556,13 @@ class NumberTparOption(StringTparOption):
 	
 	def verify(self, v):
 		try:
-			self.inform("")
-			if v.strip() == "INDEF":
-				return True
-			f = float(v)
+			if v != self._previousValue:
+				self.paramInfo.set(v)
+			self.paramInfo.set(self._previousValue)
 			return True
-		except:
-			self.inform("Not a valid floating point number.")
+		except ValueError, e:
+			self.set_candidate("")
+			self.inform(str(e))
 			return False
 
 	def klass(self):
@@ -590,6 +586,7 @@ class BooleanTparOption(StringTparOption):
 			self.inform("")
 			return True
 		else:
+			self.set_candidate("")
 			self.inform("Not a valid boolean value.")
 			return False
 	def klass(self):
@@ -598,6 +595,13 @@ class BooleanTparOption(StringTparOption):
 class EnumTparOption(StringTparOption):
 	def klass(self):
 		return "enumeration"
+
+	def verify(self, v):
+		if v not in self.paramInfo.choice:
+			self.inform("What? choose: " + "|".join(self.paramInfo.choice))
+			self.set_candidate("")
+			return False
+		return True
 
 class PsetTparOption(StringTparOption):
 	def klass(self):
@@ -831,11 +835,11 @@ class TparDisplay(Binder):
 			file   = groups.group("file")
 			try:
 				f = { "q" : self.QUIT,
-				  "g" : self.go,
-				  "r" : self.read_pset,
-				  "w" : self.write_pset,
-				  "e" : self.edit_pset
-				  }[letter]
+				      "g" : self.go,
+				      "r" : self.read_pset,
+				      "w" : self.write_pset,
+				      "e" : self.edit_pset
+				    }[letter]
 			except KeyError:
 				self.inform("unknown command: " + cmd)
 				return
