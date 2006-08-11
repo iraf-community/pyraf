@@ -2097,7 +2097,7 @@ def history(n=20, *args, **kw):
         try:
             n = abs(int(n))
             __main__._pycmdline.printHistory(n)
-        except NameError:
+        except (NameError,AttributeError):
             pass
     finally:
         rv = redirReset(resetList, closeFHList)
