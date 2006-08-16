@@ -65,6 +65,8 @@ TPAR_HELP_EMACS = """                                EDIT COMMANDS (emacs)
            MOVE_LEFT  = LEFT_ARROW             UNDEL_LINE = ESC-^K
            MOVE_LEFT  = ^B                     UNDEL_WORD = ESC-^W
 
+	   X-11 Paste:  hold down shift and click middle mouse button
+
            :e[!] [pset]         edit pset      "!" == no update
            :q[!]                exit tpar      "!" == no update
            :r!                  unlearn
@@ -148,6 +150,8 @@ TPAR_HELP_VI = """                                EDIT COMMANDS (vi)
            MOVE_END   = ^T^E                   UNDEL_CHAR = ^U^C
            MOVE_EOL   = ^E                     UNDEL_LINE = ^U^L
            MOVE_LEFT  = LEFT_ARROW             UNDEL_WORD = ^U^W
+
+	   X-11 Paste:  hold down shift and click middle mouse button
 
            :e[!] [pset]         edit pset      "!" == no update
            :q[!]                exit tpar      "!" == no update
@@ -234,13 +238,15 @@ class Binder(object):
 	def keypress(self, pos, key):
 		if key is None:
 			return
-		if key != "ready":
-			self.debug("pos: %s    key: %s" % (pos, key))
+		if key is "ready":  # Handle the "ready" binding specially to keep the rest simple.
+			if self.bindings.has_key("ready"):
+				return self.bindings["ready"]()
+			else:
+				return "ready"
+		self.debug("pos: %s    key: %s" % (pos, key))
 		if key in self.mode_keys:
 			self.chord.append(key)
 			return None
-		elif key == "ready":
-			pass
 		elif not urwid.is_mouse_event(key):
 			key = " ".join(self.chord + [key])
 			self.chord = []
@@ -254,9 +260,8 @@ class Binder(object):
 				key = f
 			else:
 				key = f()
-			if "ready" not in visited:
-				self.debug("pos: %s  visited: %s  key: %s mapping: %s" % \
-					   (pos, " --> ".join(visited), key, f))
+			self.debug("pos: %s  visited: %s  key: %s mapping: %s" % \
+				   (pos, " --> ".join(visited), key, f))
 		return key
 
 	def debug(self, s):
@@ -647,11 +652,11 @@ class TparHeader(urwid.Pile):
                     Image Reduction and Analysis Facility
 """
 	def __init__(self, package, task=None):
-		top = urwid.AttrWrap( urwid.Text(self.banner), "header")
+		top = urwid.Text(("header", self.banner))
 		s = "%8s= %-10s\n" %  ("PACKAGE", package)
 		if task is not None:
 			s += "%8s= %-10s" % ("TASK", task)
-		info = urwid.AttrWrap(urwid.Text(s), "body")
+		info = urwid.Text(("body", s))
 		urwid.Pile.__init__(self, [top, info])
 
 
