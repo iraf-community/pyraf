@@ -35,6 +35,7 @@ class FakeClass:
 try:
 	import urwid.curses_display
 	import urwid
+	urwid.set_encoding("ascii")   #  gives better performance than 'utf8'
 except:
 	urwid = FakeModule()
 	urwid.Edit = FakeClass()
