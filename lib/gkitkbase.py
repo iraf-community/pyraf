@@ -542,6 +542,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
     def createNewWindow(self):
 
+        import newWindowHack  # Fixes lockup in askstring() with Tk8.4
         newname = tkSimpleDialog.askstring("New Graphics Window",
                 "Name of new graphics window",
                 initialvalue=self.manager.getNewWindowName())
