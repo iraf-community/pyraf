@@ -55,7 +55,7 @@ def checkcache(filename=None,orig_checkcache=linecache.checkcache):
     cache.update(save)
 
 
-def updatecache(filename, orig_updatecache=linecache.updatecache):
+def updatecache(filename, module_globals=None, orig_updatecache=linecache.updatecache):
 
     """Update a cache entry and return its list of lines.  If something's
     wrong, discard the cache entry and return an empty list."""
@@ -65,7 +65,10 @@ def updatecache(filename, orig_updatecache=linecache.updatecache):
         return updateCLscript(filename)
     else:
         # original version handles other cases
-        return orig_updatecache(filename)
+        if module_globals is None:
+            return orig_updatecache(filename)
+        else:
+            return orig_updatecache(filename, module_globals=module_globals)
 
 
 def updateCLscript(filename):
