@@ -97,7 +97,7 @@ class smart_install_data(install_data):
 
 def dosetup():
     r = setup(name = "PyRAF",
-              version = "1.2",
+              version = "1.3",
               description = "A Python based CL for IRAF",
               author = "Rick White, Perry Greenfield",
               maintainer_email = "help@stsci.edu",
