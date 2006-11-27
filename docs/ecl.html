@@ -7,7 +7,7 @@
 	<META NAME="AUTHOR" CONTENT="Todd Miller">
 	<META NAME="CREATED" CONTENT="20061117;8415800">
 	<META NAME="CHANGEDBY" CONTENT="Todd Miller">
-	<META NAME="CHANGED" CONTENT="20061117;17100000">
+	<META NAME="CHANGED" CONTENT="20061121;13283200">
 	<STYLE>
 	<!--
 		@page { size: 8.5in 11in }
@@ -19,22 +19,24 @@
 	</STYLE>
 </HEAD>
 <BODY LANG="en-US" DIR="LTR">
-<H1 CLASS="western">PyRAF ECL Overview</H1>
+<H1 CLASS="western" ALIGN=CENTER><FONT SIZE=7>PyRAF ECL Support</FONT></H1>
+<H1 CLASS="western">Overview</H1>
 <P CLASS="western">PyRAF can now support the error handling
-constructs which were added to IRAF's CL to create ECL. In addition
-to PyRAF's classic Python exception handling, PyRAF's new ECL support
-enables certain errors to be trapped and to cause exception handling
-statements to execute as a result in a manner similar to IRAF ECL.
-PyRAF's ECL captures the following errors:</P>
+constructs of IRAF's ECL scripting language.  In addition to PyRAF's
+classic Python exception handling, PyRAF's  ECL support enables
+certain errors to be trapped and to cause exception handling
+statements to execute. 
+</P>
+<P CLASS="western">PyRAF's ECL captures the following errors:</P>
 <UL>
-	<LI><DD>System exceptions (FPE, segfault, etc) thrown by compiled
-	tasks (i.e. SPP or C)</DD><LI><DD>
-	error() calls from compiled tasks</DD><LI><DD>
-	CL script error() calls</DD><LI><DD STYLE="margin-bottom: 0.2in">
-	CL script division by zero</DD></UL>
+	<LI><DD><FONT FACE="Arial, sans-serif">System exceptions (FPE,
+	segfault, etc) thrown by compiled tasks (i.e. SPP or C)</FONT></DD><LI><DD>
+	<FONT FACE="Arial, sans-serif">error() calls from compiled tasks</FONT></DD><LI><DD>
+	<FONT FACE="Arial, sans-serif">error() calls from CL scripts</FONT></DD><LI><DD STYLE="margin-bottom: 0.2in">
+	<FONT FACE="Arial, sans-serif">division by zero in CL scripts</FONT></DD></UL>
 <H1 CLASS="western">Activating ECL Support</H1>
 <P CLASS="western">During it's introduction, PyRAF's ECL support is
-optional and is activated by one of the following means:</P>
+optional and is only activated by one of the following means:</P>
 <TABLE WIDTH=703 BORDER=1 CELLPADDING=4 CELLSPACING=3 STYLE="page-break-inside: avoid">
 	<COL WIDTH=211>
 	<COL WIDTH=465>
@@ -59,7 +61,7 @@ optional and is activated by one of the following means:</P>
 			<PRE>pyaf –ecl</PRE>
 		</TD>
 		<TD WIDTH=465>
-			<P CLASS="western">Use the verbose switch,  --ecl,  when invoking
+			<P CLASS="western">Use the verbose switch, --ecl, when invoking
 			pyraf</P>
 		</TD>
 	</TR>
@@ -80,14 +82,20 @@ optional and is activated by one of the following means:</P>
 		</TD>
 	</TR>
 </TABLE>
+<P CLASS="western"><BR><BR>
+</P>
+<P CLASS="western">In the absence of the above methods,  PyRAF runs
+without ECL support.</P>
 <H1 CLASS="western">New ECL Keywords</H1>
 <P CLASS="western">PyRAF's ECL support uses the following words as
 keywords, i.e. words which are part of ECL and can no longer be used
-as program identifiers (i.e. variable, task, or procedure names).</P>
-<PRE>iferr
-ifnoerr
-then</PRE><H1 CLASS="western">
-ECL Grammar Extensions</H1>
+as program identifiers (i.e. variable, task, or procedure names):</P>
+<UL>
+	<LI><PRE>iferr</PRE>
+	<LI><PRE>ifnoerr</PRE>
+	<LI><PRE STYLE="margin-bottom: 0.2in">then</PRE>
+</UL>
+<H1 CLASS="western">ECL Grammar Extensions</H1>
 <P CLASS="western" STYLE="background: transparent">PyRAF's support
 for ECL includes two new symmetric statements, <SPAN STYLE="background: transparent"><FONT COLOR="#0000ff"><B><FONT COLOR="#000000">iferr</FONT></B>
 </FONT></SPAN>and <B><FONT COLOR="#000000">ifnoerr</FONT></B><FONT COLOR="#0000ff">.</FONT>
@@ -99,10 +107,10 @@ of ordinary CL statements for which errors should be trapped. An
 “except action” are the statement(s) which should be executed
 when an error occurs (iferr) or does not occur (ifnoerr). An “else
 action” are the statement(s) which should be executed when an error
-occurs.    Below is the section of the PyRAF grammar which describes
-ECL iferr statements; IFERR, IFNOERR, THEN, and ELSE denote keyword
+occurs. Below is the section of the PyRAF grammar which describes ECL
+iferr statements; IFERR, IFNOERR, THEN, and ELSE denote keyword
 literals:</P>
-<PRE>iferr_stmt    ::= if_kind guarded_stmt except_action
+<PRE STYLE="margin-left: 0.79in">iferr_stmt    ::= if_kind guarded_stmt except_action
 iferr_stmt    ::= if_kind guarded_stmt opt_newline THEN except_action
 iferr_stmt    ::= if_kind guarded_stmt opt_newline THEN except_action opt_newline ELSE else_action
 if_kind       ::= IFERR
@@ -144,8 +152,8 @@ is executed, but never both.</P>
 }</PRE><P CLASS="western">
 There is a symmetric form of <B>iferr</B> which uses the keyword
 <B>ifnoerr</B>. It is perhaps most useful when one doesn't want to
-specify anything to handle an error, but only what to do when the
-guarded statements succeed. <B>ifnoerr</B> is effectively <B>iferr
+specify anything to handle an error, but only specify what to do when
+the guarded statements succeed.  <B>ifnoerr</B> is effectively <B>iferr
 </B>with the error-handling and success-handling statements reversed.</P>
 <PRE STYLE="margin-left: 2.36in">ifnoerr {
 &lt;guarded statements&gt;
@@ -164,8 +172,7 @@ ifnoerr {
 }</PRE><H1 CLASS="western">
 ECL Pseudo Variables</H1>
 <P CLASS="western">PyRAF in ECL mode defines the following pseudo
-variables which are associated with each <I>task</I><SPAN STYLE="font-style: normal">
-object:</SPAN></P>
+variables which are associated with each <I>task</I> object:</P>
 <TABLE WIDTH=656 BORDER=1 CELLPADDING=4 CELLSPACING=3 STYLE="page-break-inside: avoid">
 	<COL WIDTH=139>
 	<COL WIDTH=490>
@@ -218,13 +225,12 @@ object:</SPAN></P>
 </TABLE>
 <P CLASS="western"><BR><BR>
 </P>
-<P CLASS="western">Since pseudo variables are associated with a  task
-object,  they have several properties:</P>
+<P CLASS="western">Since pseudo variables are associated with a task
+object, they have several properties:</P>
 <OL>
-	<P CLASS="western"></P>
-	<LI><P CLASS="western">They are persistent,  i.e. not cleared until
-	a task is re-run,  and only then based on erract's <B>clear</B>
-	field.   They are however overwritten with each new error.</P>
+	<LI><P CLASS="western">They are persistent, i.e. not cleared until a
+	task is re-run, and only then based on erract's <B>clear</B> field.
+	They are however overwritten with each new error.</P>
 	<LI><P CLASS="western">They can be accessed in CL code as written in
 	the table above.</P>
 	<LI><P CLASS="western">They can be accessed from the command line
@@ -237,7 +243,7 @@ object,  they have several properties:</P>
 	<P CLASS="western">failed_task</P>
 	<LI><P CLASS="western">They are not re-entrant – i.e., recursive
 	procedures using them are only referring to a single storage
-	location and will interfere with one another,  only recording the
+	location and will interfere with one another, only recording the
 	last error.</P>
 </OL>
 <H1 CLASS="western">ECL Functions</H1>
@@ -263,7 +269,7 @@ easier to use.</P>
 				<PRE>error()</PRE>
 			</TD>
 			<TD WIDTH=574>
-				<P CLASS="western">Forces a CL error state,  generally raising a
+				<P CLASS="western">Forces a CL error state, generally raising a
 				traceback.</P>
 			</TD>
 		</TR>
@@ -300,23 +306,20 @@ easier to use.</P>
 <P CLASS="western">PyRAF's ECL mode now traps division by zero and
 either raises and ECL exception or returns the default result value
 contained in the variable <B>$err_dzvalue</B>.</P>
-<P CLASS="western">So in ECL,  the following code:</P>
+<P CLASS="western">So in ECL, the following guarded code:</P>
 <PRE STYLE="margin-left: 0.79in">iferr {
 $err_dzvalue = 33
 print 1/0
-          }
+}
 </PRE><P CLASS="western">
 Outputs:</P>
 <PRE STYLE="margin-left: 0.79in">Warning on line 6 of 'nested5':  divide by zero - using $err_dzvalue = 33
-33
-</PRE><P CLASS="western">
-While un-guarded code generates a traceback:</P>
+33</PRE><P CLASS="western">
+While un-guarded code such as:</P>
 <PRE STYLE="margin-left: 0.79in">$err_dzvalue = 33
-print 1/0
-</PRE><P CLASS="western">
-Outputs:</P>
-<PRE STYLE="margin-left: 0.79in">
-ERROR (1): divide by zero
+print 1/0</PRE><P CLASS="western">
+Generates a traceback and outputs:</P>
+<PRE STYLE="margin-left: 0.79in">ERROR (1): divide by zero
    'print 1/0'
       line 4: /home/jmiller/nested5.cl
 Traceback (innermost last):
@@ -325,20 +328,18 @@ IrafError: ERROR: divide by zero
                                                                                                                                                                                 </PRE><H1 CLASS="western">
 Controlling ECL Behavior using erract</H1>
 <P CLASS="western">PyRAF's ECL mode behavior is controlled by a
-multi-field environment variable named <B>erract</B>.  erract is set
-in PyRAF as a string containing one or more field modifiers.  
+multi-field environment variable named <B>erract</B>. erract is set
+in PyRAF as a string containing one or more field modifiers. 
 </P>
 <PRE STYLE="margin-left: 1.58in; text-align: left">--&gt; show erract
-abort trace flpr clear full ecl
-</PRE><P CLASS="western" ALIGN=LEFT>
- Multiple fields may be changed with a single “set” command,  and
-not all fields need be specified.  Fields not mentioned in a set
+abort trace flpr clear full ecl</PRE><P CLASS="western" ALIGN=LEFT>
+Multiple fields may be changed with a single “set” command, and
+not all fields need be specified. Fields not mentioned in a set
 statement retain their old values.</P>
 <PRE STYLE="margin-left: 1.58in; text-align: left">--&gt; set erract=&quot;noflpr noclear&quot;
 
 --&gt; show erract
 abort trace noflpr noclear full ecl
-
 </PRE>
 <TABLE WIDTH=703 BORDER=1 CELLPADDING=4 CELLSPACING=3>
 	<COL WIDTH=147>
@@ -359,11 +360,11 @@ abort trace noflpr noclear full ecl
 				<PRE>abort / noabort</PRE>
 			</TD>
 			<TD WIDTH=529>
-				<P CLASS="western">Outside an iferr block,  a failed task results
-				in an immediate error.  Inside an iferr block,  a failed task
-				causes an error as soon as the iferr guarded block is exited. 
-				Set to noabort and errors won't stop execution regardless of
-				iferr usage.</P>
+				<P CLASS="western">Outside an iferr block, a failed task results
+				in an immediate error. Inside an iferr block, a failed task
+				causes an error as soon as the iferr guarded block is exited. Set
+				to noabort and errors won't stop execution regardless of iferr
+				usage.</P>
 			</TD>
 		</TR>
 		<TR VALIGN=TOP>
@@ -380,7 +381,7 @@ abort trace noflpr noclear full ecl
 				<PRE>flpr / noflpr</PRE>
 			</TD>
 			<TD WIDTH=529>
-				<P CLASS="western">Flush the process cache on error,  or don't
+				<P CLASS="western">Flush the process cache on error, or don't
 				flush.</P>
 			</TD>
 		</TR>
@@ -390,7 +391,7 @@ abort trace noflpr noclear full ecl
 			</TD>
 			<TD WIDTH=529>
 				<P CLASS="western">Clear the error pseudo variables for a task
-				before running it,  or retain the old error values which may or
+				before running it, or retain the old error values which may or
 				may not be overwritten.</P>
 			</TD>
 		</TR>
@@ -400,7 +401,7 @@ abort trace noflpr noclear full ecl
 			</TD>
 			<TD WIDTH=529>
 				<P CLASS="western">Print traceback information on the entire
-				procedure call chain,  or only on the innermost task.</P>
+				procedure call chain, or only on the innermost CL procedure.</P>
 			</TD>
 		</TR>
 		<TR VALIGN=TOP>
@@ -408,10 +409,13 @@ abort trace noflpr noclear full ecl
 				<PRE>ecl  / noecl</PRE>
 			</TD>
 			<TD WIDTH=529>
-				<P CLASS="western">Use the new ECL error handling,  or use
-				classic PyRAF/Python exception handling inside iferr and ifnoerr
-				blocks.  Setting noecl causes an error to raise an immediate
-				exception and give a Python traceback.</P>
+				<P CLASS="western">Use the new ECL error handling, or use classic
+				PyRAF/Python exception handling inside iferr and ifnoerr blocks.
+				Setting noecl causes an error to raise an immediate exception and
+				give a Python traceback.</P>
+				<P CLASS="western">This is a runtime control.   It does not
+				affect ECL compilation which can only be activated at system
+				startup.</P>
 			</TD>
 		</TR>
 	</TBODY>
