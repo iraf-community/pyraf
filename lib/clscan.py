@@ -11,7 +11,7 @@ from cgeneric import ContextSensitiveScanner
 from generic import GenericScanner
 from cltoken import Token
 import string, re
-import irafutils
+import irafutils, irafglobals
 
 # contexts for scanner
 
@@ -726,6 +726,8 @@ class _AcceptRedirScanner(_LaxScanner,_StrictAcceptRedirScanner):
 
 # dictionary of reserved keywords
 
+
+# SEE ALSO ClScanner.__init__ for more ECL keywords.
 _keywordDict = {
                                 'begin': 1,
                                 'break': 1,
@@ -800,6 +802,12 @@ class CLScanner(ContextSensitiveScanner):
     """CL scanner class"""
 
     def __init__(self, strict=0):
+        
+        if irafglobals._use_ecl:
+            _keywordDict["iferr"] = 1
+            _keywordDict["ifnoerr"] = 1
+            _keywordDict["then"] = 1
+
         self.strict = strict
         if strict:
             sdict = _getStrictScannerDict()

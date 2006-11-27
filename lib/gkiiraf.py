@@ -22,6 +22,9 @@ class GkiIrafKernel(gki.GkiKernel):
     is shut down."""
 
     def __init__(self, device):
+        
+        import irafecl
+        module = irafecl.getTaskModule()
 
         gki.GkiKernel.__init__(self)
         graphcap = gki.getGraphcap()
@@ -36,7 +39,7 @@ class GkiIrafKernel(gki.GkiKernel):
         self.wcs = None
         if not _kernelDict.has_key(taskname):
             # create special IRAF task object for this kernel
-            _kernelDict[taskname] = iraftask.IrafGKITask(taskname, executable)
+            _kernelDict[taskname] = module.IrafGKITask(taskname, executable)
         self.task = _kernelDict[taskname]
 
     def control_openws(self, arg):

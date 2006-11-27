@@ -29,8 +29,14 @@ _os = os
 _sys = sys
 del os, sys
 
+_use_ecl = _os.environ.get("PYRAF_USE_ECL", False)
+
 class IrafError(Exception):
-    pass
+    def __init__(self, msg, errno=-1, errmsg="", errtask=""):
+        Exception.__init__(self, msg)
+        self.errno = errno
+        self.errmsg = errmsg or msg
+        self.errtask = errtask
 
 # -----------------------------------------------------
 # Verbose: verbosity flag
@@ -299,3 +305,4 @@ class IrafTask:
 
 class IrafPkg(IrafTask):
     pass
+

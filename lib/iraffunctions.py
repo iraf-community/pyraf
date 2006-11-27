@@ -54,6 +54,7 @@ import sscanf, minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 import iraf
 import gki
+import irafecl
 
 try:
     import cPickle
@@ -210,6 +211,7 @@ at the Unix command line.  The values will depend on your IRAF installation.
 
         # define clpackage
 
+        global clpkg
         clpkg = IrafTaskFactory('', 'clpackage', '.pkg', 'hlib$clpackage.cl',
                 'clpackage', 'bin$')
 
@@ -489,6 +491,7 @@ def run(taskname,args=(),kw=None,save=1):
         t = getTask(taskname)
     if kw is None: kw = {}
     if not kw.has_key('_save'): kw['_save'] = save
+##     if not kw.has_key('_parent'): kw['parent'] = "'iraf.cl'"
     apply(t.run, tuple(args), kw)
 
 
@@ -517,8 +520,7 @@ def getAllPkgs(pkgname):
 def getTask(taskname, found=0):
     """Find an IRAF task by name using minimum match
 
-    Returns an IrafTask object.  Name may be
- either fully qualified
+    Returns an IrafTask object.  Name may be either fully qualified
     (package.taskname) or just the taskname.  taskname is also allowed
     to be an IrafTask object, in which case it is simply returned.
     Does minimum match to allow abbreviated names.  If found is set,
@@ -1629,7 +1631,10 @@ def set(*args, **kw):
                 for keyword, value in kw.items():
                     keyword = _irafutils.untranslateName(keyword)
                     svalue = str(value)
-                    _varDict[keyword] = svalue
+                    if keyword == "erract":
+                        irafecl.erract.adjust(svalue)
+                    else:
+                        _varDict[keyword] = svalue
                     msg.append("set %s=%s\n" % (keyword, svalue))
                 _irafexecute.processCache.setenv("".join(msg))
             else:
@@ -1664,6 +1669,9 @@ def show(*args, **kw):
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
     resetList = redirApply(redirKW)
+    if len(args) and args[0].startswith("erract"):
+        print irafecl.erract.states()
+        return redirReset(resetList, closeFHList)
     try:
         if args:
             for arg in args:
@@ -2384,6 +2392,9 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
     to replicate the inconsistent behavior of the package command
     in IRAF.
     """
+
+    module = irafecl.getTaskModule()
+    
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
     if kw.has_key('_save'): del kw['_save']
@@ -2422,7 +2433,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
                 # Hack city -- there is a CL task with the package name, but it was
                 # not defined to be a package.  Convert it to an IrafPkg object.
 
-                _iraftask.mutateCLTask2Pkg(pkg)
+                module.mutateCLTask2Pkg(pkg)
 
                 # We must be currently loading this package if we encountered
                 # its package statement (XXX can I confirm that?).
@@ -2447,6 +2458,7 @@ def clPrint(*args, **kw):
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
     if kw.has_key('_save'): del kw['_save']
+##     if kw.has_key('_parent'): del kw['_parent']
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
     resetList = redirApply(redirKW)
@@ -2697,9 +2709,25 @@ def back(**kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
-def error(errnum=0, errmsg=''):
+def error(errno=0,errmsg='',task="error",_save=False, suppress=True):
     """Print error message"""
-    raise IrafError("ERROR: %s\n" % (errmsg,))
+    e = IrafError("ERROR: %s\n" % errmsg, errno=errno, errmsg=errmsg, errtask=task)
+    e._ecl_suppress_first_trace = suppress
+    raise e
+
+def errno(_save=None):
+    """Returns status from last call to error()"""
+    return irafecl._ecl_parent_task().DOLLARerrno
+
+errcode = errno  
+
+def errmsg(_save=None):
+    """Returns message from last call to error()"""
+    irafecl._ecl_parent_task().DOLLARerrmsg
+
+def errtask(_save=None):
+    """Returns task from last call to error()"""
+    return irafecl._ecl_parent_task().DOLLARerrtask
 
 # -----------------------------------------------------
 # clCompatibilityMode: full CL emulation (with Python
@@ -2737,6 +2765,7 @@ def clCompatibilityMode(verbose=0, _save=0):
     exec 'from pyraf import iraf' in locals
     exec 'from pyraf.irafpar import makeIrafPar' in locals
     exec 'from pyraf.irafglobals import *' in locals
+    exec 'from pyraf.irafecl import EclState' in locals
     prompt2 = '>>> '
     while (1):
         try:
@@ -2813,6 +2842,7 @@ def clExecute(s, locals=None, mode="proc",
                 local_vars_dict={}, local_vars_list=[], verbose=0, **kw):
     """Execute a single cl statement"""
     # handle redirection keywords
+
     redirKW, closeFHList = redirProcess(kw)
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
@@ -2937,6 +2967,8 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
     a warning is printed if it does *not* exist.
     """
 
+    module = irafecl.getTaskModule()
+
     if pkgname is None:
         pkgname = curpack()
         if pkgbinary is None:
@@ -2974,16 +3006,16 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
         _writeError("Warning: `%s' is not a defined task" % taskname)
 
     if function is not None:
-        newtask = _iraftask.IrafPythonTask(prefix,taskname,suffix,value,
+        newtask = module.IrafPythonTask(prefix,taskname,suffix,value,
                                 pkgname,pkgbinary,function=function)
     elif ext == '.cl':
-        newtask = _iraftask.IrafCLTask(prefix,taskname,suffix,value,
+        newtask = module.IrafCLTask(prefix,taskname,suffix,value,
                                         pkgname,pkgbinary)
     elif value[:1] == '$':
-        newtask = _iraftask.IrafForeignTask(prefix,taskname,suffix,value,
+        newtask = module.IrafForeignTask(prefix,taskname,suffix,value,
                                         pkgname,pkgbinary)
     else:
-        newtask = _iraftask.IrafTask(prefix,taskname,suffix,value,
+        newtask = module.IrafTask(prefix,taskname,suffix,value,
                                         pkgname,pkgbinary)
     if task is not None:
         # check for consistency of definition by comparing to the
@@ -3019,12 +3051,14 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
     a warning is printed if it does *not* exist.
     """
 
+    module = irafecl.getTaskModule()
+
     fullname = pkgname + '.' + taskname
     task = _tasks.get(fullname)
     if task is None and redefine:
         _writeError("Warning: `%s' is not a defined task" % taskname)
 
-    newtask = _iraftask.IrafPset(prefix,taskname,suffix,value,pkgname,pkgbinary)
+    newtask = module.IrafPset(prefix,taskname,suffix,value,pkgname,pkgbinary)
     if task is not None:
         # check for consistency of definition by comparing to the new
         # object (which will be discarded)
@@ -3060,12 +3094,14 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
     a warning is printed if it does *not* exist.
     """
 
+    module = irafecl.getTaskModule()
+
     # does package with exactly this name exist in minimum-match
     # dictionary _pkgs?
     pkg = _pkgs.get_exact_key(taskname)
     if pkg is None and redefine:
         _writeError("Warning: `%s' is not a defined task" % taskname)
-    newpkg = _iraftask.IrafPkg(prefix,taskname,suffix,value,pkgname,pkgbinary)
+    newpkg = module.IrafPkg(prefix,taskname,suffix,value,pkgname,pkgbinary)
     if pkg is not None:
         if pkg.getFilename() != newpkg.getFilename() or \
            pkg.hasParfile()  != newpkg.hasParfile():
@@ -3089,6 +3125,7 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
         return pkg
     _addPkg(newpkg)
     return newpkg
+
 
 # -----------------------------------------------------
 # Utilities to handle I/O redirection keywords

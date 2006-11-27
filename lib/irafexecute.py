@@ -35,7 +35,11 @@ except AttributeError:
 stdimagekernel = gki.GkiController()
 
 class IrafProcessError(Exception):
-    pass
+    def __init__(self, msg, errno=-1, errmsg="", errtask=""):
+        Exception.__init__(self, msg)
+        self.errno = errno
+        self.errmsg = errmsg
+        self.errtask = errtask
 
 def _getExecutable(arg):
     """Get executable pathname.
@@ -302,6 +306,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
         # Start 'er up
         irafprocess = processCache.get(task, envdict)
     except (iraf.IrafError, subproc.SubprocessError, IrafProcessError), value:
+        raise
         raise IrafProcessError("Cannot start IRAF executable\n%s" % value)
 
     # Run it
@@ -528,7 +533,8 @@ class IrafProcess:
 
         self.stdout.flush()
         self.stderr.flush()
-        if verbose:
+        import irafglobals
+        if verbose and not irafglobals._use_ecl:
             sys.stderr.write("Killing IRAF task `%s'\n" % self.task.getName())
             sys.stderr.flush()
         if self.process.cont():
@@ -540,7 +546,6 @@ class IrafProcess:
         self.terminate()
 
     def writeString(self, s):
-
         """Convert ascii string to IRAF form and write to IRAF process"""
 
         self.write(Asc2IrafString(s))
@@ -619,7 +624,9 @@ class IrafProcess:
             elif msg[:4] == 'bye\n':
                 return
             elif msg5 in ['error','ERROR']:
-                raise IrafProcessError("IRAF task terminated abnormally\n"+msg)
+                errno, text = self._scanErrno(msg)
+                raise IrafProcessError("IRAF task terminated abnormally\n"+msg,
+                                       errno=errno, errmsg=text, errtask=self.task.getName())
             else:
                 # pattern match to see what this message is
                 mcmd = re_match(msg)
@@ -635,6 +642,22 @@ class IrafProcess:
                     raise RuntimeError("Program bug: uninterpreted message `%s'"
                                     % (msg,))
         
+    def _scanErrno(self, msg):
+        sp = "\s*"
+        quote = "\""
+        m = re.search(
+            "(ERROR|error)" + sp + "\(" + sp + "(\d+)" +
+            sp + "," + sp + quote + "([^\"]*)" + quote + sp +
+            "\)" + sp, msg)
+        if m:
+            try:
+                errno = int(m.group(2))
+            except:
+                errno = -9999999
+            text = m.group(3)
+        else:
+            errno, text = -9999998, msg
+        return errno, text
 
     def setStdio(self):
         """Set self.stdin/stdout based on current state

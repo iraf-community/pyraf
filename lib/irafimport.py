@@ -16,6 +16,10 @@ R. White, 1999 August 17
 import minmatch
 import __builtin__
 
+# Save the original hooks;  replaced at bottom of module...
+_originalImport = __builtin__.__import__
+_originalReload = __builtin__.reload
+
 def _irafImport(name, globals={}, locals={}, fromlist=[]):
     if fromlist and (name in ["iraf", "pyraf.iraf"]):
         for task in fromlist:
@@ -86,10 +90,6 @@ class _irafModuleClass:
             matches = self.mmdict.getallkeys(taskname, [])
         matches.extend(self.module.getAllTasks(taskname))
         return matches
-
-# Save the original hooks
-_originalImport = __builtin__.__import__
-_originalReload = __builtin__.reload
 
 # Install our hooks
 __builtin__.__import__ = _irafImport

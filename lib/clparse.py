@@ -338,6 +338,24 @@ class CLParser(CLStrictParser):
         #   in format taskname(arg, arg, | task2 arg, arg)
         pass
 
+class EclParser(CLParser):
+    def __init__(self, AST, start='program'):
+        CLParser.__init__(self, AST, start)
+        self.primaryTypes['iferr_stmt'] = 1
+
+    def p_additions2(self, args):
+        '''
+                nonnull_stmt ::= iferr_stmt
+                iferr_stmt    ::= if_kind guarded_stmt except_action
+                iferr_stmt    ::= if_kind guarded_stmt opt_newline THEN except_action
+                iferr_stmt    ::= if_kind guarded_stmt opt_newline THEN except_action opt_newline ELSE else_action
+                if_kind ::= IFERR
+                if_kind ::= IFNOERR                
+                guarded_stmt  ::=  { opt_newline statement_list }
+                except_action ::= compound_stmt
+                else_action   ::= compound_stmt
+        '''
+        pass
 
 #
 # list tree
@@ -396,6 +414,10 @@ class PrettyTree(GenericASTTraversal):
         self.printIndentNode(node)
         self.nodeCount = self.nodeCount + 1
 
+    def n_iferr_stmt(self, node):
+        self.printIndentNode(node)
+        self.nodeCount += 1
+
     # print newline and indent
 
     def printIndent(self):
@@ -440,7 +462,13 @@ class TreeList(GenericASTTraversal):
 def treelist(ast,terminal=1):
     PrettyTree(ast,terminal)
 
-_parser = CLParser(AST)
+def getParser():
+    import irafglobals
+    if irafglobals._use_ecl:
+        _parser = EclParser(AST)
+    else:
+        _parser = CLParser(AST)
+    return _parser
 
 def parse(tokens):
     global _parser

@@ -8,6 +8,7 @@ R. White, 2000 January 19
 import os, sys
 import filecache
 from irafglobals import Verbose, userIrafHome, pyrafDir
+import irafglobals
 
 # set up pickle so it can pickle code objects
 
@@ -45,7 +46,12 @@ copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
 import dirshelve, stat, md5
 
 _versionKey = 'CACHE_VERSION'
-_currentVersion = "v2"
+
+def _currentVersion():
+    if not irafglobals._use_ecl:
+        return "v2"
+    else:
+        return "v3"
 
 class _FileContentsCache(filecache.FileCacheDict):
     def __init__(self):
@@ -94,7 +100,7 @@ class _CodeCache:
         """
         # filenames to try, open flags to use
         filelist = [(filename, "w"),
-                    ('%s.%s' % (filename, _currentVersion), "c")]
+                    ('%s.%s' % (filename, _currentVersion()), "c")]
         msg = []
         for fname, flag in filelist:
             # first try opening the cache read-write
@@ -112,22 +118,22 @@ class _CodeCache:
                     continue
             # check version of cache -- don't use it if version mismatch
             if len(fh) == 0:
-                fh[_versionKey] = _currentVersion
+                fh[_versionKey] = _currentVersion()
             oldVersion = fh.get(_versionKey, 'v0')
-            if oldVersion == _currentVersion:
+            if oldVersion == _currentVersion():
                 # normal case -- cache version is as expected
                 return (writeflag, fh, fname)
-            elif fname.endswith(_currentVersion):
+            elif fname.endswith(_currentVersion()):
                 # uh-oh, something is seriously wrong
                 msg.append("CL script cache %s has version mismatch, may be corrupt?" %
                     fname)
-            elif oldVersion > _currentVersion:
+            elif oldVersion > _currentVersion():
                 msg.append(("CL script cache %s was created by " +
                     "a newer version of pyraf (cache %s, this pyraf %s)") %
-                    (fname, `oldVersion`, `_currentVersion`))
+                    (fname, `oldVersion`, `_currentVersion()`))
             else:
                 msg.append("CL script cache %s is obsolete version (old %s, current %s)" %
-                        (fname, `oldVersion`, `_currentVersion`))
+                        (fname, `oldVersion`, `_currentVersion()`))
             fh.close()
         # failed to open either cache
         self.warning("\n".join(msg))

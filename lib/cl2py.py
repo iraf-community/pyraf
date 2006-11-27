@@ -14,7 +14,7 @@ import clscan, clparse
 from clcache import codeCache
 
 from irafglobals import Verbose
-import irafpar, minmatch, irafutils
+import irafpar, minmatch, irafutils, irafglobals
 
 # The parser object can be constructed once and used many times.
 # The other classes have instance variables (e.g. lineno in CLScanner),
@@ -24,7 +24,7 @@ import irafpar, minmatch, irafutils
 # I handled this in the CLScanner class by creating cached versions
 # of the various scanners that are stateless.
 
-_parser = clparse._parser
+_parser = None
 
 def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
         local_vars_dict=None, local_vars_list=None, usecache=1):
@@ -62,6 +62,9 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     """
 
     global _parser, codeCache
+
+    if _parser is None:
+        _parser = clparse.getParser()
 
     if mode not in ["proc", "single"]:
         raise ValueError("Mode = `%s', must be `proc' or `single'" % (mode,))
@@ -113,6 +116,11 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     else:
         raise ValueError('Either filename or string must be specified')
 
+    if mode == "single":
+        taskObj = 'cl'
+    else:
+        taskObj = None
+
     # tokenize and parse to create the abstract syntax tree
     scanner = clscan.CLScanner()
     tokens = scanner.tokenize(clInput)
@@ -136,7 +144,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
 
     # third pass -- generate python code
 
-    tree2python = Tree2Python(tree, vars, efilename)
+    tree2python = Tree2Python(tree, vars, efilename, taskObj)
 
     # just keep the relevant fields of Tree2Python output
     # attach tokens to the code object too
@@ -623,8 +631,8 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
 # special keyword arguments added to parameter list
 
 _SpecialArgs = {
-        'taskObj': None,
-        }
+    'taskObj': None,
+    }
 
 class VarList(GenericASTTraversal, ErrorTracker):
 
@@ -712,6 +720,17 @@ class VarList(GenericASTTraversal, ErrorTracker):
         """Get procedure name, undoing translations"""
         return irafutils.untranslateName(self.proc_name)
 
+    def addSpecial(self, name, type, value):
+        # just delete $nargs and add it back if it is already present
+        if self.proc_args_dict.has_key(name):
+            self.proc_args_list.remove(name)
+            del self.proc_args_dict[name]
+
+        targ = irafutils.translateName(name)
+        if not self.proc_args_dict.has_key(targ):
+            self.proc_args_list.append(targ)
+            self.proc_args_dict[targ] = Variable(targ, type, init_value=value)
+
     def addSpecialArgs(self):
         """Add mode, $nargs, other special parameters to all tasks"""
 
@@ -720,15 +739,12 @@ class VarList(GenericASTTraversal, ErrorTracker):
             self.proc_args_dict['mode'] = Variable('mode','string',
                     init_value='al')
 
-        # just delete $nargs and add it back if it is already present
-        if self.proc_args_dict.has_key('$nargs'):
-            self.proc_args_list.remove('$nargs')
-            del self.proc_args_dict['$nargs']
+        self.addSpecial("$nargs", 'int', 0)
 
-        targ = irafutils.translateName('$nargs')
-        if not self.proc_args_dict.has_key(targ):
-            self.proc_args_list.append(targ)
-            self.proc_args_dict[targ] = Variable(targ, 'int', init_value=0)
+##         self.addSpecial("$errno", 'int', 0)
+##         self.addSpecial("$errmsg", 'string', "")
+##         self.addSpecial("$errtask", 'string',"")
+##         self.addSpecial("$err_dzvalue", 'int', 1)
 
         for parg, ivalue in _SpecialArgs.items():
             if not self.proc_args_dict.has_key(parg):
@@ -1391,7 +1407,8 @@ class CheckArgList(GenericASTTraversal, ErrorTracker):
 
 
 class Tree2Python(GenericASTTraversal, ErrorTracker):
-    def __init__(self, ast, vars, filename=''):
+    def __init__(self, ast, vars, filename='', taskObj=None):
+        self._ecl_iferr_entered = 0
         GenericASTTraversal.__init__(self, ast)
         self.filename = filename
         self.column = 0
@@ -1411,10 +1428,17 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.pipeIn = []
         self.pipeCount = 0
 
+        self._ecl_pyline = 1
+        self._ecl_clline = None
+        self._ecl_linemap = {}
+
         if self.vars.proc_name:
             self.indent = 1
         else:
             self.indent = 0
+
+        if taskObj:
+            self.write("taskObj = iraf.getTask('%s')\n" % taskObj)
 
         # analyze goto structure
         # this assigns the label_count field for statement blocks
@@ -1433,11 +1457,28 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # write the header second so it can be minimal
         self.code_buffer = cStringIO.StringIO()
         self.writeProcHeader()
-        self.code = self.code_buffer.getvalue() + self.code
+        header = self.code_buffer.getvalue()
+        if irafglobals._use_ecl:
+            self.code = self._ecl_linemapping(header) + \
+                        header + \
+                        self.code
+        else:
+            self.code = header + self.code
         self.code_buffer.close()
         del self.code_buffer
 
+##         print "-"*50
+##         print self.code
+        
         self.printerrors()
+
+
+    def _ecl_linemapping(self, header):
+        lines = header.count("\n") + 2 # see below
+        newmap = {}
+        for key,value in self._ecl_linemap.items():
+            newmap[ key + lines ] = value
+        return "_ecl_linemap_" + self.vars.proc_name + " = " + repr(newmap) + "\n\n"
 
     def incrIndent(self):
         """Increment indentation count"""
@@ -1460,6 +1501,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
         """Write string to output code buffer"""
 
+        self._ecl_pyline += s.count("\n")
+        self._ecl_linemap[ self._ecl_pyline ] = self._ecl_clline
+
         if requireType != exprType:
             # need to wrap this subexpression in a conversion function
             cf = _funcName(requireType, exprType)
@@ -1475,9 +1519,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.column = 0
 
     def writeIndent(self, value=None):
-
+        
         """Write newline and indent"""
-
+        
         self.write("\n")
         for i in range(self.indent):
             self.write("\t")
@@ -1576,6 +1620,10 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
                     self.writeChunks(defargs)
                     self.write("))")
             self.write("\n")
+
+        if irafglobals._use_ecl:
+            self.writeIndent("from pyraf.irafecl import EclState")
+            self.writeIndent("_ecl = EclState(_ecl_linemap_%s)\n" % self.vars.proc_name)
 
         # write goto label definitions if needed
         for label in self.gotos.labels():
@@ -1809,6 +1857,18 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
                 self.write(')')
                 self.prune()
 
+    def n_term(self, node):
+        if irafglobals._use_ecl and node[1] in ['/','%']:
+            kind = {"/" : "divide", "%":"modulo"}[node[1]]
+            self.write("taskObj._ecl_safe_%s(" % kind)
+            self.preorder(node[0])
+            self.write(",")
+            self.preorder(node[2])
+            self.write(")")
+            self.prune()
+        else:
+            self.default(node)
+            
     #------------------------------
     # block indentation control
     #------------------------------
@@ -1834,7 +1894,22 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.preorder(node[1])
             self.prune()
         else:
+##             if self._ecl_iferr_entered:
+##                 self.writeIndent("try:")
+##                 self.incrIndent()
+##                 self.writeIndent()
+##                 for kid in node:
+##                     self.preorder(kid)
+##                 self.decrIndent()
+##                 self.writeIndent("except Exception, e:")
+##                 self.incrIndent()
+##                 self.writeIndent("taskObj._ecl_record_error(e)")
+##                 self.decrIndent()
+##                 self.prune()
+##             else:
+            self._ecl_clline = FindLineNumber(node).lineno
             self.writeIndent()
+                             
 
     #------------------------------
     # statements
@@ -1874,6 +1949,57 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # else clause is not a 'nonnull_stmt', so must explicitly
         # print the indentation
         self.writeIndent("else")
+
+    def n_iferr_stmt(self, node):
+        # iferr_stmt    ::= if_kind guarded_stmt except_action
+        # iferr_stmt    ::= if_kind guarded_stmt opt_newline THEN except_action
+        # iferr_stmt    ::= if_kind guarded_stmt opt_newline THEN except_action opt_newline ELSE else_action
+        # if_kind ::= IFERR
+        # if_kind ::= IFNOERR                
+        # guarded_stmt  ::=  { opt_newline statement_list }
+        # except_action ::= compound_stmt
+        # else_action   ::= compound_stmt
+        if len(node) == 3:
+            ifkind, guarded_stmt, except_action, else_action = node[0], node[1], node[2], None
+        elif len(node) == 5:
+            ifkind, guarded_stmt, except_action, else_action = node[0], node[1], node[4], None
+        else:
+            ifkind, guarded_stmt, except_action, else_action = node[0], node[1], node[4], node[7]
+        if ifkind.type == "IFNOERR":
+            except_action, else_action = else_action, except_action
+
+        self.writeIndent("taskObj._ecl_push_err()\n")        
+
+        self._ecl_iferr_entered += 1
+        self.preorder(guarded_stmt)
+        self._ecl_iferr_entered -= 1
+        
+        self.write("\n")        
+        self.writeIndent("if taskObj._ecl_pop_err()")
+        
+        self.preorder(except_action)
+        if else_action:
+            self.writeIndent("else")
+            self.preorder(else_action)
+        self.prune()
+
+##         self.writeIndent("try:")        
+##         self.incrIndent()
+        
+##         self._ecl_iferr_entered += 1
+##         self.preorder(guarded_stmt)
+##         self._ecl_iferr_entered -= 1
+
+##         self.decrIndent()
+        
+##         self.writeIndent("except")
+        
+##         self.preorder(except_action)
+##         if else_action:
+##             self.writeIndent("else")
+##             self.preorder(else_action)
+##         self.prune()
+
 
     def n_for_stmt(self, node):
         # convert for loop into while loop

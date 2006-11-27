@@ -3,6 +3,12 @@
 $Id$
 
 R. White, 2000 June 26
+
+iraftask defines the original PyRAF task functionality which pre-dates
+the creation of IRAF ECL.  irafecl is closely related and derived from
+iraftask,  providing drop-in replacements for the Task classes defined
+here which also support ECL syntax like "iferr" and $errno.
+
 """
 
 import os, sys, copy, re
@@ -651,9 +657,15 @@ class IrafTask(irafglobals.IrafTask):
         # (hope there are none of these in IRAF tasks)
         if name[:1] == '_':
             self.__dict__[name] = value
+        elif self.is_pseudo(name):
+            self.__dict__[name] = value
         else:
             self.initTask()
             self.setParam(name,value)
+
+    def is_pseudo(self, paramname):
+        """Hook enabling ECL pseudos... always returns False"""
+        return False
 
     # allow running task using taskname() or with
     # parameters as arguments, including keyword=value form.
@@ -1093,6 +1105,8 @@ class ParDictListSearch:
         self.__dict__['_taskObj'] = taskObj
 
     def __getattr__(self, paramname):
+        if self._taskObj.is_pseudo(paramname):
+            return getattr(self._taskObj, paramname)
         if paramname[:1] == '_':
             raise AttributeError(paramname)
         # try exact match
@@ -1131,6 +1145,8 @@ class ParDictListSearch:
                 (paramname, p.name))
 
     def __setattr__(self, paramname, value):
+        if self._taskObj.is_pseudo(paramname):
+            return setattr(self._taskObj, paramname, value)
         if paramname[:1] == '_': raise AttributeError(paramname)
         # try exact match
         try:
@@ -1515,26 +1531,26 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
             finally:
                 iraf.cl.menus = menus
 
-# -----------------------------------------------------
-# Turn an IrafCLTask into an IrafPkg
-# This is necessary because sometimes package scripts
-# are incorrectly defined as simple CL tasks.  (Currently
-# the only example I know of is the imred/ccdred/ccdtest
-# package, but there could be others.)  Need to keep
-# the same object (because there may be multiple references
-# to it) but repair the mistake by changing its class.
-#
-# A bit scary, but it works (at least in the current version
-# of Python.)
-#
-# This doesn't do everything that might be necessary.  E.g., it does
-# not print the package contents after loading and does not put the
-# package on the list of loaded pcakges.  Leave that up to the calling
-# routine.
-# -----------------------------------------------------
+    # -----------------------------------------------------
+    # Turn an IrafCLTask into an IrafPkg
+    # This is necessary because sometimes package scripts
+    # are incorrectly defined as simple CL tasks.  (Currently
+    # the only example I know of is the imred/ccdred/ccdtest
+    # package, but there could be others.)  Need to keep
+    # the same object (because there may be multiple references
+    # to it) but repair the mistake by changing its class.
+    #
+    # A bit scary, but it works (at least in the current version
+    # of Python.)
+    #
+    # This doesn't do everything that might be necessary.  E.g., it does
+    # not print the package contents after loading and does not put the
+    # package on the list of loaded pcakges.  Leave that up to the calling
+    # routine.
+    # -----------------------------------------------------
 
-def mutateCLTask2Pkg(o, loaded=1):
-
+def mutateCLTask2Pkg(o, loaded=1,  klass=IrafPkg):
+    
     """Hack an IRAF CL task object into an IRAF package object"""
 
     if isinstance(o, IrafPkg):
@@ -1550,8 +1566,7 @@ def mutateCLTask2Pkg(o, loaded=1):
     o._pkgs = minmatch.MinMatchDict()
 
     # Presto, you're an IrafPkg!
-    o.__class__ = IrafPkg
-
+    o.__class__ = klass
 
 # -----------------------------------------------------
 # IRAF foreign task class
