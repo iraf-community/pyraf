@@ -536,12 +536,16 @@ class IrafPar:
         plines = self.prompt.split('\n')
         for i in xrange(len(plines)-1): plines[i+1] = 32*' ' + plines[i+1]
         plines = '\n'.join(plines)
+        namelen = min(len(self.name), 12)
+        pvalue = self.get(prompt=0,lpar=1)
+        alwaysquoted = ['s', 'f', '*gcur', '*imcur', '*ukey', 'pset']
+        if self.type in alwaysquoted and self.value is not None: pvalue = '"' + pvalue + '"'
         if self.mode == "h":
-            s = "%13s = %-15s %s" % ("("+self.name,
-                                    self.get(prompt=0,lpar=1)+")", plines)
+            s = "%13s = %-15s %s" % ("("+self.name[:namelen],
+                                    pvalue+")", plines)
         else:
-            s = "%13s = %-15s %s" % (self.name,
-                                    self.get(prompt=0,lpar=1), plines)
+            s = "%13s = %-15s %s" % (self.name[:namelen],
+                                    pvalue, plines)
         if not verbose: return s
 
         if self.choice is not None:
@@ -2187,11 +2191,18 @@ class IrafParList:
 
     def lParam(self,verbose=0):
         """List the task parameters"""
+        # Do the non-hidden parameters first
         for i in xrange(len(self.__pars)):
             p = self.__pars[i]
-            if Verbose>0 or p.name != '$nargs':
-                print p.pretty(verbose=verbose or Verbose>0)
-
+            if p.mode != 'h':
+                if Verbose>0 or p.name != '$nargs':
+                    print p.pretty(verbose=verbose or Verbose>0)
+        # Now the hidden parameters
+        for i in xrange(len(self.__pars)):
+            p = self.__pars[i]
+            if p.mode == 'h':
+                if Verbose>0 or p.name != '$nargs':
+                    print p.pretty(verbose=verbose or Verbose>0)
     def dParam(self, taskname="", cl=1):
         """Dump the task parameters in executable form
 
