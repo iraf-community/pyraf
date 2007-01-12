@@ -28,6 +28,7 @@ add_lib_dirs.append(py_libs)
 
 def find_x(xdir=""):
     if xdir != "":
+        add_lib_dirs.append(os.path.join(xdir,'lib64'))
         add_lib_dirs.append(os.path.join(xdir,'lib'))
         add_inc_dirs.append(os.path.join(xdir,'include'))
     elif sys.platform == 'darwin' or sys.platform.startswith('linux'):
