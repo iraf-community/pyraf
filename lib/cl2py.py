@@ -1437,7 +1437,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         else:
             self.indent = 0
 
-        if taskObj:
+        if taskObj and self._ecl_iferr_entered:
             self.write("taskObj = iraf.getTask('%s')\n" % taskObj)
 
         # analyze goto structure

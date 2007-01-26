@@ -235,7 +235,9 @@ class IPython_PyRAF_Integrator(object):
             # as a variable and execute as Python
             j = line.find(cmd)
             return line[:j] + 'iraf.' + line[j:]
-        return iraf.clLineToPython(line)
+        code = iraf.clLineToPython(line)
+        statements = code.split("\n")
+        return "; ".join([ x for x in statements if x ])+"\n"
 
     def default(self, cmd, line, i):
         # print "input line:",repr(cmd),"line:",line,"i:",i
