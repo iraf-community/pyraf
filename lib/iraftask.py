@@ -1428,6 +1428,16 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
                         pass
         return matches
 
+    def unlearn(self):
+        """Resets parameters for all tasks in the package to their default values"""
+        # If package isn't loaded, just unlearn the top-level package parameters
+        if not self._loaded:
+            IrafCLTask.unlearn(self)
+        else:
+            # Loop over all tasks in the package
+            for task in self._tasks.keys():
+                iraf.getTask(task).unlearn()
+
     def __getattr__(self, name):
         """Return the task or param 'name' from this package (if it exists)."""
         if name[:1] == '_':
