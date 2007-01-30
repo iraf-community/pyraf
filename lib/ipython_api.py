@@ -258,6 +258,13 @@ class IPython_PyRAF_Integrator(object):
         """
         import linecache, traceback, sys, os
         import IPython.ultraTB
+
+        #get the color scheme from the user configuration file and pass
+        #it to the trace formatter
+        ip = IPython.ipapi.get()
+        csm = ip.options['colors']
+
+        
         linecache.checkcache()
         tblist = traceback.extract_tb(tb)
         tbskip = 0
@@ -269,7 +276,7 @@ class IPython_PyRAF_Integrator(object):
                filename == "<ipython console>":
                 tbskip += 1
         color_tb = IPython.ultraTB.AutoFormattedTB(
-            mode=self.traceback_mode, tb_offset=tbskip)
+            mode=self.traceback_mode, tb_offset=tbskip, color_scheme=csm)
         color_tb(type, value, tb)
 
     def prefilter(self, IP, line, continuation):
