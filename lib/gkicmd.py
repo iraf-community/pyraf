@@ -2,20 +2,20 @@
 iraf gki metacode (primarily for interactive graphics)"""
 
 import gki, gwm
-import Numeric
+import numpy
 
 def gkiCoord(ndcCoord):
     """Convert Normalized Device Coordinates to GKI coordinates"""
-    return Numeric.array(ndcCoord * (gki.GKI_MAX + 1), Numeric.Int16)
+    return numpy.array(ndcCoord * (gki.GKI_MAX + 1), numpy.int16)
 
 def text(textstring, x, y):
     """Return metacode for text string written at x,y"""
     gkiX = gkiCoord(x)
     gkiY = gkiCoord(y)
-    data = Numeric.fromstring(textstring,Numeric.Int8)
-    data = data.astype(Numeric.Int16)
+    data = numpy.fromstring(textstring,numpy.int8)
+    data = data.astype(numpy.int16)
     size = 6 + len(textstring)
-    metacode = Numeric.zeros(size,Numeric.Int16)
+    metacode = numpy.zeros(size,numpy.int16)
     metacode[0] = gki.BOI
     metacode[1] = gki.GKI_TEXT
     metacode[2] = size
@@ -54,7 +54,7 @@ def markCross(x, y, size=1., xflag=0, yflag=0,
     else:
         gkiYmin = gkiCoord(0.)
         gkiYmax = gkiCoord(limit)
-    metacode = Numeric.zeros(22,Numeric.Int16)
+    metacode = numpy.zeros(22,numpy.int16)
     i = 0
     metacode[i  ] = gki.BOI
     metacode[i+1] = gki.GKI_PLSET

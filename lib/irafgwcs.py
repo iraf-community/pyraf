@@ -8,7 +8,7 @@ only commit the change when it appears to really be applicable.
 $Id$
 """
 
-import struct, Numeric, math
+import struct, numpy, math
 from irafglobals import IrafError
 
 WCS_SLOTS = 16
@@ -65,16 +65,16 @@ class IrafGWcs:
             self.pending = None
             #print "Default WCS set for plotting window. Plot may not display properly."
             return
-        wcsStruct = arg[1:].astype(Numeric.Int16)
+        wcsStruct = arg[1:].astype(numpy.int16)
         if arg[0] != len(wcsStruct):
             raise IrafError("Inconsistency in length of WCS graphics structure")
         self.pending = [None]*WCS_SLOTS
         for i in xrange(WCS_SLOTS):
             record = wcsStruct[WCS_RECORD_SIZE*i:WCS_RECORD_SIZE*(i+1)]
             # read 8 4 byte floats from beginning of record
-            fvals = Numeric.fromstring(record[:8*2].tostring(),Numeric.Float32)
+            fvals = numpy.fromstring(record[:8*2].tostring(),numpy.float32)
             # read 3 4 byte ints after that
-            ivals = Numeric.fromstring(record[8*2:].tostring(),Numeric.Int32)
+            ivals = numpy.fromstring(record[8*2:].tostring(),numpy.int32)
             self.pending[i] = tuple(fvals) + tuple(ivals)
         if self.wcs is None:
             self.commit()
@@ -84,15 +84,15 @@ class IrafGWcs:
         """Return the WCS in the original IRAF format"""
 
         self.commit()
-        wcsStruct = Numeric.zeros(WCS_RECORD_SIZE * WCS_SLOTS, Numeric.Int16)
+        wcsStruct = numpy.zeros(WCS_RECORD_SIZE * WCS_SLOTS, numpy.int16)
         for i in xrange(WCS_SLOTS):
             x = self.wcs[i]
-            farr = Numeric.array(x[:8],Numeric.Float32)
-            iarr = Numeric.array(x[8:],Numeric.Int32)
+            farr = numpy.array(x[:8],numpy.float32)
+            iarr = numpy.array(x[8:],numpy.int32)
             wcsStruct[WCS_RECORD_SIZE*i:
                       WCS_RECORD_SIZE*(i+1)] = \
-                      Numeric.fromstring(farr.tostring() + iarr.tostring(),
-                                                             Numeric.Int16)
+                      numpy.fromstring(farr.tostring() + iarr.tostring(),
+                                                             numpy.int16)
         return wcsStruct.tostring()
 
 
@@ -247,9 +247,9 @@ class IrafGWcs:
 def _setWCSDefault():
     """Define default WCS for STDGRAPH plotting area."""
     # set 8 4 byte floats
-    farr = Numeric.array([0.,1.,0.,1.,0.,1.,0.,1.],Numeric.Float32)
+    farr = numpy.array([0.,1.,0.,1.,0.,1.,0.,1.],numpy.float32)
     # set 3 4 byte ints
-    iarr = Numeric.array([LINEAR,LINEAR,CLIP+NEWFORMAT],Numeric.Int32)
+    iarr = numpy.array([LINEAR,LINEAR,CLIP+NEWFORMAT],numpy.int32)
     wcsarr = tuple(farr)+tuple(iarr)
 
     wcs = []

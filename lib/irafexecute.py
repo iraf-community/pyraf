@@ -3,7 +3,7 @@
 $Id$
 """
 
-import os, re, signal, string, struct, sys, time, types, Numeric, cStringIO
+import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
 import subproc, filecache, wutil
 import iraf, gki, irafutils, irafukey
 from irafglobals import IrafTask
@@ -11,7 +11,7 @@ import irafgwcs
 
 #stdgraph = None
 
-IPC_PREFIX = Numeric.array([01120],Numeric.Int16).tostring()
+IPC_PREFIX = numpy.array([01120],numpy.int16).tostring()
 
 # weirdo protocol to get output from task back to subprocess
 # definitions from cl/task.h and lib/clio.h
@@ -773,14 +773,14 @@ class IrafProcess:
             self.stderr.write(Iraf2AscString(xdata))
             self.stderr.flush()
         elif chan == 6:
-            gki.kernel.append(Numeric.fromstring(xdata,'s'))
+            gki.kernel.append(numpy.fromstring(xdata, dtype=numpy.int16))
         elif chan == 7:
-            stdimagekernel.append(Numeric.fromstring(xdata,'s'))
+            stdimagekernel.append(numpy.fromstring(xdata, dtype=numpy.int16))
         elif chan == 8:
             self.stdout.write("data for STDPLOT\n")
             self.stdout.flush()
         elif chan == 9:
-            sdata = Numeric.fromstring(xdata,'s')
+            sdata = numpy.fromstring(xdata, dtype=numpy.int16)
             if isBigEndian:
                 # Actually, the channel destination is sent
                 # by the iraf process as a 4 byte int, the following
@@ -971,15 +971,15 @@ class IrafProcess:
                             % (self.msg,))
 
 
-# IRAF string conversions using Numeric module
+# IRAF string conversions using numpy module
 
 def Asc2IrafString(ascii_string):
     """translate ascii to IRAF 16-bit string format"""
-    inarr = Numeric.fromstring(ascii_string, Numeric.Int8)
-    return inarr.astype(Numeric.Int16).tostring()
+    inarr = numpy.fromstring(ascii_string, numpy.int8)
+    return inarr.astype(numpy.int16).tostring()
 
 def Iraf2AscString(iraf_string):
     """translate 16-bit IRAF characters to ascii"""
-    inarr = Numeric.fromstring(iraf_string, Numeric.Int16)
-    return inarr.astype(Numeric.Int8).tostring()
+    inarr = numpy.fromstring(iraf_string, numpy.int16)
+    return inarr.astype(numpy.int8).tostring()
 

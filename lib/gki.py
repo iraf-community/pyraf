@@ -39,7 +39,7 @@ graphics kernels as directed by commands embedded in the metacode stream.
 $Id$
 """
 
-import Numeric
+import numpy
 from types import *
 import os, sys, string, re, wutil, graphcap, iraf
 import fontdata
@@ -203,8 +203,8 @@ class EditHistory:
         return newEditHistory
 
 def acopy(a):
-    """Return copy of Numeric array a"""
-    return Numeric.array(a, copy=1)
+    """Return copy of numpy array a"""
+    return numpy.array(a, copy=1)
 
 # GKI opcodes that clear the buffer
 _clearCodes = [
@@ -231,12 +231,12 @@ class GkiBuffer:
 
         """Initialize to empty buffer or to metacode"""
 
-        if metacode:
+        if metacode is not None:
             self.buffer = metacode
             self.bufferSize = len(metacode)
             self.bufferEnd = len(metacode)
         else:
-            self.buffer = Numeric.zeros(0, Numeric.Int16)
+            self.buffer = numpy.zeros(0, numpy.int16)
             self.bufferSize = 0
             self.bufferEnd = 0
         self.editHistory = EditHistory()
@@ -310,7 +310,7 @@ class GkiBuffer:
             diff = self.bufferEnd + len(metacode) - self.bufferSize
             nblocks = diff/self.INCREMENT + 1
             self.bufferSize = self.bufferSize + nblocks * self.INCREMENT
-            newbuffer = Numeric.zeros(self.bufferSize, Numeric.Int16)
+            newbuffer = numpy.zeros(self.bufferSize, numpy.int16)
             if self.bufferEnd > 0:
                 newbuffer[0:self.bufferEnd] = self.buffer[0:self.bufferEnd]
             self.buffer = newbuffer
@@ -368,7 +368,7 @@ class GkiBuffer:
 
     def get(self):
 
-        """Return buffer contents (as Numeric array, even if empty)"""
+        """Return buffer contents (as numpy array, even if empty)"""
 
         return self.buffer[0:self.bufferEnd]
 
@@ -417,7 +417,7 @@ class GkiBuffer:
                 if (ip+arglen) > lenMC: break
                 self.lastTranslate = ip
                 self.lastOpcode = opcode
-                arg = buffer[ip+3:ip+arglen].astype(Numeric.Int)
+                arg = buffer[ip+3:ip+arglen].astype(numpy.int)
                 ip = ip + arglen
                 if ((opcode < 0) or
                     (opcode > GKI_MAX_OP_CODE) or
@@ -738,7 +738,7 @@ class DrawBuffer:
 
         """Get current contents of buffer
 
-        Note that this returns a view into the Numeric array,
+        Note that this returns a view into the numpy array,
         so if the return value is modified the buffer will change too.
         """
 
@@ -928,7 +928,7 @@ class GkiController(GkiProxy):
     def control_openws(self, arg):
 
         mode = arg[0]
-        device = string.strip(arg[2:].astype(Numeric.Int8).tostring())
+        device = string.strip(arg[2:].astype(numpy.int8).tostring())
         self.openKernel(device)
 
     def openKernel(self, device=None):
@@ -1271,26 +1271,26 @@ class IrafHatchFills:
 
         self.patterns = [None]*7
         # pattern 3, vertical stripes
-        p = Numeric.zeros(128,Numeric.Int8)
+        p = numpy.zeros(128,numpy.int8)
         p[0:4] = [0x92,0x49,0x24,0x92]
         for i in xrange(31):
             p[(i+1)*4:(i+2)*4] = p[0:4]
         self.patterns[3] = p
         # pattern 4, horizontal stripes
-        p = Numeric.zeros(128,Numeric.Int8)
+        p = numpy.zeros(128,numpy.int8)
         p[0:4] = [0xFF,0xFF,0xFF,0xFF]
         for i in xrange(10):
             p[(i+1)*12:(i+1)*12+4] = p[0:4]
         self.patterns[4] = p
         # pattern 5, close diagonal striping
-        p = Numeric.zeros(128,Numeric.Int8)
+        p = numpy.zeros(128,numpy.int8)
         p[0:12] = [0x92,0x49,0x24,0x92,0x24,0x92,0x49,0x24,0x49,0x24,0x92,0x49]
         for i in xrange(9):
             p[(i+1)*12:(i+2)*12] = p[0:12]
         p[120:128] = p[0:8]
         self.patterns[5] = p
         # pattern 6, diagonal stripes the other way
-        p = Numeric.zeros(128,Numeric.Int8)
+        p = numpy.zeros(128,numpy.int8)
         p[0:12] = [0x92,0x49,0x24,0x92,0x49,0x24,0x92,0x49,0x24,0x92,0x49,0x24]
         for i in xrange(9):
             p[(i+1)*12:(i+2)*12] = p[0:12]

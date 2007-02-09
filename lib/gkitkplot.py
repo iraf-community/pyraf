@@ -4,7 +4,7 @@ Tkplot implementation of the gki kernel class
 $Id$
 """
 
-import Numeric, sys, string, wutil
+import numpy, sys, string, wutil
 import Tkinter, msgiobuffer
 import Ptkplot
 import gki, gkitkbase, gkigcur, tkplottext, textattrib, irafgwcs
@@ -179,7 +179,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.wcs.commit()
         x = gki.ndc(arg[0])
         y = gki.ndc(arg[1])
-        text = arg[3:].astype(Numeric.Int8).tostring()
+        text = arg[3:].astype(numpy.int8).tostring()
         self._tkplotAppend(self.tkplot_text, x, y, text)
 
     def gki_fillarea(self, arg):
@@ -271,7 +271,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.gwidget.delete(Tkinter.ALL)
         # Clear the screen
         self.tkplot_faset(0,0)
-        self.tkplot_fillarea(Numeric.array([0.,0.,1.,0.,1.,1.,0.,1.]))
+        self.tkplot_fillarea(numpy.array([0.,0.,1.,0.,1.,1.,0.,1.]))
         # Plot the current buffer
         for (function, args) in self.drawBuffer.get():
             apply(function, args)
@@ -304,10 +304,10 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         gw = self.gwidget
         h = gw.winfo_height()
         w = gw.winfo_width()
-        scaled = (Numeric.array([w,-h]) *
-                  (Numeric.reshape(vertices, (npts, 2))
-                   - Numeric.array([0.,1.])))
-        apply(gw.create_line,tuple(scaled.flat.astype(Numeric.Int32)),options)
+        scaled = (numpy.array([w,-h]) *
+                  (numpy.reshape(vertices, (npts, 2))
+                   - numpy.array([0.,1.])))
+        apply(gw.create_line,tuple(scaled.ravel().astype(numpy.int32)),options)
 
     def tkplot_polymarker(self, vertices):
 
@@ -319,9 +319,9 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         gw = self.gwidget
         h = gw.winfo_height()
         w = gw.winfo_width()
-        scaled = (Numeric.array([w,-h]) *
-                  (Numeric.reshape(vertices, (npts, 2))
-                   - Numeric.array([0.,1.]))).astype(Numeric.Int32)
+        scaled = (numpy.array([w,-h]) *
+                  (numpy.reshape(vertices, (npts, 2))
+                   - numpy.array([0.,1.]))).astype(numpy.int32)
         # Lack of intrinsic Tk point mode means that they must be explicitly
         # looped over.
         for i in xrange(npts):
@@ -347,10 +347,10 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         gw = self.gwidget
         h = gw.winfo_height()
         w = gw.winfo_width()
-        scaled = (Numeric.array([w,-h]) *
-                  (Numeric.reshape(vertices, (npts, 2))
-                   - Numeric.array([0.,1.])))
-        coords = tuple(scaled.flat.astype(Numeric.Int32))
+        scaled = (numpy.array([w,-h]) *
+                  (numpy.reshape(vertices, (npts, 2))
+                   - numpy.array([0.,1.])))
+        coords = tuple(scaled.ravel().astype(numpy.int32))
         if fa.fillstyle == 1: # hollow
             apply(gw.create_line, coords+(coords[0],coords[1]), options)
         else: # solid or clear cases

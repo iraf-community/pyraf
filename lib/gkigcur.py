@@ -4,7 +4,7 @@ implement IRAF gcur functionality
 $Id$
 """
 
-import string, os, sys, Numeric, Tkinter
+import string, os, sys, numpy, Tkinter
 import gwm, wutil, iraf, gkicmd, gki, irafutils
 
 # The following class attempts to emulate the standard IRAF gcursor

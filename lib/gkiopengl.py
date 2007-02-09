@@ -4,7 +4,7 @@ OpenGL implementation of the gki kernel class
 $Id$
 """
 
-import Numeric, os, sys, string, re, wutil
+import numpy, os, sys, string, re, wutil
 import Tkinter, msgiobuffer
 from OpenGL.GL import *
 import toglcolors
@@ -184,7 +184,7 @@ class GkiOpenGlKernel(gkitkbase.GkiInteractiveTkBase):
         self.wcs.commit()
         x = gki.ndc(arg[0])
         y = gki.ndc(arg[1])
-        text = arg[3:].astype(Numeric.Int8).tostring()
+        text = arg[3:].astype(numpy.int8).tostring()
         self._glAppend(self.gl_text, x, y, text)
 
     def gki_fillarea(self, arg):

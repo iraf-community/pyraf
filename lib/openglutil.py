@@ -8,7 +8,7 @@ $Id$
 
 import OpenGL
 from OpenGL.GL import *
-import Numeric
+import numpy
 
 if OpenGL.__version__[0] == '1':
     oldpyopengl = 1
@@ -16,7 +16,7 @@ if OpenGL.__version__[0] == '1':
     def glPlot(vertices, plottype):
         npts = len(vertices)/2
         glBegin(plottype)
-        glVertex(Numeric.reshape(vertices,(npts, 2)))
+        glVertex(numpy.reshape(vertices,(npts, 2)))
         glEnd()
 
 else:
@@ -24,5 +24,5 @@ else:
 
     def glPlot(vertices, plottype):
         npts = len(vertices)/2
-        glVertexPointerd(Numeric.reshape(vertices,(npts, 2)))
+        glVertexPointerd(numpy.reshape(vertices,(npts, 2)))
         glDrawArrays(plottype, 0, npts)

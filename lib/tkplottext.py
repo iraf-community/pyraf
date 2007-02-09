@@ -26,7 +26,7 @@ by a system-wide configuration state. See gkiopengl.py
 """
 
 import fontdata
-import Numeric
+import numpy
 import math
 from textattrib import *
 
@@ -116,21 +116,21 @@ def softText(win,x,y,textstr):
     options = {"fill":color}
     font = ta.font
     size = fsize*hsize
-    cosrot = Numeric.cos((charUp-90)*Numeric.pi/180)
-    sinrot = Numeric.sin((charUp-90)*Numeric.pi/180)
+    cosrot = numpy.cos((charUp-90)*numpy.pi/180)
+    sinrot = numpy.sin((charUp-90)*numpy.pi/180)
     nchar = 0
     # The main event!
     for char in textstr:
         # draw character with origin at bottom left corner of character box
         charstrokes = ta.font[ord(char)-ord(' ')]
         for i in xrange(len(charstrokes[0])):
-            vertex = Numeric.zeros((len(charstrokes[0][i]),2),Numeric.Float64)
+            vertex = numpy.zeros((len(charstrokes[0][i]),2),numpy.float64)
             xf = size * charstrokes[0][i]/27. -fsize*hsize/2.
             yf = size * charstrokes[1][i]*fontAspect/27. - fsize*vsize/2.
             vertex[:,0]=      cosrot*(xf + nchar*dx) \
                             - sinrot*(yf + nchar*dy) + xNetOffset + xwin*x
             vertex[:,1]=ywin-(sinrot*(xf + nchar*dx) \
                             + cosrot*(yf + nchar*dy) + yNetOffset + ywin*y)
-            apply(gw.create_line, tuple(vertex.flat.astype(Numeric.Int32)),
+            apply(gw.create_line, tuple(vertex.ravel().astype(numpy.int32)),
                       options)
         nchar = nchar + 1

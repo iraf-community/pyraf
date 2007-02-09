@@ -49,8 +49,8 @@ def ukey():
     char = getSingleTTYChar()
 
     if not char:
-        # on control-C, raise KeyboardInterrupt
-        raise KeyboardInterrupt
+        # on control-C, raise Keyboardnumpy.interrupt
+        raise Keyboardnumpy.interrupt
     elif char == '\004':
         # on control-D, raise EOF
         raise EOFError

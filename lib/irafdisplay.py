@@ -30,7 +30,7 @@ $Id$
 
 """
 
-import os, socket, Numeric, fcntl
+import os, socket, numpy, fcntl
 import irafutils
 
 # FCNTL is deprecated in Python 2.2
@@ -157,9 +157,9 @@ class ImageDisplay:
 
         """Write request to image display"""
 
-        a = Numeric.array([tid,thingct,subunit,0,x,y,z,t], Numeric.Int16)
+        a = numpy.array([tid,thingct,subunit,0,x,y,z,t], numpy.int16)
         # Compute the checksum
-        sum = Numeric.add.reduce(a)
+        sum = numpy.add.reduce(a)
         sum = 0xffff - (sum & 0xffff)
         a[3] = sum
         self._write(a.tostring())

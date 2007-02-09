@@ -41,33 +41,30 @@ import __main__, re, os, types
 import minmatch, describe, iraf, irafutils
 from irafglobals import IrafTask, IrafPkg
 
-# print info on Numeric arrays if Numeric is available
+# print info on numpy arrays if numpy is available
 
 try:
-    import Numeric
-    _NumericArrayType = Numeric.ArrayType
+    import numpy
+    _numpyArrayType = numpy.ndarray
 except ImportError:
-    # no Numeric available, so we won't encounter arrays
-    _NumericArrayType = None
+    # no numpy available, so we won't encounter arrays
+    _numpyArrayType = None
 
 try:
-    if _NumericArrayType:
-        _NumericTypeName = {}
-        _NumericTypeName[Numeric.PyObject]     = 'PyObject'
-        _NumericTypeName[Numeric.UnsignedInt8] = 'UnsignedInt8'
-        _NumericTypeName[Numeric.Int8]         = 'Int8'
-        _NumericTypeName[Numeric.Int16]        = 'Int16'
-        _NumericTypeName[Numeric.Int32]        = 'Int32'
-        _NumericTypeName[Numeric.Float32]      = 'Float32'
-        _NumericTypeName[Numeric.Float64]      = 'Float64'
-        # Int sometimes has different character type than Int32,
-        # but may really be the same type
-        if not _NumericTypeName.has_key(Numeric.Int):
-            a = Numeric.array([0],Numeric.Int)
-            _NumericTypeName[Numeric.Int] = 'Int'+`a.itemsize()*8`
-        _NumericTypeName[Numeric.Complex32]    = 'Complex32'
-        _NumericTypeName[Numeric.Complex64]    = 'Complex64'
-        _NumericTypeName[Numeric.Complex128]   = 'Complex128'
+    if _numpyArrayType:
+        _numpyTypeName = {}
+        _numpyTypeName[numpy.object_]     = 'object_'
+        _numpyTypeName[numpy.uint8]       = 'uint8'
+        _numpyTypeName[numpy.int8]         = 'int8'
+        _numpyTypeName[numpy.uint16]       = 'uint16'
+        _numpyTypeName[numpy.int16]        = 'int16'
+        _numpyTypeName[numpy.uint32]       = 'uint32'
+        _numpyTypeName[numpy.int32]        = 'int32'
+        _numpyTypeName[numpy.float32]      = 'float32'
+        _numpyTypeName[numpy.float64]      = 'float64'
+        _numpyTypeName[numpy.complex64]    = 'complex64'
+        _numpyTypeName[numpy.complex128]    = 'complex128'
+        _numpyTypeName[numpy.complex256]   = 'complex256'
 except AttributeError:
     pass
 
@@ -375,8 +372,8 @@ def _valueString(value,verbose=0):
         except (AttributeError, TypeError):
             # oh well, just have to live with type string alone
             pass
-    elif issubclass(t, _NumericArrayType):
-        vstr = vstr + " " + _NumericTypeName[value.typecode()] + "["
+    elif issubclass(t, _numpyArrayType):
+        vstr = vstr + " " + _numpyTypeName[value.dtype()] + "["
         for k in range(len(value.shape)):
             if k:
                 vstr = vstr + "," + `value.shape[k]`

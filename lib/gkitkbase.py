@@ -4,7 +4,7 @@ Tk gui implementation for the gki plot widget
 $Id$
 """
 
-import Numeric, os, sys, string, wutil, time
+import numpy, os, sys, string, wutil, time
 import Tkinter, msgiobuffer
 import gki, textattrib, irafgwcs
 from irafglobals import IrafError, pyrafDir, userWorkingHome
@@ -284,7 +284,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             fname = fd.GetFileName()
             fd.DialogCleanup()
         fh = open(fname, 'r')
-        metacode = Numeric.fromstring(fh.read(), Numeric.Int16)
+        metacode = numpy.fromstring(fh.read(), numpy.int16)
         fh.close()
         self.clear(name=fname)
         self.append(metacode,isUndoable=1)

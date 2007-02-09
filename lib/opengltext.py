@@ -26,7 +26,7 @@ by a system-wide configuration state. See gkiopengl.py
 """
 
 import fontdata
-import Numeric
+import numpy
 import math
 from OpenGL.GL import *
 import openglutil
@@ -142,7 +142,7 @@ def drawchar(char,font,size,aspect):
     # draw character with origin at bottom left corner of character box
     charstrokes = font[ord(char)-ord(' ')]
     for i in xrange(len(charstrokes[0])):
-        vertex = Numeric.zeros((len(charstrokes[0][i]),2),Numeric.Float64)
+        vertex = numpy.zeros((len(charstrokes[0][i]),2),numpy.float64)
         vertex[:,0] = size * charstrokes[0][i]/27.
         vertex[:,1] = size * charstrokes[1][i] * aspect/27.
-        openglutil.glPlot(vertex.flat, GL_LINE_STRIP)
+        openglutil.glPlot(vertex.ravel(), GL_LINE_STRIP)
