@@ -1110,7 +1110,7 @@ def printPlot(window=None):
         window = gwm.getActiveGraphicsWindow()
         if window is None: return
     gkibuff = window.gkibuffer.get()
-    if gkibuff:
+    if len(gkibuff):
         graphcap = getGraphcap()
         stdplot = iraf.envget('stdplot','')
         if not stdplot:
