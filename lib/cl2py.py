@@ -2281,7 +2281,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         for arg in arglist[1:]:
             if len(newargs)+len(arg)+2>maxline:
                 self.write(newargs + ',')
-                self.writeIndent('\t')
+                #self.writeIndent('\t')
                 newargs = arg
                 maxline = linelength - self.column
             else:

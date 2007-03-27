@@ -93,7 +93,7 @@ if doCmdline:
 	import sys
 	import IPython
 	sys.argv = ["ipython","-p","pyraf"]
-	IPython.Shell.start().mainloop()
+	IPython.Shell.start(user_ns=globals()).mainloop()
 	sys.exit()
     else:
         import pyraf.pycmdline
