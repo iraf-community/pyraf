@@ -1418,9 +1418,11 @@ def fscan(locals, line, *namelist, **kw):
     Accepts an additional keyword argument strconv with names of
     conversion functions for each argument in namelist.
 
-    Returns number of arguments set to new values.  If there are
-    too few space-delimited arguments on the input line, it does
-    not set all the arguments.  Returns EOF on end-of-file.
+    Returns number of arguments set to new values, which may be
+    fewer than the number of variables if an unexpected character
+    is encountered in 'line'.  If there are too few space-delimited
+    arguments on the input line, it does not set all the arguments.
+    Returns EOF on end-of-file.
     """
     # get the value of the line (which may be a variable, string literal,
     # expression, or an IRAF list parameter)
@@ -1445,6 +1447,7 @@ def fscan(locals, line, *namelist, **kw):
         strconv = n*[None]
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+    n_actual = 0        # this will be the actual number of values converted
     for i in range(n):
         # even messier: special handling for struct type variables, which
         # consume the entire remaining string
@@ -1476,9 +1479,13 @@ def fscan(locals, line, *namelist, **kw):
             cmd = namelist[i] + ' = ' + strconv[i] + '(' + `f[i]` + ')'
         else:
             cmd = namelist[i] + ' = ' + `f[i]`
-        exec cmd in locals
-    _nscan = n
-    return n
+        try:
+            exec cmd in locals
+            n_actual += 1
+        except ValueError:
+            break
+    _nscan = n_actual
+    return n_actual
 
 def fscanf(locals, line, format, *namelist, **kw):
     """fscanf function sets parameters from a string/list parameter with format
@@ -1486,9 +1493,11 @@ def fscanf(locals, line, format, *namelist, **kw):
     Implementation is similar to fscan but is a bit simpler because
     special struct handling is not needed.  Does not allow strconv keyword.
 
-    Returns number of arguments set to new values.  If there are
-    too few space-delimited arguments on the input line, it does
-    not set all the arguments.  Returns EOF on end-of-file.
+    Returns number of arguments set to new values, which may be
+    fewer than the number of variables if an unexpected character
+    is encountered in 'line'.  If there are too few space-delimited
+    arguments on the input line, it does not set all the arguments.
+    Returns EOF on end-of-file.
     """
     # get the value of the line (which may be a variable, string literal,
     # expression, or an IRAF list parameter)
@@ -1510,11 +1519,16 @@ def fscanf(locals, line, format, *namelist, **kw):
         n = 1
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+    n_actual = 0        # this will be the actual number of values converted
     for i in range(n):
         cmd = namelist[i] + ' = ' + `f[i]`
-        exec cmd in locals
-    _nscan = n
-    return n
+        try:
+            exec cmd in locals
+            n_actual += 1
+        except ValueError:
+            break
+    _nscan = n_actual
+    return n_actual
 
 def _weirdEOF(locals, namelist):
     # Replicate a weird IRAF behavior -- if the argument list
