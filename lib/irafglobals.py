@@ -297,6 +297,88 @@ _INDEF_int = _INDEFClass_int()
 _INDEF_float = _INDEFClass_float()
 
 # -----------------------------------------------------
+# define IRAF-like EPSILON object
+# -----------------------------------------------------
+
+class _EPSILONClass(object):
+    """Class of singleton EPSILON object, for floating-point comparison"""
+
+    def __new__(cls):
+        # Guido's example Singleton pattern
+        it = cls.__dict__.get("__it__")
+        if it is not None:
+            return it
+        cls.__it__ = it = super(_EPSILONClass, cls).__new__(cls)
+        return it
+
+    def __init__(self):
+        self.__dict__["_value"] = None
+
+    def setvalue(self):
+        DEFAULT_VALUE = 1.192e-7
+        hlib = _os.environ.get("hlib")
+        if hlib is None:
+            self._value = DEFAULT_VALUE
+            return
+        fd = open(_os.path.join(hlib, "mach.h"))
+        lines = fd.readlines()
+        fd.close()
+        foundit = 0
+        for line in lines:
+            words = line.split()
+            if len(words) < 1 or words[0] == "#":
+                continue
+            if words[0] == "define" and words[1] == "EPSILONR":
+                strvalue = words[2]
+                if strvalue[0] == "(":
+                    strvalue = strvalue[1:-1]
+                self._value = float(strvalue)
+                foundit = 1
+                break
+        if not foundit:
+            self._value = DEFAULT_VALUE
+
+    def __copy__(self):
+        """Not allowed to make a copy"""
+        return self
+
+    def __deepcopy__(self, memo=None):
+        """Not allowed to make a copy"""
+        return self
+
+    def __setattr__(self, name, value):
+        """Not allowed to modify the value or add a new attribute"""
+        if name == "_value":
+            if self.__dict__["_value"] is None:
+                self.__dict__["_value"] = value
+            else:
+                raise RuntimeError, "epsilon cannot be modified"
+        else:
+            pass
+
+    def __delattr__(self, value):
+        """Not allowed to delete the value"""
+        pass
+
+    def __cmp__(self, other):
+        return cmp(self._value, other)
+
+    def __repr__(self): return "%.6g" % self._value
+    def __str__(self): return "%.6g" % self._value
+
+    __oct__ = None
+    __hex__ = None
+
+    def __int__(self): return 0
+    def __long__(self): return 0
+    def __float__(self): return self._value
+
+    def __nonzero__(self): return 1
+
+epsilon = _EPSILONClass()
+epsilon.setvalue()
+
+# -----------------------------------------------------
 # tag classes
 # -----------------------------------------------------
 
@@ -305,4 +387,3 @@ class IrafTask:
 
 class IrafPkg(IrafTask):
     pass
-

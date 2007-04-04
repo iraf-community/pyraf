@@ -904,6 +904,15 @@ class CLScanner(ContextSensitiveScanner):
             # INDEF, EOF always get recognized
             self.addToken(type=string.upper(keyword))
 
+        elif keyword == "epsilon":
+
+            # epsilon always gets recognized
+            self.addToken(type="FLOAT", attr=keyword)
+            # xxx self.addToken(type="FLOAT")
+            #     AttributeError: 'NoneType' object has no attribute 'find'
+            # xxx self.addToken(type=string.upper(keyword))
+            #     epsilon was quoted
+
         elif _boolDict.has_key(keyword):
 
             # boolean yes, no always gets recognized
