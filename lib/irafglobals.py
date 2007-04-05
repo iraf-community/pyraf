@@ -375,6 +375,58 @@ class _EPSILONClass(object):
 
     def __nonzero__(self): return 1
 
+    def __add__(self, other):
+        return self._value + other
+
+    def __sub__(self, other):
+        return self._value - other
+
+    def __mul__(self, other):
+        return self._value * other
+
+    def __div__(self, other):
+        return self._value / other
+
+    def __mod__(self, other):
+        return self._value % other
+
+    def __divmod__(self, other):
+        return (self._value / other, self._value % other)
+
+    def __pow__(self, other):
+        return self._value ** other
+
+    def __neg__(self):
+        return -self._value
+
+    def __pos__(self):
+        return self._value
+
+    def __abs__(self):
+        return abs(self._value)
+
+    # arguments in reverse order
+    def __radd__(self, other):
+        return other + self._value
+
+    def __rsub__(self, other):
+        return other - self._value
+
+    def __rmul__(self, other):
+        return other * self._value
+
+    def __rdiv__(self, other):
+        return other / self._value
+
+    def __rmod__(self, other):
+        return other % self._value
+
+    def __rdivmod__(self, other):
+        return (other / self._value, other % self._value)
+
+    def __rpow__(self, other):
+        return other ** self._value
+
 epsilon = _EPSILONClass()
 epsilon.setvalue()
 
