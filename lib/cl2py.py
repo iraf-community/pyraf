@@ -1427,6 +1427,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.pipeOut = []
         self.pipeIn = []
         self.pipeCount = 0
+        # This is used only by n_for_stmt and n_next_stmt; it's for
+        # incrementing the loop variable before writing "continue".
+        self.save_incr = []
 
         self._ecl_pyline = 1
         self._ecl_clline = None
@@ -2028,6 +2031,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # -------- execution block --------
         # go down inside the compound_stmt item so the increment can
         # be included inside the same block
+        self.save_incr.append(node[6])
         self.write(":")
         self.incrIndent()
         for i in range(node[8].label_count):
@@ -2043,9 +2047,18 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.writeIndent()
             self.preorder(incr)
         self.decrIndent()
+        del(self.save_incr[-1])
         self.prune()
 
     def n_next_stmt(self, node):
+        if len(self.save_incr) > 0:
+            # increment the loop variable -- copied from n_for_stmt()
+            incr = self.save_incr[-1]
+            if incr.type == "opt_assign_stmt" and len(incr)==0:
+                pass
+            else:
+                self.preorder(incr)
+                self.writeIndent()
         self.write("continue")
         self.prune()
 
@@ -2281,7 +2294,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         for arg in arglist[1:]:
             if len(newargs)+len(arg)+2>maxline:
                 self.write(newargs + ',')
-                #self.writeIndent('\t')
+                self.writeIndent('\t')
                 newargs = arg
                 maxline = linelength - self.column
             else:
