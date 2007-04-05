@@ -1427,9 +1427,12 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.pipeOut = []
         self.pipeIn = []
         self.pipeCount = 0
-        # This is used only by n_for_stmt and n_next_stmt; it's for
-        # incrementing the loop variable before writing "continue".
-        self.save_incr = []
+        # These three are used only by n_while_stmt, n_for_stmt, n_next_stmt,
+        # and decrIndent; they are for incrementing the loop variable before
+        # writing "continue" in a "for" loop (but not in a "while" loop).
+        self.save_incr = []             # info to increment the loop variable
+        self.save_indent = []           # indentation level in a while loop
+        self.IN_A_WHILE_LOOP = "while"  # this is a constant value
 
         self._ecl_pyline = 1
         self._ecl_clline = None
@@ -1499,6 +1502,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         if self.printPass[self.indent]:
             self.writeIndent('pass')
         self.indent = self.indent-1
+        if len(self.save_indent) > 0 and self.save_indent[-1] == self.indent:
+            del self.save_incr[-1]
+            del self.save_indent[-1]
 
     def write(self, s, requireType=None, exprType=None):
 
@@ -2004,6 +2010,15 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 ##         self.prune()
 
 
+    def n_while_stmt(self, node):
+        """we've got a 'while' statement"""
+        # Append this value as a flag to tell n_next_stmt that it should
+        # not increment the loop variable before writing "continue".
+        self.save_incr.append(self.IN_A_WHILE_LOOP)
+        # Save the indentation level, so we can tell when we're leaving
+        # the 'while' loop.
+        self.save_indent.append(self.indent)
+
     def n_for_stmt(self, node):
         # convert for loop into while loop
         #
@@ -2031,7 +2046,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # -------- execution block --------
         # go down inside the compound_stmt item so the increment can
         # be included inside the same block
-        self.save_incr.append(node[6])
+        self.save_incr.append(node[6])  # needed if there's a 'next' statement
         self.write(":")
         self.incrIndent()
         for i in range(node[8].label_count):
@@ -2047,11 +2062,13 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.writeIndent()
             self.preorder(incr)
         self.decrIndent()
-        del(self.save_incr[-1])
+        if len(self.save_incr) > 0:
+            del(self.save_incr[-1])
         self.prune()
 
     def n_next_stmt(self, node):
-        if len(self.save_incr) > 0:
+        if len(self.save_incr) > 0 and \
+           self.save_incr[-1] != self.IN_A_WHILE_LOOP:
             # increment the loop variable -- copied from n_for_stmt()
             incr = self.save_incr[-1]
             if incr.type == "opt_assign_stmt" and len(incr)==0:
