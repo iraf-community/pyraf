@@ -997,23 +997,48 @@ def frac(x):
 
 def real(x):
     """Return real/float representation of x"""
-    if x == INDEF: return INDEF
-    try:
-        return float(x)
-    except ValueError:
-        #...handle the special a:b:c case here...
-        f = map(float,x.split(":"))
-        if x.find('-') >= 0:
-            sign = -1
+    if x == INDEF:
+        return INDEF
+    elif isinstance(x, str):
+        x = x.strip()
+        if x.find(':') >= 0:
+            #...handle the special a:b:c case here...
+            if x[0] in ["-", "+"]:
+                if x[0] == "-":
+                    sign = -1.
+                x = x[1:]
+            else:
+                sign = 1.
+            m = _re.search(r"[^0-9:.]", x)
+            if m:
+                x = x[0:m.start()]
+            f = map(float,x.split(":"))
             f = map(abs, f)
+            return sign*clSexagesimal(*f)
         else:
-            sign = 1
-        return sign*clSexagesimal(*f)
+            x = _re.sub("[EdD]", "e", x, count=1)
+            m = _re.search(r"[^0-9.e+-]", x)
+            if m:
+                x = x[0:m.start()]
+            return float(x)
+    else:
+        return float(x)
 
 def integer(x):
     """Return integer representation of x"""
     if x==INDEF:
         return INDEF
+    elif isinstance(x, str):
+        x = x.strip()
+        i = 0
+        j = len(x)
+        if x[0] in ["+", "-"]:
+            i = 1
+        x = _re.sub("[EdD]", "e", x, count=1)
+        m = _re.search(r"[^0-9.e+-]", x[i:])
+        if m:
+            j = i + m.start()
+        return int(float(x[:j]))
     else:
         return int(x)
 
