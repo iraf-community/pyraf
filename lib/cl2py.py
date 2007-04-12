@@ -101,8 +101,8 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
         else:
             raise TypeError('filename must be a string or a filehandle')
     elif string is not None:
-        if not isinstance(string,str):
-            raise TypeError('string must be a string')
+        #if not isinstance(string,str):
+        #raise TypeError('string must be a string')
         clInput = string
         efilename = 'string_proc'
         if usecache:
