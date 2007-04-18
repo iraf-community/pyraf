@@ -192,7 +192,7 @@ class IPython_PyRAF_Integrator(object):
         elif line[i:i+1] != "" and line[i] in '=,[':
             # don't even try if it doesn't look like a procedure call
             return line
-        elif cmd in self._ipython_magic:
+        elif cmd in self._ipython_magic and cmd not in ['cd']:
             return line
         elif not hasattr(iraf,cmd):
             # not an IRAF command
