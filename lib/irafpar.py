@@ -1294,8 +1294,9 @@ class IrafParPset(IrafParS):
             return iraf.getTask(self.value or self.name)
         else:
             from iraffunctions import IrafTaskFactory
-            return IrafTaskFactory(taskname=self.value.split(".")[0],
-                                   value=self.value)
+            irf_val = iraf.Expand(self.value)
+            return IrafTaskFactory(taskname=irf_val.split(".")[0],
+                                   value=irf_val)
 
 
 # -----------------------------------------------------
