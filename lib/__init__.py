@@ -8,7 +8,7 @@ $Id$
 
 R. White, 2000 February 18
 """
-__version__ = "1.4dev (2006Nov24)"
+__version__ = "1.4 (2007Jun15)"
 
 import os, sys, __main__
 
