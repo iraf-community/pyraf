@@ -519,7 +519,6 @@ class IrafTask(irafglobals.IrafTask):
 
         # OK, the easy case didn't work -- now initialize the
         # complete parDictList (if necessary) and search them all
-
         if self._parDictList is None: self._setParDictList()
         for dictname, paramdict in self._parDictList:
             if paramdict.has_key(paramname,exact=exact):
@@ -765,13 +764,13 @@ class IrafTask(irafglobals.IrafTask):
                     par.get()._deleteRunningParList()
 
     def _setParDictList(self):
-        """Set the list of parameter dictionaries for task execution.
+        """Set the list of (up to 3) parameter dictionaries for task execution.
 
         Parameter dictionaries for execution consist of this
         task's parameters (which includes any psets
-        referenced), all the parameters for packages that have
-        been loaded, and the cl parameters.  Each dictionary
-        has an associated name (because parameters could be
+        referenced), all the parameters for the task of the package
+        loaded for the current task, and the cl parameters.  Each
+        dictionary has an associated name (because parameters could be
         asked for as task.parname as well as just parname).
 
         Create this list anew for each execution in case the
@@ -780,24 +779,24 @@ class IrafTask(irafglobals.IrafTask):
         the getParam() and setParam() methods.
         """
 
+        # Start with the parameters for the current task
         self.initTask()
         parDictList = [(self._name,self.getParDict())]
-        # package parameters
-        # only include each pkg once
-        pinc = {}
-        for i in xrange(len(iraf.loadedPath)):
-            pkg = iraf.loadedPath[-1-i]
-            pkgname = pkg.getName()
-            if not pinc.has_key(pkgname):
-                pd = pkg.getParDict()
-                # don't include null dictionaries
-                if pd:
-                    parDictList.append( (pkg.getName(), pd) )
-        # cl parameters
+
+        # Next, parameters from the package to which the current task belongs
+        # [Ticket 59: mimic behavior of param.c:lookup_param()]
+        pd = iraf.getTask(self.getPkgname()).getParDict()
+        if (pd): # do not include null dictionaries
+            parDictList.append( (self.getPkgname(),pd) )
+
+        # Lastly, cl parameters
         cl = iraf.cl
         if cl is not None:
             parDictList.append( (cl.getName(),cl.getParDict()) )
+
+        # Done
         self._parDictList = parDictList
+
 
     def _getParFromDict(self, paramdict, paramname, pindex, field,
                     native, mode, prompt):
