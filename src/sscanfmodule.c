@@ -82,7 +82,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /*
  * Size of copy buffer for conversions with a specified field width.
  */
-#define FWBUFSIZE	512
+#define FWBUFSIZE	1023
 
 /*
  * Flag array for scansets.  Array is indexed by character,
