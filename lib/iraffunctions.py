@@ -1226,7 +1226,7 @@ def clDms(x,digits=1,seconds=1,deg=None):
     else:
         secform = "%%0%d.%df" % (digits+3, digits)
     if seconds:
-        return ("%s%02d:%02d:"+secform) % (sign, d, m, s)
+        return ("%s%2d:%02d:"+secform) % (sign, d, m, s)
     else:
         return ("%s%02d:"+secform) % (sign, m, s)
 
@@ -1753,7 +1753,7 @@ def time(**kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
     resetList = redirApply(redirKW)
     try:
-        print _time.ctime(_time.time())
+        print _time.strftime('%a %H:%M:%S %d-%b-%Y')
     finally:
         rv = redirReset(resetList, closeFHList)
     return rv
