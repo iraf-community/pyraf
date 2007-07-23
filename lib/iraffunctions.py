@@ -2486,6 +2486,11 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
                 if Verbose>0: _writeError("Warning: CL task `%s' apparently is "
                         "a package" % pkgname)
 
+            # Make sure that this is the current package, even
+            # if another package was loaded in the package script
+            # but before the package statement
+            if loadedPath[-1] is not pkg: loadedPath.append(pkg)
+
             rv1 = (pkgname, bin or PkgBinary)
     finally:
         rv = redirReset(resetList, closeFHList)
