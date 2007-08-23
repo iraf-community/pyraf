@@ -687,6 +687,7 @@ def gkiTranslate(metacode, functionTable):
             apply(f,(arg,))
         opcode, arg = gkiBuffer.getNextCode()
 
+
 class DrawBuffer:
 
     """implement a buffer for draw commands which allocates memory in blocks
@@ -936,7 +937,14 @@ class GkiController(GkiProxy):
         """Open kernel specified by device or by current value of stdgraph"""
         device = self.getDevice(device)
         graphcap = getGraphcap()
-        if graphcap[device] != graphcap.get(self.lastDevice):
+
+        # In either of these 3 cases we want to create a new kernel.  The last
+        # is the most complex, and it needs to be revisited (when the Device
+        # class is refactored) but suffice it to say we only want to compare
+        # the dict for the device, not the "master dict".
+        if None == self.lastDevice or \
+           device != self.lastDevice or \
+           graphcap[device].dict[device] != graphcap.get(self.lastDevice)[self.lastDevice]:
             self.flush()
             executable = graphcap[device]['kf']
             if executable == 'cl':
@@ -1028,7 +1036,7 @@ class GkiRedirection(GkiKernel):
         # Overloads the baseclass implementation.
         self.filehandle.write(metacode.tostring())
 
-    # It's possible, even likely that control will nee dto deal with
+    # It's possible, even likely that control will need to deal with
     # setwcs and getwcs cases eventually. Crassly, we'll leave it to
     # users to find a good case that illustrates this. For now control
     # does nothing
