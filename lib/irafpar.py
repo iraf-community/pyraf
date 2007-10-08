@@ -1144,6 +1144,13 @@ class IrafArrayPar(IrafPar):
             raise ValueError("Value must be a " + `len(self.value)` +
                     "-element array for " + self.name)
 
+    def isLegal(self):
+        """Dont call checkValue for arrays"""
+        try:
+            return self.value is not None
+        except ValueError:
+            return 0
+
 # -----------------------------------------------------
 # IRAF string parameter mixin class
 # -----------------------------------------------------
