@@ -316,6 +316,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
             # Redirect graphics
             prevkernel = gki.kernel
             gki.kernel = gki.GkiRedirection(stdgraph)
+            gki.kernel.wcs = prevkernel.wcs
         else:
             # do graphics task initialization
             gki.kernel.taskStart(taskname)

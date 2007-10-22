@@ -44,6 +44,7 @@ from types import *
 import os, sys, string, re, wutil, graphcap, iraf
 import fontdata
 from textattrib import *
+import irafgwcs
 
 nIrafColors = 16
 
@@ -900,6 +901,7 @@ class GkiController(GkiProxy):
         GkiProxy.__init__(self)
         self.interactiveKernel = None
         self.lastDevice = None
+        self.wcs = None
 
     def taskStart(self, name):
 
@@ -1025,23 +1027,37 @@ class GkiNull(GkiKernel):
 class GkiRedirection(GkiKernel):
     """A graphics kernel whose only responsibility is to redirect
     metacode to a file-like object. Currently doesn't handle WCS
-    get or set commands. Unclear how important this is."""
+    get or set commands. Unclear how important this is.
+    
+    (This is needed for situations when you append to a graphics
+    file - RIJ)"""
 
     def __init__(self, filehandle):
+        self.createFunctionTables()
         # Differs from all other constructors in that it takes a
         # file-like object as an argument.
         self.filehandle = filehandle
+        self.wcs = None
+        self.returnData = None
 
     def append(self, metacode):
         # Overloads the baseclass implementation.
         self.filehandle.write(metacode.tostring())
 
-    # It's possible, even likely that control will need to deal with
-    # setwcs and getwcs cases eventually. Crassly, we'll leave it to
-    # users to find a good case that illustrates this. For now control
-    # does nothing
-    def control(self, metacode): pass
-        
+    # control needs to get and set WCS data
+    def control_setwcs(self, arg):
+        self.wcs = irafgwcs.IrafGWcs(arg)
+        # Need to store this in the (persistent) kernel
+        kernel.wcs = self.wcs
+
+    def control_getwcs(self, arg):
+        if not self.wcs:
+            self.wcs = irafgwcs.IrafGWcs()
+        if self.returnData:
+            self.returnData = self.returnData + self.wcs.pack()
+        else:
+            self.returnData = self.wcs.pack()
+
     def getStdin(self, default=None): return default
 
     def getStdout(self, default=None): return default
