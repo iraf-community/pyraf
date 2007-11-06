@@ -771,8 +771,9 @@ class IrafProcess:
             self.stdout.flush()
         elif chan == 5:
             sys.stdout.flush()
-            self.stderr.write(Iraf2AscString(xdata))
-            self.stderr.flush()
+            if self.stderr.isatty():
+                self.stderr.write(Iraf2AscString(xdata))
+                self.stderr.flush()
         elif chan == 6:
             gki.kernel.append(numpy.fromstring(xdata, dtype=numpy.int16))
         elif chan == 7:
@@ -983,4 +984,5 @@ def Iraf2AscString(iraf_string):
     """translate 16-bit IRAF characters to ascii"""
     inarr = numpy.fromstring(iraf_string, numpy.int16)
     return inarr.astype(numpy.int8).tostring()
+
 
