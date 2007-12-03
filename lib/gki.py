@@ -216,6 +216,8 @@ _clearCodes = [
         GKI_CANCEL,
         ]
 
+#**********************************************************************
+
 class GkiBuffer:
 
     """implement a buffer for gki which allocates memory in blocks so that
@@ -444,6 +446,8 @@ class GkiBuffer:
         if j > self.bufferEnd: j = self.bufferEnd
         return self.buffer[i:j]
 
+#**********************************************************************
+
 class GkiReturnBuffer:
 
     """A fifo buffer used to queue up metacode to be returned to
@@ -473,6 +477,8 @@ class GkiReturnBuffer:
 
 # stack of active IRAF tasks, used to identify source of plot
 tasknameStack = []
+
+#**********************************************************************
 
 class GkiKernel:
 
@@ -629,38 +635,42 @@ class GkiKernel:
             self.stdin, self.stdout, self.stderr = None, None, None
 
     def getStdin(self, default=None):
-        # if default is a file, don't redirect it
-        # otherwise if graphics is active, redirect to status line
+        # return our own or the default, depending on what is defined
+        # and what is a tty
         try:
-            if (not self.stdin) or \
+            if self.stdin and self.stdin.isatty():
+                return self.stdin
+            elif (not self.stdin) or \
               (default and not default.isatty()):
                 return default
         except AttributeError:
-            pass
+            pass # OK if isatty is missing
         return self.stdin
 
     def getStdout(self, default=None):
-        # if default is a file, don't redirect it
-        # otherwise if graphics is active, redirect to status line
+        # return our own or the default, depending on what is defined
+        # and what is a tty
         try:
-            if (not self.stdout) or \
+            if self.stdout and self.stdout.isatty():
+                return self.stdout
+            elif (not self.stdout) or \
               (default and not default.isatty()):
                 return default
         except AttributeError:
-            # OK if isatty is missing
-            pass
+            pass # OK if isatty is missing
         return self.stdout
 
     def getStderr(self, default=None):
-        # if default is a file, don't redirect it
-        # otherwise if graphics is active, redirect to status line
+        # return our own or the default, depending on what is defined
+        # and what is a tty
         try:
-            if (not self.stderr) or \
+            if self.stderr and self.stderr.isatty():
+                return self.stderr
+            elif (not self.stderr) or \
               (default and not default.isatty()):
                 return default
         except AttributeError:
-            # OK if isatty is missing
-            pass
+            pass # OK if isatty is missing
         return self.stderr
 
 #**********************************************************************
@@ -688,6 +698,7 @@ def gkiTranslate(metacode, functionTable):
             apply(f,(arg,))
         opcode, arg = gkiBuffer.getNextCode()
 
+#**********************************************************************
 
 class DrawBuffer:
 
@@ -882,6 +893,8 @@ class GkiProxy(GkiKernel):
         if self.stdgraph:
             self.stdgraph.taskDone(name)
 
+#**********************************************************************
+
 class GkiController(GkiProxy):
 
     """Proxy that switches between interactive and other kernels
@@ -996,6 +1009,8 @@ class GkiController(GkiProxy):
                 tried[devstr] = pdevstr
         return devstr
 
+#**********************************************************************
+
 class GkiNull(GkiKernel):
 
     """A version of the graphics kernel that does nothing except warn the
@@ -1023,6 +1038,8 @@ class GkiNull(GkiKernel):
 
     def translate(self, gkiMetacode, redraw=0):
         pass
+
+#**********************************************************************
 
 class GkiRedirection(GkiKernel):
     """A graphics kernel whose only responsibility is to redirect
@@ -1061,9 +1078,10 @@ class GkiRedirection(GkiKernel):
     def getStdin(self, default=None): return default
 
     def getStdout(self, default=None): return default
- 
+
     def getStderr(self, default=None): return default
-     
+
+#**********************************************************************
 
 class GkiNoisy(GkiKernel):
 
@@ -1149,6 +1167,7 @@ def printPlot(window=None):
     stdout = kernel.getStdout(default=sys.stdout)
     stdout.write("%s\n" % msg)
 
+#**********************************************************************
 
 class IrafGkiConfig:
 
