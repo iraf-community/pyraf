@@ -163,6 +163,9 @@ class RawOpengl(Widget, Misc):
             self._isSWCursorActive = 0
             self['cursor'] = 'arrow'
 
+    def getSWCursor(self):
+        return self._SWCursor
+
     def SWCursorWake(self):
         self.doIdleSWCursor = 1
         self.after_idle(self.idleSWCursorWake)
