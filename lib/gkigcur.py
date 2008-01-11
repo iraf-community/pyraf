@@ -112,9 +112,10 @@ class Gcursor:
         NDC coordinates"""
 
         gwidget = self.gwidget
-        if gwidget._SWCursor.isLastSWmove:
-            ndcX = gwidget._SWCursor.lastx
-            ndcY = gwidget._SWCursor.lasty
+        cursorobj = gwidget.getSWCursor()
+        if cursorobj.isLastSWmove:
+            ndcX = cursorobj.lastx
+            ndcY = cursorobj.lasty
         else:
             sx = gwidget.winfo_pointerx() - gwidget.winfo_rootx()
             sy = gwidget.winfo_pointery() - gwidget.winfo_rooty()
@@ -136,7 +137,7 @@ class Gcursor:
         if not wutil.isViewable(self.top.winfo_id()):
             return
         # if no previous position, ignore
-        cursorobj = gwidget._SWCursor
+        cursorobj = gwidget.getSWCursor()
         newX = cursorobj.lastx * width  + deltaX
         newY = cursorobj.lasty * height + deltaY
 
