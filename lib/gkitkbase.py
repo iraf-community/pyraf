@@ -129,6 +129,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     activateSWCursor()      Various methods for handling the crosshair cursor
     deactivateSWCursor()    (Should rename and clean these up)
     isSWCursorActive()
+    getSWCursor()
 
     #XXX
     Still need to work on the ColorManager class, which has a bunch
