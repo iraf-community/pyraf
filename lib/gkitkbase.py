@@ -685,8 +685,8 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         gwidget = self.gwidget
         if gwidget:
             if gwidget.lastX is None:
-                gwidget.lastX = gwidget.winfo_width()/2
-                gwidget.lastY = gwidget.winfo_height()/2
+                gwidget.lastX = int(gwidget.winfo_width()/2.)
+                gwidget.lastY = int(gwidget.winfo_height()/2.)
             wutil.moveCursorTo(gwidget.winfo_id(),gwidget.lastX,gwidget.lastY)
             gwidget.focus_force()
 
