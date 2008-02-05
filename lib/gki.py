@@ -1044,18 +1044,17 @@ class GkiNull(GkiKernel):
 class GkiRedirection(GkiKernel):
     """A graphics kernel whose only responsibility is to redirect
     metacode to a file-like object. Currently doesn't handle WCS
-    get or set commands. Unclear how important this is.
+    get or set commands.
     
     (This is needed for situations when you append to a graphics
     file - RIJ)"""
 
     def __init__(self, filehandle):
-        self.createFunctionTables()
         # Differs from all other constructors in that it takes a
         # file-like object as an argument.
+        GkiKernel.__init__(self)
         self.filehandle = filehandle
         self.wcs = None
-        self.returnData = None
 
     def append(self, metacode):
         # Overloads the baseclass implementation.
