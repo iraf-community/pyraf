@@ -487,6 +487,7 @@ class GkiKernel:
 
     def __init__(self):
 
+        # Basics needed for all instances
         self.createFunctionTables()
         self.returnData = None
         self.errorMessageCount = 0
@@ -494,9 +495,20 @@ class GkiKernel:
         self.stdout = None
         self.stderr = None
         self._stdioStack = []
+        self.gkiPreferTtyIpc = None # see notes in the getter
         # no harm in allocating gkibuffer, doesn't actually allocate
         # space unless appended to.
         self.gkibuffer = GkiBuffer()
+
+    def preferTtyIpc(self):
+        """Getter. Return the attribute, set 1st if need be (lazy init)."""
+        # Allow users to set the behavior of redirection choices
+        # for special uses of PyRAF (e.g. embedded in other GUI's).  Do not
+        # set this without knowing what you are doing - it breaks some commonly
+        # used command-line redirection within PyRAF. (thus default = False)
+        if self.gkiPreferTtyIpc == None:
+            self.gkiPreferTtyIpc = iraf.envget('gkiprefertty','') == 'yes'
+        return self.gkiPreferTtyIpc
 
     def createFunctionTables(self):
 
@@ -638,7 +650,7 @@ class GkiKernel:
         # return our own or the default, depending on what is defined
         # and what is a tty
         try:
-            if self.stdin and self.stdin.isatty():
+            if self.preferTtyIpc() and self.stdin and self.stdin.isatty():
                 return self.stdin
             elif (not self.stdin) or \
               (default and not default.isatty()):
@@ -651,7 +663,7 @@ class GkiKernel:
         # return our own or the default, depending on what is defined
         # and what is a tty
         try:
-            if self.stdout and self.stdout.isatty():
+            if self.preferTtyIpc() and self.stdout and self.stdout.isatty():
                 return self.stdout
             elif (not self.stdout) or \
               (default and not default.isatty()):
@@ -664,7 +676,7 @@ class GkiKernel:
         # return our own or the default, depending on what is defined
         # and what is a tty
         try:
-            if self.stderr and self.stderr.isatty():
+            if self.preferTtyIpc() and self.stderr and self.stderr.isatty():
                 return self.stderr
             elif (not self.stderr) or \
               (default and not default.isatty()):
