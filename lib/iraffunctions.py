@@ -49,7 +49,7 @@ def _writeError(msg):
 # now it is safe to import other iraf modules
 # -----------------------------------------------------
 
-import sys, os, string, re, math, types, time, fnmatch, glob, linecache
+import sys, os, string, re, math, struct, types, time, fnmatch, glob, linecache
 import sscanf, minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 import iraf
@@ -75,6 +75,7 @@ _os = os
 _string = string
 _re = re
 _math = math
+_struct = struct
 _types = types
 _time = time
 _fnmatch = fnmatch
@@ -94,10 +95,12 @@ _irafpar = irafpar
 _irafexecute = irafexecute
 _cl2py = cl2py
 
-del sys, os, string, re, math, types, time, fnmatch, glob, linecache
+del sys, os, string, re, math, struct, types, time, fnmatch, glob, linecache
 del StringIO, pickle
 del minmatch, subproc, wutil
 del irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
+
+BITS_PER_LONG = _struct.calcsize('l') * 8 # is 64 on a 64-bit machine
 
 # -----------------------------------------------------
 # private dictionaries:
@@ -1070,13 +1073,20 @@ def radix(value, base=10, length=0):
         # handle specially so don't have to worry about it below
         return "%0*d" % (length, ivalue)
     # convert to an unsigned long integer
-    lvalue = eval(hex(ivalue) + 'L')
+    hexIvalue = hex(ivalue) # hex() can return a string for an int or a long
+    isLong = hexIvalue[-1] == 'L'
+    if not isLong: hexIvalue += 'L'
+    lvalue = eval(hexIvalue)
     outdigits = []
-    while lvalue > 0:
+    while lvalue > 0 or lvalue < -1:
         lvalue, digit = divmod(lvalue, base)
         outdigits.append(int(digit))
     outdigits = map(lambda index: _radixDigits[index], outdigits)
-    # zero-padding
+    # zero-pad if needed (automatically do so for negative numbers)
+    if ivalue < 0:
+        maxlen = 32
+        if isLong: maxlen = BITS_PER_LONG
+        outdigits.extend((maxlen-len(outdigits))*["1"])
     if length>len(outdigits):
         outdigits.extend((length-len(outdigits))*["0"])
     outdigits.reverse()
