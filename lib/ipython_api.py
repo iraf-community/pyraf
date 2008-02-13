@@ -14,7 +14,10 @@ Code derived from pyraf.pycmdline.py
 #*****************************************************************************
 
 from IPython import Release
-__author__  = '%s <%s>' % Release.authors['Fernando']
+
+# comment out this line because it crashes epydoc
+# __author__  = '%s <%s>' % Release.authors['Fernando']
+
 __license__ = Release.license
 
 # set search path to include directory above this script and current directory
