@@ -142,6 +142,13 @@ if wutil.hasGraphics:
             except ImportError:
                 print "OpenGL module not installed, using default instead"
                 kernel = "default"
+        elif kernelname == "matplotlib":
+            try:
+                import GkiMpl
+                kernel = GkiMpl.GkiMplKernel
+            except ImportError:
+                print "matplotlib module not installed, using default instead"
+                kernel = "default"
         else:
             print "Graphics kernel specified by PYRAFGRAPHICS=", \
                    kernelname, " not found."
