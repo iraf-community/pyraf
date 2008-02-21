@@ -141,27 +141,29 @@ if wutil.hasGraphics:
                 kernel = gkiopengl.GkiOpenGlKernel
             except ImportError:
                 print "OpenGL module not installed, using default instead"
-                kernel = "default"
+                kernelname = "default"
         elif kernelname == "matplotlib":
             try:
                 import GkiMpl
                 kernel = GkiMpl.GkiMplKernel
             except ImportError:
                 print "matplotlib module not installed, using default instead"
-                kernel = "default"
+                kernelname = "default"
         else:
             print "Graphics kernel specified by PYRAFGRAPHICS=", \
                    kernelname, " not found."
             print "Using default kernel instead."
-            kernel = "default"
+            kernelname = "default"
     else:
-        kernel = "default"
-    if kernel == "default":
+        kernelname = "default"
+    if kernelname == "default":
         import gkitkplot
         kernel = gkitkplot.GkiTkplotKernel
     _g = GraphicsWindowManager(kernel)
-#    _g = GraphicsWindowManager(gkitkplot.GkiTkplotKernel)
     wutil.isGwmStarted = 1
+    if os.environ.has_key('PYRAFGRAPHICS_TEST'):
+        print "Using graphics kernel: "+kernelname
+    del kernelname
 else:
     _g = None
     wutil.isGwmStarted = 0
