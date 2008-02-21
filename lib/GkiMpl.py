@@ -15,6 +15,7 @@ from matplotlib.patches import Rectangle
 import gki, gkitkbase, textattrib
 import gkigcur
 import MplCanvasAdapter as mca
+from wutil import moveCursorTo
 
 # MPL version
 MPL_MAJ_MIN = matplotlib.__version__.split('.') # tmp var
@@ -480,7 +481,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # wutil.moveCursorTo uses 0,0 <--> upper left, need to convert
         sx = int(  x   * self.gwidget.winfo_width())
         sy = int((1-y) * self.gwidget.winfo_height())
-        wutil.moveCursorTo(self.gwidget.winfo_id(), sx, sy)
+        # call the wutil version
+        moveCursorTo(self.gwidget.winfo_id(), sx, sy)
 
     def gki_plset(self, arg):
 
