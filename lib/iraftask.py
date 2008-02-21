@@ -1006,9 +1006,8 @@ class IrafPset(IrafTask):
             raise KeyError("Pset "+self.getName()+" has no parameter file")
 
     def _run(self, redirKW, specialKW):
-        # should executing a pset run epar?
-        # currently we silently do nothing
-        pass
+        # executing a pset
+        self.eParam() # the cl runs the param editor here; so shall we
 
     def __str__(self):
         # when coerced to a string, pset is name of task
