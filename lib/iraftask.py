@@ -525,8 +525,8 @@ class IrafTask(irafglobals.IrafTask):
                 return self._getParFromDict(paramdict, paramname, pindex,
                                                 field, native, mode="h", prompt=prompt)
         else:
-            raise iraf.IrafError("Unknown parameter requested: " +
-                    paramname)
+            raise iraf.IrafError('Unknown parameter requested: "'+paramname+
+                  '" for task: "'+self._name+'" in pkg: "'+self._pkgname+'"')
 
     #---------------------------------------------------------
     # task parameter utility methods
