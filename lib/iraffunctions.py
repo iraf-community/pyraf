@@ -992,6 +992,24 @@ def strlstr(str1,str2):
     if INDEF in (str1, str2): return INDEF
     return str2.rfind(str1)+1
 
+def trim(str, trimchars=None):
+    """Trim any of the chars in 'trimchars' (default = whitesspace) from
+    both ends of 'str'."""
+    if INDEF in (str, trimchars): return INDEF
+    return str.strip(trimchars)
+
+def triml(str, trimchars=None):
+    """Trim any of the chars in 'trimchars' (default = whitesspace) from
+    the left side of 'str'."""
+    if INDEF in (str, trimchars): return INDEF
+    return str.lstrip(trimchars)
+
+def trimr(str, trimchars=None):
+    """Trim any of the chars in 'trimchars' (default = whitesspace) from
+    the right side of 'str'."""
+    if INDEF in (str, trimchars): return INDEF
+    return str.rstrip(trimchars)
+
 def frac(x):
     """Return fractional part of x"""
     if x == INDEF: return INDEF
@@ -1092,33 +1110,103 @@ def radix(value, base=10, length=0):
     outdigits.reverse()
     return ''.join(outdigits)
 
+def rad(value):
+    """Convert arg in degrees to radians"""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.radians(value)
+
+def deg(value):
+    """Convert arg in radians to degrees"""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.degrees(value)
+
 def sin(value):
-    """Trigonometric sine function"""
+    """Trigonometric sine function.  Input in radians."""
     if value==INDEF:
         return INDEF
     else:
         return _math.sin(value)
 
+def asin(value):
+    """Trigonometric arc sine function.  Result in radians."""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.asin(value)
+
 def cos(value):
-    """Trigonometric cosine function"""
+    """Trigonometric cosine function.  Input in radians."""
     if value==INDEF:
         return INDEF
     else:
         return _math.cos(value)
 
+def acos(value):
+    """Trigonometric arc cosine function.  Result in radians."""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.acos(value)
+
 def tan(value):
-    """Trigonometric tangent function"""
+    """Trigonometric tangent function.  Input in radians."""
     if value==INDEF:
         return INDEF
     else:
         return _math.tan(value)
 
 def atan2(x,y):
-    """Trigonometric 2-argument arctangent function"""
+    """Trigonometric 2-argument arctangent function.  Result in radians."""
     if INDEF in (x,y):
         return INDEF
     else:
         return _math.atan2(x,y)
+
+def dsin(value):
+    """Trigonometric sine function.  Input in degrees."""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.sin(_math.radians(value))
+
+def dasin(value):
+    """Trigonometric arc sine function.  Result in degrees."""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.degrees(_math.asin(value))
+
+def dcos(value):
+    """Trigonometric cosine function.  Input in degrees."""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.cos(_math.radians(value))
+
+def dacos(value):
+    """Trigonometric arc cosine function.  Result in degrees."""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.degrees(_math.acos(value))
+
+def dtan(value):
+    """Trigonometric tangent function.  Input in degrees."""
+    if value==INDEF:
+        return INDEF
+    else:
+        return _math.tan(_math.radians(value))
+
+def datan2(x,y):
+    """Trigonometric 2-argument arctangent function.  Result in degrees."""
+    if INDEF in (x,y):
+        return INDEF
+    else:
+        return _math.degrees(_math.atan2(x,y))
 
 def exp(value):
     """Exponential function"""
