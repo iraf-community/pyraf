@@ -42,7 +42,7 @@ def find_x(xdir=""):
             raise ImportError("Tkinter is not installed")
         tk=Tkinter.Tk()
         tk.withdraw()
-    	tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
+        tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
         tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
         tk_lib = os.path.join((tk.getvar('tk_library')), '../')
         tkv = str(Tkinter.TkVersion)[:3]
@@ -59,7 +59,7 @@ def find_x(xdir=""):
                     ind = lib_list.index(lib)
                     add_lib_dirs.append(os.path.dirname(lib_list[ind + 2]))
                     #break
-            	    add_inc_dirs.append(os.path.join(os.path.dirname(lib_list[ind + 2]), '../include'))
+                    add_inc_dirs.append(os.path.join(os.path.dirname(lib_list[ind + 2]), '../include'))
 
 
 
@@ -98,7 +98,7 @@ class smart_install_data(install_data):
 
 def dosetup():
     r = setup(name = "PyRAF",
-              version = "1.2",
+              version = "1.6",
               description = "A Python based CL for IRAF",
               author = "Rick White, Perry Greenfield",
               maintainer_email = "help@stsci.edu",
