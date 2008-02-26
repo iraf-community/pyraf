@@ -50,7 +50,7 @@ def _writeError(msg):
 # -----------------------------------------------------
 
 import sys, os, string, re, math, struct, types, time, fnmatch, glob, linecache
-import sscanf, minmatch, subproc, wutil
+import numpy, sscanf, minmatch, subproc, wutil
 import irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 import iraf
 import gki
@@ -84,6 +84,7 @@ _linecache = linecache
 _StringIO = StringIO
 _pickle = pickle
 
+_numpy = numpy
 _minmatch = minmatch
 _subproc = subproc
 _wutil = wutil
@@ -97,10 +98,15 @@ _cl2py = cl2py
 
 del sys, os, string, re, math, struct, types, time, fnmatch, glob, linecache
 del StringIO, pickle
-del minmatch, subproc, wutil
+del numpy, minmatch, subproc, wutil
 del irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 
+# Number of bits per long
 BITS_PER_LONG = _struct.calcsize('l') * 8 # is 64 on a 64-bit machine
+
+# FP_EPSILON is the smallest number such that: 1.0 + epsilon > 1.0;  Use None
+# in the finfo ctor to make it use the default precision for a Python float.
+FP_EPSILON = _numpy.finfo(None).eps
 
 # -----------------------------------------------------
 # private dictionaries:
@@ -375,7 +381,6 @@ def saveToFile(savefile, **kw):
     p.dump(dict)
     if doclose:
         fh.close()
-
 
 
 def restoreFromFile(savefile, doprint=1, **kw):
@@ -1257,6 +1262,41 @@ def maximum(*args):
     else:
         return max(*args)
 
+def hypot(x,y):
+    """Return the Euclidean distance, sqrt(x*x + y*y)."""
+    if INDEF in (x,y):
+        return INDEF
+    else:
+        return _math.hypot(x,y)
+
+def sign(value):
+    """Sign of argument (-1 or 1)"""
+    if value==INDEF: return INDEF
+    if value>=0.0:
+       return 1
+    else:
+       return -1
+
+def clNot(value):
+    """Bitwise boolean NOT of an integer"""
+    if value==INDEF: return INDEF
+    return ~(int(value))
+
+def clAnd(x,y):
+    """Bitwise boolean AND of two integers"""
+    if INDEF in (x,y): return INDEF
+    return x&y
+
+def clOr(x,y):
+    """Bitwise boolean OR of two integers"""
+    if INDEF in (x,y): return INDEF
+    return x|y
+
+def clXor(x,y):
+    """Bitwise eXclusive OR of two integers"""
+    if INDEF in (x,y): return INDEF
+    return x^y
+
 def osfn(filename):
     """Convert IRAF virtual path name to OS pathname"""
 
@@ -1346,6 +1386,56 @@ def access(filename):
     # Magic values that trigger special behavior
     magicValues = { "STDIN": 1, "STDOUT": 1, "STDERR": 1}
     return magicValues.has_key(filename) or _os.path.exists(Expand(filename))
+
+def fp_equal(x, y):
+    """Floating point compare  to within machine precision. This logic is
+       taken directly from IRAF's fp_equald function."""
+    # Check the easy answers first
+    if INDEF in (x,y): return INDEF
+    if x==y: return True
+
+    # We can't normalize zero, so handle the zero operand cases first.
+    # Note that the case where 0 equals 0 is handled above.
+    if x==0.0 or y==0.0: return False
+
+    # Now normalize the operands and do an epsilon comparison
+    normx, ex = _fp_norm(x)
+    normy, ey = _fp_norm(y)
+
+    # Here is an easy false check
+    if ex != ey: return False
+
+    # Finally compare the values
+    x1 = 1.0 + abs(normx-normy)
+    x2 = 1.0 + (32.0 * FP_EPSILON)
+    return x1 <= x2
+
+def _fp_norm(x):
+    """Normalize a floating point number x to the value normx, in the
+       range [1-10).  expon is returned such that:
+       x = normx * (10.0 ** expon)
+       This logic is taken directly from IRAF's fp_normd function."""
+    # See FP_EPSILON description elsewhere.
+    tol = FP_EPSILON * 10.0
+    absx = abs(x)
+    expon = 0
+
+    if absx > 0:
+       while absx < (1.0-tol):
+           absx *= 10.0
+           expon -= 1
+           if absx == 0.0: # check for underflow to zero
+               return 0, 0
+       while absx >= (10.0+tol):
+           absx /= 10.0
+           expon += 1
+
+    if x < 0:
+        normx = -absx
+    else:
+        normx = absx
+
+    return normx, expon
 
 _denode_pat = _re.compile(r'[^/]*!')
 
