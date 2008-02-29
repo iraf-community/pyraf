@@ -269,7 +269,7 @@ class Binder(object):
 		# return self.inform(s)
 		return None
 
-class PyrafEdit(urwid.Edit, Binder):
+class PyrafEdit(urwid.Edit):
 	"""PyrafEdit is a text entry widget which has keybindings similar
 	to IRAF's CL epar command.
 	"""
@@ -296,7 +296,7 @@ class PyrafEdit(urwid.Edit, Binder):
 			"right": self.MOVE_RIGHT,
 			"left": self.MOVE_LEFT,
 			}
-		Binder.__init__(self, EDIT_BINDINGS, inform)
+		self._binder = Binder(EDIT_BINDINGS, inform)
 
 	def reset_del_buffers(self):
 		self._del_words = []
@@ -394,7 +394,7 @@ class PyrafEdit(urwid.Edit, Binder):
 		self.insert_text(line)
 
 	def keypress(self, pos, key):
-		key = Binder.keypress(self, pos, key)
+		key = Binder.keypress(self._binder, pos, key)
 		if key is not None and not urwid.is_mouse_event(key):
 			key = urwid.Edit.keypress(self, pos, key)
 		return key
@@ -405,7 +405,7 @@ class PyrafEdit(urwid.Edit, Binder):
 	def verify(self):
 		return True
 
-class StringTparOption(urwid.Columns, Binder):
+class StringTparOption(urwid.Columns):
 	def __init__(self, paramInfo, defaultParamInfo, inform):
 
 		MODE_KEYS = []
@@ -422,7 +422,7 @@ class StringTparOption(urwid.Columns, Binder):
 			"home": self.MOVE_START
 			}
 
-		Binder.__init__(self, BINDINGS, inform, MODE_KEYS)
+		self._binder = Binder(BINDINGS, inform, MODE_KEYS)
 		
 		self._mode = "clear"
 		self._newline = True
@@ -460,7 +460,7 @@ class StringTparOption(urwid.Columns, Binder):
 					0, 1, 1)		
 
 	def keypress(self, pos, key):
-		key = Binder.keypress(self, pos, key)
+		key = Binder.keypress(self._binder, pos, key)
 		if key:
 			key = self._edit.keypress(pos, key)
 		return key
@@ -580,10 +580,10 @@ class NumberTparOption(StringTparOption):
 class BooleanTparOption(StringTparOption):
 	def __init__(self, *args, **keys):
 		StringTparOption.__init__(self, *args, **keys)
-		self.bind(" ","space")
-		self.bind("space", self.TOGGLE)
-		self.bind("right", self.TOGGLE)
-		self.bind("left", self.TOGGLE)
+		self._binder.bind(" ","space")
+		self._binder.bind("space", self.TOGGLE)
+		self._binder.bind("right", self.TOGGLE)
+		self._binder.bind("left", self.TOGGLE)
 
 	def TOGGLE(self):
 		if self.get_result() == "yes":
@@ -614,10 +614,10 @@ class BooleanTparOption(StringTparOption):
 class EnumTparOption(StringTparOption):
 	def __init__(self, *args, **keys):
 		StringTparOption.__init__(self, *args, **keys)
-		self.bind(" ","space")
-		self.bind("space", self.SPACE)
-		self.bind("right", self.SPACE)
-		self.bind("left", self.LEFT)
+		self._binder.bind(" ","space")
+		self._binder.bind("space", self.SPACE)
+		self._binder.bind("right", self.SPACE)
+		self._binder.bind("left", self.LEFT)
 
 	def adjust(self, delta, wrap):
 		choices = self.paramInfo.choice
