@@ -2030,16 +2030,33 @@ def stty(terminal=None, **kw):
             else:
                 raise TypeError('unexpected keyword argument: '+key)
         if terminal is None and len(kw) == 0:
+            # will need default values for the next step; try _wutil for them
+            dftNcol = '80'
+            dftNlin = '24'
+            try:
+               if _sys.stdout.isatty():
+                   nlines,ncols = _wutil.getTermWindowSize()
+                   dftNcol = str(ncols)
+                   dftNlin = str(nlines)
+            except: pass # No error message here - may not always be available
             # no args: print terminal type and size
             print '%s ncols=%s nlines=%s' % (envget('terminal','undefined'),
-                    envget('ttyncols','80'), envget('ttynlines','24'))
+                    envget('ttyncols',dftNcol), envget('ttynlines',dftNlin))
         elif expkw['resize'] or expkw['terminal'] == "resize":
-            # resize: sets CL environmental parameters giving screen size
+            # resize: sets CL env parameters giving screen size; show errors
             if _sys.stdout.isatty():
                 nlines,ncols = _wutil.getTermWindowSize()
                 set(ttyncols=str(ncols), ttynlines=str(nlines))
         elif expkw['terminal']:
             set(terminal=expkw['terminal'])
+            # They are setting the terminal type.  Let's at least try to
+            # get the dimensions if not given. This is more than the CL does.
+            if (not kw.has_key('nlines')) and (not kw.has_key('ncols')) and \
+               _sys.stdout.isatty():
+                try:
+                    nlines,ncols = _wutil.getTermWindowSize()
+                    set(ttyncols=str(ncols), ttynlines=str(nlines))
+                except: pass # No error msg here - may not always be available
         elif expkw['playback'] is not None:
             _writeError("stty playback not implemented")
     finally:
