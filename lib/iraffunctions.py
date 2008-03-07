@@ -1328,24 +1328,17 @@ def clSexagesimal(d, m, s=0):
     """Convert d:m:s value to float"""
     return (d+(m+s/60.0)/60.0)
 
-def clDms(x,digits=1,seconds=1,deg=None):
+def clDms(x,digits=1,seconds=1):
     """Convert float to d:m:s.s
 
     Number of decimal places on seconds is set by digits.
     If seconds is false, prints just d:m.m (omits seconds).
-    deg keyword is same as seconds (for backward compatibility).
     """
     if x<0:
         sign = '-'
         x = -x
     else:
         sign = ''
-    if deg is not None:
-        seconds = deg
-        # print deprecation warning
-        import warnings
-        warnings.warn("Use 'seconds' instead of deprecated keyword 'deg'",
-            DeprecationWarning, stacklevel=2)
     if seconds:
         d = int(x)
         x = 60*(x-d)
