@@ -44,7 +44,7 @@ _string_types = [ 's', 'f', 'struct' ]
 _string_list_types = [ '*struct', '*s', '*f', '*i' ]
 _real_types = [ 'r', 'd' ]
 
-def IrafParFactory(fields,filename=None,strict=0):
+def IrafParFactory(fields, strict=0):
 
     """IRAF parameter factory
 
@@ -58,31 +58,31 @@ def IrafParFactory(fields,filename=None,strict=0):
         raise SyntaxError("At least 3 fields must be given")
     type = fields[1]
     if type in _string_types:
-        return IrafParS(fields,filename,strict)
+        return IrafParS(fields,strict)
     elif type in _string_list_types:
-        return IrafParLS(fields,filename,strict)
+        return IrafParLS(fields,strict)
     elif type == "*gcur" or type == "gcur":
-        return IrafParGCur(fields,filename,strict)
+        return IrafParGCur(fields,strict)
     elif type == "*imcur" or type == "imcur":
-        return IrafParImCur(fields,filename,strict)
+        return IrafParImCur(fields,strict)
     elif type == "*ukey" or type == "ukey":
-        return IrafParUKey(fields,filename,strict)
+        return IrafParUKey(fields,strict)
     elif type == "pset":
-        return IrafParPset(fields,filename,strict)
+        return IrafParPset(fields,strict)
     elif type in _real_types:
-        return IrafParR(fields,filename,strict)
+        return IrafParR(fields,strict)
     elif type == "i":
-        return IrafParI(fields,filename,strict)
+        return IrafParI(fields,strict)
     elif type == "b":
-        return IrafParB(fields,filename,strict)
+        return IrafParB(fields,strict)
     elif type == "ar":
-        return IrafParAR(fields,filename,strict)
+        return IrafParAR(fields,strict)
     elif type == "ai":
-        return IrafParAI(fields,filename,strict)
+        return IrafParAI(fields,strict)
     elif type == "as":
-        return IrafParAS(fields,filename,strict)
+        return IrafParAS(fields,strict)
     elif type == "ab":
-        return IrafParAB(fields,filename,strict)
+        return IrafParAB(fields,strict)
     elif type[:1] == "a":
         raise SyntaxError("Cannot handle arrays of type %s" % type)
     else:
@@ -113,6 +113,11 @@ def makeIrafPar(init_value, datatype=None, name="<anonymous>", mode="h",
         strict=0, filename=None):
 
     """Create an IrafPar variable"""
+
+    # Deprecation note
+    if filename!=None and len(filename)>0 and filename!='string_proc':
+       warning("Use of filename arg in makeIrafPar is rather deprecated\n"+\
+               ", filename = \'"+filename+"'", level=-1)
 
     # if init_value is already an IrafPar, just return it
     #XXX Could check parameters to see if they are ok
@@ -182,7 +187,7 @@ def makeIrafPar(init_value, datatype=None, name="<anonymous>", mode="h",
         if fields[i] is not None:
             fields[i] = str(fields[i])
     try:
-        return IrafParFactory(fields, filename, strict=strict)
+        return IrafParFactory(fields, strict=strict)
     except ValueError, e:
         errmsg = "Bad value for parameter `%s'\n%s" % (name, str(e))
         raise ValueError(errmsg)
@@ -244,7 +249,7 @@ class IrafPar:
 
     """Non-array IRAF parameter base class"""
 
-    def __init__(self,fields,filename,strict=0):
+    def __init__(self,fields,strict=0):
         orig_len = len(fields)
         if orig_len < 3 or None in fields[0:3]:
             raise SyntaxError("At least 3 fields must be given")
@@ -847,7 +852,7 @@ class IrafArrayPar(IrafPar):
 
     """IRAF array parameter class"""
 
-    def __init__(self,fields,filename,strict=0):
+    def __init__(self,fields,strict=0):
         orig_len = len(fields)
         if orig_len < 3:
             raise SyntaxError("At least 3 fields must be given")
@@ -1279,8 +1284,8 @@ class IrafParPset(IrafParS):
 
     """IRAF pset parameter class"""
 
-    def __init__(self,fields,filename,strict=0):
-        IrafParS.__init__(self,fields,filename,strict)
+    def __init__(self,fields,strict=0):
+        IrafParS.__init__(self,fields,strict)
         # omitted pset parameters default to null string
         if self.value is None: self.value = ""
 
@@ -1314,8 +1319,8 @@ class IrafParL(_StringMixin, IrafPar):
 
     """IRAF list parameter base class"""
 
-    def __init__(self,fields,filename,strict=0):
-        IrafPar.__init__(self,fields,filename,strict)
+    def __init__(self,fields,strict=0):
+        IrafPar.__init__(self,fields,strict)
         # filehandle for input file
         self.__dict__['fh'] = None
         # lines used to store input when not reading from a tty
@@ -2508,7 +2513,7 @@ def _readpar(filename,strict=0):
                 # move match pointer
                 i1 = mm.end()
             try:
-                par = IrafParFactory(flist,filename,strict=strict)
+                par = IrafParFactory(flist, strict=strict)
             except KeyboardInterrupt:
                 raise
             except Exception, exc:

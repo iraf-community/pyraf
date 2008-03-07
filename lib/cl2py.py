@@ -104,7 +104,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
         #if not isinstance(string,str):
         #raise TypeError('string must be a string')
         clInput = string
-        efilename = 'string_proc'
+        efilename = 'string_proc' # revisit this setting (tik #24), maybe '' ?
         if usecache:
             index, pycode = codeCache.get(None,mode=mode,source=clInput)
             if pycode is not None:
