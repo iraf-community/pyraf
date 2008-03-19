@@ -283,10 +283,10 @@ class IPython_PyRAF_Integrator(object):
         color_tb(type, value, tb)
 
     def prefilter(self, IP, line, continuation):
-        """prefilter pre-processes input to do PyRAF substitutions before passing it on
-        to IPython.
+        """prefilter pre-processes input to do PyRAF substitutions before
+           passing it on to IPython.
         """
-        line = self.cmd(line)
+        line = self.cmd(str(line)) # use type str here, not unicode
         return self.InteractiveShell._prefilter(IP, line, continuation)
 
     # The following are IPython "magic" functions when used as bound methods.
