@@ -936,6 +936,8 @@ def isNullFile(s):
 def substr(s,first,last):
     """Return sub-string using IRAF 1-based indexing"""
     if s == INDEF: return INDEF
+    # Avoid having -1 as the first index
+    if first == 0: first = 1
     return s[first-1:last]
 
 def strlen(s):
