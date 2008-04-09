@@ -416,7 +416,7 @@ class Variable:
         """Get name without translations"""
         return irafutils.untranslateName(self.name)
 
-    def toPar(self, strict=0, filename=''):
+    def toPar(self, strict=0):
         """Convert this variable to an IrafPar object"""
         return irafpar.makeIrafPar(self.init_value,
                         datatype=self.type,
@@ -428,8 +428,7 @@ class Variable:
                         max=self.options["max"],
                         enum=self.options["enum"],
                         prompt=self.options["prompt"],
-                        strict=strict,
-                        filename=filename)
+                        strict=strict)
 
     def procLine(self):
         """Return a string usable as parameter declaration with
@@ -688,7 +687,7 @@ class VarList(GenericASTTraversal, ErrorTracker):
         p = []
         for var in self.proc_args_list:
             if not _SpecialArgs.has_key(var):
-                arg = self.proc_args_dict[var].toPar(filename=self.filename)
+                arg = self.proc_args_dict[var].toPar()
                 p.append(arg)
         self.parList = irafpar.IrafParList(self.getProcName(),
                                 filename=self.filename, parlist=p)
