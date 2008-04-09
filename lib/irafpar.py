@@ -114,7 +114,7 @@ def makeIrafPar(init_value, datatype=None, name="<anonymous>", mode="h",
 
     """Create an IrafPar variable"""
 
-    # Deprecation note
+    # Deprecation note - after 1.6 is released, remove the arg and this note
     if filename!=None and len(filename)>0 and filename!='string_proc':
        warning("Use of filename arg in makeIrafPar is rather deprecated\n"+\
                ", filename = \'"+filename+"'", level=-1)
