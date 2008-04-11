@@ -9,7 +9,8 @@ $Id: gki_sys_tests.py 801 2007-08-2 sontag $
 """
 
 import os, sys
-import graphcap, iraf, gki, wutil
+from pyraf import iraf
+from pyraf import gki
 
 
 def psi_land_in_graphcap_test():
@@ -29,3 +30,20 @@ def controlList_test():
    """ Simple aliveness test for the control2name dict """
    for ctl in gki.GKI_ILLEGAL_LIST:
       assert gki.control2name[ctl] == 'control_unknown'
+
+def run_all():
+   tsts = [x for x in globals().keys() if x.find('test')>=0]
+   for t in tsts:
+      func = eval(t)
+      print func.__doc__.strip()
+      func()
+
+   # If we get here with no exception, we have passed all of the tests
+   print "\nSuccessfully passed "+str(len(tsts))+" tests"
+
+
+#
+# main routine
+#
+if (__name__ == '__main__'):
+   run_all()
