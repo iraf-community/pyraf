@@ -132,12 +132,18 @@ def getNewestTmpPskFile(theBeforeList):
    return flistAft[0]
 
 
+def run_all():
+   tsts = [x for x in globals().keys() if x.find('test')>=0]
+   for t in tsts:
+      func = eval(t)
+      print func.__doc__.strip()
+      func()
+   # If we get here with no exception, we have passed all of the tests
+   print "\nSuccessfully passed "+str(len(tsts))+" tests"
+
+#
+#
 if __name__ == "__main__":
    """ This main is not necessary for testing via nose, but it was handy
    in development. """
-   import gki_psikern_tests
-   junk = gki_psikern_tests.__dict__.keys()
-   mthds = [j for j in junk if j.find("_test")>0]
-   for m in mthds:
-      print "Running test: "+m
-      eval(m)
+   run_all()
