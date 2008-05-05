@@ -90,11 +90,11 @@ if doCmdline:
     # Start up command line wrapper keeping definitions in main name space
     # Keep the command-line object in namespace too for access to history
     if _use_ipython_shell:
-	import sys
-	import IPython
-	sys.argv = ["ipython","-p","pyraf"]
-	IPython.Shell.start(user_ns=globals()).mainloop()
-	sys.exit()
+        import sys
+        import IPython
+        sys.argv = ["ipython","-p","pyraf"]
+        IPython.Shell.start(user_ns=globals()).mainloop()
+        sys.exit()
     else:
         import pyraf.pycmdline
         del _use_ipython_shell
