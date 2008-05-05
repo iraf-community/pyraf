@@ -20,28 +20,28 @@ import os, sys, string, commands, re
 # Fake out import of urwid if it fails to keep tpar from bringing down
 # all of PyRAF.
 class FakeModule:
-	def __new__(*args, **keys):
-		pass
-	def __init__(*args, **keys):
-		pass
+    def __new__(*args, **keys):
+        pass
+    def __init__(*args, **keys):
+        pass
 
 class FakeClass:
-	def __new__(*args, **keys):
-		pass
-	def __init__(*args, **keys):
-		pass
-	
-	
+    def __new__(*args, **keys):
+        pass
+    def __init__(*args, **keys):
+        pass
+
+
 try:
-	import urwid.curses_display
-	import urwid
-	urwid.set_encoding("ascii")   #  gives better performance than 'utf8'
+    import urwid.curses_display
+    import urwid
+    urwid.set_encoding("ascii")   #  gives better performance than 'utf8'
 except:
-	urwid = FakeModule()
-	urwid.Edit = FakeClass()
-	urwid.Columns = FakeClass()
-	urwid.AttrWrap = FakeClass()
-	urwid.Pile = FakeClass()
+    urwid = FakeModule()
+    urwid.Edit = FakeClass()
+    urwid.Columns = FakeClass()
+    urwid.AttrWrap = FakeClass()
+    urwid.Pile = FakeClass()
 
 # PyRAF modules
 import iraf, irafpar, irafhelp, cStringIO, wutil, iraffunctions
@@ -66,73 +66,73 @@ TPAR_HELP_EMACS = """                                EDIT COMMANDS (emacs)
            MOVE_LEFT  = LEFT_ARROW             UNDEL_LINE = ESC-^K
            MOVE_LEFT  = ^B                     UNDEL_WORD = ESC-^W
 
-	   X-11 Paste:  hold down shift and click middle mouse button
+           X-11 Paste:  hold down shift and click middle mouse button
 
            :e[!] [pset]         edit pset      "!" == no update
            :q[!]                exit tpar      "!" == no update
            :r!                  unlearn
            :w[!] [pset]         unsupported
-           :g[!]                run task 
+           :g[!]                run task
 """
 
 TPAR_BINDINGS_EMACS = {
-	"ctrl c" : "quit",
-	"ctrl C" : "quit",
-	"ctrl d" : "exit",
-	"ctrl D" : "exit",
-	"ctrl z" : "exit",
-	"ctrl Z" : "exit",
-	
-	"ctrl p"   : "up",
-	"ctrl P"   : "up",
-	"shift tab": "up",
-	
-	"ctrl n"   : "down",
-	"ctrl N"   : "down",
-	
-	"esc v"  : "page down",
-	"esc V"  : "page down",
-	
-	"esc p"  : "page up",
-	"esc P"  : "page up",
-	
-#	"ctrl l" : "redraw",        # re-draw... just ignore
-#	"ctrl L" : "redraw",
-	
-	"ctrl K" : "del_line",			
-	"ctrl k" : "del_line",
-	
-	"esc d": "del_word",
-	"esc D": "del_word",
-	
-	"esc f": "next_word",
-	"esc F": "next_word",
-	
-	"esc b": "prev_word",
-	"esc B": "prev_word",
-	
-	"ctrl a": "move_bol",
-	"ctrl A": "move_bol",
-	
-	"ctrl e": "move_eol",
-	"ctrl E": "move_eol",
-	
-	"esc >": "end",
-	"esc <": "home",
-	
-	"ctrl f": "right",
-	"ctrl F": "right",
+    "ctrl c" : "quit",
+    "ctrl C" : "quit",
+    "ctrl d" : "exit",
+    "ctrl D" : "exit",
+    "ctrl z" : "exit",
+    "ctrl Z" : "exit",
 
-	"ctrl b": "left",
-	"ctrl B": "left",
-	
-	"esc ctrl d": "undel_char",
-	"esc ctrl k": "undel_line",
-	"ctrl y": "undel_line",
-	"esc ctrl w": "undel_word",
-	
-	"esc ?": "help"
-	}
+    "ctrl p"   : "up",
+    "ctrl P"   : "up",
+    "shift tab": "up",
+
+    "ctrl n"   : "down",
+    "ctrl N"   : "down",
+
+    "esc v"  : "page down",
+    "esc V"  : "page down",
+
+    "esc p"  : "page up",
+    "esc P"  : "page up",
+
+#   "ctrl l" : "redraw",        # re-draw... just ignore
+#   "ctrl L" : "redraw",
+
+    "ctrl K" : "del_line",
+    "ctrl k" : "del_line",
+
+    "esc d": "del_word",
+    "esc D": "del_word",
+
+    "esc f": "next_word",
+    "esc F": "next_word",
+
+    "esc b": "prev_word",
+    "esc B": "prev_word",
+
+    "ctrl a": "move_bol",
+    "ctrl A": "move_bol",
+
+    "ctrl e": "move_eol",
+    "ctrl E": "move_eol",
+
+    "esc >": "end",
+    "esc <": "home",
+
+    "ctrl f": "right",
+    "ctrl F": "right",
+
+    "ctrl b": "left",
+    "ctrl B": "left",
+
+    "esc ctrl d": "undel_char",
+    "esc ctrl k": "undel_line",
+    "ctrl y": "undel_line",
+    "esc ctrl w": "undel_word",
+
+    "esc ?": "help"
+    }
 
 
 TPAR_HELP_VI = """                                EDIT COMMANDS (vi)
@@ -152,519 +152,519 @@ TPAR_HELP_VI = """                                EDIT COMMANDS (vi)
            MOVE_EOL   = ^E                     UNDEL_LINE = ^U^L
            MOVE_LEFT  = LEFT_ARROW             UNDEL_WORD = ^U^W
 
-	   X-11 Paste:  hold down shift and click middle mouse button
+           X-11 Paste:  hold down shift and click middle mouse button
 
            :e[!] [pset]         edit pset      "!" == no update
            :q[!]                exit tpar      "!" == no update
            :r!                  unlearn
            :w[!] [pset]         unsupported
-           :g[!]                run task 
+           :g[!]                run task
 """
 
 TPAR_BINDINGS_VI = {
-	"ctrl c" : "quit",
-	"ctrl d" : "exit",
-	"ctrl C" : "quit",
-	"ctrl D" : "exit",
-	
-	"ctrl K"   : "up",
-	"ctrl k"   : "up",
-	
-	"ctrl j"   : "down",
-	"ctrl J"   : "down",
-	
-	"ctrl n"  : "page down",
-	"ctrl N"  : "page down",
-	
-	"ctrl p"  : "page up",
-	"ctrl P"  : "page up",
-	
-#	"ctrl r" : "redraw",        # re-draw... just ignore
-#	"ctrl R" : "redraw",
-	
-	"tab ctrl D" : "del_line",			
-	"tab ctrl d" : "del_line",
-	
-	"tab ctrl W": "del_word",
-	"tab ctrl w": "del_word",
-	
-	"ctrl w": "next_word",
-	"ctrl W": "next_word",
-	
-	"ctrl b": "prev_word",
-	"ctrl B": "prev_word",
-	
-	"ctrl a": "move_bol",
-	"ctrl A": "move_bol",
-	
-	"ctrl e": "move_eol",
-	"ctrl E": "move_eol",
-	
-	"ctrl T ctrl E": "end",
-	"ctrl t ctrl e": "end",
-	"ctrl T ctrl S": "home",
-	"ctrl t ctrl s": "home",
-	
-	"ctrl L": "right",			
-	"ctrl l": "right",
-	
-	"ctrl H": "left",
-	"ctrl h": "left",
-	
-	"ctrl U ctrl C": "undel_char",
-	"ctrl u ctrl c": "undel_char",
-	
-	"ctrl U ctrl L": "undel_line",
-	"ctrl u ctrl l": "undel_line",
-	
-	"ctrl U ctrl W": "undel_word",			
-	"ctrl u ctrl w": "undel_word",
-	
-	"esc ?": "help"
-	}
+    "ctrl c" : "quit",
+    "ctrl d" : "exit",
+    "ctrl C" : "quit",
+    "ctrl D" : "exit",
+
+    "ctrl K"   : "up",
+    "ctrl k"   : "up",
+
+    "ctrl j"   : "down",
+    "ctrl J"   : "down",
+
+    "ctrl n"  : "page down",
+    "ctrl N"  : "page down",
+
+    "ctrl p"  : "page up",
+    "ctrl P"  : "page up",
+
+#   "ctrl r" : "redraw",        # re-draw... just ignore
+#   "ctrl R" : "redraw",
+
+    "tab ctrl D" : "del_line",
+    "tab ctrl d" : "del_line",
+
+    "tab ctrl W": "del_word",
+    "tab ctrl w": "del_word",
+
+    "ctrl w": "next_word",
+    "ctrl W": "next_word",
+
+    "ctrl b": "prev_word",
+    "ctrl B": "prev_word",
+
+    "ctrl a": "move_bol",
+    "ctrl A": "move_bol",
+
+    "ctrl e": "move_eol",
+    "ctrl E": "move_eol",
+
+    "ctrl T ctrl E": "end",
+    "ctrl t ctrl e": "end",
+    "ctrl T ctrl S": "home",
+    "ctrl t ctrl s": "home",
+
+    "ctrl L": "right",
+    "ctrl l": "right",
+
+    "ctrl H": "left",
+    "ctrl h": "left",
+
+    "ctrl U ctrl C": "undel_char",
+    "ctrl u ctrl c": "undel_char",
+
+    "ctrl U ctrl L": "undel_line",
+    "ctrl u ctrl l": "undel_line",
+
+    "ctrl U ctrl W": "undel_word",
+    "ctrl u ctrl w": "undel_word",
+
+    "esc ?": "help"
+    }
 
 class Binder(object):
-	"""The Binder class manages keypresses for urwid and adds the
-	ability to bind specific inputs to actions.
-	"""
-	def __init__(self, bindings, inform, mode_keys=[]):
-		self.bindings = bindings
-		self.inform = inform
-		self.mode_keys = mode_keys
-		self.chord = []
+    """The Binder class manages keypresses for urwid and adds the
+    ability to bind specific inputs to actions.
+    """
+    def __init__(self, bindings, inform, mode_keys=[]):
+        self.bindings = bindings
+        self.inform = inform
+        self.mode_keys = mode_keys
+        self.chord = []
 
-	def bind(self, k, f):
-		self.bindings[k] = f
-	
-	def keypress(self, pos, key):
-		if key is None:
-			return
-		if key is "ready":  # Handle the "ready" binding specially to keep the rest simple.
-			if self.bindings.has_key("ready"):
-				return self.bindings["ready"]()
-			else:
-				return "ready"
-		self.debug("pos: %s    key: %s" % (pos, key))
-		if key in self.mode_keys:
-			self.chord.append(key)
-			return None
-		elif not urwid.is_mouse_event(key):
-			key = " ".join(self.chord + [key])
-			self.chord = []
-		visited = []
-		while self.bindings.has_key(key) and key not in visited:
-			visited.append(key)
-			f = self.bindings[key]
-			if f is None:
-				key = None
-			elif isinstance(f, str):
-				key = f
-			else:
-				key = f()
-			self.debug("pos: %s  visited: %s  key: %s mapping: %s" % \
-				   (pos, " --> ".join(visited), key, f))
-		return key
+    def bind(self, k, f):
+        self.bindings[k] = f
 
-	def debug(self, s):
-		# return self.inform(s)
-		return None
+    def keypress(self, pos, key):
+        if key is None:
+            return
+        if key is "ready":  # Handle the "ready" binding specially to keep the rest simple.
+            if self.bindings.has_key("ready"):
+                return self.bindings["ready"]()
+            else:
+                return "ready"
+        self.debug("pos: %s    key: %s" % (pos, key))
+        if key in self.mode_keys:
+            self.chord.append(key)
+            return None
+        elif not urwid.is_mouse_event(key):
+            key = " ".join(self.chord + [key])
+            self.chord = []
+        visited = []
+        while self.bindings.has_key(key) and key not in visited:
+            visited.append(key)
+            f = self.bindings[key]
+            if f is None:
+                key = None
+            elif isinstance(f, str):
+                key = f
+            else:
+                key = f()
+            self.debug("pos: %s  visited: %s  key: %s mapping: %s" % \
+                   (pos, " --> ".join(visited), key, f))
+        return key
+
+    def debug(self, s):
+        # return self.inform(s)
+        return None
 
 class PyrafEdit(urwid.Edit):
-	"""PyrafEdit is a text entry widget which has keybindings similar
-	to IRAF's CL epar command.
-	"""
-	def __init__(self, *args, **keys):
-		inform = keys["inform"]
-		del keys["inform"]
-		self.reset_del_buffers()
-		urwid.Edit.__init__(self, *args, **keys)
-		EDIT_BINDINGS  = {  # single field bindings
-			"delete" : self.DEL_CHAR,						
-			"del_line": self.DEL_LINE,
-			"del_word": self.DEL_WORD,
-			
-			"undel_char": self.UNDEL_CHAR,
-			"undel_word": self.UNDEL_WORD,
-			"undel_line": self.UNDEL_LINE,
-			
-			"next_word": self.NEXT_WORD,
-			"prev_word": self.PREV_WORD,
-			
-			"move_bol": self.MOVE_BOL,
-			"move_eol": self.MOVE_EOL,
-			
-			"right": self.MOVE_RIGHT,
-			"left": self.MOVE_LEFT,
-			}
-		self._binder = Binder(EDIT_BINDINGS, inform)
+    """PyrafEdit is a text entry widget which has keybindings similar
+    to IRAF's CL epar command.
+    """
+    def __init__(self, *args, **keys):
+        inform = keys["inform"]
+        del keys["inform"]
+        self.reset_del_buffers()
+        urwid.Edit.__init__(self, *args, **keys)
+        EDIT_BINDINGS  = {  # single field bindings
+                           "delete" : self.DEL_CHAR,
+                           "del_line": self.DEL_LINE,
+                           "del_word": self.DEL_WORD,
 
-	def reset_del_buffers(self):
-		self._del_words = []
-		self._del_lines = []
-		self._del_chars = []
+                           "undel_char": self.UNDEL_CHAR,
+                           "undel_word": self.UNDEL_WORD,
+                           "undel_line": self.UNDEL_LINE,
 
-	def DEL_CHAR(self):
-		s = self.get_edit_text()
-		if len(s):
-			n = self.edit_pos
-			if n >= len(s):
-				n -= 1
-			c = s[n]
-			self.set_edit_text(s[:n] + s[n+1:])
-			self._del_chars.append(c)
-			
-	def DEL_WORD(self):
-		s = self.get_edit_text()
-		i = self.edit_pos
-		while i > 0 and not s[i].isspace():
-			i -= 1
-		if s[i].isspace():
-			i += 1
-		word = ""
-		while i < len(s) and not s[i].isspace():
-			word += s[i]
-			i += 1			
-		s = s[:i-len(word)] + s[i:]
-		self._del_words.append(word)
-		self.edit_pos = i
-		self.set_edit_text(s)
+                           "next_word": self.NEXT_WORD,
+                           "prev_word": self.PREV_WORD,
 
-	def DEL_LINE(self):
-		s = self.get_edit_text()
-		line = s[self.edit_pos:]
-		self.set_edit_text(s[:self.edit_pos])
-		self.set_edit_pos(len(self.get_edit_text()))
-		self._del_lines.append(line)
+                           "move_bol": self.MOVE_BOL,
+                           "move_eol": self.MOVE_EOL,
 
-	def NEXT_WORD(self):
-		s = self.get_edit_text()
-		i = self.edit_pos
-		while s and i < len(s)-1 and not s[i].isspace():
-			i += 1		
-		while s and i < len(s)-1 and s[i].isspace():
-			i += 1
-		self.edit_pos = i
-		
-	def PREV_WORD(self):
-		s = self.get_edit_text()
-		i = self.edit_pos
-		while s and i > 0 and s[i].isspace():
-			i -= 1
-		while s and i > 0 and not s[i].isspace():
-			i -= 1		
-		self.edit_pos = i
+                           "right": self.MOVE_RIGHT,
+                           "left": self.MOVE_LEFT,
+                         }
+        self._binder = Binder(EDIT_BINDINGS, inform)
 
-	def MOVE_BOL(self):
-		self.edit_pos = 0
+    def reset_del_buffers(self):
+        self._del_words = []
+        self._del_lines = []
+        self._del_chars = []
 
-	def MOVE_EOL(self):
-		self.edit_pos = len(self.get_edit_text())
+    def DEL_CHAR(self):
+        s = self.get_edit_text()
+        if len(s):
+            n = self.edit_pos
+            if n >= len(s):
+                n -= 1
+            c = s[n]
+            self.set_edit_text(s[:n] + s[n+1:])
+            self._del_chars.append(c)
 
-	def MOVE_RIGHT(self):
-		if self.edit_pos < len(self.get_edit_text()):
-			self.edit_pos += 1
+    def DEL_WORD(self):
+        s = self.get_edit_text()
+        i = self.edit_pos
+        while i > 0 and not s[i].isspace():
+            i -= 1
+        if s[i].isspace():
+            i += 1
+        word = ""
+        while i < len(s) and not s[i].isspace():
+            word += s[i]
+            i += 1
+        s = s[:i-len(word)] + s[i:]
+        self._del_words.append(word)
+        self.edit_pos = i
+        self.set_edit_text(s)
 
-	def MOVE_LEFT(self):
-		if self.edit_pos > 0:
-			self.edit_pos -= 1
+    def DEL_LINE(self):
+        s = self.get_edit_text()
+        line = s[self.edit_pos:]
+        self.set_edit_text(s[:self.edit_pos])
+        self.set_edit_pos(len(self.get_edit_text()))
+        self._del_lines.append(line)
 
-	def UNDEL_CHAR(self):
-		try:
-			char = self._del_chars.pop()
-		except:
-			return
-		self.insert_text(char)
-		self.edit_pos -= 1
+    def NEXT_WORD(self):
+        s = self.get_edit_text()
+        i = self.edit_pos
+        while s and i < len(s)-1 and not s[i].isspace():
+            i += 1
+        while s and i < len(s)-1 and s[i].isspace():
+            i += 1
+        self.edit_pos = i
 
-	def UNDEL_WORD(self):
-		try:
-			word = self._del_words.pop()
-		except:
-			return
-		self.insert_text(word)
+    def PREV_WORD(self):
+        s = self.get_edit_text()
+        i = self.edit_pos
+        while s and i > 0 and s[i].isspace():
+            i -= 1
+        while s and i > 0 and not s[i].isspace():
+            i -= 1
+        self.edit_pos = i
 
-	def UNDEL_LINE(self):
-		try:
-			if len(self._del_lines) > 1:
-				line = self._del_lines.pop()
-			else:
-				line = self._del_lines[0]
-		except:
-			return
-		self.insert_text(line)
+    def MOVE_BOL(self):
+        self.edit_pos = 0
 
-	def keypress(self, pos, key):
-		key = Binder.keypress(self._binder, pos, key)
-		if key is not None and not urwid.is_mouse_event(key):
-			key = urwid.Edit.keypress(self, pos, key)
-		return key
-		
-	def get_result(self):
-		return self.get_edit_text().strip()
+    def MOVE_EOL(self):
+        self.edit_pos = len(self.get_edit_text())
 
-	def verify(self):
-		return True
+    def MOVE_RIGHT(self):
+        if self.edit_pos < len(self.get_edit_text()):
+            self.edit_pos += 1
+
+    def MOVE_LEFT(self):
+        if self.edit_pos > 0:
+            self.edit_pos -= 1
+
+    def UNDEL_CHAR(self):
+        try:
+            char = self._del_chars.pop()
+        except:
+            return
+        self.insert_text(char)
+        self.edit_pos -= 1
+
+    def UNDEL_WORD(self):
+        try:
+            word = self._del_words.pop()
+        except:
+            return
+        self.insert_text(word)
+
+    def UNDEL_LINE(self):
+        try:
+            if len(self._del_lines) > 1:
+                line = self._del_lines.pop()
+            else:
+                line = self._del_lines[0]
+        except:
+            return
+        self.insert_text(line)
+
+    def keypress(self, pos, key):
+        key = Binder.keypress(self._binder, pos, key)
+        if key is not None and not urwid.is_mouse_event(key):
+            key = urwid.Edit.keypress(self, pos, key)
+        return key
+
+    def get_result(self):
+        return self.get_edit_text().strip()
+
+    def verify(self):
+        return True
 
 class StringTparOption(urwid.Columns):
-	def __init__(self, paramInfo, defaultParamInfo, inform):
+    def __init__(self, paramInfo, defaultParamInfo, inform):
 
-		MODE_KEYS = []
+        MODE_KEYS = []
 
-		BINDINGS = {
-			"enter" : self.ENTER,
-			"up"   : self.MOVE_UP,
-			"down" : self.MOVE_DOWN,
-			"page up"   : self.PAGE_UP,
-			"page down" : self.PAGE_DOWN,
-			"undel_line": self.UNDEL_LINE,
-			"ready" : self.READY_LINE,
-			"end" : self.MOVE_END,
-			"home": self.MOVE_START
-			}
+        BINDINGS = {
+            "enter" : self.ENTER,
+            "up"   : self.MOVE_UP,
+            "down" : self.MOVE_DOWN,
+            "page up"   : self.PAGE_UP,
+            "page down" : self.PAGE_DOWN,
+            "undel_line": self.UNDEL_LINE,
+            "ready" : self.READY_LINE,
+            "end" : self.MOVE_END,
+            "home": self.MOVE_START
+            }
 
-		self._binder = Binder(BINDINGS, inform, MODE_KEYS)
-		
-		self._mode = "clear"
-		self._newline = True
-		self.inform = inform
-		self.paramInfo    = paramInfo
-		self.defaultParamInfo = defaultParamInfo
-		
-		name  = self.paramInfo.name
-		value = self.paramInfo.get(field = "p_filename", native = 0,
-						prompt = 0)
-		self._previousValue = value
+        self._binder = Binder(BINDINGS, inform, MODE_KEYS)
 
-		# Generate the input label
-		if (self.paramInfo.get(field = "p_mode") == "h"):
-			required=False
-		else:
-			required=True
+        self._mode = "clear"
+        self._newline = True
+        self.inform = inform
+        self.paramInfo    = paramInfo
+        self.defaultParamInfo = defaultParamInfo
 
-		help = self.paramInfo.get(field = "p_prompt", native = 0, prompt = 0)
-		self._args = (name, value, help, required)
-		if not required:
-			name = "(" + name
-			help = ") " + help
-		else:
-			help = "  " + help
-		self._name = urwid.Text( "%-10s=" % name )
-		self._edit = PyrafEdit("", "", wrap="clip", align="right", inform=inform)
-		self._edit.verify = self.verify
-		self._value = urwid.Text( "%10s" % value, align="right" )
-		self._help = urwid.Text( "%-30s" % help )
-		urwid.Columns.__init__( self, [('weight',0.20, self._name),
-					       ('weight',0.20, self._edit),
-					       ('weight',0.20, self._value),
-					       ('weight',0.40, self._help)],
-					0, 1, 1)		
+        name  = self.paramInfo.name
+        value = self.paramInfo.get(field = "p_filename", native = 0,
+                        prompt = 0)
+        self._previousValue = value
 
-	def keypress(self, pos, key):
-		key = Binder.keypress(self._binder, pos, key)
-		if key:
-			key = self._edit.keypress(pos, key)
-		return key
-		
-	def get_name(self):
-		return self._args[0]
+        # Generate the input label
+        if (self.paramInfo.get(field = "p_mode") == "h"):
+            required=False
+        else:
+            required=True
 
-	def get_candidate(self):
-		return self._edit.get_edit_text()
+        help = self.paramInfo.get(field = "p_prompt", native = 0, prompt = 0)
+        self._args = (name, value, help, required)
+        if not required:
+            name = "(" + name
+            help = ") " + help
+        else:
+            help = "  " + help
+        self._name = urwid.Text( "%-10s=" % name )
+        self._edit = PyrafEdit("", "", wrap="clip", align="right", inform=inform)
+        self._edit.verify = self.verify
+        self._value = urwid.Text( "%10s" % value, align="right" )
+        self._help = urwid.Text( "%-30s" % help )
+        urwid.Columns.__init__( self, [('weight',0.20, self._name),
+                                       ('weight',0.20, self._edit),
+                                       ('weight',0.20, self._value),
+                                       ('weight',0.40, self._help)],
+                                0, 1, 1)
 
-	def set_candidate(self, s):
-		self._edit.set_edit_text(s)
-		self._edit.edit_pos = len(s)
+    def keypress(self, pos, key):
+        key = Binder.keypress(self._binder, pos, key)
+        if key:
+            key = self._edit.keypress(pos, key)
+        return key
 
-	def normalize(self, v):
-		"""abstract method called to standardize equivalent values
-		when the 'result' is set."""
-		return v
+    def get_name(self):
+        return self._args[0]
 
-	def get_result(self):
-		return self._value.get_text()[0].strip()
+    def get_candidate(self):
+        return self._edit.get_edit_text()
 
-	def set_result(self, r):
-		self._value.set_text( self.normalize(str(r)) )
+    def set_candidate(self, s):
+        self._edit.set_edit_text(s)
+        self._edit.edit_pos = len(s)
 
-	def unlearn_value(self):
-		self.set_result(self._previousValue)
+    def normalize(self, v):
+        """abstract method called to standardize equivalent values
+        when the 'result' is set."""
+        return v
 
-	def verify(self, v):
-		self.inform("")
-		return True
+    def get_result(self):
+        return self._value.get_text()[0].strip()
 
-	def UNDEL_LINE(self): # a little iffy.  handle first copy from value field to edit field here.  defer subsequent calls.
-		v = self.get_result()
-		if v:
-			self.set_candidate( self.get_candidate() + v)
-			self.set_result("")
-		else:
-			return "undel_line"
+    def set_result(self, r):
+        self._value.set_text( self.normalize(str(r)) )
 
-	def ENTER(self):
-		return self.linechange("down")
+    def unlearn_value(self):
+        self.set_result(self._previousValue)
 
-	def MOVE_UP(self):
-		return self.linechange("up")
+    def verify(self, v):
+        self.inform("")
+        return True
 
-	def MOVE_DOWN(self):
-		return self.linechange("down")
+    def UNDEL_LINE(self): # a little iffy.  handle first copy from value field to edit field here.  defer subsequent calls.
+        v = self.get_result()
+        if v:
+            self.set_candidate( self.get_candidate() + v)
+            self.set_result("")
+        else:
+            return "undel_line"
 
-	def PAGE_UP(self):
-		return self.linechange("page up")
+    def ENTER(self):
+        return self.linechange("down")
 
-	def PAGE_DOWN(self):
-		return self.linechange("page down")
+    def MOVE_UP(self):
+        return self.linechange("up")
 
-	def MOVE_START(self):
-		return self.linechange("home")
+    def MOVE_DOWN(self):
+        return self.linechange("down")
 
-	def MOVE_END(self):
-		return self.linechange("end")
+    def PAGE_UP(self):
+        return self.linechange("page up")
 
-	def linechange(self, rval):
-		"""Updates this field when changing the field focus,
-		i.e. switching lines."""
-		s = self.get_candidate()
-		if s != "":
-			if self.verify(s):
-				self.set_result(s)
-				self.set_candidate("")
-			else:
-				return None
-		else:  # clear old error messages
-			self.inform("")
-		self._edit.set_edit_pos(0)
-		self._edit.reset_del_buffers()
-		self._newline = True
-		return rval
-				
-	def READY_LINE(self):
-		"""Prepares this field for editing in the current
-		mode: default clear or default edit."""
-		if not self._newline:
-			return
-		self._newline = False
-		if self._mode == "clear":
-			self.set_candidate("")
-		else:
-			s  = self.get_result()
-			self.set_candidate( s )
-			self._edit.set_edit_pos( len(s) )
+    def PAGE_DOWN(self):
+        return self.linechange("page down")
 
-	def klass(self):
-		return "string"
+    def MOVE_START(self):
+        return self.linechange("home")
+
+    def MOVE_END(self):
+        return self.linechange("end")
+
+    def linechange(self, rval):
+        """Updates this field when changing the field focus,
+        i.e. switching lines."""
+        s = self.get_candidate()
+        if s != "":
+            if self.verify(s):
+                self.set_result(s)
+                self.set_candidate("")
+            else:
+                return None
+        else:  # clear old error messages
+            self.inform("")
+        self._edit.set_edit_pos(0)
+        self._edit.reset_del_buffers()
+        self._newline = True
+        return rval
+
+    def READY_LINE(self):
+        """Prepares this field for editing in the current
+        mode: default clear or default edit."""
+        if not self._newline:
+            return
+        self._newline = False
+        if self._mode == "clear":
+            self.set_candidate("")
+        else:
+            s  = self.get_result()
+            self.set_candidate( s )
+            self._edit.set_edit_pos( len(s) )
+
+    def klass(self):
+        return "string"
 
 
 class NumberTparOption(StringTparOption):
-	def normalize(self, v):
-		if v in ["INDEF","Indef","indef"]:
-			return "INDEF"
-		else:
-			return v
-	
-	def verify(self, v):
-		try:
-			if v != self._previousValue:
-				self.paramInfo.set(v)
-			self.paramInfo.set(self._previousValue)
-			return True
-		except ValueError, e:
-			self.set_candidate("")
-			self.inform(str(e))
-			return False
+    def normalize(self, v):
+        if v in ["INDEF","Indef","indef"]:
+            return "INDEF"
+        else:
+            return v
 
-	def klass(self):
-		return "number"
+    def verify(self, v):
+        try:
+            if v != self._previousValue:
+                self.paramInfo.set(v)
+            self.paramInfo.set(self._previousValue)
+            return True
+        except ValueError, e:
+            self.set_candidate("")
+            self.inform(str(e))
+            return False
+
+    def klass(self):
+        return "number"
 
 class BooleanTparOption(StringTparOption):
-	def __init__(self, *args, **keys):
-		StringTparOption.__init__(self, *args, **keys)
-		self._binder.bind(" ","space")
-		self._binder.bind("space", self.TOGGLE)
-		self._binder.bind("right", self.TOGGLE)
-		self._binder.bind("left", self.TOGGLE)
+    def __init__(self, *args, **keys):
+        StringTparOption.__init__(self, *args, **keys)
+        self._binder.bind(" ","space")
+        self._binder.bind("space", self.TOGGLE)
+        self._binder.bind("right", self.TOGGLE)
+        self._binder.bind("left", self.TOGGLE)
 
-	def TOGGLE(self):
-		if self.get_result() == "yes":
-			self.set_result("no")
-		else:
-			self.set_result("yes")
+    def TOGGLE(self):
+        if self.get_result() == "yes":
+            self.set_result("no")
+        else:
+            self.set_result("yes")
 
-	def normalize(self, v):
-		if v in ["n","N"]:
-			return "no"
-		elif v in ["y","Y"]:
-			return "yes"
-		else:
-			return v
+    def normalize(self, v):
+        if v in ["n","N"]:
+            return "no"
+        elif v in ["y","Y"]:
+            return "yes"
+        else:
+            return v
 
-	def verify(self, v):
-		v = self.normalize(v)
-		if v in ["yes","no"]:
-			self.inform("")
-			return True
-		else:
-			self.set_candidate("")
-			self.inform("Not a valid boolean value.")
-			return False
-	def klass(self):
-		return "boolean"
+    def verify(self, v):
+        v = self.normalize(v)
+        if v in ["yes","no"]:
+            self.inform("")
+            return True
+        else:
+            self.set_candidate("")
+            self.inform("Not a valid boolean value.")
+            return False
+    def klass(self):
+        return "boolean"
 
 class EnumTparOption(StringTparOption):
-	def __init__(self, *args, **keys):
-		StringTparOption.__init__(self, *args, **keys)
-		self._binder.bind(" ","space")
-		self._binder.bind("space", self.SPACE)
-		self._binder.bind("right", self.SPACE)
-		self._binder.bind("left", self.LEFT)
+    def __init__(self, *args, **keys):
+        StringTparOption.__init__(self, *args, **keys)
+        self._binder.bind(" ","space")
+        self._binder.bind("space", self.SPACE)
+        self._binder.bind("right", self.SPACE)
+        self._binder.bind("left", self.LEFT)
 
-	def adjust(self, delta, wrap):
-		choices = self.paramInfo.choice
-		try:
-			v = choices[ choices.index(self.get_result()) + delta ]
-		except IndexError:
-			v = choices[ wrap ]
-		self.set_result(v)
+    def adjust(self, delta, wrap):
+        choices = self.paramInfo.choice
+        try:
+            v = choices[ choices.index(self.get_result()) + delta ]
+        except IndexError:
+            v = choices[ wrap ]
+        self.set_result(v)
 
-	def SPACE(self):
-		return self.adjust(1, 0)
+    def SPACE(self):
+        return self.adjust(1, 0)
 
-	def LEFT(self):
-		return self.adjust(-1, -1)
-		
-	
-	def klass(self):
-		return "enumeration"
+    def LEFT(self):
+        return self.adjust(-1, -1)
 
-	def verify(self, v):
-		if v not in self.paramInfo.choice:
-			self.inform("What? choose: " + "|".join(self.paramInfo.choice))
-			self.set_candidate("")
-			return False
-		return True
+
+    def klass(self):
+        return "enumeration"
+
+    def verify(self, v):
+        if v not in self.paramInfo.choice:
+            self.inform("What? choose: " + "|".join(self.paramInfo.choice))
+            self.set_candidate("")
+            return False
+        return True
 
 class PsetTparOption(StringTparOption):
-	def klass(self):
-		return "pset"
-	
+    def klass(self):
+        return "pset"
+
 class TparHeader(urwid.Pile):
-        banner = """                                   I R A F
+    banner = """                                   I R A F
                     Image Reduction and Analysis Facility
 """
-	def __init__(self, package, task=None):
-		top = urwid.Text(("header", self.banner))
-		s = "%8s= %-10s\n" %  ("PACKAGE", package)
-		if task is not None:
-			s += "%8s= %-10s" % ("TASK", task)
-		info = urwid.Text(("body", s))
-		urwid.Pile.__init__(self, [top, info])
+    def __init__(self, package, task=None):
+        top = urwid.Text(("header", self.banner))
+        s = "%8s= %-10s\n" %  ("PACKAGE", package)
+        if task is not None:
+            s += "%8s= %-10s" % ("TASK", task)
+        info = urwid.Text(("body", s))
+        urwid.Pile.__init__(self, [top, info])
 
 
 class TparDisplay(Binder):
-        palette = [
+    palette = [
                 ('body','default','default', 'standout'),
-		('header', 'default', 'default', ('standout', 'underline')),
+                ('header', 'default', 'default', ('standout', 'underline')),
                 ('help','black','light gray'),
                 ('reverse','light gray','black'),
                 ('important','dark blue','light gray',('standout','underline')),
@@ -674,443 +674,443 @@ class TparDisplay(Binder):
                 ('bright','dark gray','light gray', ('bold','standout')),
                 ('buttn','black','dark cyan'),
                 ('buttnf','white','dark blue','bold'),
-                ]
+               ]
 
-	def __init__(self,  taskName):
-		
-		MODE_KEYS_EMACS = [ "esc"]
-	
-		MODE_KEYS_VI = ["esc", "tab",
-				"ctrl u", "ctrl U",
-				"ctrl t", "ctrl T"]
+    def __init__(self,  taskName):
 
-		TPAR_BINDINGS = {  # Page level bindings			
-			"quit"   : self.QUIT,
-			"exit "  : self.EXIT,			
-			"help"   : self.HELP,
-			"end" : self.MOVE_END,
-			"home" : self.MOVE_START,
-			}
+        MODE_KEYS_EMACS = [ "esc"]
 
-		# Get the Iraftask object
-		if isinstance(taskName, irafpar.IrafParList):
-			# IrafParList acts as an IrafTask for our purposes
-			self.taskObject = taskName
-		else:
-			# taskName must be a string or an IrafTask object
-			self.taskObject = iraf.getTask(taskName)
+        MODE_KEYS_VI = ["esc", "tab",
+                        "ctrl u", "ctrl U",
+                        "ctrl t", "ctrl T"]
 
-		# Now go back and ensure we have the full taskname
-		self.taskName = self.taskObject.getName()
-		self.pkgName = self.taskObject.getPkgname()
-		self.paramList = self.taskObject.getParList(docopy=1)
-		
-		# Ignore the last parameter which is $nargs
-		self.numParams = len(self.paramList) - 1
-		
-		# Get default parameter values for unlearn
-		self.get_default_param_list()
-		self.make_entries()
+        TPAR_BINDINGS = {  # Page level bindings
+                          "quit"   : self.QUIT,
+                          "exit "  : self.EXIT,
+                          "help"   : self.HELP,
+                          "end" : self.MOVE_END,
+                          "home" : self.MOVE_START,
+                         }
 
-		self.escape = False
+        # Get the Iraftask object
+        if isinstance(taskName, irafpar.IrafParList):
+            # IrafParList acts as an IrafTask for our purposes
+            self.taskObject = taskName
+        else:
+            # taskName must be a string or an IrafTask object
+            self.taskObject = iraf.getTask(taskName)
 
-		bwidth = ('fixed', 14)
-		
-		self.help_button = urwid.Padding(
-			urwid.Button("Help",self.HELP),
-			align="center",	width=('fixed', 8))
-		self.cancel_button = urwid.Padding(
-			urwid.Button("Cancel",self.QUIT),
-			align="center",	width=('fixed', 10))
-		self.save_button = urwid.Padding(
-			urwid.Button("Save",self.EXIT),
-			align="center",	width=('fixed', 8))
-		self.exec_button = urwid.Padding(
-			urwid.Button("Exec",self.go),
-			align="center",	width=('fixed', 8))
-		
-		self.buttons = urwid.Columns([
-			('weight', 0.2, self.exec_button),
-			('weight', 0.2, self.save_button),
-			('weight', 0.2, self.cancel_button),
-			('weight', 0.4, self.help_button)])
+        # Now go back and ensure we have the full taskname
+        self.taskName = self.taskObject.getName()
+        self.pkgName = self.taskObject.getPkgname()
+        self.paramList = self.taskObject.getParList(docopy=1)
 
-		self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
-		self.listitems = [urwid.Divider(" ")] + self.entryNo + \
-				 [urwid.Divider(" "), self.colon_edit,
-				  self.buttons]
-		self.listbox = urwid.ListBox( self.listitems )
+        # Ignore the last parameter which is $nargs
+        self.numParams = len(self.paramList) - 1
 
-		self.listbox.set_focus(1)
-		self.footer = urwid.Text("")
-		self.header = TparHeader(self.pkgName, self.taskName)
+        # Get default parameter values for unlearn
+        self.get_default_param_list()
+        self.make_entries()
 
-		self.view = urwid.Frame(
-			self.listbox,
-			header=self.header,
-			footer=self.footer)
+        self.escape = False
 
-		self._editor = iraf.envget("editor")
-		BINDINGS = {}
-		BINDINGS.update(TPAR_BINDINGS)
-		if self._editor == "vi":
-			BINDINGS.update(TPAR_BINDINGS_VI)
-			MODE_KEYS = MODE_KEYS_VI
-		else:	
-			BINDINGS.update(TPAR_BINDINGS_EMACS)
-			MODE_KEYS = MODE_KEYS_EMACS
-		Binder.__init__(self, BINDINGS, self.inform, MODE_KEYS)
+        bwidth = ('fixed', 14)
 
-	def get_default_param_list(self):
-		# Obtain the default parameter list
-		dlist = self.taskObject.getDefaultParList()
-		if len(dlist) != len(self.paramList):
-		    # whoops, lengths don't match
-		    raise ValueError("Mismatch between default, current par lists"
-			" for task %s (try unlearn)" % self.taskName)
-		dict = {}
-		for par in dlist:
-			dict[par.name] = par
+        self.help_button = urwid.Padding(
+            urwid.Button("Help",self.HELP),
+            align="center",    width=('fixed', 8))
+        self.cancel_button = urwid.Padding(
+            urwid.Button("Cancel",self.QUIT),
+            align="center",    width=('fixed', 10))
+        self.save_button = urwid.Padding(
+            urwid.Button("Save",self.EXIT),
+            align="center",    width=('fixed', 8))
+        self.exec_button = urwid.Padding(
+            urwid.Button("Exec",self.go),
+            align="center",    width=('fixed', 8))
 
-		# Build default list sorted into same order as current list
-		try:
-			dsort = []
-			for par in self.paramList:
-				dsort.append(dict[par.name])
-		except KeyError:
-			raise ValueError("Mismatch between default, current par lists"
-					 " for task %s (try unlearn)" % self.taskName)
-		self.defaultParamList = dsort
+        self.buttons = urwid.Columns([
+            ('weight', 0.2, self.exec_button),
+            ('weight', 0.2, self.save_button),
+            ('weight', 0.2, self.cancel_button),
+            ('weight', 0.4, self.help_button)])
 
-	# Method to create the parameter entries
-	def make_entries(self):
-		# Loop over the parameters to create the entries
-		self.entryNo = [None] * self.numParams
-		for i in range(self.numParams):
-			self.entryNo[i] = self.tpar_option_factory(
-				self.paramList[i], self.defaultParamList[i])
+        self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
+        self.listitems = [urwid.Divider(" ")] + self.entryNo + \
+                         [urwid.Divider(" "), self.colon_edit,
+                          self.buttons]
+        self.listbox = urwid.ListBox( self.listitems )
 
-	def main(self):
-		self.ui = urwid.curses_display.Screen()
-		self.ui.register_palette( self.palette )
-		self.ui.run_wrapper( self.run )
-		self.done()
+        self.listbox.set_focus(1)
+        self.footer = urwid.Text("")
+        self.header = TparHeader(self.pkgName, self.taskName)
 
-	def get_keys(self):
-		keys = []
-		while not keys:
-			try:
-				keys = self.ui.get_input()
-			except KeyboardInterrupt:
-				keys = ["ctrl c"]
-		return keys
-	
-	def run(self):
-		self.ui.set_mouse_tracking()
-		size = self.ui.get_cols_rows()
-		self.done = False
-		self._newline = True
-		while not self.done:
-			self.view.keypress(size, "ready")
-                        canvas = self.view.render( size, focus=1 )
-                        self.ui.draw_screen( size, canvas )
-			for k in self.get_keys():
-				if k == ":":
-					self.colon_escape()
-					break
-                                elif urwid.is_mouse_event(k):
-                                        event, button, col, row = k
-                                        self.view.mouse_event(
-						size, event,
-						button, col, row, focus=True )
-                                elif k == 'window resize':
-					size = self.ui.get_cols_rows()
-					self.inform("resize %s" % (str(size)))
-				k = self.keypress(size, k)
-				self.view.keypress( size, k )
+        self.view = urwid.Frame(
+                                self.listbox,
+                                header=self.header,
+                                footer=self.footer)
 
-	def colon_escape(self):
-		"""colon_escape switches the focus to the 'mini-buffer' and
-		accepts and executes a one line colon command."""
-		w, pos0 = self.listbox.get_focus()
-		try:
-			default_file = w.get_result()
-		except:
-			default_file = ""
-		self.listbox.set_focus(len(self.listitems)-2)
-		size = self.ui.get_cols_rows()
-		self.colon_edit.set_edit_text("")
-		self.colon_edit.set_edit_pos(0)
-		self.view.keypress(size, ":")
-		done = False
-		while not done:
-                        canvas = self.view.render( size, focus=1 )
-                        self.ui.draw_screen( size, canvas )
-			for k in self.get_keys():
-				if urwid.is_mouse_event(k) or \
-				       k == "ctrl c" or k == "ctrl g":
-					self.colon_edit.set_edit_text("")
-					return
-                                elif k == 'window resize':
-					size = self.ui.get_cols_rows()
-				elif k == 'enter':
-					done = True
-					break
-				k = self.keypress(size, k)
-				self.view.keypress( size, k )
-		cmd = self.colon_edit.get_edit_text()
-		self.listbox.set_focus(pos0)
-		self.colon_edit.set_edit_text("")
-		self.process_colon(cmd)
-		
-	def process_colon(self, cmd):
-		# : <cmd_letter> [!] [<filename>]
-		groups = re.match("^:(?P<cmd>[a-z])\s*"
-				  "(?P<emph>!?)\s*"
-				  "(?P<file>\w*)",  cmd)
-		if not groups:
-			self.inform("bad command: " + cmd)
-		else:
-			letter    = groups.group("cmd")
-			emph = groups.group("emph") == "!"
-			file   = groups.group("file")
-			try:
-				f = { "q" : self.QUIT,
-				      "g" : self.go,
-				      "r" : self.read_pset,
-				      "w" : self.write_pset,
-				      "e" : self.edit_pset
-				    }[letter]
-			except KeyError:
-				self.inform("unknown command: " + cmd)
-				return
-			try:
-				f(file, emph)
-			except Exception, e:
-				self.inform("command '%s' failed with exception '%s'" % (cmd, e))
-		
-	def save(self, emph):
-		# Save all the entries and verify them, keeping track of the
-		# invalid entries which have been reset to their original input values
-		if emph:
-			return
-		self.badEntriesList = self.save_entries()
+        self._editor = iraf.envget("editor")
+        BINDINGS = {}
+        BINDINGS.update(TPAR_BINDINGS)
+        if self._editor == "vi":
+            BINDINGS.update(TPAR_BINDINGS_VI)
+            MODE_KEYS = MODE_KEYS_VI
+        else:
+            BINDINGS.update(TPAR_BINDINGS_EMACS)
+            MODE_KEYS = MODE_KEYS_EMACS
+        Binder.__init__(self, BINDINGS, self.inform, MODE_KEYS)
 
-		# If there were invalid entries, prepare the message dialog
-		ansOKCANCEL = True
-		if (self.badEntriesList):
-			ansOKCANCEL = self.process_bad_entries(
-				self.badEntriesList,
-				self.taskName)
-		return ansOKCANCEL
+    def get_default_param_list(self):
+        # Obtain the default parameter list
+        dlist = self.taskObject.getDefaultParList()
+        if len(dlist) != len(self.paramList):
+            # whoops, lengths don't match
+            raise ValueError("Mismatch between default, current par lists"
+            " for task %s (try unlearn)" % self.taskName)
+        dict = {}
+        for par in dlist:
+            dict[par.name] = par
 
-	def MOVE_START(self):
-		self.listbox.set_focus(1)
-		return "home"
-		
-	def MOVE_END(self):
-		self.listbox.set_focus(len(self.entryNo))
-		return "end"
+        # Build default list sorted into same order as current list
+        try:
+            dsort = []
+            for par in self.paramList:
+                dsort.append(dict[par.name])
+        except KeyError:
+            raise ValueError("Mismatch between default, current par lists"
+                     " for task %s (try unlearn)" % self.taskName)
+        self.defaultParamList = dsort
 
-	# For the following routines,  event is either a urwid event *or*
-	# a Pset filename
-	def QUIT(self, event=None, emph=True):  # maybe save
-		self.save(emph)
-		def quit_continue():
-			pass
-		self.done = quit_continue
+    # Method to create the parameter entries
+    def make_entries(self):
+        # Loop over the parameters to create the entries
+        self.entryNo = [None] * self.numParams
+        for i in range(self.numParams):
+            self.entryNo[i] = self.tpar_option_factory(
+                self.paramList[i], self.defaultParamList[i])
 
-	def EXIT(self, event=None):  # always save
-		self.QUIT(event, False)
+    def main(self):
+        self.ui = urwid.curses_display.Screen()
+        self.ui.register_palette( self.palette )
+        self.ui.run_wrapper( self.run )
+        self.done()
 
-	# EXECUTE: save the parameter settings and run the task
-	def go(self, event=None, emph=False):
-		"""Executes the task."""
-		self.save(emph)
-		def go_continue():
-			print "\nTask %s is running...\n" % self.taskName
-			self.run_task()
-		self.done = go_continue
+    def get_keys(self):
+        keys = []
+        while not keys:
+            try:
+                keys = self.ui.get_input()
+            except KeyboardInterrupt:
+                keys = ["ctrl c"]
+        return keys
 
-	def edit_pset(self, file, emph):
-		"""Edits the pset referred to by the specifiefd file or the current field."""
-		self.save(emph)
-		w, pos0 = self.listbox.get_focus()
-		try:
-			default_file = w.get_result()
-		except:
-			default_file = ""
-		if file == "":
-			iraffunctions.tparam(default_file)
-		else:
-			def edit_pset_continue():
-				iraffunctions.tparam(file)
-			self.done = edit_pset_continue
+    def run(self):
+        self.ui.set_mouse_tracking()
+        size = self.ui.get_cols_rows()
+        self.done = False
+        self._newline = True
+        while not self.done:
+            self.view.keypress(size, "ready")
+            canvas = self.view.render( size, focus=1 )
+            self.ui.draw_screen( size, canvas )
+            for k in self.get_keys():
+                if k == ":":
+                    self.colon_escape()
+                    break
+                elif urwid.is_mouse_event(k):
+                    event, button, col, row = k
+                    self.view.mouse_event(
+                                    size, event,
+                                    button, col, row, focus=True )
+                elif k == 'window resize':
+                    size = self.ui.get_cols_rows()
+                    self.inform("resize %s" % (str(size)))
+                k = self.keypress(size, k)
+                self.view.keypress( size, k )
 
- 	def read_pset(self, file, emph):
-		"""Unlearns the current changes *or* reads in the specified file."""
-		if file == "":
-			self.unlearn_all_entries()
-		else:
-			def new_pset():
-				self.__init__(file)
-			self.done = new_pset
+    def colon_escape(self):
+        """colon_escape switches the focus to the 'mini-buffer' and
+        accepts and executes a one line colon command."""
+        w, pos0 = self.listbox.get_focus()
+        try:
+            default_file = w.get_result()
+        except:
+            default_file = ""
+        self.listbox.set_focus(len(self.listitems)-2)
+        size = self.ui.get_cols_rows()
+        self.colon_edit.set_edit_text("")
+        self.colon_edit.set_edit_pos(0)
+        self.view.keypress(size, ":")
+        done = False
+        while not done:
+            canvas = self.view.render( size, focus=1 )
+            self.ui.draw_screen( size, canvas )
+            for k in self.get_keys():
+                if urwid.is_mouse_event(k) or \
+                       k == "ctrl c" or k == "ctrl g":
+                    self.colon_edit.set_edit_text("")
+                    return
+                elif k == 'window resize':
+                    size = self.ui.get_cols_rows()
+                elif k == 'enter':
+                    done = True
+                    break
+                k = self.keypress(size, k)
+                self.view.keypress( size, k )
+        cmd = self.colon_edit.get_edit_text()
+        self.listbox.set_focus(pos0)
+        self.colon_edit.set_edit_text("")
+        self.process_colon(cmd)
 
- 	def write_pset(self, file, overwrite):
-		if os.path.exists(file) and not overwrite:
-			self.inform("File '%s' exists and overwrite (!) not used." % (file,))
-		# XXXX write out parameters to file
- 		self.inform("write pset: %s" % (file,))
+    def process_colon(self, cmd):
+        # : <cmd_letter> [!] [<filename>]
+        groups = re.match("^:(?P<cmd>[a-z])\s*"
+                  "(?P<emph>!?)\s*"
+                  "(?P<file>\w*)",  cmd)
+        if not groups:
+            self.inform("bad command: " + cmd)
+        else:
+            letter    = groups.group("cmd")
+            emph = groups.group("emph") == "!"
+            file   = groups.group("file")
+            try:
+                f = { "q" : self.QUIT,
+                      "g" : self.go,
+                      "r" : self.read_pset,
+                      "w" : self.write_pset,
+                      "e" : self.edit_pset
+                    }[letter]
+            except KeyError:
+                self.inform("unknown command: " + cmd)
+                return
+            try:
+                f(file, emph)
+            except Exception, e:
+                self.inform("command '%s' failed with exception '%s'" % (cmd, e))
 
-	# Method to "unlearn" all the parameter entry values in the GUI
-	# and set the parameter back to the default value
-	def unlearn_all_entries(self):
-		for entry in self.entryNo:
-			entry.unlearn_value()
+    def save(self, emph):
+        # Save all the entries and verify them, keeping track of the
+        # invalid entries which have been reset to their original input values
+        if emph:
+            return
+        self.badEntriesList = self.save_entries()
 
-	# Read, save, and verify the entries
-	def save_entries(self):
+        # If there were invalid entries, prepare the message dialog
+        ansOKCANCEL = True
+        if (self.badEntriesList):
+            ansOKCANCEL = self.process_bad_entries(
+                self.badEntriesList,
+                self.taskName)
+        return ansOKCANCEL
 
-		self.badEntries = []
+    def MOVE_START(self):
+        self.listbox.set_focus(1)
+        return "home"
 
-		# Loop over the parameters to obtain the modified information
-		for i in range(self.numParams):
+    def MOVE_END(self):
+        self.listbox.set_focus(len(self.entryNo))
+        return "end"
 
-		    par = self.paramList[i]
-		    entry = self.entryNo[i]
-		    # Cannot change an entry if it is a PSET, just skip
-		    if par.type == "pset":
-			continue
+    # For the following routines,  event is either a urwid event *or*
+    # a Pset filename
+    def QUIT(self, event=None, emph=True):  # maybe save
+        self.save(emph)
+        def quit_continue():
+            pass
+        self.done = quit_continue
 
-		    value = entry.get_result()
+    def EXIT(self, event=None):  # always save
+        self.QUIT(event, False)
 
-		    # Set new values for changed parameters - a bit tricky,
-		    # since changes that weren't followed by a return or
-		    # tab have not yet been checked.  If we eventually
-		    # use a widget that can check all changes, we will
-		    # only need to check the isChanged flag.
-		    if par.isChanged() or value != entry._previousValue:
-			# Verify the value is valid. If it is invalid,
-			# the value will be converted to its original valid value.
-			# Maintain a list of the reset values for user notification.
-			if not entry.verify(value):
-				self.badEntries.append([
-					entry.paramInfo.name, value,
-					entry._previous_value])
-			else:
-				self.taskObject.setParam(par.name, value)
+    # EXECUTE: save the parameter settings and run the task
+    def go(self, event=None, emph=False):
+        """Executes the task."""
+        self.save(emph)
+        def go_continue():
+            print "\nTask %s is running...\n" % self.taskName
+            self.run_task()
+        self.done = go_continue
 
-		# Save results to the uparm directory
-		# Skip the save if the thing being edited is an IrafParList without
-		# an associated file (in which case the changes are just being
-		# made in memory.)
+    def edit_pset(self, file, emph):
+        """Edits the pset referred to by the specifiefd file or the current field."""
+        self.save(emph)
+        w, pos0 = self.listbox.get_focus()
+        try:
+            default_file = w.get_result()
+        except:
+            default_file = ""
+        if file == "":
+            iraffunctions.tparam(default_file)
+        else:
+            def edit_pset_continue():
+                iraffunctions.tparam(file)
+            self.done = edit_pset_continue
 
-		taskObject = self.taskObject
-		if (not isinstance(taskObject, irafpar.IrafParList)) or \
-		  taskObject.getFilename():
-		    taskObject.saveParList()
+    def read_pset(self, file, emph):
+        """Unlearns the current changes *or* reads in the specified file."""
+        if file == "":
+            self.unlearn_all_entries()
+        else:
+            def new_pset():
+                self.__init__(file)
+            self.done = new_pset
 
-		return self.badEntries
+    def write_pset(self, file, overwrite):
+        if os.path.exists(file) and not overwrite:
+            self.inform("File '%s' exists and overwrite (!) not used." % (file,))
+        # XXXX write out parameters to file
+        self.inform("write pset: %s" % (file,))
 
-	# Run the task
-	def run_task(self):
+    # Method to "unlearn" all the parameter entry values in the GUI
+    # and set the parameter back to the default value
+    def unlearn_all_entries(self):
+        for entry in self.entryNo:
+            entry.unlearn_value()
 
-		# Use the run method of the IrafTask class
-		# Set mode='h' so it does not prompt for parameters (like IRAF epar)
-		# Also turn on parameter saving
-		self.taskObject.run(mode='h', _save=1)
+    # Read, save, and verify the entries
+    def save_entries(self):
 
-	def get_results(self):
-		results = {}
-		for i in self.items:
-			results[i.get_name()] = i.get_result()
-		return results
+        self.badEntries = []
 
-	def draw_screen(self, size):
-		canvas = self.view.render( size, focus=True )
-		self.ui.draw_screen( size, canvas )
+        # Loop over the parameters to obtain the modified information
+        for i in range(self.numParams):
 
-	def inform(self, s):
-		"""output any message to status bar"""
-		self.footer.set_text(s)
+            par = self.paramList[i]
+            entry = self.entryNo[i]
+            # Cannot change an entry if it is a PSET, just skip
+            if par.type == "pset":
+                continue
 
-	def info(self, msg, b):
-		self.exit_flag = False
-		size = self.ui.get_cols_rows()
-		exit_button = urwid.Padding(
-			urwid.Button("Exit", self.exit_info),
-			align="center",	width=('fixed',8))
-		frame = urwid.Frame( urwid.Filler(
-			urwid.AttrWrap(urwid.Text(msg), "help"),
-			valign="top"),
-				     header=self.header,
-				     footer=exit_button)
-		canvas = frame.render( size )
-		self.ui.draw_screen( size, canvas )
-		self.get_keys() # wait for keypress
-				
-	def exit_info(self, ehb):
-		self.exit_flag = True
+            value = entry.get_result()
 
-	def HELP(self, event=None):
-		if self._editor == "vi":
-			self.info(TPAR_HELP_VI, self.help_button)
-		else:
-			self.info(TPAR_HELP_EMACS, self.help_button)
+            # Set new values for changed parameters - a bit tricky,
+            # since changes that weren't followed by a return or
+            # tab have not yet been checked.  If we eventually
+            # use a widget that can check all changes, we will
+            # only need to check the isChanged flag.
+            if par.isChanged() or value != entry._previousValue:
+                # Verify the value is valid. If it is invalid,
+                # the value will be converted to its original valid value.
+                # Maintain a list of the reset values for user notification.
+                if not entry.verify(value):
+                    self.badEntries.append([
+                        entry.paramInfo.name, value,
+                        entry._previous_value])
+                else:
+                    self.taskObject.setParam(par.name, value)
 
-	def askokcancel(self, title, msg):
-		self.info(msg, None)
-		return False
+        # Save results to the uparm directory
+        # Skip the save if the thing being edited is an IrafParList without
+        # an associated file (in which case the changes are just being
+        # made in memory.)
 
-	# Process invalid input values and invoke a query dialog
-	def process_bad_entries(self, badEntriesList, taskname):
+        taskObject = self.taskObject
+        if (not isinstance(taskObject, irafpar.IrafParList)) or \
+          taskObject.getFilename():
+            taskObject.saveParList()
 
-		format = "%20s %20s %20s\n"
-		badEntriesString = "\nTask " + taskname.upper() + \
-				   " -- Invalid values have been entered.\n\n"
-		badEntriesString += format % \
-				    ("Parameter", "Bad Value", "Reset Value")
-		for i in range (len(badEntriesList)):
-			badEntriesString += format % \
-					    (badEntriesList[i][0].strip(), \
-					     badEntriesList[i][1].strip(), \
-					     badEntriesList[i][2].strip())
+        return self.badEntries
 
-			badEntriesString + "\nOK to continue using"\
-		  " the reset\nvalues or cancel to re-enter\nvalues?\n"
+    # Run the task
+    def run_task(self):
 
-		# Invoke the modal message dialog
-		return (self.askokcancel("Notice", badEntriesString))
+        # Use the run method of the IrafTask class
+        # Set mode='h' so it does not prompt for parameters (like IRAF epar)
+        # Also turn on parameter saving
+        self.taskObject.run(mode='h', _save=1)
 
-	# TparOption values for non-string types
-	_tparOptionDict = { "b": BooleanTparOption,
-			    "r": NumberTparOption,
-			    "d": NumberTparOption,
-			    "i": NumberTparOption,
-			    "pset": PsetTparOption,
-			    "ar": NumberTparOption,
-			    "ai": NumberTparOption,
-			    }
+    def get_results(self):
+        results = {}
+        for i in self.items:
+            results[i.get_name()] = i.get_result()
+        return results
 
-	def tpar_option_factory(self, param, defaultParam):
-		"""Return TparOption item of appropriate type for the parameter param"""
-		# If there is an enumerated list, regardless of datatype, use
-		# the EnumTparOption
-		if (param.choice != None):
-			tparOption = EnumTparOption
-		else:
-			# Use String for types not in the dictionary
-			tparOption = self._tparOptionDict.get(param.type, StringTparOption)
-		return tparOption(param, defaultParam, self.inform)
+    def draw_screen(self, size):
+        canvas = self.view.render( size, focus=True )
+        self.ui.draw_screen( size, canvas )
+
+    def inform(self, s):
+        """output any message to status bar"""
+        self.footer.set_text(s)
+
+    def info(self, msg, b):
+        self.exit_flag = False
+        size = self.ui.get_cols_rows()
+        exit_button = urwid.Padding(
+                          urwid.Button("Exit", self.exit_info),
+                          align="center", width=('fixed',8))
+        frame = urwid.Frame(urwid.Filler(
+                                  urwid.AttrWrap(urwid.Text(msg), "help"),
+                                  valign="top"),
+                            header=self.header,
+                            footer=exit_button)
+        canvas = frame.render( size )
+        self.ui.draw_screen( size, canvas )
+        self.get_keys() # wait for keypress
+
+    def exit_info(self, ehb):
+        self.exit_flag = True
+
+    def HELP(self, event=None):
+        if self._editor == "vi":
+            self.info(TPAR_HELP_VI, self.help_button)
+        else:
+            self.info(TPAR_HELP_EMACS, self.help_button)
+
+    def askokcancel(self, title, msg):
+        self.info(msg, None)
+        return False
+
+    # Process invalid input values and invoke a query dialog
+    def process_bad_entries(self, badEntriesList, taskname):
+
+        format = "%20s %20s %20s\n"
+        badEntriesString = "\nTask " + taskname.upper() + \
+                           " -- Invalid values have been entered.\n\n"
+        badEntriesString += format % \
+                            ("Parameter", "Bad Value", "Reset Value")
+        for i in range (len(badEntriesList)):
+            badEntriesString += format % \
+                        (badEntriesList[i][0].strip(), \
+                         badEntriesList[i][1].strip(), \
+                         badEntriesList[i][2].strip())
+
+            badEntriesString += "\nOK to continue using"\
+            " the reset\nvalues or cancel to re-enter\nvalues?\n"
+
+        # Invoke the modal message dialog
+        return (self.askokcancel("Notice", badEntriesString))
+
+    # TparOption values for non-string types
+    _tparOptionDict = { "b": BooleanTparOption,
+                        "r": NumberTparOption,
+                        "d": NumberTparOption,
+                        "i": NumberTparOption,
+                        "pset": PsetTparOption,
+                        "ar": NumberTparOption,
+                        "ai": NumberTparOption,
+                       }
+
+    def tpar_option_factory(self, param, defaultParam):
+        """Return TparOption item of appropriate type for the parameter param"""
+        # If there is an enumerated list, regardless of datatype, use
+        # the EnumTparOption
+        if (param.choice != None):
+            tparOption = EnumTparOption
+        else:
+            # Use String for types not in the dictionary
+            tparOption = self._tparOptionDict.get(param.type, StringTparOption)
+        return tparOption(param, defaultParam, self.inform)
 
 
 def tpar(taskName):
-	if isinstance(urwid, FakeModule):
-		print >>sys.stderr, "The urwid package isn't available on your Python system so tpar can't be used."
-		print >>sys.stderr, "Install urwid version >= 0.9.4 or use epar instead."
-		return
-	TparDisplay(taskName).main()
+    if isinstance(urwid, FakeModule):
+        print >>sys.stderr, "The urwid package isn't available on your Python system so tpar can't be used."
+        print >>sys.stderr, "Install urwid version >= 0.9.4 or use epar instead."
+        return
+    TparDisplay(taskName).main()
 
 if __name__ == "__main__":
-	main()
+    main()
 
