@@ -211,7 +211,8 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         self.pageVar.trace('w', self._setPageVar)
         windowID = self.gwidget.winfo_id()
         self.flush()
-        wutil.setBackingStore(windowID)
+        if os.uname()[0] != 'Darwin': # this step is unneeded on OSX
+            wutil.setBackingStore(windowID)
 
     # -----------------------------------------------
 
