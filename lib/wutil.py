@@ -184,6 +184,8 @@ class TerminalFocusEntity(FocusEntity):
         return self.windowID
 
     def forceFocus(self):
+        if os.uname()[0] == 'Darwin': # under dev. on OSX; was broken anyway
+            return
         if not (self.windowID and isViewable(self.windowID)):
             # no window or not viewable
             return
@@ -204,7 +206,7 @@ class TerminalFocusEntity(FocusEntity):
         else:
             return
         windict = getWindowAttributes(self.windowID)
-        if windict:
+        if windict and windict['width'] > 0:
             maxX = windict['width']
             maxY = windict['height']
         else:
