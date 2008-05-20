@@ -125,6 +125,7 @@ class PyrafCanvas(Canvas):
         # XBM file for cursor is in same directory as this module
         global _blankcursor
         self['cursor'] = '@' + _blankcursor + ' black'
+
         # ignore type for now since only one type of software cursor
         # is implemented
         self.update_idletasks()
@@ -208,13 +209,16 @@ class PyrafCanvas(Canvas):
             self.tkRedraw()
 
 class FullWindowCursor:
-    """This implements a  full window crosshair cursor"""
+    """This implements a full window crosshair cursor.  This class can 
+       operate in the xutil-wrapping mode or in a Tkinter-only mode. """
     # Perhaps this should inherit from an abstract Cursor class eventually
 
-    def __init__(self, x, y, window=None):
+    def __init__(self, x, y, window):
 
-        """Display the cursor for the first time"""
+        """Display the cursor for the first time.  The passed in window
+           also needs to act as a Tk Canvas object."""
 
+        self.__useX11 = True
         self.lastx = x
         self.lasty = y
         self.window = window
@@ -223,24 +227,54 @@ class FullWindowCursor:
                               # sofware command or by mouse events.
                               # Kludgy, and used by modules using the
                               # cursor position.
+        self.__tkHorLine = None
+        self.__tkVerLine = None
         self.draw()
 
-    def xorDraw(self):
+    def _xutilXorDraw(self):
 
         xutil.drawCursor(self.window.winfo_id(), self.lastx, self.lasty,
                          self.window.width, self.window.height)
 
+    def _tkDrawCursor(self):
+
+        self._tkEraseCursor()
+
+        # coords and window sizes
+        ww = self.window.width
+        wh = self.window.height
+        x  = self.lastx*ww
+        y  = (1.0-self.lasty)*wh
+
+        # Draw the crosshairs.  self.window is a Tk Canvas object
+        self.__tkHorLine = self.window.create_line(0,y,ww,y,fill='red')
+        self.__tkVerLine = self.window.create_line(x,0,x,wh,fill='red')
+
+    def _tkEraseCursor(self):
+
+        if self.__tkHorLine != None:
+            self.window.delete(self.__tkHorLine);
+            self.__tkHorLine = None
+        if self.__tkVerLine != None:
+            self.window.delete(self.__tkVerLine);
+            self.__tkVerLine = None
+
+
     def erase(self):
 
         if self.isVisible:
-            self.xorDraw()
-            self.isVisible = 0
+            if self.__useX11:
+                self._xutilXorDraw()
+            else:
+                self._tkEraseCursor()
+        self.isVisible = 0
 
     def draw(self):
 
         if not self.isVisible:
-            self.xorDraw()
-            self.isVisible = 1
+            if self.__useX11: self._xutilXorDraw()
+            else:             self._tkDrawCursor()
+        self.isVisible = 1
 
     def moveTo(self,x,y, SWmove=0):
 
