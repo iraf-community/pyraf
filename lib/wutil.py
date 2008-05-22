@@ -35,29 +35,43 @@ if WUTIL_ON_MAC and os.environ.has_key('PYRAF_WUTIL_USING_AQUA'):
 
 # attempt to override with xutil versions
 try:
-    import xutil
-    #initGraphics = initXGraphics
-    xutil.initXGraphics() # call here for lack of a better place for n
+    if WUTIL_USING_X:
+        import xutil
+        #initGraphics = initXGraphics
+        xutil.initXGraphics() # call here for lack of a better place for n
 
-    # Check to make sure a valid XWindow ID was initialized
-    # Attach closeGraphics to XWindow methods
-    #ONLY if an XWindow was successfully initialized.
-    #  WJH (10June2004)
-    if xutil.getWindowID() == -1:
-        raise EnvironmentError
+        # Check to make sure a valid XWindow ID was initialized
+        # Attach closeGraphics to XWindow methods
+        #ONLY if an XWindow was successfully initialized.
+        #  WJH (10June2004)
+        if xutil.getWindowID() == -1:
+            raise EnvironmentError
 
-    # Successful intialization. Reset dummy methods with
-    # those from 'xutil' now.
-    from xutil import *
-    hasXWindow = 1 # Flag to mark successful initialization of XWindow
-    closeGraphics = closeXGraphics
+        # Successful intialization. Reset dummy methods with
+        # those from 'xutil' now.
+        from xutil import *
+        hasXWindow = 1 # Flag to mark successful initialization of XWindow
+        closeGraphics = closeXGraphics
+    else:
+        # !!! UNDER DEVELOPMENT - MAY CHANGE AT ANY TIME !!!
+        def closeGraphicsEmpty(): pass
+        def getWindowIdEmpty(): return 0
+        def drawCursorEmpty(WindowID, x, y, w, h): pass
+        closeGraphics = closeGraphicsEmpty
+        getWindowID = getWindowIdEmpty
+        drawCursor = drawCursorEmpty
+        # Perhaps this really means "has a window", i.e. has a screen to use
+        hasXWindow = 1 # kludge
 except ImportError:
     hasXWindow = 0 # Unsuccessful init of XWindow
 except EnvironmentError:
     hasXWindow = 0 # Unsuccessful init of XWindow
 
 # Clean up the namespace a bit...
-del xutil
+try:
+    del xutil
+except NameError:
+    pass # may not have imported it
 
 magicConstant = None
 try:
