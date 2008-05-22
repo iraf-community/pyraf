@@ -10,6 +10,7 @@ $Id$
 import struct, fcntl, sys, os
 from irafglobals import IrafError
 
+# empty placeholder versions
 def getWindowID(): return None
 def moveCursorTo(WindowID, x, y): pass
 def setFocusTo(WindowID): pass
@@ -21,6 +22,17 @@ def getDeepestVisual(): return 24
 def initGraphics(): pass
 def closeGraphics(): pass
 
+# Are we on MacOS X ?
+WUTIL_ON_MAC = False
+if os.uname()[0] == 'Darwin':
+    WUTIL_ON_MAC = True
+
+# For a little while we may support both versions (X or Aqua) on OSX
+WUTIL_USING_X = True
+if WUTIL_ON_MAC and os.environ.has_key('PYRAF_WUTIL_USING_AQUA'):
+    WUTIL_USING_X = False
+
+# attempt to override with xutil versions
 try:
     import xutil
     #initGraphics = initXGraphics
@@ -89,6 +101,8 @@ def getTopID(WindowID):
         return wid
     if topIDmap.has_key(wid):
         return topIDmap[wid]
+    if not WUTIL_USING_X:
+        return None # a "top ID" makes little sense if we are not using X
     try:
         oid = wid
         while 1:
@@ -103,6 +117,8 @@ def getTopID(WindowID):
 
 def isViewable(WindowID):
 
+    if not WUTIL_USING_X:
+        return 1  # native OSX code still under dev.; make everything viewable
     attrdict = getWindowAttributes(WindowID)
     if attrdict:
         return attrdict['viewable']
@@ -184,8 +200,8 @@ class TerminalFocusEntity(FocusEntity):
         return self.windowID
 
     def forceFocus(self):
-        if os.uname()[0] == 'Darwin': # under dev. on OSX; was broken anyway
-            return
+        if WUTIL_ON_MAC:
+            return # under dev. on OSX...  (was broken anyway)
         if not (self.windowID and isViewable(self.windowID)):
             # no window or not viewable
             return

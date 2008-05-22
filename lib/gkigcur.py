@@ -133,7 +133,7 @@ class Gcursor:
         gwidget = self.gwidget
         width = self.gwidget.width
         height = self.gwidget.height
-        # only force focus if window is viewable
+        # only move cursor if window is viewable
         if not wutil.isViewable(self.top.winfo_id()):
             return
         # if no previous position, ignore
