@@ -10,6 +10,7 @@ matplotlib.use('TkAgg') # set backend
 import matplotlib.backends.backend_tkagg as tkagg
 from Ptkplot import FullWindowCursor
 from wutil import moveCursorTo
+from wutil import WUTIL_USING_X
 
 
 # XBM file for cursor is in same directory as this module
@@ -164,7 +165,10 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         # XBM file for cursor is in same directory as this module
         global _blankcursor
         gw = self.__theGwidget
-        gw['cursor'] = '@' + _blankcursor + ' black'
+        if WUTIL_USING_X:
+            gw['cursor'] = '@' + _blankcursor + ' black'
+        else:
+            gw['cursor'] = '' # under development !!!
         # ignore type for now since only one type of software cursor
         # is implemented
         gw.update_idletasks()
