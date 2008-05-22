@@ -1,5 +1,5 @@
 """
-Graphics window manager, creates multple toplevel togl widgets for
+Graphics window manager, creates multiple toplevel togl widgets for
 use by python plotting
 
 $Id$
