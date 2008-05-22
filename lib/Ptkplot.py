@@ -8,7 +8,7 @@ $Id$
 import os
 from Tkinter import _default_root
 from Tkinter import *
-import xutil, wutil
+import wutil
 import sys, time
 
 # XBM file for cursor is in same directory as this module
@@ -218,7 +218,7 @@ class FullWindowCursor:
         """Display the cursor for the first time.  The passed in window
            also needs to act as a Tk Canvas object."""
 
-        self.__useX11 = True
+        self.__useX11 = wutil.WUTIL_USING_X
         self.lastx = x
         self.lasty = y
         self.window = window
@@ -233,7 +233,7 @@ class FullWindowCursor:
 
     def _xutilXorDraw(self):
 
-        xutil.drawCursor(self.window.winfo_id(), self.lastx, self.lasty,
+        wutil.drawCursor(self.window.winfo_id(), self.lastx, self.lasty,
                          self.window.width, self.window.height)
 
     def _tkDrawCursor(self):

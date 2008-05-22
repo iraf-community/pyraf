@@ -12,6 +12,7 @@ from irafglobals import IrafError
 
 # empty placeholder versions
 def getWindowID(): return None
+def drawCursor(WindowID, x, y, w, h): pass
 def moveCursorTo(WindowID, x, y): pass
 def setFocusTo(WindowID): pass
 def setBackingStore(WindowID): pass
