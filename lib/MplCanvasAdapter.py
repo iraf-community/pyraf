@@ -168,7 +168,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         if WUTIL_USING_X:
             gw['cursor'] = '@' + _blankcursor + ' black'
         else:
-            gw['cursor'] = '' # under development !!!
+            gw['cursor'] = 'tcross' # under dev. !!! (use CGDisplayHideCursor?)
         # ignore type for now since only one type of software cursor
         # is implemented
         gw.update_idletasks()

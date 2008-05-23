@@ -124,7 +124,10 @@ class PyrafCanvas(Canvas):
         # to disable a cursor in Tk?).
         # XBM file for cursor is in same directory as this module
         global _blankcursor
-        self['cursor'] = '@' + _blankcursor + ' black'
+        if wutil.WUTIL_USING_X:
+            self['cursor'] = '@' + _blankcursor + ' black'
+        else:
+            self['cursor'] = 'tcross' # see note in MplCanvasAdapter
 
         # ignore type for now since only one type of software cursor
         # is implemented
