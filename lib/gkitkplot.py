@@ -417,15 +417,8 @@ class tkColorManager:
         """Set crosshair cursor color to given index
 
         Only has an effect in index color mode."""
-#        import Ptogl
         if irafColorIndex is not None:
             self.config.setCursorColor(irafColorIndex)
-#        else:
-            # cursor color is result of xor-ing desired cursor color with
-            # background color
-#            fgcolor = self.indexmap[self.config.cursorColor]
-#            bgcolor = self.indexmap[0]
-#            Ptogl.cursorColor = fgcolor ^ bgcolor
 
     def setDrawingColor(self, irafColorIndex):
 

@@ -48,7 +48,7 @@ atexit.register(cleanup)
 # [end DAA]
 
 # crosshair cursor color (only has an effect in indexed color mode)
-# this is global so that it applies to all Ptogl widgets
+# this is global so that it applies to all Ptkplot widgets
 cursorColor = 1
 cursorTrueColor = (1.0, 0.0, 0.0)
 # visuals that use true colors

@@ -16,7 +16,7 @@ class GraphicsWindowManager(gki.GkiProxy):
 
     """Proxy for active graphics window and manager of multiple windows
 
-    Each window is an instance of GkiOpenGlKernel.  stdgraph
+    Each window is an instance of a graphics kernel.  stdgraph
     holds the active window pointer.
     """
 
@@ -136,12 +136,8 @@ if wutil.hasGraphics:
             import gkitkplot
             kernel = gkitkplot.GkiTkplotKernel
         elif kernelname == "opengl":
-            try:
-                import gkiopengl
-                kernel = gkiopengl.GkiOpenGlKernel
-            except ImportError:
-                print "OpenGL module not installed, using default instead"
-                kernelname = "default"
+            print "OpenGL kernel is no longer supported, using default instead"
+            kernelname = "default"
         elif kernelname == "matplotlib":
             try:
                 import GkiMpl
@@ -150,8 +146,8 @@ if wutil.hasGraphics:
                 print "matplotlib module not installed, using default instead"
                 kernelname = "default"
         else:
-            print "Graphics kernel specified by PYRAFGRAPHICS=", \
-                   kernelname, " not found."
+            print 'Graphics kernel specified by "PYRAFGRAPHICS='+ \
+                   kernelname+'" not found.'
             print "Using default kernel instead."
             kernelname = "default"
     else:
