@@ -55,11 +55,9 @@ try:
     else:
         # !!! UNDER DEVELOPMENT - MAY CHANGE AT ANY TIME !!!
         def closeGraphicsEmpty(): pass
-        def getWindowIdEmpty(): return 0
-        def drawCursorEmpty(WindowID, x, y, w, h): pass
+        def getWindowIdZero(): return 0
         closeGraphics = closeGraphicsEmpty
-        getWindowID = getWindowIdEmpty
-        drawCursor = drawCursorEmpty
+        getWindowID = getWindowIdZero
         # Perhaps this really means "has a window", i.e. has a screen to use
         hasXWindow = 1 # kludge
 except ImportError:
@@ -366,8 +364,13 @@ class FocusController:
         If always is true, target is added to stack even if it is already
         the focus (useful for pairs of setFocusTo/restoreLast calls.)
         """
-        if not self.hasGraphics:
+        if (focusTarget == None) or (not self.hasGraphics):
             return
+        if not WUTIL_USING_X:
+            if hasattr(focusTarget, 'gwidget'): # gwidget is a Canvas
+                focusTarget.gwidget.focus_set()
+                return # allow others to pass through to use this class
+
         current = self.focusStack[-1]
         if type(focusTarget) == type(""):
             next = self.focusEntities[focusTarget]
