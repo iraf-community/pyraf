@@ -77,8 +77,8 @@ class Gcursor:
     def cursorOff(self):
         """Turn cross-hair cursor off"""
         self.gwidget.deactivateSWCursor()
-        self.gwidget.lastX = self.x/self.gwidget.width
-        self.gwidget.lastY = self.y/self.gwidget.height
+        self.gwidget.lastX = int(self.x/self.gwidget.width)
+        self.gwidget.lastY = int(self.y/self.gwidget.height)
 
     def bind(self):
 

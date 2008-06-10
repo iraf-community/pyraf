@@ -122,7 +122,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     The gwidget object (created by makeGWidget) should have these
     attributes (in addition to the usual Tk methods):
 
-    lastX, lastY            Last cursor position, initially None
+    lastX, lastY            Last cursor position (int), initially None
     rgbamode                Flag indicating RGB (if true) or indexed color mode
     activate()              Make this the focus of plots
 
