@@ -138,8 +138,11 @@ def run_all():
       func = eval(t)
       print func.__doc__.strip()
       func()
+
    # If we get here with no exception, we have passed all of the tests
    print "\nSuccessfully passed "+str(len(tsts))+" tests"
+   return len(tsts)
+
 
 #
 #

@@ -40,6 +40,7 @@ def run_all():
 
    # If we get here with no exception, we have passed all of the tests
    print "\nSuccessfully passed "+str(len(tsts))+" tests"
+   return len(tsts)
 
 
 #
