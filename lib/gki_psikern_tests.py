@@ -16,7 +16,7 @@ def gki_single_prow_test():
    """ Test a prow-plot of a single row from dev$pix to .ps """
    iraf.plot(_doprint=0) # load plot for prow
    # get look at tmp dir before plot/flush
-   flistBef = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   flistBef = findAllTmpPskFiles()
    # plot
    iraf.prow("dev$pix", row=256, dev="psi_land") # plot
    iraf.gflush()
@@ -34,7 +34,7 @@ def gki_prow_1_append_test():
    """ Test a prow-plot with 1 append (2 rows total, dev$pix) to .ps """
    iraf.plot(_doprint=0) # load plot for prow
    # get look at tmp dir before plot/flush
-   flistBef = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   flistBef = findAllTmpPskFiles()
    # plot
    iraf.prow("dev$pix", row=256, dev="psi_land") # plot
    iraf.prow("dev$pix", row=250, dev="psi_land", append=True) # append #1
@@ -53,7 +53,7 @@ def gki_prow_2_appends_test():
    """ Test a prow-plot with 2 appends (3 rows total, dev$pix) to .ps """
    iraf.plot(_doprint=0) # load plot for prow
    # get look at tmp dir before plot/flush
-   flistBef = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   flistBef = findAllTmpPskFiles()
    # plot
    iraf.prow("dev$pix", row=256, dev="psi_land") # plot
    iraf.prow("dev$pix", row=250, dev="psi_land", append=True) # append #1
@@ -73,7 +73,7 @@ def gki_2_prows_no_append_test():
    """ Test 2 prow calls with no append (2 dev$pix rows) to 2 .ps's """
    iraf.plot(_doprint=0) # load plot for prow
    # get look at tmp dir before plot/flush
-   flistBef = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   flistBef = findAllTmpPskFiles()
    # plot
    iraf.prow("dev$pix", row=256, dev="psi_land") # plot
    iraf.prow("dev$pix", row=250, dev="psi_land") # plot again (flushes 1st)
@@ -85,7 +85,7 @@ def gki_2_prows_no_append_test():
    assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
    os.remove(psOut)
    # NOW flush second
-   flistBef = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   flistBef = findAllTmpPskFiles()
    iraf.gflush()
    # get output postscript temp file name
    psOut = getNewestTmpPskFile(flistBef)
@@ -101,7 +101,7 @@ def gki_prow_to_different_devices_test():
    """ Test 2 prow calls, each to different devices - one .ps written """
    iraf.plot(_doprint=0) # load plot for prow
    # get look at tmp dir before plot/flush
-   flistBef = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   flistBef = findAllTmpPskFiles()
    # use a fake printer name so we don't waste a sheet of paper w/ each test
    os.environ['LPDEST'] = "hp_dev_null"
    # plot
@@ -117,16 +117,26 @@ def gki_prow_to_different_devices_test():
    # clean up
    os.remove(psOut)
    # NOW flush - should do nothing
-   flistBef = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   flistBef = findAllTmpPskFiles()
    iraf.gflush()
-   flistAft = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   flistAft = findAllTmpPskFiles()
    assert flistBef==flistAft, "Extra tmp .ps file written? "+repr(flistAft)
+
+
+def findAllTmpPskFiles():
+   """ Do a glob in the tmp dir (and cwd) looking for psikern files.
+   Return the list. """
+   # Usually the files are dropped in the $tmp directory
+   flistCur = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   # for some reason, on Solaris (at least), the files are dumped to cwd
+   flistCur += glob.glob(os.getcwd()+os.sep+'psk*')
+   return flistCur
 
 
 def getNewestTmpPskFile(theBeforeList):
    """ Do a glob in the tmp dir looking for psikern files, compare with the
    old list to find the single new (expected) file. Return string filename. """
-   flistAft = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   flistAft = findAllTmpPskFiles()
    for f in theBeforeList: flistAft.remove(f)
    assert len(flistAft) == 1, "Expected single postcript file: "+repr(flistAft)
    return flistAft[0]
