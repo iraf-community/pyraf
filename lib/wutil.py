@@ -10,7 +10,7 @@ $Id$
 import struct, fcntl, sys, os
 from irafglobals import IrafError
 
-# empty placeholder versions
+# empty placeholder versions for X
 def getWindowID(): return None
 def drawCursor(WindowID, x, y, w, h): pass
 def moveCursorTo(WindowID, x, y): pass
@@ -60,6 +60,13 @@ try:
         getWindowID = getWindowIdZero
         # Perhaps this really means "has a window", i.e. has a screen to use
         hasXWindow = 1 # kludge
+        # !!!
+        if WUTIL_ON_MAC: # as opposed to the PC (from future import ...)
+            try:
+                import aqutil
+            except:
+                print "ERROR importing aqutil"
+
 except ImportError:
     hasXWindow = 0 # Unsuccessful init of XWindow
 except EnvironmentError:
