@@ -10,6 +10,11 @@ import objc
 from Foundation import NSBundle
 
 
+# arbitrary module constants for term vs. gui
+WIN_ID_TERM = 1001
+WIN_ID_GUI  = 1002
+
+
 # module variables
 __thisPSN = None
 __termPSN = None
@@ -17,22 +22,63 @@ __initialized = False
 
 
 def focusOnGui():
+    """ Set focus to GUI """
     global __thisPSN
     err = SetFrontProcess(__thisPSN)
     if err: raise Exception("SetFrontProcess: "+`err`)
 
 
 def focusOnTerm():
+    """ Set focus to terminal """
     global __termPSN
     err = SetFrontProcess(__termPSN)
     if err: raise Exception("SetFrontProcess: "+`err`)
 
 
+def guiHasFocus():
+    """ Return True if GUI has focus """
+    err, aPSN = GetFrontProcess()
+    if err: raise Exception("GetFrontProcess: "+`err`)
+    return aPSN == __thisPSN
+
+
+def termHasFocus():
+    """ Return True if terminal has focus """
+    err, aPSN = GetFrontProcess()
+    if err: raise Exception("GetFrontProcess: "+`err`)
+    return aPSN == __termPSN
+
+
+def getWindowID():
+    """ On OSX, the actual window ID's are not important here.  We only
+    need to distinguish between the terminal and the GUI.  In fact, we treat
+    all GUI windows as having the same ID. """
+    if termHasFocus():
+        return WIN_ID_TERM  # 1 == terminal
+    else:
+        return WIN_ID_GUI   # 2 == any GUI window
+
+
+def setFocusTo(windowID):
+    """ Move the focus to the given window ID (see notes in getWindowID) """
+    # We could do something fancy like create unique window id's out of the
+    # process serial numbers (PSN's), but for now stick with WIN_ID_*
+    if not windowID in (WIN_ID_TERM, WIN_ID_GUI):
+        raise RuntimeError("Bug: unexpected OSX windowID: "+str(windowID))
+    if windowID == WIN_ID_TERM:
+        focusOnTerm()
+    else:
+        focusOnGui()
+
+
 def __doPyobjcWinInit():
+    """ Initialize the Pyobjc bridging and make some calls to get our PSN and
+    the parent terminal's PSN. Do only ONCE per process. """
+
     global __thisPSN, __termPSN, __initialized
     # Guard against accidental second calls
     if __initialized: return
-    print "\n\n !!! INIT !!! \n\n" # !!!
+    print "\n\n !!! AQUTIL INIT !!! \n\n" # !!!
 
     # Taken in part from PyObjc's Examples/Scripts/wmEnable.py
     OSErr  = objc._C_SHT
@@ -87,5 +133,4 @@ def __doPyobjcWinInit():
 #
 if not __initialized:
     __doPyobjcWinInit()
-    focusOnGui() # always want to do this at start, right?
     __initialized = True
