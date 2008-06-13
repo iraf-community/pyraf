@@ -21,6 +21,8 @@ else:
     _blankcursor = os.path.join(os.getcwd(), dirname, _blankcursor)
 del dirname
 
+_TK_HAS_NONE_CURSOR = True # assume True until we learn otherwise
+
 if _default_root is None:
     # create the initial Tk window and immediately withdraw it
     import Tkinter
@@ -56,6 +58,37 @@ truevis = {
           'truecolor' : 1,
           'directcolor' : 1,
           }
+
+
+def hideTkCursor(theCanvas):
+    """ Make the existing cursor disappear. """
+    # Make the existing cursor disappear.  There currently isn't a
+    # better way to disable a cursor in Tk. In Tk 8.5, there will be a
+    # 'none' option to set the cursor to.  Until then, load a blank cursor
+    # from an XBM file - is in same directory as this module. Might, on OSX
+    # only, be able to use: CGDisplayHideCursor()
+    #
+    # Note - the blankcursor format is causing errors on some non-Linux
+    # platforms, so we need to use 'none' or 'tcross' for now.
+
+    global _TK_HAS_NONE_CURSOR
+    global _blankcursor
+
+    if _TK_HAS_NONE_CURSOR:
+        # See if this supports the 'none' cursor
+        try:
+            theCanvas['cursor'] = 'none'
+            return
+        except TclError:
+            _TK_HAS_NONE_CURSOR = False
+
+    # If we get here, the 'none' cursor is not yet supported.  Load the blank
+    # one, or use 'tcross'.
+    if wutil.WUTIL_USING_X:
+        theCanvas['cursor'] = '@' + _blankcursor + ' black'
+    else:
+        theCanvas['cursor'] = 'tcross' # this'll do for now
+
 
 class PyrafCanvas(Canvas):
     """Widget"""
@@ -120,15 +153,7 @@ class PyrafCanvas(Canvas):
         return self._isSWCursorActive
 
     def activateSWCursor(self, x=None, y=None, type=None):
-        # Load a blank cursor from a file (isn't there a better way
-        # to disable a cursor in Tk?).
-        # XBM file for cursor is in same directory as this module
-        global _blankcursor
-        if wutil.WUTIL_USING_X:
-            self['cursor'] = '@' + _blankcursor + ' black'
-        else:
-            self['cursor'] = 'tcross' # see note in MplCanvasAdapter
-
+        hideTkCursor(self)
         # ignore type for now since only one type of software cursor
         # is implemented
         self.update_idletasks()
