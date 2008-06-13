@@ -8,20 +8,10 @@ import os, matplotlib
 import Tkinter as Tki
 matplotlib.use('TkAgg') # set backend
 import matplotlib.backends.backend_tkagg as tkagg
+from Ptkplot import hideTkCursor
 from Ptkplot import FullWindowCursor
 from wutil import moveCursorTo
 from wutil import WUTIL_USING_X
-
-
-# XBM file for cursor is in same directory as this module
-_blankcursor = 'blankcursor.xbm'
-dirname = os.path.dirname(__file__)
-if os.path.isabs(dirname):
-    _blankcursor = os.path.join(dirname, _blankcursor)
-else:
-    # change relative directory paths to absolute
-    _blankcursor = os.path.join(os.getcwd(), dirname, _blankcursor)
-del dirname
 
 
 class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
@@ -160,15 +150,8 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
     # activateSWCursor() is used as if it belonged to the gwidget's class
     def activateSWCursor(self, x=None, y=None, type=None, drawToo=True):
 
-        # Load a blank cursor from a file (isn't there a better way
-        # to disable a cursor in Tk?).
-        # XBM file for cursor is in same directory as this module
-        global _blankcursor
         gw = self.__theGwidget
-        if WUTIL_USING_X:
-            gw['cursor'] = '@' + _blankcursor + ' black'
-        else:
-            gw['cursor'] = 'tcross' # under dev. !!! (use CGDisplayHideCursor?)
+        hideTkCursor(gw) # from Ptkplot
         # ignore type for now since only one type of software cursor
         # is implemented
         gw.update_idletasks()
@@ -190,7 +173,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
             gw.unbind("<Motion>")
             self.__SWCursor.isLastSWmove = 1
             self.__isSWCursorActive = 0
-            gw['cursor'] = 'arrow'
+            gw['cursor'] = 'arrow' # set back to normal
 
     # getSWCursor() is used as if it belonged to the gwidget's class
     def getSWCursor(self):
