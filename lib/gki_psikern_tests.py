@@ -11,6 +11,10 @@ $Id: gki_psikern_tests.py 801 2007-08-2 sontag $
 import glob, os, sys
 from pyraf import iraf
 
+diff = "diff"
+if 'PYRAF_TEST_DIFF' in os.environ:
+   diff = os.environ['PYRAF_TEST_DIFF']
+
 
 def gki_single_prow_test():
    """ Test a prow-plot of a single row from dev$pix to .ps """
@@ -23,7 +27,7 @@ def gki_single_prow_test():
    # get output postscript temp file name
    psOut = getNewestTmpPskFile(flistBef)
    # diff
-   cmd = "diff -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
+   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256.ps "+psOut
    assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
    # clean up
@@ -42,7 +46,7 @@ def gki_prow_1_append_test():
    # get output postscript temp file name
    psOut = getNewestTmpPskFile(flistBef)
    # diff
-   cmd = "diff -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
+   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256_250.ps "+psOut
    assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
    # clean up
@@ -62,7 +66,7 @@ def gki_prow_2_appends_test():
    # get output postscript temp file name
    psOut = getNewestTmpPskFile(flistBef)
    # diff
-   cmd = "diff -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
+   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256_250_200.ps "+psOut
    assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
    # clean up
@@ -80,7 +84,7 @@ def gki_2_prows_no_append_test():
    # get output postscript temp file name
    psOut = getNewestTmpPskFile(flistBef)
    # diff
-   cmd = "diff -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
+   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256.ps "+psOut
    assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
    os.remove(psOut)
@@ -90,7 +94,7 @@ def gki_2_prows_no_append_test():
    # get output postscript temp file name
    psOut = getNewestTmpPskFile(flistBef)
    # diff
-   cmd = "diff -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
+   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_250.ps "+psOut
    assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
    # clean up
@@ -111,7 +115,7 @@ def gki_prow_to_different_devices_test():
    # get output postscript temp file name
    psOut = getNewestTmpPskFile(flistBef)
    # diff
-   cmd = "diff -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
+   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256.ps "+psOut
    assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
    # clean up
