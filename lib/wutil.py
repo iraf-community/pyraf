@@ -52,18 +52,24 @@ try:
         from xutil import *
         hasXWindow = 1 # Flag to mark successful initialization of XWindow
         closeGraphics = closeXGraphics
+
     else:
-        # !!! UNDER DEVELOPMENT - MAY CHANGE AT ANY TIME !!!
-        def closeGraphicsEmpty(): pass
+        # Start with a basic empty non-X implementation (e.g. Cygwin?, OSX, ?)
         def getWindowIdZero(): return 0
-        closeGraphics = closeGraphicsEmpty
         getWindowID = getWindowIdZero
         # Perhaps this really means "has a window", i.e. has a screen to use
         hasXWindow = 1 # kludge
-        # !!!
+
+        # If on OSX, use aqutil
         if WUTIL_ON_MAC: # as opposed to the PC (from future import ...)
             try:
                 import aqutil
+                # override the few Mac-specific functions needed
+                from aqutil import getWindowID, setFocusTo
+                # ... but, do nothing with moveCursorTo() for now
+
+                # need to init TerminalFocusEntity() obj w/ focus on term !)
+
             except:
                 print "ERROR importing aqutil"
 
@@ -220,8 +226,8 @@ class TerminalFocusEntity(FocusEntity):
         return self.windowID
 
     def forceFocus(self):
-        if WUTIL_ON_MAC:
-            return # under dev. on OSX...  (was broken anyway)
+        if WUTIL_ON_MAC and WUTIL_USING_X:
+            return # X ver. under dev. on OSX...  (was broken anyway)
         if not (self.windowID and isViewable(self.windowID)):
             # no window or not viewable
             return
@@ -235,6 +241,8 @@ class TerminalFocusEntity(FocusEntity):
     def saveCursorPos(self):
         if (not self.windowID) or (self.windowID != getWindowID()):
             return
+        if not WUTIL_USING_X:
+            return # !!! the following two xutil methods are still undefined
         posdict = getPointerPosition(self.windowID)
         if posdict:
             x = posdict['win_x']
@@ -376,7 +384,6 @@ class FocusController:
         if not WUTIL_USING_X:
             if hasattr(focusTarget, 'gwidget'): # gwidget is a Canvas
                 focusTarget.gwidget.focus_set()
-                return # allow others to pass through to use this class
 
         current = self.focusStack[-1]
         if type(focusTarget) == type(""):
