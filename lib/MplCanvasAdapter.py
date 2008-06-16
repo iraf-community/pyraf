@@ -11,7 +11,6 @@ import matplotlib.backends.backend_tkagg as tkagg
 from Ptkplot import hideTkCursor
 from Ptkplot import FullWindowCursor
 from wutil import moveCursorTo
-from wutil import WUTIL_USING_X
 
 
 class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):

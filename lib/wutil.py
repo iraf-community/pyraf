@@ -65,7 +65,7 @@ try:
             try:
                 import aqutil
                 # override the few Mac-specific functions needed
-                from aqutil import getFocalWindowID, setFocusTo
+                from aqutil import getFocalWindowID, setFocusTo, getParentID
                 # ... but, do nothing with moveCursorTo() for now
 
                 # need to init TerminalFocusEntity() obj w/ focus on term !)
@@ -118,17 +118,23 @@ topIDmap = {}
 
 def getTopID(WindowID):
 
-    """Find top level X windows ID parent of given window.
+    """Find top level windows ID, parent of given window.
     If window is already top (or not implemented), it returns its own ID.
     If the input Id represents the root window then it will just
     return itself"""
     wid = WindowID
     if wid <= 0:
         return wid
+
+    # a "top ID" makes less sense if we are not using X
+    if not WUTIL_USING_X:
+        if WUTIL_ON_MAC:
+            return aqutil.getTopIdFor(wid)
+        else:
+            return wid # everything is its own top
+
     if topIDmap.has_key(wid):
         return topIDmap[wid]
-    if not WUTIL_USING_X:
-        return WindowID # a "top ID" makes little sense if we are not using X
     try:
         oid = wid
         while 1:

@@ -10,9 +10,11 @@ import objc
 from Foundation import NSBundle
 
 
-# arbitrary module constants for term vs. gui
-WIN_ID_TERM = 1001
-WIN_ID_GUI  = 1002
+# Arbitrary module constants for term vs. gui.  0 and negative numbers have
+# special meanings when queried elsewhere (e.g. wutil).  It is assumed that
+# these two values are very unlikely to collide with actual Tk widget id's.
+WIN_ID_TERM = 101
+WIN_ID_GUI  = 102
 
 
 # module variables
@@ -47,6 +49,19 @@ def termHasFocus():
     err, aPSN = GetFrontProcess()
     if err: raise Exception("GetFrontProcess: "+`err`)
     return aPSN == __termPSN
+
+
+def getTopIdFor(winId):
+    """ In Aqua we only use the two IDs and they are both "top-level" ids."""
+    if winId == WIN_ID_TERM:
+        return WIN_ID_TERM # its either the terminal window
+    else:
+        return WIN_ID_GUI  # or some kind of gui (e.g. all Tk winfo id values)
+
+
+def getParentID(winId):
+    """ In Aqua we only use the two IDs and they are both "top-level" ids."""
+    return winId
 
 
 def getFocalWindowID():
