@@ -11,7 +11,7 @@ import struct, fcntl, sys, os
 from irafglobals import IrafError
 
 # empty placeholder versions for X
-def getWindowID(): return None
+def getFocalWindowID(): return None
 def drawCursor(WindowID, x, y, w, h): pass
 def moveCursorTo(WindowID, x, y): pass
 def setFocusTo(WindowID): pass
@@ -44,7 +44,7 @@ try:
         # Attach closeGraphics to XWindow methods
         #ONLY if an XWindow was successfully initialized.
         #  WJH (10June2004)
-        if xutil.getWindowID() == -1:
+        if xutil.getFocalWindowID() == -1:
             raise EnvironmentError
 
         # Successful intialization. Reset dummy methods with
@@ -56,7 +56,7 @@ try:
     else:
         # Start with a basic empty non-X implementation (e.g. Cygwin?, OSX, ?)
         def getWindowIdZero(): return 0
-        getWindowID = getWindowIdZero
+        getFocalWindowID = getWindowIdZero
         # Perhaps this really means "has a window", i.e. has a screen to use
         hasXWindow = 1 # kludge
 
@@ -65,7 +65,7 @@ try:
             try:
                 import aqutil
                 # override the few Mac-specific functions needed
-                from aqutil import getWindowID, setFocusTo
+                from aqutil import getFocalWindowID, setFocusTo
                 # ... but, do nothing with moveCursorTo() for now
 
                 # need to init TerminalFocusEntity() obj w/ focus on term !)
@@ -128,7 +128,7 @@ def getTopID(WindowID):
     if topIDmap.has_key(wid):
         return topIDmap[wid]
     if not WUTIL_USING_X:
-        return None # a "top ID" makes little sense if we are not using X
+        return WindowID # a "top ID" makes little sense if we are not using X
     try:
         oid = wid
         while 1:
@@ -214,7 +214,7 @@ class TerminalFocusEntity(FocusEntity):
         """IMPORTANT: This class must be instantiated while focus
         is in the terminal window"""
         try:
-            self.windowID = getWindowID()
+            self.windowID = getFocalWindowID()
             if self.windowID == -1:
                 self.windowID = None
         except EnvironmentError, e:
@@ -231,7 +231,7 @@ class TerminalFocusEntity(FocusEntity):
         if not (self.windowID and isViewable(self.windowID)):
             # no window or not viewable
             return
-        if self.windowID == getWindowID():
+        if self.windowID == getFocalWindowID():
             # focus is already here
             return
         if self.lastX is not None:
@@ -239,7 +239,7 @@ class TerminalFocusEntity(FocusEntity):
         setFocusTo(self.windowID)
 
     def saveCursorPos(self):
-        if (not self.windowID) or (self.windowID != getWindowID()):
+        if (not self.windowID) or (self.windowID != getFocalWindowID()):
             return
         if not WUTIL_USING_X:
             return # !!! the following two xutil methods are still undefined
@@ -266,7 +266,7 @@ class TerminalFocusEntity(FocusEntity):
     def updateWindowID(self, id=None):
         """Update terminal window ID (to current window if id is not given)"""
         if id is None:
-            id = getWindowID()
+            id = getFocalWindowID()
         self.windowID = id
 
     def getWindowSize(self):
@@ -327,7 +327,7 @@ class FocusController:
         if len(self.focusStack) > 1:
             # update current position if we're in the correct window
             current = self.focusStack.pop()
-            if current.getWindowID() == getWindowID():
+            if current.getWindowID() == getFocalWindowID():
                 current.saveCursorPos()
         if self.focusInFamily():
             self.focusStack[-1].forceFocus()
@@ -354,7 +354,7 @@ class FocusController:
         Return None if focus is not in the focus family"""
         if not self.hasGraphics:
             return None, None
-        currentFocusWinID = getWindowID()
+        currentFocusWinID = getFocalWindowID()
         currentTopID = getTopID(currentFocusWinID)
         for name,focusEntity in self.focusEntities.items():
             if getTopID(focusEntity.getWindowID()) == currentTopID:
@@ -410,7 +410,7 @@ class FocusController:
         (as defined by self.focusEntities)"""
         if not self.hasGraphics:
             return 0
-        currentFocusWinID = getWindowID()
+        currentFocusWinID = getFocalWindowID()
         currentTopID = getTopID(currentFocusWinID)
         for focusEntity in self.focusEntities.values():
             fwid = focusEntity.getWindowID()

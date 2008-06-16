@@ -94,7 +94,7 @@ PyObject *wrap_moveCursorTo(PyObject *self, PyObject *args) {
   return Py_None;
 }
 
-int getWindowID(void) {
+int getFocalWindowID(void) {
    Window w;
    int revert;
    /*  Display *XOpenDisplay(char *); */
@@ -134,10 +134,10 @@ PyObject *wrap_getDeepestVisual(PyObject *self, PyObject *args) {
   return Py_BuildValue("i",depth);
 }
 
-PyObject *wrap_getWindowID(PyObject *self, PyObject *args) {
+PyObject *wrap_getFocalWindowID(PyObject *self, PyObject *args) {
   int result;
   TrapXlibErrors /* macro code to handle xlib exceptions */
-  result = getWindowID();
+  result = getFocalWindowID();
   RestoreOldXlibErrorHandlers /* macro */
   return Py_BuildValue("i",result);
 }
@@ -405,7 +405,7 @@ PyObject *wrap_drawCursor(PyObject *self, PyObject *args) {
 
 static PyMethodDef xutilMethods[] = {
   { "moveCursorTo",wrap_moveCursorTo, 1},
-  { "getWindowID",wrap_getWindowID, 1},
+  { "getFocalWindowID",wrap_getFocalWindowID, 1},
   { "setFocusTo",wrap_setFocusTo, 1},
   { "setBackingStore",wrap_setBackingStore, 1},
   { "getWindowAttributes",wrap_getWindowAttributes, 1},

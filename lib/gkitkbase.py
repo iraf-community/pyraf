@@ -628,8 +628,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     def hasFocus(self):
 
         """Returns true if this window currently has focus"""
-
-        return  wutil.getTopID(wutil.getWindowID()) == \
+        return  wutil.getTopID(wutil.getFocalWindowID()) == \
                 wutil.getTopID(self.getWindowID())
 
     def setDrawingColor(self, irafColorIndex):

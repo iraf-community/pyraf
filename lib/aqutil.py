@@ -49,8 +49,9 @@ def termHasFocus():
     return aPSN == __termPSN
 
 
-def getWindowID():
-    """ On OSX, the actual window ID's are not important here.  We only
+def getFocalWindowID():
+    """ Return the window ID for the window which currently has the focus.
+    On OSX, the actual window ID's are not important here.  We only
     need to distinguish between the terminal and the GUI.  In fact, we treat
     all GUI windows as having the same ID. """
     if termHasFocus():
@@ -60,7 +61,7 @@ def getWindowID():
 
 
 def setFocusTo(windowID):
-    """ Move the focus to the given window ID (see notes in getWindowID) """
+    """ Move the focus to the given window ID (see getFocalWindowID docs) """
     # We could do something fancy like create unique window id's out of the
     # process serial numbers (PSN's), but for now stick with WIN_ID_*
     if not windowID in (WIN_ID_TERM, WIN_ID_GUI):
