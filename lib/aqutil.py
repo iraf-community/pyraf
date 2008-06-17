@@ -94,7 +94,6 @@ def __doPyobjcWinInit():
     global __thisPSN, __termPSN, __initialized
     # Guard against accidental second calls
     if __initialized: return
-    print "\n\n !!! AQUTIL INIT !!! \n\n" # !!!
 
     # Taken in part from PyObjc's Examples/Scripts/wmEnable.py
     OSErr  = objc._C_SHT
