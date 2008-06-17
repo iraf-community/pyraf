@@ -33,7 +33,9 @@ WUTIL_USING_X = True
 if WUTIL_ON_MAC and os.environ.has_key('PYRAF_WUTIL_USING_AQUA'):
     WUTIL_USING_X = False
 
-# attempt to override with xutil versions
+# attempt to override with xutil or aqua versions
+_hasAqua = 0
+_hasXWin = 0
 try:
     if WUTIL_USING_X:
         import xutil
@@ -50,15 +52,13 @@ try:
         # Successful intialization. Reset dummy methods with
         # those from 'xutil' now.
         from xutil import *
-        hasXWindow = 1 # Flag to mark successful initialization of XWindow
+        _hasXWin = 1 # Flag to mark successful initialization of XWindow
         closeGraphics = closeXGraphics
 
     else:
         # Start with a basic empty non-X implementation (e.g. Cygwin?, OSX, ?)
         def getWindowIdZero(): return 0
         getFocalWindowID = getWindowIdZero
-        # Perhaps this really means "has a window", i.e. has a screen to use
-        hasXWindow = 1 # kludge
 
         # If on OSX, use aqutil
         if WUTIL_ON_MAC: # as opposed to the PC (from future import ...)
@@ -66,17 +66,19 @@ try:
                 import aqutil
                 # override the few Mac-specific functions needed
                 from aqutil import getFocalWindowID, setFocusTo, getParentID
+                _hasAqua = 1
                 # ... but, do nothing with moveCursorTo() for now
 
                 # need to init TerminalFocusEntity() obj w/ focus on term !)
 
             except:
+                _hasAqua = 0
                 print "ERROR importing aqutil"
 
 except ImportError:
-    hasXWindow = 0 # Unsuccessful init of XWindow
+    _hasXWin = 0 # Unsuccessful init of XWindow
 except EnvironmentError:
-    hasXWindow = 0 # Unsuccessful init of XWindow
+    _hasXWin = 0 # Unsuccessful init of XWindow
 
 # Clean up the namespace a bit...
 try:
@@ -128,7 +130,7 @@ def getTopID(WindowID):
 
     # a "top ID" makes less sense if we are not using X
     if not WUTIL_USING_X:
-        if WUTIL_ON_MAC:
+        if _hasAqua:
             return aqutil.getTopIdFor(wid)
         else:
             return wid # everything is its own top
@@ -146,6 +148,14 @@ def getTopID(WindowID):
                 wid = pid
     except EnvironmentError:
         return None
+
+def forceFocusToNewWindow():
+    """ This is used to make sure that a window which just popped up is
+    actually in the front, where focus would be.  With X, any new window
+    comes to the front anyway, so this is a no-op.  Currently this is
+    only necessary under Aqua. """
+    if _hasAqua:
+        aqutil.focusOnGui()
 
 def isViewable(WindowID):
 
@@ -439,8 +449,14 @@ class FocusController:
 terminal = TerminalFocusEntity()
 focusController = FocusController(terminal)
 
-if hasXWindow:
+if _hasXWin or _hasAqua:
     hasGraphics = focusController.hasGraphics
+elif WUTIL_ON_MAC:
+    # Handle the case where we are on the Mac with no X and no PyObjc.  We can
+    # still run, albeit without the automatic mouse moving and focus jumping.
+    hasGraphics = focusController.hasGraphics
+    if hasGraphics:
+        print "\nLimited graphics available (aqutil not loaded)\n"
 else:
     hasGraphics = None
 

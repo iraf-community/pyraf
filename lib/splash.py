@@ -78,6 +78,12 @@ class PyrafSplash(SplashScreen):
             self.initialText = text
         else:
             self.initialText = [None]
+        # put focus on this app (Mac only)
+        self.__termWin = None
+        if wutil.WUTIL_ON_MAC:
+            self.__termWin = wutil.getFocalWindowID() # the terminal window
+            wutil.forceFocusToNewWindow()
+        # create it
         SplashScreen.__init__(self, **kw)
         self.defaultCursor = self['cursor']
         self.bind("<Button>", self.killCursor)
@@ -139,6 +145,9 @@ class PyrafSplash(SplashScreen):
         # disable future writes
         self.text = None
         self.update_idletasks()
+        # put focus back on terminal (if set)
+        if self.__termWin:
+            wutil.setFocusTo(self.__termWin)
 
 class IrafMonitorSplash(PyrafSplash):
 

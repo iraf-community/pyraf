@@ -693,8 +693,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             # this may not have the global focus; it may only be the focus seen
             # when the application itself has focus.  We may need to force the
             # app itself to have focus first, so we do that here too.
-            if not wutil.WUTIL_USING_X:
-                wutil.setFocusTo(wutil.getTopID(self.getWindowID()))
+            wutil.forceFocusToNewWindow()
             gwidget.focus_force()
 
     def getWindowID(self):
