@@ -32,12 +32,16 @@ if os.uname()[0] == 'Darwin':
 WUTIL_USING_X = True
 if WUTIL_ON_MAC and os.environ.has_key('PYRAF_WUTIL_USING_AQUA'):
     WUTIL_USING_X = False
+# On OSX, a terminal with no display causes us to fail pretty abruptly:
+# "INIT_Processeses(), could not establish the default connection to the WindowServer.Abort".
+# Give the user (Mac or other) a way to still run remotely with no display.
+_skipDisplay = os.environ.has_key('PYRAF_NO_DISPLAY')
 
 # attempt to override with xutil or aqua versions
 _hasAqua = 0
 _hasXWin = 0
 try:
-    if WUTIL_USING_X:
+    if WUTIL_USING_X and not _skipDisplay:
         import xutil
         #initGraphics = initXGraphics
         xutil.initXGraphics() # call here for lack of a better place for n
@@ -61,7 +65,7 @@ try:
         getFocalWindowID = getWindowIdZero
 
         # If on OSX, use aqutil
-        if WUTIL_ON_MAC: # as opposed to the PC (from future import ...)
+        if WUTIL_ON_MAC and not _skipDisplay: # as opposed to the PC (future?)
             try:
                 import aqutil
                 # override the few Mac-specific functions needed
@@ -449,21 +453,21 @@ class FocusController:
 terminal = TerminalFocusEntity()
 focusController = FocusController(terminal)
 
-if _hasXWin or _hasAqua:
-    hasGraphics = focusController.hasGraphics
-elif WUTIL_ON_MAC:
-    # Handle the case where we are on the Mac with no X and no PyObjc.  We can
-    # still run, albeit without the automatic mouse moving and focus jumping.
-    hasGraphics = focusController.hasGraphics
-    if hasGraphics:
-        print "\nLimited graphics available (aqutil not loaded)\n"
-else:
-    hasGraphics = None
+# Do we have access to a graphics display?
+hasGraphics = None
+if not _skipDisplay:
+    if _hasXWin or _hasAqua:
+        hasGraphics = focusController.hasGraphics
+    elif WUTIL_ON_MAC:
+        # Handle case where we are on the Mac with no X and no PyObjc.  We can
+        # still run, albeit without automatic mouse moving and focus jumping.
+        hasGraphics = focusController.hasGraphics
+        if hasGraphics:
+            print "\nLimited graphics available (aqutil not loaded)\n"
 
 if not hasGraphics:
     print ""
-    print "No graphics display available for this session " + \
-                      "(X Window unavailable)."
+    print "No graphics display available for this session."
     print "Graphics tasks that attempt to plot to an interactive " + \
                       "screen will fail."
     print ""
