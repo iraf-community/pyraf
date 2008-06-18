@@ -70,11 +70,8 @@ try:
                 import aqutil
                 # override the few Mac-specific functions needed
                 from aqutil import getFocalWindowID, setFocusTo, getParentID
+                from aqutil import moveCursorTo, getPointerPostion
                 _hasAqua = 1
-                # ... but, do nothing with moveCursorTo() for now
-
-                # need to init TerminalFocusEntity() obj w/ focus on term !)
-
             except:
                 _hasAqua = 0
                 print "ERROR importing aqutil"

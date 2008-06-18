@@ -87,6 +87,15 @@ def setFocusTo(windowID):
         focusOnGui()
 
 
+def moveCursorTo(windowID, x, y): pass
+#   print "MCT called! id,x,y: "+`(windowID, x, y)`
+
+
+def getPointerPostion(windowID):
+    print "GPP called!  id: "+`windowID`
+    return None
+
+
 def __doPyobjcWinInit():
     """ Initialize the Pyobjc bridging and make some calls to get our PSN and
     the parent terminal's PSN. Do only ONCE per process. """
@@ -110,6 +119,7 @@ def __doPyobjcWinInit():
          # This is undocumented SPI
          ( u'CPSSetProcessName', OSErr+INPSN+objc._C_CHARPTR),
          ( u'CPSEnableForegroundOperation', OSErr+INPSN),
+         ( u'CGWarpMouseCursorPosition', 'v{CGPoint=ff}'),
     ]
 
     bndl = NSBundle.bundleWithPath_(objc.pathForFramework(
