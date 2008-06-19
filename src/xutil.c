@@ -67,7 +67,8 @@ int MyXlibIOErrorHandler(Display *d) {
   return 0;
 }
 
-void moveCursorTo(int win, int x, int y) {
+// rx,ry are unused by the X version of this; x,y are w.r.t. the given window
+void moveCursorTo(int win, int rx, int ry, int x, int y) {
   Window w;
   /*  Display *XOpenDisplay(char *); */
   int s;
@@ -84,11 +85,11 @@ void moveCursorTo(int win, int x, int y) {
 }
 
 PyObject *wrap_moveCursorTo(PyObject *self, PyObject *args) {
-  int x, y, w;
-  if (!PyArg_ParseTuple(args,"iii",&w, &x, &y))
+  int w, rx, ry, x, y;
+  if (!PyArg_ParseTuple(args, "iiiii", &w, &rx, &ry, &x, &y))
     return NULL;
   TrapXlibErrors /* macro code to handle xlib exceptions */
-  moveCursorTo(w,x,y);
+  moveCursorTo(w, rx, ry, x, y);
   RestoreOldXlibErrorHandlers /* macro */
   Py_INCREF(Py_None);
   return Py_None;
