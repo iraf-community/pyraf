@@ -13,10 +13,10 @@ from irafglobals import IrafError
 # empty placeholder versions for X
 def getFocalWindowID(): return None
 def drawCursor(WindowID, x, y, w, h): pass
-def moveCursorTo(WindowID, x, y): pass
+def moveCursorTo(WindowID, rx, ry, x, y): pass
 def setFocusTo(WindowID): pass
 def setBackingStore(WindowID): pass
-def getPointerPostion(WindowID): pass
+def getPointerPosition(WindowID): pass
 def getWindowAttributes(WindowID): pass
 def getParentID(WindowID): pass
 def getDeepestVisual(): return 24
@@ -70,7 +70,7 @@ try:
                 import aqutil
                 # override the few Mac-specific functions needed
                 from aqutil import getFocalWindowID, setFocusTo, getParentID
-                from aqutil import moveCursorTo, getPointerPostion
+                from aqutil import moveCursorTo, getPointerPosition
                 _hasAqua = 1
             except:
                 _hasAqua = 0
@@ -230,10 +230,16 @@ class TerminalFocusEntity(FocusEntity):
     def __init__(self):
         """IMPORTANT: This class must be instantiated while focus
         is in the terminal window"""
+        self.lastScreenX = None
+        self.lastScreenY = None
         try:
             self.windowID = getFocalWindowID()
             if self.windowID == -1:
                 self.windowID = None
+            if _hasAqua:
+                scrnPosDict = aqutil.getPointerGlobalPosition()
+                self.lastScreenX = scrnPosDict['x']
+                self.lastScreenY = scrnPosDict['y']
         except EnvironmentError, e:
             self.windowID = None
         self.lastX = 30
@@ -251,15 +257,26 @@ class TerminalFocusEntity(FocusEntity):
         if self.windowID == getFocalWindowID():
             # focus is already here
             return
-        if self.lastX is not None:
-            moveCursorTo(self.windowID,self.lastX,self.lastY)
+        if _hasAqua:
+            if self.lastScreenX is not None:
+                moveCursorTo(self.windowID, self.lastScreenX, self.lastScreenY,
+                             0, 0)
+        else: # WUTIL_USING_X
+            if self.lastX is not None:
+                moveCursorTo(self.windowID, 0, 0, self.lastX, self.lastY)
         setFocusTo(self.windowID)
 
     def saveCursorPos(self):
         if (not self.windowID) or (self.windowID != getFocalWindowID()):
             return
+        if _hasAqua:
+            scrnPosDict = aqutil.getPointerGlobalPosition()
+            self.lastScreenX = scrnPosDict['x']
+            self.lastScreenY = scrnPosDict['y']
+            return
         if not WUTIL_USING_X:
-            return # !!! the following two xutil methods are still undefined
+            return # some of the following xutil methods are undefined
+
         posdict = getPointerPosition(self.windowID)
         if posdict:
             x = posdict['win_x']

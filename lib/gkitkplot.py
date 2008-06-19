@@ -363,7 +363,9 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         # wutil.MoveCursorTo uses 0,0 <--> upper left, need to convert
         sx = int(  x   * gwidget.winfo_width())
         sy = int((1-y) * gwidget.winfo_height())
-        wutil.moveCursorTo(gwidget.winfo_id(), sx, sy)
+        rx = gwidget.winfo_rootx()
+        ry = gwidget.winfo_rooty()
+        wutil.moveCursorTo(gwidget.winfo_id(), rx, ry, sx, sy)
 
     def tkplot_plset(self, linestyle, linewidth, color):
 

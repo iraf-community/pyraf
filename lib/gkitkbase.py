@@ -687,10 +687,14 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             if gwidget.lastX is None:
                 gwidget.lastX = int(gwidget.winfo_width()/2.)
                 gwidget.lastY = int(gwidget.winfo_height()/2.)
-            wutil.moveCursorTo(gwidget.winfo_id(),gwidget.lastX,gwidget.lastY)
+            wutil.moveCursorTo(gwidget.winfo_id(),
+                               gwidget.winfo_rootx(),
+                               gwidget.winfo_rooty(),
+                               gwidget.lastX,
+                               gwidget.lastY)
 
             # On non-X, "focus_force()" places focus on the gwidget canvas, but
-            # this may not have the global focus; it may only be the focus seen
+            # this may not have the global focus; it may only be the widget seen
             # when the application itself has focus.  We may need to force the
             # app itself to have focus first, so we do that here too.
             wutil.forceFocusToNewWindow()

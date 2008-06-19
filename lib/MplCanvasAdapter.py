@@ -210,6 +210,8 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
             y = self.__SWCursor.lasty
             # call the wutil version
             moveCursorTo(gw.winfo_id(),
+                         gw.winfo_rootx(),
+                         gw.winfo_rooty(),
                          int(x*gw.winfo_width()),
                          int((1.-y)*gw.winfo_height()))
         else:

@@ -481,8 +481,10 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # wutil.moveCursorTo uses 0,0 <--> upper left, need to convert
         sx = int(  x   * self.gwidget.winfo_width())
         sy = int((1-y) * self.gwidget.winfo_height())
+        rx = self.gwidget.winfo_rootx()
+        ry = self.gwidget.winfo_rooty()
         # call the wutil version
-        moveCursorTo(self.gwidget.winfo_id(), sx, sy)
+        moveCursorTo(self.gwidget.winfo_id(), rx, ry, sx, sy)
 
     def gki_plset(self, arg):
 

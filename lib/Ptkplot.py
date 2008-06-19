@@ -201,6 +201,8 @@ class PyrafCanvas(Canvas):
             x = self._SWCursor.lastx
             y = self._SWCursor.lasty
             wutil.moveCursorTo(self.winfo_id(),
+                               self.winfo_rootx(),
+                               self.winfo_rooty(),
                                int(x*self.winfo_width()),
                                int((1.-y)*self.winfo_height()))
         else:
