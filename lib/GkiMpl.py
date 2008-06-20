@@ -474,16 +474,21 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # record this operation as a tuple in the draw buffer
         self._plotAppend(self.gki_setcursor, arg)
 
-        # move the cursor
+        # get x and y
         cursorNumber = arg[0]
         x = gki.ndc(arg[1])
         y = gki.ndc(arg[2])
+        # Update the sw cursor object (A clear example of why this update
+        # is needed is how 'apall' re-centers the cursor w/out changing y, when
+        # the user types 'r'; without this update, the two cursors separate.)
+        swCurObj = self.__mca.getSWCursor()
+        if swCurObj: swCurObj.moveTo(x, y, SWmove=1)
         # wutil.moveCursorTo uses 0,0 <--> upper left, need to convert
         sx = int(  x   * self.gwidget.winfo_width())
         sy = int((1-y) * self.gwidget.winfo_height())
         rx = self.gwidget.winfo_rootx()
         ry = self.gwidget.winfo_rooty()
-        # call the wutil version
+        # call the wutil version to move the cursor
         moveCursorTo(self.gwidget.winfo_id(), rx, ry, sx, sy)
 
     def gki_plset(self, arg):

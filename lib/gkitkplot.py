@@ -360,11 +360,17 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
     def tkplot_setcursor(self, cursornumber, x, y):
 
         gwidget = self.gwidget
+        # Update the sw cursor object (A clear example of why this update
+        # is needed is how 'apall' re-centers the cursor w/out changing y, when
+        # the user types 'r'; without this update, the two cursors separate.)
+        swCurObj = gwidget.getSWCursor()
+        if swCurObj: swCurObj.moveTo(x, y, SWmove=1)
         # wutil.MoveCursorTo uses 0,0 <--> upper left, need to convert
         sx = int(  x   * gwidget.winfo_width())
         sy = int((1-y) * gwidget.winfo_height())
         rx = gwidget.winfo_rootx()
         ry = gwidget.winfo_rooty()
+        # call the wutil version to move the cursor
         wutil.moveCursorTo(gwidget.winfo_id(), rx, ry, sx, sy)
 
     def tkplot_plset(self, linestyle, linewidth, color):
