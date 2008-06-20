@@ -25,7 +25,7 @@ def gki_single_prow_test():
    iraf.prow("dev$pix", row=256, dev="psi_land") # plot
    iraf.gflush()
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef)
+   psOut = getNewestTmpPskFile(flistBef, "single_prow")
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256.ps "+psOut
@@ -44,7 +44,7 @@ def gki_prow_1_append_test():
    iraf.prow("dev$pix", row=250, dev="psi_land", append=True) # append #1
    iraf.gflush()
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef)
+   psOut = getNewestTmpPskFile(flistBef, "prow_1_append")
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256_250.ps "+psOut
@@ -64,7 +64,7 @@ def gki_prow_2_appends_test():
    iraf.prow("dev$pix", row=200, dev="psi_land", append=True) # append #1
    iraf.gflush()
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef)
+   psOut = getNewestTmpPskFile(flistBef, "prow_2_appends")
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256_250_200.ps "+psOut
@@ -82,7 +82,7 @@ def gki_2_prows_no_append_test():
    iraf.prow("dev$pix", row=256, dev="psi_land") # plot
    iraf.prow("dev$pix", row=250, dev="psi_land") # plot again (flushes 1st)
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef)
+   psOut = getNewestTmpPskFile(flistBef, "2_prows_no_append - A")
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256.ps "+psOut
@@ -92,7 +92,7 @@ def gki_2_prows_no_append_test():
    flistBef = findAllTmpPskFiles()
    iraf.gflush()
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef)
+   psOut = getNewestTmpPskFile(flistBef, "2_prows_no_append - B")
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_250.ps "+psOut
@@ -113,7 +113,7 @@ def gki_prow_to_different_devices_test():
    iraf.prow("dev$pix", row=250, dev="lw") # plot to fake printer, should flush
                                            # last plot, and should warn @ fake
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef)
+   psOut = getNewestTmpPskFile(flistBef, "prow_to_different_devices")
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256.ps "+psOut
@@ -124,7 +124,7 @@ def gki_prow_to_different_devices_test():
    flistBef = findAllTmpPskFiles()
    iraf.gflush()
    flistAft = findAllTmpPskFiles()
-   assert flistBef==flistAft, "Extra tmp .ps file written? "+repr(flistAft)
+   assert flistBef==flistAft, "Extra tmp .ps file written? "+str(flistAft)
 
 
 def findAllTmpPskFiles():
@@ -137,12 +137,16 @@ def findAllTmpPskFiles():
    return flistCur
 
 
-def getNewestTmpPskFile(theBeforeList):
+def getNewestTmpPskFile(theBeforeList, title):
    """ Do a glob in the tmp dir looking for psikern files, compare with the
    old list to find the single new (expected) file. Return string filename. """
    flistAft = findAllTmpPskFiles()
+   assert len(flistAft) > len(theBeforeList), \
+          'No postcript file generated during: "'+title+'": '+ \
+          str(theBeforeList)
    for f in theBeforeList: flistAft.remove(f)
-   assert len(flistAft) == 1, "Expected single postcript file: "+repr(flistAft)
+   assert len(flistAft) == 1, 'Expected single postcript file during: "'+ \
+                              title+'": '+str(flistAft)
    return flistAft[0]
 
 
