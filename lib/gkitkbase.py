@@ -682,23 +682,29 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             return
         # warp cursor
         # if no previous position, move to center
-        gwidget = self.gwidget
-        if gwidget:
-            if gwidget.lastX is None:
-                gwidget.lastX = int(gwidget.winfo_width()/2.)
-                gwidget.lastY = int(gwidget.winfo_height()/2.)
-            wutil.moveCursorTo(gwidget.winfo_id(),
-                               gwidget.winfo_rootx(),
-                               gwidget.winfo_rooty(),
-                               gwidget.lastX,
-                               gwidget.lastY)
+        gw = self.gwidget
+        if gw:
+            if gw.lastX is None or \
+               (gw.lastX == 0 and gw.lastY == 0):
+                swCurObj = gw.getSWCursor()
+                if swCurObj:
+                    gw.lastX = int(swCurObj.lastx*gw.winfo_width())
+                    gw.lastY = int((1.-swCurObj.lasty)*gw.winfo_height())
+                else:
+                    gw.lastX = int(gw.winfo_width()/2.)
+                    gw.lastY = int(gw.winfo_height()/2.)
+            wutil.moveCursorTo(gw.winfo_id(),
+                               gw.winfo_rootx(),
+                               gw.winfo_rooty(),
+                               gw.lastX,
+                               gw.lastY)
 
             # On non-X, "focus_force()" places focus on the gwidget canvas, but
             # this may not have the global focus; it may only be the widget seen
             # when the application itself has focus.  We may need to force the
             # app itself to have focus first, so we do that here too.
             wutil.forceFocusToNewWindow()
-            gwidget.focus_force()
+            gw.focus_force()
 
     def getWindowID(self):
 
