@@ -248,7 +248,7 @@ class FullWindowCursor:
         """Display the cursor for the first time.  The passed in window
            also needs to act as a Tk Canvas object."""
 
-        self.__useX11 = wutil.WUTIL_USING_X
+        self.__useX11 = wutil.WUTIL_USING_X and (not wutil.WUTIL_ON_MAC)
         self.lastx = x
         self.lasty = y
         self.window = window
