@@ -10,7 +10,7 @@ matplotlib.use('TkAgg') # set backend
 import matplotlib.backends.backend_tkagg as tkagg
 from Ptkplot import hideTkCursor
 from Ptkplot import FullWindowCursor
-from wutil import moveCursorTo
+from wutil import moveCursorTo, WUTIL_USING_X
 
 
 class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
@@ -201,11 +201,11 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
     def moveCursor(self, event):
 
         """Call back for mouse motion events"""
-        # Kludge to handle the fact that Mac OS X doesn't remember
+        # Kludge to handle the fact that MacOS X (X11) doesn't remember
         # software driven moves, the first move will just move nothing
-        # but will properly update the coordinates
+        # but will properly update the coordinates.  Do not do this under Aqua.
         gw = self.__theGwidget
-        if self.__SWCursor.isLastSWmove:
+        if WUTIL_USING_X and self.__SWCursor.isLastSWmove:
             x = self.__SWCursor.lastx
             y = self.__SWCursor.lasty
             # call the wutil version

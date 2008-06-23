@@ -66,7 +66,7 @@ def hideTkCursor(theCanvas):
     # better way to disable a cursor in Tk. In Tk 8.5, there will be a
     # 'none' option to set the cursor to.  Until then, load a blank cursor
     # from an XBM file - is in same directory as this module. Might, on OSX
-    # only, be able to use: CGDisplayHideCursor()
+    # only, be able to use: CGDisplay[Hide,Show]Cursor()
     #
     # Note - the blankcursor format is causing errors on some non-Linux
     # platforms, so we need to use 'none' or 'tcross' for now.
@@ -194,10 +194,10 @@ class PyrafCanvas(Canvas):
     def moveCursor(self, event):
         """Call back for mouse motion events"""
 
-        # Kludge to handle the fact that Mac OS X x doesn't remember
+        # Kludge to handle the fact that MacOS X (X11) doesn't remember
         # software driven moves, the first move will just move nothing
-        # but will properly update the coordinates
-        if self._SWCursor.isLastSWmove:
+        # but will properly update the coordinates.  Do not do this under Aqua.
+        if wutil.WUTIL_USING_X and self._SWCursor.isLastSWmove:
             x = self._SWCursor.lastx
             y = self._SWCursor.lasty
             wutil.moveCursorTo(self.winfo_id(),

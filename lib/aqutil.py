@@ -108,7 +108,7 @@ def getPointerGlobalPosition():
     # except that the NSPoint origin is the bottom left of the screen, so we
     # need to convert to the top-left origin.
     pos = AppKit.NSEvent.mouseLocation() # current mouse location
-    if __screenHeight <= 0: raise Exception("aqutil module not initialized")
+    if __screenHeight <= 0: raise Exception("Bug: aqutil module uninitialized")
     return { 'x' : pos.x, 'y' : __screenHeight - pos.y }
 
 
@@ -147,7 +147,7 @@ def __doPyobjcWinInit():
 
     bndl = AppKit.NSBundle.bundleWithPath_(objc.pathForFramework(
            u'/System/Library/Frameworks/ApplicationServices.framework'))
-    if bndl is None: raise Exception("Error in bundleWithPath_")
+    if bndl is None: raise Exception("Error in aqutil with bundleWithPath_")
 
     # Load the functions into the global (module) namespace
     objc.loadBundleFunctions(bndl, globals(), FUNCTIONS)
