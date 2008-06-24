@@ -128,6 +128,7 @@ def __doPyobjcWinInit():
     # Taken in part from PyObjc's Examples/Scripts/wmEnable.py
     OSErr  = objc._C_SHT
     OSStat = objc._C_INT
+    CGErr  = objc._C_INT
     INPSN  = 'n^{ProcessSerialNumber=LL}'
     OUTPSN = 'o^{ProcessSerialNumber=LL}'
     OUTPID = 'o^_C_ULNG'
@@ -140,6 +141,8 @@ def __doPyobjcWinInit():
          ( u'CGWarpMouseCursorPosition', 'v{CGPoint=ff}'),
          ( u'CGMainDisplayID', objc._C_PTR+objc._C_VOID),
          ( u'CGDisplayPixelsHigh', objc._C_ULNG+objc._C_ULNG),
+         ( u'CGDisplayHideCursor', CGErr+objc._C_ULNG),
+         ( u'CGDisplayShowCursor', CGErr+objc._C_ULNG),
          # This is undocumented SPI
          ( u'CPSSetProcessName', OSErr+INPSN+objc._C_CHARPTR),
          ( u'CPSEnableForegroundOperation', OSErr+INPSN),
