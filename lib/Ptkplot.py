@@ -66,7 +66,9 @@ def hideTkCursor(theCanvas):
     # better way to disable a cursor in Tk. In Tk 8.5, there will be a
     # 'none' option to set the cursor to.  Until then, load a blank cursor
     # from an XBM file - is in same directory as this module. Might, on OSX
-    # only, be able to use: CGDisplay[Hide,Show]Cursor()
+    # only, be able to use: CGDisplay[Hide,Show]Cursor() - the problem with
+    # this is that the cursor s gone even when trying to use menu items, as
+    # long as the GUI is the front process.
     #
     # Note - the blankcursor format is causing errors on some non-Linux
     # platforms, so we need to use 'none' or 'tcross' for now.
@@ -162,7 +164,7 @@ class PyrafCanvas(Canvas):
                 self._SWCursor = FullWindowCursor(0.5, 0.5, self)
             self._isSWCursorActive = 1
             self.bind("<Motion>",self.moveCursor)
-        if not self._SWCursor.isVisible:
+        if not self._SWCursor.isVisible():
             self._SWCursor.draw()
 
     def deactivateSWCursor(self):
@@ -248,11 +250,11 @@ class FullWindowCursor:
         """Display the cursor for the first time.  The passed in window
            also needs to act as a Tk Canvas object."""
 
-        self.__useX11 = wutil.WUTIL_USING_X and (not wutil.WUTIL_ON_MAC)
         self.lastx = x
         self.lasty = y
-        self.window = window
-        self.isVisible = 0
+        self.__useX11 = wutil.WUTIL_USING_X and (not wutil.WUTIL_ON_MAC)
+        self.__window = window
+        self.__isVisible = 0
         self.isLastSWmove = 1 # indicates if last position driven by
                               # sofware command or by mouse events.
                               # Kludgy, and used by modules using the
@@ -263,48 +265,49 @@ class FullWindowCursor:
 
     def _xutilXorDraw(self):
 
-        wutil.drawCursor(self.window.winfo_id(), self.lastx, self.lasty,
-                         self.window.width, self.window.height)
+        wutil.drawCursor(self.__window.winfo_id(), self.lastx, self.lasty,
+                         self.__window.width, self.__window.height)
 
     def _tkDrawCursor(self):
 
         self._tkEraseCursor()
 
         # coords and window sizes
-        ww = self.window.width
-        wh = self.window.height
+        ww = self.__window.width
+        wh = self.__window.height
         x  = self.lastx*ww
         y  = (1.0-self.lasty)*wh
 
-        # Draw the crosshairs.  self.window is a Tk Canvas object
-        self.__tkHorLine = self.window.create_line(0,y,ww,y,fill='red')
-        self.__tkVerLine = self.window.create_line(x,0,x,wh,fill='red')
+        # Draw the crosshairs.  __window is a Tk Canvas object
+        self.__tkHorLine = self.__window.create_line(0,y,ww,y,fill='red')
+        self.__tkVerLine = self.__window.create_line(x,0,x,wh,fill='red')
 
     def _tkEraseCursor(self):
 
         if self.__tkHorLine != None:
-            self.window.delete(self.__tkHorLine);
+            self.__window.delete(self.__tkHorLine);
             self.__tkHorLine = None
         if self.__tkVerLine != None:
-            self.window.delete(self.__tkVerLine);
+            self.__window.delete(self.__tkVerLine);
             self.__tkVerLine = None
 
+    def isVisible(self): return self.__isVisible
 
     def erase(self):
 
-        if self.isVisible:
+        if self.__isVisible:
             if self.__useX11:
                 self._xutilXorDraw()
             else:
                 self._tkEraseCursor()
-        self.isVisible = 0
+        self.__isVisible = 0
 
     def draw(self):
 
-        if not self.isVisible:
+        if not self.__isVisible:
             if self.__useX11: self._xutilXorDraw()
             else:             self._tkDrawCursor()
-        self.isVisible = 1
+        self.__isVisible = 1
 
     def moveTo(self,x,y, SWmove=0):
 
