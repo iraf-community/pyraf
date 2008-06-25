@@ -167,7 +167,16 @@ def epar(taskName, parent=None, isChild=0):
 
     if not wutil.hasGraphics:
         raise IrafError("Cannot run epar without X-windows")
+
+    if not isChild:
+        oldFoc = wutil.getFocalWindowID()
+        wutil.forceFocusToNewWindow()
+
     EparDialog(taskName, parent, isChild)
+
+    if not isChild:
+        wutil.setFocusTo(oldFoc)
+
 
 class EparDialog:
     def __init__(self, taskName, parent=None, isChild=0,
