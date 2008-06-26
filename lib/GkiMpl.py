@@ -116,8 +116,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # determined, apply the GKI text scale factor used to it (deflt: 1.0)
         ptSz = ptSz*gkiTextScaleFactor
 
-        # leave as decimal, it will get truncated by Text if need be
-        return ptSz
+        # leave as float (not N.float64), it'll get truncated by Text if needed
+        return float(ptSz)
 
     def clearMplData(self):
 
