@@ -47,11 +47,12 @@ import irafexecute, clcache
 
 # set up exit handler to close caches
 def _cleanup():
-    iraf.gflush()
+    if iraf: iraf.gflush()
     if hasattr(irafexecute,'processCache'):
         del irafexecute.processCache
     if hasattr(clcache,'codeCache'):
         del clcache.codeCache
+
 import atexit
 atexit.register(_cleanup)
 del atexit
