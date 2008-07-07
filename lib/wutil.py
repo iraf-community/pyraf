@@ -469,7 +469,9 @@ focusController = FocusController(terminal)
 
 # Do we have access to a graphics display?
 hasGraphics = None
-if not _skipDisplay:
+if _skipDisplay:
+    print "No graphics display to be used for this session."
+else:
     if _hasXWin or _hasAqua:
         hasGraphics = focusController.hasGraphics
     elif WUTIL_ON_MAC:
@@ -479,9 +481,9 @@ if not _skipDisplay:
         if hasGraphics:
             print "\nLimited graphics available (aqutil not loaded)\n"
 
-if not hasGraphics:
-    print ""
-    print "No graphics display available for this session."
-    print "Graphics tasks that attempt to plot to an interactive " + \
-                      "screen will fail."
-    print ""
+    if not hasGraphics:
+        print ""
+        print "No graphics display available for this session."
+        print "Graphics tasks that attempt to plot to an interactive " + \
+                          "screen will fail."
+        print ""
