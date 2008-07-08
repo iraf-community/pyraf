@@ -470,7 +470,10 @@ focusController = FocusController(terminal)
 # Do we have access to a graphics display?
 hasGraphics = None
 if _skipDisplay:
-    print "No graphics display to be used for this session."
+    # A common _skipDisplay case is pyraf being imported in a script,
+    # in which case we keep quiet about the lack of graphics.
+    if sys.argv[0].find('pyraf') >= 0: # but do warn for interactive sessions
+        print "No graphics display intended for this session."
 else:
     if _hasXWin or _hasAqua:
         hasGraphics = focusController.hasGraphics
