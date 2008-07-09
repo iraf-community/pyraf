@@ -166,7 +166,7 @@ the "Execute" button.
 def epar(taskName, parent=None, isChild=0):
 
     if not wutil.hasGraphics:
-        raise IrafError("Cannot run epar without X-windows")
+        raise IrafError("Cannot run epar without graphics windows")
 
     if not isChild:
         oldFoc = wutil.getFocalWindowID()

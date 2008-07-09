@@ -1030,10 +1030,9 @@ class GkiNull(GkiKernel):
 
     def __init__(self):
 
-        print "No graphics display available for this session " + \
-              "(X Window unavailable)"
+        print "No graphics display available for this session."
         print "Graphics tasks that attempt to plot to an interactive " + \
-              "screen will fail"
+              "screen will fail."
         GkiKernel.__init__(self)
         self.name = 'Null'
 
