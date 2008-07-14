@@ -25,7 +25,7 @@ def gki_single_prow_test():
    iraf.prow("dev$pix", row=256, dev="psi_land") # plot
    iraf.gflush()
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef, "single_prow")
+   psOut = getNewTmpPskFile(flistBef, "single_prow")
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256.ps "+psOut
@@ -44,7 +44,7 @@ def gki_prow_1_append_test():
    iraf.prow("dev$pix", row=250, dev="psi_land", append=True) # append #1
    iraf.gflush()
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef, "prow_1_append")
+   psOut = getNewTmpPskFile(flistBef, "prow_1_append")
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256_250.ps "+psOut
@@ -64,7 +64,7 @@ def gki_prow_2_appends_test():
    iraf.prow("dev$pix", row=200, dev="psi_land", append=True) # append #1
    iraf.gflush()
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef, "prow_2_appends")
+   psOut = getNewTmpPskFile(flistBef, "prow_2_appends")
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256_250_200.ps "+psOut
@@ -82,7 +82,9 @@ def gki_2_prows_no_append_test():
    iraf.prow("dev$pix", row=256, dev="psi_land") # plot
    iraf.prow("dev$pix", row=250, dev="psi_land") # plot again (flushes 1st)
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef, "2_prows_no_append - A")
+   prf = None
+   if os.uname()[0] == 'SunOS': prf = '.eps' # Solaris can leave extras here
+   psOut = getNewTmpPskFile(flistBef, "2_prows_no_append - A", preferred=prf)
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256.ps "+psOut
@@ -92,7 +94,9 @@ def gki_2_prows_no_append_test():
    flistBef = findAllTmpPskFiles()
    iraf.gflush()
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef, "2_prows_no_append - B")
+   prf = None
+   if os.uname()[0] == 'SunOS': prf = '.eps' # Solaris can leave extras here
+   psOut = getNewTmpPskFile(flistBef, "2_prows_no_append - B", preferred=prf)
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_250.ps "+psOut
@@ -113,7 +117,7 @@ def gki_prow_to_different_devices_test():
    iraf.prow("dev$pix", row=250, dev="lw") # plot to fake printer, should flush
                                            # last plot, and should warn @ fake
    # get output postscript temp file name
-   psOut = getNewestTmpPskFile(flistBef, "prow_to_different_devices")
+   psOut = getNewTmpPskFile(flistBef, "prow_to_different_devices")
    # diff
    cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
          os.sep+"prow_256.ps "+psOut
@@ -132,22 +136,33 @@ def findAllTmpPskFiles():
    Return the list. """
    # Usually the files are dropped in the $tmp directory
    flistCur = glob.glob(os.environ['tmp']+os.sep+'psk*')
-   # for some reason, on Solaris (at least), the files are dumped to cwd
+   # for some reason, on Solaris (at least), some files are dumped to cwd
    flistCur += glob.glob(os.getcwd()+os.sep+'psk*')
    return flistCur
 
 
-def getNewestTmpPskFile(theBeforeList, title):
+def getNewTmpPskFile(theBeforeList, title, preferred=None):
    """ Do a glob in the tmp dir looking for psikern files, compare with the
-   old list to find the single new (expected) file. Return string filename. """
+   old list to find the new (expected) file.  If preferred is None, then only
+   a single new file is expected.  If not None, then we assume that more than
+   one new file may be present, and the arg is used as a search substring
+   (regexp would be cooler) to choose which single file to return of the newly
+   found set. Returns a single string filename. """
+
    flistAft = findAllTmpPskFiles()
    assert len(flistAft) > len(theBeforeList), \
-          'No postcript file generated during: "'+title+'": '+ \
+          'No postcript file(s) generated during: "'+title+'": '+ \
           str(theBeforeList)
    for f in theBeforeList: flistAft.remove(f)
-   assert len(flistAft) == 1, 'Expected single postcript file during: "'+ \
-                              title+'": '+str(flistAft)
+   if preferred == None:
+       assert len(flistAft)==1, 'Expected single postcript file during: "'+ \
+                                  title+'": '+str(flistAft)
+   else:
+       for f in flistAft:
+           if f.find(preferred) >= 0: return f
+
    return flistAft[0]
+       
 
 
 def run_all():
