@@ -580,7 +580,7 @@ class IrafTask(irafglobals.IrafTask):
             sys.stderr.write("Task %s has no parameter file\n" % self._name)
             sys.stderr.flush()
 
-    def saveParList(self,filename=None):
+    def saveParList(self,filename=None, comment=None):
         """Write task parameters in .par format to filename (name or handle)
 
         If filename is omitted, writes to uparm scrunch file (if possible)
@@ -598,7 +598,7 @@ class IrafTask(irafglobals.IrafTask):
                         (self._name,)
                 if iraf.Verbose>0: print status
                 return status
-        rv = self._currentParList.saveParList(filename)
+        rv = self._currentParList.saveParList(filename, comment)
         return rv
 
     def unlearn(self):

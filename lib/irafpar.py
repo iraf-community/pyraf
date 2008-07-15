@@ -2229,7 +2229,7 @@ class IrafParList:
                 print "%s%s" % (taskname,p.dpar(cl=cl))
         if cl: print "# EOF"
 
-    def saveParList(self, filename=None):
+    def saveParList(self, filename=None, comment=None):
         """Write .par file data to filename (string or filehandle)"""
         if filename is None:
             filename = self.__filename
@@ -2240,6 +2240,8 @@ class IrafParList:
         else:
             fh = open(iraf.Expand(filename),'w')
         nsave = len(self.__pars)
+        if comment:
+            fh.write('# '+comment+'\n')
         for par in self.__pars:
             if par.name == '$nargs':
                 nsave = nsave-1
