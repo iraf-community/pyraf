@@ -7,14 +7,13 @@ M.D. De La Pena, 2000 February 04
 #System level modules
 from Tkinter import _default_root
 from Tkinter import *
-from tkMessageBox import askokcancel
+from tkMessageBox import askokcancel, showwarning
 import os, sys
 
 # PyRAF modules
 import iraf, irafpar, irafhelp, cStringIO, wutil
 from irafglobals import pyrafDir, userWorkingHome, IrafError
-
-import eparoption
+import eparoption, filedlg
 
 # Constants
 MINVIEW     = 500
@@ -117,6 +116,9 @@ File menu:
              Psets.
     Save
              Save the parameters and close the editor window.  The task is not
+             executed.
+    Save As
+             Save the parameters to a user-specified file.  The task is not
              executed.
     Unlearn
              Restore all parameters to the system default values for this
@@ -573,6 +575,8 @@ class EparDialog:
             fileButton.menu.entryconfigure(0, state=DISABLED)
 
         fileButton.menu.add_command(label="Save",    command=self.quit)
+        if not self.isChild:
+            fileButton.menu.add_command(label="Save As", command=self.saveAs)
         fileButton.menu.add_command(label="Unlearn", command=self.unlearn)
         fileButton.menu.add_separator()
         fileButton.menu.add_command(label="Cancel", command=self.abort)
@@ -642,6 +646,13 @@ class EparDialog:
         buttonQuit.pack(side=LEFT, padx=5, pady=7)
         buttonQuit.bind("<Enter>", self.printQuitInfo)
 
+        # Save all the current parameter settings to a separate file
+        if not self.isChild:
+            buttonSaveAs = Button(box, text="Save As",
+                                  relief=RAISED, command=self.saveAs)
+            buttonSaveAs.pack(side=LEFT, padx=5, pady=7)
+            buttonSaveAs.bind("<Enter>", self.printSaveAsInfo)
+
         # Unlearn all the parameter settings (set back to the defaults)
         buttonUnlearn = Button(box, text="Unlearn",
                             relief=RAISED, command=self.unlearn)
@@ -700,6 +711,10 @@ class EparDialog:
         self.top.status.config(text =
              " Save the current entries and exit this edit session")
 
+    def printSaveAsInfo(self, event):
+        self.top.status.config(text =
+             " Save the current entries to a user-specified file")
+
     def printAbortInfo(self, event):
         self.top.status.config(text=" Abort this edit session")
 
@@ -732,12 +747,12 @@ class EparDialog:
 
         # first save the child parameters, aborting save if
         # invalid entries were encountered
-        if self.saveChildren():
+        if self.checkSetSaveChildren():
             return
 
         # Save all the entries and verify them, keeping track of the
         # invalid entries which have been reset to their original input values
-        self.badEntriesList = self.saveEntries()
+        self.badEntriesList = self.checkSetSaveEntries()
 
         # If there were invalid entries, prepare the message dialog
         if (self.badEntriesList):
@@ -770,16 +785,67 @@ class EparDialog:
         CHILDY = PARENTY
 
 
+    # SAVE AS: save the parameter settings to a user-specified file
+    def saveAs(self, event=None):
+
+        # the user wishes to save to a different name
+        fd = filedlg.PersistSaveFileDialog(self.top, "Save Parameter File As",
+                                           "*.par")
+        if fd.Show() != 1:
+            fd.DialogCleanup()
+            return
+        fname = fd.GetFileName()
+        fd.DialogCleanup()
+
+        # first check the child parameters, aborting save if
+        # invalid entries were encountered
+        if self.checkSetSaveChildren():
+            return
+
+        # notify them that pset children will not be saved as part of 
+        # their special version
+        pars = []
+        for par in self.paramList:
+            if par.type == "pset": pars.append(par.name)
+        if len(pars):
+            msg = "If you have made any changes to the PSET "+ \
+                  "values for:\n\n"
+            for p in pars: msg += "\t\t"+p+"\n"
+            msg = msg+"\nthose changes will NOT be explicitly saved to:"+ \
+                  '\n\n"'+fname+'"'
+            showwarning(message=msg, title='PSET Save-As Not Yet Supported')
+
+        # Verify all the entries (without save), keeping track of the invalid
+        # entries which have been reset to their original input values
+        self.badEntriesList = self.checkSetSaveEntries(doSave=False)
+
+        # If there were invalid entries, prepare the message dialog
+        if (self.badEntriesList):
+            ansOKCANCEL = self.processBadEntries(self.badEntriesList,
+                          self.taskName)
+            if not ansOKCANCEL:
+                return
+
+        # If there were no invalid entries or the user says OK, finally
+        # save to their stated file.  Since we have already processed the
+        # bad entries, there should be none returned.
+        mstr = "TASKMETA: task="+self.taskName+" package="+self.pkgName
+        if self.checkSetSaveEntries(doSave=True, filename=fname, comment=mstr):
+            raise Exception("Unexpected bad entries for: "+self.taskName)
+
+        print "Saved "+self.taskName+" parameter values to: "+fname
+
+
     # EXECUTE: save the parameter settings and run the task
     def execute(self, event=None):
 
         # first save the child parameters, aborting save if
         # invalid entries were encountered
-        if self.saveChildren():
+        if self.checkSetSaveChildren():
             return
 
         # Now save the parameter values of the parent
-        self.badEntriesList = self.saveEntries()
+        self.badEntriesList = self.checkSetSaveEntries()
 
         # If there were invalid entries in the parent epar dialog, prepare
         # the message dialog
@@ -970,7 +1036,7 @@ class EparDialog:
 
 
     # Read, save, and validate the entries
-    def saveEntries(self):
+    def checkSetSaveEntries(self, doSave=True, filename=None, comment=None):
 
         self.badEntries = []
 
@@ -998,9 +1064,6 @@ class EparDialog:
                     self.badEntries.append([entry.name, value,
                                         entry.choice.get()])
 
-                # Determine the type of entry variable
-                classType = entry.choiceClass
-
                 # get value again in case it changed
                 value = entry.choice.get()
 
@@ -1014,14 +1077,14 @@ class EparDialog:
         # made in memory.)
 
         taskObject = self.taskObject
-        if (not isinstance(taskObject, irafpar.IrafParList)) or \
-          taskObject.getFilename():
-            taskObject.saveParList()
+        if doSave and ((not isinstance(taskObject, irafpar.IrafParList)) or taskObject.getFilename()):
+            taskObject.saveParList(filename=filename, comment=comment)
 
         return self.badEntries
 
-    def saveChildren(self):
-        """Save the parameter settings for all child (pset) windows.
+    def checkSetSaveChildren(self, doSave=True):
+        """Check, then set, then save the parameter settings for
+        all child (pset) windows.
 
         Prompts if any problems are found.  Returns None
         on success, list of bad entries on failure.
@@ -1033,7 +1096,8 @@ class EparDialog:
         # Save the children in backwards order to coincide with the
         # display of the dialogs (LIFO)
         for n in range (len(self.top.childList)-1, -1, -1):
-            self.badEntriesList = self.top.childList[n].saveEntries()
+            self.badEntriesList = self.top.childList[n]. \
+                                  checkSetSaveEntries(doSave=doSave)
             if (self.badEntriesList):
                 ansOKCANCEL = self.processBadEntries(self.badEntriesList,
                               self.top.childList[n].taskName)
