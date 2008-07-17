@@ -163,6 +163,10 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
               flistAft[1].find('.eps') > 0:
                # Are these files related (copies?)
                for f in flistAft: os.system("/bin/ls -ld "+f)
+               # Or, did the /tmp version suddenly get deleted?
+               if not os.path.exists(flistAft[0]):
+                   print "Am somehow missing the deletes.  Test: "+title
+                   return flistAft[1]
            # Either way, throw something
            raise Exception('Expected single postcript file during: "'+ \
                            title+'": '+str(flistAft))
