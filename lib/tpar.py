@@ -16,6 +16,7 @@ Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
 # XXXX Debugging tip:  uncomment self.inform() in the debug() method below
 
 import os, sys, string, commands, re
+import urwutil
 
 # Fake out import of urwid if it fails to keep tpar from bringing down
 # all of PyRAF.
@@ -44,7 +45,7 @@ except:
     urwid.Pile = FakeClass()
 
 # PyRAF modules
-import iraf, irafpar, irafhelp, cStringIO, wutil, iraffunctions
+import iraf, irafpar, irafhelp, iraftask, cStringIO, wutil, iraffunctions
 from irafglobals import pyrafDir, userWorkingHome, IrafError
 
 TPAR_HELP_EMACS = """                                EDIT COMMANDS (emacs)
@@ -714,7 +715,7 @@ class TparDisplay(Binder):
 
         self.escape = False
 
-        bwidth = ('fixed', 14)
+        isPset = isinstance(self.taskObject, iraftask.IrafPset)
 
         self.help_button = urwid.Padding(
             urwid.Button("Help",self.HELP),
@@ -722,6 +723,10 @@ class TparDisplay(Binder):
         self.cancel_button = urwid.Padding(
             urwid.Button("Cancel",self.QUIT),
             align="center",    width=('fixed', 10))
+        if not isPset:
+            self.save_as_button = urwid.Padding(
+                urwid.Button("Save As",self.SAVEAS),
+                align="center",    width=('fixed', 11))
         self.save_button = urwid.Padding(
             urwid.Button("Save",self.EXIT),
             align="center",    width=('fixed', 8))
@@ -729,11 +734,19 @@ class TparDisplay(Binder):
             urwid.Button("Exec",self.go),
             align="center",    width=('fixed', 8))
 
-        self.buttons = urwid.Columns([
-            ('weight', 0.2, self.exec_button),
-            ('weight', 0.2, self.save_button),
-            ('weight', 0.2, self.cancel_button),
-            ('weight', 0.4, self.help_button)])
+        if isPset:
+            self.buttons = urwid.Columns([
+                ('weight', 0.2, self.exec_button),
+                ('weight', 0.2, self.save_button),
+                ('weight', 0.2, self.cancel_button),
+                ('weight', 0.4, self.help_button)])
+        else:
+            self.buttons = urwid.Columns([
+                ('weight', 0.175, self.exec_button),
+                ('weight', 0.175, self.save_button),
+                ('weight', 0.175, self.save_as_button),
+                ('weight', 0.175, self.cancel_button),
+                ('weight', 0.3, self.help_button)])
 
         self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
         self.listitems = [urwid.Divider(" ")] + self.entryNo + \
@@ -889,12 +902,72 @@ class TparDisplay(Binder):
             except Exception, e:
                 self.inform("command '%s' failed with exception '%s'" % (cmd, e))
 
+    def save_as(self):
+
+        # The user wishes to save to a different name.
+        fname = self.select_file(
+                "Save paramater values to which file?", overwriteCheck=True)
+
+        # Now save the parameters
+        if fname == None:
+            msg = "Parameters NOT saved to a file."
+            okdlg = urwutil.DialogDisplay(msg, 8, 0)
+            okdlg.add_buttons([ ("OK",0) ])
+            okdlg.main()
+            return
+
+        # Tpar apparently does nothing with children (PSETs), so skip the
+        # check or set or save of them
+
+        # Notify them that pset children will not be saved as part of 
+        # their special version
+        pars = []
+        for par in self.paramList:
+            if par.type == "pset": pars.append(par.name)
+        if len(pars):
+            msg = "If you have made any changes to the PSET "+ \
+                  "values for:\n\n"
+            for p in pars: msg += "     "+p+"\n"
+            msg = msg+"\nthose changes will NOT be explicitly saved to:"+ \
+                  '\n\n"'+fname+'"'
+            # title='PSET Save-As Not Yet Supported
+            okdlg = urwutil.DialogDisplay(msg, 0, 0)
+            okdlg.add_buttons([ ("OK",0) ])
+            okdlg.main()
+
+        # Verify all the entries (without save), keeping track of the invalid
+        # entries which have been reset to their original input values
+        self.badEntriesList = self.check_set_save_entries(False)
+
+        # If there were invalid entries, prepare the message dialog
+        ansOKCANCEL = True
+        if self.badEntriesList:
+            ansOKCANCEL = self.process_bad_entries(self.badEntriesList,
+                                                   self.taskName)
+        if not ansOKCANCEL:
+            return # should we tell them we are not saving ?
+
+        # If there were no invalid entries or the user said OK, finally
+        # save to their stated file.  Since we have already processed the
+        # bad entries, there should be none returned.
+        mstr = "TASKMETA: task="+self.taskName+" package="+self.pkgName
+        if self.check_set_save_entries(doSave=True, filename=fname, \
+                                       comment=mstr):
+            raise Exception("Unexpected bad entries for: "+self.taskName)
+
+        # Let them know what they just did
+        msg = "Saved to: "+fname
+        okdlg = urwutil.DialogDisplay(msg, 8, 0)
+        okdlg.add_buttons([ ("OK",0) ])
+        okdlg.main()
+
+
     def save(self, emph):
-        # Save all the entries and verify them, keeping track of the
-        # invalid entries which have been reset to their original input values
+        # Save all the entries and verify them, keeping track of the invalid
+        # entries which have been reset to their original input values
         if emph:
             return
-        self.badEntriesList = self.save_entries()
+        self.badEntriesList = self.check_set_save_entries(True)
 
         # If there were invalid entries, prepare the message dialog
         ansOKCANCEL = True
@@ -920,8 +993,19 @@ class TparDisplay(Binder):
             pass
         self.done = quit_continue
 
+
+    def SAVEAS(self, event=None):
+
+        """ SaveAs button - save parameters to a user specified file"""
+        self.save_as()
+        def save_as_continue(): # get back to editing
+            iraffunctions.tparam(self.taskObject)
+        self.done = save_as_continue  # self.done = None # will also continue
+
+
     def EXIT(self, event=None):  # always save
         self.QUIT(event, False)
+
 
     # EXECUTE: save the parameter settings and run the task
     def go(self, event=None, emph=False):
@@ -969,7 +1053,7 @@ class TparDisplay(Binder):
             entry.unlearn_value()
 
     # Read, save, and verify the entries
-    def save_entries(self):
+    def check_set_save_entries(self, doSave, filename=None, comment=None):
 
         self.badEntries = []
 
@@ -1006,9 +1090,8 @@ class TparDisplay(Binder):
         # made in memory.)
 
         taskObject = self.taskObject
-        if (not isinstance(taskObject, irafpar.IrafParList)) or \
-          taskObject.getFilename():
-            taskObject.saveParList()
+        if doSave and ((not isinstance(taskObject, irafpar.IrafParList)) or taskObject.getFilename()):
+            taskObject.saveParList(filename=filename, comment=comment)
 
         return self.badEntries
 
@@ -1057,6 +1140,31 @@ class TparDisplay(Binder):
             self.info(TPAR_HELP_VI, self.help_button)
         else:
             self.info(TPAR_HELP_EMACS, self.help_button)
+
+    def select_file(self, prompt, overwriteCheck=False):
+        """ Allow user to select a file - handle whether it is expected
+        to be new or existing. Returns file name on success, None on error. """
+
+        # Allow the user to select a specific file. A FileDialog would be
+        # great here, but as of '08 none comes 'standard' w/ urwid yet. There's
+        # an example (browse.py), but the 0.9.8 ver. doesn't work with 0.9.7.
+        while True:
+            inputdlg = urwutil.InputDialogDisplay(prompt, 9, 0)
+            inputdlg.add_buttons([ ("OK", 0),  ("Cancel", 1) ])
+            rv, fname = inputdlg.main()
+            if rv > 0: return None # they canceled
+
+            # See if the file exists (if we care)
+            if overwriteCheck and os.path.exists(fname):
+                yesnodlg = urwutil.DialogDisplay(
+                           "File exists.  Overwrite?", 8, 0)
+                yesnodlg.add_buttons([ ("Yes", 0),  ("No", 1) ])
+                rv, junk = yesnodlg.main()
+                if rv == 0: return fname
+                # if no, then go thru selection again
+            else:
+                return fname
+
 
     def askokcancel(self, title, msg):
         self.info(msg, None)
