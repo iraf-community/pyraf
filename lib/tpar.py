@@ -16,7 +16,6 @@ Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
 # XXXX Debugging tip:  uncomment self.inform() in the debug() method below
 
 import os, sys, string, commands, re
-import urwutil
 
 # Fake out import of urwid if it fails to keep tpar from bringing down
 # all of PyRAF.
@@ -36,6 +35,7 @@ class FakeClass:
 try:
     import urwid.curses_display
     import urwid
+    import urwutil
     urwid.set_encoding("ascii")   #  gives better performance than 'utf8'
 except:
     urwid = FakeModule()
