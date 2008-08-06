@@ -2381,6 +2381,52 @@ def _printDiff(pd1, pd2, label):
             print "Parameter `%s': %s" % (key, ", ".join(mm))
 
 
+# The dictionary of all special-use par files found on disk.
+# Each key is a tuple of (taskName, pkgName).
+# Each value is a list of path names.
+_specialUseParFileDict = None
+
+def findAllSpecialParFiles():
+    """ Search the disk in the expected areas for special-purpose parameter
+    files.  These can have any name, end in .par, and have metadata comments
+    which identify their associated task.  This functions simply fills our
+    _specialUseParFileDict dictionary. """
+
+    global _specialUseParFileDict
+
+    _specialUseParFileDict = {} # still unwritten
+#   _specialUseParFileDict = {('display','tv'): ['/usr/joe/iraf/z2open.par','two.par','letter_c.par']}
+
+
+def haveSpecialVersions(taskName, pkgName):
+    """ This is a simple check to see if special-purpose parameter files
+    have been found for the given task/package.  This returns True or False.
+    If the dictionary has not been created yet, this initializes it (note that
+    this is intentionally lazy-initialized as searching the disk may take
+    some time. """
+
+    global _specialUseParFileDict
+
+    # lazy init
+    if _specialUseParFileDict == None: findAllSpecialParFiles()
+
+    tupKey = (taskName, pkgName)
+    return tupKey in _specialUseParFileDict
+
+
+def getSpecialVersionFiles(taskName, pkgName):
+    """ Returns a (possibly empty) list of path names for special versions of
+    parameter files. This also causes lazy initialization."""
+
+    global _specialUseParFileDict
+
+    tupKey = (taskName, pkgName)
+    if haveSpecialVersions(taskName, pkgName):
+        return _specialUseParFileDict[tupKey]
+    else:
+        return []
+
+
 # -----------------------------------------------------
 # Read IRAF .par file and return list of parameters
 # -----------------------------------------------------

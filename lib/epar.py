@@ -13,7 +13,7 @@ import os, sys
 # PyRAF modules
 import iraf, irafpar, irafhelp, cStringIO, wutil
 from irafglobals import pyrafDir, userWorkingHome, IrafError
-import eparoption, filedlg
+import eparoption, filedlg, listdlg
 
 # Constants
 MINVIEW     = 500
@@ -202,6 +202,10 @@ class EparDialog:
 
         # Get default parameter values for unlearn
         self.getDefaultParamList()
+
+        # See if there exist any special versions on disk to load
+        self.foundSpecials = irafpar.haveSpecialVersions(self.taskName,
+                             self.pkgName) # irafpar caches them
 
         # Create the root window as required, but hide it
         self.parent = parent
@@ -570,13 +574,17 @@ class EparDialog:
 
         fileButton.menu = Menu(fileButton, tearoff=0)
 
+        if self.foundSpecials:
+            fileButton.menu.add_command(label="Open...", command=self.pfopen)
+            fileButton.menu.add_separator()
+
         fileButton.menu.add_command(label="Execute", command=self.execute)
         if self.isChild:
             fileButton.menu.entryconfigure(0, state=DISABLED)
 
         fileButton.menu.add_command(label="Save",    command=self.quit)
         if not self.isChild:
-            fileButton.menu.add_command(label="Save As", command=self.saveAs)
+            fileButton.menu.add_command(label="Save As...", command=self.saveAs)
         fileButton.menu.add_command(label="Unlearn", command=self.unlearn)
         fileButton.menu.add_separator()
         fileButton.menu.add_command(label="Cancel", command=self.abort)
@@ -648,7 +656,7 @@ class EparDialog:
 
         # Save all the current parameter settings to a separate file
         if not self.isChild:
-            buttonSaveAs = Button(box, text="Save As",
+            buttonSaveAs = Button(box, text="Save As...",
                                   relief=RAISED, command=self.saveAs)
             buttonSaveAs.pack(side=LEFT, padx=5, pady=7)
             buttonSaveAs.bind("<Enter>", self.printSaveAsInfo)
@@ -673,6 +681,13 @@ class EparDialog:
         buttonHelp.bind("<Enter>", self.printHelpInfo)
 
         box.pack(fill=X, expand=FALSE)
+
+        # Allow them to load a file if the right kind was found
+        if self.foundSpecials:
+            buttonOpen = Button(box, text="Open...",
+                                relief=RAISED, command=self.pfopen)
+            buttonOpen.pack(side=RIGHT, padx=5, pady=7)
+            buttonOpen.bind("<Enter>", self.printOpenInfo)
 
 
     # Determine which method of displaying the IRAF help pages was
@@ -714,6 +729,10 @@ class EparDialog:
     def printSaveAsInfo(self, event):
         self.top.status.config(text =
              " Save the current entries to a user-specified file")
+
+    def printOpenInfo(self, event):
+        self.top.status.config(text =
+             " Load parameter values from a user-specified file")
 
     def printAbortInfo(self, event):
         self.top.status.config(text=" Abort this edit session")
@@ -785,10 +804,39 @@ class EparDialog:
         CHILDY = PARENTY
 
 
+    # OPEN: load parameter settings from a user-specified file
+    def pfopen(self, event=None):
+
+        flist = irafpar.getSpecialVersionFiles(self.taskName, self.pkgName)
+        if len(flist) <= 0:
+            msg = "No special-purpose parameter files found for "+self.taskName
+            showwarning(message=msg, title='File not found')
+            return
+
+        fname = None
+        if len(flist) == 1:
+            if askokcancel("Confirm",
+                           "Single special-purpose parameter file found.\n"+ \
+                           "Load file?\n\n"+flist[0]):
+                fname = flist[0]
+        else: # len(flist) > 0
+            ld = listdlg.ListSingleSelectDialog("Select Parameter File",
+                         "Select which file you prefer for task/pkg:",
+                         flist, self.top)
+            fname = ld.getresult() # will be None or a string fname
+
+        # check-point
+        if fname == None: return
+
+        # Now load it
+        print "Loading "+self.taskName+" parameter values from: "+fname
+        print "<UNFINISHED>"
+
+
     # SAVE AS: save the parameter settings to a user-specified file
     def saveAs(self, event=None):
 
-        # the user wishes to save to a different name
+        # The user wishes to save to a different name
         fd = filedlg.PersistSaveFileDialog(self.top, "Save Parameter File As",
                                            "*.par")
         if fd.Show() != 1:
@@ -797,12 +845,12 @@ class EparDialog:
         fname = fd.GetFileName()
         fd.DialogCleanup()
 
-        # first check the child parameters, aborting save if
+        # First check the child parameters, aborting save if
         # invalid entries were encountered
         if self.checkSetSaveChildren():
             return
 
-        # notify them that pset children will not be saved as part of 
+        # Notify them that pset children will not be saved as part of 
         # their special version
         pars = []
         for par in self.paramList:
