@@ -638,6 +638,16 @@ class EparDialog:
         # Button goes back to the nonactive color.
         top.bind("<Leave>", self.clearInfo)
 
+        # Allow them to load/open a file if the right kind was found
+        if self.foundSpecials:
+            buttonOpen = Button(box, text="Open...",
+                                relief=RAISED, command=self.pfopen)
+            buttonOpen.pack(side=LEFT, padx=5, pady=7)
+            buttonOpen.bind("<Enter>", self.printOpenInfo)
+            # separate this button rom the others - it's unusual
+            strut = Label(box, text="")
+            strut.pack(side=LEFT, padx=20)
+
         # Execute the task
         buttonExecute = Button(box, text="Execute",
                                relief=RAISED, command=self.execute)
@@ -681,13 +691,6 @@ class EparDialog:
         buttonHelp.bind("<Enter>", self.printHelpInfo)
 
         box.pack(fill=X, expand=FALSE)
-
-        # Allow them to load a file if the right kind was found
-        if self.foundSpecials:
-            buttonOpen = Button(box, text="Open...",
-                                relief=RAISED, command=self.pfopen)
-            buttonOpen.pack(side=RIGHT, padx=5, pady=7)
-            buttonOpen.bind("<Enter>", self.printOpenInfo)
 
 
     # Determine which method of displaying the IRAF help pages was
@@ -816,13 +819,13 @@ class EparDialog:
         fname = None
         if len(flist) == 1:
             if askokcancel("Confirm",
-                           "Single special-purpose parameter file found.\n"+ \
+                           "One special-purpose parameter file found.\n"+ \
                            "Load file?\n\n"+flist[0]):
                 fname = flist[0]
         else: # len(flist) > 0
             ld = listdlg.ListSingleSelectDialog("Select Parameter File",
-                         "Select which file you prefer for task/pkg:",
-                         flist, self.top)
+                         "Select which parameter file to load for "+ \
+                         self.pkgName+"."+self.taskName, flist, self.top)
             fname = ld.getresult() # will be None or a string fname
 
         # check-point
