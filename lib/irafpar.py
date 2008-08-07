@@ -5,7 +5,7 @@ $Id$
 R. White, 2000 January 7
 """
 
-import os, sys, re, types
+import glob, os, re, sys, types
 import irafimcur, irafukey, irafutils, minmatch, epar, tpar
 from irafglobals import INDEF, Verbose, yes, no
 import gki
@@ -2386,7 +2386,13 @@ def _printDiff(pd1, pd2, label):
 # Each value is a list of path names.
 _specialUseParFileDict = None
 
-def findAllSpecialParFiles():
+
+# Pattern for TASKMETA lines like: '# TASKMETA: task=display package=tv'
+_re_taskmeta = \
+    re.compile(r'^# *TASKMETA *: *task *= *([^ ]*) *package *= *([^ \n]*)')
+
+
+def _findAllSpecialParFiles():
     """ Search the disk in the expected areas for special-purpose parameter
     files.  These can have any name, end in .par, and have metadata comments
     which identify their associated task.  This functions simply fills our
@@ -2394,8 +2400,48 @@ def findAllSpecialParFiles():
 
     global _specialUseParFileDict
 
+    # default state is that dictionary is (now) created but empty
     _specialUseParFileDict = {} # still unwritten
-#   _specialUseParFileDict = {('display','tv'): ['/usr/joe/iraf/z2open.par','two.par','letter_c.par']}
+
+    # See if the auxilliary par directory has been specified
+    uparmAux = iraf.envget("uparm_aux","")
+    if len(uparmAux) <= 0: return
+
+    flist = glob.glob(uparmAux+"/*.par")
+    if len(flist) <= 0: return
+
+    # At this point, we have files.  Foreach, figure out the task and 
+    # package it is for, and add it's pathname to the dict.
+    for supfname in flist:
+        buf = []
+        try:
+            supfile = open(supfname, 'r')
+            buf = supfile.readlines()
+            supfile.close()
+        except:
+            pass
+        if len(buf) < 1:
+            warning("Unable to read special use parameter file: "+supfname,
+                    level = -1)
+            continue
+
+        # get task and pkg names, and verify this is a correct file
+        tupKey = None
+        for line in buf:
+            mo = _re_taskmeta.match(line)
+            if mo:
+                # the syntax is right,  get the task and pkg names
+                tupKey = ( mo.group(1), mo.group(2) )
+                break # only one TASKMETA line per file
+
+        if tupKey:
+            if tupKey in _specialUseParFileDict:
+                _specialUseParFileDict[tupKey].append(supfname)
+            else:
+                _specialUseParFileDict[tupKey] = [supfname,]
+        else:
+            warning("Syntax error in special use parameter file: "+supfname,
+                    level = -1)
 
 
 def haveSpecialVersions(taskName, pkgName):
@@ -2408,7 +2454,7 @@ def haveSpecialVersions(taskName, pkgName):
     global _specialUseParFileDict
 
     # lazy init
-    if _specialUseParFileDict == None: findAllSpecialParFiles()
+    if _specialUseParFileDict == None: _findAllSpecialParFiles()
 
     tupKey = (taskName, pkgName)
     return tupKey in _specialUseParFileDict
