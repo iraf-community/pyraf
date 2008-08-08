@@ -32,6 +32,11 @@ class FileDialog(ModalDialog):
         self.filter = filter.strip()
         self.orig_dir = os.getcwd()
         self.cwd = os.getcwd()       # the logical current working directory
+        # Allow a start-directory as part of the given filter
+        if self.filter.find(os.sep) >= 0:
+            self.cwd = os.path.dirname(self.filter)
+            self.filter = os.path.basename(self.filter) # do this second!
+        # main Dialog code
         Dialog.__init__(self, widget)
 
     #       setup routine called back from Dialog
