@@ -823,6 +823,7 @@ class EparDialog:
                            "Load file?\n\n"+flist[0]):
                 fname = flist[0]
         else: # len(flist) > 0
+            flist.sort()
             ld = listdlg.ListSingleSelectDialog("Select Parameter File",
                          "Select which parameter file to load for "+ \
                          self.pkgName+"."+self.taskName, flist, self.top)
@@ -840,8 +841,11 @@ class EparDialog:
     def saveAs(self, event=None):
 
         # The user wishes to save to a different name
-        fd = filedlg.PersistSaveFileDialog(self.top, "Save Parameter File As",
-                                           "*.par")
+        # (could use Tkinter's FileDialog, but this one is prettier)
+        filt = '*.par'
+        upx = iraf.envget("uparm_aux","")
+        if len(upx) > 0:  filt = upx+"/*.par"
+        fd = filedlg.SaveFileDialog(self.top, "Save Parameter File As", filt)
         if fd.Show() != 1:
             fd.DialogCleanup()
             return
@@ -885,6 +889,9 @@ class EparDialog:
             raise Exception("Unexpected bad entries for: "+self.taskName)
 
         print "Saved "+self.taskName+" parameter values to: "+fname
+        
+        # Notify irafpar that there is a new special-purpose file on the scene
+        irafpar.newSpecialParFile(self.taskName, self.pkgName, fname)
 
 
     # EXECUTE: save the parameter settings and run the task

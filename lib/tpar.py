@@ -961,6 +961,8 @@ class TparDisplay(Binder):
         okdlg.add_buttons([ ("OK",0) ])
         okdlg.main()
 
+        # Notify irafpar that there is a new special-purpose file on the scene
+        irafpar.newSpecialParFile(self.taskName, self.pkgName, fname)
 
     def save(self, emph):
         # Save all the entries and verify them, keeping track of the invalid
@@ -1142,7 +1144,7 @@ class TparDisplay(Binder):
             self.info(TPAR_HELP_EMACS, self.help_button)
 
     def select_file(self, prompt, overwriteCheck=False):
-        """ Allow user to select a file - handle whether it is expected
+        """ Allow user to input a file - handle whether it is expected
         to be new or existing. Returns file name on success, None on error. """
 
         # Allow the user to select a specific file. A FileDialog would be
