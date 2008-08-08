@@ -903,10 +903,13 @@ class TparDisplay(Binder):
                 self.inform("command '%s' failed with exception '%s'" % (cmd, e))
 
     def save_as(self):
+        """ Save the parameter settings to a user-specified file.  Any
+        changes here must be coordinated with the corresponding epar saveAs
+        function. """
 
         # The user wishes to save to a different name.
         fname = self.select_file(
-                "Save paramater values to which file?", overwriteCheck=True)
+                "Save parameter values to which file?", overwriteCheck=True)
 
         # Now save the parameters
         if fname == None:

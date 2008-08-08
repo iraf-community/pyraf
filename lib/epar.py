@@ -839,6 +839,9 @@ class EparDialog:
 
     # SAVE AS: save the parameter settings to a user-specified file
     def saveAs(self, event=None):
+        """ Save the parameter settings to a user-specified file.  Any
+        changes here must be coordinated with the corresponding tpar save_as
+        function. """
 
         # The user wishes to save to a different name
         # (could use Tkinter's FileDialog, but this one is prettier)
