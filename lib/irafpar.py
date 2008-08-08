@@ -2387,7 +2387,7 @@ def _printDiff(pd1, pd2, label):
 _specialUseParFileDict = None
 
 
-# Pattern for TASKMETA lines like: '# TASKMETA: task=display package=tv'
+# For TASKMETA lines in par files, e.g.: '# TASKMETA: task=display package=tv'
 _re_taskmeta = \
     re.compile(r'^# *TASKMETA *: *task *= *([^ ]*) *package *= *([^ \n]*)')
 
@@ -2442,6 +2442,24 @@ def _findAllSpecialParFiles():
         else:
             warning("Syntax error in special use parameter file: "+supfname,
                     level = -1)
+
+
+def newSpecialParFile(taskName, pkgName, pathName):
+    """ Someone has just created a new one and we are being notified of that
+    fact so that we can update the dict. """
+
+    # We could at this point simply re-scan the disk for files, but for
+    # now let's assume the user doesnt want that.  Just add this entry to
+    # the dict.  Someday, after we gauge usage, we could change this to
+    # re-scan and add this entry to the dict if not there yet.
+
+    global _specialUseParFileDict
+
+    tupKey = (taskName, pkgName)
+    if tupKey in _specialUseParFileDict:
+        _specialUseParFileDict[tupKey].append(pathName)
+    else:
+        _specialUseParFileDict[tupKey] = [pathName,]
 
 
 def haveSpecialVersions(taskName, pkgName):
