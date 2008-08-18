@@ -227,7 +227,7 @@ void getWindowAttributes(int win, XWindowAttributes *winAttr, char **visual) {
 PyObject *wrap_getWindowAttributes(PyObject *self, PyObject *args) {
         int win, viewable;
         XWindowAttributes wa;
-        char *visual;
+        char *visual = NULL;
         if (!PyArg_ParseTuple(args,"i", &win))
                 return NULL;
         TrapXlibErrors /* macro code to handle xlib exceptions */

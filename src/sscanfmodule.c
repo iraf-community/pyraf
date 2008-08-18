@@ -99,9 +99,7 @@ static char sscanf_sscanf__doc__[] =
 ;
 
 static PyObject *
-sscanf_sscanf(self, args)
-PyObject *self;    /* Not used */
-PyObject *args;
+sscanf_sscanf( PyObject *self, PyObject *args )
 {
     char c, *fmt, *input, *inptr;
     char *s, *start, *end, mfwbuf[FWBUFSIZE + 1];
@@ -407,7 +405,7 @@ static char sscanf_module_documentation[] =
 ;
 
 void
-initsscanf()
+initsscanf(void)
 {
     /* Create the module and add the functions */
     (void) Py_InitModule4("sscanf", sscanf_methods,
