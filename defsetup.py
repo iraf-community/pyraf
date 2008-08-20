@@ -21,6 +21,9 @@ def find_x(xdir=""):
         add_lib_dirs.append('/usr/X11R6/lib64')
         add_lib_dirs.append('/usr/X11R6/lib')
         add_inc_dirs.append('/usr/X11R6/include')
+    elif sys.platform == 'sunos5' :
+        add_lib_dirs.append('/usr/openwin/lib') 
+        add_inc_dirs.append('/usr/openwin/include')
     else:
         try:
             import Tkinter
