@@ -2457,7 +2457,8 @@ def newSpecialParFile(taskName, pkgName, pathName):
 
     tupKey = (taskName, pkgName)
     if tupKey in _specialUseParFileDict:
-        _specialUseParFileDict[tupKey].append(pathName)
+        if not pathName in _specialUseParFileDict[tupKey]:
+            _specialUseParFileDict[tupKey].append(pathName)
     else:
         _specialUseParFileDict[tupKey] = [pathName,]
 
