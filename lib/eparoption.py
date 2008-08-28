@@ -421,7 +421,7 @@ class BooleanEparOption(EparOption):
         self.rbyes = Radiobutton(self.entry, text = "Yes",
                                  variable    = self.choice,
                                  value       = "yes",
-                                 anchor      = E,
+                                 anchor      = W,
                                  takefocus   = 0,
                                  underline   = 0)
         self.rbyes.pack(side = LEFT, ipadx = self.padWidth)
