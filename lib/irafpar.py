@@ -2401,7 +2401,7 @@ def _findAllSpecialParFiles():
     global _specialUseParFileDict
 
     # default state is that dictionary is (now) created but empty
-    _specialUseParFileDict = {} # still unwritten
+    _specialUseParFileDict = {}
 
     # See if the auxilliary par directory has been specified
     uparmAux = iraf.envget("uparm_aux","")

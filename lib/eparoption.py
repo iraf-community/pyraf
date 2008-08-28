@@ -288,6 +288,11 @@ class EparOption:
         """Clear just this Entry"""
         self.entry.delete(0, END)
 
+    def forceValue(self, newVal):
+        """Force-set a parameter entry to the given value"""
+        if newVal == None: newVal = ""
+        self.choice.set(newVal)
+
     def unlearnValue(self):
         """Unlearn a parameter value by setting it back to its default"""
         defaultValue = self.defaultParamInfo.get(field = "p_filename",

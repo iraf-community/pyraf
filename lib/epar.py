@@ -832,9 +832,11 @@ class EparDialog:
         # check-point
         if fname == None: return
 
-        # Now load it
-        print "Loading "+self.taskName+" parameter values from: "+fname
-        print "<UNFINISHED>"
+        # Now load it: "Loading "+self.taskName+" param values from: "+fname
+        newParList = irafpar.IrafParList(self.taskName, fname)
+
+        # Set the GUI entries to these values (let the user Save after)
+        self.setAllEntriesFromParList(newParList)
 
 
     # SAVE AS: save the parameter settings to a user-specified file
@@ -1089,9 +1091,27 @@ class EparDialog:
         return 1
 
 
-    # Method to "unlearn" all the parameter entry values in the GUI
-    # and set the parameter back to the default value
+    def setAllEntriesFromParList(self, aParList):
+        """ Set all the parameter entry values in the GUI to the values
+            in the given par list """
+        for i in range(self.numParams):
+            par = self.paramList[i]
+            if par.type == "pset":
+                continue # skip PSET's for now
+            gui_entry = self.entryNo[i]
+            old = gui_entry.choice.get() # str
+            par.set(aParList.getValue(par.name, native=1, prompt=0))
+            gui_entry.forceValue(par.value) # takes a str
+            # !!! remove this debugging stuff soon (see eparOptionFactory)
+            if old != str(par.value):
+                print 'CHANGED: "'+old+'" to "'+repr(par.value)+'"' + \
+                      ', for: '+par.name + " ("+str(type(old))+" to "+\
+                      str(type(par.value))+")"
+
+
     def unlearnAllEntries(self, master):
+        """ Method to "unlearn" all the parameter entry values in the GUI
+            and set the parameter back to the default value """
         for entry in self.entryNo:
             entry.unlearnValue()
 
