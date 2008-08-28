@@ -1099,14 +1099,10 @@ class EparDialog:
             if par.type == "pset":
                 continue # skip PSET's for now
             gui_entry = self.entryNo[i]
-            old = gui_entry.choice.get() # str
+            old = gui_entry.choice.get() # str; see eparOptionFactory
             par.set(aParList.getValue(par.name, native=1, prompt=0))
-            gui_entry.forceValue(par.value) # takes a str
-            # !!! remove this debugging stuff soon (see eparOptionFactory)
-            if old != str(par.value):
-                print 'CHANGED: "'+old+'" to "'+repr(par.value)+'"' + \
-                      ', for: '+par.name + " ("+str(type(old))+" to "+\
-                      str(type(par.value))+")"
+            # gui holds a str, but par.value is native; conversion occurs
+            gui_entry.forceValue(par.value)
 
 
     def unlearnAllEntries(self, master):
