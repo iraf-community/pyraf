@@ -2455,6 +2455,9 @@ def newSpecialParFile(taskName, pkgName, pathName):
 
     global _specialUseParFileDict
 
+    # lazy init
+    if _specialUseParFileDict == None: _findAllSpecialParFiles()
+
     tupKey = (taskName, pkgName)
     if tupKey in _specialUseParFileDict:
         if not pathName in _specialUseParFileDict[tupKey]:
