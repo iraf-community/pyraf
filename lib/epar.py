@@ -110,6 +110,10 @@ The Menu Bar
 -----------
 
 File menu:
+
+    Open...
+             Load parameters from a user-specified file.  Values are not
+             stored unless Execute or Save is then selected.
     Execute
              Save all the parameters, close the editor windows, and start the
              IRAF task.  This is disabled in the secondary windows used to edit
@@ -117,7 +121,7 @@ File menu:
     Save
              Save the parameters and close the editor window.  The task is not
              executed.
-    Save As
+    Save As...
              Save the parameters to a user-specified file.  The task is not
              executed.
     Unlearn
@@ -204,8 +208,8 @@ class EparDialog:
         self.getDefaultParamList()
 
         # See if there exist any special versions on disk to load
-        self.foundSpecials = irafpar.haveSpecialVersions(self.taskName,
-                             self.pkgName) # irafpar caches them
+        self.__areAnyToLoad = irafpar.haveSpecialVersions(self.taskName,
+                              self.pkgName) # irafpar caches them
 
         # Create the root window as required, but hide it
         self.parent = parent
@@ -574,7 +578,7 @@ class EparDialog:
 
         fileButton.menu = Menu(fileButton, tearoff=0)
 
-        if self.foundSpecials:
+        if self.__areAnyToLoad:
             fileButton.menu.add_command(label="Open...", command=self.pfopen)
             fileButton.menu.add_separator()
 
@@ -639,7 +643,7 @@ class EparDialog:
         top.bind("<Leave>", self.clearInfo)
 
         # Allow them to load/open a file if the right kind was found
-        if self.foundSpecials:
+        if self.__areAnyToLoad:
             buttonOpen = Button(box, text="Open...",
                                 relief=RAISED, command=self.pfopen)
             buttonOpen.pack(side=LEFT, padx=5, pady=7)
@@ -822,7 +826,7 @@ class EparDialog:
                            "One special-purpose parameter file found.\n"+ \
                            "Load file?\n\n"+flist[0]):
                 fname = flist[0]
-        else: # len(flist) > 0
+        else: # >1 file, need a select dialog
             flist.sort()
             ld = listdlg.ListSingleSelectDialog("Select Parameter File",
                          "Select which parameter file to load for "+ \
