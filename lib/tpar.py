@@ -706,6 +706,10 @@ class TparDisplay(Binder):
         self.pkgName = self.taskObject.getPkgname()
         self.paramList = self.taskObject.getParList(docopy=1)
 
+        # See if there exist any special versions on disk to load
+        self.__areAnyToLoad = irafpar.haveSpecialVersions(self.taskName,
+                              self.pkgName) # irafpar caches them
+
         # Ignore the last parameter which is $nargs
         self.numParams = len(self.paramList) - 1
 
@@ -733,20 +737,34 @@ class TparDisplay(Binder):
         self.exec_button = urwid.Padding(
             urwid.Button("Exec",self.go),
             align="center",    width=('fixed', 8))
+        if self.__areAnyToLoad:
+            self.open_button = urwid.Padding(
+                urwid.Button("Open",self.PFOPEN),
+                align="center",    width=('fixed', 8))
 
-        if isPset:
+        # GUI button layout - weightings
+        if isPset: # show no Open nor Save As buttons
             self.buttons = urwid.Columns([
                 ('weight', 0.2, self.exec_button),
                 ('weight', 0.2, self.save_button),
                 ('weight', 0.2, self.cancel_button),
                 ('weight', 0.4, self.help_button)])
         else:
-            self.buttons = urwid.Columns([
-                ('weight', 0.175, self.exec_button),
-                ('weight', 0.175, self.save_button),
-                ('weight', 0.175, self.save_as_button),
-                ('weight', 0.175, self.cancel_button),
-                ('weight', 0.3, self.help_button)])
+            if not self.__areAnyToLoad: # show Save As but not Open
+                self.buttons = urwid.Columns([
+                    ('weight', 0.175, self.exec_button),
+                    ('weight', 0.175, self.save_button),
+                    ('weight', 0.175, self.save_as_button),
+                    ('weight', 0.175, self.cancel_button),
+                    ('weight', 0.3, self.help_button)])
+            else: # show all possible buttons (iterated on this spacing)
+                self.buttons = urwid.Columns([
+                    ('weight', 0.20, self.open_button),
+                    ('weight', 0.15, self.exec_button),
+                    ('weight', 0.15, self.save_button),
+                    ('weight', 0.15, self.save_as_button),
+                    ('weight', 0.18, self.cancel_button),
+                    ('weight', 0.20, self.help_button)])
 
         self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
         self.listitems = [urwid.Divider(" ")] + self.entryNo + \
@@ -967,6 +985,56 @@ class TparDisplay(Binder):
         # Notify irafpar that there is a new special-purpose file on the scene
         irafpar.newSpecialParFile(self.taskName, self.pkgName, fname)
 
+
+    def pfopen(self):
+        """ Load the parameter settings from a user-specified file.  Any
+        changes here must be coordinated with the corresponding epar pfopen
+        function. """
+
+        flist = irafpar.getSpecialVersionFiles(self.taskName, self.pkgName)
+        if len(flist) <= 0:
+            msg = "No special-purpose parameter files found for "+self.taskName
+            okdlg = urwutil.DialogDisplay(msg, 8, 0)
+            okdlg.add_buttons([ ("OK",0) ])
+            okdlg.main()
+            return
+
+        fname = None
+        if len(flist) == 1:
+            msg = "One special-purpose parameter file found.\n"+ \
+                  "Load file?\n\n"+flist[0]
+            yesnodlg = urwutil.DialogDisplay(msg, 12, 0)
+            yesnodlg.add_buttons([ ("OK", 0),  ("Cancel", 1) ])
+            rv, junk = yesnodlg.main()
+            if rv == 0: fname = flist[0] # if not, fname is still None
+        else: # >1 file, need a select dialog
+            flist.sort()
+            chcs = [] # ListDialogDisplay takes a 2-column tuple
+            for i in range(len(flist)):
+                chcs.append(str(i)) # need index as tag - it is the return val
+                chcs.append(flist[i])
+            def menuItemConstr(tag, state):
+                return urwutil.MenuItem(tag)
+            selectdlg = urwutil.ListDialogDisplay("Select from these:",
+                                len(flist)+7, 75,
+                                menuItemConstr, tuple(chcs), False)
+            selectdlg.add_buttons([ ("Cancel",1), ])
+            rv, ans = selectdlg.main()
+            if rv == 0: fname = flist[int(ans)]
+
+        # check-point: if fname is not None, we load a file
+        msg = "\n\nPress any key to continue..."
+
+        if fname != None:
+            newParList = irafpar.IrafParList(self.taskName, fname) # load it
+            self.set_all_entries_from_par_list(newParList) # set GUI entries
+            msg = "\n\nLoaded:\n\n     "+fname+msg
+
+        # Notify them (also forces a screen redraw, which we need)
+        self.ui.clear() # fixes clear when next line calls draw_screen
+        self.info(msg, None)
+
+
     def save(self, emph):
         # Save all the entries and verify them, keeping track of the invalid
         # entries which have been reset to their original input values
@@ -997,6 +1065,13 @@ class TparDisplay(Binder):
         def quit_continue():
             pass
         self.done = quit_continue
+
+
+    def PFOPEN(self, event=None):
+
+        """ Open button - load parameters from a user specified file"""
+        self.pfopen()
+        self.done = None # simply continue
 
 
     def SAVEAS(self, event=None):
@@ -1051,9 +1126,21 @@ class TparDisplay(Binder):
         # XXXX write out parameters to file
         self.inform("write pset: %s" % (file,))
 
-    # Method to "unlearn" all the parameter entry values in the GUI
-    # and set the parameter back to the default value
+    def set_all_entries_from_par_list(self, aParList):
+        """ Set all the parameter entry values in the GUI to the values
+            in the given par list. Note corresponding EparDialog method. """
+        for i in range(self.numParams):
+            par = self.paramList[i]
+            if par.type == "pset":
+                continue # skip PSET's for now
+            gui_entry = self.entryNo[i]
+            par.set(aParList.getValue(par.name, native=1, prompt=0))
+            # gui holds a str, but par.value is native; conversion occurs
+            gui_entry.set_result(par.value)
+
     def unlearn_all_entries(self):
+        """ Method to "unlearn" all the parameter entry values in the GUI
+            and set the parameter back to the default value """
         for entry in self.entryNo:
             entry.unlearn_value()
 
