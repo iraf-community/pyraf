@@ -813,6 +813,9 @@ class EparDialog:
 
     # OPEN: load parameter settings from a user-specified file
     def pfopen(self, event=None):
+        """ Load the parameter settings from a user-specified file.  Any
+        changes here must be coordinated with the corresponding tpar pfopen
+        function. """
 
         flist = irafpar.getSpecialVersionFiles(self.taskName, self.pkgName)
         if len(flist) <= 0:
@@ -1097,13 +1100,12 @@ class EparDialog:
 
     def setAllEntriesFromParList(self, aParList):
         """ Set all the parameter entry values in the GUI to the values
-            in the given par list """
+            in the given par list.  Note corresponding TparDisplay method. """
         for i in range(self.numParams):
             par = self.paramList[i]
             if par.type == "pset":
                 continue # skip PSET's for now
             gui_entry = self.entryNo[i]
-            old = gui_entry.choice.get() # str; see eparOptionFactory
             par.set(aParList.getValue(par.name, native=1, prompt=0))
             # gui holds a str, but par.value is native; conversion occurs
             gui_entry.forceValue(par.value)

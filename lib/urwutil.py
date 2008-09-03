@@ -150,7 +150,7 @@ class InputDialogDisplay(DialogDisplay):
             self.frame.set_focus('body')
         if k in ('down','page down'):
             self.frame.set_focus('footer')
-        if k == 'enter' or k == 'ctrl m': # STScI change !!! add ctrl-m for OSX
+        if k == 'enter' or k == 'ctrl m': # STScI change ! add ctrl-m for OSX
             # pass enter to the "ok" button
             self.frame.set_focus('footer')
             self.view.keypress( size, 'enter' )
@@ -233,7 +233,7 @@ class MenuItem(urwid.Text):
         self.state = False
     def selectable(self):
         return True
-    # The change below (in the if) was made by STScI !!!
+    # The change below (in the if) was made by STScI !
     def keypress(self,size,key):
         if key == "enter" or \
            key == "ctrl m" or key == " ": # is ctrl-m on OSX; also allow space
