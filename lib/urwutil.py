@@ -150,10 +150,10 @@ class InputDialogDisplay(DialogDisplay):
             self.frame.set_focus('body')
         if k in ('down','page down'):
             self.frame.set_focus('footer')
-        if k == 'enter':
+        if k == 'enter' or k == 'ctrl m': # STScI change !!! add ctrl-m for OSX
             # pass enter to the "ok" button
             self.frame.set_focus('footer')
-            self.view.keypress( size, k )
+            self.view.keypress( size, 'enter' )
 
     def on_exit(self, exitcode):
         return exitcode, self.edit.get_edit_text()
