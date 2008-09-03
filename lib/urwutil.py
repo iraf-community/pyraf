@@ -135,7 +135,6 @@ class DialogDisplay:
         pass
 
 
-
 class InputDialogDisplay(DialogDisplay):
     def __init__(self, text, height, width):
         self.edit = urwid.Edit()
@@ -158,6 +157,99 @@ class InputDialogDisplay(DialogDisplay):
 
     def on_exit(self, exitcode):
         return exitcode, self.edit.get_edit_text()
+
+
+#
+# ListDialogDisplay example:
+#
+# choices = ['a','b','c','d']
+# import urwutil
+# import urwid
+# def mmm(tag, state): return urwutil.MenuItem(tag)
+# chcs = []
+# for itm in choices:
+#    chcs.append(itm)
+#    chcs.append('') # empty state
+# dlg=urwutil.ListDialogDisplay("select: ", len(choices)+7,
+#                               75, mmm, tuple(chcs), False)
+# dlg.add_buttons([ ("Cancel",1), ])
+# rv, item = dlg.main() # use item if rv == 0
+#
+
+class ListDialogDisplay(DialogDisplay):
+    def __init__(self, text, height, width, constr, items, has_default):
+        j = []
+        if has_default:
+            k, tail = 3, ()
+        else:
+            k, tail = 2, ("no",)
+        while items:
+            j.append( items[:k] + tail )
+            items = items[k:]
+
+        l = []
+        self.items = []
+        for tag, item, default in j:
+            w = constr( tag, default=="on" )
+            self.items.append(w)
+            w = urwid.Columns( [('fixed', 12, w),
+                urwid.Text(item)], 2 )
+            w = urwid.AttrWrap(w, 'selectable','focus')
+            l.append(w)
+
+        lb = urwid.ListBox(l)
+        lb = urwid.AttrWrap( lb, "selectable" )
+        DialogDisplay.__init__(self, text, height, width, lb )
+
+        self.frame.set_focus('body')
+
+    def unhandled_key(self, size, k):
+        if k in ('up','page up'):
+            self.frame.set_focus('body')
+        if k in ('down','page down'):
+            self.frame.set_focus('footer')
+        if k == 'enter':
+            # pass enter to the "ok" button
+            self.frame.set_focus('footer')
+            self.buttons.set_focus(0)
+            self.view.keypress( size, k )
+
+    def on_exit(self, exitcode):
+        """Print the tag of the item selected."""
+        if exitcode != 0:
+            return exitcode, ""
+        s = ""
+        for i in self.items:
+            if i.get_state():
+                s = i.get_label()
+                break
+        return exitcode, s
+
+
+class MenuItem(urwid.Text):
+    """A custom widget for the ListDialog"""
+    def __init__(self, label):
+        urwid.Text.__init__(self, label)
+        self.state = False
+    def selectable(self):
+        return True
+    # The change below (in the if) was made by STScI !!!
+    def keypress(self,size,key):
+        if key == "enter" or \
+           key == "ctrl m" or key == " ": # is ctrl-m on OSX; also allow space
+            self.state = True
+            raise DialogExit, 0
+        return key
+    def mouse_event(self,size,event,button,col,row,focus):
+        if event=='mouse release':
+            self.state = True
+            raise DialogExit, 0
+        return False
+    def get_state(self):
+        return self.state
+    def get_label(self):
+        text, attr = self.get_text()
+        return text
 
 
 def show_usage():
