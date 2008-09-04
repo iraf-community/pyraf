@@ -36,6 +36,7 @@ try:
     import urwid.curses_display
     import urwid
     import urwutil
+    import urwfiledlg
     urwid.set_encoding("ascii")   #  gives better performance than 'utf8'
 except:
     urwid = FakeModule()
@@ -1240,22 +1241,26 @@ class TparDisplay(Binder):
         """ Allow user to input a file - handle whether it is expected
         to be new or existing. Returns file name on success, None on error. """
 
-        # Allow the user to select a specific file. A FileDialog would be
-        # great here, but as of '08 none comes 'standard' w/ urwid yet. There's
-        # an example (browse.py), but the 0.9.8 ver. doesn't work with 0.9.7.
+        # Allow the user to select a specific file.  Note that urwid's
+        # browser example (browse.py) doesn't work with 0.9.7.
         while True:
-            inputdlg = urwutil.InputDialogDisplay(prompt, 9, 0)
-            inputdlg.add_buttons([ ("OK", 0),  ("Cancel", 1) ])
-            rv, fname = inputdlg.main()
-            if rv > 0 or fname == None: return None # they canceled
+            try:
+                fname = urwfiledlg.main()
+            except:
+                prompt="(File chooser error, enter choice manually.)\n"+prompt
+                inputdlg = urwutil.InputDialogDisplay(prompt, 9, 0)
+                inputdlg.add_buttons([ ("OK", 0),  ("Cancel", 1) ])
+                rv, fname = inputdlg.main()
+                if rv > 0: fname = None
 
+            if fname == None: return None # they canceled
             fname = fname.strip()
             if len(fname) == 0: return None
 
             # See if the file exists (if we care)
             if overwriteCheck and os.path.exists(fname):
                 yesnodlg = urwutil.DialogDisplay(
-                           "File exists.  Overwrite?", 8, 0)
+                           "File exists!  Overwrite?\n\n    "+fname, 9, 0)
                 yesnodlg.add_buttons([ ("Yes", 0),  ("No", 1) ])
                 rv, junk = yesnodlg.main()
                 if rv == 0: return fname
