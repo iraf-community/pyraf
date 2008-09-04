@@ -977,7 +977,7 @@ class TparDisplay(Binder):
             raise Exception("Unexpected bad entries for: "+self.taskName)
 
         # Let them know what they just did
-        msg = "Saved to: "+fname
+        msg = 'Saved to: "'+fname+'"'
         okdlg = urwutil.DialogDisplay(msg, 8, 0)
         okdlg.add_buttons([ ("OK",0) ])
         okdlg.main()
@@ -1031,7 +1031,10 @@ class TparDisplay(Binder):
             msg = "\n\nLoaded:\n\n     "+fname+msg
 
         # Notify them (also forces a screen redraw, which we need)
-        self.ui.clear() # fixes clear when next line calls draw_screen
+        try:
+            self.ui.clear() # fixes clear when next line calls draw_screen
+        except AttributeError:
+            self.ui._clear() # older urwid vers use different method name
         self.info(msg, None)
 
 
@@ -1244,7 +1247,10 @@ class TparDisplay(Binder):
             inputdlg = urwutil.InputDialogDisplay(prompt, 9, 0)
             inputdlg.add_buttons([ ("OK", 0),  ("Cancel", 1) ])
             rv, fname = inputdlg.main()
-            if rv > 0: return None # they canceled
+            if rv > 0 or fname == None: return None # they canceled
+
+            fname = fname.strip()
+            if len(fname) == 0: return None
 
             # See if the file exists (if we care)
             if overwriteCheck and os.path.exists(fname):
