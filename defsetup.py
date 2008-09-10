@@ -3,6 +3,7 @@
 import os, os.path, sys, commands
 import distutils.core
 import distutils.sysconfig 
+import string
 
 x_libraries = 'X11'
 
