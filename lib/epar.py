@@ -856,6 +856,7 @@ class EparDialog:
         # (could use Tkinter's FileDialog, but this one is prettier)
         filt = '*.par'
         upx = iraf.envget("uparm_aux","")
+        if 'UPARM_AUX' in os.environ: upx = os.environ['UPARM_AUX']
         if len(upx) > 0:  filt = upx+"/*.par"
         fd = filedlg.SaveFileDialog(self.top, "Save Parameter File As", filt)
         if fd.Show() != 1:

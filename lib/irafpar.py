@@ -2405,6 +2405,7 @@ def _findAllSpecialParFiles():
 
     # See if the auxilliary par directory has been specified
     uparmAux = iraf.envget("uparm_aux","")
+    if 'UPARM_AUX' in os.environ: uparmAux = os.environ['UPARM_AUX']
     if len(uparmAux) <= 0: return
 
     flist = glob.glob(uparmAux+"/*.par")

@@ -77,8 +77,8 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         # see also get/set_size_inches, get_figheight/width, get_dpi
         #   and, figure.get_window_extent() # is Bbox, use .width/.height()
         #
-        #  before rsz: w = self.figure.get_window_extent().width()
-        #  before rsz: h = self.figure.get_window_extent().height()
+        #  before rsz: w = self.figure.get_window_extent().width # not func .98
+        #  before rsz: h = self.figure.get_window_extent().height() # is in .91
 
         # Need to deactivate cursor before resizing, then re-act. after
         self.wrappedRedrawOrResize(w=evt.width, h=evt.height)
