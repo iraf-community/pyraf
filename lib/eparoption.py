@@ -30,7 +30,7 @@ import FileDialog, tkFileDialog
 import filedlg
 
 # PYRAF modules
-import epar
+import epar, wutil
 
 # Constants
 MAXLIST  =  15
@@ -311,7 +311,10 @@ class EnumEparOption(EparOption):
 
         # Need to adjust the value width so the menu button is
         # aligned properly
-        self.valueWidth = self.valueWidth - 4
+        if wutil.WUTIL_USING_X:
+            self.valueWidth = self.valueWidth - 4
+        else:
+            self.valueWidth = self.valueWidth - 9 # looks right on Aqua
 
         # Generate the button
         self.entry = Menubutton(self.master.frame,
