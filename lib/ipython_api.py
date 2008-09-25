@@ -58,7 +58,7 @@ class IPythonIrafCompleter(IrafCompleter):
         def completer(C, text):  # C will be the IPython Completer;  not used
             return self.global_matches(text)
         # set_custom_completer mutates completer
-        self.IP.set_custom_completer(completer) 
+        self.IP.set_custom_completer(completer)
         # ... get the mutant...
         self._completer = self.IP.Completer.matchers[0]
 
@@ -72,7 +72,7 @@ class IPythonIrafCompleter(IrafCompleter):
         the IP has been created and after the pyraf profile has been
         read.  This creates a new Completer and obliterates ours.
         We hook IP.init_readline here so that IPython doesn't override (or at
-        least re-implements) changes PyRAF has already made.        
+        least re-implements) changes PyRAF has already made.
         """
         if not hasattr(self, "_ipython_init_readline"):
             self._ipython_init_readline = self.InteractiveShell.init_readline
@@ -85,7 +85,7 @@ class IPythonIrafCompleter(IrafCompleter):
     def uninstall_init_readline_hack(self):
         self.InteractiveShell.init_readline = self._ipython_init_readline  # restore class method
         del self._ipython_init_readline
-        
+
 
 # ---------------------------------------------------------------------------
 
@@ -95,16 +95,16 @@ class IPython_PyRAF_Integrator(object):
     1. PyRAF readline completion
     2. PyRAF CL translation
     3. PyRAF exception traceback simplification
-    
+
     """
     import string
     import IPython.ipapi
     from IPython.iplib import InteractiveShell
-        
+
     def __init__(self, clemulate=1, cmddict={},
                  cmdchars=("a-zA-Z_.","0-9")):
         import re, sys, os
-        self.reword = re.compile('[a-z]*')       
+        self.reword = re.compile('[a-z]*')
         self._cl_emulation = clemulate
         self.cmddict = cmddict
         self.recmd = re.compile(
@@ -121,7 +121,7 @@ class IPython_PyRAF_Integrator(object):
 
         self.traceback_mode = "Context"
 
-        self._ipython_api = IPython.ipapi.get() 
+        self._ipython_api = IPython.ipapi.get()
 
         self._ipython_magic = self._ipython_api.IP.lsmagic() # skip %
 
@@ -251,7 +251,7 @@ class IPython_PyRAF_Integrator(object):
             code = code.rstrip()
         # print "pyraf code:", repr(code)
         return code
-    
+
     def showtraceback(self, IP, type, value, tb):
         """Display the exception that just occurred.
 
@@ -267,7 +267,6 @@ class IPython_PyRAF_Integrator(object):
         ip = IPython.ipapi.get()
         csm = ip.options['colors']
 
-        
         linecache.checkcache()
         tblist = traceback.extract_tb(tb)
         tbskip = 0
@@ -315,7 +314,7 @@ class IPython_PyRAF_Integrator(object):
         for a in args:
             print >>sys.stderr, a,
         print >>sys.stderr
-        
+
     def set_pyraf_magic(self, IP, line):
         """Setting flag="1" Enables PyRAF to intepret a magic
         identifier before IPython.
@@ -333,10 +332,10 @@ class IPython_PyRAF_Integrator(object):
     def use_pyraf_traceback(self, IP=None, flag=None):
         IP = self._get_IP(IP)
         if self._evaluate_flag(flag, "use_pyraf_traceback"):
-            self._debug("PyRAF exception traceback on")
+            self._debug("PyRAF traceback display: on")
             IP.set_custom_exc((Exception,), self.showtraceback)
         else:
-            self._debug("PyRAF exception traceback off")
+            self._debug("PyRAF traceback display: off")
             IP.custom_exceptions = ((), None)
 
     def use_pyraf_cl_emulation(self, IP=None, flag=None):
@@ -347,7 +346,7 @@ class IPython_PyRAF_Integrator(object):
         else:
             self._debug("PyRAF CL emulation off")
 
-    def use_pyraf_completer(self, IP=None, flag=None):        
+    def use_pyraf_completer(self, IP=None, flag=None):
         if self._evaluate_flag(flag, "use_pyraf_readline_completer"):
             self._debug("PyRAF readline completion on")
             self._pyraf_completer.activate()
