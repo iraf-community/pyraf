@@ -452,7 +452,7 @@ class IrafTask(irafglobals.IrafTask):
             raise iraf.IrafError("Attempt to set unknown parameter " +
                     qualifiedName)
 
-    def getParam(self,qualifiedName,native=0,mode=None,exact=0,prompt=1):
+    def getParam(self,qualifiedName,native=1,mode=None,exact=0,prompt=1):
         """Return parameter specified by qualifiedName.
 
         qualifiedName can be a simple parameter name or can be
@@ -1558,7 +1558,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
     # -----------------------------------------------------
 
 def mutateCLTask2Pkg(o, loaded=1,  klass=IrafPkg):
-    
+
     """Hack an IRAF CL task object into an IRAF package object"""
 
     if isinstance(o, IrafPkg):

@@ -324,7 +324,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
             gki.kernel.pushStdio(None,None,None)
         try:
             irafprocess.run(task, pstdin=stdin, pstdout=stdout, pstderr=stderr)
-        finally:        
+        finally:
             if stdgraph:
                 # undo graphics redirection
                 gki.kernel = prevkernel
@@ -642,7 +642,7 @@ class IrafProcess:
                     # should never get here
                     raise RuntimeError("Program bug: uninterpreted message `%s'"
                                     % (msg,))
-        
+
     def _scanErrno(self, msg):
         sp = "\s*"
         quote = "\""
@@ -688,7 +688,7 @@ class IrafProcess:
         sys.stderr = gki.kernel.getStderr(default=sys.__stderr__)
         try:
             try:
-                pmsg = self.task.getParam(paramname)          
+                pmsg = self.task.getParam(paramname, native=0)
                 if type(pmsg) != types.StringType:
                     # Only psets should return a non-string type (they
                     # return the task object).
