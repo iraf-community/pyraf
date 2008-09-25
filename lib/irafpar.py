@@ -1266,7 +1266,7 @@ class IrafParS(_StringMixin, IrafPar):
 
     """IRAF string parameter class"""
     pass
-    
+
 # -----------------------------------------------------
 # IRAF string array parameter class
 # -----------------------------------------------------
@@ -1472,7 +1472,7 @@ class IrafParLS(IrafParL):
 
 class IrafParCursor(IrafParL):
     """Base class for cursor parameters"""
-    
+
     def _coerceOneValue(self,value,strict=0):
         if isinstance(value,IrafParCursor):
             return value.p_filename
@@ -1599,11 +1599,11 @@ class IrafParB(_BooleanMixin,IrafPar):
 
     """IRAF boolean parameter class"""
     pass
-    
+
 # -----------------------------------------------------
 # IRAF boolean array parameter class
-# ----------------------------------------------------- 
-   
+# -----------------------------------------------------
+
 class IrafParAB(_BooleanMixin,IrafArrayPar):
 
         """IRAF boolean array parameter class"""
@@ -1799,7 +1799,7 @@ class IrafParAR(_RealMixin,IrafArrayPar):
 
     """IRAF real array parameter class"""
     pass
-    
+
 # -----------------------------------------------------
 # IRAF parameter list synchronized to disk file
 # -----------------------------------------------------
@@ -2411,7 +2411,7 @@ def _findAllSpecialParFiles():
     flist = glob.glob(uparmAux+"/*.par")
     if len(flist) <= 0: return
 
-    # At this point, we have files.  Foreach, figure out the task and 
+    # At this point, we have files.  Foreach, figure out the task and
     # package it is for, and add it's pathname to the dict.
     for supfname in flist:
         buf = []

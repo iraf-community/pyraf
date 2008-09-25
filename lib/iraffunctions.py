@@ -188,7 +188,7 @@ at the Unix command line.  The values will depend on your IRAF installation.
 """)
 
          #stacksize problem on linux
-        
+
         if arch == 'redhat' or \
                arch == 'linux' or \
                arch == 'linuxppc' or \
@@ -1492,7 +1492,7 @@ def imaccess(filename):
     # First strip any extension or section specification.
     tfilename = filename
     i = tfilename.find('[')
-    if i>=0: 
+    if i>=0:
         tfilename = filename[:i]
     if '*' in tfilename or '?' in tfilename:
         return 0
@@ -1511,7 +1511,7 @@ def imaccess(filename):
         # 1) ambiguous files (imaccess accepts this)
         # 2) non specification of extension # for multi-extension fits files
         #    (imaccess doesn't require)
-        # This approach, while adaptable, is brittle in its dependency on 
+        # This approach, while adaptable, is brittle in its dependency on
         # IRAF error strings
         if ((errstr.find('must specify which fits extension') >= 0) or
             (errstr.find('ambiguous')) >= 0):
@@ -2633,7 +2633,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
     """
 
     module = irafecl.getTaskModule()
-    
+
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
     if kw.has_key('_save'): del kw['_save']
@@ -2964,7 +2964,7 @@ def errno(_save=None):
     """Returns status from last call to error()"""
     return irafecl._ecl_parent_task().DOLLARerrno
 
-errcode = errno  
+errcode = errno
 
 def errmsg(_save=None):
     """Returns message from last call to error()"""
@@ -3384,7 +3384,7 @@ def redirProcess(kw):
     Returns (redirKW, closeFHList) which are a dictionary of
     the filehandles for stdin, stdout, stderr and a list of
     filehandles to close after execution.
-    
+
     Image and Stdplot redirection not handled (but it isn't clear that these
     are ever used anyway)
     """
