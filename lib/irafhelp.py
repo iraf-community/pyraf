@@ -257,7 +257,7 @@ def _valueHelp(object, padchars):
     except AttributeError:
         name = ''
     name = name + (padchars-len(name))*" "
-    if name:
+    if name and len(name.strip()) > 0:
         print name, ":", vstr
     else:
         # omit the colon if name is null
@@ -417,10 +417,16 @@ def _htmlHelp(taskname):
     pid = os.fork()
     if pid == 0:
         url = _HelpURL + taskname
+
+        if not os.uname()[0] in ('SunOS','Linux'): # OSX, etc
+            if 0 != os.system("open "+url):
+                print "Error opening URL: "+url
+            os._exit(0)
+
         cmd = _Netscape + " -remote 'openURL(" + url + ")' 1> /dev/null 2>&1"
         status = os.system(cmd)
         if status != 0:
             print "Starting Netscape for HTML help..."
             os.execvp("netscape",["netscape",url])
         os._exit(0)
-    print "HTML help on", taskname,"is being displayed in Netscape"
+    print "HTML help on", taskname,"is being displayed in a browser"
