@@ -130,7 +130,7 @@ class MsgIOBuffer(Frame):
             self.msgIO.canvas.configure(height = self.viewHeight)
 
         # View is to show the information just moved into the message area
-        self.msgIO.canvas.yview_moveto(1.0)
+        self.msgIO.canvas.yview_moveto(1)
 
 
     def updateIO(self, text = ""):
@@ -208,7 +208,7 @@ class MsgIOBuffer(Frame):
         scrollHgt = mbHgt + self.minHgt
         self.msgIO.canvas.itemconfigure(1, height = scrollHgt)
         self.msgIO.canvas.configure(scrollregion = (0, 0, 0, scrollHgt))
-        self.msgIO.canvas.yview_moveto(1.0)
+        self.msgIO.canvas.yview_moveto(1)
 
 
 
