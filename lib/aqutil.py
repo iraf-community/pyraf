@@ -5,7 +5,7 @@ bridging package so that compiling another C extension is not needed.
 $Id: sontag $
 """
 
-import Tkinter
+import os, Tkinter
 import objc
 import AppKit
 
@@ -16,6 +16,12 @@ import AppKit
 WIN_ID_TERM = 101
 WIN_ID_GUI  = 102
 
+
+# There are different calling sequences/requirements in 10.4 vs. 10.5.
+# See what the Darwin major version number is.
+__objcReqsVoids = os.uname()[2]                       # str: darwin num
+__objcReqsVoids = int(__objcReqsVoids.split('.')[0])  # int: darwin maj
+__objcReqsVoids = __objcReqsVoids > 8                 # bool: if 9+
 
 # module variables
 __thisPSN = None
@@ -40,14 +46,24 @@ def focusOnTerm():
 
 def guiHasFocus():
     """ Return True if GUI has focus """
-    err, aPSN = GetFrontProcess()
+    global __objcReqsVoids
+    if __objcReqsVoids:
+        err, aPSN = GetFrontProcess(None)
+    else:
+        err, aPSN = GetFrontProcess()
+
     if err: raise Exception("GetFrontProcess: "+str(err))
     return aPSN == __thisPSN
 
 
 def termHasFocus():
     """ Return True if terminal has focus """
-    err, aPSN = GetFrontProcess()
+    global __objcReqsVoids
+    if __objcReqsVoids:
+        err, aPSN = GetFrontProcess(None)
+    else:
+        err, aPSN = GetFrontProcess()
+
     if err: raise Exception("GetFrontProcess: "+str(err))
     return aPSN == __termPSN
 
@@ -121,7 +137,7 @@ def __doPyobjcWinInit():
     """ Initialize the Pyobjc bridging and make some calls to get our PSN and
     the parent terminal's PSN. Do only ONCE per process. """
 
-    global __thisPSN, __termPSN, __screenHeight, __initialized
+    global __thisPSN, __termPSN, __screenHeight, __initialized, __objcReqsVoids
     # Guard against accidental second calls
     if __initialized: return
 
@@ -160,12 +176,18 @@ def __doPyobjcWinInit():
     # Get terminal's PSN (on OSX assume terminal is now frontmost process)
     # Do this before even setting the PyRAF process to a FG app.
     # Or use GetProcessInformation w/ __thisPSN, then pinfo.processLauncher
-    err, __termPSN = GetFrontProcess()
+    if __objcReqsVoids:
+        err, __termPSN = GetFrontProcess(None)
+    else:
+        err, __termPSN = GetFrontProcess()
     if err: raise Exception("GetFrontProcess: "+str(err))
 
     # Get our PSN
     # [debug PSN numbers (get pid's) via psn2pid, or use GetProcessPID()]
-    err, __thisPSN = GetCurrentProcess()
+    if __objcReqsVoids:
+        err, __thisPSN = GetCurrentProcess(None)
+    else:
+        err, __thisPSN = GetCurrentProcess()
     if err: raise Exception("GetCurrentProcess: "+str(err))
 
     # Set Proc name
