@@ -8,7 +8,6 @@ $Id$
 """
 
 import struct, fcntl, sys, os
-from irafglobals import IrafError
 
 # empty placeholder versions for X
 def getFocalWindowID(): return None
