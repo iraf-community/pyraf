@@ -6,7 +6,8 @@ R. White, 2000 January 7
 """
 
 import glob, os, re, sys, types
-import irafimcur, irafukey, irafutils, minmatch, epar, tpar
+from pytools import minmatch, irafutils
+import irafimcur, irafukey, epar, tpar
 from irafglobals import INDEF, Verbose, yes, no
 import gki
 

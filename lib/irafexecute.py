@@ -4,8 +4,9 @@ $Id$
 """
 
 import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
+from pytools import irafutils
 import subproc, filecache, wutil
-import iraf, gki, irafutils, irafukey
+import iraf, gki, irafukey
 from irafglobals import IrafTask
 import irafgwcs
 

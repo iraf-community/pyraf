@@ -50,8 +50,9 @@ def _writeError(msg):
 # -----------------------------------------------------
 
 import sys, os, string, re, math, struct, types, time, fnmatch, glob, linecache
-import numpy, sscanf, minmatch, subproc, wutil
-import irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
+from pytools import minmatch, irafutils
+import numpy, sscanf, subproc, wutil
+import irafnames, iraftask, irafpar, irafexecute, cl2py
 import iraf
 import gki
 import irafecl

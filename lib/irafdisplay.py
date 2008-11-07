@@ -31,7 +31,7 @@ $Id$
 """
 
 import os, socket, numpy, fcntl
-import irafutils
+from pytools import irafutils
 
 # FCNTL is deprecated in Python 2.2
 if hasattr(fcntl,'F_SETFL'):

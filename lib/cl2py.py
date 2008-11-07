@@ -14,7 +14,8 @@ import clscan, clparse
 from clcache import codeCache
 
 from irafglobals import Verbose
-import irafpar, minmatch, irafutils, irafglobals
+import irafpar, irafglobals
+from pytools import minmatch, irafutils
 
 # The parser object can be constructed once and used many times.
 # The other classes have instance variables (e.g. lineno in CLScanner),

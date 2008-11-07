@@ -7,7 +7,7 @@ $Id$
 import sys
 import wutil
 import termios, sys, os, string
-import irafutils
+from pytools import irafutils
 
 # TERMIOS is deprecated in Python 2.1
 if hasattr(termios, 'ICANON'):

@@ -8,8 +8,9 @@ $Id$
 """
 
 import sys,string
+from pytools import irafutils
 from irafglobals import Verbose, IrafError
-import irafdisplay, irafutils, gki, iraf
+import irafdisplay, gki, iraf
 
 # dictionary of devices to support multiple active displays
 _devices = {}

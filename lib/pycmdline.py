@@ -26,8 +26,8 @@ R. White, 2000 February 20
 """
 
 import string, re, os, sys, code, keyword, traceback, linecache
-import minmatch, iraf
-import wutil
+from pytools import minmatch
+import iraf, wutil
 from irafglobals import pyrafDir
 
 class CmdConsole(code.InteractiveConsole):

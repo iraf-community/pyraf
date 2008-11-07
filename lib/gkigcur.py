@@ -5,7 +5,8 @@ $Id$
 """
 
 import string, os, sys, numpy, Tkinter
-import gwm, wutil, iraf, gkicmd, gki, irafutils
+from pytools import irafutils
+import gwm, wutil, iraf, gkicmd, gki
 
 # The following class attempts to emulate the standard IRAF gcursor
 # mode of operation. That is to say, it is basically a keyboard driven

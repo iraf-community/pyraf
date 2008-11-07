@@ -13,8 +13,8 @@ $Id$
 R. White, 1999 August 17
 """
 
-import minmatch
 import __builtin__
+from pytools import minmatch
 
 # Save the original hooks;  replaced at bottom of module...
 _originalImport = __builtin__.__import__

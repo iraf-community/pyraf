@@ -11,9 +11,10 @@ from tkMessageBox import askokcancel, showwarning
 import os, sys
 
 # PyRAF modules
+from pytools import filedlg, listdlg
 import iraf, irafpar, irafhelp, cStringIO, wutil
 from irafglobals import pyrafDir, userWorkingHome, IrafError
-import eparoption, filedlg, listdlg
+import eparoption
 
 # Constants
 MINVIEW     = 500

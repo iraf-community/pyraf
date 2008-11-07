@@ -11,7 +11,8 @@ from cgeneric import ContextSensitiveScanner
 from generic import GenericScanner
 from cltoken import Token
 import string, re
-import irafutils, irafglobals
+from pytools import irafutils
+import irafglobals
 
 # contexts for scanner
 

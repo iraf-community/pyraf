@@ -27,7 +27,7 @@ import os, sys, string, commands
 import FileDialog, tkFileDialog
 
 # Community modules
-import filedlg
+from pytools import filedlg
 
 # PYRAF modules
 import epar, wutil

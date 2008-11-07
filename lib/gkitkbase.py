@@ -6,10 +6,10 @@ $Id$
 
 import numpy, os, sys, string, wutil, time
 import Tkinter, msgiobuffer
+from pytools import filedlg
 import gki, textattrib, irafgwcs
 from irafglobals import IrafError, pyrafDir, userWorkingHome
 import tkMessageBox, tkSimpleDialog
-import filedlg
 
 nIrafColors = 16
 

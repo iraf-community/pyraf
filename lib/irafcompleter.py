@@ -20,7 +20,8 @@ import readline
 import __builtin__
 import __main__
 import string, re, keyword, glob, os, sys
-import iraf, minmatch
+import iraf
+from pytools import minmatch
 
 # dictionaries mapping between characters and readline names
 char2lab = {}

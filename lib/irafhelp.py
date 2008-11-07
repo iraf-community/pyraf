@@ -38,7 +38,8 @@ R. White, 1999 September 23
 """
 
 import __main__, re, os, types
-import minmatch, describe, iraf, irafutils
+from pytools import minmatch, irafutils
+import describe, iraf
 from irafglobals import IrafTask, IrafPkg
 
 # print info on numpy arrays if numpy is available
