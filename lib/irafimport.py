@@ -31,6 +31,14 @@ def _irafImport(name, globals={}, locals={}, fromlist=[]):
     elif name == "iraf":
         return _irafModuleProxy
     else:
+        # !!! TEMPORARY KLUDGE !!! working on why seeing pyraf.minmatch in cache
+        if   name == 'pyraf.minmatch':  name = 'pytools.minmatch'
+        elif name == 'pyraf.irafutils': name = 'pytools.irafutils'
+        elif name == 'pyraf.dialog':    name = 'pytools.dialog'
+        elif name == 'pyraf.listdlg':   name = 'pytools.listdlg'
+        elif name == 'pyraf.filedlg':   name = 'pytools.filedlg'
+        elif name == 'pyraf.alert':     name = 'pytools.alert'
+        # !!! END TEMPORARY KLUDGE !!!
         return _originalImport(name, globals, locals, fromlist)
 
 def _irafReload(module):
