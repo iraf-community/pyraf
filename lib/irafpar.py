@@ -2239,7 +2239,10 @@ class IrafParList:
         if hasattr(filename,'write'):
             fh = filename
         else:
-            fh = open(iraf.Expand(filename),'w')
+            absFileName = iraf.Expand(filename)
+            absDir = os.path.dirname(absFileName)
+            if not os.path.isdir(absDir): os.makedirs(absDir)
+            fh = open(absFileName,'w')
         nsave = len(self.__pars)
         if comment:
             fh.write('# '+comment+'\n')
