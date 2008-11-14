@@ -12,7 +12,7 @@ from generic import GenericScanner
 from cltoken import Token
 import string, re
 from pytools import irafutils
-import irafglobals
+import pyrafglobals
 
 # contexts for scanner
 
@@ -804,7 +804,7 @@ class CLScanner(ContextSensitiveScanner):
 
     def __init__(self, strict=0):
         
-        if irafglobals._use_ecl:
+        if pyrafglobals._use_ecl:
             _keywordDict["iferr"] = 1
             _keywordDict["ifnoerr"] = 1
             _keywordDict["then"] = 1

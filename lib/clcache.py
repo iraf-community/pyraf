@@ -7,8 +7,8 @@ R. White, 2000 January 19
 
 import os, sys
 import filecache
-from irafglobals import Verbose, userIrafHome, pyrafDir
-import irafglobals
+from pytools.irafglobals import Verbose, userIrafHome
+import pyrafglobals
 
 # set up pickle so it can pickle code objects
 
@@ -48,7 +48,7 @@ import dirshelve, stat, md5
 _versionKey = 'CACHE_VERSION'
 
 def _currentVersion():
-    if not irafglobals._use_ecl:
+    if not pyrafglobals._use_ecl:
         return "v2"
     else:
         return "v3"
@@ -279,6 +279,6 @@ if not os.path.exists(userCacheDir):
 dbfile = 'clcache'
 codeCache = _CodeCache([
         os.path.join(userCacheDir,dbfile),
-        os.path.join(pyrafDir,dbfile),
+        os.path.join(pyrafglobals.pyrafDir,dbfile),
         ])
 del userCacheDir, dbfile

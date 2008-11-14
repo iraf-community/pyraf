@@ -47,7 +47,6 @@ except:
 
 # PyRAF modules
 import iraf, irafpar, irafhelp, iraftask, cStringIO, wutil, iraffunctions
-from irafglobals import pyrafDir, userWorkingHome, IrafError
 
 TPAR_HELP_EMACS = """                                EDIT COMMANDS (emacs)
 
@@ -1185,9 +1184,9 @@ class TparDisplay(Binder):
         # an associated file (in which case the changes are just being
         # made in memory.)
 
-        taskObject = self.taskObject
-        if doSave and ((not isinstance(taskObject, irafpar.IrafParList)) or taskObject.getFilename()):
-            taskObject.saveParList(filename=filename, comment=comment)
+        if doSave and ((not isinstance(self.taskObject, irafpar.IrafParList)) \
+                       or self.taskObject.getFilename()):
+            self.taskObject.saveParList(filename=filename, comment=comment)
 
         return self.badEntries
 

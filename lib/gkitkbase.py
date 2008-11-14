@@ -7,8 +7,9 @@ $Id$
 import numpy, os, sys, string, wutil, time
 import Tkinter, msgiobuffer
 from pytools import filedlg
+from pytools.irafglobals import IrafError, userWorkingHome
 import gki, textattrib, irafgwcs
-from irafglobals import IrafError, pyrafDir, userWorkingHome
+from pyrafglobals import pyrafDir
 import tkMessageBox, tkSimpleDialog
 
 nIrafColors = 16

@@ -12,9 +12,9 @@ here which also support ECL syntax like "iferr" and $errno.
 """
 
 import os, sys, copy, re
-from pytools import minmatch, irafutils
+from pytools import minmatch, irafutils, irafglobals
 import subproc
-import irafglobals, iraf, irafpar, irafexecute, epar, tpar, cl2py
+import iraf, irafpar, irafexecute, epar, tpar, cl2py
 
 # may be set to function to monitor task execution
 # function gets called for every task execution

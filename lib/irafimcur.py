@@ -9,7 +9,7 @@ $Id$
 
 import sys,string
 from pytools import irafutils
-from irafglobals import Verbose, IrafError
+from pytools.irafglobals import Verbose, IrafError
 import irafdisplay, gki, iraf
 
 # dictionary of devices to support multiple active displays

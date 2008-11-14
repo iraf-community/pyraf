@@ -5,9 +5,9 @@ $Id$
 
 import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
 from pytools import irafutils
+from pytools.irafglobals import IrafTask
 import subproc, filecache, wutil
 import iraf, gki, irafukey
-from irafglobals import IrafTask
 import irafgwcs
 
 #stdgraph = None
@@ -535,8 +535,8 @@ class IrafProcess:
 
         self.stdout.flush()
         self.stderr.flush()
-        import irafglobals
-        if verbose and not irafglobals._use_ecl:
+        import pyrafglobals
+        if verbose and not pyrafglobals._use_ecl:
             sys.stderr.write("Killing IRAF task `%s'\n" % self.task.getName())
             sys.stderr.flush()
         if self.process.cont():

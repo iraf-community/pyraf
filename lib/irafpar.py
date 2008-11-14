@@ -7,8 +7,8 @@ R. White, 2000 January 7
 
 import glob, os, re, sys, types
 from pytools import minmatch, irafutils
+from pytools.irafglobals import INDEF, Verbose, yes, no
 import irafimcur, irafukey, epar, tpar
-from irafglobals import INDEF, Verbose, yes, no
 import gki
 
 # container class used for __deepcopy__ method

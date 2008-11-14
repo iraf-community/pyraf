@@ -12,8 +12,9 @@ import os, sys
 
 # PyRAF modules
 from pytools import filedlg, listdlg
+from pytools.irafglobals import userWorkingHome, IrafError
 import iraf, irafpar, irafhelp, cStringIO, wutil
-from irafglobals import pyrafDir, userWorkingHome, IrafError
+from pyrafglobals import pyrafDir
 import eparoption
 
 # Constants

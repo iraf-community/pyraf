@@ -4,7 +4,8 @@ R. White, 2001 Dec 15
 """
 
 import os, sys, Tkinter
-import irafglobals, wutil
+from pytools.irafglobals import IrafPkg
+import wutil
 
 logo = "pyraflogo_rgb_web.gif"
 
@@ -174,7 +175,7 @@ class IrafMonitorSplash(PyrafSplash):
         else:
             name = task.getName()
             if name != 'cl':
-                if isinstance(task, irafglobals.IrafPkg):
+                if isinstance(task, IrafPkg):
                     msg = "Loading %s" % name
                 else:
                     msg = "Running %s" % name

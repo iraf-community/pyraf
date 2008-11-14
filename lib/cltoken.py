@@ -29,7 +29,7 @@ $Id$
 #
 
 import string
-from irafglobals import INDEF
+from pytools.irafglobals import INDEF
 
 verbose = 0
 

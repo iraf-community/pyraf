@@ -28,7 +28,7 @@ R. White, 2000 February 20
 import string, re, os, sys, code, keyword, traceback, linecache
 from pytools import minmatch
 import iraf, wutil
-from irafglobals import pyrafDir
+from pyrafglobals import pyrafDir
 
 class CmdConsole(code.InteractiveConsole):
     """Base class for command console.

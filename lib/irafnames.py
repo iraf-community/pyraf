@@ -8,7 +8,8 @@ R. White, 1999 March 26
 """
 
 import __main__
-import iraf, irafglobals
+from pytools import irafglobals
+import iraf
 
 def _addName(task, module):
     """Add a task object to the module namespace

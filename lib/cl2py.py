@@ -13,8 +13,8 @@ from cltoken import Token
 import clscan, clparse
 from clcache import codeCache
 
-from irafglobals import Verbose
-import irafpar, irafglobals
+from pytools.irafglobals import Verbose
+import irafpar, pyrafglobals
 from pytools import minmatch, irafutils
 
 # The parser object can be constructed once and used many times.
@@ -1464,7 +1464,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.code_buffer = cStringIO.StringIO()
         self.writeProcHeader()
         header = self.code_buffer.getvalue()
-        if irafglobals._use_ecl:
+        if pyrafglobals._use_ecl:
             self.code = self._ecl_linemapping(header) + \
                         header + \
                         self.code
@@ -1559,7 +1559,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         if not noHdr:
             self.write("from pyraf import iraf")
             self.writeIndent("from pyraf.irafpar import makeIrafPar, IrafParList")
-            self.writeIndent("from pyraf.irafglobals import *")
+            self.writeIndent("from pytools.irafglobals import *")
+            self.writeIndent("from pyraf.pyrafglobals import *")
             self.write("\n")
 
         if self.vars.proc_name:
@@ -1630,7 +1631,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
                     self.write("))")
             self.write("\n")
 
-        if irafglobals._use_ecl:
+        if pyrafglobals._use_ecl:
             self.writeIndent("from pyraf.irafecl import EclState")
             self.writeIndent("_ecl = EclState(_ecl_linemap_%s)\n" % self.vars.proc_name)
 
@@ -1867,7 +1868,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
                 self.prune()
 
     def n_term(self, node):
-        if irafglobals._use_ecl and node[1] in ['/','%']:
+        if pyrafglobals._use_ecl and node[1] in ['/','%']:
             kind = {"/" : "divide", "%":"modulo"}[node[1]]
             self.write("taskObj._ecl_safe_%s(" % kind)
             self.preorder(node[0])

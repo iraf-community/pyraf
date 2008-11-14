@@ -2,7 +2,7 @@
 
 import inspect
 import sys
-import iraf, irafglobals, iraftask, irafexecute, irafecl
+import iraf, pyrafglobals, iraftask, irafexecute, irafecl
 
 executionMonitor = None
 
@@ -28,7 +28,7 @@ def getTaskModule():
     """Returns the module which supplies Task classes for the current
     language mode,  either ECL or classic CL.
     """
-    if irafglobals._use_ecl:
+    if pyrafglobals._use_ecl:
         return irafecl
     else:
         return iraftask

@@ -38,6 +38,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[]):
         elif name == 'pyraf.listdlg':   name = 'pytools.listdlg'
         elif name == 'pyraf.filedlg':   name = 'pytools.filedlg'
         elif name == 'pyraf.alert':     name = 'pytools.alert'
+        elif name == 'pyraf.irafglobals': name='pytools.irafglobals' # is diffnt
         # !!! END TEMPORARY KLUDGE !!!
         return _originalImport(name, globals, locals, fromlist)
 

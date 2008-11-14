@@ -463,8 +463,8 @@ def treelist(ast,terminal=1):
     PrettyTree(ast,terminal)
 
 def getParser():
-    import irafglobals
-    if irafglobals._use_ecl:
+    import pyrafglobals
+    if pyrafglobals._use_ecl:
         _parser = EclParser(AST)
     else:
         _parser = CLParser(AST)

@@ -17,7 +17,7 @@ R. White, 2000 January 20
 
 # define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
 
-from irafglobals import *
+from pytools.irafglobals import *
 from subproc import SubprocessError
 
 # -----------------------------------------------------
@@ -417,7 +417,8 @@ def restoreFromFile(savefile, doprint=1, **kw):
     # replace INDEF everywhere we can find it
     # this does not replace references in parameters, unfortunately
     INDEF = dict['INDEF']
-    import __main__, pyraf, iraf, irafpar, irafglobals, cltoken
+    from pytools import irafglobals
+    import __main__, pyraf, iraf, irafpar, cltoken
     for module in (__main__, pyraf, iraf, irafpar, irafglobals, cltoken):
         if hasattr(module,'INDEF'): module.INDEF = INDEF
 
@@ -2474,7 +2475,8 @@ def _clProcedure(*args, **kw):
     locals = {}
     exec 'from pyraf import iraf' in locals
     exec 'from pyraf.irafpar import makeIrafPar' in locals
-    exec 'from pyraf.irafglobals import *' in locals
+    exec 'from pytools.irafglobals import *' in locals
+    exec 'from pyraf.pyrafglobals import *' in locals
     # feed the input to clExecute
     # redirect input to sys.__stdin__ after reading the CL script from sys.stdin
     clExecute(_sys.stdin.read(), locals=locals, Stdin=_sys.__stdin__)
@@ -3010,7 +3012,8 @@ def clCompatibilityMode(verbose=0, _save=0):
     # initialize environment
     exec 'from pyraf import iraf' in locals
     exec 'from pyraf.irafpar import makeIrafPar' in locals
-    exec 'from pyraf.irafglobals import *' in locals
+    exec 'from pytools.irafglobals import *' in locals
+    exec 'from pyraf.pyrafglobals import *' in locals
     exec 'from pyraf.irafecl import EclState' in locals
     prompt2 = '>>> '
     while (1):

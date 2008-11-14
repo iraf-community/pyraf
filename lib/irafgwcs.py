@@ -9,7 +9,7 @@ $Id$
 """
 
 import struct, numpy, math
-from irafglobals import IrafError
+from pytools.irafglobals import IrafError
 
 WCS_SLOTS = 16
 WCS_RECORD_SIZE = 22  # (in 2 byte integers)

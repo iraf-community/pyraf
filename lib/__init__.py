@@ -69,7 +69,7 @@ else:
 
     # command-line options
 
-    import irafglobals as _irafglobals
+    import pyrafglobals as _pyrafglobals
     import getopt
     try:
         optlist, args = getopt.getopt(sys.argv[1:], "imvhsne",
@@ -109,13 +109,13 @@ else:
             elif opt == "--ipython":
                 _use_ipython_shell = 1
             elif opt in ["-e", "--ecl"]:
-                _irafglobals._use_ecl = True
+                _pyrafglobals._use_ecl = True
             else:
                 print "Program bug, uninterpreted option", opt
                 raise SystemExit
 
     if "epyraf" in sys.argv[0]:  # See also -e and --ecl switches
-        _irafglobals._use_ecl = True
+        _pyrafglobals._use_ecl = True
 
     import iraf
     iraf.setVerbose(verbose)
