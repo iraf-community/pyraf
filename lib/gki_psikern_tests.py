@@ -157,16 +157,17 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
    if preferred == None:
        # In this case, we expect only a single ps file.
        if len(flistAft) != 1:
-           # But, if there are two (sometimes occurs on Solaris), and one
-           # is in /tmp and the other is a local .eps, let's debug it a bit.
-           if len(flistAft) == 2 and flistAft[0].find('/tmp/') == 0 and \
-              flistAft[1].find('.eps') > 0:
+           # But, if there are two+ (sometimes occurs on Solaris), and one
+           # is in /tmp and another is a local .eps, let's debug it a bit.
+           if len(flistAft) >= 2 and flistAft[0].find('/tmp/') == 0 and \
+              flistAft[-1].find('.eps') > 0:
                # Are these files related (copies?)
+               print "Debugging multiple postscript files scenario"
                for f in flistAft: os.system("/bin/ls -ld "+f)
                # Or, did the /tmp version suddenly get deleted?
                if not os.path.exists(flistAft[0]):
                    print "Am somehow missing the deletes.  Test: "+title
-                   return flistAft[1]
+                   return flistAft[-1]
            # Either way, throw something
            raise Exception('Expected single postcript file during: "'+ \
                            title+'": '+str(flistAft))
