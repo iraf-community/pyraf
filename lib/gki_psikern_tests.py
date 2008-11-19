@@ -8,7 +8,7 @@ researched and addressed.
 $Id: gki_psikern_tests.py 801 2007-08-2 sontag $
 """
 
-import glob, os, sys
+import glob, os, sys, time
 from pyraf import iraf
 
 diff = "diff"
@@ -138,6 +138,13 @@ def findAllTmpPskFiles():
    flistCur = glob.glob(os.environ['tmp']+os.sep+'psk*')
    # for some reason, on Solaris (at least), some files are dumped to cwd
    flistCur += glob.glob(os.getcwd()+os.sep+'psk*')
+   # sometimes the tmp files disappear (at least on Solaris)
+   if sys.platform=='sunos5':
+       time.sleep(1)
+       for f in flistCur:
+           if not os.path.exists(f):
+               print "This existed then did not: "+f
+               flistCur.remove(f)
    return flistCur
 
 
