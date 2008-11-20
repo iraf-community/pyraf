@@ -138,10 +138,11 @@ def findAllTmpPskFiles():
    flistCur = glob.glob(os.environ['tmp']+os.sep+'psk*')
    # for some reason, on Solaris (at least), some files are dumped to cwd
    flistCur += glob.glob(os.getcwd()+os.sep+'psk*')
-   # sometimes the tmp files disappear (at least on Solaris)
+   # sometimes the tmp files disappear on Solaris
    if sys.platform=='sunos5':
        time.sleep(1)
        for f in flistCur:
+           os.system("/bin/ls -ld "+f)
            if not os.path.exists(f):
                print "This existed then did not: "+f
                flistCur.remove(f)
