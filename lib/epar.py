@@ -4,13 +4,14 @@ $Id$
 
 M.D. De La Pena, 2000 February 04
 """
-#System level modules
+
+# system level modules
 from Tkinter import _default_root
 from Tkinter import *
 from tkMessageBox import askokcancel, showwarning
 import os, sys
 
-# PyRAF modules
+# local modules
 from pytools import filedlg, listdlg
 from pytools.irafglobals import userWorkingHome, IrafError
 import iraf, irafpar, irafhelp, cStringIO, wutil
@@ -190,18 +191,18 @@ class EparDialog:
     def __init__(self, taskName, parent=None, isChild=0,
                  title="PyRAF Parameter Editor", childList=None):
 
-        # Get the Iraftask object
+        # Set the _taskParsObj
         if isinstance(taskName, irafpar.IrafParList):
             # IrafParList acts as an IrafTask for our purposes
-            self.taskObject = taskName
+            self._taskParsObj = taskName
         else:
-            # taskName must be a string or an IrafTask object
-            self.taskObject = iraf.getTask(taskName)
+            # taskName must be a string name of, or an IrafTask object
+            self._taskParsObj = iraf.getTask(taskName)
 
         # Now go back and ensure we have the full taskname
-        self.taskName = self.taskObject.getName()
-        self.pkgName = self.taskObject.getPkgname()
-        self.paramList = self.taskObject.getParList(docopy=1)
+        self.taskName = self._taskParsObj.getName()
+        self.pkgName = self._taskParsObj.getPkgname()
+        self.paramList = self._taskParsObj.getParList(docopy=1)
 
         # Ignore the last parameter which is $nargs
         self.numParams = len(self.paramList) - 1
@@ -483,7 +484,7 @@ class EparDialog:
     def getDefaultParamList(self):
 
         # Obtain the default parameter list
-        dlist = self.taskObject.getDefaultParList()
+        dlist = self._taskParsObj.getDefaultParList()
         if len(dlist) != len(self.paramList):
             # whoops, lengths don't match
             raise ValueError("Mismatch between default, current par lists"
@@ -537,7 +538,7 @@ class EparDialog:
         helpbox = Frame(topbox, bg=self.bkgColor)
 
         # Set up the information strings
-        if isinstance(self.taskObject, irafpar.IrafParList):
+        if isinstance(self._taskParsObj, irafpar.IrafParList):
             # label for a parameter list is just filename
             packString = " Filename = " + taskName
             Label(textbox, text=packString, bg=self.bkgColor).pack(side=TOP,
@@ -1155,16 +1156,16 @@ class EparDialog:
 
                 # Update the task parameter (also does the conversion
                 # from string)
-                self.taskObject.setParam(par.name, value)
+                self._taskParsObj.setParam(par.name, value)
 
         # Save results to the uparm directory
         # Skip the save if the thing being edited is an IrafParList without
         # an associated file (in which case the changes are just being
         # made in memory.)
 
-        taskObject = self.taskObject
-        if doSave and ((not isinstance(taskObject, irafpar.IrafParList)) or taskObject.getFilename()):
-            taskObject.saveParList(filename=filename, comment=comment)
+        if doSave and ((not isinstance(self._taskParsObj,irafpar.IrafParList)) \
+                  or self._taskParsObj.getFilename()):
+            self._taskParsObj.saveParList(filename=filename, comment=comment)
 
         return self.badEntries
 
@@ -1203,4 +1204,4 @@ class EparDialog:
         # Use the run method of the IrafTask class
         # Set mode='h' so it does not prompt for parameters (like IRAF epar)
         # Also turn on parameter saving
-        self.taskObject.run(mode='h', _save=1)
+        self._taskParsObj.run(mode='h', _save=1)
