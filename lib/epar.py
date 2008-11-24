@@ -1,4 +1,4 @@
-"""module 'epar.py' -- main module for generating the epar task editor
+""" Main module for the PyRAF-version of the Epar parameter editor
 
 $Id$
 
@@ -9,14 +9,24 @@ M.D. De La Pena, 2000 February 04
 from Tkinter import _default_root
 from Tkinter import *
 from tkMessageBox import askokcancel, showwarning
-import os, sys
+import os, sys, cStringIO
+
+#!!! TEMPORARY SWITCH TO EASE DEVELOPMENT
+# When PyrafEparDialog is complete this switch will be removed (and all related
+# code), as well as the EparDialog class, in favor of PyrafEparDialog.
+USE_DEV_VER_OF_DLG = False
+#!!! END TEMPORARY SWITCH
 
 # local modules
 from pytools import filedlg, listdlg
 from pytools.irafglobals import userWorkingHome, IrafError
-import iraf, irafpar, irafhelp, cStringIO, wutil
+import iraf, irafpar, irafhelp, wutil
 from pyrafglobals import pyrafDir
-import eparoption
+if USE_DEV_VER_OF_DLG:
+    from pytools import editpar, eparoption
+else:
+    class EditParDialog: pass
+    import eparoption
 
 # Constants
 MINVIEW     = 500
@@ -181,23 +191,26 @@ def epar(taskName, parent=None, isChild=0):
         oldFoc = wutil.getFocalWindowID()
         wutil.forceFocusToNewWindow()
 
-    EparDialog(taskName, parent, isChild)
+    if USE_DEV_VER_OF_DLG:
+        PyrafEparDialog(taskName, parent, isChild)
+    else:
+        EparDialog(taskName, parent, isChild)
 
     if not isChild:
         wutil.setFocusTo(oldFoc)
 
 
 class EparDialog:
-    def __init__(self, taskName, parent=None, isChild=0,
+    def __init__(self, taskStr, parent=None, isChild=0,
                  title="PyRAF Parameter Editor", childList=None):
 
         # Set the _taskParsObj
-        if isinstance(taskName, irafpar.IrafParList):
+        if isinstance(taskStr, irafpar.IrafParList):
             # IrafParList acts as an IrafTask for our purposes
-            self._taskParsObj = taskName
+            self._taskParsObj = taskStr
         else:
-            # taskName must be a string name of, or an IrafTask object
-            self._taskParsObj = iraf.getTask(taskName)
+            # taskStr must be a string name of, or an IrafTask object
+            self._taskParsObj = iraf.getTask(taskStr)
 
         # Now go back and ensure we have the full taskname
         self.taskName = self._taskParsObj.getName()
@@ -263,7 +276,7 @@ class EparDialog:
                 # PyRAF default
                 self.top.option_readfile(os.path.join(pyrafDir,optfile))
 
-        # Create an empty list to hold child EparDialogs
+        # Create an empty list to hold child dialogs
         # *** Not a good way, REDESIGN with Mediator!
         # Also, build the parent menu bar
         if (self.parent == None):
