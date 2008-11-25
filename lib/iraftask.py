@@ -12,9 +12,8 @@ here which also support ECL syntax like "iferr" and $errno.
 """
 
 import os, sys, copy, re
-from pytools import minmatch, irafutils, irafglobals
-import subproc
-import iraf, irafpar, irafexecute, epar, tpar, cl2py
+from pytools import minmatch, irafutils, irafglobals, taskpars
+import subproc, iraf, irafpar, irafexecute, epar, tpar, cl2py
 
 # may be set to function to monitor task execution
 # function gets called for every task execution
@@ -47,7 +46,7 @@ _IrafTask_attr_dict = {
 
 # use empty "tag" class from irafglobals as base class
 
-class IrafTask(irafglobals.IrafTask):
+class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
     """IRAF task class"""
 
