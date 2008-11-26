@@ -15,6 +15,8 @@ import os, sys, cStringIO
 # When PyrafEparDialog is complete this switch will be removed (and all related
 # code), as well as the EparDialog class, in favor of PyrafEparDialog.
 USE_DEV_VER_OF_DLG = False
+# When doing so, I will remove all duplicate code/comments that are found here
+# and in editpar.py
 #!!! END TEMPORARY SWITCH
 
 # local modules
@@ -24,6 +26,7 @@ import iraf, irafpar, irafhelp, wutil
 from pyrafglobals import pyrafDir
 if USE_DEV_VER_OF_DLG:
     from pytools import editpar, eparoption
+    from pytools.editpar import EditParDialog # ! simplify this when able
 else:
     class EditParDialog: pass
     import eparoption
@@ -182,7 +185,7 @@ button, and if the last parameter is selected then Tab wraps around and selects
 the "Execute" button.
 """
 
-def epar(taskName, parent=None, isChild=0):
+def epar(theTask, parent=None, isChild=0):
 
     if not wutil.hasGraphics:
         raise IrafError("Cannot run epar without graphics windows")
@@ -192,12 +195,49 @@ def epar(taskName, parent=None, isChild=0):
         wutil.forceFocusToNewWindow()
 
     if USE_DEV_VER_OF_DLG:
-        PyrafEparDialog(taskName, parent, isChild)
+        PyrafEparDialog(theTask, parent, isChild)
     else:
-        EparDialog(taskName, parent, isChild)
+        EparDialog(theTask, parent, isChild)
 
     if not isChild:
         wutil.setFocusTo(oldFoc)
+
+
+class PyrafEparDialog(EditParDialog):
+
+    def __init__(self, theTask, parent=None, isChild=0,
+                 title="PyRAF Parameter Editor", childList=None):
+
+        # Init base - calls _setTaskParsObj(), sets self.taskName, etc
+        EditParDialog.__init__(self,theTask,parent,isChild,title,childList)
+
+        # See if there exist any special versions on disk to load
+        self.__areAnyToLoad = irafpar.haveSpecialVersions(self.taskName,
+                              self.pkgName) # irafpar caches them
+
+        #!! make sure option_readfile uses pyrafDir
+        # !!! --->  check for missing stuff in ctor here <---
+
+    def _setTaskParsObj(self, theTask):
+        """ Overridden version, so as to use Iraf tasks and IrafParList """
+
+        if isinstance(theTask, irafpar.IrafParList):
+            # IrafParList acts as an IrafTask for our purposes
+            self._taskParsObj = theTask
+        else:
+            # theTask must be a string name of, or an IrafTask object
+            self._taskParsObj = iraf.getTask(theTask)
+
+    def _skipParSave_Hook(self):
+        """ Overridden version, so as to check for a special case. """
+        # Skip the save if the thing being edited is an IrafParList without
+        # an associated file (in which case the changes are just being
+        # made in memory.)
+        if isinstance(self._taskParsObj,irafpar.IrafParList) and \
+           not self._taskParsObj.getFilename():
+            return True
+        else:
+            return False
 
 
 class EparDialog:
