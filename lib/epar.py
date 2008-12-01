@@ -20,16 +20,15 @@ USE_DEV_VER_OF_DLG = False
 #!!! END TEMPORARY SWITCH
 
 # local modules
-from pytools import filedlg, listdlg
+from pytools import filedlg, listdlg, eparoption
 from pytools.irafglobals import userWorkingHome, IrafError
-import iraf, irafpar, irafhelp, wutil
+import iraf, irafpar, irafhelp, wutil, pseteparoption
 from pyrafglobals import pyrafDir
 if USE_DEV_VER_OF_DLG:
-    from pytools import editpar, eparoption
+    from pytools import editpar
     from pytools.editpar import EditParDialog # ! simplify this when able
 else:
     class EditParDialog: pass
-    import eparoption
 
 # Constants
 MINVIEW     = 500
@@ -196,6 +195,7 @@ def epar(theTask, parent=None, isChild=0):
 
     if USE_DEV_VER_OF_DLG:
         PyrafEparDialog(theTask, parent, isChild)
+        # also need to change name in pseteparoption.py !
     else:
         EparDialog(theTask, parent, isChild)
 
@@ -577,9 +577,13 @@ class EparDialog:
         # Loop over the parameters to create the entries
         self.entryNo = [None] * self.numParams
         for i in range(self.numParams):
+            specType = None
+            if self.paramList[i].type == "pset":
+                specType = pseteparoption.PsetEparOption # PyRAF-specific
+
             self.entryNo[i] = eparoption.eparOptionFactory(master, statusBar,
                                   self.paramList[i], self.defaultParamList[i],
-                                  self.doScroll, self.fieldWidths)
+                                  self.doScroll, self.fieldWidths, specType)
 
 
     # Method to print the package and task names and to set up the menu
