@@ -387,13 +387,13 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
     # task parameter access
     #---------------------------------------------------------
 
-    def setParam(self,qualifiedName,newvalue,check=1,exact=0):
+    def setParam(self, qualifiedName, newvalue, check=1, exact=0, scope=''):
         """Set parameter specified by qualifiedName to newvalue.
 
         qualifiedName can be a simple parameter name or can be
         [[package.]task.]paramname[.field].
         If check is set to zero, does not check value to make sure it
-        satisfies min-max range or choice list.
+        satisfies min-max range or choice list.  The scope arg is ignored here.
         """
 
         package, task, paramname, pindex, field = _splitName(qualifiedName)
@@ -458,8 +458,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         qualifiedName can be a simple parameter name or can be
         [[package.]task.]paramname[.field].
         Paramname can also have an optional subscript, "param[1]".
-        If native is non-zero, returns native format (e.g. float for
-        floating point parameter.)  Default is return string value.
+        If native is non-zero (default), returns native format (e.g. float
+        for floating point parameter.), otherwise returns string value.
         If exact is set, parameter name must match exactly.  Default
         is to do minimum match.
         If prompt is 0, does not prompt for parameter value (even if
