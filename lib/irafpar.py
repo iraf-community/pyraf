@@ -6,7 +6,7 @@ R. White, 2000 January 7
 """
 
 import glob, os, re, sys, types
-from pytools import minmatch, irafutils
+from pytools import minmatch, irafutils, taskpars
 from pytools.irafglobals import INDEF, Verbose, yes, no
 import irafimcur, irafukey, epar, tpar
 import gki
@@ -1887,7 +1887,7 @@ class ParCache(FileCache):
 # (start with __) to avoid conflicts with parameter names
 
 
-class IrafParList:
+class IrafParList(taskpars.TaskPars):
 
     """List of Iraf parameters"""
 
@@ -1959,8 +1959,8 @@ class IrafParList:
                 tname = p.__class__.__name__
             else:
                 tname = t.__name__
-            raise TypeError("Parameter must be of type IrafPar (value is %s)" %
-                    tname)
+            raise TypeError("Parameter must be of type IrafPar (value: "+ \
+                            tname+", type: "+str(t)+", object: "+repr(p)+")")
         elif self.__pardict.has_exact_key(p.name):
             if p.name in ["$nargs", "mode"]:
                 # allow substitution of these default parameters
@@ -2122,8 +2122,10 @@ class IrafParList:
                         prompt=prompt)
         return value
 
-    def setParam(self,param,value):
-        """Set task parameter 'param' to value (with minimum-matching)"""
+    def setParam(self, param, value, scope='', check=0):
+        """Set task parameter 'param' to value (with minimum-matching).
+           The scope and check args are included for use as a task object
+           but they are currently ignored."""
         self.getParObject(param).set(value)
 
     def setParList(self,*args,**kw):
