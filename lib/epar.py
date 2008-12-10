@@ -579,7 +579,7 @@ class EparDialog:
         for i in range(self.numParams):
             specType = None
             if self.paramList[i].type == "pset":
-                specType = pseteparoption.PsetEparOption # PyRAF-specific
+                specType = pseteparoption.PsetEparOption # PyRAF-specific !!
 
             self.entryNo[i] = eparoption.eparOptionFactory(master, statusBar,
                                   self.paramList[i], self.defaultParamList[i],
@@ -961,8 +961,6 @@ class EparDialog:
         if self.checkSetSaveEntries(doSave=True, filename=fname, comment=mstr):
             raise Exception("Unexpected bad entries for: "+self.taskName)
 
-        print "Saved "+self.taskName+" parameter values to: "+fname
-        
         # Notify irafpar that there is a new special-purpose file on the scene
         irafpar.newSpecialParFile(self.taskName, self.pkgName, fname)
 
@@ -1201,28 +1199,41 @@ class EparDialog:
             # use a widget that can check all changes, we will
             # only need to check the isChanged flag.
             if par.isChanged() or value != entry.previousValue:
+
                 # Verify the value is valid. If it is invalid,
                 # the value will be converted to its original valid value.
                 # Maintain a list of the reset values for user notification.
+                # Always call entryCheck, no matter what type of _taskParsObj,
+                # since entryCheck can do some basic type checking.
                 if entry.entryCheck():
                     self.badEntries.append([entry.name, value,
                                         entry.choice.get()])
+                # See if we need to do a more serious validity check
+                elif self._taskParsObj.canPerformValidation():
+                    valOK, instead = self._taskParsObj.tryValue(entry.name,
+                                                       value, scope=par.scope)
+                    if not valOK:
+                        self.badEntries.append([entry.name, value, instead])
+                        entry.choice.set(instead)
 
-                # get value again in case it changed
+                # get value again in case it changed - this version IS valid
                 value = entry.choice.get()
 
                 # Update the task parameter (also does the conversion
                 # from string)
-                self._taskParsObj.setParam(par.name, value)
+                self._taskParsObj.setParam(par.name, value, scope=par.scope,
+                                           check=0)
 
         # Save results to the uparm directory
         # Skip the save if the thing being edited is an IrafParList without
         # an associated file (in which case the changes are just being
         # made in memory.)
 
+        # Save results to the given file
         if doSave and ((not isinstance(self._taskParsObj,irafpar.IrafParList)) \
                   or self._taskParsObj.getFilename()):
-            self._taskParsObj.saveParList(filename=filename, comment=comment)
+            rv=self._taskParsObj.saveParList(filename=filename, comment=comment)
+            print rv
 
         return self.badEntries
 
