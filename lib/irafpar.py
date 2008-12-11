@@ -198,12 +198,12 @@ def makeIrafPar(init_value, datatype=None, name="<anonymous>", mode="h",
 # Set up minmatch dictionaries for parameter fields
 # -----------------------------------------------------
 
-flist = ("p_name", "p_xtype", "p_type", "p_mode", "p_prompt",
-                        "p_value", "p_default", "p_filename", "p_maximum", "p_minimum")
+flist = ("p_name", "p_xtype", "p_type", "p_mode", "p_prompt", "p_scope",
+         "p_value", "p_default", "p_filename", "p_maximum", "p_minimum")
 _getFieldDict = minmatch.MinMatchDict()
 for field in flist: _getFieldDict.add(field, field)
 
-flist = ("p_prompt", "p_value", "p_filename", "p_maximum", "p_minimum", "p_mode")
+flist = ("p_prompt", "p_value", "p_filename", "p_maximum", "p_minimum", "p_mode", "p_scope")
 _setFieldDict = minmatch.MinMatchDict()
 for field in flist: _setFieldDict.add(field, field)
 
@@ -235,6 +235,7 @@ _IrafPar_attr_dict = {
         "choiceDict" : None,
         "prompt" : None,
         "flags" : 0,
+        "scope" : None,
         }
 
 # flag bits tell whether value has been changed and
@@ -261,6 +262,7 @@ class IrafPar:
         self.name   = fields[0]
         self.type   = fields[1]
         self.mode   = fields[2]
+        self.scope  = None # simple default; may be unused
         #
         # put fields into appropriate attributes
         #
@@ -331,6 +333,12 @@ class IrafPar:
             return self.value is not None
         except ValueError:
             return 0
+
+    def setScope(self,value=''):
+        """Set scope value.  Written this way to not change the
+           standard set of fields in the comma-separated list. """
+        # set through dictionary to avoid extra calls to __setattr__
+        self.__dict__['scope'] = value
 
     def setCmdline(self,value=1):
         """Set cmdline flag"""
@@ -772,6 +780,7 @@ class IrafPar:
         elif field == "p_type": return self._getPType()
         elif field == "p_mode": return self.mode
         elif field == "p_prompt": return self.prompt
+        elif field == "p_scope": return self.scope
         elif field == "p_default" or field == "p_filename":
             # these all appear to be equivalent -- they just return the
             # current PFilename of the parameter (which is the same as the value
@@ -815,6 +824,8 @@ class IrafPar:
         elif field == "p_filename":
             # this is only relevant for list parameters (*imcur, *gcur, etc.)
             self.set(value,check=check)
+        elif field == "p_scope":
+            self.scope = value
         elif field == "p_maximum":
             self.max = self._coerceOneValue(value)
         elif field == "p_minimum":
