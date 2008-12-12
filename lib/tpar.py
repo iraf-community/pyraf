@@ -1131,7 +1131,7 @@ class TparDisplay(Binder):
 
     def set_all_entries_from_par_list(self, aParList):
         """ Set all the parameter entry values in the GUI to the values
-            in the given par list. Note corresponding EparDialog method. """
+            in the given par list. Note corresponding EditParDialog method. """
         for i in range(self.numParams):
             par = self.paramList[i]
             if par.type == "pset":
@@ -1175,7 +1175,7 @@ class TparDisplay(Binder):
                 if not entry.verify(value):
                     self.badEntries.append([
                         entry.paramInfo.name, value,
-                        entry._previous_value])
+                        entry._previousValue])
                 else:
                     self.taskObject.setParam(par.name, value)
 
