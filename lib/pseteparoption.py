@@ -44,7 +44,7 @@ class PsetEparOption(eparoption.EparOption):
                 child.top.deiconify()
                 child.top.tkraise()
                 return
-        childPsetHandle = epar.EparDialog(self.buttonText,
+        childPsetHandle = epar.PyrafEparDialog(self.buttonText,
                                           parent  = self.master.frame,
                                           isChild = 1,
                                           childList = parentToplevel.childList,
