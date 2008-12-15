@@ -14,8 +14,8 @@ import clscan, clparse
 from clcache import codeCache
 
 from pytools.irafglobals import Verbose
+from pytools import basicpar, minmatch, irafutils
 import irafpar, pyrafglobals
-from pytools import minmatch, irafutils
 
 # The parser object can be constructed once and used many times.
 # The other classes have instance variables (e.g. lineno in CLScanner),
@@ -1729,7 +1729,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             # objects instead of parameter values if they are specified.
 
             attribs = s.split('.')
-            ipf = irafpar.isParField(attribs[-1])
+            ipf = basicpar.isParField(attribs[-1])
             if self.vars.has_key(attribs[0]):
                 attribs.insert(0, 'Vars')
             elif ipf and (len(attribs)==2):

@@ -12,7 +12,7 @@ here which also support ECL syntax like "iferr" and $errno.
 """
 
 import os, sys, copy, re
-from pytools import minmatch, irafutils, irafglobals, taskpars
+from pytools import basicpar, minmatch, irafutils, irafglobals, taskpars
 import subproc, iraf, irafpar, irafexecute, epar, tpar, cl2py
 
 # may be set to function to monitor task execution
@@ -1702,7 +1702,7 @@ def _splitName(qualifiedName):
 
     # add field=None if not present
 
-    if len(slist)==1 or not irafpar.isParField(slist[-1]):
+    if len(slist)==1 or not basicpar.isParField(slist[-1]):
         # no field
         slist.append(None)
     if len(slist) > 4:
