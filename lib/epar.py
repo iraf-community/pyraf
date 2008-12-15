@@ -12,7 +12,6 @@ import os, sys, cStringIO
 
 # local modules
 from pytools import filedlg, listdlg, eparoption, editpar
-from pytools.editpar import INPUTWIDTH, VALUEWIDTH, PROMPTWIDTH
 from pytools.irafglobals import IrafError
 import iraf, irafpar, irafhelp, wutil, pseteparoption
 from pyrafglobals import pyrafDir
@@ -69,61 +68,20 @@ class PyrafEparDialog(editpar.EditParDialog):
         # Note that irafpar caches the list of these versions
         return irafpar.haveSpecialVersions(self.taskName, self.pkgName)
 
-    # Method to create the parameter entries (!!! Need to consolidate better !!)
-    def makeEntries(self, master, statusBar):
 
-        # Determine the size of the longest input string
-        inputLength = INPUTWIDTH
-        for i in range(self.numParams):
-            inputString = self.paramList[i].name
-            if (len(inputString) > inputLength):
-                inputLength = len(inputString)
-
-        # Set up the field widths
-        # Allow extra spaces for buffer and in case the longest parameter
-        # has the hidden parameter indicator
-        self.fieldWidths = {}
-        self.fieldWidths['inputWidth'] = inputLength + 4
-        self.fieldWidths['valueWidth'] = VALUEWIDTH
-        self.fieldWidths['promptWidth'] = PROMPTWIDTH
-
-        # Loop over the parameters to create the entries
-        self.entryNo = [None] * self.numParams
-        for i in range(self.numParams):
-            specType = None
-            if self.paramList[i].type == "pset":
-                specType = pseteparoption.PsetEparOption # only PyRAF-specific!
-
-            self.entryNo[i] = eparoption.eparOptionFactory(master, statusBar,
-                                  self.paramList[i], self.defaultParamList[i],
-                                  self.doScroll, self.fieldWidths, specType)
-
-    # !!! Need to consolidate better!
-    # Method to print the package and task names and to set up the menu
-    # button for the choice of the display for the IRAF help page
-    def printNames(self, top, taskName, pkgName):
-
-        topbox = Frame(top, bg=self.bkgColor)
-        textbox = Frame(topbox, bg=self.bkgColor)
-        helpbox = Frame(topbox, bg=self.bkgColor)
-
-        # Set up the information strings
-        if isinstance(self._taskParsObj, irafpar.IrafParList):
-            # label for a parameter list is just filename
-            packString = " Filename = " + taskName
-            Label(textbox, text=packString, bg=self.bkgColor).pack(side=TOP,
-                  anchor=W)
+    def _nonStandardEparOptionFor(self, paramTypeStr):
+        """ Override to allow use of PsetEparOption.
+            Return None or a class which derives from EparOption. """
+        if paramTypeStr == "pset":
+            return pseteparoption.PsetEparOption
         else:
-            # labels for Iraf task
-            packString = "  Package = " + pkgName.upper()
-            Label(textbox, text=packString, bg=self.bkgColor).pack(side=TOP,
-                  anchor=W)
+            return None
 
-            taskString = "       Task = " + taskName.upper()
-            Label(textbox, text=taskString, bg=self.bkgColor).pack(side=TOP,
-                  anchor=W)
-        textbox.pack(side=LEFT, anchor=W)
-        topbox.pack(side=TOP, expand=FALSE, fill=X)
+
+    # Two overrides of deafult behavior, related to unpackaged "tasks"
+    def _getUnpackagedTaskTitle(self): return "Filename"
+    def _isUnpackagedTask(self):
+        return isinstance(self._taskParsObj, irafpar.IrafParList)
 
 
     # OPEN: load parameter settings from a user-specified file
