@@ -24,6 +24,7 @@ the DialogDisplay and the InputDialogDisplay classes.  Unsure why this
 functionality is not delivered with a standard urwid installation, so we will
 include this file until it comes with urwid.  This is slightly modified.
 
+$Id$
 """
 
 import sys

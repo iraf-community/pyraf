@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-$Id: MplCanvasAdapter.py sontag $
+$Id$
 """
 
 import os, matplotlib

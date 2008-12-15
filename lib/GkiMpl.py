@@ -1,7 +1,7 @@
 """
 matplotlib implementation of the gki kernel class
 
-$Id: GkiMplKernel.py sontag $
+$Id$
 """
 
 import math, sys, numpy

@@ -5,7 +5,7 @@ _use_ecl        Flag to turn on ECL mode in PyRAF
 
 This is defined so it is safe to say 'from pyrafglobals import *'
 
-$Id: pyrafglobals.py 784 2007-04-05 14:16:52Z rij $
+$Id$
 
 Broken out from irafglobals.py which was signed "R. White, 2000 January 5"
 """

@@ -1,5 +1,7 @@
 """splash.py: Display PyRAF splash screen
 
+$Id$
+
 R. White, 2001 Dec 15
 """
 

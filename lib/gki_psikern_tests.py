@@ -5,7 +5,7 @@ The first version of this will be under-representative of the total
 functionality, but tests will be added over time, as code issues are
 researched and addressed.
 
-$Id: gki_psikern_tests.py 801 2007-08-2 sontag $
+$Id$
 """
 
 import glob, os, sys, time

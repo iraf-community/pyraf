@@ -2,7 +2,7 @@
    options to be used for PSETs in the parameter editor task.  Code was 
    broken out from eparoption.py.
 
-$Id: pseteparoption.py 941 2008-11-07 21:10:42Z sontag $
+$Id$
 """
 
 # System level modules

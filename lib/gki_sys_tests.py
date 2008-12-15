@@ -5,7 +5,7 @@ The first version of this will be under-representative of the GKI
 functionality, but tests will be added over time, as code issues are
 researched and addressed.
 
-$Id: gki_sys_tests.py 801 2007-08-2 sontag $
+$Id$
 """
 
 import os, sys

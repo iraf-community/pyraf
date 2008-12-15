@@ -2,7 +2,7 @@
 not possible in Tkinter.  In general, an attempt is made to use the Pyobjc
 bridging package so that compiling another C extension is not needed.
 
-$Id: sontag $
+$Id$
 """
 
 import os, Tkinter
