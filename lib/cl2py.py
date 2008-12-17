@@ -386,7 +386,7 @@ class Variable:
             else:
                 self.type = _longTypeName[ipo.type]
                 self.list_flag = 0
-            if isinstance(ipo, irafpar.IrafArrayPar):
+            if isinstance(ipo, basicpar.IrafArrayPar):
                 self.shape = ipo.shape
             else:
                 self.shape = None
