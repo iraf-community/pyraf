@@ -837,7 +837,7 @@ class IrafParList(taskpars.TaskPars):
         else:
             absFileName = iraf.Expand(filename)
             absDir = os.path.dirname(absFileName)
-            if not os.path.isdir(absDir): os.makedirs(absDir)
+            if len(absDir) and not os.path.isdir(absDir): os.makedirs(absDir)
             fh = open(absFileName,'w')
         nsave = len(self.__pars)
         if comment:
