@@ -119,30 +119,18 @@ class PyrafEparDialog(editpar.EditParDialog):
         self.setAllEntriesFromParList(newParList)
 
 
-    # SAVE AS: save the parameter settings to a user-specified file
-    def saveAs(self, event=None):
-        """ Save the parameter settings to a user-specified file.  Any
-        changes here must be coordinated with the corresponding tpar save_as
-        function. """
-
-        # The user wishes to save to a different name
-        # (could use Tkinter's FileDialog, but this one is prettier)
+    def _getSaveAsFilter(self):
+        """ Return a string to be used as the filter arg to the save file
+            dialog during Save-As. """
         filt = '*.par'
         upx = iraf.envget("uparm_aux","")
         if 'UPARM_AUX' in os.environ: upx = os.environ['UPARM_AUX']
         if len(upx) > 0:  filt = upx+"/*.par"
-        fd = filedlg.SaveFileDialog(self.top, "Save Parameter File As", filt)
-        if fd.Show() != 1:
-            fd.DialogCleanup()
-            return
-        fname = fd.GetFileName()
-        fd.DialogCleanup()
+        return filt
 
-        # First check the child parameters, aborting save if
-        # invalid entries were encountered
-        if self.checkSetSaveChildren():
-            return
 
+    def _saveAsPreSave_Hook(self, fnameToBeUsed):
+        """ Override to check for (and warn about) PSETs. """
         # Notify them that pset children will not be saved as part of 
         # their special version
         pars = []
@@ -153,29 +141,14 @@ class PyrafEparDialog(editpar.EditParDialog):
                   "values for:\n\n"
             for p in pars: msg += "\t\t"+p+"\n"
             msg = msg+"\nthose changes will NOT be explicitly saved to:"+ \
-                  '\n\n"'+fname+'"'
+                  '\n\n"'+fnameToBeUsed+'"'
             showwarning(message=msg, title='PSET Save-As Not Yet Supported')
 
-        # Verify all the entries (without save), keeping track of the invalid
-        # entries which have been reset to their original input values
-        self.badEntriesList = self.checkSetSaveEntries(doSave=False)
 
-        # If there were invalid entries, prepare the message dialog
-        if (self.badEntriesList):
-            ansOKCANCEL = self.processBadEntries(self.badEntriesList,
-                          self.taskName)
-            if not ansOKCANCEL:
-                return
-
-        # If there were no invalid entries or the user says OK, finally
-        # save to their stated file.  Since we have already processed the
-        # bad entries, there should be none returned.
-        mstr = "TASKMETA: task="+self.taskName+" package="+self.pkgName
-        if self.checkSetSaveEntries(doSave=True, filename=fname, comment=mstr):
-            raise Exception("Unexpected bad entries for: "+self.taskName)
-
+    def _saveAsPostSave_Hook(self, fnameToBeUsed):
+        """ Override this to notify irafpar. """
         # Notify irafpar that there is a new special-purpose file on the scene
-        irafpar.newSpecialParFile(self.taskName, self.pkgName, fname)
+        irafpar.newSpecialParFile(self.taskName, self.pkgName, fnameToBeUsed)
 
 
     def htmlHelp(self, event=None):
@@ -193,4 +166,3 @@ class PyrafEparDialog(editpar.EditParDialog):
         result = fh.getvalue()
         fh.close()
         return result
-
