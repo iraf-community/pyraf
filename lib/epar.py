@@ -68,6 +68,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         # Note that irafpar caches the list of these versions
         return irafpar.haveSpecialVersions(self.taskName, self.pkgName)
 
+    def _getUnlearnButtonTitle(self): return "Unlearn" # otherwise: "Defaults"
 
     def _nonStandardEparOptionFor(self, paramTypeStr):
         """ Override to allow use of PsetEparOption.
