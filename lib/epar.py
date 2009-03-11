@@ -68,7 +68,13 @@ class PyrafEparDialog(editpar.EditParDialog):
         # Note that irafpar caches the list of these versions
         return irafpar.haveSpecialVersions(self.taskName, self.pkgName)
 
-    def _getUnlearnButtonTitle(self): return "Unlearn" # otherwise: "Defaults"
+    def _overrideMasterSettings(self):
+        """ Override this so that we can use rules in irafpar. """
+        self._useSimpleAutoClose  = True
+        self._saveAndCloseOnExec  = True
+        self._showExtraHelpButton = True
+        self._unpackagedTaskTitle = "Filename"
+        self._defaultsButtonTitle = "Unlearn"
 
     def _nonStandardEparOptionFor(self, paramTypeStr):
         """ Override to allow use of PsetEparOption.
@@ -80,7 +86,6 @@ class PyrafEparDialog(editpar.EditParDialog):
 
 
     # Two overrides of deafult behavior, related to unpackaged "tasks"
-    def _getUnpackagedTaskTitle(self): return "Filename"
     def _isUnpackagedTask(self):
         return isinstance(self._taskParsObj, irafpar.IrafParList)
 
