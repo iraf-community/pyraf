@@ -51,16 +51,17 @@ class PyrafEparDialog(editpar.EditParDialog):
             # theTask must be a string name of, or an IrafTask object
             self._taskParsObj = iraf.getTask(theTask)
 
-    def _skipParSave_Hook(self):
+    def _doActualSave(self, filename, comment):
         """ Overridden version, so as to check for a special case. """
         # Skip the save if the thing being edited is an IrafParList without
         # an associated file (in which case the changes are just being
         # made in memory.)
         if isinstance(self._taskParsObj,irafpar.IrafParList) and \
            not self._taskParsObj.getFilename():
-            return True
+            return '' # skip it
         else:
-            return False
+            return self._taskParsObj.saveParList(filename=filename,
+                                                 comment=comment)
 
     def _showOpenButton(self):
         """ Override this so that we can use rules in irafpar. """
