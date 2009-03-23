@@ -292,7 +292,10 @@ class IrafParL(_StringMixin, IrafPar):
         else:
             # if self.value is null, use the special _getNextValue method
             # (which should always return a string)
-            value = self._getNextValue()
+            if prompt:
+                value = self._getNextValue()
+            else:
+                return self.value
         if native:
             return self._coerceValue(value)
         else:
