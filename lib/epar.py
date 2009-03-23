@@ -91,32 +91,17 @@ class PyrafEparDialog(editpar.EditParDialog):
         return isinstance(self._taskParsObj, irafpar.IrafParList)
 
 
+    def _getOpenChoices(self):
+        return irafpar.getSpecialVersionFiles(self.taskName, self.pkgName)
+
+
     # OPEN: load parameter settings from a user-specified file
     def pfopen(self, event=None):
         """ Load the parameter settings from a user-specified file.  Any
         changes here must be coordinated with the corresponding tpar pfopen
         function. """
 
-        flist = irafpar.getSpecialVersionFiles(self.taskName, self.pkgName)
-        if len(flist) <= 0:
-            msg = "No special-purpose parameter files found for "+self.taskName
-            showwarning(message=msg, title='File not found')
-            return
-
-        fname = None
-        if len(flist) == 1:
-            if askokcancel("Confirm",
-                           "One special-purpose parameter file found.\n"+ \
-                           "Load file?\n\n"+flist[0]):
-                fname = flist[0]
-        else: # >1 file, need a select dialog
-            flist.sort()
-            ld = listdlg.ListSingleSelectDialog("Select Parameter File",
-                         "Select which parameter file to load for "+ \
-                         self.pkgName+"."+self.taskName, flist, self.top)
-            fname = ld.getresult() # will be None or a string fname
-
-        # check-point
+        fname = self._openMenuChoice.get()
         if fname == None: return
 
         # Now load it: "Loading "+self.taskName+" param values from: "+fname
