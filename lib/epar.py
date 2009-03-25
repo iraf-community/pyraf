@@ -74,6 +74,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         self._useSimpleAutoClose  = True
         self._saveAndCloseOnExec  = True
         self._showExtraHelpButton = True
+        self._appName             = "Epar"
         self._unpackagedTaskTitle = "Filename"
         self._defaultsButtonTitle = "Unlearn"
 
