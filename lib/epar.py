@@ -122,7 +122,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         filt = '*.par'
         upx = iraf.envget("uparm_aux","")
         if 'UPARM_AUX' in os.environ: upx = os.environ['UPARM_AUX']
-        if len(upx) > 0:  filt = upx+"/*.par"
+        if len(upx) > 0:  filt = iraf.Expand(upx)+"/*.par"
         return filt
 
 
