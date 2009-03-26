@@ -70,10 +70,14 @@ class PyrafEparDialog(editpar.EditParDialog):
         return irafpar.haveSpecialVersions(self.taskName, self.pkgName)
 
     def _overrideMasterSettings(self):
-        """ Override this so that we can use rules in irafpar. """
+        """ Override this to tailor the GUI specifically for epar. """
         self._useSimpleAutoClose  = True
+
         self._saveAndCloseOnExec  = True
+        self._showSaveCloseOnExec = False
+
         self._showExtraHelpButton = True
+
         self._appName             = "Epar"
         self._unpackagedTaskTitle = "Filename"
         self._defaultsButtonTitle = "Unlearn"
