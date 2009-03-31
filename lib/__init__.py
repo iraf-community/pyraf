@@ -15,6 +15,7 @@ import os, sys, __main__
 def usage():
     print __main__.__doc__
     sys.stdout.flush()
+    irafimport.restoreBuiltins()
     sys.exit()
 
 # set search path to include current directory

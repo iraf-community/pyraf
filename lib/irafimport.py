@@ -20,6 +20,11 @@ from pytools import minmatch
 _originalImport = __builtin__.__import__
 _originalReload = __builtin__.reload
 
+def restoreBuiltins():
+    """ Called before exiting pyraf - this put's import and reload back. """
+    __builtin__.__import__ = _originalImport
+    __builtin__.__reload__ = _originalReload
+
 def _irafImport(name, globals={}, locals={}, fromlist=[]):
     if fromlist and (name in ["iraf", "pyraf.iraf"]):
         for task in fromlist:

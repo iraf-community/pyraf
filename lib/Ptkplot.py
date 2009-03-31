@@ -38,13 +38,20 @@ if _default_root is None:
 # [Modified by RLW to use new atexit module, Dec 2001]
 
 def cleanup():
-    from Tkinter import _default_root, TclError
-    import Tkinter
     try:
-        if _default_root: _default_root.destroy()
-    except TclError:
+        from Tkinter import _default_root, TclError
+        import Tkinter
+        try:
+            if _default_root: _default_root.destroy()
+        except TclError:
+            pass
+        Tkinter._default_root = None
+    except SystemError:
+        # If cleanup() is called before pyraf fully loads, we will
+        # see: "SystemError: Parent module 'pyraf' not loaded".  In that case,
+        # since nothing was done yet with _default_root, we can skip this.
         pass
-    Tkinter._default_root = None
+
 import atexit
 atexit.register(cleanup)
 # [end DAA]
