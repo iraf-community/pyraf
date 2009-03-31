@@ -47,7 +47,7 @@ try:
 
         # Check to make sure a valid XWindow ID was initialized
         # Attach closeGraphics to XWindow methods
-        #ONLY if an XWindow was successfully initialized.
+        # ONLY if an XWindow was successfully initialized.
         #  WJH (10June2004)
         if xutil.getFocalWindowID() == -1:
             raise EnvironmentError

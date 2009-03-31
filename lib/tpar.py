@@ -46,7 +46,7 @@ except:
     urwid.Pile = FakeClass()
 
 # PyRAF modules
-import iraf, irafpar, irafhelp, iraftask, cStringIO, wutil, iraffunctions
+import iraf, irafpar, irafhelp, iraftask, cStringIO, iraffunctions
 
 TPAR_HELP_EMACS = """                                EDIT COMMANDS (emacs)
 

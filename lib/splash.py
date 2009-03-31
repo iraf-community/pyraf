@@ -83,7 +83,7 @@ class PyrafSplash(SplashScreen):
             self.initialText = [None]
         # put focus on this app (Mac only)
         self.__termWin = None
-        if wutil.WUTIL_ON_MAC:
+        if wutil.hasGraphics and wutil.WUTIL_ON_MAC:
             self.__termWin = wutil.getFocalWindowID() # the terminal window
             wutil.forceFocusToNewWindow()
         # create it
