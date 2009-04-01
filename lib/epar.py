@@ -82,6 +82,14 @@ class PyrafEparDialog(editpar.EditParDialog):
         self._unpackagedTaskTitle = "Filename"
         self._defaultsButtonTitle = "Unlearn"
 
+        if not wutil.WUTIL_USING_X:
+            x = "#ccccff"
+            self._frmeColor = x
+            self._taskColor = x
+            self._bboxColor = x
+            self._entsColor = x
+
+
     def _nonStandardEparOptionFor(self, paramTypeStr):
         """ Override to allow use of PsetEparOption.
             Return None or a class which derives from EparOption. """
