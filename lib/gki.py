@@ -1225,7 +1225,7 @@ class IrafGkiConfig:
                 (1.,1.,1.),  # white
                 (1.,0.,0.),  # red
                 (0.,1.,0.),  # green
-                (0.,0.,0.1), # blue
+                (0.,0.,1.),  # blue
                 (0.,1.,1.),  # cyan
                 (1.,1.,0.),  # yellow
                 (1.,0.,1.),  # magenta
