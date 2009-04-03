@@ -719,9 +719,9 @@ class IrafParList(taskpars.TaskPars):
                         prompt=prompt)
         return value
 
-    def setParam(self, param, value, scope='', check=0):
+    def setParam(self, param, value, scope='', check=0, idxHint=None):
         """Set task parameter 'param' to value (with minimum-matching).
-           The scope and check args are included for use as a task object
+           scope, idxHint, and check are included for use as a task object
            but they are currently ignored."""
         self.getParObject(param).set(value)
 

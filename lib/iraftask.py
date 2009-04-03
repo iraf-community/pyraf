@@ -387,13 +387,14 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
     # task parameter access
     #---------------------------------------------------------
 
-    def setParam(self, qualifiedName, newvalue, check=1, exact=0, scope=''):
+    def setParam(self, qualifiedName, newvalue, check=1, exact=0, scope='',
+                 idxHint=None):
         """Set parameter specified by qualifiedName to newvalue.
 
         qualifiedName can be a simple parameter name or can be
         [[package.]task.]paramname[.field].
         If check is set to zero, does not check value to make sure it
-        satisfies min-max range or choice list.  The scope arg is ignored here.
+        satisfies min-max range or choice list.  scope, idxHint are ignored.
         """
 
         package, task, paramname, pindex, field = _splitName(qualifiedName)
