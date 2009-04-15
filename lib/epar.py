@@ -255,6 +255,8 @@ class PyrafEparDialog(editpar.EditParDialog):
 
         # Set the GUI entries to these values (let the user Save after)
         self.setAllEntriesFromParList(newParList)
+     
+        self.freshenFocus()
 
 
     def _getSaveAsFilter(self):
