@@ -1,6 +1,6 @@
 #
 # $HeadURL: https://www.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/pytools/lib/stsci_distutils_hack.py $
-# $Rev: 7093 $
+# $Rev: 7917 $
 #
 # Implements setup.py code common to many of our packages.
 #
@@ -12,6 +12,26 @@
 # where XX is the version of pytools you expect for the install to work
 #
 
+"""
+Special handling for stsci_python package installation.
+
+stsci_python is distributed as a single package, but it contains
+packages that are also distributed separately.  When we use this
+module to install our package, we can use the exact same definition
+file to control the setup.py of the individual package _and_ the
+setup.py of stsci_python.
+
+This module also preserves revision control data in the installed
+or distributed files.
+
+If you are not a developer at STScI, this module is probably not of
+much interest to you.
+
+"""
+
+__docformat__ = 'restructuredtext'
+
+
 ######## ######## ######## ######## ######## ######## ######## ########
 #
 # actually perform the install
@@ -21,6 +41,19 @@
 import sys
 
 def run( pytools_version = None ) :
+    """
+    Perform a stsci_python install based on the information in defsetup.py
+
+    * gather our subversion revision number and the install time
+
+    * perform the install
+
+    usage: 
+
+        import pytools.stsci_distutils_hack
+        pytools.stsci_distutils_hack.run(pytools_version = "3.0")
+
+    """
 
     if not hasattr(sys, 'version_info') or sys.version_info < (2,3,0,'alpha',0):
         raise SystemExit, "Python 2.3 or later required."
@@ -104,6 +137,11 @@ o =  distutils.command.install_data.install_data
 o.old_run = o.run
 
 def new_run ( self ) :
+        """
+        Hack for distutils to cause install_data to be in the same directory
+        as the python library files.  Our packages expect this.
+        """
+
         # We want our data files in the directory with the library files
         install_cmd = self.get_finalized_command('install')
         self.install_dir = getattr(install_cmd, 'install_lib')
@@ -130,63 +168,6 @@ def new_run ( self ) :
         return distutils.command.install_data.install_data.old_run(self)
 
 o.run = new_run
-
-
-######## ######## ######## ######## ######## ######## ######## ########
-#
-# Implements "python setup.py install --place=dir"
-#
-# This replaces --local from earlier stsci_python releases.  The
-# flag is different because it doesn't quite do the same thing.
-#
-# --place=$dir means that
-#   scripts go into $dir/bin
-#   python code goes into $dir/lib
-#
-# This is a less complicated structure than you get from --prefix and --home.
-
-import distutils.command.install
-
-# same trick as smart_install_data used: save the old run() method and
-# insert our own run method ahead of it
-
-o = distutils.command.install.install
-o.old_finalize_unix  = o.finalize_unix
-o.old_finalize_other = o.finalize_other
-
-# INSTALL_SCHEMES are effectively a list of where to put different kinds
-# of files.  It exists so you can have complex structures like what 
-# --prefix does.  We want a simpler one, so here it is.
-distutils.command.install.INSTALL_SCHEMES['unix_place'] = {
-        'purelib': '$base/lib',
-        'platlib': '$base/lib',
-        'headers': '$base/include',
-        'scripts': '$base/bin',
-        'data'   : '$base/lib',
-    }
-
-
-def new_finalize_unix(self) :
-    # this is handled just like --home, but with a different scheme name
-    # see finalize_unix() in distutils/command/install.py
-    if self.place :
-        self.install_base = self.install_platbase = self.place
-        self.select_scheme("unix_place")
-        return
-    self.old_finalize_unix()
-
-def new_finalize_other(self) :
-    # need to think about what to do for windows
-    # (distutils says that macs come through here, but macs use finalize_unix)
-    self.old_finalize_unix()
-
-o.finalize_unix  = new_finalize_unix
-o.finalize_other = new_finalize_other
-
-# to make a new option "--foo", you need to create a variable named
-# "foo" in the object and add an entry to user_options[]
-o.place = None
-o.user_options.append( ( "place=", None, "Specify place to install" ) )
 
 
 ######## ######## ######## ######## ######## ######## ######## ########
