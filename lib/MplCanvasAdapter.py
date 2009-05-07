@@ -72,20 +72,31 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         gw.moveCursorTo       = self.moveCursorTo
         gw.tkRedraw           = self.tkRedraw
 
-    def resize_event(self, evt):
+    def resize_event(self, evt=None):
 
-        # see also get/set_size_inches, get_figheight/width, get_dpi
-        #   and, figure.get_window_extent() # is Bbox, use .width/.height()
+        # See also get/set_size_inches, figure.get_window_extent().  The latter
+        # is Bbox, use .width/.height()
         #
         #  before rsz: w = self.figure.get_window_extent().width # not func .98
         #  before rsz: h = self.figure.get_window_extent().height() # is in .91
 
+        # Note that the 'evt' arg was always part of the signature for
+        # versions before MPL v 0.98.5.2, when it became optional.
+        # So see if it is there.  Always use it if present, it is accurate.
+        if evt != None:
+            curW = evt.width
+            curH = evt.height
+        else:
+            dpi = self.figure.get_dpi()
+            curW = self.figure.get_figwidth() * dpi
+            curH = self.figure.get_figheight() * dpi
+
         # Need to deactivate cursor before resizing, then re-act. after
-        self.wrappedRedrawOrResize(w=evt.width, h=evt.height)
+        self.wrappedRedrawOrResize(w=curW, h=curH)
 
         # also update the widget's w/h attrs; we will need this for the cursor
-        self.__theGwidget.width  = evt.width
-        self.__theGwidget.height = evt.height
+        self.__theGwidget.width  = curW
+        self.__theGwidget.height = curH
 
     def flush(self):
 
