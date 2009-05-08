@@ -51,24 +51,6 @@ except ImportError:
     # no numpy available, so we won't encounter arrays
     _numpyArrayType = None
 
-try:
-    if _numpyArrayType:
-        _numpyTypeName = {}
-        _numpyTypeName[numpy.object_]     = 'object_'
-        _numpyTypeName[numpy.uint8]       = 'uint8'
-        _numpyTypeName[numpy.int8]         = 'int8'
-        _numpyTypeName[numpy.uint16]       = 'uint16'
-        _numpyTypeName[numpy.int16]        = 'int16'
-        _numpyTypeName[numpy.uint32]       = 'uint32'
-        _numpyTypeName[numpy.int32]        = 'int32'
-        _numpyTypeName[numpy.float32]      = 'float32'
-        _numpyTypeName[numpy.float64]      = 'float64'
-        _numpyTypeName[numpy.complex64]    = 'complex64'
-        _numpyTypeName[numpy.complex128]    = 'complex128'
-        _numpyTypeName[numpy.complex256]   = 'complex256'
-except AttributeError:
-    pass
-
 _MODULE = 0
 _FUNCTION = 1
 _METHOD = 2
@@ -374,7 +356,7 @@ def _valueString(value,verbose=0):
             # oh well, just have to live with type string alone
             pass
     elif issubclass(t, _numpyArrayType):
-        vstr = vstr + " " + _numpyTypeName[value.dtype()] + "["
+        vstr = vstr + " " + str(value.dtype) + "["
         for k in range(len(value.shape)):
             if k:
                 vstr = vstr + "," + `value.shape[k]`
