@@ -861,6 +861,53 @@ def listVars(prefix="", equals="\t= ", **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
+def which(*args, **kw): # kw[0] == '_save'
+    """ Emulate the which function in IRAF. """
+    # handle redirection and save keywords
+    redirKW, closeFHList = redirProcess(kw)
+    if kw.has_key('_save'): del kw['_save']
+    if len(kw):
+        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+    resetList = redirApply(redirKW)
+    # now do the actual work
+    try:
+        for arg in args:
+            try:
+                print getTask(arg).getPkgname()
+                # or: getTask(arg).getPkgname()+"."+getTask(arg).getName()
+            except _minmatch.AmbiguousKeyError, e:
+                print str(e)
+            except (KeyError, TypeError):
+                if deftask(arg):
+                    print 'language' # handle, e.g. 'which which', 'which cd'
+                else:
+                    _writeError(arg+": task not found.")
+    finally:
+        rv = redirReset(resetList, closeFHList)
+    return rv
+
+def whereis(*args, **kw): # kw[0] == '_save'
+    """ Emulate the whereis function in IRAF. """
+    # handle redirection and save keywords
+    redirKW, closeFHList = redirProcess(kw)
+    if kw.has_key('_save'): del kw['_save']
+    if len(kw):
+        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+    resetList = redirApply(redirKW)
+    # now do the actual work
+    try:
+        for arg in args:
+            matches = _mmtasks.getall(arg)
+            if matches:
+                matches.reverse() # this reverse isn't necessary - they arrive
+                                  # in the right order, but CL seems to do this
+                print " ".join(matches)
+            else:
+                print arg+": task not found."
+    finally:
+        rv = redirReset(resetList, closeFHList)
+    return rv
+
 # -----------------------------------------------------
 # IRAF utility functions
 # -----------------------------------------------------
@@ -1566,32 +1613,6 @@ def curPkgbinary():
         return loadedPath[-1].getPkgbinary()
     else:
         return ""
-
-def which(*args, **kw): # kw[0] == '_save'
-    """ Emulate the which function in IRAF. """
-    for arg in args:
-        try:
-            print getTask(arg).getPkgname()
-            # or: getTask(arg).getPkgname()+"."+getTask(arg).getName()
-        except _minmatch.AmbiguousKeyError, e:
-            print str(e)
-        except (KeyError, TypeError):
-            if deftask(arg):
-                print 'language' # handle things like 'which which', 'which cd'
-            else:
-                _writeError(arg+": task not found.")
-    return
-
-def whereis(*args, **kw): # kw[0] == '_save'
-    """ Emulate the whereis function in IRAF. """
-    for arg in args:
-        matches = _mmtasks.getall(arg)
-        if matches:
-            matches.reverse() # this reverse isn't necessary - they arrive in
-                              # the right order, but the CL seems to do this
-            print " ".join(matches)
-        else:
-            print arg+": task not found."
 
 # utility functions for boolean conversions
 
