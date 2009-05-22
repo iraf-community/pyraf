@@ -903,7 +903,7 @@ def whereis(*args, **kw): # kw[0] == '_save'
                                   # in the right order, but CL seems to do this
                 print " ".join(matches)
             else:
-                print arg+": task not found."
+                _writeError(arg+": task not found.")
     finally:
         rv = redirReset(resetList, closeFHList)
     return rv
