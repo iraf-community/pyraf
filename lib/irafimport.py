@@ -14,7 +14,10 @@ R. White, 1999 August 17
 """
 
 import __builtin__
+import sys
 from pytools import minmatch
+
+importHasLvlArg = sys.version_info[0] > 2 or sys.version_info[1] >= 5 # no 1.*
 
 # Save the original hooks;  replaced at bottom of module...
 _originalImport = __builtin__.__import__
@@ -45,7 +48,12 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
         elif name == 'pyraf.alert':     name = 'pytools.alert'
         elif name == 'pyraf.irafglobals': name='pytools.irafglobals' # is diffnt
         # !!! END TEMPORARY KLUDGE !!!
-        return _originalImport(name, globals, locals, fromlist, level)
+
+        if importHasLvlArg:
+            return _originalImport(name, globals, locals, fromlist, level)
+        else:
+            # we could assert here that level == -1, but it's safe to assume
+            return _originalImport(name, globals, locals, fromlist)
 
 def _irafReload(module):
     if isinstance(module, _irafModuleClass):
