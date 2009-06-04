@@ -4,6 +4,8 @@ Tkplot implementation of the gki kernel class
 $Id$
 """
 
+from __future__ import division # confidence high
+
 import numpy, sys, string, wutil
 import Tkinter, msgiobuffer
 import Ptkplot
@@ -292,7 +294,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         la = self.lineAttributes
         # XXX not handling linestyle yet, except for clear
         stipple = 0
-        npts = len(vertices)/2
+        npts = len(vertices)//2
         if la.linestyle == 0: # clear
             color = self.colorManager.setDrawingColor(0)
         else:
@@ -314,7 +316,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         # IRAF only implements points for poly marker, that makes it simple
         ma = self.markerAttributes   # Marker attributes don't appear
                                      # to be set when this mode is used though.
-        npts = len(vertices)/2
+        npts = len(vertices)//2
         color = self.colorManager.setDrawingColor(ma.color)
         gw = self.gwidget
         h = gw.winfo_height()
@@ -337,7 +339,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         fa = self.fillAttributes
         clear = 0
         polystipple = 0
-        npts = len(vertices)/2
+        npts = len(vertices)//2
         if fa.fillstyle != 0:
             color = self.colorManager.setDrawingColor(fa.color)
         else: # clear region
