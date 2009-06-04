@@ -5,6 +5,8 @@
 $Id$
 """
 
+from __future__ import division # confidence high
+
 import os
 from Tkinter import _default_root
 from Tkinter import *

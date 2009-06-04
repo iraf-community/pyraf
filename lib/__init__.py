@@ -8,6 +8,8 @@ $Id$
 
 R. White, 2000 February 18
 """
+from __future__ import division # confidence high
+
 __version__ = "1.7dev (May 2008)"
 
 import os, sys, __main__

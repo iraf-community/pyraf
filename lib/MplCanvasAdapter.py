@@ -4,6 +4,8 @@
 $Id$
 """
 
+from __future__ import division # confidence high
+
 import os, matplotlib
 import Tkinter as Tki
 matplotlib.use('TkAgg') # set backend

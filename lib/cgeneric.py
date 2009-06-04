@@ -19,6 +19,7 @@ $Id$
 
 Created 1999 September 10 by R. White
 """
+from __future__ import division # confidence high
 
 class ContextSensitiveScanner:
 

@@ -4,6 +4,8 @@ matplotlib implementation of the gki kernel class
 $Id$
 """
 
+from __future__ import division # confidence high
+
 import math, sys, numpy
 import Tkinter as Tki
 import matplotlib
