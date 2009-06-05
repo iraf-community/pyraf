@@ -5,6 +5,8 @@ $Id$
 R. White, 2001 Dec 15
 """
 
+from __future__ import division # confidence high
+
 import os, sys, Tkinter
 from pytools.irafglobals import IrafPkg
 import wutil
@@ -39,8 +41,8 @@ class SplashScreen(Tkinter.Toplevel):
         self.update_idletasks()
         xmax = self.winfo_screenwidth()
         ymax = self.winfo_screenheight()
-        x0 = (xmax - self.winfo_reqwidth()) / 2
-        y0 = (ymax - self.winfo_reqheight()) / 2
+        x0 = (xmax - self.winfo_reqwidth()) // 2
+        y0 = (ymax - self.winfo_reqheight()) // 2
         self.geometry("+%d+%d" % (x0, y0))
 
     def createWidgets(self):
@@ -100,24 +102,24 @@ class PyrafSplash(SplashScreen):
         height = iheight+10+15*self.nlines
         self.canvas = Tkinter.Canvas(self, width=width, height=height,
             background=self["background"])
-        self.image = self.canvas.create_image(width/2, 5+iheight/2, image=self.img)
+        self.image = self.canvas.create_image(width//2, 5+iheight//2, image=self.img)
         self.text = self.nlines*[None]
         minx = 0
         font = ("helvetica", 12)
         for i in range(self.nlines):
             y = height-(self.nlines-i)*15+8
             tval = self.initialText[i] or ""
-            self.text[i] = self.canvas.create_text(width/2, y,
+            self.text[i] = self.canvas.create_text(width//2, y,
                 text=tval, fill=self.textcolor, font=font)
             minx = min(minx, self.canvas.bbox(self.text[i])[0])
         if minx<3:
             # expand window and recenter all items
             width = width+(3-minx)*2
             self.canvas.configure(width=width)
-            self.canvas.coords(self.image, width/2, 5+iheight/2)
+            self.canvas.coords(self.image, width//2, 5+iheight//2)
             for i in range(self.nlines):
                 y = height-(self.nlines-i)*15+8
-                self.canvas.coords(self.text[i], width/2, y)
+                self.canvas.coords(self.text[i], width//2, y)
         self.canvas.pack()
 
     def write(self, s):
