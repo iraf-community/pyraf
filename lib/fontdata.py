@@ -2,6 +2,7 @@
 
 $Id$
 """
+from __future__ import division # confidence high
 
 from numpy import *
 

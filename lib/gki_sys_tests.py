@@ -7,6 +7,7 @@ researched and addressed.
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import os, sys
 from pyraf import iraf

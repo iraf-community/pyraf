@@ -3,6 +3,7 @@ Tk gui implementation for the gki plot widget
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import numpy, os, sys, string, wutil, time
 import Tkinter, msgiobuffer
