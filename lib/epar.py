@@ -4,6 +4,7 @@ $Id$
 
 M.D. De La Pena, 2000 February 04
 """
+from __future__ import division # confidence high
 
 # system level modules
 from Tkinter import *
