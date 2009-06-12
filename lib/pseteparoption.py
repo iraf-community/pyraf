@@ -4,6 +4,7 @@
 
 $Id$
 """
+from __future__ import division # confidence high
 
 # System level modules
 from Tkinter import *

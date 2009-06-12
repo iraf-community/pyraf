@@ -16,6 +16,7 @@ import tkSimpleDialog
 
 tkSimpleDialog.askstring("window title", "question?")
 """
+from __future__ import division # confidence high
 
 import tkSimpleDialog
 from Tkinter import *
