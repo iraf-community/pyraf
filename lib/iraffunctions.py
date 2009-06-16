@@ -49,7 +49,8 @@ def _writeError(msg):
 # now it is safe to import other iraf modules
 # -----------------------------------------------------
 
-import sys, os, string, re, math, struct, types, time, fnmatch, glob, linecache
+import sys, os, string, re, math, struct, types, time, fnmatch, glob, tempfile
+import linecache
 from pytools import minmatch, irafutils
 import numpy, sscanf, subproc, wutil
 import irafnames, iraftask, irafpar, irafexecute, cl2py
@@ -81,6 +82,7 @@ _types = types
 _time = time
 _fnmatch = fnmatch
 _glob = glob
+_tempfile = tempfile
 _linecache = linecache
 _StringIO = StringIO
 _pickle = pickle
@@ -98,7 +100,7 @@ _irafexecute = irafexecute
 _cl2py = cl2py
 
 del sys, os, string, re, math, struct, types, time, fnmatch, glob, linecache
-del StringIO, pickle
+del StringIO, pickle, tempfile
 del numpy, minmatch, subproc, wutil
 del irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
 
@@ -276,9 +278,11 @@ def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
     if nfound == 0:
         raise IOError("No exec statement found in script %s" % file)
     # write new script to temporary file
-    import tempfile
-    newfile = tempfile.mktemp()
-    open(newfile,'w').writelines(newlines)
+    (fd, newfile) = _tempfile.mkstemp()
+    _os.close(fd)
+    f = open(newfile, 'w')
+    f.writelines(newlines)
+    f.close()
     _os.chmod(newfile,0700)
     # run new script and capture output
     fh = _StringIO.StringIO()
@@ -2642,12 +2646,29 @@ def task(*args, **kw):
             _writeError("Warning: `.' illegal in task name, changing "
                     "`%s' to `%s'" % (pkgname, spkgname))
             pkgname = spkgname
+        # get the task name
         if len(kw) > 1:
             raise SyntaxError("More than one `=' in task definition")
         elif len(kw) < 1:
             raise SyntaxError("Must be at least one `=' in task definition")
         s = kw.keys()[0]
         value = kw[s]
+        # To handle when actual CL code is given, not a file name, we will
+        # replace the code with the name of the tmp file that we write it to.
+        if value.find('\n') >= 0:
+            # write it to a temp file in the home$ dir, then use filename
+            (f, tmpCl) = _tempfile.mkstemp(suffix=".cl", prefix=str(s)+'_',
+                                           dir=userIrafHome, text=True)
+            # write inline code to .cl file; len(kw) is checked below
+            _os.write(f, value+'\n')
+            # Add text at end to auto-delete this temp file
+            _os.write(f, '#\n# this last section automatically added\n')
+            _os.write(f, 'delete '+tmpCl+' verify-\n')
+            _os.close(f)
+            # exchange for tmp .cl file name
+            value = tmpCl
+
+        # untranslateName
         s = _irafutils.untranslateName(s)
         args = args + (s,)
 
