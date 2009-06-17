@@ -12,7 +12,7 @@ versions of urwid.  Many thanks to author Rebecca Breu.
 
 $Id$
 """
-
+from __future__ import division # confidence high
  
 from urwid import *
 from urwid import WidgetWrap

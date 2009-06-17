@@ -6,6 +6,7 @@ If the c versions do not exist, then these routines will do nothing
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import struct, fcntl, sys, os
 

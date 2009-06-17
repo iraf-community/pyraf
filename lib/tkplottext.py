@@ -1,9 +1,7 @@
 """Implements text rendering using stroked font and Tkplot/X
 
 $Id$
-"""
 
-"""
 General description and discussion about the assumptions of how
 text is to be handled. This will be a phased implementation and
 initially, some IRAF text features may not be implmented
@@ -22,8 +20,8 @@ From experiments, these are some properties of IRAF text:
 
 This implementation will allow some of these properties to be overriden
 by a system-wide configuration state. See gkiopengl.py
-
 """
+from __future__ import division # confidence high
 
 import fontdata
 import numpy
