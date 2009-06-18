@@ -14,6 +14,7 @@ $Id$
 
 RLW, 2000 February 13
 """
+from __future__ import division # confidence high
 
 from rlcompleter import Completer
 import readline
@@ -158,7 +159,7 @@ class IrafCompleter(Completer):
                 return self.filename_matches(text, line[:lt])
             else:
                 if not hasattr(self, "namespace"):
-                    self.namespace = {}  
+                    self.namespace = {}
                 return Completer.global_matches(self,text)
         else:
             taskname = m.group(1)

@@ -27,8 +27,8 @@ Ultimately more functionality may be added to make this a complete
 replacement for CDL.
 
 $Id$
-
 """
+from __future__ import division # confidence high
 
 import os, socket, numpy, fcntl
 from pytools import irafutils

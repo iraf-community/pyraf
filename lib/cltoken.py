@@ -2,6 +2,7 @@
 
 $Id$
 """
+from __future__ import division # confidence high
 
 #  Copyright (c) 1998-1999 John Aycock
 #

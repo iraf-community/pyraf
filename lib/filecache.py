@@ -28,6 +28,7 @@ $Id$
 
 R. White, 2000 October 1
 """
+from __future__ import division # confidence high
 
 import os, stat, sys, hashlib
 

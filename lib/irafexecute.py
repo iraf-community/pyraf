@@ -2,6 +2,7 @@
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
 from pytools import irafutils
@@ -821,7 +822,7 @@ class IrafProcess:
         """Handle xfer data requests"""
 
         chan, nbytes = self.chanbytes()
-        nchars = nbytes/2
+        nchars = nbytes//2
         if chan == 3:
 
             # Read data from stdin unless xferline already has

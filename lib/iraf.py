@@ -4,6 +4,7 @@ $Id$
 
 R. White, 1999 Jan 25
 """
+from __future__ import division # confidence high
 
 from iraffunctions import *
 

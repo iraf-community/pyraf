@@ -4,6 +4,7 @@ $Id$
 
 R. White, 2000 January 19
 """
+from __future__ import division # confidence high
 
 import os, sys
 import filecache
