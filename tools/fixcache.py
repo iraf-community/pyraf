@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # rename clcache files
 
+from __future__ import division # confidence high
 import os
 
 def fixit(trylist, verbose=0):

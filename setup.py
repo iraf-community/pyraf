@@ -2,6 +2,7 @@
 
 # We use the local copy of stsci_distutils_hack, unless
 # the user asks for the stpytools version
+from __future__ import division # confidence high
 
 import os
 if os.getenv("USE_STPYTOOLS") :

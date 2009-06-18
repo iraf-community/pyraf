@@ -11,11 +11,12 @@ and move the user cache so that everything gets compiled from scratch.)
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import os, sys, traceback, time
 
 def printcenter(s, length=70, char="-"):
-    l1 = (length-len(s))/2
+    l1 = (length-len(s))//2
     l2 = length-l1-len(s)
     print l1*char, s, l2*char
     sys.stdout.flush()
