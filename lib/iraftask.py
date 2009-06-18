@@ -8,8 +8,8 @@ iraftask defines the original PyRAF task functionality which pre-dates
 the creation of IRAF ECL.  irafecl is closely related and derived from
 iraftask,  providing drop-in replacements for the Task classes defined
 here which also support ECL syntax like "iferr" and $errno.
-
 """
+from __future__ import division # confidence high
 
 import os, sys, copy, re
 from pytools import basicpar, minmatch, irafutils, irafglobals, taskpars

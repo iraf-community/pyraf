@@ -36,6 +36,7 @@ $Id$
 
 R. White, 1999 September 23
 """
+from __future__ import division # confidence high
 
 import __main__, re, os, types
 from pytools import minmatch, irafutils
