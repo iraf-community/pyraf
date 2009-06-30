@@ -2657,14 +2657,24 @@ def task(*args, **kw):
         # replace the code with the name of the tmp file that we write it to.
         if value.find('\n') >= 0:
             # write it to a temp file in the home$ dir, then use filename
-            (f, tmpCl) = _tempfile.mkstemp(suffix=".cl", prefix=str(s)+'_',
-                                           dir=userIrafHome, text=True)
+            (fd, tmpCl) = _tempfile.mkstemp(suffix=".cl", prefix=str(s)+'_',
+                                            dir=userIrafHome, text=True)
+            _os.close(fd)
+            # check for invalid chars as far as python function names go.
+            # yes this goes against the use of mkstemp from a purity point
+            # of view but it can't much be helped
+            tmpClorig = tmpCl
+            tmpCl = tmpCl.replace('-','_')
+            tmpCl = tmpCl.replace('+','_')
+            assert tmpClorig == tmpCl or not _os.path.exists(tmpCl), \
+                   'Abused mkstemp fname: '+tmpCl
             # write inline code to .cl file; len(kw) is checked below
-            _os.write(f, value+'\n')
+            f = open(tmpCl, 'w')
+            f.write(value+'\n')
             # Add text at end to auto-delete this temp file
-            _os.write(f, '#\n# this last section automatically added\n')
-            _os.write(f, 'delete '+tmpCl+' verify-\n')
-            _os.close(f)
+            f.write('#\n# this last section automatically added\n')
+            f.write('delete '+tmpCl+' verify-\n')
+            f.close()
             # exchange for tmp .cl file name
             value = tmpCl
 
