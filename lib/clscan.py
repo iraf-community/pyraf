@@ -6,6 +6,7 @@ $Id$
 
 R. White, 1999 September 10
 """
+from __future__ import division # confidence high
 
 from cgeneric import ContextSensitiveScanner
 from generic import GenericScanner
