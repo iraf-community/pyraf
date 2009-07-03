@@ -1,4 +1,5 @@
 """This module adds IRAF ECL style error handling to PyRAF."""
+from __future__ import division # confidence high
 
 import inspect
 import sys
@@ -39,16 +40,16 @@ class Erract(object):
     control ECL exception handling:
 
     abort | noabort  An ECL task should stop and unwind when it encounters an untrapped error.
-    
+
     trace | notrace  Output to stderr for each task failure.
-    
+
     flpr  | noflpr   Flush the process cache for failed tasks.
-    
+
     clear | noclear  Reset the $errno, $errmsg, $errtask variables with each task invocation, or not.
-    
+
     full  | nofull   Show tracebacks for the entire ECL call stack or just the erring task.
 
-    ecl | noecl      Use ECL style error handling or classic PyRAF exception handling.    
+    ecl | noecl      Use ECL style error handling or classic PyRAF exception handling.
     """
     def __init__(self, clear=True, flpr=True, abort=True, trace=True, full=True, ecl=True):
         self.clear = clear
@@ -119,7 +120,7 @@ def _ecl_interpreted_frame(frame=None):
     else:
         return None
 
-class EclBase: 
+class EclBase:
     def __init__(self, *args, **kw):
         self.__dict__['DOLLARerrno'] = 0
         self.__dict__['DOLLARerrmsg'] = ""
@@ -206,7 +207,7 @@ class EclBase:
     def _ecl_push_err(self):
         """Method call emitted in compiled CL code to start an iferr
         block.  Increments local iferr state counter to track iferr
-        block nesting.        
+        block nesting.
         """
         s = self._ecl_state()
         s += 1
@@ -215,7 +216,7 @@ class EclBase:
     def _ecl_pop_err(self):
         """Method call emitted in compiled CL code to close an iferr
         block and start the handler.  Returns $errno which is 0 iff no
-        error occurred.  Decrements local iferr state counter to track block nesting.      
+        error occurred.  Decrements local iferr state counter to track block nesting.
         """
         s = self._ecl_state()
         s += -1
@@ -237,12 +238,12 @@ class EclBase:
             for a in args:
                 s += str(a) + " "
             sys.stderr.write(s+"\n")
-            sys.stderr.flush()        
+            sys.stderr.flush()
 
     def _ecl_exception_properties(self, e):
         """This is a 'safe wrapper' which extracts the ECL pseudo parameter values from an
         exception.  It works for both ECL and non-ECL exceptions.
-        """        
+        """
         return (getattr(e, "errno", -1),
                 getattr(e, "errmsg", e.message),
                 getattr(e, "errtask", ""))
@@ -297,20 +298,20 @@ class EclBase:
 
     def _ecl_safe_divide(self, a, b):
         """_ecl_safe_divide is used to wrap the division operator for ECL code and trap divide-by-zero errors."""
-        if b == 0:  
+        if b == 0:
             if not erract.abort or self._ecl_iferr_entered():
-                self._ecl_trace("Warning on line %d of '%s':  divide by zero - using $err_dzvalue =" % 
+                self._ecl_trace("Warning on line %d of '%s':  divide by zero - using $err_dzvalue =" %
                                 (self._ecl_get_lineno(), self._name), self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
                 iraf.error(1, "divide by zero", self._name, suppress=False)
         return a / b
-            
+
     def _ecl_safe_modulo(self, a, b):
         """_ecl_safe_modulus is used to wrap the modulus operator for ECL code and trap mod-by-zero errors."""
-        if b == 0:  
+        if b == 0:
             if not erract.abort or self._ecl_iferr_entered():
-                self._ecl_trace("Warning on line %d of task '%s':  modulo by zero - using $err_dzvalue =" % 
+                self._ecl_trace("Warning on line %d of task '%s':  modulo by zero - using $err_dzvalue =" %
                                 (self._ecl_get_lineno(), self._name), self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
