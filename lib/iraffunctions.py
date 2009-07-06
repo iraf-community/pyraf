@@ -2301,6 +2301,19 @@ def flprcache(*args, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
+def noprcache(*args, **kw):
+    """Disable process cache.  No process cache will be employed
+       for the rest of this session."""
+    # handle redirection and save keywords
+    redirKW, closeFHList = redirProcess(kw)
+    resetList = redirApply(redirKW)
+    try:
+        _irafexecute.processCache.setSize(0)
+        if Verbose>0: print "Disabled process cache"
+    finally:
+        rv = redirReset(resetList, closeFHList)
+    return rv
+
 def prcache(*args, **kw):
     """Print process cache.  If args are given, locks tasks into cache."""
     # handle redirection and save keywords
