@@ -1,0 +1,26 @@
+# -*- Mode: Shell-Script -*-  Not really, but shows comments correctly
+#***************************************************************************
+#
+# Configuration file for ipython -- ipythonrc format
+#
+# The format of this file is one of 'key value' lines.
+# Lines containing only whitespace at the beginning and then a # are ignored
+# as comments. But comments can NOT be put on lines with data.
+#***************************************************************************
+
+# This is an example of a 'profile' file which includes a base file and adds
+# some customizaton for a particular purpose.
+
+# If this file is found in the user's ~/.ipython directory as
+# ipythonrc-pyraf, it can be loaded by calling passing the '-profile
+# pyraf' (or '-p pyraf') option to IPython.
+
+# A simple alias pyraf -> 'ipython -p pyraf' makes life very convenient.
+
+# Load the user's basic configuration
+include ipythonrc
+
+# import ...
+
+import_mod pyraf.ipython_api
+import_mod iraf
