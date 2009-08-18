@@ -163,7 +163,7 @@ def _help(object, variables, functions, modules,
         if _printIrafHelp(object, html, irafkw): return
 
     if isinstance(object,str):
-        if re.match(r'[a-z_][a-z0-9_.]*$',object) or \
+        if re.match(r'[A-Za-z_][A-Za-z0-9_.]*$',object) or \
           (re.match(r'[^\0]*$',object) and \
                     os.path.exists(iraf.Expand(object, noerror=1))):
             if _printIrafHelp(object, html, irafkw): return
