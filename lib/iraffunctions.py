@@ -2301,15 +2301,34 @@ def flprcache(*args, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
-def noprcache(*args, **kw):
+def prcacheOff(**kw):
     """Disable process cache.  No process cache will be employed
        for the rest of this session."""
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
+    if kw.has_key('_save'): del kw['_save']
+    if len(kw):
+        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
     resetList = redirApply(redirKW)
     try:
         _irafexecute.processCache.setSize(0)
         if Verbose>0: print "Disabled process cache"
+    finally:
+        rv = redirReset(resetList, closeFHList)
+    return rv
+
+def prcacheOn(**kw):
+    """Re-enable process cache.  A process cache will again be employed
+       for the rest of this session.  This may be useful after prcacheOff()."""
+    # handle redirection and save keywords
+    redirKW, closeFHList = redirProcess(kw)
+    if kw.has_key('_save'): del kw['_save']
+    if len(kw):
+        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+    resetList = redirApply(redirKW)
+    try:
+        _irafexecute.processCache.resetSize()
+        if Verbose>0: print "Enabled process cache"
     finally:
         rv = redirReset(resetList, closeFHList)
     return rv
