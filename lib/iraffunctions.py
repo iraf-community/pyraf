@@ -465,6 +465,34 @@ def _addTask(task, pkgname=None):
     # add task to list for its package
     getPkg(pkgname).addTask(task,fullname)
 
+
+# --------------------------------------------------------------------------
+# decorator to consolidate repeated code used in command-line functions
+# --------------------------------------------------------------------------
+def handleRedirAndSaveKwds(target):
+    """ This decorator is used to consolidate repeated code used in
+        command-line functions, concerning standard pipe redirection.
+        The replaced function 'target' should return only a None.
+    """
+    # create the wrapper function here which handles the redirect keywords,
+    # and return it so it can replace 'target'
+    def wrapper(*args, **kw):
+        # handle redirection and save keywords
+        redirKW, closeFHList = redirProcess(kw)
+        if kw.has_key('_save'): del kw['_save']
+        if len(kw):
+            raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        resetList = redirApply(redirKW)
+        try:
+            # call 'target' to do the interesting work of this function
+            target(*args, **kw)
+        finally:
+            rv = redirReset(resetList, closeFHList)
+        return rv
+    # return it so it can replace 'target'
+    return wrapper
+
+
 # -----------------------------------------------------
 # addLoaded: Add an IRAF package to the loaded pkgs list
 # -----------------------------------------------------
@@ -845,72 +873,43 @@ def listCurrent(n=1, hidden=0, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
+@handleRedirAndSaveKwds # !!! need to think about the args in this one !!!
 def listVars(prefix="", equals="\t= ", **kw):
     """List IRAF variables"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        keylist = getVarList()
-        if len(keylist) == 0:
-            print 'No IRAF variables defined'
-        else:
-            keylist.sort()
-            for word in keylist:
-                print "%s%s%s%s" % (prefix, word, equals, envget(word))
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    keylist = getVarList()
+    if len(keylist) == 0:
+        print 'No IRAF variables defined'
+    else:
+        keylist.sort()
+        for word in keylist:
+            print "%s%s%s%s" % (prefix, word, equals, envget(word))
 
+@handleRedirAndSaveKwds
 def which(*args, **kw): # kw[0] == '_save'
     """ Emulate the which function in IRAF. """
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    # now do the actual work
-    try:
-        for arg in args:
-            try:
-                print getTask(arg).getPkgname()
-                # or: getTask(arg).getPkgname()+"."+getTask(arg).getName()
-            except _minmatch.AmbiguousKeyError, e:
-                print str(e)
-            except (KeyError, TypeError):
-                if deftask(arg):
-                    print 'language' # handle, e.g. 'which which', 'which cd'
-                else:
-                    _writeError(arg+": task not found.")
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
-
-def whereis(*args, **kw): # kw[0] == '_save'
-    """ Emulate the whereis function in IRAF. """
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    # now do the actual work
-    try:
-        for arg in args:
-            matches = _mmtasks.getall(arg)
-            if matches:
-                matches.reverse() # this reverse isn't necessary - they arrive
-                                  # in the right order, but CL seems to do this
-                print " ".join(matches)
+    for arg in args:
+        try:
+            print getTask(arg).getPkgname()
+            # or: getTask(arg).getPkgname()+"."+getTask(arg).getName()
+        except _minmatch.AmbiguousKeyError, e:
+            print str(e)
+        except (KeyError, TypeError):
+            if deftask(arg):
+                print 'language' # handle, e.g. 'which which', 'which cd'
             else:
                 _writeError(arg+": task not found.")
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+
+@handleRedirAndSaveKwds
+def whereis(*args, **kw): # kw[0] == '_save'
+    """ Emulate the whereis function in IRAF. """
+    for arg in args:
+        matches = _mmtasks.getall(arg)
+        if matches:
+            matches.reverse() # this reverse isn't necessary - they arrive
+                              # in the right order, but CL seems to do this
+            print " ".join(matches)
+        else:
+            _writeError(arg+": task not found.")
 
 # -----------------------------------------------------
 # IRAF utility functions
