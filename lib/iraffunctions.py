@@ -722,68 +722,41 @@ def getVarList():
 # list contents of the dictionaries
 # -----------------------------------------------------
 
+@handleRedirAndSaveKwds
 def listAll(hidden=0, **kw):
     """List IRAF packages, tasks, and variables"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        print 'Packages:'
-        listPkgs()
-        print 'Loaded Packages:'
-        listLoaded()
-        print 'Tasks:'
-        listTasks(hidden=hidden)
-        print 'Variables:'
-        listVars()
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    print 'Packages:'
+    listPkgs()
+    print 'Loaded Packages:'
+    listLoaded()
+    print 'Tasks:'
+    listTasks(hidden=hidden)
+    print 'Variables:'
+    listVars()
 
+@handleRedirAndSaveKwds
 def listPkgs(**kw):
     """List IRAF packages"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        keylist = getPkgList()
-        if len(keylist) == 0:
-            print 'No IRAF packages defined'
-        else:
-            keylist.sort()
-            # append '/' to identify packages
-            for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
-            _irafutils.printCols(keylist)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    keylist = getPkgList()
+    if len(keylist) == 0:
+        print 'No IRAF packages defined'
+    else:
+        keylist.sort()
+        # append '/' to identify packages
+        for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
+        _irafutils.printCols(keylist)
 
+@handleRedirAndSaveKwds
 def listLoaded(**kw):
     """List loaded IRAF packages"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        keylist = getLoadedList()
-        if len(keylist) == 0:
-            print 'No IRAF packages loaded'
-        else:
-            keylist.sort()
-            # append '/' to identify packages
-            for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
-            _irafutils.printCols(keylist)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    keylist = getLoadedList()
+    if len(keylist) == 0:
+        print 'No IRAF packages loaded'
+    else:
+        keylist.sort()
+        # append '/' to identify packages
+        for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
+        _irafutils.printCols(keylist)
 
 def listTasks(pkglist=None, hidden=0, **kw):
     """List IRAF tasks, optionally specifying a list of packages to include
@@ -849,31 +822,20 @@ def listTasks(pkglist=None, hidden=0, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
+@handleRedirAndSaveKwds
 def listCurrent(n=1, hidden=0, **kw):
     """List IRAF tasks in current package (equivalent to '?' in the cl)
-
     If parameter n is specified, lists n most recent packages."""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        if len(loadedPath):
-            if n > len(loadedPath): n = len(loadedPath)
-            plist = n*[None]
-            for i in xrange(n):
+    if len(loadedPath):
+        if n > len(loadedPath): n = len(loadedPath)
+        plist = n*[None]
+        for i in xrange(n):
+            plist[i] = loadedPath[-1-i].getName()
+        listTasks(plist,hidden=hidden)
+    else:
+        print 'No IRAF tasks defined'
 
-                plist[i] = loadedPath[-1-i].getName()
-            listTasks(plist,hidden=hidden)
-        else:
-            print 'No IRAF tasks defined'
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
-
-@handleRedirAndSaveKwds # !!! need to think about the args in this one !!!
+@handleRedirAndSaveKwds
 def listVars(prefix="", equals="\t= ", **kw):
     """List IRAF variables"""
     keylist = getVarList()
@@ -885,7 +847,7 @@ def listVars(prefix="", equals="\t= ", **kw):
             print "%s%s%s%s" % (prefix, word, equals, envget(word))
 
 @handleRedirAndSaveKwds
-def which(*args, **kw): # kw[0] == '_save'
+def which(*args, **kw):
     """ Emulate the which function in IRAF. """
     for arg in args:
         try:
@@ -900,7 +862,7 @@ def which(*args, **kw): # kw[0] == '_save'
                 _writeError(arg+": task not found.")
 
 @handleRedirAndSaveKwds
-def whereis(*args, **kw): # kw[0] == '_save'
+def whereis(*args, **kw):
     """ Emulate the whereis function in IRAF. """
     for arg in args:
         matches = _mmtasks.getall(arg)
@@ -1913,7 +1875,7 @@ def set(*args, **kw):
             else:
                 # set with no arguments lists all variables (using same format
                 # as IRAF)
-                listVars(prefix="    ", equals="=")
+                listVars("    ", "=")
         else:
             # The only other case allowed is the peculiar syntax
             # 'set @filename', which only gets used in the zzsetenv.def file,
@@ -1951,7 +1913,7 @@ def show(*args, **kw):
                 print envget(arg)
         else:
             # print them all
-            listVars(prefix="    ", equals="=")
+            listVars("    ", "=")
     finally:
         rv = redirReset(resetList, closeFHList)
     return rv
@@ -1978,19 +1940,10 @@ def unset(*args, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
+@handleRedirAndSaveKwds
 def time(**kw):
     """Print current time and date"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        print _time.strftime('%a %H:%M:%S %d-%b-%Y')
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    print _time.strftime('%a %H:%M:%S %d-%b-%Y')
 
 def sleep(seconds=0, **kw):
     """Sleep for specified time"""
@@ -2155,27 +2108,18 @@ def tparam(*args, **kw):
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
 
+@handleRedirAndSaveKwds
 def lparam(*args, **kw):
     """List parameters for tasks"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        for taskname in args:
+    for taskname in args:
+        try:
+            taskname.lParam()
+        except AttributeError:
             try:
-                taskname.lParam()
-            except AttributeError:
-                try:
-                    getTask(taskname).lParam()
-                except (KeyError, TypeError):
-                    _writeError("Warning: Could not find task %s for lpar\n" %
-                            taskname)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+                getTask(taskname).lParam()
+            except (KeyError, TypeError):
+                _writeError("Warning: Could not find task %s for lpar\n" %
+                        taskname)
 
 def dparam(*args, **kw):
     """Dump parameters for task in executable form"""
@@ -2205,161 +2149,86 @@ def dparam(*args, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
+@handleRedirAndSaveKwds
 def update(*args, **kw):
     """Update task parameters on disk"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        for taskname in args:
-            try:
-                getTask(taskname).saveParList()
-            except KeyError, e:
-                _writeError("Warning: Could not find task %s for update" %
-                        taskname)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    for taskname in args:
+        try:
+            getTask(taskname).saveParList()
+        except KeyError, e:
+            _writeError("Warning: Could not find task %s for update" %
+                    taskname)
 
+@handleRedirAndSaveKwds
 def unlearn(*args, **kw):
     """Unlearn task parameters -- restore to defaults"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        for taskname in args:
-            try:
-                getTask(taskname).unlearn()
-            except KeyError, e:
-                _writeError("Warning: Could not find task %s to unlearn" %
-                        taskname)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    for taskname in args:
+        try:
+            getTask(taskname).unlearn()
+        except KeyError, e:
+            _writeError("Warning: Could not find task %s to unlearn" %
+                    taskname)
 
+@handleRedirAndSaveKwds
 def edit(*args, **kw):
     """Edit text files"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        editor = envget('editor')
-        margs = map(Expand, args)
-        _os.system(' '.join([editor,]+margs))
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    editor = envget('editor')
+    margs = map(Expand, args)
+    _os.system(' '.join([editor,]+margs))
 
 _clearString = None
 
+@handleRedirAndSaveKwds
 def clear(*args, **kw):
     """Clear screen if output is terminal"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        global _clearString
-        if _clearString is None:
-            # get the clear command by running system clear
-            fh = _StringIO.StringIO()
-            try:
-                clOscmd('/usr/bin/tput clear', Stdout=fh)
-                _clearString = fh.getvalue()
-            except SubprocessError:
-                _clearString = ""
-            fh.close()
-            del fh
-        if _sys.stdout == _sys.__stdout__:
-            _sys.stdout.write(_clearString)
-            _sys.stdout.flush()
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    global _clearString
+    if _clearString is None:
+        # get the clear command by running system clear
+        fh = _StringIO.StringIO()
+        try:
+            clOscmd('/usr/bin/tput clear', Stdout=fh)
+            _clearString = fh.getvalue()
+        except SubprocessError:
+            _clearString = ""
+        fh.close()
+        del fh
+    if _sys.stdout == _sys.__stdout__:
+        _sys.stdout.write(_clearString)
+        _sys.stdout.flush()
 
+@handleRedirAndSaveKwds
 def flprcache(*args, **kw):
     """Flush process cache.  Takes optional list of tasknames."""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    resetList = redirApply(redirKW)
-    try:
-        apply(_irafexecute.processCache.flush, args)
-        if Verbose>0: print "Flushed process cache"
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    apply(_irafexecute.processCache.flush, args)
+    if Verbose>0: print "Flushed process cache"
 
+@handleRedirAndSaveKwds
 def prcacheOff(**kw):
     """Disable process cache.  No process cache will be employed
        for the rest of this session."""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        _irafexecute.processCache.setSize(0)
-        if Verbose>0: print "Disabled process cache"
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    _irafexecute.processCache.setSize(0)
+    if Verbose>0: print "Disabled process cache"
 
+@handleRedirAndSaveKwds
 def prcacheOn(**kw):
     """Re-enable process cache.  A process cache will again be employed
        for the rest of this session.  This may be useful after prcacheOff()."""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        _irafexecute.processCache.resetSize()
-        if Verbose>0: print "Enabled process cache"
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    _irafexecute.processCache.resetSize()
+    if Verbose>0: print "Enabled process cache"
 
+@handleRedirAndSaveKwds
 def prcache(*args, **kw):
     """Print process cache.  If args are given, locks tasks into cache."""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    resetList = redirApply(redirKW)
-    try:
-        if args:
-            apply(_irafexecute.processCache.lock, args)
-        else:
-            _irafexecute.processCache.list()
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    if args:
+        apply(_irafexecute.processCache.lock, args)
+    else:
+        _irafexecute.processCache.list()
 
+@handleRedirAndSaveKwds
 def gflush(*args, **kw):
     """Flush any buffered graphics output."""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        import gki
-        gki.kernel.flush()
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    import gki
+    gki.kernel.flush()
 
 def pyexecute(filename, **kw):
     """Execute python code in filename (which may include IRAF path).
@@ -2407,15 +2276,13 @@ def pyexecute(filename, **kw):
 # history routines
 
 def history(n=20, *args, **kw):
-    """Print history
-
+    """Print history.
     Does not replicate the IRAF behavior of changing default number of
     lines to print.  (That seems fairly useless to me.)
     """
 
     # Seems like there ought to be a way to do this using readline, but I have
     # not been able to figure out any readline command that lists the history
-
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
     if kw.has_key('_save'): del kw['_save']
@@ -2433,36 +2300,18 @@ def history(n=20, *args, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
+@handleRedirAndSaveKwds
 def ehistory(*args, **kw):
     """Dummy history function"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        print 'ehistory command not required: Use arrow keys to recall commands'
-        print 'or ctrl-R to search for a string in the command history.'
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    print 'ehistory command not required: Use arrow keys to recall commands'
+    print 'or ctrl-R to search for a string in the command history.'
 
 # dummy routines
 
+@handleRedirAndSaveKwds
 def clNoBackground(*args, **kw):
     """Dummy background function"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        _writeError('Background jobs not implemented')
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    _writeError('Background jobs not implemented')
 
 jobs = service = kill = wait = clNoBackground
 
@@ -2511,36 +2360,18 @@ def fprint(*args, **kw):
 
 # various helper functions
 
+@handleRedirAndSaveKwds
 def pkgHelp(pkgname=None, **kw):
     """Give help on package (equivalent to CL '? [taskname]')"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        if pkgname is None:
-            listCurrent()
-        else:
-            listTasks(pkgname)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    if pkgname is None:
+        listCurrent()
+    else:
+        listTasks(pkgname)
 
+@handleRedirAndSaveKwds
 def allPkgHelp(**kw):
     """Give help on all packages (equivalent to CL '??')"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        listTasks()
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    listTasks()
 
 def _clProcedure(*args, **kw):
     """Core function for the CL task
@@ -2613,24 +2444,15 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
         rv = redirReset(resetList, closeFHList)
     return rv
 
+@handleRedirAndSaveKwds
 def hidetask(*args, **kw):
     """Hide the CL task in package listings"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        for taskname in args:
-            try:
-                getTask(taskname).setHidden()
-            except KeyError, e:
-                _writeError("Warning: Could not find task %s to hide" %
-                        taskname)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    for taskname in args:
+        try:
+            getTask(taskname).setHidden()
+        except KeyError, e:
+            _writeError("Warning: Could not find task %s to hide" %
+                    taskname)
 
 # pattern matching single task name, possibly with $ prefix and/or
 # .pkg or .tb suffix
@@ -2808,24 +2630,14 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
     # return output as array of strings if not None, else return name,bin
     return rv or rv1
 
+@handleRedirAndSaveKwds
 def clPrint(*args, **kw):
     """CL print command -- emulates CL spacing and uses redirection keywords"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-##     if kw.has_key('_parent'): del kw['_parent']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        for arg in args:
-            print arg,
-            # don't put spaces after string arguments
-            if isinstance(arg,(str,unicode)): _sys.stdout.softspace=0
-        print
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    for arg in args:
+        print arg,
+        # don't put spaces after string arguments
+        if isinstance(arg,(str,unicode)): _sys.stdout.softspace=0
+    print
 
 # printf format conversion utilities
 
@@ -2978,19 +2790,10 @@ def printf(format, *args, **kw):
 
 _backDir = None
 
+@handleRedirAndSaveKwds
 def pwd(**kw):
     """Print working directory"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        print _os.getcwd()
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    print _os.getcwd()
 
 def chdir(directory=None, **kw):
     """Change working directory"""
@@ -3040,30 +2843,21 @@ def chdir(directory=None, **kw):
 
 cd = chdir
 
+@handleRedirAndSaveKwds
 def back(**kw):
     """Go back to previous working directory"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
+    global _backDir
+    if _backDir is None:
+        raise IrafError("no previous directory for back()")
     try:
-        global _backDir
-        if _backDir is None:
-            raise IrafError("no previous directory for back()")
-        try:
-            _newBack = _os.getcwd()
-        except OSError:
-            # OSError for getcwd() means current directory does not exist
-            _newBack = _backDir
-        _os.chdir(_backDir)
-        print _backDir
-        _irafexecute.processCache.setenv('chdir %s\n' % _backDir)
-        _backDir = _newBack
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+        _newBack = _os.getcwd()
+    except OSError:
+        # OSError for getcwd() means current directory does not exist
+        _newBack = _backDir
+    _os.chdir(_backDir)
+    print _backDir
+    _irafexecute.processCache.setenv('chdir %s\n' % _backDir)
+    _backDir = _newBack
 
 def error(errno=0,errmsg='',task="error",_save=False, suppress=True):
     """Print error message"""
