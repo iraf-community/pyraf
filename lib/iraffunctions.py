@@ -467,12 +467,31 @@ def _addTask(task, pkgname=None):
 
 
 # --------------------------------------------------------------------------
-# decorator to consolidate repeated code used in command-line functions
+# Use decorators to consolidate repeated code used in command-line functions.
+# (09/2009)
+# These decorator functions are not the simplest form in that they each also
+# define a function (the actual wrapper) and return that function.  This
+# is needed to get to both the before and after parts of the target.  This
+# approach was performance tested to ensure that PyRAF functionality would
+# not suffer for the sake of code maintainability.  The results showed (under
+# Python 2.4/.5/.6) that performance can be degraded (by 65%) for only the very
+# simplest target function (e.g. "pass"), but that for functions which take
+# any amount of time to do their work (e.g. taking 0.001 sec), the performance
+# degradation is effectively unmeasurable.  This same approach can be done
+# with a decorator class instead of a decorator function, but the performance
+# degradation is always greater by a factor of at least 3.
+#
+# These decorators could all be combined into a single function with arguments
+# deciding their different capabilities, but that would add another level (i.e.
+# a function within a function within a function) and for the sake of simplicity
+# and robustness as we move into Py3K, we'll write them out separately for now.
 # --------------------------------------------------------------------------
+
 def handleRedirAndSaveKwds(target):
     """ This decorator is used to consolidate repeated code used in
         command-line functions, concerning standard pipe redirection.
-        The replaced function 'target' should return only a None.
+        Typical 'target' functions will: take 0 or more positional arguments,
+        take 0 keyword args (except redir's &  _save), and return nothing.
     """
     # create the wrapper function here which handles the redirect keywords,
     # and return it so it can replace 'target'
@@ -1896,68 +1915,40 @@ def set(*args, **kw):
 
 reset = set
 
+@handleRedirAndSaveKwds
 def show(*args, **kw):
     """Print value of IRAF or OS environment variables"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
     if len(args) and args[0].startswith("erract"):
         print irafecl.erract.states()
-        return redirReset(resetList, closeFHList)
-    try:
+    else:
         if args:
             for arg in args:
                 print envget(arg)
         else:
             # print them all
             listVars("    ", "=")
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
 
+@handleRedirAndSaveKwds
 def unset(*args, **kw):
-    """Unset IRAF environment variables
-
+    """Unset IRAF environment variables.
     This is not a standard IRAF task, but it is obviously useful.
     It makes the resulting variables undefined.  It silently ignores
     variables that are not defined.  It does not change the os environment
     variables.
     """
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    resetList = redirApply(redirKW)
-    try:
-        if len(kw) != 0:
-            raise SyntaxError("unset requires a list of variable names")
-        for arg in args:
-            if _varDict.has_key(arg):
-                del _varDict[arg]
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    for arg in args:
+        if _varDict.has_key(arg):
+            del _varDict[arg]
 
 @handleRedirAndSaveKwds
 def time(**kw):
     """Print current time and date"""
     print _time.strftime('%a %H:%M:%S %d-%b-%Y')
 
-def sleep(seconds=0, **kw):
+@handleRedirAndSaveKwds
+def sleep(seconds, **kw):
     """Sleep for specified time"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        _time.sleep(float(seconds))
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    _time.sleep(float(seconds))
 
 def beep(**kw):
     """Beep to terminal (even if output is redirected)"""
@@ -2727,64 +2718,55 @@ _fDispatch["M"] = _hConv
 
 del badList, b
 
+@handleRedirAndSaveKwds
 def printf(format, *args, **kw):
     """Formatted print function"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        # make argument list mutable
-        args = list(args)
-        newformat = []
-        # find all format strings and translate them (and arg) if needed
-        iend = 0
+    # make argument list mutable
+    args = list(args)
+    newformat = []
+    # find all format strings and translate them (and arg) if needed
+    iend = 0
+    mm = _reFormat.search(format, iend)
+    i = 0
+    while mm:
+        oend = iend
+        istart = mm.start()
+        iend = mm.end()
+        # append the stuff preceding the format
+        newformat.append(format[oend:istart])
+        c = mm.group('c')
+        # special handling for INDEF arguments
+        if args[i] == INDEF and c != 'w':
+            # INDEF always gets printed as string except for '%w' format
+            f = _quietConv
+        else:
+            # dispatch function for this format type
+            f = _fDispatch[c]
+        if f is None:
+            # append the format
+            newformat.append(mm.group())
+        else:
+            w = mm.group('w')
+            d = mm.group('d')
+            # ugly special case for 'r' format
+            if c == 'r':
+                c = format[iend-1:iend+1]
+                iend = iend+1
+            # append the modified format
+            newformat.append(f(w, d, c, args, i))
         mm = _reFormat.search(format, iend)
-        i = 0
-        while mm:
-            oend = iend
-            istart = mm.start()
-            iend = mm.end()
-            # append the stuff preceding the format
-            newformat.append(format[oend:istart])
-            c = mm.group('c')
-            # special handling for INDEF arguments
-            if args[i] == INDEF and c != 'w':
-                # INDEF always gets printed as string except for '%w' format
-                f = _quietConv
-            else:
-                # dispatch function for this format type
-                f = _fDispatch[c]
-            if f is None:
-                # append the format
-                newformat.append(mm.group())
-            else:
-                w = mm.group('w')
-                d = mm.group('d')
-                # ugly special case for 'r' format
-                if c == 'r':
-                    c = format[iend-1:iend+1]
-                    iend = iend+1
-                # append the modified format
-                newformat.append(f(w, d, c, args, i))
-            mm = _reFormat.search(format, iend)
-            i = i+1
-        newformat.append(format[iend:])
-        format = ''.join(newformat)
-        # finally ready to print
-        try:
-            _sys.stdout.write(format % tuple(args))
-            _sys.stdout.flush()
-        except ValueError, e:
-            raise IrafError(str(e))
-        except TypeError, e:
-            raise IrafError('%s\nFormat/datatype mismatch in printf '
-                    '(format is %s)' % (str(e), `format`))
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+        i = i+1
+    newformat.append(format[iend:])
+    format = ''.join(newformat)
+    # finally ready to print
+    try:
+        _sys.stdout.write(format % tuple(args))
+        _sys.stdout.flush()
+    except ValueError, e:
+        raise IrafError(str(e))
+    except TypeError, e:
+        raise IrafError('%s\nFormat/datatype mismatch in printf '
+                '(format is %s)' % (str(e), `format`))
 
 # _backDir is previous working directory
 
