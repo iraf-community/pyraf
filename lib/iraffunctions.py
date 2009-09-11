@@ -491,7 +491,7 @@ def handleRedirAndSaveKwds(target):
     """ This decorator is used to consolidate repeated code used in
         command-line functions, concerning standard pipe redirection.
         Typical 'target' functions will: take 0 or more positional arguments,
-        take 0 keyword args (except redir's &  _save), and return nothing.
+        take no keyword args (except redir's &  _save), and return nothing.
     """
     # create the wrapper function here which handles the redirect keywords,
     # and return it so it can replace 'target'
@@ -504,7 +504,7 @@ def handleRedirAndSaveKwds(target):
         resetList = redirApply(redirKW)
         try:
             # call 'target' to do the interesting work of this function
-            target(*args, **kw)
+            target(*args)
         finally:
             rv = redirReset(resetList, closeFHList)
         return rv
@@ -742,7 +742,7 @@ def getVarList():
 # -----------------------------------------------------
 
 @handleRedirAndSaveKwds
-def listAll(hidden=0, **kw):
+def listAll(hidden=0):
     """List IRAF packages, tasks, and variables"""
     print 'Packages:'
     listPkgs()
@@ -754,7 +754,7 @@ def listAll(hidden=0, **kw):
     listVars()
 
 @handleRedirAndSaveKwds
-def listPkgs(**kw):
+def listPkgs():
     """List IRAF packages"""
     keylist = getPkgList()
     if len(keylist) == 0:
@@ -766,7 +766,7 @@ def listPkgs(**kw):
         _irafutils.printCols(keylist)
 
 @handleRedirAndSaveKwds
-def listLoaded(**kw):
+def listLoaded():
     """List loaded IRAF packages"""
     keylist = getLoadedList()
     if len(keylist) == 0:
@@ -842,7 +842,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
     return rv
 
 @handleRedirAndSaveKwds
-def listCurrent(n=1, hidden=0, **kw):
+def listCurrent(n=1, hidden=0):
     """List IRAF tasks in current package (equivalent to '?' in the cl)
     If parameter n is specified, lists n most recent packages."""
     if len(loadedPath):
@@ -855,7 +855,7 @@ def listCurrent(n=1, hidden=0, **kw):
         print 'No IRAF tasks defined'
 
 @handleRedirAndSaveKwds
-def listVars(prefix="", equals="\t= ", **kw):
+def listVars(prefix="", equals="\t= "):
     """List IRAF variables"""
     keylist = getVarList()
     if len(keylist) == 0:
@@ -866,7 +866,7 @@ def listVars(prefix="", equals="\t= ", **kw):
             print "%s%s%s%s" % (prefix, word, equals, envget(word))
 
 @handleRedirAndSaveKwds
-def which(*args, **kw):
+def which(*args):
     """ Emulate the which function in IRAF. """
     for arg in args:
         try:
@@ -881,7 +881,7 @@ def which(*args, **kw):
                 _writeError(arg+": task not found.")
 
 @handleRedirAndSaveKwds
-def whereis(*args, **kw):
+def whereis(*args):
     """ Emulate the whereis function in IRAF. """
     for arg in args:
         matches = _mmtasks.getall(arg)
@@ -1916,7 +1916,7 @@ def set(*args, **kw):
 reset = set
 
 @handleRedirAndSaveKwds
-def show(*args, **kw):
+def show(*args):
     """Print value of IRAF or OS environment variables"""
     if len(args) and args[0].startswith("erract"):
         print irafecl.erract.states()
@@ -1929,7 +1929,7 @@ def show(*args, **kw):
             listVars("    ", "=")
 
 @handleRedirAndSaveKwds
-def unset(*args, **kw):
+def unset(*args):
     """Unset IRAF environment variables.
     This is not a standard IRAF task, but it is obviously useful.
     It makes the resulting variables undefined.  It silently ignores
@@ -1941,12 +1941,12 @@ def unset(*args, **kw):
             del _varDict[arg]
 
 @handleRedirAndSaveKwds
-def time(**kw):
+def time():
     """Print current time and date"""
     print _time.strftime('%a %H:%M:%S %d-%b-%Y')
 
 @handleRedirAndSaveKwds
-def sleep(seconds, **kw):
+def sleep(seconds):
     """Sleep for specified time"""
     _time.sleep(float(seconds))
 
@@ -2100,7 +2100,7 @@ def tparam(*args, **kw):
         rv = redirReset(resetList, closeFHList)
 
 @handleRedirAndSaveKwds
-def lparam(*args, **kw):
+def lparam(*args):
     """List parameters for tasks"""
     for taskname in args:
         try:
@@ -2141,7 +2141,7 @@ def dparam(*args, **kw):
     return rv
 
 @handleRedirAndSaveKwds
-def update(*args, **kw):
+def update(*args):
     """Update task parameters on disk"""
     for taskname in args:
         try:
@@ -2151,7 +2151,7 @@ def update(*args, **kw):
                     taskname)
 
 @handleRedirAndSaveKwds
-def unlearn(*args, **kw):
+def unlearn(*args):
     """Unlearn task parameters -- restore to defaults"""
     for taskname in args:
         try:
@@ -2161,7 +2161,7 @@ def unlearn(*args, **kw):
                     taskname)
 
 @handleRedirAndSaveKwds
-def edit(*args, **kw):
+def edit(*args):
     """Edit text files"""
     editor = envget('editor')
     margs = map(Expand, args)
@@ -2170,7 +2170,7 @@ def edit(*args, **kw):
 _clearString = None
 
 @handleRedirAndSaveKwds
-def clear(*args, **kw):
+def clear(*args):
     """Clear screen if output is terminal"""
     global _clearString
     if _clearString is None:
@@ -2188,27 +2188,27 @@ def clear(*args, **kw):
         _sys.stdout.flush()
 
 @handleRedirAndSaveKwds
-def flprcache(*args, **kw):
+def flprcache(*args):
     """Flush process cache.  Takes optional list of tasknames."""
     apply(_irafexecute.processCache.flush, args)
     if Verbose>0: print "Flushed process cache"
 
 @handleRedirAndSaveKwds
-def prcacheOff(**kw):
+def prcacheOff():
     """Disable process cache.  No process cache will be employed
        for the rest of this session."""
     _irafexecute.processCache.setSize(0)
     if Verbose>0: print "Disabled process cache"
 
 @handleRedirAndSaveKwds
-def prcacheOn(**kw):
+def prcacheOn():
     """Re-enable process cache.  A process cache will again be employed
        for the rest of this session.  This may be useful after prcacheOff()."""
     _irafexecute.processCache.resetSize()
     if Verbose>0: print "Enabled process cache"
 
 @handleRedirAndSaveKwds
-def prcache(*args, **kw):
+def prcache(*args):
     """Print process cache.  If args are given, locks tasks into cache."""
     if args:
         apply(_irafexecute.processCache.lock, args)
@@ -2216,7 +2216,7 @@ def prcache(*args, **kw):
         _irafexecute.processCache.list()
 
 @handleRedirAndSaveKwds
-def gflush(*args, **kw):
+def gflush():
     """Flush any buffered graphics output."""
     import gki
     gki.kernel.flush()
@@ -2292,12 +2292,12 @@ def history(n=20, *args, **kw):
     return rv
 
 @handleRedirAndSaveKwds
-def ehistory(*args, **kw):
+def ehistory(*args):
     """Dummy history function"""
     print 'ehistory command not required: Use arrow keys to recall commands'
     print 'or ctrl-R to search for a string in the command history.'
 
-# dummy routines
+# dummy routines (must allow *args and **kw)
 
 @handleRedirAndSaveKwds
 def clNoBackground(*args, **kw):
@@ -2352,7 +2352,7 @@ def fprint(*args, **kw):
 # various helper functions
 
 @handleRedirAndSaveKwds
-def pkgHelp(pkgname=None, **kw):
+def pkgHelp(pkgname=None):
     """Give help on package (equivalent to CL '? [taskname]')"""
     if pkgname is None:
         listCurrent()
@@ -2360,7 +2360,7 @@ def pkgHelp(pkgname=None, **kw):
         listTasks(pkgname)
 
 @handleRedirAndSaveKwds
-def allPkgHelp(**kw):
+def allPkgHelp():
     """Give help on all packages (equivalent to CL '??')"""
     listTasks()
 
@@ -2436,7 +2436,7 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     return rv
 
 @handleRedirAndSaveKwds
-def hidetask(*args, **kw):
+def hidetask(*args):
     """Hide the CL task in package listings"""
     for taskname in args:
         try:
@@ -2622,7 +2622,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
     return rv or rv1
 
 @handleRedirAndSaveKwds
-def clPrint(*args, **kw):
+def clPrint(*args):
     """CL print command -- emulates CL spacing and uses redirection keywords"""
     for arg in args:
         print arg,
@@ -2719,7 +2719,7 @@ _fDispatch["M"] = _hConv
 del badList, b
 
 @handleRedirAndSaveKwds
-def printf(format, *args, **kw):
+def printf(format, *args):
     """Formatted print function"""
     # make argument list mutable
     args = list(args)
@@ -2773,60 +2773,48 @@ def printf(format, *args, **kw):
 _backDir = None
 
 @handleRedirAndSaveKwds
-def pwd(**kw):
+def pwd():
     """Print working directory"""
     print _os.getcwd()
 
-def chdir(directory=None, **kw):
+@handleRedirAndSaveKwds
+def chdir(directory=None):
     """Change working directory"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
+    global _backDir
     try:
-        global _backDir
-        try:
-            _newBack = _os.getcwd()
-        except OSError:
-            # OSError for getcwd() means current directory does not exist
-            _newBack = _backDir
-        if directory is None:
-            # use startup directory as home if argument is omitted
-            directory = userWorkingHome
-        if not isinstance(directory, (str,unicode)):
-            raise IrafError("Illegal non-string value for directory:"+ \
-                  +repr(directory))
-        # Check for (1) local directory and (2) iraf variable
-        # when given an argument like 'dev'.  In IRAF 'cd dev' is
-        # the same as 'cd ./dev' if there is a local directory named
-        # dev but is equivalent to 'cd dev$' if there is no local
-        # directory.
-        try:
-            edir = Expand(directory)
-            _os.chdir(edir)
-            _backDir = _newBack
-            _irafexecute.processCache.setenv('chdir %s\n' % edir)
-            return
-        except (IrafError, OSError):
-            pass
+        _newBack = _os.getcwd()
+    except OSError:
+        # OSError for getcwd() means current directory does not exist
+        _newBack = _backDir
+    if directory is None:
+        # use startup directory as home if argument is omitted
+        directory = userWorkingHome
+    if not isinstance(directory, (str,unicode)):
+        raise IrafError("Illegal non-string value for directory:"+ \
+              +repr(directory))
+    # Check for (1) local directory and (2) iraf variable
+    # when given an argument like 'dev'.  In IRAF 'cd dev' is
+    # the same as 'cd ./dev' if there is a local directory named
+    # dev but is equivalent to 'cd dev$' if there is no local
+    # directory.
+    try:
+        edir = Expand(directory)
+        _os.chdir(edir)
+        _backDir = _newBack
+        _irafexecute.processCache.setenv('chdir %s\n' % edir)
+    except (IrafError, OSError):
         try:
             edir = Expand(directory + '$')
             _os.chdir(edir)
             _backDir = _newBack
             _irafexecute.processCache.setenv('chdir %s\n' % edir)
-            return
         except (IrafError, OSError):
             raise IrafError("Cannot change directory to `%s'" % (directory,))
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
 
 cd = chdir
 
 @handleRedirAndSaveKwds
-def back(**kw):
+def back():
     """Go back to previous working directory"""
     global _backDir
     if _backDir is None:
