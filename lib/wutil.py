@@ -24,7 +24,7 @@ def initGraphics(): pass
 def closeGraphics(): pass
 
 # Are we on MacOS X ?
-WUTIL_ON_MAC = os.uname()[0] == 'Darwin'
+WUTIL_ON_MAC = sys.platform == 'darwin'
 
 # For a while we may support both versions (X or Aqua) on OSX
 WUTIL_USING_X = True

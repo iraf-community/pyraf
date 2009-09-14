@@ -38,7 +38,7 @@ R. White, 1999 September 23
 """
 from __future__ import division # confidence high
 
-import __main__, re, os, types
+import __main__, re, os, sys, types
 from pytools import minmatch, irafutils
 from pytools.irafglobals import IrafTask, IrafPkg
 import describe, iraf
@@ -402,7 +402,7 @@ def _htmlHelp(taskname):
     if pid == 0:
         url = _HelpURL + taskname
 
-        if not os.uname()[0] in ('SunOS','Linux'): # OSX, etc
+        if not sys.platform[:-1] in ('sunos','linux'): # e.g. OSX, etc
             if 0 != os.system("open "+url):
                 print "Error opening URL: "+url
             os._exit(0)
