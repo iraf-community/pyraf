@@ -25,11 +25,13 @@ from subproc import SubprocessError
 # -----------------------------------------------------
 
 def setVerbose(value=1, **kw):
-    """Set verbosity level when running tasks
-
+    """Set verbosity level when running tasks.
     Level 0 (default) prints almost nothing.
     Level 1 prints warnings.
     Level 2 prints info on progress.
+    This accepts **kw so it can be used on the PyRAF command-line.  This
+    cannot avail itself of the decorator which wraps redirProcess since it
+    needs to be defined here up front.
     """
     if isinstance(value,(str,unicode)):
         try:
@@ -491,7 +493,7 @@ def handleRedirAndSaveKwds(target):
     """ This decorator is used to consolidate repeated code used in
         command-line functions, concerning standard pipe redirection.
         Typical 'target' functions will: take 0 or more positional arguments,
-        take no keyword args (except redir's &  _save), and return nothing.
+        take NO keyword args (except redir's &  _save), and return nothing.
     """
     # create the wrapper function here which handles the redirect keywords,
     # and return it so it can replace 'target'
@@ -505,6 +507,31 @@ def handleRedirAndSaveKwds(target):
         try:
             # call 'target' to do the interesting work of this function
             target(*args)
+        finally:
+            rv = redirReset(resetList, closeFHList)
+        return rv
+    # return it so it can replace 'target'
+    return wrapper
+
+def handleRedirAndSaveKwdsPlus(target):
+    """ This decorator is used to consolidate repeated code used in
+        command-line functions, concerning standard pipe redirection.
+        Typical 'target' functions will: take 0 or more positional arguments,
+        take AT LEAST ONE keyword arg (not including redir's &  _save), and
+        return nothing.
+    """
+    # create the wrapper function here which handles the redirect keywords,
+    # and return it so it can replace 'target'
+    def wrapper(*args, **kw):
+        # handle redirection and save keywords
+        redirKW, closeFHList = redirProcess(kw)
+        if kw.has_key('_save'): del kw['_save']
+        # the missing check here on len(kw) is the main difference between
+        # this and handleRedirAndSaveKwds (also the sig. of target())
+        resetList = redirApply(redirKW)
+        try:
+            # call 'target' to do the interesting work of this function
+            target(*args, **kw)
         finally:
             rv = redirReset(resetList, closeFHList)
         return rv
@@ -777,69 +804,60 @@ def listLoaded():
         for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
         _irafutils.printCols(keylist)
 
+@handleRedirAndSaveKwdsPlus
 def listTasks(pkglist=None, hidden=0, **kw):
     """List IRAF tasks, optionally specifying a list of packages to include
 
     Package(s) may be specified by name or by IrafPkg objects.
     """
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        keylist = getTaskList()
-        if len(keylist) == 0:
-            print 'No IRAF tasks defined'
-            return
-        # make a dictionary of pkgs to list
-        if pkglist is None:
-            pkgdict = _pkgs
-        else:
-            pkgdict = {}
-            if isinstance(pkglist, (str,unicode,_iraftask.IrafPkg)):
-                pkglist = [ pkglist ]
-            for p in pkglist:
-                try:
-                    pthis = getPkg(p)
-                    if pthis.isLoaded():
-                        pkgdict[pthis.getName()] = 1
-                    else:
-                        _writeError('Package %s has not been loaded' %
-                                pthis.getName())
-                except KeyError, e:
-                    _writeError(str(e))
-        if not len(pkgdict):
-            print 'No packages to list'
-            return
-
-        # print each package separately
-        keylist.sort()
-        lastpkg = ''
-        tlist = []
-        for tname in keylist:
-            pkg, task = tname.split('.')
-            tobj = _tasks[tname]
-            if hidden or not tobj.isHidden():
-                if isinstance(tobj,_iraftask.IrafPkg):
-                    task = task + '/'
-                elif isinstance(tobj,_iraftask.IrafPset):
-                    task = task + '@'
-                if pkg == lastpkg:
-                    tlist.append(task)
+    keylist = getTaskList()
+    if len(keylist) == 0:
+        print 'No IRAF tasks defined'
+        return
+    # make a dictionary of pkgs to list
+    if pkglist is None:
+        pkgdict = _pkgs
+    else:
+        pkgdict = {}
+        if isinstance(pkglist, (str,unicode,_iraftask.IrafPkg)):
+            pkglist = [ pkglist ]
+        for p in pkglist:
+            try:
+                pthis = getPkg(p)
+                if pthis.isLoaded():
+                    pkgdict[pthis.getName()] = 1
                 else:
-                    if len(tlist) and pkgdict.has_key(lastpkg):
-                        print lastpkg + '/:'
-                        _irafutils.printCols(tlist)
-                    tlist = [task]
-                    lastpkg = pkg
-        if len(tlist) and pkgdict.has_key(lastpkg):
-            print lastpkg + '/:'
-            _irafutils.printCols(tlist)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+                    _writeError('Package %s has not been loaded' %
+                            pthis.getName())
+            except KeyError, e:
+                _writeError(str(e))
+    if not len(pkgdict):
+        print 'No packages to list'
+        return
+
+    # print each package separately
+    keylist.sort()
+    lastpkg = ''
+    tlist = []
+    for tname in keylist:
+        pkg, task = tname.split('.')
+        tobj = _tasks[tname]
+        if hidden or not tobj.isHidden():
+            if isinstance(tobj,_iraftask.IrafPkg):
+                task = task + '/'
+            elif isinstance(tobj,_iraftask.IrafPset):
+                task = task + '@'
+            if pkg == lastpkg:
+                tlist.append(task)
+            else:
+                if len(tlist) and pkgdict.has_key(lastpkg):
+                    print lastpkg + '/:'
+                    _irafutils.printCols(tlist)
+                tlist = [task]
+                lastpkg = pkg
+    if len(tlist) and pkgdict.has_key(lastpkg):
+        print lastpkg + '/:'
+        _irafutils.printCols(tlist)
 
 @handleRedirAndSaveKwds
 def listCurrent(n=1, hidden=0):
@@ -854,7 +872,7 @@ def listCurrent(n=1, hidden=0):
     else:
         print 'No IRAF tasks defined'
 
-@handleRedirAndSaveKwds
+@handleRedirAndSaveKwdsPlus
 def listVars(prefix="", equals="\t= "):
     """List IRAF variables"""
     keylist = getVarList()
@@ -1871,44 +1889,37 @@ def nscan():
 # these have extra keywords (redirection, _save) because they can
 # be called as tasks
 
+@handleRedirAndSaveKwdsPlus
 def set(*args, **kw):
     """Set IRAF environment variables"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    resetList = redirApply(redirKW)
-    try:
-        if len(args) == 0:
-            if len(kw) != 0:
-                # normal case is only keyword,value pairs
-                msg = []
-                for keyword, value in kw.items():
-                    keyword = _irafutils.untranslateName(keyword)
-                    svalue = str(value)
-                    if keyword == "erract":
-                        irafecl.erract.adjust(svalue)
-                    else:
-                        _varDict[keyword] = svalue
-                    msg.append("set %s=%s\n" % (keyword, svalue))
-                _irafexecute.processCache.setenv("".join(msg))
-            else:
-                # set with no arguments lists all variables (using same format
-                # as IRAF)
-                listVars("    ", "=")
+    if len(args) == 0:
+        if len(kw) != 0:
+            # normal case is only keyword,value pairs
+            msg = []
+            for keyword, value in kw.items():
+                keyword = _irafutils.untranslateName(keyword)
+                svalue = str(value)
+                if keyword == "erract":
+                    irafecl.erract.adjust(svalue)
+                else:
+                    _varDict[keyword] = svalue
+                msg.append("set %s=%s\n" % (keyword, svalue))
+            _irafexecute.processCache.setenv("".join(msg))
         else:
-            # The only other case allowed is the peculiar syntax
-            # 'set @filename', which only gets used in the zzsetenv.def file,
-            # where it reads extern.pkg.  That file also gets read (in full cl
-            # mode) by clpackage.cl.  I get errors if I read this during
-            # zzsetenv.def, so just ignore it here...
-            #
-            # Flag any other syntax as an error.
-            if len(args) != 1 or len(kw) != 0 or \
-               (not isinstance(args[0],(str,unicode))) or args[0][:1] != '@':
-                raise SyntaxError("set requires name=value pairs")
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+            # set with no arguments lists all variables (using same format
+            # as IRAF)
+            listVars("    ", "=")
+    else:
+        # The only other case allowed is the peculiar syntax
+        # 'set @filename', which only gets used in the zzsetenv.def file,
+        # where it reads extern.pkg.  That file also gets read (in full cl
+        # mode) by clpackage.cl.  I get errors if I read this during
+        # zzsetenv.def, so just ignore it here...
+        #
+        # Flag any other syntax as an error.
+        if len(args) != 1 or len(kw) != 0 or \
+           (not isinstance(args[0],(str,unicode))) or args[0][:1] != '@':
+            raise SyntaxError("set requires name=value pairs")
 
 # currently do not distinguish set from reset
 # this will change when keep/bye/unloading are implemented
@@ -2005,53 +2016,46 @@ _sttyArgs = _minmatch.MinMatchDict({
                         'delay': 500,
                         })
 
+@handleRedirAndSaveKwdsPlus
 def stty(terminal=None, **kw):
     """IRAF stty command (mainly not implemented)"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    resetList = redirApply(redirKW)
-    try:
-        expkw = _sttyArgs.copy()
-        if terminal is not None: expkw['terminal'] = terminal
-        for key, item in kw.items():
-            if _sttyArgs.has_key(key):
-                expkw[key] = item
-            else:
-                raise TypeError('unexpected keyword argument: '+key)
-        if terminal is None and len(kw) == 0:
-            # will need default values for the next step; try _wutil for them
-            dftNcol = '80'
-            dftNlin = '24'
+    expkw = _sttyArgs.copy()
+    if terminal is not None: expkw['terminal'] = terminal
+    for key, item in kw.items():
+        if _sttyArgs.has_key(key):
+            expkw[key] = item
+        else:
+            raise TypeError('unexpected keyword argument: '+key)
+    if terminal is None and len(kw) == 0:
+        # will need default values for the next step; try _wutil for them
+        dftNcol = '80'
+        dftNlin = '24'
+        try:
+           if _sys.stdout.isatty():
+               nlines,ncols = _wutil.getTermWindowSize()
+               dftNcol = str(ncols)
+               dftNlin = str(nlines)
+        except: pass # No error message here - may not always be available
+        # no args: print terminal type and size
+        print '%s ncols=%s nlines=%s' % (envget('terminal','undefined'),
+                envget('ttyncols',dftNcol), envget('ttynlines',dftNlin))
+    elif expkw['resize'] or expkw['terminal'] == "resize":
+        # resize: sets CL env parameters giving screen size; show errors
+        if _sys.stdout.isatty():
+            nlines,ncols = _wutil.getTermWindowSize()
+            set(ttyncols=str(ncols), ttynlines=str(nlines))
+    elif expkw['terminal']:
+        set(terminal=expkw['terminal'])
+        # They are setting the terminal type.  Let's at least try to
+        # get the dimensions if not given. This is more than the CL does.
+        if (not kw.has_key('nlines')) and (not kw.has_key('ncols')) and \
+           _sys.stdout.isatty():
             try:
-               if _sys.stdout.isatty():
-                   nlines,ncols = _wutil.getTermWindowSize()
-                   dftNcol = str(ncols)
-                   dftNlin = str(nlines)
-            except: pass # No error message here - may not always be available
-            # no args: print terminal type and size
-            print '%s ncols=%s nlines=%s' % (envget('terminal','undefined'),
-                    envget('ttyncols',dftNcol), envget('ttynlines',dftNlin))
-        elif expkw['resize'] or expkw['terminal'] == "resize":
-            # resize: sets CL env parameters giving screen size; show errors
-            if _sys.stdout.isatty():
                 nlines,ncols = _wutil.getTermWindowSize()
                 set(ttyncols=str(ncols), ttynlines=str(nlines))
-        elif expkw['terminal']:
-            set(terminal=expkw['terminal'])
-            # They are setting the terminal type.  Let's at least try to
-            # get the dimensions if not given. This is more than the CL does.
-            if (not kw.has_key('nlines')) and (not kw.has_key('ncols')) and \
-               _sys.stdout.isatty():
-                try:
-                    nlines,ncols = _wutil.getTermWindowSize()
-                    set(ttyncols=str(ncols), ttynlines=str(nlines))
-                except: pass # No error msg here - may not always be available
-        elif expkw['playback'] is not None:
-            _writeError("stty playback not implemented")
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+            except: pass # No error msg here - may not always be available
+    elif expkw['playback'] is not None:
+        _writeError("stty playback not implemented")
 
 def eparam(*args, **kw):
     """Edit parameters for tasks.  Starts up epar GUI."""
@@ -2221,48 +2225,41 @@ def gflush():
     import gki
     gki.kernel.flush()
 
+@handleRedirAndSaveKwdsPlus
 def pyexecute(filename, **kw):
     """Execute python code in filename (which may include IRAF path).
-
     This is callable from within CL scripts.  There is a corresponding
     pyexecute.cl task that runs outside the PyRAF environment and just
     prints a warning.
     """
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    resetList = redirApply(redirKW)
-    try:
-        # these keyword parameters are relevant only outside PyRAF
-        for keyword in ['_save', 'verbose', 'tasknames']:
-            if kw.has_key(keyword):
-                del kw[keyword]
-        # get package info
-        if kw.has_key('PkgName'):
-            pkgname = kw['PkgName']
-            del kw['PkgName']
-        else:
-            pkgname = curpack()
-        if kw.has_key('PkgBinary'):
-            pkgbinary = kw['PkgBinary']
-            del kw['PkgBinary']
-        else:
-            pkgbinary = curPkgbinary()
-        # fix illegal package names
-        spkgname = pkgname.replace('.', '_')
-        if spkgname != pkgname:
-            _writeError("Warning: `.' illegal in task name, changing "
-                    "`%s' to `%s'" % (pkgname, spkgname))
-            pkgname = spkgname
-        if len(kw):
-            raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-        # execute code in a new namespace (including PkgName, PkgBinary)
-        efilename = Expand(filename)
-        namespace = {'PkgName': pkgname, 'PkgBinary': pkgbinary,
-            '__file__': efilename}
-        execfile(efilename, namespace)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    # these keyword parameters are relevant only outside PyRAF
+    for keyword in ['_save', 'verbose', 'tasknames']:
+        if kw.has_key(keyword):
+            del kw[keyword]
+    # get package info
+    if kw.has_key('PkgName'):
+        pkgname = kw['PkgName']
+        del kw['PkgName']
+    else:
+        pkgname = curpack()
+    if kw.has_key('PkgBinary'):
+        pkgbinary = kw['PkgBinary']
+        del kw['PkgBinary']
+    else:
+        pkgbinary = curPkgbinary()
+    # fix illegal package names
+    spkgname = pkgname.replace('.', '_')
+    if spkgname != pkgname:
+        _writeError("Warning: `.' illegal in task name, changing "
+                "`%s' to `%s'" % (pkgname, spkgname))
+        pkgname = spkgname
+    if len(kw):
+        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+    # execute code in a new namespace (including PkgName, PkgBinary)
+    efilename = Expand(filename)
+    namespace = {'PkgName': pkgname, 'PkgBinary': pkgbinary,
+        '__file__': efilename}
+    execfile(efilename, namespace)
 
 # history routines
 
@@ -2299,7 +2296,7 @@ def ehistory(*args):
 
 # dummy routines (must allow *args and **kw)
 
-@handleRedirAndSaveKwds
+@handleRedirAndSaveKwdsPlus
 def clNoBackground(*args, **kw):
     """Dummy background function"""
     _writeError('Background jobs not implemented')
@@ -2391,7 +2388,7 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     the cl, using above _clProcedure function.  It is being
     retained only for backward compatibility since translated
     versions of CL scripts could use it.  New versions will
-    not use it.
+    not use it.  Also, this cannot use handleRedirAndSaveKwds.
     """
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
