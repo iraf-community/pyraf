@@ -510,7 +510,7 @@ def handleRedirAndSaveKwds(target):
         finally:
             rv = redirReset(resetList, closeFHList)
         return rv
-    # return it so it can replace 'target'
+    # return wrapper so it can replace 'target'
     return wrapper
 
 def handleRedirAndSaveKwdsPlus(target):
@@ -535,7 +535,7 @@ def handleRedirAndSaveKwdsPlus(target):
         finally:
             rv = redirReset(resetList, closeFHList)
         return rv
-    # return it so it can replace 'target'
+    # return wrapper so it can replace 'target'
     return wrapper
 
 
@@ -2057,51 +2057,31 @@ def stty(terminal=None, **kw):
     elif expkw['playback'] is not None:
         _writeError("stty playback not implemented")
 
-def eparam(*args, **kw):
+@handleRedirAndSaveKwds
+def eparam(*args):
     """Edit parameters for tasks.  Starts up epar GUI."""
-    # keywords are simply ignored here
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        for taskname in args:
+    for taskname in args:
+        try:
+            taskname.eParam()
+        except AttributeError:
             try:
-                taskname.eParam()
-            except AttributeError:
-                try:
-                    getTask(taskname).eParam()
-                except (KeyError, TypeError):
-                    _writeError("Warning: Could not find task %s for epar\n" %
-                            taskname)
-    finally:
-        # note return value not used here
-        rv = redirReset(resetList, closeFHList)
+                getTask(taskname).eParam()
+            except (KeyError, TypeError):
+                _writeError("Warning: Could not find task %s for epar\n" %
+                        taskname)
 
-def tparam(*args, **kw):
+@handleRedirAndSaveKwds
+def tparam(*args):
     """Edit parameters for tasks.  Starts up epar GUI."""
-    # keywords are simply ignored here
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        for taskname in args:
-            try:
-                taskname.tParam()
-            except AttributeError:
-                # try:
-                getTask(taskname).tParam()
-                # except (KeyError, TypeError):
-                #    _writeError("Warning: Could not find task %s for tpar\n" %
-                #            taskname)
-    finally:
-        # note return value not used here
-        rv = redirReset(resetList, closeFHList)
+    for taskname in args:
+        try:
+            taskname.tParam()
+        except AttributeError:
+            # try:
+            getTask(taskname).tParam()
+            # except (KeyError, TypeError):
+            #    _writeError("Warning: Could not find task %s for tpar\n" %
+            #            taskname)
 
 @handleRedirAndSaveKwds
 def lparam(*args):
@@ -2116,33 +2096,25 @@ def lparam(*args):
                 _writeError("Warning: Could not find task %s for lpar\n" %
                         taskname)
 
+@handleRedirAndSaveKwdsPlus
 def dparam(*args, **kw):
     """Dump parameters for task in executable form"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    # pyraf-specific cl keyword used to specify CL or Python syntax
+    # only keyword: pyraf-specific 'cl=' used to specify CL or Python syntax
+    cl = 1
     if kw.has_key('cl'):
         cl = kw['cl']
         del kw['cl']
-    else:
-        cl = 1
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
-    try:
-        for taskname in args:
+    for taskname in args:
+        try:
+            taskname.dParam(cl=cl)
+        except AttributeError:
             try:
-                taskname.dParam(cl=cl)
-            except AttributeError:
-                try:
-                    getTask(taskname).dParam(cl=cl)
-                except (KeyError, TypeError):
-                    _writeError("Warning: Could not find task %s for dpar\n" %
-                            taskname)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+                getTask(taskname).dParam(cl=cl)
+            except (KeyError, TypeError):
+                _writeError("Warning: Could not find task %s for dpar\n" %
+                        taskname)
 
 @handleRedirAndSaveKwds
 def update(*args):
@@ -2263,30 +2235,20 @@ def pyexecute(filename, **kw):
 
 # history routines
 
-def history(n=20, *args, **kw):
+@handleRedirAndSaveKwds
+def history(n=20):
     """Print history.
     Does not replicate the IRAF behavior of changing default number of
     lines to print.  (That seems fairly useless to me.)
     """
-
     # Seems like there ought to be a way to do this using readline, but I have
     # not been able to figure out any readline command that lists the history
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-    if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
-    resetList = redirApply(redirKW)
+    import __main__
     try:
-        import __main__
-        try:
-            n = abs(int(n))
-            __main__._pycmdline.printHistory(n)
-        except (NameError,AttributeError):
-            pass
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+        n = abs(int(n))
+        __main__._pycmdline.printHistory(n)
+    except (NameError,AttributeError):
+        pass
 
 @handleRedirAndSaveKwds
 def ehistory(*args):
@@ -2314,30 +2276,26 @@ bye = keep = logout = clbye = cache = language = clDummy
 
 # unimplemented but no exception raised (and no message
 # printed if not in verbose mode)
-
-def _notImplemented(cmd, args, kw):
+def _notImplemented(cmd):
     """Dummy unimplemented function"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    resetList = redirApply(redirKW)
-    try:
-        if Verbose>0:
-            _writeError("The %s task has not been implemented" % cmd)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    if Verbose>0:
+        _writeError("The %s task has not been implemented" % cmd)
 
+@handleRedirAndSaveKwdsPlus
 def putlog(*args, **kw):
-    _notImplemented('putlog',args,kw)
+    _notImplemented('putlog')
 
+@handleRedirAndSaveKwdsPlus
 def clAllocate(*args, **kw):
-    _notImplemented('_allocate',args,kw)
+    _notImplemented('_allocate')
 
+@handleRedirAndSaveKwdsPlus
 def clDeallocate(*args, **kw):
-    _notImplemented('_deallocate',args,kw)
+    _notImplemented('_deallocate')
 
+@handleRedirAndSaveKwdsPlus
 def clDevstatus(*args, **kw):
-    _notImplemented('_devstatus',args,kw)
+    _notImplemented('_devstatus')
 
 # unimplemented -- raise exception
 
@@ -2456,87 +2414,77 @@ _re_taskname = _re.compile(taskname)
 
 del taskname, optional_whitespace
 
+@handleRedirAndSaveKwdsPlus
 def task(*args, **kw):
     """Define IRAF tasks"""
-    # handle redirection and save keywords
-    redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
-
+    redefine = 0
     if kw.has_key('Redefine'):
         redefine = kw['Redefine']
         del kw['Redefine']
+    # get package info
+    if kw.has_key('PkgName'):
+        pkgname = kw['PkgName']
+        del kw['PkgName']
     else:
-        redefine = 0
+        pkgname = curpack()
+    if kw.has_key('PkgBinary'):
+        pkgbinary = kw['PkgBinary']
+        del kw['PkgBinary']
+    else:
+        pkgbinary = curPkgbinary()
+    # fix illegal package names
+    spkgname = pkgname.replace('.', '_')
+    if spkgname != pkgname:
+        _writeError("Warning: `.' illegal in task name, changing "
+                "`%s' to `%s'" % (pkgname, spkgname))
+        pkgname = spkgname
+    # get the task name
+    if len(kw) > 1:
+        raise SyntaxError("More than one `=' in task definition")
+    elif len(kw) < 1:
+        raise SyntaxError("Must be at least one `=' in task definition")
+    s = kw.keys()[0]
+    value = kw[s]
+    # To handle when actual CL code is given, not a file name, we will
+    # replace the code with the name of the tmp file that we write it to.
+    if value.find('\n') >= 0:
+        # write it to a temp file in the home$ dir, then use filename
+        (fd, tmpCl) = _tempfile.mkstemp(suffix=".cl", prefix=str(s)+'_',
+                                        dir=userIrafHome, text=True)
+        _os.close(fd)
+        # check for invalid chars as far as python function names go.
+        # yes this goes against the use of mkstemp from a purity point
+        # of view but it can't much be helped
+        tmpClorig = tmpCl
+        tmpCl = tmpCl.replace('-','_')
+        tmpCl = tmpCl.replace('+','_')
+        assert tmpClorig == tmpCl or not _os.path.exists(tmpCl), \
+               'Abused mkstemp fname: '+tmpCl
+        # write inline code to .cl file; len(kw) is checked below
+        f = open(tmpCl, 'w')
+        f.write(value+'\n')
+        # Add text at end to auto-delete this temp file
+        f.write('#\n# this last section automatically added\n')
+        f.write('delete '+tmpCl+' verify-\n')
+        f.close()
+        # exchange for tmp .cl file name
+        value = tmpCl
 
-    resetList = redirApply(redirKW)
-    try:
-        # get package info
-        if kw.has_key('PkgName'):
-            pkgname = kw['PkgName']
-            del kw['PkgName']
-        else:
-            pkgname = curpack()
-        if kw.has_key('PkgBinary'):
-            pkgbinary = kw['PkgBinary']
-            del kw['PkgBinary']
-        else:
-            pkgbinary = curPkgbinary()
-        # fix illegal package names
-        spkgname = pkgname.replace('.', '_')
-        if spkgname != pkgname:
-            _writeError("Warning: `.' illegal in task name, changing "
-                    "`%s' to `%s'" % (pkgname, spkgname))
-            pkgname = spkgname
-        # get the task name
-        if len(kw) > 1:
-            raise SyntaxError("More than one `=' in task definition")
-        elif len(kw) < 1:
-            raise SyntaxError("Must be at least one `=' in task definition")
-        s = kw.keys()[0]
-        value = kw[s]
-        # To handle when actual CL code is given, not a file name, we will
-        # replace the code with the name of the tmp file that we write it to.
-        if value.find('\n') >= 0:
-            # write it to a temp file in the home$ dir, then use filename
-            (fd, tmpCl) = _tempfile.mkstemp(suffix=".cl", prefix=str(s)+'_',
-                                            dir=userIrafHome, text=True)
-            _os.close(fd)
-            # check for invalid chars as far as python function names go.
-            # yes this goes against the use of mkstemp from a purity point
-            # of view but it can't much be helped
-            tmpClorig = tmpCl
-            tmpCl = tmpCl.replace('-','_')
-            tmpCl = tmpCl.replace('+','_')
-            assert tmpClorig == tmpCl or not _os.path.exists(tmpCl), \
-                   'Abused mkstemp fname: '+tmpCl
-            # write inline code to .cl file; len(kw) is checked below
-            f = open(tmpCl, 'w')
-            f.write(value+'\n')
-            # Add text at end to auto-delete this temp file
-            f.write('#\n# this last section automatically added\n')
-            f.write('delete '+tmpCl+' verify-\n')
-            f.close()
-            # exchange for tmp .cl file name
-            value = tmpCl
+    # untranslateName
+    s = _irafutils.untranslateName(s)
+    args = args + (s,)
 
-        # untranslateName
-        s = _irafutils.untranslateName(s)
-        args = args + (s,)
-
-        # assign value to each task in the list
-        global _re_taskname
-        for tlist in args:
-            mtl = _re_taskname.match(tlist)
-            if not mtl:
-                raise SyntaxError("Illegal task name `%s'" % (tlist,))
-            name = mtl.group('taskname')
-            prefix = mtl.group('taskprefix')
-            suffix = mtl.group('tasksuffix')
-            newtask = IrafTaskFactory(prefix,name,suffix,value,
-                            pkgname,pkgbinary,redefine=redefine)
-    finally:
-        rv = redirReset(resetList, closeFHList)
-    return rv
+    # assign value to each task in the list
+    global _re_taskname
+    for tlist in args:
+        mtl = _re_taskname.match(tlist)
+        if not mtl:
+            raise SyntaxError("Illegal task name `%s'" % (tlist,))
+        name = mtl.group('taskname')
+        prefix = mtl.group('taskprefix')
+        suffix = mtl.group('tasksuffix')
+        newtask = IrafTaskFactory(prefix,name,suffix,value,
+                        pkgname,pkgbinary,redefine=redefine)
 
 def redefine(*args, **kw):
     """Redefine an existing task"""
