@@ -80,9 +80,10 @@ if _use_ipython_shell:
         shutil.copy(pyrafrc_source, pyrafrc_dest)
     del pyraf, home, ip, pyrafrc_dest, pyrafrc_source
 else:
-    print "PyRAF", __version__, "Copyright (c) 2002 AURA"
-    # just print first line of Python copyright (long in v2.0)
-    print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
+    if '-s' not in sys.argv and '--silent' not in sys.argv:
+       print "PyRAF", __version__, "Copyright (c) 2002 AURA"
+       # just print first line of Python copyright (long in v2.0)
+       print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
 
 
 if doCmdline:
@@ -92,13 +93,19 @@ if doCmdline:
     if _use_ipython_shell:
         import sys
         import IPython
-        sys.argv = ["ipython","-p","pyraf"]
+        if '-s' in sys.argv or '--silent' in sys.argv:
+           sys.argv = ["ipython","-nobanner","-p","pyraf"]
+        else:
+           sys.argv = ["ipython","-p","pyraf"]
         IPython.Shell.start(user_ns=globals()).mainloop()
         sys.exit()
     else:
         import pyraf.pycmdline
         del _use_ipython_shell
         _pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
-        _pycmdline.start()
+        if '-s' in sys.argv or '--silent' in sys.argv:
+           _pycmdline.start('') # use no banner
+        else:
+           _pycmdline.start() # use default banner
 else:
     del doCmdline
