@@ -14,6 +14,7 @@ $Id$
 
 R. White, 2000 January 20
 """
+from __future__ import division
 
 # define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
 
@@ -224,21 +225,18 @@ at the Unix command line.  The values will depend on your IRAF installation.
         clProcedure(Stdin='hlib$zzsetenv.def')
 
         # define clpackage
-
         global clpkg
         clpkg = IrafTaskFactory('', 'clpackage', '.pkg', 'hlib$clpackage.cl',
                 'clpackage', 'bin$')
 
         # add the cl as a task, because its parameters are sometimes needed,
         # but make it a hidden task
-
         # cl is implemented as a Python task
         cl = IrafTaskFactory('','cl','','cl$cl.par','clpackage','bin$',
                 function=_clProcedure)
         cl.setHidden()
 
         # load clpackage
-
         clpkg.run(_doprint=0, _hush=hush, _save=1)
 
         if access('login.cl'):
@@ -882,6 +880,12 @@ def listVars(prefix="", equals="\t= "):
         keylist.sort()
         for word in keylist:
             print "%s%s%s%s" % (prefix, word, equals, envget(word))
+
+@handleRedirAndSaveKwds
+def gripes():
+    """ Hide the system call - direct the user to support """
+    print "Please email your concern directly to support@stsci.edu"
+gripe = gripes
 
 @handleRedirAndSaveKwds
 def which(*args):
