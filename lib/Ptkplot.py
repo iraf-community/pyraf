@@ -275,7 +275,7 @@ class FullWindowCursor:
     def _xutilXorDraw(self):
 
         wutil.drawCursor(self.__window.winfo_id(), self.lastx, self.lasty,
-                         self.__window.width, self.__window.height)
+                         int(self.__window.width), int(self.__window.height))
 
     def _tkDrawCursor(self):
 
