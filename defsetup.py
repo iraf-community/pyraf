@@ -88,7 +88,7 @@ DATA_FILES = [ ( pkg,
 
 
 setupargs = {
-    'version' :			    "1.x", # see lib's __init__.py
+    'version' :			    "1.8.1", # see lib's __init__.py
     'description' :		    "A Python based CL for IRAF",
     'author' :			    "Rick White, Perry Greenfield",
     'maintainer_email' :	"help@stsci.edu",
