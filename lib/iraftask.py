@@ -15,6 +15,12 @@ import os, sys, copy, re
 from pytools import basicpar, minmatch, irafutils, irafglobals, taskpars
 import subproc, iraf, irafpar, irafexecute, epar, tpar, cl2py
 
+# Running without an IRAF installation?
+if sys.platform.startswith('win'):
+    HAS_IRAF = False
+else:
+    HAS_IRAF = 'PYRAF_NO_IRAF' not in os.environ
+
 # may be set to function to monitor task execution
 # function gets called for every task execution
 executionMonitor = None
@@ -832,6 +838,18 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # "installed" version of the executable, and if that is not
         # found it tries the pathname given in the TASK declaration.
 
+        # Handle non-IRAF installs
+        if not HAS_IRAF:
+            # debug
+            print self._name+' needs '+self._filename
+            # do this until I have fixed iraf.Expand for non-HAS_IRAF
+            if self._name=='cl' and self._filename[-3:]=='par': # !!!
+                self._filename = '/usr/stsci/iraf/iraf/pkg/cl/cl.par'
+            if self._filename == self._name+'$'+self._name+'.cl': # !!!
+                junk='/usr/stsci/iraf/iraf/pkg/'+self._name+'/'+self._name+'.cl'
+                if os.path.exists(junk):
+                    self._filename = junk
+                    print '---->', self._filename
         # Expand iraf variables.  We will try both paths if the expand fails.
         try:
             exename1 = iraf.Expand(self._filename)
