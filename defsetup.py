@@ -72,6 +72,7 @@ PYRAF_EXTENSIONS = [distutils.core.Extension('pyraf.sscanfmodule', ['src/sscanfm
                               include_dirs=add_inc_dirs,
                               library_dirs=add_lib_dirs,
                               libraries = [x_libraries])]
+if sys.platform == 'win32': PYRAF_EXTENSIONS = []
 
 pkg = "pyraf"
 
