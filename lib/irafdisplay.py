@@ -30,11 +30,18 @@ $Id$
 """
 from __future__ import division # confidence high
 
-import os, socket, numpy, fcntl
+import os, numpy, socket, sys
 from pytools import irafutils
+try:
+    import fcntl
+except:
+    if 0==sys.platform.find('win') or sys.platform=='cygwin':
+        fcntl = None # not on win* or cygwin but IS on darwin
+    else:
+        raise
 
 # FCNTL is deprecated in Python 2.2
-if hasattr(fcntl,'F_SETFL'):
+if hasattr(fcntl,'F_SETFL') or fcntl==None:
     FCNTL = fcntl
 else:
     import FCNTL
@@ -218,6 +225,8 @@ class FifoImageDisplay(ImageDisplay):
             fcntl.fcntl(self._fdout, FCNTL.F_SETFL, os.O_WRONLY)
         except OSError, error:
             raise IOError("Cannot open image display (%s)" % (error,))
+        except AttributeError:
+            raise RuntimeError("Image fcntl is not supported on this platform")
 
     def __del__(self):
         self.close()
@@ -226,9 +235,11 @@ class UnixImageDisplay(ImageDisplay):
 
     """Unix socket version of image display"""
 
-    def __init__(self, filename, family=socket.AF_UNIX, type=socket.SOCK_STREAM):
+    def __init__(self, filename, family=None, type=socket.SOCK_STREAM):
         ImageDisplay.__init__(self)
         try:
+            if family==None: # set in func, not in decl so it works on win
+                family = socket.AF_UNIX
             self._socket = socket.socket(family, type)
             self._socket.connect(filename)
             self._fdin = self._fdout = self._socket.fileno()
