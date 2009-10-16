@@ -55,11 +55,18 @@ def _writeError(msg):
 import sys, os, string, re, math, struct, types, time, fnmatch, glob, tempfile
 import linecache
 from pytools import minmatch, irafutils
-import numpy, sscanf, subproc, wutil
+import numpy, subproc, wutil
 import irafnames, iraftask, irafpar, irafexecute, cl2py
 import iraf
 import gki
 import irafecl
+try:
+    import sscanf
+except:
+    if 0==sys.platform.find('win') or sys.platform=='cygwin':
+        sscanf = None # not on win* or cygwin but IS on darwin
+    else:
+        raise
 
 try:
     import cPickle
@@ -1772,6 +1779,8 @@ def fscanf(locals, line, format, *namelist, **kw):
         _weirdEOF(locals, namelist)
         _nscan = 0
         return EOF
+    if sscanf == None:
+        raise RuntimeError("fscanf is not supported on this platform")
     f = sscanf.sscanf(line, format)
     n = min(len(f),len(namelist))
     # if list is null, add a null string
