@@ -7,11 +7,19 @@ from __future__ import division # confidence high
 
 import sys
 import wutil
-import termios, sys, os, string
+import sys, os, string
 from pytools import irafutils
 
+try:
+    import termios
+except:
+   if 0==sys.platform.find('win') or sys.platform=='cygwin':
+       termios = None # not on win* or cygwin but IS on darwin 
+   else:
+       raise
+
 # TERMIOS is deprecated in Python 2.1
-if hasattr(termios, 'ICANON'):
+if hasattr(termios, 'ICANON') or termios==None:
     TERMIOS = termios
 else:
     import TERMIOS
