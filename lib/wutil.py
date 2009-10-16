@@ -8,7 +8,14 @@ $Id$
 """
 from __future__ import division # confidence high
 
-import struct, fcntl, sys, os
+import struct, sys, os
+try:
+    import fcntl
+except:
+    if 0==sys.platform.find('win') or sys.platform=='cygwin':
+        fcntl = None # not used on win (yet) but IS on darwin
+    else:
+        raise
 
 # empty placeholder versions for X
 def getFocalWindowID(): return None
@@ -110,6 +117,8 @@ except ImportError:
         magicConstant = 0x5413
     elif platform[:4] == 'osf1':
         magicConstant = 0x40087468
+    elif platform == 'win32':
+        magicConstant = None # this is unused on windows (so far)
     elif platform == 'darwin':
         try:
             import termios
