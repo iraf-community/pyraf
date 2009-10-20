@@ -13,8 +13,8 @@ from pytools import irafutils
 try:
     import termios
 except:
-   if 0==sys.platform.find('win') or sys.platform=='cygwin':
-       termios = None # not on win* or cygwin but IS on darwin 
+   if 0==sys.platform.find('win'): # not on win*, but IS on darwin & cygwin
+       termios = None
    else:
        raise
 
