@@ -71,8 +71,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     if mode not in ["proc", "single"]:
         raise ValueError("Mode = `%s', must be `proc' or `single'" % (mode,))
 
-    if filename is not None:
-
+    if not filename in (None, ''):
         if isinstance(filename,str):
             efilename = os.path.expanduser(filename)
             if usecache:
