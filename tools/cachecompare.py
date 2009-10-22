@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 """cachecompare.py: Compare contents of new CL to old cache"""
+from __future__ import division # confidence high
 
 import os
 import pyraf

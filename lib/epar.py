@@ -4,11 +4,12 @@ $Id$
 
 M.D. De La Pena, 2000 February 04
 """
+from __future__ import division # confidence high
 
 # system level modules
 from Tkinter import *
-from tkMessageBox import askokcancel, showwarning
-import os, sys, cStringIO
+from tkMessageBox import askokcancel, showwarning, showerror
+import os, stat, sys, cStringIO
 
 # local modules
 from pytools import filedlg, listdlg, eparoption, editpar
@@ -183,7 +184,7 @@ class PyrafEparDialog(editpar.EditParDialog):
             # theTask must be a string name of, or an IrafTask object
             self._taskParsObj = iraf.getTask(theTask)
 
-    def _doActualSave(self, filename, comment):
+    def _doActualSave(self, filename, comment, set_ro=False):
         """ Overridden version, so as to check for a special case. """
         # Skip the save if the thing being edited is an IrafParList without
         # an associated file (in which case the changes are just being
@@ -192,8 +193,20 @@ class PyrafEparDialog(editpar.EditParDialog):
            not self._taskParsObj.getFilename():
             return '' # skip it
         else:
-            return self._taskParsObj.saveParList(filename=filename,
-                                                 comment=comment)
+            retval = ''
+            try:
+                retval = self._taskParsObj.saveParList(filename=filename,
+                                                       comment=comment)
+            except IOError:
+                retval="Error saving to "+filename+".  Please check privileges."
+                showerror(message=retval, title='Error Saving File')
+            if set_ro:
+                privs = os.stat(filename).st_mode
+                try:
+                    os.chmod(filename, privs ^ stat.S_IWUSR)
+                except OSError:
+                    pass # just try, don't whine
+            return retval
 
     def _showOpenButton(self):
         """ Override this so that we can use rules in irafpar. """

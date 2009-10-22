@@ -7,6 +7,7 @@ only commit the change when it appears to really be applicable.
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import struct, numpy, math
 from pytools.irafglobals import IrafError

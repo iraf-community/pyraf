@@ -13,6 +13,8 @@ XXX keys, len are incomplete if directory is not writable?
 R. White, 2000 September 26
 """
 
+from __future__ import division # confidence high
+
 import os, binascii, string, __builtin__
 _os = os
 _binascii = binascii
@@ -22,7 +24,7 @@ del os, binascii, string
 # For anydbm
 error = IOError
 
-class _Database:
+class _Database(object):
 
     """Dictionary-like object with entries stored in separate files
 
@@ -73,7 +75,7 @@ class _Database:
 
     def _getFilename(self, key):
 
-        """Return filename equivalent to this key"""
+        """Return filename equivalent to this string key"""
 
         filename = _binascii.b2a_base64(key)
         # get rid of trailing newline in base64 and replace slashes
@@ -119,6 +121,9 @@ class _Database:
 
     def has_key(self, key):
         return self._dict.has_key(key) or _os.path.exists(self._getFilename(key))
+
+    def __contains__(self, key):
+        return self.has_key(key)
 
     def __len__(self):
         return len(self._dict)

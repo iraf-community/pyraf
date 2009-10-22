@@ -28,8 +28,9 @@ $Id$
 
 R. White, 2000 October 1
 """
+from __future__ import division # confidence high
 
-import os, stat, sys, md5
+import os, stat, sys, hashlib
 
 class FileCache:
 
@@ -152,7 +153,9 @@ class MD5Cache(FileCache):
 
         contents = self._getFileHandle().read()
         # md5 digest is the value associated with the file
-        self.value = md5.new(contents).digest()
+        h = hashlib.md5()
+        h.update(contents)
+        self.value = h.digest()
 
 
 class FileCacheDict:

@@ -4,6 +4,7 @@ $Id$
 
 R. White, 2000 January 19
 """
+from __future__ import division # confidence high
 
 import os, sys
 import filecache
@@ -43,7 +44,7 @@ copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
 # with changes of the CL file contents when the script is
 # being developed.
 
-import dirshelve, stat, md5
+import dirshelve, stat, hashlib
 
 _versionKey = 'CACHE_VERSION'
 
@@ -187,7 +188,9 @@ class _CodeCache:
             return self.clFileDict.get(filename)
         elif source:
             # there is no filename, but return md5 digest of source as key
-            return md5.new(source).digest()
+            h = hashlib.md5()
+            h.update(source)
+            return h.digest()
 
     def add(self, index, pycode):
 

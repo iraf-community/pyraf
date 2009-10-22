@@ -9,6 +9,7 @@ $Id$
 
 Broken out from irafglobals.py which was signed "R. White, 2000 January 5"
 """
+from __future__ import division # confidence high
 
 import os, sys
 _os = os

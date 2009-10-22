@@ -2,6 +2,7 @@
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
 from pytools import irafutils
@@ -99,7 +100,9 @@ class _ProcessCache:
 
     """Cache of active processes indexed by executable path"""
 
-    def __init__(self, limit=8):
+    DFT_LIMIT = 8
+
+    def __init__(self, limit=DFT_LIMIT):
         self._data = {}          # dictionary with active process proxies
         self._pcount = 0         # total number of processes started
         self._plimit = limit     # number of active processes allowed
@@ -201,6 +204,10 @@ class _ProcessCache:
         else:
             while len(self._data) > self._plimit:
                 self._deleteOldest()
+
+    def resetSize(self):
+        """Set the number of processes allowed in cache back to the default"""
+        self.setSize(_ProcessCache.DFT_LIMIT)
 
     def lock(self, *args):
         """Lock the specified tasks into the cache
@@ -821,7 +828,7 @@ class IrafProcess:
         """Handle xfer data requests"""
 
         chan, nbytes = self.chanbytes()
-        nchars = nbytes/2
+        nchars = nbytes//2
         if chan == 3:
 
             # Read data from stdin unless xferline already has

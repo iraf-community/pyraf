@@ -4,6 +4,7 @@ $Id$
 
 R. White, 2000 January 7
 """
+from __future__ import division # confidence high
 
 import copy, glob, os, re, sys, types
 from pytools import basicpar, minmatch, irafutils, taskpars

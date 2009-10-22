@@ -36,8 +36,9 @@ $Id$
 
 R. White, 1999 September 23
 """
+from __future__ import division # confidence high
 
-import __main__, re, os, types
+import __main__, re, os, sys, types
 from pytools import minmatch, irafutils
 from pytools.irafglobals import IrafTask, IrafPkg
 import describe, iraf
@@ -50,24 +51,6 @@ try:
 except ImportError:
     # no numpy available, so we won't encounter arrays
     _numpyArrayType = None
-
-try:
-    if _numpyArrayType:
-        _numpyTypeName = {}
-        _numpyTypeName[numpy.object_]     = 'object_'
-        _numpyTypeName[numpy.uint8]       = 'uint8'
-        _numpyTypeName[numpy.int8]         = 'int8'
-        _numpyTypeName[numpy.uint16]       = 'uint16'
-        _numpyTypeName[numpy.int16]        = 'int16'
-        _numpyTypeName[numpy.uint32]       = 'uint32'
-        _numpyTypeName[numpy.int32]        = 'int32'
-        _numpyTypeName[numpy.float32]      = 'float32'
-        _numpyTypeName[numpy.float64]      = 'float64'
-        _numpyTypeName[numpy.complex64]    = 'complex64'
-        _numpyTypeName[numpy.complex128]    = 'complex128'
-        _numpyTypeName[numpy.complex256]   = 'complex256'
-except AttributeError:
-    pass
 
 _MODULE = 0
 _FUNCTION = 1
@@ -180,7 +163,7 @@ def _help(object, variables, functions, modules,
         if _printIrafHelp(object, html, irafkw): return
 
     if isinstance(object,str):
-        if re.match(r'[a-z_][a-z0-9_.]*$',object) or \
+        if re.match(r'[A-Za-z_][A-Za-z0-9_.]*$',object) or \
           (re.match(r'[^\0]*$',object) and \
                     os.path.exists(iraf.Expand(object, noerror=1))):
             if _printIrafHelp(object, html, irafkw): return
@@ -374,7 +357,7 @@ def _valueString(value,verbose=0):
             # oh well, just have to live with type string alone
             pass
     elif issubclass(t, _numpyArrayType):
-        vstr = vstr + " " + _numpyTypeName[value.dtype()] + "["
+        vstr = vstr + " " + str(value.dtype) + "["
         for k in range(len(value.shape)):
             if k:
                 vstr = vstr + "," + `value.shape[k]`
@@ -419,7 +402,7 @@ def _htmlHelp(taskname):
     if pid == 0:
         url = _HelpURL + taskname
 
-        if not os.uname()[0] in ('SunOS','Linux'): # OSX, etc
+        if not sys.platform[:-1] in ('sunos','linux'): # e.g. OSX, etc
             if 0 != os.system("open "+url):
                 print "Error opening URL: "+url
             os._exit(0)

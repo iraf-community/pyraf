@@ -38,6 +38,7 @@ graphics kernels as directed by commands embedded in the metacode stream.
 
 $Id$
 """
+from __future__ import division
 
 import numpy
 from types import *
@@ -311,7 +312,7 @@ class GkiBuffer:
         if self.bufferSize < (self.bufferEnd + len(metacode)):
             # increment buffer size and copy into new array
             diff = self.bufferEnd + len(metacode) - self.bufferSize
-            nblocks = diff/self.INCREMENT + 1
+            nblocks = diff//self.INCREMENT + 1
             self.bufferSize = self.bufferSize + nblocks * self.INCREMENT
             newbuffer = numpy.zeros(self.bufferSize, numpy.int16)
             if self.bufferEnd > 0:

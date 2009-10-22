@@ -12,9 +12,13 @@ $Id$
 
 R. White, 1999 August 17
 """
+from __future__ import division # confidence high
 
 import __builtin__
+import sys
 from pytools import minmatch
+
+importHasLvlArg = sys.version_info[0] > 2 or sys.version_info[1] >= 5 # no 1.*
 
 # Save the original hooks;  replaced at bottom of module...
 _originalImport = __builtin__.__import__
@@ -25,7 +29,7 @@ def restoreBuiltins():
     __builtin__.__import__ = _originalImport
     __builtin__.__reload__ = _originalReload
 
-def _irafImport(name, globals={}, locals={}, fromlist=[]):
+def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     if fromlist and (name in ["iraf", "pyraf.iraf"]):
         for task in fromlist:
             pkg = iraf.getPkg(task,found=1)
@@ -45,7 +49,12 @@ def _irafImport(name, globals={}, locals={}, fromlist=[]):
         elif name == 'pyraf.alert':     name = 'pytools.alert'
         elif name == 'pyraf.irafglobals': name='pytools.irafglobals' # is diffnt
         # !!! END TEMPORARY KLUDGE !!!
-        return _originalImport(name, globals, locals, fromlist)
+
+        if importHasLvlArg:
+            return _originalImport(name, globals, locals, fromlist, level)
+        else:
+            # we could assert here that level == -1, but it's safe to assume
+            return _originalImport(name, globals, locals, fromlist)
 
 def _irafReload(module):
     if isinstance(module, _irafModuleClass):

@@ -4,6 +4,7 @@ $Id$
 
 R. White, 1999 December 20
 """
+from __future__ import division # confidence high
 
 import cStringIO, os, sys
 

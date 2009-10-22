@@ -8,7 +8,9 @@ $Id$
 
 R. White, 2000 February 18
 """
-__version__ = "1.7.1"
+from __future__ import division # confidence high
+
+__version__ = "1.8.1"
 
 import os, sys, __main__
 

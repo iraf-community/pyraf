@@ -5,6 +5,8 @@ bridging package so that compiling another C extension is not needed.
 $Id$
 """
 
+from __future__ import division # confidence high
+
 import os, Tkinter
 import objc
 import AppKit

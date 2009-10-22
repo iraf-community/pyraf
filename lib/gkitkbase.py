@@ -3,6 +3,7 @@ Tk gui implementation for the gki plot widget
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import numpy, os, sys, string, wutil, time
 import Tkinter, msgiobuffer
@@ -212,7 +213,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         self.pageVar.trace('w', self._setPageVar)
         windowID = self.gwidget.winfo_id()
         self.flush()
-        if os.uname()[0] != 'Darwin': # this step is unneeded on OSX
+        if sys.platform != 'darwin': # this step is unneeded on OSX
             wutil.setBackingStore(windowID)
 
     # -----------------------------------------------

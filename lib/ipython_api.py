@@ -12,6 +12,7 @@ Code derived from pyraf.pycmdline.py
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
 #*****************************************************************************
+from __future__ import division # confidence high
 
 from IPython import Release
 
@@ -25,6 +26,7 @@ __license__ = Release.license
 # that messes things up by allowing direct imports of pyraf submodules
 # (bypassing the __init__ mechanism.)
 
+import sys
 from pyraf import iraf, __version__
 from pyraf.irafpar import makeIrafPar
 from pytools.irafglobals import yes, no, INDEF, EOF
@@ -33,7 +35,8 @@ _locals = globals()
 
 # del iraf, __version__, makeIrafPar, yes, no, INDEF, EOF, logout, quit, exit
 
-print "PyRAF", __version__, "Copyright (c) 2002 AURA"
+if '-nobanner' not in sys.argv:
+    print "PyRAF", __version__, "Copyright (c) 2002 AURA"
 
 # Start up command line wrapper keeping definitions in main name space
 # Keep the command-line object in namespace too for access to history
@@ -329,35 +332,37 @@ class IPython_PyRAF_Integrator(object):
             if magic not in self._ipython_magic:
                 self._ipython_magic.append(magic)
 
-    def use_pyraf_traceback(self, IP=None, flag=None):
+    def use_pyraf_traceback(self, IP=None, flag=None, feedback=True):
         IP = self._get_IP(IP)
         if self._evaluate_flag(flag, "use_pyraf_traceback"):
-            self._debug("PyRAF traceback display: on")
+            if feedback: self._debug("PyRAF traceback display: on")
             IP.set_custom_exc((Exception,), self.showtraceback)
         else:
-            self._debug("PyRAF traceback display: off")
+            if feedback: self._debug("PyRAF traceback display: off")
             IP.custom_exceptions = ((), None)
 
-    def use_pyraf_cl_emulation(self, IP=None, flag=None):
+    def use_pyraf_cl_emulation(self, IP=None, flag=None, feedback=True):
         """Turns PyRAF CL emulation on (1) or off (0)"""
         self._cl_emulation = self._evaluate_flag(flag, "use_pyraf_cl_emulation")
         if self._cl_emulation:
-            self._debug("PyRAF CL emulation on")
+            if feedback: self._debug("PyRAF CL emulation on")
         else:
-            self._debug("PyRAF CL emulation off")
+            if feedback: self._debug("PyRAF CL emulation off")
 
-    def use_pyraf_completer(self, IP=None, flag=None):
+    def use_pyraf_completer(self, IP=None, flag=None, feedback=True):
         if self._evaluate_flag(flag, "use_pyraf_readline_completer"):
-            self._debug("PyRAF readline completion on")
+            if feedback: self._debug("PyRAF readline completion on")
             self._pyraf_completer.activate()
         else:
-            self._debug("PyRAF readline completion off")
+            if feedback: self._debug("PyRAF readline completion off")
             self._pyraf_completer.deactivate()
 
+fb = "-nobanner" not in sys.argv
 __PyRAF = IPython_PyRAF_Integrator()
-# __PyRAF.use_pyraf_completer()  Can't do this yet... but it's hooked.
-# __PyRAF.use_pyraf_cl_emulation()
-__PyRAF.use_pyraf_traceback()
+# __PyRAF.use_pyraf_completer(feedback=fb) Can't do this yet...but it's hooked.
+# __PyRAF.use_pyraf_cl_emulation(feedback=fb)
+__PyRAF.use_pyraf_traceback(feedback=fb)
+del fb
 
 del IPythonIrafCompleter, IPython_PyRAF_Integrator, IrafCompleter
 

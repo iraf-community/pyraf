@@ -6,6 +6,7 @@ If the c versions do not exist, then these routines will do nothing
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import struct, fcntl, sys, os
 
@@ -23,14 +24,23 @@ def initGraphics(): pass
 def closeGraphics(): pass
 
 # Are we on MacOS X ?
-WUTIL_ON_MAC = False
-if os.uname()[0] == 'Darwin':
-    WUTIL_ON_MAC = True
+WUTIL_ON_MAC = sys.platform == 'darwin'
 
-# For a little while we may support both versions (X or Aqua) on OSX
+# For a while we may support both versions (X or Aqua) on OSX
 WUTIL_USING_X = True
-if WUTIL_ON_MAC and os.environ.has_key('PYRAF_WUTIL_USING_AQUA'):
-    WUTIL_USING_X = False
+if WUTIL_ON_MAC:
+    if os.environ.has_key('PYRAF_WUTIL_USING_AQUA'):
+        WUTIL_USING_X = False
+    else:
+        # Do this check for them; look at the python exec - is it X11-linked?
+        # We *could* do an "otool -L" on sys.executable and check for the
+        # X11 libs, but the following method is faster & nearly as effective.
+        # We assume that any python with a PyObjc package in its sys.path
+        # is NOT linked with any X11 libraries.  OSX python comes /w PyObjc.
+        junk = ",".join(sys.path)
+        WUTIL_USING_X = junk.lower().find('/pyobjc') < 0
+        del junk
+
 # On OSX, a terminal with no display causes us to fail pretty abruptly:
 # "INIT_Processeses(), could not establish the default connection to the WindowServer.Abort".
 # Give the user (Mac or other) a way to still run remotely with no display.

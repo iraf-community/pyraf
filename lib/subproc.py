@@ -17,6 +17,7 @@ Subprocess class features:
 
 $Id$
 """
+from __future__ import division # confidence high
 
 __version__ = "Revision: 1.7r "
 

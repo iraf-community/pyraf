@@ -3,6 +3,7 @@ implement IRAF gcur functionality
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import string, os, sys, numpy, Tkinter
 from pytools import irafutils

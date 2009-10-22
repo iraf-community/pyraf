@@ -22,6 +22,8 @@
 # http://www.pythonware.com
 #
 
+from __future__ import division # confidence high
+
 import string
 from dis import opname, HAVE_ARGUMENT
 

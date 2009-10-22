@@ -1,10 +1,9 @@
 #! /usr/bin/env python
 
 """loadall.py: Load all the main packages in IRAF with verbose turned on
-
-
 $Id$
 """
+from __future__ import division # confidence high
 
 import sys, traceback
 from pyraf import iraf
@@ -12,7 +11,7 @@ from pyraf import iraf
 iraf.setVerbose()
 
 def printcenter(s, length=70, char="-"):
-    l1 = (length-len(s))/2
+    l1 = (length-len(s))//2
     l2 = length-l1-len(s)
     print l1*char, s, l2*char
 
@@ -31,7 +30,7 @@ while keepGoing and (ntotal<len(plist)):
         if not ptried.has_key(pkg):
             ptried[pkg] = 1
             nnew = nnew+1
-            l1 = (70-len(pkg))/2
+            l1 = (70-len(pkg))//2
             l2 = 70-l1-len(pkg)
             printcenter(pkg)
             if pkg == "digiphotx":

@@ -3,6 +3,7 @@ OpenGL implementation of the gki kernel class
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import sys, os, string
 import gki, irafgwcs, iraftask, iraf

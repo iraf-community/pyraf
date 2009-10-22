@@ -7,6 +7,7 @@ researched and addressed.
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import glob, os, sys, time
 from pyraf import iraf
@@ -110,7 +111,7 @@ def gki_prow_to_different_devices_test():
    iraf.plot(_doprint=0) # load plot for prow
    # get look at tmp dir before plot/flush
    flistBef = findAllTmpPskFiles()
-   # use a fake printer name so we don't waste a sheet of paper w/ each test
+   # use a fake printer name so we don't waste a sheet of paper with each test
    os.environ['LPDEST'] = "hp_dev_null"
    # plot
    iraf.prow("dev$pix", row=256, dev="psi_land") # plot (no .ps file yet)

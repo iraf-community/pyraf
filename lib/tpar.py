@@ -10,8 +10,8 @@ contexts or for people who prefer text interfaces to GUIs.
 $Id$
 
 Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
-
 """
+from __future__ import division # confidence high
 
 # XXXX Debugging tip:  uncomment self.inform() in the debug() method below
 
@@ -38,12 +38,13 @@ try:
     import urwutil
     import urwfiledlg
     urwid.set_encoding("ascii")   #  gives better performance than 'utf8'
-except:
+except Exception, e:
     urwid = FakeModule()
     urwid.Edit = FakeClass()
     urwid.Columns = FakeClass()
     urwid.AttrWrap = FakeClass()
     urwid.Pile = FakeClass()
+    urwid.the_error = str(e)
 
 # PyRAF modules
 import iraf, irafpar, irafhelp, iraftask, cStringIO, iraffunctions
@@ -1317,7 +1318,8 @@ class TparDisplay(Binder):
 def tpar(taskName):
     if isinstance(urwid, FakeModule):
         print >>sys.stderr, "The urwid package isn't available on your Python system so tpar can't be used."
-        print >>sys.stderr, "Install urwid version >= 0.9.4 or use epar instead."
+        print >>sys.stderr, '    (the error given: "'+urwid.the_error+'")'
+        print >>sys.stderr, "Please install urwid version >= 0.9.4 or use epar instead."
         return
     TparDisplay(taskName).main()
 

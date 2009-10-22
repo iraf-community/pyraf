@@ -1,8 +1,9 @@
 #!/usr/bin/env python
+from __future__ import division # confidence high
 
 import os, os.path, sys, commands
 import distutils.core
-import distutils.sysconfig 
+import distutils.sysconfig
 import string
 
 x_libraries = 'X11'
@@ -23,7 +24,7 @@ def find_x(xdir=""):
         add_lib_dirs.append('/usr/X11R6/lib')
         add_inc_dirs.append('/usr/X11R6/include')
     elif sys.platform == 'sunos5' :
-        add_lib_dirs.append('/usr/openwin/lib') 
+        add_lib_dirs.append('/usr/openwin/lib')
         add_inc_dirs.append('/usr/openwin/include')
     else:
         try:
@@ -74,7 +75,7 @@ PYRAF_EXTENSIONS = [distutils.core.Extension('pyraf.sscanfmodule', ['src/sscanfm
 
 pkg = "pyraf"
 
-DATA_FILES = [ ( pkg, 
+DATA_FILES = [ ( pkg,
                     ['data/blankcursor.xbm',
                     'data/epar.optionDB',
                     'data/pyraflogo_rgb_web.gif',
@@ -82,12 +83,12 @@ DATA_FILES = [ ( pkg,
                     'lib/LICENSE.txt',
                     ]
                 ),
-                (pkg+'/clcache',  [ "data/clcache/*" ] ) 
+                (pkg+'/clcache',  [ "data/clcache/*" ] )
         ]
 
 
 setupargs = {
-    'version' :			    "1.7.1", # see lib's __init__.py
+    'version' :			    "1.8.1", # see lib's __init__.py
     'description' :		    "A Python based CL for IRAF",
     'author' :			    "Rick White, Perry Greenfield",
     'maintainer_email' :	"help@stsci.edu",

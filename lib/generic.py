@@ -35,6 +35,8 @@ $Id$
 # - Add optional value parameter to GenericParser.error.
 # - Add check for assertion error in ambiguity resolution.
 
+from __future__ import division # confidence high
+
 __version__ = 'SPARK-0.6.1rlw'
 
 import re

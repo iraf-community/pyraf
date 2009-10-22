@@ -5,6 +5,7 @@
 
 M.D. De La Pena, 2000 June 28
 """
+from __future__ import division # confidence high
 
 # System level modules
 from Tkinter import *

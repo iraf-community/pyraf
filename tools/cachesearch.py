@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 """cachesearch.py: Check all entries in CL cache for a particular string"""
+from __future__ import division # confidence high
 
 import os, re
 import pyraf

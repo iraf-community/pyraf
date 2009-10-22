@@ -6,6 +6,7 @@ imcur parameter.
 
 $Id$
 """
+from __future__ import division # confidence high
 
 import sys,string
 from pytools import irafutils
