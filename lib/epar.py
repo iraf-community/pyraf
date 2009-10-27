@@ -6,16 +6,21 @@ M.D. De La Pena, 2000 February 04
 """
 from __future__ import division # confidence high
 
-# system level modules
-from Tkinter import *
-from tkMessageBox import askokcancel, showwarning, showerror
-import os, stat, sys, cStringIO
-
-# local modules
-from pytools import filedlg, listdlg, eparoption, editpar
-from pytools.irafglobals import IrafError
-import iraf, irafpar, irafhelp, wutil, pseteparoption
-from pyrafglobals import pyrafDir
+from pytools import capable
+if capable.OF_GRAPHICS:
+    # system level modules
+    from Tkinter import *
+    from tkMessageBox import askokcancel, showwarning, showerror
+    import os, stat, sys, cStringIO
+    # local modules
+    from pytools import filedlg, listdlg, eparoption, editpar
+    from pytools.irafglobals import IrafError
+    import iraf, irafpar, irafhelp, wutil, pseteparoption
+    from pyrafglobals import pyrafDir
+else:
+    class editpar():
+        class EditParDialog():
+            pass # dummy so that code below can import
 
 # tool help
 eparHelpString = """\
