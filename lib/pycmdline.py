@@ -27,7 +27,7 @@ R. White, 2000 February 20
 from __future__ import division # confidence high
 
 import string, re, os, sys, code, keyword, traceback, linecache
-from pytools import minmatch
+from pytools import capable, minmatch
 import iraf, wutil
 from pyrafglobals import pyrafDir
 
@@ -186,8 +186,9 @@ class PyCmdLine(CmdConsole):
         # turn command completion on or off as requested
         self.do_complete(default=self.complete)
         # install special error handler for Tk tracebacks
-        import pyrafTk
-        pyrafTk.setTkErrorHandler(self.showtraceback)
+        if capable.OF_GRAPHICS:
+            import pyrafTk
+            pyrafTk.setTkErrorHandler(self.showtraceback)
 
     def runsource(self, source, filename="<input>", symbol="single"):
         """Compile and run some source in the interpreter.
