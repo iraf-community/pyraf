@@ -51,7 +51,8 @@ if WUTIL_ON_MAC:
 # On OSX, a terminal with no display causes us to fail pretty abruptly:
 # "INIT_Processeses(), could not establish the default connection to the WindowServer.Abort".
 # Give the user (Mac or other) a way to still run remotely with no display.
-_skipDisplay = os.environ.has_key('PYRAF_NO_DISPLAY')
+from pytools import capable
+_skipDisplay = not capable.OF_GRAPHICS
 
 # attempt to override with xutil or aqua versions
 _hasAqua = 0
