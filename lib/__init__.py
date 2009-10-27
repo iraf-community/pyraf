@@ -47,6 +47,7 @@ _pyrafMain = os.path.split(executable)[1] != 'pyraf'
 del executable
 
 import irafexecute, clcache
+from pytools import capable
 
 # set up exit handler to close caches
 def _cleanup():
@@ -86,7 +87,7 @@ else:
     verbose = 0
     doCmdline = 1
     _silent = 0
-    _dosplash = 1
+    _dosplash = capable.OF_GRAPHICS
     _use_ipython_shell = 0
     if optlist:
         for opt, value in optlist:
