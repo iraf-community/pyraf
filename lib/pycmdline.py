@@ -28,7 +28,7 @@ from __future__ import division # confidence high
 
 import string, re, os, sys, code, keyword, traceback, linecache
 from pytools import capable, minmatch
-import iraf, wutil
+import iraf, irafinst, wutil
 from pyrafglobals import pyrafDir
 
 class CmdConsole(code.InteractiveConsole):
@@ -244,6 +244,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
     def do_exit(self, line='', i=0):
         """Exit from Python"""
         if self.debug>1: self.write('do_exit: %s\n' % line[i:])
+        irafinst.cleanup()
         wutil.closeGraphics()
         raise SystemExit
 
