@@ -30,11 +30,14 @@ def getDeepestVisual(): return 24
 def initGraphics(): pass
 def closeGraphics(): pass
 
-# Are we on MacOS X ?
+# Are we on MacOS X ?  Windows ?
 WUTIL_ON_MAC = sys.platform == 'darwin'
+WUTIL_ON_WIN = sys.platform.startswith('win')
+
+# Default to using X on most platforms, tho definitely not on windows
+WUTIL_USING_X = not WUTIL_ON_WIN
 
 # For a while we may support both versions (X or Aqua) on OSX
-WUTIL_USING_X = True
 if WUTIL_ON_MAC:
     if os.environ.has_key('PYRAF_WUTIL_USING_AQUA'):
         WUTIL_USING_X = False
@@ -502,6 +505,9 @@ else:
         hasGraphics = focusController.hasGraphics
         if hasGraphics:
             print "\nLimited graphics available (aqutil not loaded)\n"
+    elif WUTIL_ON_WIN:
+        hasGraphics = 1 # try this, tho VERY limited (epar only I guess)
+        print "\nLimited graphics available on win32 platform\n"
 
     if not hasGraphics:
         print ""
