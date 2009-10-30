@@ -78,7 +78,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
                 index, pycode = codeCache.get(efilename,mode=mode)
                 if pycode is not None:
                     if Verbose>1:
-                        print efilename,"found in CL script cache"
+                        print efilename,"filename found in CL script cache"
                     return pycode
             else:
                 index = None
@@ -91,7 +91,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
                 index, pycode = codeCache.get(filename,mode=mode,source=clInput)
                 if pycode is not None:
                     if Verbose>1:
-                        print filename,"found in CL script cache"
+                        print filename,"filehandle found in CL script cache"
                     return pycode
             else:
                 index = None
@@ -110,7 +110,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
             index, pycode = codeCache.get(None,mode=mode,source=clInput)
             if pycode is not None:
                 if Verbose>1:
-                    print filename,"found in CL script cache"
+                    print "Found in CL script cache: ",clInput.strip()[:20]
                 return pycode
         else:
             index = None
@@ -130,26 +130,21 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     tree.filename = efilename
 
     # first pass -- get variables
-
     vars = VarList(tree,mode,local_vars_list,local_vars_dict,parlist)
 
     # check variable list for consistency with the given parlist
     # this may change the vars list
-
     _checkVars(vars, parlist, parfile)
 
     # second pass -- check all expression types
     # type info is added to tree
-
     TypeCheck(tree, vars, efilename)
 
     # third pass -- generate python code
-
     tree2python = Tree2Python(tree, vars, efilename, taskObj)
 
     # just keep the relevant fields of Tree2Python output
     # attach tokens to the code object too
-
     pycode = Pycode(tree2python)
 
     # add to cache
