@@ -56,7 +56,7 @@ import sys, os, string, re, math, struct, types, time, fnmatch, glob, tempfile
 import linecache
 from pytools import minmatch, irafutils
 import numpy, subproc, wutil
-import irafnames, iraftask, irafpar, irafexecute, cl2py
+import irafnames, irafinst, iraftask, irafpar, irafexecute, cl2py
 import iraf
 import gki
 import irafecl
@@ -104,6 +104,7 @@ _wutil = wutil
 
 _irafnames = irafnames
 _irafutils = irafutils
+_irafinst = irafinst
 _iraftask = iraftask
 _irafpar = irafpar
 _irafexecute = irafexecute
@@ -112,7 +113,7 @@ _cl2py = cl2py
 del sys, os, string, re, math, struct, types, time, fnmatch, glob, linecache
 del StringIO, pickle, tempfile
 del numpy, minmatch, subproc, wutil
-del irafnames, irafutils, iraftask, irafpar, irafexecute, cl2py
+del irafnames, irafutils, irafinst, iraftask, irafpar, irafexecute, cl2py
 
 # Number of bits per long
 BITS_PER_LONG = _struct.calcsize('l') * 8 # is 64 on a 64-bit machine
@@ -229,7 +230,8 @@ at the Unix command line.  The values will depend on your IRAF installation.
         set(home = userIrafHome)
 
         # define initial symbols
-        clProcedure(Stdin='hlib$zzsetenv.def')
+        if _irafinst.EXISTS:
+            clProcedure(Stdin='hlib$zzsetenv.def')
 
         # define clpackage
         global clpkg
@@ -267,6 +269,8 @@ at the Unix command line.  The values will depend on your IRAF installation.
 
 def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
     """Returns dictionary of environment vars defined in cl startup file"""
+    if not _irafinst.EXISTS:
+        return {'iraf': '/iraf/is/not/here/', 'IRAFARCH': 'arch_is_unused'}
     if not _os.path.exists(file):
         raise IOError("CL startup file %s does not exist" % file)
     lines = open(file,'r').readlines()
