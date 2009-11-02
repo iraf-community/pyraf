@@ -9,7 +9,7 @@ $Id$
 """
 from __future__ import division # confidence high
 
-import os, sys
+import os, shutil, sys, tempfile
 
 
 # File name prefix signal
@@ -22,21 +22,20 @@ else:
     EXISTS = 'PYRAF_NO_IRAF' not in os.environ
 
 # Keep track of any tmp files created
-_files = []
+_tmp_dir = None
 
 # cleanup (for exit)
 def cleanup():
-    """ Try to cleanup.  Don't complain if the files isn't there.  """
-    global _files
-    for f in _files:
-        os.remove(f)
-    _files = []
+    """ Try to cleanup.  Don't complain if the dir isn't there.  """
+    global _tmp_dir
+    if _tmp_dir:
+        shutil.rmtree(_tmp_dir)
+        _tmp_dir = None
 
 
 # Create files on the fly when needed
 def tmpParFile(fname):
     """ Create a tmp file for the given par file, and return the filename. """
-    global _files
     assert fname and fname.endswith('.par'), 'Unexpected file: '+fname
 
     if fname == 'cl.par':
@@ -102,22 +101,32 @@ mode,s,h,ql
         # For now that's it - this must be a file we don't handle
         raise RuntimeError('Unexpected .par file: '+fname)
 
-    tmpd = os.environ['HOME']+os.sep+'.pyraf-no-iraf' # !!! use tmp dir
-    if not os.path.exists(tmpd): os.mkdir(tmpd)
-    tmpf = tmpd+os.sep+fname
+    return _writeTmpFile(fname, content)
+
+
+def _writeTmpFile(base_fname, text):
+    """ Utility function for writing our tmp files. Return the full fname."""
+    global _tmp_dir
+    if not _tmp_dir:
+        _tmp_dir = tempfile.mkdtemp('.pyraf-no-iraf')
+    tmpf = _tmp_dir+os.sep+base_fname
     if os.path.exists(tmpf): os.remove(tmpf)
     f = open(tmpf, 'w')
-    f.write(content)
+    f.write(text)
     f.close()
-    _files.append(tmpf)
     return tmpf
 
 
-def getNoIrafClFor(fname):
-    """ Generate CL file text on the fly when missing IRAF, return the str. """
+def getNoIrafClFor(fname, useTmpFile=False):
+    """ Generate CL file text on the fly when missing IRAF, return the
+    full text sting.  If useTmpFile, then returns the temp file name. """
 
     assert fname and fname.endswith('.cl'), 'Unexpected file: '+fname
 
+    # First call ourselves to get the text if we need to write it to a tmp file
+    if useTmpFile:
+        return _writeTmpFile(fname, getNoIrafClFor(fname, useTmpFile=False))
+        
     # bare-bones clpackage.cl
     if fname == 'clpackage.cl':
         return """
@@ -135,6 +144,26 @@ if (menus) {
     system
 keep
 """
+
+    # basic login.cl for the case of no IRAF
+    if fname == 'login.cl':
+        usr = None
+        if hasattr(os, 'getlogin'): usr = os.getlogin()
+        if not usr and 'USER'     in os.environ: usr = os.environ['USER']
+        if not usr and 'USERNAME' in os.environ: usr = os.environ['USERNAME']
+        if not usr and 'LOGNAME'  in os.environ: usr = os.environ['LOGNAME']
+        content = '# LOGIN.CL -- User login file.\nset home = "'+ \
+        os.getcwd()+os.sep+'"\nset userid = "'+usr+'"\n'+ \
+        'set uparm = "home$uparm/"\n'+ \
+        'stty xterm\n'+ \
+        'showtype = yes\n'+ \
+        '# Load default CL pkg - allow overrides via loginuser.cl\n'+\
+        'clpackage\n'+ \
+        'package user\n'+ \
+        '# Basic foreign tasks from UNIX (add a Win section?)\n'+ \
+        'task  $adb $bc $cal $cat $comm $cp $csh $date $dbx $df $diff = "$foreign"\n' +\
+        '# more ..\nkeep\n'
+        return content
 
     # bare-bones system.cl
     if fname == 'system.cl':
