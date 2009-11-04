@@ -152,17 +152,31 @@ keep
         if not usr and 'USER'     in os.environ: usr = os.environ['USER']
         if not usr and 'USERNAME' in os.environ: usr = os.environ['USERNAME']
         if not usr and 'LOGNAME'  in os.environ: usr = os.environ['LOGNAME']
-        content = '# LOGIN.CL -- User login file.\nset home = "'+ \
-        os.getcwd()+os.sep+'"\nset userid = "'+usr+'"\n'+ \
+        content = '# LOGIN.CL -- User login file.\n'+ \
+        'set home = "'+os.getcwd()+os.sep+'"\nset userid = "'+usr+'"\n'+ \
         'set uparm = "home$uparm/"\n'+ \
         'stty xterm\n'+ \
         'showtype = yes\n'+ \
         '# Load default CL pkg - allow overrides via loginuser.cl\n'+\
         'clpackage\n'+ \
+        '# Default USER package - to be modified by the user\n'+ \
         'package user\n'+ \
         '# Basic foreign tasks from UNIX (add a Win section?)\n'+ \
-        'task  $adb $bc $cal $cat $comm $cp $csh $date $dbx $df $diff = "$foreign"\n' +\
-        '# more ..\nkeep\n'
+        'task  $adb $bc $cal $cat $comm $cp $csh $date $dbx = "$foreign"\n' +\
+        'task  $df $diff $du $find $finger $ftp $grep $lpq  = "$foreign"\n' +\
+        'task  $lprm $ls $mail $make $man $mon $mv $nm $od  = "$foreign"\n' +\
+        'task  $ps $rcp $rlogin $rsh $ruptime $rwho $sh     = "$foreign"\n' +\
+        'task  $spell $sps $strings $su $telnet $tip $top   = "$foreign"\n' +\
+        'task  $vi $emacs $w $wc $less $more $rusers $sync  = "$foreign"\n' +\
+        'task  $pwd $gdb $xc $mkpkg $generic $rtar $wtar    = "$foreign"\n' +\
+        'task  $tar $bash $tcsh $buglog $who $ssh $scp      = "$foreign"\n' +\
+        'task  $mkdir $rm $chmod $sort                      = "$foreign"\n' +\
+        'task  $cls = "$clear;ls"\n' +\
+        'task  $clw = "$clear;w"\n' +\
+        'if (access ("home$loginuser.cl"))\n' +\
+        '   cl < "home$loginuser.cl"\n' +\
+        ';\n' +\
+        '# more ...\nkeep\n'
         return content
 
     # bare-bones system.cl
