@@ -108,7 +108,7 @@ def _writeTmpFile(base_fname, text):
     """ Utility function for writing our tmp files. Return the full fname."""
     global _tmp_dir
     if not _tmp_dir:
-        _tmp_dir = tempfile.mkdtemp('.pyraf-no-iraf')
+        _tmp_dir = tempfile.mkdtemp(prefix='pyraf_tmp_', suffix='.no-iraf')
     tmpf = _tmp_dir+os.sep+base_fname
     if os.path.exists(tmpf): os.remove(tmpf)
     f = open(tmpf, 'w')
@@ -152,8 +152,10 @@ keep
         if not usr and 'USER'     in os.environ: usr = os.environ['USER']
         if not usr and 'USERNAME' in os.environ: usr = os.environ['USERNAME']
         if not usr and 'LOGNAME'  in os.environ: usr = os.environ['LOGNAME']
+        ihome = os.getcwd()+'/'
+        ihome = ihome.replace('\\', '/') # for windoze
         content = '# LOGIN.CL -- User login file.\n'+ \
-        'set home = "'+os.getcwd()+os.sep+'"\nset userid = "'+usr+'"\n'+ \
+        'set home = "'+ihome+'"\nset userid = "'+usr+'"\n'+ \
         'set uparm = "home$uparm/"\n'+ \
         'stty xterm\n'+ \
         'showtype = yes\n'+ \
