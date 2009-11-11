@@ -6,16 +6,21 @@ M.D. De La Pena, 2000 February 04
 """
 from __future__ import division # confidence high
 
-# system level modules
-from Tkinter import *
-from tkMessageBox import askokcancel, showwarning, showerror
-import os, stat, sys, cStringIO
-
-# local modules
-from pytools import filedlg, listdlg, eparoption, editpar
+from pytools import capable
+if capable.OF_GRAPHICS:
+    from Tkinter import *
+    from tkMessageBox import askokcancel, showwarning, showerror
+    import os, stat, sys, cStringIO
+    from pytools import filedlg, listdlg, eparoption, editpar
+    import iraf, irafpar, irafhelp, wutil, pseteparoption
+    from pyrafglobals import pyrafDir
+else:
+    wutil = None
+    class editpar():
+        class EditParDialog():
+            pass # dummy so that code below can import
 from pytools.irafglobals import IrafError
-import iraf, irafpar, irafhelp, wutil, pseteparoption
-from pyrafglobals import pyrafDir
+
 
 # tool help
 eparHelpString = """\
@@ -152,7 +157,7 @@ the "Execute" button.
 
 def epar(theTask, parent=None, isChild=0):
 
-    if not wutil.hasGraphics:
+    if wutil is None or not wutil.hasGraphics:
         raise IrafError("Cannot run epar without graphics windows")
 
     if not isChild:

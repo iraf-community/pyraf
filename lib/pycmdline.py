@@ -27,8 +27,8 @@ R. White, 2000 February 20
 from __future__ import division # confidence high
 
 import string, re, os, sys, code, keyword, traceback, linecache
-from pytools import minmatch
-import iraf, wutil
+from pytools import capable, minmatch
+import iraf, irafinst, wutil
 from pyrafglobals import pyrafDir
 
 class CmdConsole(code.InteractiveConsole):
@@ -186,8 +186,9 @@ class PyCmdLine(CmdConsole):
         # turn command completion on or off as requested
         self.do_complete(default=self.complete)
         # install special error handler for Tk tracebacks
-        import pyrafTk
-        pyrafTk.setTkErrorHandler(self.showtraceback)
+        if capable.OF_GRAPHICS:
+            import pyrafTk
+            pyrafTk.setTkErrorHandler(self.showtraceback)
 
     def runsource(self, source, filename="<input>", symbol="single"):
         """Compile and run some source in the interpreter.
@@ -243,6 +244,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
     def do_exit(self, line='', i=0):
         """Exit from Python"""
         if self.debug>1: self.write('do_exit: %s\n' % line[i:])
+        irafinst.cleanup()
         wutil.closeGraphics()
         raise SystemExit
 

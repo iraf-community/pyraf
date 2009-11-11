@@ -6,9 +6,11 @@ $Id$
 """
 from __future__ import division # confidence high
 
-import string, wutil, Tkinter
+import os, string, wutil
+from pytools import capable
+if capable.OF_GRAPHICS:
+    import Tkinter
 import gki
-import os
 
 class GWMError(Exception):
     pass

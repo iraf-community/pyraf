@@ -8,7 +8,14 @@ $Id$
 """
 from __future__ import division # confidence high
 
-import struct, fcntl, sys, os
+import struct, sys, os
+try:
+    import fcntl
+except:
+    if 0==sys.platform.find('win') or sys.platform=='cygwin':
+        fcntl = None # not used on win (yet) but IS on darwin
+    else:
+        raise
 
 # empty placeholder versions for X
 def getFocalWindowID(): return None
@@ -23,11 +30,14 @@ def getDeepestVisual(): return 24
 def initGraphics(): pass
 def closeGraphics(): pass
 
-# Are we on MacOS X ?
+# Are we on MacOS X ?  Windows ?
 WUTIL_ON_MAC = sys.platform == 'darwin'
+WUTIL_ON_WIN = sys.platform.startswith('win')
+
+# Default to using X on most platforms, tho definitely not on windows
+WUTIL_USING_X = not WUTIL_ON_WIN
 
 # For a while we may support both versions (X or Aqua) on OSX
-WUTIL_USING_X = True
 if WUTIL_ON_MAC:
     if os.environ.has_key('PYRAF_WUTIL_USING_AQUA'):
         WUTIL_USING_X = False
@@ -44,7 +54,8 @@ if WUTIL_ON_MAC:
 # On OSX, a terminal with no display causes us to fail pretty abruptly:
 # "INIT_Processeses(), could not establish the default connection to the WindowServer.Abort".
 # Give the user (Mac or other) a way to still run remotely with no display.
-_skipDisplay = os.environ.has_key('PYRAF_NO_DISPLAY')
+from pytools import capable
+_skipDisplay = not capable.OF_GRAPHICS
 
 # attempt to override with xutil or aqua versions
 _hasAqua = 0
@@ -83,7 +94,7 @@ try:
                 _hasAqua = 1
             except:
                 _hasAqua = 0
-                print "ERROR importing aqutil"
+                print "ERROR importing aqutil, please see the online PyRAF FAQ"
 
 except ImportError:
     _hasXWin = 0 # Unsuccessful init of XWindow
@@ -110,6 +121,8 @@ except ImportError:
         magicConstant = 0x5413
     elif platform[:4] == 'osf1':
         magicConstant = 0x40087468
+    elif platform == 'win32':
+        magicConstant = None # this is unused on windows (so far)
     elif platform == 'darwin':
         try:
             import termios
@@ -492,6 +505,9 @@ else:
         hasGraphics = focusController.hasGraphics
         if hasGraphics:
             print "\nLimited graphics available (aqutil not loaded)\n"
+    elif WUTIL_ON_WIN:
+        hasGraphics = 1 # try this, tho VERY limited (epar only I guess)
+        print "\nLimited graphics available on win32 platform\n"
 
     if not hasGraphics:
         print ""

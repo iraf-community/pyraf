@@ -13,7 +13,8 @@ from __future__ import division
 
 import os, sys, copy, re
 from pytools import basicpar, minmatch, irafutils, irafglobals, taskpars
-import subproc, iraf, irafpar, irafexecute, epar, tpar, cl2py
+import subproc, irafinst, iraf, irafpar, irafexecute, epar, tpar, cl2py
+
 
 # may be set to function to monitor task execution
 # function gets called for every task execution
@@ -92,10 +93,34 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         Force indicates whether shortcut initialization can be used
         or not.  (No difference for base IrafTask.)
         """
-        if self._filename and not self._fullpath: self._initFullpath()
+        if self._filename and not self._fullpath:
+            if irafinst.EXISTS:
+                self._initFullpath() # allow to throw on error
+            else: # be more accommodating
+                try:
+                    self._initFullpath()
+                except iraf.IrafError:
+                    self._initNoIrafTask()
         if self._currentParList is None:
             self._initParpath()
             self._initParList()
+
+
+    def _initNoIrafTask(self):
+        """ Special-case handle the initialization that is going awry due
+        to a missing IRAF installation. """
+        # Handle non-IRAF installs - could not find the file anywhere
+        # Handle .par files differently from other types
+        orig = self._filename
+        base = os.path.basename(self._filename)
+        base = base[1+base.rfind('$'):]
+        if base and base.endswith('.par'):
+            self._filename = irafinst.tmpParFile(base)
+        else:
+            self._filename = irafinst.NO_IRAF_PFX+base # to be built on the fly
+        if iraf.Verbose>1:
+            print 'Task "'+self._name+'" needed "'+orig+'" got: '+self._filename
+
 
     #=========================================================
     # public accessor methods for attributes
@@ -831,7 +856,6 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # cl/exec.c: first it checks in the BIN directory for the
         # "installed" version of the executable, and if that is not
         # found it tries the pathname given in the TASK declaration.
-
         # Expand iraf variables.  We will try both paths if the expand fails.
         try:
             exename1 = iraf.Expand(self._filename)
@@ -904,7 +928,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         except iraf.IrafError, e:
             if iraf.Verbose>0:
                 print "Error expanding executable name for task " + \
-                        self._name
+                        self._name + ", tried: " + self._filename
                 print str(e)
             exename1 = ""
             basedir = ""
@@ -922,7 +946,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         """Decide what to do if .par file is not found"""
         # Here I raise an exception, but subclasses (e.g., CL tasks)
         # can do something different.
-        raise iraf.IrafError("Cannot find .par file for task " + self._name)
+        raise iraf.IrafError("Cannot find .par file for task "+self._name+\
+              ", tried: "+self._defaultParpath+", for file: "+self._filename)
 
     def _initParList(self):
 
@@ -1247,7 +1272,21 @@ class IrafCLTask(IrafTask):
         if filehandle is None:
             filehandle = self._fullpath
 
-        if not cl2py.checkCache(filehandle, self._pycode):
+        justMade = False
+        fcopy = self._filename
+        if not irafinst.EXISTS and fcopy.startswith(irafinst.NO_IRAF_PFX):
+            # translate code to python
+            if iraf.Verbose>0:
+                print "Compiling No-IRAF CL task %s" % (self._name,)
+            fcopy = os.path.basename(fcopy)
+            self._codeObject = None
+            self._pycode = cl2py.cl2py(None,
+                                       string=irafinst.getNoIrafClFor(fcopy),
+                                       parlist=self._defaultParList,
+                                       parfile=self._defaultParpath)
+            justMade = True
+
+        if not justMade and not cl2py.checkCache(filehandle, self._pycode):
             # File has changed, force recompilation
             self._pycode = None
             if iraf.Verbose>1:
