@@ -83,6 +83,10 @@ class IrafCompleter(Completer):
         readline.parse_and_bind("set bell-style none")
         readline.parse_and_bind("set show-all-if-ambiguous")
         self.completionChar = char
+        # load any cmd history
+        hfile = os.getenv('HOME','.')+os.sep+'.pyraf_history'
+        if os.path.exists(hfile):
+            readline.read_history_file(hfile)
 
     def deactivate(self):
         """Turn off completion, restoring old behavior for character"""
