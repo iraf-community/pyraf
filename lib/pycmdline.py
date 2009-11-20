@@ -245,18 +245,28 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
     def do_exit(self, line='', i=0):
         """Exit from PyRAF and then Python"""
         if self.debug>1: self.write('do_exit: %s\n' % line[i:])
+
         # write out history - ignore write errors
         hfile = os.getenv('HOME','.')+os.sep+'.pyraf_history'
+        hlen = 1000 # High default.  Note this setting itself may cause
+                    # confusion between this history and the IRAF history cmd.
+        try:
+            hlen = int(iraf.envget('histfilesize'))
+        except (KeyError, ValueError):
+            pass
         try:
             import readline
-            # Arbitrarily set this length - allowing this as a setting might
-            # cause confusion between this history and the IRAF history cmd
-            readline.set_history_length(1000)  # it must have SOME limit tho
+            readline.set_history_length(hlen)  # hlen<0 means unlimited
             readline.write_history_file(hfile) # clobber any old version
         except IOError:
             pass
+
+        # any irafinst tmp files?
         irafinst.cleanup() # any irafinst tmp files?
+
+        # graphics
         wutil.closeGraphics()
+
         # leave
         raise SystemExit
 
