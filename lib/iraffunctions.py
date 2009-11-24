@@ -1975,8 +1975,10 @@ def time():
     """Print current time and date"""
     print _time.strftime('%a %H:%M:%S %d-%b-%Y')
 
+# Note - we really should not give this a default (should require an int),
+# because why run "sleep 0"?, but some legacy .cl scripts call it that way.
 @handleRedirAndSaveKwds
-def sleep(seconds):
+def sleep(seconds=0):
     """Sleep for specified time"""
     _time.sleep(float(seconds))
 
