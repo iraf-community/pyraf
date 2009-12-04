@@ -157,6 +157,7 @@ _cmdDict = minmatch.QuietMinMatchDict({
                                 '.clemulate': 'do_clemulate',
                                 '.logfile': 'do_logfile',
                                 '.exit': 'do_exit',
+#                               'lo': 'do_exit',
                                 '.fulltraceback': 'do_fulltraceback',
                                 '.complete': 'do_complete',
                                 '.debug': 'do_debug',
@@ -242,10 +243,31 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
 """)
 
     def do_exit(self, line='', i=0):
-        """Exit from Python"""
+        """Exit from PyRAF and then Python"""
         if self.debug>1: self.write('do_exit: %s\n' % line[i:])
-        irafinst.cleanup()
+
+        # write out history - ignore write errors
+        hfile = os.getenv('HOME','.')+os.sep+'.pyraf_history'
+        hlen = 1000 # High default.  Note this setting itself may cause
+                    # confusion between this history and the IRAF history cmd.
+        try:
+            hlen = int(iraf.envget('histfilesize'))
+        except (KeyError, ValueError):
+            pass
+        try:
+            import readline
+            readline.set_history_length(hlen)  # hlen<0 means unlimited
+            readline.write_history_file(hfile) # clobber any old version
+        except IOError:
+            pass
+
+        # any irafinst tmp files?
+        irafinst.cleanup() # any irafinst tmp files?
+
+        # graphics
         wutil.closeGraphics()
+
+        # leave
         raise SystemExit
 
     def do_logfile(self, line='', i=0):

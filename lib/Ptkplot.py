@@ -51,7 +51,7 @@ def cleanup():
     except SystemError:
         # If cleanup() is called before pyraf fully loads, we will
         # see: "SystemError: Parent module 'pyraf' not loaded".  In that case,
-        # since nothing was done yet with _default_root, we can skip this.
+        # since nothing was done yet w/ _default_root, we can safely skip this.
         pass
 
 import atexit

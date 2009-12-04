@@ -53,8 +53,15 @@ del absPyrafDir, pyrafDir
 
 if "." not in sys.path: sys.path.insert(0, ".")
 
-# read the user's startup file (if there is one)
+# allow the use of PYRAF_ARGS
+extraArgs = os.getenv('PYRAF_ARGS', '').strip()
+extraArgsList = [x for x in extraArgs.split(' ') if len(x)]
+if len(extraArgsList):
+    sys.argv.extend(extraArgsList)
+x = None
+del extraArgs, extraArgsList, x
 
+# read the user's startup file (if there is one)
 if os.environ.has_key("PYTHONSTARTUP") and \
                 os.path.isfile(os.environ["PYTHONSTARTUP"]):
     execfile(os.environ["PYTHONSTARTUP"])
