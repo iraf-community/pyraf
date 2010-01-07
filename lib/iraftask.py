@@ -14,6 +14,7 @@ from __future__ import division
 import os, sys, copy, re
 from pytools import basicpar, minmatch, irafutils, irafglobals, taskpars
 import subproc, irafinst, iraf, irafpar, irafexecute, epar, tpar, cl2py
+import subprocess
 
 
 # may be set to function to monitor task execution
@@ -1686,9 +1687,18 @@ class IrafForeignTask(IrafTask):
         if self._nsub==0 and args:
             # no argument substitution, just append all args
             cmdline = cmdline + ' ' + ' '.join(args)
-        if iraf.Verbose>1: print "Running foreign task", cmdline
-        # create and run the subprocess
-        subproc.subshellRedir(cmdline)
+        if iraf.Verbose>1: print "Running foreign task:", cmdline
+        # create and run the sub-process
+        if subproc.is_supported:
+            subproc.subshellRedir(cmdline)
+        else:
+            self._wrap_subprocess(cmdline)
+
+    def _wrap_subprocess(self, cmdline):
+        """ This function is set up mostly for use on Windows (w/out Cygwin)
+        since that is the only mode it is currently expected to be used in. """
+        # subprocess.call should work for most commands
+        subprocess.call(cmdline, shell=True) # this waits
 
     def _parSub(self, mo):
         """Substitute an argument for this match object"""
