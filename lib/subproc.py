@@ -49,6 +49,8 @@ __version__ = "Revision: 1.7r "
 
 import errno, os, select, signal, string, sys, time, types
 
+is_supported = hasattr(os, 'fork')
+
 try:
     class SubprocessError(Exception):
         pass
