@@ -309,10 +309,15 @@ class PyrafEparDialog(editpar.EditParDialog):
         irafpar.newSpecialParFile(self.taskName, self.pkgName, fnameToBeUsed)
 
 
-    def htmlHelp(self, event=None):
+    def htmlHelp(self, helpString=None, title=None):
         """ Overridden version, use irafhelp to invoke the HTML help """
-        # Invoke the STSDAS HTML help
-        irafhelp.help(self.taskName, html=1)
+        # Help on EPAR itself will use helpString and title.  If so, defer
+        # to base, otherwise call irafhelp.help() for task specific text.
+        if helpString and title:
+            editpar.EditParDialog.htmlHelp(self, helpString, title)
+        else:
+            # Invoke the STSDAS HTML help
+            irafhelp.help(self.taskName, html=1)
 
 
     # Get the task help in a string (RLW)
