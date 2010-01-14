@@ -1,0 +1,10 @@
+*Listbox*background:		white
+*Listbox*selectBackground:	white
+*Listbox*foreground:		black
+*Listbox*selectForeground:	black
+*Entry*background:		white
+*Entry*foreground:		black
+*Entry*selectForeground:	black
+*Scrollbar*background:		#d9d9d9
+*Scrollbar*Foreground:		#d9d9d9
+*Menu*selectColor:		black
