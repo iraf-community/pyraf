@@ -47,9 +47,9 @@ __version__ = "Revision: 1.7r "
 # ken.manheimer@nist.gov
 
 
-import errno, os, select, signal, string, sys, time, types
+import errno, os, select, signal, string, subprocess, sys, time, types
 
-is_supported = hasattr(os, 'fork')
+OS_HAS_FORK = hasattr(os, 'fork')
 
 try:
     class SubprocessError(Exception):
@@ -916,13 +916,22 @@ def systemRedir(cmd):
 
 def subshellRedir(cmd, shell=None):
     """Run the command in a subshell with Python I/O redirection in effect
-
     cmd should be a simple string with the command and its arguments.
     shell is the shell to use -- default is value of SHELL environment
     variable or /bin/sh if SHELL is not defined.
     """
-    shell = shell or os.environ.get('SHELL') or '/bin/sh'
-    return systemRedir((shell, "-c", cmd))
+    if OS_HAS_FORK:
+        shell = shell or os.environ.get('SHELL') or '/bin/sh'
+        return systemRedir((shell, "-c", cmd))
+    else:
+        return _wrapSubprocess(cmd)
+
+def _wrapSubprocess(cmdline):
+    """ This function is set up mostly for use on Windows (w/out Cygwin)
+    since that is the only mode it is currently expected to be used in. """
+    # subprocess.call should work for most commands
+    return subprocess.call(cmdline, shell=True) # this waits
+
 
 class RedirProcess(Subprocess):
 

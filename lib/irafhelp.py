@@ -3,7 +3,7 @@ IRAF packages, etc.
 
 - help() with no arguments will list all the defined variables.
 - help("taskname") or help(IrafTaskObject) display the IRAF help for the task
-- help("taskname",html=1) or help(IrafTaskObject,html=1) will direct Netscape
+- help("taskname",html=1) or help(IrafTaskObject,html=1) will direct a browser
   to display the HTML version of IRAF help for the task
 - help(object) where object is a module, instance, ? will display
   information on the attributes and methods of the object (or the
@@ -389,28 +389,14 @@ def _irafHelp(taskname, irafkw):
         return 0
 
 _HelpURL = "http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?task="
-_Netscape = "netscape"
+_Browser = "netscape"
 
 def _htmlHelp(taskname):
-    """Display HTML help for given IRAF task in Netscape.
-    Task can be either a name or an IrafTask object.
-    Tries using 'netscape -remote' command to load the page in
-    a running Netscape.  If that fails, starts a new netscape."""
+    """Display HTML help for given IRAF task in a browser.
+    Task can be either a name or an IrafTask object. """
 
-    if isinstance(taskname,IrafTask): taskname = taskname.getName()
-    pid = os.fork()
-    if pid == 0:
-        url = _HelpURL + taskname
+    if isinstance(taskname,IrafTask):
+        taskname = taskname.getName()
+    url = _HelpURL + taskname
 
-        if not sys.platform[:-1] in ('sunos','linux'): # e.g. OSX, etc
-            if 0 != os.system("open "+url):
-                print "Error opening URL: "+url
-            os._exit(0)
-
-        cmd = _Netscape + " -remote 'openURL(" + url + ")' 1> /dev/null 2>&1"
-        status = os.system(cmd)
-        if status != 0:
-            print "Starting Netscape for HTML help..."
-            os.execvp("netscape",["netscape",url])
-        os._exit(0)
-    print "HTML help on", taskname,"is being displayed in a browser"
+    irafutils.launchBrowser(url, brow_bin=_Browser, subj=taskname)
