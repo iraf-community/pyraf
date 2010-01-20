@@ -3275,7 +3275,10 @@ def redirProcess(kw):
                         # output file
                         # check to see if it is dev$null
                         if isNullFile(value):
-                            value = '/dev/null'
+                            if _sys.platform.startswith('win'):
+                                value = 'NUL'
+                            else:
+                                value = '/dev/null'
                         elif "w" in openArgs and \
                           envget("clobber","") != yes and \
                           _os.path.exists(value):
