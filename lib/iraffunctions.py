@@ -2157,6 +2157,13 @@ def unlearn(*args):
             _writeError("Warning: Could not find task %s to unlearn" %
                     taskname)
 
+@handleRedirAndSaveKwdsPlus
+def teal(taskArg, **kw):
+    """ Call the TEAL GUI but use simple-auto-close mode (like EPAR) by setting
+    returnDict=False.  This call will return nothing. """
+    from pytools import teal
+    teal.teal(taskArg, returnDict=False, **kw)
+
 @handleRedirAndSaveKwds
 def edit(*args):
     """Edit text files"""
