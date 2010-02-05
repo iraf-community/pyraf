@@ -245,7 +245,7 @@ class EclBase:
         exception.  It works for both ECL and non-ECL exceptions.
         """
         return (getattr(e, "errno", -1),
-                getattr(e, "errmsg", e.message),
+                getattr(e, "errmsg", str(e)),
                 getattr(e, "errtask", ""))
 
     def _ecl_record_error(self, e):
@@ -338,7 +338,7 @@ class EclTraceback(EclBase):
             try:
                 self._ecl_trace("ERROR (%d): %s" % (e.errno, e.errmsg))
             except:
-                self._ecl_trace("ERROR:", e.message)
+                self._ecl_trace("ERROR:", str(e))
             self._ecl_traceback(e)
             if erract.abort: # and not self._ecl_iferr_entered():
                 e._ecl_traced = True

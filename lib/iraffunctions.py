@@ -54,7 +54,7 @@ def _writeError(msg):
 
 import sys, os, string, re, math, struct, types, time, fnmatch, glob, tempfile
 import linecache
-from pytools import minmatch, irafutils
+from pytools import minmatch, irafutils, teal
 import numpy, subproc, wutil
 import irafnames, irafinst, iraftask, irafpar, irafexecute, cl2py
 import iraf
@@ -99,6 +99,7 @@ _pickle = pickle
 
 _numpy = numpy
 _minmatch = minmatch
+_teal = teal
 _subproc = subproc
 _wutil = wutil
 
@@ -112,7 +113,7 @@ _cl2py = cl2py
 
 del sys, os, string, re, math, struct, types, time, fnmatch, glob, linecache
 del StringIO, pickle, tempfile
-del numpy, minmatch, subproc, wutil
+del numpy, minmatch, subproc, teal, wutil
 del irafnames, irafutils, irafinst, iraftask, irafpar, irafexecute, cl2py
 
 # Number of bits per long
@@ -2082,14 +2083,17 @@ def stty(terminal=None, **kw):
 def eparam(*args):
     """Edit parameters for tasks.  Starts up epar GUI."""
     for taskname in args:
-        try:
+        try: # maybe it is an IRAF task
             taskname.eParam()
         except AttributeError:
-            try:
+            try: # maybe it is an IRAF task name
                 getTask(taskname).eParam()
             except (KeyError, TypeError):
-                _writeError("Warning: Could not find task %s for epar\n" %
-                        taskname)
+                try: # maybe it is a task which uses .cfg files
+                    _teal.teal(taskname, returnDict=False)
+                except _teal.cfgpars.NoCfgFileError:
+                    _writeError("Warning: Could not find task %s for epar\n" %
+                            taskname)
 
 @handleRedirAndSaveKwds
 def tparam(*args):
@@ -2161,8 +2165,10 @@ def unlearn(*args):
 def teal(taskArg, **kw):
     """ Call the TEAL GUI but use simple-auto-close mode (like EPAR) by setting
     returnDict=False.  This call will return nothing. """
-    from pytools import teal
-    teal.teal(taskArg, returnDict=False, **kw)
+    try:
+        _teal.teal(taskArg, returnDict=False, **kw)
+    except _teal.cfgpars.NoCfgFileError:
+        _writeError("Warning: Could not find task "+taskArg+" for teal\n")
 
 @handleRedirAndSaveKwds
 def edit(*args):
