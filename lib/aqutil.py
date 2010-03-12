@@ -7,7 +7,7 @@ $Id$
 
 from __future__ import division # confidence high
 
-import os, Tkinter
+import os, struct, Tkinter
 import objc
 import AppKit
 
@@ -144,19 +144,30 @@ def __doPyobjcWinInit():
     if __initialized: return
 
     # Taken in part from PyObjc's Examples/Scripts/wmEnable.py
+    # Be aware that '^' means objc._C_PTR
+    #
+    #  input par: n^<argtype>
+    # output par: o^<argtype>
+    #  inout par: N^<argtype>
+    # return values are the first in the list, and 'v' is void
+    #
     OSErr  = objc._C_SHT
     OSStat = objc._C_INT
     CGErr  = objc._C_INT
     INPSN  = 'n^{ProcessSerialNumber=LL}'
     OUTPSN = 'o^{ProcessSerialNumber=LL}'
     OUTPID = 'o^_C_ULNG'
+    WARPSIG = 'v{CGPoint=ff}'
+    if struct.calcsize("l") > 4: # is 64-bit python
+        WARPSIG = 'v{CGPoint=dd}'
+
     FUNCTIONS=[
          # These are public API
          ( u'GetCurrentProcess', OSErr+OUTPSN),
          ( u'GetFrontProcess', OSErr+OUTPSN),
          ( u'GetProcessPID', OSStat+INPSN+OUTPID),
          ( u'SetFrontProcess', OSErr+INPSN),
-         ( u'CGWarpMouseCursorPosition', 'v{CGPoint=ff}'),
+         ( u'CGWarpMouseCursorPosition', WARPSIG),
          ( u'CGMainDisplayID', objc._C_PTR+objc._C_VOID),
          ( u'CGDisplayPixelsHigh', objc._C_ULNG+objc._C_ULNG),
          ( u'CGDisplayHideCursor', CGErr+objc._C_ULNG),
