@@ -126,55 +126,65 @@ class GraphicsWindowManager(gki.GkiProxy):
         self.window()
 
 
-# Create a module instance of the GWM object that can be referred
+#
+# Module-level functions
+#
+
+def _setGraphicsWindowManager():
+    """ Decide which graphics kernel to use and generate a GWM object.
+    This is only meant to be called internally! """
+    if wutil.hasGraphics:
+        # see which kernel to use
+        if os.environ.has_key('PYRAFGRAPHICS'):
+            kernelname = os.environ['PYRAFGRAPHICS'].lower()
+            if kernelname == "tkplot":
+                import gkitkplot
+                kernel = gkitkplot.GkiTkplotKernel
+            elif kernelname == "opengl":
+                print "OpenGL kernel no longer exists, using default instead"
+                kernelname = "default"
+            elif kernelname == "matplotlib":
+                try:
+                    import GkiMpl
+                    kernel = GkiMpl.GkiMplKernel
+                except ImportError:
+                    print "matplotlib is not installed, using default instead"
+                    kernelname = "default"
+            else:
+                print 'Graphics kernel specified by "PYRAFGRAPHICS='+ \
+                       kernelname+'" not found.'
+                print "Using default kernel instead."
+                kernelname = "default"
+        else:
+            kernelname = "default"
+
+        if os.environ.has_key('PYRAFGRAPHICS_TEST'):
+            print "Using graphics kernel: "+kernelname
+        if kernelname == "default":
+            import gkitkplot
+            kernel = gkitkplot.GkiTkplotKernel
+        wutil.isGwmStarted = 1
+        return GraphicsWindowManager(kernel)
+    else:
+        wutil.isGwmStarted = 0
+        return None
+
+# Create a module instance of the GWM object that can be referred to
 # by anything that imports this module. It is in effect a singleton
 # object intended to be instantiated only once and be accessible from
 # the module.
-
-if wutil.hasGraphics:
-    # see which kernel to use
-    if os.environ.has_key('PYRAFGRAPHICS'):
-        kernelname = os.environ['PYRAFGRAPHICS'].lower()
-        if kernelname == "tkplot":
-            import gkitkplot
-            kernel = gkitkplot.GkiTkplotKernel
-        elif kernelname == "opengl":
-            print "OpenGL kernel is no longer supported, using default instead"
-            kernelname = "default"
-        elif kernelname == "matplotlib":
-            try:
-                import GkiMpl
-                kernel = GkiMpl.GkiMplKernel
-            except ImportError:
-                print "matplotlib module not installed, using default instead"
-                kernelname = "default"
-        else:
-            print 'Graphics kernel specified by "PYRAFGRAPHICS='+ \
-                   kernelname+'" not found.'
-            print "Using default kernel instead."
-            kernelname = "default"
-    else:
-        kernelname = "default"
-    if kernelname == "default":
-        import gkitkplot
-        kernel = gkitkplot.GkiTkplotKernel
-    _g = GraphicsWindowManager(kernel)
-    wutil.isGwmStarted = 1
-    if os.environ.has_key('PYRAFGRAPHICS_TEST'):
-        print "Using graphics kernel: "+kernelname
-    del kernelname
-else:
-    _g = None
-    wutil.isGwmStarted = 0
+_g = _setGraphicsWindowManager()
 
 #
 # Public routines to access windows managed by _g
 #
+def _resetGraphicsWindowManager():
+    """ For development only (2010), risky but useful in perf tests """
+    global _g
+    _g = _setGraphicsWindowManager()
 
 def getGraphicsWindowManager():
-
     """Return window manager object (None if none defined)"""
-
     return _g
 
 def window(windowName=None):

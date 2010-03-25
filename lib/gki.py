@@ -1517,3 +1517,13 @@ import gwm, gkiiraf
 
 kernel = GkiController()
 
+# Beware! This is highly experimental and was made only for a test case.
+def _resetGraphicsKernel():
+    global kernel
+    if kernel:
+       kernel.clearReturnData()
+       kernel.flush()
+       gwm.delete()
+       kernel = None
+    gwm._resetGraphicsWindowManager()
+    kernel = GkiController()
