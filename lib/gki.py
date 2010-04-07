@@ -559,6 +559,8 @@ class GkiKernel:
         self.translate(buffer,0)
 
     def translate(self, gkiMetacode, redraw=0):
+        # Note, during the perf. testing of #122 it was noticed that this
+        # doesn't seem to get called - look into.
         gkiTranslate(gkiMetacode, self.functionTable)
 
     def errorMessage(self, text):
@@ -687,7 +689,6 @@ class GkiKernel:
         return self.stderr
 
 #**********************************************************************
-
 def gkiTranslate(metacode, functionTable):
 
     """General Function that can be used for decoding and interpreting
@@ -709,6 +710,7 @@ def gkiTranslate(metacode, functionTable):
         f = functionTable[opcode]
         if f is not None:
             apply(f,(arg,))
+# ! DEBUG ! timer("in gkiTranslate, for: "+opcode2name[opcode]) # good dbg spot
         opcode, arg = gkiBuffer.getNextCode()
 
 #**********************************************************************
