@@ -62,6 +62,8 @@ _hasAqua = 0
 _hasXWin = 0
 try:
     if WUTIL_USING_X and not _skipDisplay:
+        # set an env var before importing xutil (see PyRAF FAQ on this)
+        os.environ['XLIB_SKIP_ARGB_VISUALS'] = '1'
         import xutil
         #initGraphics = initXGraphics
         xutil.initXGraphics() # call here for lack of a better place for n
