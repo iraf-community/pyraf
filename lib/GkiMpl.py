@@ -172,9 +172,9 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
     def gcur(self):
         """Return cursor value after key is typed"""
         # BUT, before we rush into sending that gcur obj back, this happens to
-        # be an excellent spot to redraw!  If we are in interactice task (yes
-        # since they want a gcur) AND if we haven't yet made our first draw
-        # because we are saving draws for performance-sake, then do so now.
+        # be an excellent spot to redraw!  If we are an interactive task (yes
+        # since they want a gcur) AND if we haven't been drawing because we
+        # are saving draws for performance-sake, then do so now.
         if self.__savingDraws:
             if not self.__allowDrawing:
                 self.__allowDrawing = True
@@ -386,6 +386,15 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
                   linewidth=GKI_TO_MPL_LINEWIDTH*self.lineAttributes.linewidth,
                   color=self.lineAttributes.color)
         self.__normLines.append(ll)
+
+        # While we are here and obviously getting drawing commands from the
+        # task, set our draw-saving flag.  This covers the case of the
+        # interactive task during a redraw from a user-typed 'r'.  That entire
+        # case goes: 1) no drawing during initial plot creation, 2) task is 
+        # done giving us gki commands when gcur() seen, so drawing is allowed
+        # 3) user types 'r' or similar to cause a redraw so this turns off
+        # drawing again (to speed it up) until the next gcur() is seen.
+        self.__allowDrawing = False
 
     def gki_polymarker(self, arg):
 
