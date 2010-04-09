@@ -6,7 +6,7 @@ $Id$
 
 from __future__ import division # confidence high
 
-import math, sys, numpy
+import math, sys, numpy, os
 import Tkinter as Tki
 import matplotlib
 # (done in mca file) matplotlib.use('TkAgg') # set backend
@@ -78,6 +78,10 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.__extraHeightMax = 25
         self.__firstPlotDone  = 0
         self.__skipPlotAppends = False # allow gki_ funcs to be reused
+        self.__allowDrawing = False # like taskStart, but can't rely on that
+        self.__savingDraws = 'PYRAF_ORIG_MPL_DRAWING' not in os.environ
+        # eventually assume __savingDraws is always True and rm it from the code
+#       self.__lastGkiCmds = (None, None, None) # unused for now
 
         self.colorManager = tkColorManager(self.irafGkiConfig)
         self.startNewPage()
@@ -166,8 +170,18 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # done
 
     def gcur(self):
-
         """Return cursor value after key is typed"""
+        # BUT, before we rush into sending that gcur obj back, this happens to
+        # be an excellent spot to redraw!  If we are in interactice task (yes
+        # since they want a gcur) AND if we haven't yet made our first draw
+        # because we are saving draws for performance-sake, then do so now.
+        if self.__savingDraws:
+            if not self.__allowDrawing:
+                self.__allowDrawing = True
+                self.gki_flush(None)
+            # else, we have already allowed drawing, so no need to flush here
+
+        # Now, do what we came here for.
         return self.__gcursorObject()
 
     def gcurTerminate(self, msg='Window destroyed by user'):
@@ -179,13 +193,28 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
             # closing the window to act the same as EOF
             self.top.quit()
 
+    def taskStart(self, name):
+        """ Because of redirection, this is not always called on the first plot
+        but it should be called for every successive one. """
+        # We take this opportuninty to simply set our draw-saving flag.
+        self.__allowDrawing = False
+
     def taskDone(self, name):
 
         """Called when a task is finished"""
         # This is the usual hack to prevent the double redraw after first
         # Tk plot, but this version does not seem to suffer from the bug.
 #       self.doubleRedrawHack()
-        pass
+
+        if self.__savingDraws: # no need to draw now, UNLESS we haven't yet
+            # If we have not yet made our first draw, then we need to now.
+            # For interactive tasks, we should have drawn already (see gcur).
+            # For non-interactive tasks, we will not have drawn yet.
+            if not self.__allowDrawing:
+                self.__allowDrawing = True
+                self.gki_flush(None)
+                # if we set it to False here, would that affect win resizes?
+            # else, we have already allowed drawing, so no need to flush here
 
     def update(self):
 
@@ -262,29 +291,42 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
     def incrPlot(self):
 
         """Plot any new commands in the buffer"""
-        gwidget = self.gwidget
-        if gwidget:
-            active = gwidget.isSWCursorActive()
+        # This step slows us down but is needed, e.g. 'T' in implot.
+        # So, save it for ONLY after we have allowed drawing.  This can
+        # seriously hinder performance in interactive tasks but at least
+        # we can avoid taking that hit until after gcur() is 1st called and
+        # we are waiting on a human.  We *could* look into checking what the
+        # actual incr/change was and see if it is worth redrawing.
+        if self.gwidget and (not self.__savingDraws or self.__allowDrawing):
+            active = self.gwidget.isSWCursorActive()
             if active:
-                gwidget.deactivateSWCursor()
-            # render any new contents of draw buffer
-            # this line slows us down but is needed, e.g. 'T' in implot
-            self.__mca.show()
+                self.gwidget.deactivateSWCursor()
+            # Render any new contents of draw buffer (this is costly).
+            self.__mca.draw() # in mpl v0.99, .draw() == .show()
             # Do NOT add the logic here (as in redraw()) to loop through the
             # drawBuffer func-arg pairs, calling apply(), using the
             # __skipPlotAppends attr. Do not do so since the MPL kernel version
             # keeps its own data cache and doesn't use the drawBuffer that way.
             if active:
-                gwidget.activateSWCursor()
+                self.gwidget.activateSWCursor()
 
     # special methods that go into the function tables
 
     def _plotAppend(self, plot_function, *args):
-
         """ Append a 2-tuple (plot_function, args) to the draw buffer """
         # Allow for this draw buffer append to be skipped at times
         if not self.__skipPlotAppends:
             self.drawBuffer.append((plot_function,args))
+
+        # Run _noteGkiCmd here as well, as almost all gki_* funcs call us
+#       self._noteGkiCmd(plot_function)
+
+#   def _noteGkiCmd(self, cmdFunc):
+#       """ Append the func to our history, but keep the len constant. """
+        # Track any and all gki commands - this is used for pattern watching
+        # in the gki stream, not for redraws.  Track the func itself.
+        # Since we track everything, we can't just use the drawBuffer here.
+#       self.__lastGkiCmds = self.__lastGkiCmds[1:] + (cmdFunc,)
 
     def gki_clearws(self, arg):
 
@@ -294,20 +336,31 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.clearMplData()
         self.__mca.draw()
 
+        # Note this explicitly (not for redrawing) since _plotAppend isn't used
+#       self._noteGkiCmd(self.gki_clearws)
+
     def gki_cancel(self, arg):
 
         self.gki_clearws(arg)
 
+        # Note this explicitly (not for redrawing) since _plotAppend isn't used
+#       self._noteGkiCmd(self.gki_cancel)
+
     def gki_flush(self, arg):
 
-        """ Render current plot immediately.  Also used by redraw().
-        DESIGN NOTE: This is called multiple times (~8) for a single prow
-        call.  We might look into any performance improvement gained by
-        skipping the resize calculation between taskStart() and taskDone(). """
+        """ Asked to render current plot immediately.  Also used by redraw().
+        NOTE: This is called multiple times (~8) for a single prow
+        call.  There is a performance improvement gained by skipping the
+        resize calculation between taskStart() and taskDone(). """
         # don't put flush command into the draw buffer
-        self.resizeGraphics(self.__xsz, self.__ysz) # do NOT use adjusted y!
-        self.__mca.draw()
-        self.__mca.flush()
+        if not self.__savingDraws or self.__allowDrawing:
+            self.resizeGraphics(self.__xsz, self.__ysz) # do NOT use adjusted y!
+            self.__mca.draw()
+            self.__mca.flush()
+
+        # Note this explicitly (not for redrawing) since _plotAppend isn't used
+#       self._noteGkiCmd(self.gki_flush)
+            
 
     def gki_polyline(self, arg):
 
@@ -558,6 +611,9 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
     def gki_unknown(self, arg):
 
         self.errorMessage(gki.standardWarning % "GKI_UNKNOWN")
+
+        # Note this explicitly (not for redrawing) since _plotAppend isn't used
+#       self._noteGkiCmd(self.gki_unknown)
 
     def gRedraw(self):
 

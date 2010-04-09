@@ -750,7 +750,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             table = self.functionTable
         gki.gkiTranslate(gkiMetacode, table)
         # render new stuff immediately
-        self.incrPlot()
+        self.incrPlot() # pure virtual, must be overridden
 
     def control_openws(self, arg):
 
