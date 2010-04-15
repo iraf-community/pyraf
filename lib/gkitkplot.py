@@ -7,7 +7,7 @@ $Id$
 from __future__ import division # confidence high
 
 import numpy, sys, string, wutil
-import Tkinter, msgiobuffer
+import Tkinter
 import Ptkplot
 import gki, gkitkbase, gkigcur, tkplottext, textattrib, irafgwcs
 

@@ -25,7 +25,7 @@ class MsgIOBuffer(Frame):
         # Initialize class attributes
         self.messageText  = ""
         self.currentText  = text
-        self.minHgt       = 25
+        self.minHgt       = 25 # try 65 with Tk8.5 on OSX
         self.viewHeight   = viewHeight
         self.entrySetting = StringVar()
         self.entrySetting.set("")

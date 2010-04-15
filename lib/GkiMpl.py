@@ -378,9 +378,14 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         xs = rshpd[:,0]
         ys = rshpd[:,1]
 
-        # Put the normalized data into a Line2D object, append to our list
-        # later we will scale it and append it to the fig
-        # (don't draw now, slows things down)
+        # Put the normalized data into a Line2D object, append to our list.
+        # Later we will scale it and append it to the fig.  For the sake of
+        # performance, don't draw now, it slows things down.
+        # Note that for each object we make and store here (which is
+        # normalized), there will be a second (sized) copy of the same object
+        # created in resizeGraphics().  We could consider storing this data
+        # in some other way for speed, but perf. tests for #122 showed
+        # that this use of multiple object creation wasn't a big hit at all.
         ll=Line2D(xs, ys,
                   linestyle=self.lineAttributes.linestyle,
                   linewidth=GKI_TO_MPL_LINEWIDTH*self.lineAttributes.linewidth,
@@ -414,8 +419,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         ys = rshpd[:,1]
 
         # put the normalized data into a Line2D object, append to our list
-        # later we will scale it and append it to the fig
-        # (don't draw now, slows things down)
+        # later we will scale it and append it to the fig.  See performance
+        # note in gki_polyline()
         ll=Line2D(xs, ys, linestyle='', marker='.',
                   markersize=3.0, markeredgewidth=0.0,
                   markerfacecolor=self.markerAttributes.color,
@@ -640,7 +645,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         #
         # DESIGN NOTE:  Make sure this is not getting called for window
         # resizes!  Using the drawBuffer is too slow and unnecessary.  Resizes
-        # should only be hooking into resizeGraphics().
+        # should only be hooking into resizeGraphics() for performance sake.
 
         # Clear the screen
         self.clearMplData()
