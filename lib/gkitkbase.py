@@ -194,6 +194,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         self.makeStatus()
         self.gwidget.redraw = self.redraw
         self.gwidget.pack(side=Tkinter.TOP, expand=1, fill=Tkinter.BOTH)
+        self.gwidget.bind('<Enter>', self.focusOnGwidget) # if mouse enters gw
 
         self.colorManager.setColors(self.gwidget)
         self.wcs = irafgwcs.IrafGWcs()
@@ -215,6 +216,14 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         self.flush()
         if sys.platform != 'darwin': # this step is unneeded on OSX
             wutil.setBackingStore(windowID)
+
+    def focusOnGwidget(self, event):
+        # For all kernels, when mouse enters area, give gwidget the focus.
+        # This is a request.  This should NOT change which app has focus.
+        # Without this, some tasks could become inoperable if somehow the
+        # focus were to leave the gwidget during interactive input.
+        self.gwidget.focus_set()
+
 
     # -----------------------------------------------
 
