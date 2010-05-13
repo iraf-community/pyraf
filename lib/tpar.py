@@ -724,7 +724,10 @@ class TparDisplay(Binder):
 
         self.escape = False
 
-        self._createButtons()
+        if URWID_PRE_9P9:
+            self._createButtonsOld()
+        else:
+            self._createButtons()
 
 
         self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
@@ -753,7 +756,8 @@ class TparDisplay(Binder):
             MODE_KEYS = MODE_KEYS_EMACS
         Binder.__init__(self, BINDINGS, self.inform, MODE_KEYS)
 
-    def _createButtons(self):
+
+    def _createButtonsOld(self):
         """ Set up all the bottom row buttons and their spacings """
 
         isPset = isinstance(self.taskObject, iraftask.IrafPset)
@@ -802,6 +806,53 @@ class TparDisplay(Binder):
                     ('weight', 0.15, self.save_as_button),
                     ('weight', 0.18, self.cancel_button),
                     ('weight', 0.20, self.help_button)])
+
+
+    def _createButtons(self):
+        """ Set up all the bottom row buttons and their spacings """
+
+        isPset = isinstance(self.taskObject, iraftask.IrafPset)
+
+        self.help_button = urwid.Padding(
+            urwid.Button("Help",self.HELP), align="center", width=8, right=4,
+                                                                     left=5)
+        self.cancel_button = urwid.Padding(
+            urwid.Button("Cancel",self.QUIT), align="center", width=10)
+        if not isPset:
+            self.save_as_button = urwid.Padding(
+                urwid.Button("Save As",self.SAVEAS), align="center", width=11)
+        self.save_button = urwid.Padding(
+            urwid.Button("Save",self.EXIT), align="center", width=8)
+        self.exec_button = urwid.Padding(
+            urwid.Button("Exec",self.go), align="center", width=8)
+        if self.__areAnyToLoad:
+            self.open_button = urwid.Padding(
+                urwid.Button("Open",self.PFOPEN), align="center", width=8)
+
+        # GUI button layout - weightings
+        if isPset: # show no Open nor Save As buttons
+            self.buttons = urwid.Columns([
+                ('weight', 0.20, self.exec_button),
+                ('weight', 0.23, self.save_button),
+                ('weight', 0.23, self.cancel_button),
+                ('weight', 0.20, self.help_button)])
+        else:
+            if not self.__areAnyToLoad: # show Save As but not Open
+                self.buttons = urwid.Columns([
+                    ('weight', 0.15, self.exec_button),
+                    ('weight', 0.15, self.save_button),
+                    ('weight', 0.18, self.save_as_button),
+                    ('weight', 0.18, self.cancel_button),
+                    ('weight', 0.15, self.help_button)])
+            else: # show all possible buttons (iterated on this spacing)
+                self.buttons = urwid.Columns([
+                    ('weight', 0.10, self.open_button),
+                    ('weight', 0.10, self.exec_button),
+                    ('weight', 0.10, self.save_button),
+                    ('weight', 0.12, self.save_as_button),
+                    ('weight', 0.12, self.cancel_button),
+                    ('weight', 0.10, self.help_button)])
+
 
     def get_default_param_list(self):
         # Obtain the default parameter list
@@ -1228,7 +1279,7 @@ class TparDisplay(Binder):
         size = self.ui.get_cols_rows()
         exit_button = urwid.Padding(
                           urwid.Button("Exit", self.exit_info),
-                          align="center", width=('fixed',8))
+                          align="center", width=8)
         frame = urwid.Frame(urwid.Filler(
                                   urwid.AttrWrap(urwid.Text(msg), "help"),
                                   valign="top"),
