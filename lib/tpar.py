@@ -32,12 +32,16 @@ class FakeClass:
         pass
 
 
+URWID_PRE_9P9 = False
+
 try:
     import urwid.curses_display
     import urwid
     import urwutil
     import urwfiledlg
     urwid.set_encoding("ascii")   #  gives better performance than 'utf8'
+    if 0==urwid.__version__.find('0.9.8') or 0==urwid.__version__.find('0.9.7'):
+        URWID_PRE_9P9 = True
 except Exception, e:
     urwid = FakeModule()
     urwid.Edit = FakeClass()
@@ -720,6 +724,38 @@ class TparDisplay(Binder):
 
         self.escape = False
 
+        self._createButtons()
+
+
+        self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
+        self.listitems = [urwid.Divider(" ")] + self.entryNo + \
+                         [urwid.Divider(" "), self.colon_edit,
+                          self.buttons]
+        self.listbox = urwid.ListBox( self.listitems )
+
+        self.listbox.set_focus(1)
+        self.footer = urwid.Text("")
+        self.header = TparHeader(self.pkgName, self.taskName)
+
+        self.view = urwid.Frame(
+                                self.listbox,
+                                header=self.header,
+                                footer=self.footer)
+
+        self._editor = iraf.envget("editor")
+        BINDINGS = {}
+        BINDINGS.update(TPAR_BINDINGS)
+        if self._editor == "vi":
+            BINDINGS.update(TPAR_BINDINGS_VI)
+            MODE_KEYS = MODE_KEYS_VI
+        else:
+            BINDINGS.update(TPAR_BINDINGS_EMACS)
+            MODE_KEYS = MODE_KEYS_EMACS
+        Binder.__init__(self, BINDINGS, self.inform, MODE_KEYS)
+
+    def _createButtons(self):
+        """ Set up all the bottom row buttons and their spacings """
+
         isPset = isinstance(self.taskObject, iraftask.IrafPset)
 
         self.help_button = urwid.Padding(
@@ -766,32 +802,6 @@ class TparDisplay(Binder):
                     ('weight', 0.15, self.save_as_button),
                     ('weight', 0.18, self.cancel_button),
                     ('weight', 0.20, self.help_button)])
-
-        self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
-        self.listitems = [urwid.Divider(" ")] + self.entryNo + \
-                         [urwid.Divider(" "), self.colon_edit,
-                          self.buttons]
-        self.listbox = urwid.ListBox( self.listitems )
-
-        self.listbox.set_focus(1)
-        self.footer = urwid.Text("")
-        self.header = TparHeader(self.pkgName, self.taskName)
-
-        self.view = urwid.Frame(
-                                self.listbox,
-                                header=self.header,
-                                footer=self.footer)
-
-        self._editor = iraf.envget("editor")
-        BINDINGS = {}
-        BINDINGS.update(TPAR_BINDINGS)
-        if self._editor == "vi":
-            BINDINGS.update(TPAR_BINDINGS_VI)
-            MODE_KEYS = MODE_KEYS_VI
-        else:
-            BINDINGS.update(TPAR_BINDINGS_EMACS)
-            MODE_KEYS = MODE_KEYS_EMACS
-        Binder.__init__(self, BINDINGS, self.inform, MODE_KEYS)
 
     def get_default_param_list(self):
         # Obtain the default parameter list
