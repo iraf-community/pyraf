@@ -36,6 +36,7 @@ URWID_PRE_9P9 = False
 
 try:
     import urwid.curses_display
+    import urwid.raw_display
     import urwid
     import urwutil
     import urwfiledlg
@@ -263,7 +264,7 @@ class Binder(object):
             f = self.bindings[key]
             if f is None:
                 key = None
-            elif isinstance(f, str):
+            elif isinstance(f, str): # str & unicode?
                 key = f
             else:
                 key = f()
@@ -884,9 +885,16 @@ class TparDisplay(Binder):
                 self.paramList[i], self.defaultParamList[i])
 
     def main(self):
-        self.ui = urwid.curses_display.Screen()
+        # Create the Screen using curses_display.
+        # On OSX in py2.6 and greater, this causes issues (see #117),
+        # where raw_display seems to work just as well so use it.
+        if sys.platform == 'darwin' and sys.version_info[0] == 2 and \
+           sys.version_info[1] > 5:
+            self.ui = urwid.raw_display.Screen()
+        else:
+            self.ui = urwid.curses_display.Screen()
         self.ui.register_palette( self.palette )
-        self.ui.run_wrapper( self.run )
+        self.ui.run_wrapper(self.run) # raw_display has alternate_buffer=True
         self.done()
 
     def get_keys(self):
@@ -1378,9 +1386,9 @@ class TparDisplay(Binder):
 
 def tpar(taskName):
     if isinstance(urwid, FakeModule):
-        print >>sys.stderr, "The urwid package isn't available on your Python system so tpar can't be used."
+        print >>sys.stderr, "The urwid package isn't found on your Python system so tpar can't be used."
         print >>sys.stderr, '    (the error given: "'+urwid.the_error+'")'
-        print >>sys.stderr, "Please install urwid version >= 0.9.4 or use epar instead."
+        print >>sys.stderr, "Please install urwid version >= 0.9.7 or use epar instead."
         return
     TparDisplay(taskName).main()
 
