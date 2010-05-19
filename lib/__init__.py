@@ -10,7 +10,7 @@ R. White, 2000 February 18
 """
 from __future__ import division # confidence high
 
-__version__ = "1.8.1.dev (Oct 2009 and on)"
+__version__ = "1.9 (May 2010)"
 
 import os, sys, __main__
 
