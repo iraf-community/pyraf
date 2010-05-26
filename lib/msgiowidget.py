@@ -147,11 +147,10 @@ class MsgIOWidget(Tki.Frame):
         # Find what had focus up to this point
         lastFoc = self.focus_get()
 
-        # Collapse the label as much as possible
+        # Collapse the label as much as possible, it is too big on Linux & OSX
         lblTxt = self._msgLabelVar.get()
         lblTxtLen = len(lblTxt.strip())
-        if sys.platform == 'darwin':
-            lblTxtLen -= 3 # !!! try on Linux too !!!
+        lblTxtLen -= 3
         self._msgLabel.configure(width=min(self._msgLabelMaxWidth, lblTxtLen))
         
         # Enable the entry widget
