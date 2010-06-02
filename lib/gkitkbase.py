@@ -6,7 +6,7 @@ $Id$
 from __future__ import division # confidence high
 
 import numpy, os, sys, string, wutil, time
-import Tkinter, msgiobuffer, msgiowidget
+import Tkinter, msgiobuffer
 from pytools import filedlg
 from pytools.irafglobals import IrafError, userWorkingHome
 import gki, textattrib, irafgwcs
@@ -162,7 +162,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         self.name = 'Tkplot'
         self._errorMessageCount = 0
         self._slowraise = 0
-        self._toWriteAtNextClear = None
         self.irafGkiConfig = gki._irafGkiConfig
         self.windowName = windowName
         self.manager = manager
@@ -234,8 +233,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
         self.top.status = msgiobuffer.MsgIOBuffer(self.top, width=600)
         self.top.status.msgIO.pack(side=Tkinter.BOTTOM, fill = Tkinter.X)
-#       self.top.status = msgiowidget.MsgIOWidget(self.top, width=600)
-#       self.top.status.pack(side=Tkinter.BOTTOM, fill = Tkinter.X)
 
     # -----------------------------------------------
     # Menu bar definitions
@@ -748,13 +745,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
                     (self.gkibuffer, self.wcs, name, self.getHistory()) )
             self.pageVar.set(len(self.history)-1)
             self.StatusLine.write(text=" ")
-            if self._toWriteAtNextClear:
-                # Often clear() is called at the start of a task, and we (or
-                # the derived class) may have requested some text be shown
-                # right after the next possible clear().  Show and delete it.
-                self.StatusLine.write(text=self._toWriteAtNextClear)
-                self._toWriteAtNextClear = None
-                # note - this will only be seen for interactive task starts
             self.flush()
         elif (self.history[-1][2] == "") and gki.tasknameStack:
             # plot is empty but so is name -- set name

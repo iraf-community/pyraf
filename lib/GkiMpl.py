@@ -6,7 +6,7 @@ $Id$
 
 from __future__ import division # confidence high
 
-import math, sys, numpy, os, readline
+import math, sys, numpy, os
 import Tkinter as Tki
 import matplotlib
 # (done in mca file) matplotlib.use('TkAgg') # set backend
@@ -198,9 +198,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         but it should be called for every successive one. """
         # We take this opportuninty to simply set our draw-saving flag.
         self.__allowDrawing = False
-        # Note the task command given to be shown in the status widget
-        self._toWriteAtNextClear = readline.get_history_item(
-                                   readline.get_current_history_length())
 
     def taskDone(self, name):
 
