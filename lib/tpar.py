@@ -32,12 +32,17 @@ class FakeClass:
         pass
 
 
+URWID_PRE_9P9 = False
+
 try:
     import urwid.curses_display
+    import urwid.raw_display
     import urwid
     import urwutil
     import urwfiledlg
     urwid.set_encoding("ascii")   #  gives better performance than 'utf8'
+    if 0==urwid.__version__.find('0.9.8') or 0==urwid.__version__.find('0.9.7'):
+        URWID_PRE_9P9 = True
 except Exception, e:
     urwid = FakeModule()
     urwid.Edit = FakeClass()
@@ -259,7 +264,7 @@ class Binder(object):
             f = self.bindings[key]
             if f is None:
                 key = None
-            elif isinstance(f, str):
+            elif isinstance(f, str): # str & unicode?
                 key = f
             else:
                 key = f()
@@ -720,6 +725,42 @@ class TparDisplay(Binder):
 
         self.escape = False
 
+        if URWID_PRE_9P9:
+            self._createButtonsOld()
+        else:
+            self._createButtons()
+
+
+        self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
+        self.listitems = [urwid.Divider(" ")] + self.entryNo + \
+                         [urwid.Divider(" "), self.colon_edit,
+                          self.buttons]
+        self.listbox = urwid.ListBox( self.listitems )
+
+        self.listbox.set_focus(1)
+        self.footer = urwid.Text("")
+        self.header = TparHeader(self.pkgName, self.taskName)
+
+        self.view = urwid.Frame(
+                                self.listbox,
+                                header=self.header,
+                                footer=self.footer)
+
+        self._editor = iraf.envget("editor")
+        BINDINGS = {}
+        BINDINGS.update(TPAR_BINDINGS)
+        if self._editor == "vi":
+            BINDINGS.update(TPAR_BINDINGS_VI)
+            MODE_KEYS = MODE_KEYS_VI
+        else:
+            BINDINGS.update(TPAR_BINDINGS_EMACS)
+            MODE_KEYS = MODE_KEYS_EMACS
+        Binder.__init__(self, BINDINGS, self.inform, MODE_KEYS)
+
+
+    def _createButtonsOld(self):
+        """ Set up all the bottom row buttons and their spacings """
+
         isPset = isinstance(self.taskObject, iraftask.IrafPset)
 
         self.help_button = urwid.Padding(
@@ -767,31 +808,52 @@ class TparDisplay(Binder):
                     ('weight', 0.18, self.cancel_button),
                     ('weight', 0.20, self.help_button)])
 
-        self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
-        self.listitems = [urwid.Divider(" ")] + self.entryNo + \
-                         [urwid.Divider(" "), self.colon_edit,
-                          self.buttons]
-        self.listbox = urwid.ListBox( self.listitems )
 
-        self.listbox.set_focus(1)
-        self.footer = urwid.Text("")
-        self.header = TparHeader(self.pkgName, self.taskName)
+    def _createButtons(self):
+        """ Set up all the bottom row buttons and their spacings """
 
-        self.view = urwid.Frame(
-                                self.listbox,
-                                header=self.header,
-                                footer=self.footer)
+        isPset = isinstance(self.taskObject, iraftask.IrafPset)
 
-        self._editor = iraf.envget("editor")
-        BINDINGS = {}
-        BINDINGS.update(TPAR_BINDINGS)
-        if self._editor == "vi":
-            BINDINGS.update(TPAR_BINDINGS_VI)
-            MODE_KEYS = MODE_KEYS_VI
+        self.help_button = urwid.Padding(
+            urwid.Button("Help",self.HELP), align="center", width=8, right=4,
+                                                                     left=5)
+        self.cancel_button = urwid.Padding(
+            urwid.Button("Cancel",self.QUIT), align="center", width=10)
+        if not isPset:
+            self.save_as_button = urwid.Padding(
+                urwid.Button("Save As",self.SAVEAS), align="center", width=11)
+        self.save_button = urwid.Padding(
+            urwid.Button("Save",self.EXIT), align="center", width=8)
+        self.exec_button = urwid.Padding(
+            urwid.Button("Exec",self.go), align="center", width=8)
+        if self.__areAnyToLoad:
+            self.open_button = urwid.Padding(
+                urwid.Button("Open",self.PFOPEN), align="center", width=8)
+
+        # GUI button layout - weightings
+        if isPset: # show no Open nor Save As buttons
+            self.buttons = urwid.Columns([
+                ('weight', 0.20, self.exec_button),
+                ('weight', 0.23, self.save_button),
+                ('weight', 0.23, self.cancel_button),
+                ('weight', 0.20, self.help_button)])
         else:
-            BINDINGS.update(TPAR_BINDINGS_EMACS)
-            MODE_KEYS = MODE_KEYS_EMACS
-        Binder.__init__(self, BINDINGS, self.inform, MODE_KEYS)
+            if not self.__areAnyToLoad: # show Save As but not Open
+                self.buttons = urwid.Columns([
+                    ('weight', 0.15, self.exec_button),
+                    ('weight', 0.15, self.save_button),
+                    ('weight', 0.18, self.save_as_button),
+                    ('weight', 0.18, self.cancel_button),
+                    ('weight', 0.15, self.help_button)])
+            else: # show all possible buttons (iterated on this spacing)
+                self.buttons = urwid.Columns([
+                    ('weight', 0.10, self.open_button),
+                    ('weight', 0.10, self.exec_button),
+                    ('weight', 0.10, self.save_button),
+                    ('weight', 0.12, self.save_as_button),
+                    ('weight', 0.12, self.cancel_button),
+                    ('weight', 0.10, self.help_button)])
+
 
     def get_default_param_list(self):
         # Obtain the default parameter list
@@ -823,9 +885,16 @@ class TparDisplay(Binder):
                 self.paramList[i], self.defaultParamList[i])
 
     def main(self):
-        self.ui = urwid.curses_display.Screen()
+        # Create the Screen using curses_display.
+        # On OSX in py2.6 and greater, this causes issues (see #117),
+        # where raw_display seems to work just as well so use it.
+        if sys.platform == 'darwin' and sys.version_info[0] == 2 and \
+           sys.version_info[1] > 5:
+            self.ui = urwid.raw_display.Screen()
+        else:
+            self.ui = urwid.curses_display.Screen()
         self.ui.register_palette( self.palette )
-        self.ui.run_wrapper( self.run )
+        self.ui.run_wrapper(self.run) # raw_display has alternate_buffer=True
         self.done()
 
     def get_keys(self):
@@ -1218,7 +1287,7 @@ class TparDisplay(Binder):
         size = self.ui.get_cols_rows()
         exit_button = urwid.Padding(
                           urwid.Button("Exit", self.exit_info),
-                          align="center", width=('fixed',8))
+                          align="center", width=8)
         frame = urwid.Frame(urwid.Filler(
                                   urwid.AttrWrap(urwid.Text(msg), "help"),
                                   valign="top"),
@@ -1317,9 +1386,9 @@ class TparDisplay(Binder):
 
 def tpar(taskName):
     if isinstance(urwid, FakeModule):
-        print >>sys.stderr, "The urwid package isn't available on your Python system so tpar can't be used."
+        print >>sys.stderr, "The urwid package isn't found on your Python system so tpar can't be used."
         print >>sys.stderr, '    (the error given: "'+urwid.the_error+'")'
-        print >>sys.stderr, "Please install urwid version >= 0.9.4 or use epar instead."
+        print >>sys.stderr, "Please install urwid version >= 0.9.7 or use epar instead."
         return
     TparDisplay(taskName).main()
 

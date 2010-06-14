@@ -172,9 +172,9 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
     def gcur(self):
         """Return cursor value after key is typed"""
         # BUT, before we rush into sending that gcur obj back, this happens to
-        # be an excellent spot to redraw!  If we are in interactice task (yes
-        # since they want a gcur) AND if we haven't yet made our first draw
-        # because we are saving draws for performance-sake, then do so now.
+        # be an excellent spot to redraw!  If we are an interactive task (yes
+        # since they want a gcur) AND if we haven't been drawing because we
+        # are saving draws for performance-sake, then do so now.
         if self.__savingDraws:
             if not self.__allowDrawing:
                 self.__allowDrawing = True
@@ -378,14 +378,28 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         xs = rshpd[:,0]
         ys = rshpd[:,1]
 
-        # Put the normalized data into a Line2D object, append to our list
-        # later we will scale it and append it to the fig
-        # (don't draw now, slows things down)
+        # Put the normalized data into a Line2D object, append to our list.
+        # Later we will scale it and append it to the fig.  For the sake of
+        # performance, don't draw now, it slows things down.
+        # Note that for each object we make and store here (which is
+        # normalized), there will be a second (sized) copy of the same object
+        # created in resizeGraphics().  We could consider storing this data
+        # in some other way for speed, but perf. tests for #122 showed
+        # that this use of multiple object creation wasn't a big hit at all.
         ll=Line2D(xs, ys,
                   linestyle=self.lineAttributes.linestyle,
                   linewidth=GKI_TO_MPL_LINEWIDTH*self.lineAttributes.linewidth,
                   color=self.lineAttributes.color)
         self.__normLines.append(ll)
+
+        # While we are here and obviously getting drawing commands from the
+        # task, set our draw-saving flag.  This covers the case of the
+        # interactive task during a redraw from a user-typed 'r'.  That entire
+        # case goes: 1) no drawing during initial plot creation, 2) task is 
+        # done giving us gki commands when gcur() seen, so drawing is allowed
+        # 3) user types 'r' or similar to cause a redraw so this turns off
+        # drawing again (to speed it up) until the next gcur() is seen.
+        self.__allowDrawing = False
 
     def gki_polymarker(self, arg):
 
@@ -405,8 +419,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         ys = rshpd[:,1]
 
         # put the normalized data into a Line2D object, append to our list
-        # later we will scale it and append it to the fig
-        # (don't draw now, slows things down)
+        # later we will scale it and append it to the fig.  See performance
+        # note in gki_polyline()
         ll=Line2D(xs, ys, linestyle='', marker='.',
                   markersize=3.0, markeredgewidth=0.0,
                   markerfacecolor=self.markerAttributes.color,
@@ -631,7 +645,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         #
         # DESIGN NOTE:  Make sure this is not getting called for window
         # resizes!  Using the drawBuffer is too slow and unnecessary.  Resizes
-        # should only be hooking into resizeGraphics().
+        # should only be hooking into resizeGraphics() for performance sake.
 
         # Clear the screen
         self.clearMplData()

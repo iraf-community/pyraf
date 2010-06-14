@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 
-"""cachecompare.py: Compare contents of new CL to old cache"""
+"""cachecompare.py: Compare contents of new CL to old cache
+$Id$
+"""
 from __future__ import division # confidence high
 
 import os

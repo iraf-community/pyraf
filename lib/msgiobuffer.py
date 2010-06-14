@@ -4,6 +4,7 @@
    frame contains the latest I/O from the interactive program.
 
 M.D. De La Pena, 2000 June 28
+$Id$
 """
 from __future__ import division # confidence high
 
@@ -25,7 +26,7 @@ class MsgIOBuffer(Frame):
         # Initialize class attributes
         self.messageText  = ""
         self.currentText  = text
-        self.minHgt       = 25
+        self.minHgt       = 25 # try 65 with Tk8.5 on OSX
         self.viewHeight   = viewHeight
         self.entrySetting = StringVar()
         self.entrySetting.set("")

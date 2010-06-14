@@ -301,6 +301,11 @@ class TerminalFocusEntity(FocusEntity):
         if not WUTIL_USING_X:
             return # some of the following xutil methods are undefined
 
+        # This also won't work on a Mac if running from the Terminal app
+        # but it WILL work on a Mac from an X11 xterm window
+        if WUTIL_USING_X and WUTIL_ON_MAC and self.windowID < 2:
+            return
+
         posdict = getPointerPosition(self.windowID)
         if posdict:
             x = posdict['win_x']
