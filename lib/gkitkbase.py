@@ -223,7 +223,8 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         # This is a request.  This should NOT change which app has focus.
         # Without this, some tasks could become inoperable if somehow the
         # focus were to leave the gwidget during interactive input.
-        self.gwidget.focus_set()
+        if self.gwidget:
+            self.gwidget.focus_set()
 
 
     # -----------------------------------------------
@@ -748,7 +749,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
                     (self.gkibuffer, self.wcs, name, self.getHistory()) )
             self.pageVar.set(len(self.history)-1)
             self.StatusLine.write(text=" ")
-            if self._toWriteAtNextClear:
+            if self._toWriteAtNextClear and self.StatusLine:
                 # Often clear() is called at the start of a task, and we (or
                 # the derived class) may have requested some text be shown
                 # right after the next possible clear().  Show and delete it.
