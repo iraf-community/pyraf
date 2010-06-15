@@ -222,7 +222,8 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         # This is a request.  This should NOT change which app has focus.
         # Without this, some tasks could become inoperable if somehow the
         # focus were to leave the gwidget during interactive input.
-        self.gwidget.focus_set()
+        if self.gwidget:
+            self.gwidget.focus_set()
 
 
     # -----------------------------------------------
