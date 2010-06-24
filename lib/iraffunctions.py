@@ -2155,11 +2155,23 @@ def update(*args):
 def unlearn(*args):
     """Unlearn task parameters -- restore to defaults"""
     for taskname in args:
-        try:
+        try: # maybe it is an IRAF task name
             getTask(taskname).unlearn()
         except KeyError, e:
-            _writeError("Warning: Could not find task %s to unlearn" %
-                    taskname)
+            try: # maybe it is a task which uses .cfg files
+                flist = _teal.cfgpars.getUsrCfgFilesForPyPkg(taskname)
+                if flist == None or len(flist) == 0:
+                    pass # no need to be verbose
+                elif len(flist) == 1:
+                    _os.remove(flist[0]) # don't be chatty here either
+                else:
+                    _writeError('Error: multiple user-owned files found to'+ \
+                                ' "unlearn" for task '+taskname+ \
+                                '\nNone were deleted:\n'+str(flist))
+            except _teal.cfgpars.NoCfgFileError:
+                _writeError("Warning: Could not find task %s to unlearn" %
+                            taskname)
+
 
 @handleRedirAndSaveKwdsPlus
 def teal(taskArg, **kw):
