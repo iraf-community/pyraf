@@ -10,7 +10,13 @@ R. White, 2000 February 18
 """
 from __future__ import division # confidence high
 
-__version__ = "1.9.1.dev (June 2010 and on)"
+__version__ = "1.9.1.dev"
+
+try:
+    from svn_version import __svn_version__
+    __version__ += " (r"+__svn_version__+')'
+except:
+    pass
 
 import os, sys, __main__
 
