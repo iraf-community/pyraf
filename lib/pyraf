@@ -66,6 +66,7 @@ if os.environ.has_key("PYTHONSTARTUP") and \
                 os.path.isfile(os.environ["PYTHONSTARTUP"]):
     execfile(os.environ["PYTHONSTARTUP"])
 
+# now we get into pyraf's __init__.py
 from pyraf import doCmdline, _use_ipython_shell, iraf, __version__
 from pyraf.irafpar import makeIrafPar
 from pytools.irafglobals import yes, no, INDEF, EOF
