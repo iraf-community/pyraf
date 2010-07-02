@@ -203,7 +203,7 @@ class PyrafEparDialog(editpar.EditParDialog):
                 retval = self._taskParsObj.saveParList(filename=filename,
                                                        comment=comment)
             except IOError:
-                retval="Error saving to "+filename+".  Please check privileges."
+                retval="Error saving to "+str(filename)+".  Please check privileges."
                 showerror(message=retval, title='Error Saving File')
             if set_ro:
                 privs = os.stat(filename).st_mode

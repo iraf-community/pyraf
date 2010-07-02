@@ -24,7 +24,9 @@ def usage():
     print __main__.__doc__
     sys.stdout.flush()
     irafimport.restoreBuiltins()
-    sys.exit()
+    # exit with prejudice, not a raised exc; we don't want/need anything
+    # to be run at this point - else we'd see run-time import warnings
+    os._exit(0)
 
 # set search path to include current directory
 
@@ -63,12 +65,13 @@ def _cleanup():
     if hasattr(clcache,'codeCache'):
         del clcache.codeCache
 
-import atexit
-atexit.register(_cleanup)
-del atexit
+# register the exit handler, but only if 'pyraf' is going to import fully
+if '-h' not in sys.argv and '--help' not in sys.argv:
+    import atexit
+    atexit.register(_cleanup)
+    del atexit
 
 # now get ready to do the serious IRAF initialization
-
 if _pyrafMain:
     # if not executing as pyraf main, just initialize iraf module
     # quietly load initial iraf symbols and packages
