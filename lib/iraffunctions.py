@@ -2464,6 +2464,7 @@ del taskname, optional_whitespace
 def task(*args, **kw):
     """Define IRAF tasks"""
     redefine = 0
+    iscmdstring = False
     if kw.has_key('Redefine'):
         redefine = kw['Redefine']
         del kw['Redefine']
@@ -2478,6 +2479,9 @@ def task(*args, **kw):
         del kw['PkgBinary']
     else:
         pkgbinary = curPkgbinary()
+    if kw.has_key('IsCmdString'):
+        iscmdstring = kw['IsCmdString']
+        del kw['IsCmdString']
     # fix illegal package names
     spkgname = pkgname.replace('.', '_')
     if spkgname != pkgname:
@@ -2493,7 +2497,7 @@ def task(*args, **kw):
     value = kw[s]
     # To handle when actual CL code is given, not a file name, we will
     # replace the code with the name of the tmp file that we write it to.
-    if value.find('\n') >= 0:
+    if iscmdstring:
         # write it to a temp file in the home$ dir, then use filename
         (fd, tmpCl) = _tempfile.mkstemp(suffix=".cl", prefix=str(s)+'_',
                                         dir=userIrafHome, text=True)

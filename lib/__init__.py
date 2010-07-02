@@ -54,6 +54,7 @@ while os.path.islink(executable):
 _pyrafMain = os.path.split(executable)[1] != 'pyraf'
 del executable
 
+runCmd = None
 import irafexecute, clcache
 from pytools import capable
 
@@ -71,6 +72,7 @@ if '-h' not in sys.argv and '--help' not in sys.argv:
     atexit.register(_cleanup)
     del atexit
 
+
 # now get ready to do the serious IRAF initialization
 if _pyrafMain:
     # if not executing as pyraf main, just initialize iraf module
@@ -85,8 +87,8 @@ else:
     import pyrafglobals as _pyrafglobals
     import getopt
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], "imvhsne",
-            ["commandwrapper=", "verbose", "help", "silent", "nosplash","ipython", "ecl"])
+        optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsne",
+            ["commandwrapper=", "command=", "verbose", "help", "silent", "nosplash","ipython", "ecl"])
         if len(args) > 1:
             print 'Error: more than one savefile argument'
             usage()
@@ -109,6 +111,11 @@ else:
                     doCmdline = 1
                 elif value in ("no", "n"):
                     doCmdline = 0
+                else:
+                    usage()
+            elif opt in ("-c", "--command"):
+                if value != None and len(value) > 0:
+                    runCmd = value
                 else:
                     usage()
             elif opt in ("-v", "--verbose"):

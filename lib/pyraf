@@ -67,7 +67,7 @@ if os.environ.has_key("PYTHONSTARTUP") and \
     execfile(os.environ["PYTHONSTARTUP"])
 
 # now we get into pyraf's __init__.py
-from pyraf import doCmdline, _use_ipython_shell, iraf, __version__
+from pyraf import doCmdline, _use_ipython_shell, iraf, runCmd, __version__
 from pyraf.irafpar import makeIrafPar
 from pytools.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
@@ -93,7 +93,15 @@ else:
        # just print first line of Python copyright (long in v2.0)
        print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
 
+# Run give command
+if runCmd:
+    iraf.task(cmd_line=runCmd, IsCmdString=1)
+    iraf.cmd_line()
+    sys.exit()
+else:
+    del runCmd
 
+# Start command line
 if doCmdline:
     del doCmdline
     # Start up command line wrapper keeping definitions in main name space
