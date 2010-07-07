@@ -9,20 +9,26 @@ Usage: pyraf [options] [savefile]
 
 where savefile is an optional save file to start from and options are one
 or more of:
-  -s  Silent initialization (does not print startup messages)
-  -n  No splash screen during startup
-  -v  Set verbosity level (may be repeated to increase verbosity)
-  -m  Run command line wrapper to provide extra capabilities (default)
-  -i  Do not run command line wrapper, just run standard Python front end
-  -h  Print this message
+  -c cmd  Command passed in as string (any valid PyRAF command)
+  -e      Turn on ECL mode
+  -h      Print this message
+  -i      Do not run command line wrapper, just run standard Python front end
+  -m      Run command line wrapper to provide extra capabilities (default)
+  -n      No splash screen during startup
+  -p      Run the IPython shell instead of the normal PyRAF command shell
+  -s      Silent initialization (does not print startup messages)
+  -v      Set verbosity level (may be repeated to increase verbosity)
 
 Long versions of options:
-  -s  --silent
-  -n  --nosplash
-  -v  --verbose
-  -m  --commandwrapper=yes
-  -i  --commandwrapper=no
+  -c  --comand=<cmd>
+  -e  --ecl
   -h  --help
+  -i  --commandwrapper=no
+  -m  --commandwrapper=yes
+  -n  --nosplash
+  -p  --ipython
+  -s  --silent
+  -v  --verbose
 """
 
 # $Id$

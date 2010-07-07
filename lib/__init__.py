@@ -87,7 +87,7 @@ else:
     import pyrafglobals as _pyrafglobals
     import getopt
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsne",
+        optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsnpe",
             ["commandwrapper=", "command=", "verbose", "help", "silent", "nosplash","ipython", "ecl"])
         if len(args) > 1:
             print 'Error: more than one savefile argument'
@@ -126,7 +126,7 @@ else:
                 _silent = 1
             elif opt in ("-n", "--nosplash"):
                 _dosplash = 0
-            elif opt == "--ipython":
+            elif opt in ("-p", "--ipython"):
                 _use_ipython_shell = 1
             elif opt in ["-e", "--ecl"]:
                 _pyrafglobals._use_ecl = True
