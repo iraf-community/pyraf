@@ -12,12 +12,12 @@ or more of:
   -c cmd  Command passed in as string (any valid PyRAF command)
   -e      Turn on ECL mode
   -h      Print this message
-  -i      Do not run command line wrapper, just run standard Python front end
+  -i      No command line wrapper, just run standard interactive Python shell
   -m      Run command line wrapper to provide extra capabilities (default)
   -n      No splash screen during startup
-  -p      Run the IPython shell instead of the normal PyRAF command shell
   -s      Silent initialization (does not print startup messages)
   -v      Set verbosity level (may be repeated to increase verbosity)
+  -y      Run the IPython shell instead of the normal PyRAF command shell
 
 Long versions of options:
   -c  --comand=<cmd>
@@ -26,9 +26,9 @@ Long versions of options:
   -i  --commandwrapper=no
   -m  --commandwrapper=yes
   -n  --nosplash
-  -p  --ipython
   -s  --silent
   -v  --verbose
+  -y  --ipython
 """
 
 # $Id$
@@ -131,3 +131,6 @@ if doCmdline:
            _pycmdline.start() # use default banner
 else:
     del doCmdline
+    # run the standard Python interpreter
+    import code
+    code.interact(local=locals())
