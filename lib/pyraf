@@ -9,20 +9,26 @@ Usage: pyraf [options] [savefile]
 
 where savefile is an optional save file to start from and options are one
 or more of:
-  -s  Silent initialization (does not print startup messages)
-  -n  No splash screen during startup
-  -v  Set verbosity level (may be repeated to increase verbosity)
-  -m  Run command line wrapper to provide extra capabilities (default)
-  -i  Do not run command line wrapper, just run standard Python front end
-  -h  Print this message
+  -c cmd  Command passed in as string (any valid PyRAF command)
+  -e      Turn on ECL mode
+  -h      Print this message
+  -i      No command line wrapper, just run standard interactive Python shell
+  -m      Run command line wrapper to provide extra capabilities (default)
+  -n      No splash screen during startup
+  -s      Silent initialization (does not print startup messages)
+  -v      Set verbosity level (may be repeated to increase verbosity)
+  -y      Run the IPython shell instead of the normal PyRAF command shell
 
 Long versions of options:
-  -s  --silent
-  -n  --nosplash
-  -v  --verbose
-  -m  --commandwrapper=yes
-  -i  --commandwrapper=no
+  -c  --comand=<cmd>
+  -e  --ecl
   -h  --help
+  -i  --commandwrapper=no
+  -m  --commandwrapper=yes
+  -n  --nosplash
+  -s  --silent
+  -v  --verbose
+  -y  --ipython
 """
 
 # $Id$
@@ -67,7 +73,7 @@ if os.environ.has_key("PYTHONSTARTUP") and \
     execfile(os.environ["PYTHONSTARTUP"])
 
 # now we get into pyraf's __init__.py
-from pyraf import doCmdline, _use_ipython_shell, iraf, __version__
+from pyraf import doCmdline, _use_ipython_shell, iraf, runCmd, __version__
 from pyraf.irafpar import makeIrafPar
 from pytools.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
@@ -93,7 +99,15 @@ else:
        # just print first line of Python copyright (long in v2.0)
        print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
 
+# Run give command
+if runCmd:
+    iraf.task(cmd_line=runCmd, IsCmdString=1)
+    iraf.cmd_line()
+    sys.exit()
+else:
+    del runCmd
 
+# Start command line
 if doCmdline:
     del doCmdline
     # Start up command line wrapper keeping definitions in main name space
@@ -117,3 +131,6 @@ if doCmdline:
            _pycmdline.start() # use default banner
 else:
     del doCmdline
+    # run the standard Python interpreter
+    import code
+    code.interact(local=locals())
