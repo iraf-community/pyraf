@@ -99,7 +99,7 @@ else:
        # just print first line of Python copyright (long in v2.0)
        print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
 
-# Run give command
+# Run given command
 if runCmd:
     iraf.task(cmd_line=runCmd, IsCmdString=1)
     iraf.cmd_line()
