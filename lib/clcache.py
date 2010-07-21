@@ -275,7 +275,8 @@ userCacheDir = os.path.join(userIrafHome,'pyraf')
 if not os.path.exists(userCacheDir):
     try:
         os.mkdir(userCacheDir)
-        print 'Created directory %s for cache' % userCacheDir
+        if '-s' not in sys.argv and '--silent' not in sys.argv:
+            print 'Created directory %s for cache' % userCacheDir
     except OSError:
         print 'Could not create directory %s' % userCacheDir
 
