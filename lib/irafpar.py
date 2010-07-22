@@ -996,23 +996,39 @@ _re_taskmeta = \
     re.compile(r'^# *TASKMETA *: *task *= *([^ ]*) *package *= *([^ \n]*)')
 
 
-def _findAllSpecialParFiles():
-    """ Search the disk in the expected areas for special-purpose parameter
+def _updateSpecialParFileDict(dirToCheck=None):
+    """ Search the disk in the given path (or .) for special-purpose parameter
     files.  These can have any name, end in .par, and have metadata comments
-    which identify their associated task.  This functions simply fills our
-    _specialUseParFileDict dictionary. """
+    which identify their associated task.  This function simply fills or
+    adds to our _specialUseParFileDict dictionary. """
 
     global _specialUseParFileDict
 
-    # default state is that dictionary is (now) created but empty
-    _specialUseParFileDict = {}
+    # Default state is that dictionary is created but empty
+    if _specialUseParFileDict == None:
+        _specialUseParFileDict = {}
 
-    # See if the auxilliary par directory has been specified
-    uparmAux = iraf.envget("uparm_aux","")
-    if 'UPARM_AUX' in os.environ: uparmAux = os.environ['UPARM_AUX']
-    if len(uparmAux) <= 0: return
+    # If the caller gave us a dirToCheck, use only it, otherwise check the
+    # usual places (which calls us recursively).
+    if dirToCheck == None:
+        # Check the auxilliary par dir
+        uparmAux = iraf.envget("uparm_aux","")
+        if 'UPARM_AUX' in os.environ: uparmAux = os.environ['UPARM_AUX']
+        if len(uparmAux) > 0:
+            _updateSpecialParFileDict(dirToCheck=uparmAux)
+            # If the _updateSpecialParFileDict processing is found to be
+            # be taking too long, we could easily add a global flag here like
+            # _alreadyCheckedUparmAux = True
 
-    flist = glob.glob(uparmAux+"/*.par")
+        # Also check the current directory
+        _updateSpecialParFileDict(dirToCheck=os.getcwd())
+        # For performance, note that there is nothing yet in place to stop us
+        # from rereading a large dir of par files every time this is called
+
+        return # we've done enough
+
+    # Do a glob in the given dir
+    flist = glob.glob(dirToCheck+"/*.par")
     if len(flist) <= 0: return
 
     # At this point, we have files.  Foreach, figure out the task and
@@ -1041,7 +1057,9 @@ def _findAllSpecialParFiles():
 
         if tupKey:
             if tupKey in _specialUseParFileDict:
-                _specialUseParFileDict[tupKey].append(supfname)
+                supflist = _specialUseParFileDict[tupKey]
+                if supfname not in supflist:
+                    _specialUseParFileDict[tupKey].append(supfname)
             else:
                 _specialUseParFileDict[tupKey] = [supfname,]
         else:
@@ -1060,8 +1078,9 @@ def newSpecialParFile(taskName, pkgName, pathName):
 
     global _specialUseParFileDict
 
-    # lazy init
-    if _specialUseParFileDict == None: _findAllSpecialParFiles()
+    # lazy init - only search disk here when abs. necessary
+    if _specialUseParFileDict == None:
+        _updateSpecialParFileDict()
 
     tupKey = (taskName, pkgName)
     if tupKey in _specialUseParFileDict:
@@ -1074,15 +1093,16 @@ def newSpecialParFile(taskName, pkgName, pathName):
 def haveSpecialVersions(taskName, pkgName):
     """ This is a simple check to see if special-purpose parameter files
     have been found for the given task/package.  This returns True or False.
-    If the dictionary has not been created yet, this initializes it (note that
-    this is intentionally lazy-initialized as searching the disk may take
-    some time. """
+    If the dictionary has not been created yet, this initializes it.  Note
+    that this may take some time reading the disk. """
 
     global _specialUseParFileDict
 
-    # lazy init
-    if _specialUseParFileDict == None: _findAllSpecialParFiles()
+    # Always update the _specialUseParFileDict, since we may have changed
+    # directories into a new work area with as-yet-unseen .par files
+    _updateSpecialParFileDict()
 
+    # Check and return answer
     tupKey = (taskName, pkgName)
     return tupKey in _specialUseParFileDict
 
