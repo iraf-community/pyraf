@@ -23,13 +23,18 @@ class PsetEparOption(eparoption.EparOption):
         self.buttonText = self.value.getName()
 
         # Need to adjust the value width so the button is aligned properly
-        self.valueWidth = self.valueWidth - 3
+        if eparoption.USING_X:
+            self.valueWidth = self.valueWidth - 3
+        else:
+            self.valueWidth = self.valueWidth - 6
 
         # Generate the button
         self.entry = Button(self.master.frame,
                                  width   = self.valueWidth,
                                  text    = "PSET " + self.buttonText,
                                  relief  = RAISED,
+                                 background = self.bkgColor,
+                                 highlightbackground = self.bkgColor,
                                  command = self.childEparDialog)
         self.entry.pack(side = LEFT)
 
