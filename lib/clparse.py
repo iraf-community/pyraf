@@ -65,6 +65,14 @@ class CLStrictParser(GenericASTBuilder):
                 'opt_comma': 1,
                 'bool_expr': 1,
                 }
+        self._currentFname = None
+
+
+    def parse(self, tokens, fname=None):
+        """ Override this, only so we can add the optional fname arg. 
+            Delegate all parse logic to parent. """
+        self._currentFname = fname
+        return GenericASTBuilder.parse(self, tokens)
 
     def typestring(self, token):
         try:
@@ -73,10 +81,15 @@ class CLStrictParser(GenericASTBuilder):
             return token
 
     def error(self, token, value=None):
+        finfo = ''
+        if self._currentFname:
+            finfo = 'file "'+self._currentFname+'"'
         if hasattr(token, 'lineno'):
-            errmsg = "CL syntax error at `%s' (line %d)" % (token, token.lineno)
+            if len(finfo): finfo += ', '
+            errmsg = "CL syntax error at `%s' (%sline %d)" % (token, finfo, token.lineno)
         else:
-            errmsg = "CL syntax error at `%s'" % (token,)
+            if len(finfo): finfo = '('+finfo+')'
+            errmsg = "CL syntax error at `%s' %s" % (token, finfo)
         if value is not None: errmsg = errmsg + "\n" + str(value)
         raise SyntaxError(errmsg)
 
@@ -471,9 +484,10 @@ def getParser():
         _parser = CLParser(AST)
     return _parser
 
-def parse(tokens):
+def parse(tokens, fname=None):
     global _parser
-    return _parser.parse(tokens)
+    return _parser.parse(tokens, fname=fname)
+
 
 if __name__ == '__main__':
 
@@ -483,13 +497,15 @@ if __name__ == '__main__':
 
     # scan file 'simple.cl'
 
-    lines = open('simple.cl').read()
+    fnm = 'simple.cl'
+    lines = open(fnm).read()
     scanner = clscan.CLScanner()
     tokens = scanner.tokenize(lines)
     t1 = time.time()
 
     # parse
-    tree = _parser.parse(tokens)
+    p = getParser()
+    tree = p.parse(tokens, fname=fnm)
     t2 = time.time()
 
     print 'Scan:', t1-t0, 'sec, Parse:', t2-t1, 'sec'

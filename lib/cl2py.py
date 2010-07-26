@@ -125,7 +125,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     # tokenize and parse to create the abstract syntax tree
     scanner = clscan.CLScanner()
     tokens = scanner.tokenize(clInput)
-    tree = _parser.parse(tokens)
+    tree = _parser.parse(tokens, fname=efilename)
     # add filename to tree root
     tree.filename = efilename
 
@@ -2379,7 +2379,7 @@ if __name__ == "__main__":
     t1 = time.time()
 
     # parse
-    tree = _parser.parse(tokens)
+    tree = _parser.parse(tokens, fname=filename)
     tree.filename = filename
     t2 = time.time()
 
