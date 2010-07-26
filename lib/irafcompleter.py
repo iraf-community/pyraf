@@ -86,7 +86,11 @@ class IrafCompleter(Completer):
         # load any cmd history
         hfile = os.getenv('HOME','.')+os.sep+'.pyraf_history'
         if os.path.exists(hfile):
-            readline.read_history_file(hfile)
+            try:
+                readline.read_history_file(hfile)
+            except IOError, e:
+                # we do NOT want this to prevent startup.  see ticket #132
+                print 'ERROR reading "'+hfile+'" -> '+str(e)
 
     def deactivate(self):
         """Turn off completion, restoring old behavior for character"""
