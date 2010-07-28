@@ -67,6 +67,12 @@ if len(extraArgsList):
 x = None
 del extraArgs, extraArgsList, x
 
+# handle any warning supression right away, before any more imports
+if '-s' in sys.argv or '--silent' in sys.argv:
+    import warnings
+    warnings.simplefilter("ignore")
+    del warnings
+
 # read the user's startup file (if there is one)
 if os.environ.has_key("PYTHONSTARTUP") and \
                 os.path.isfile(os.environ["PYTHONSTARTUP"]):
