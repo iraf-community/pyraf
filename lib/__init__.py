@@ -128,7 +128,7 @@ else:
                 _dosplash = 0
             elif opt in ("-y", "--ipython"):
                 _use_ipython_shell = 1
-            elif opt in ["-e", "--ecl"]:
+            elif opt in ("-e", "--ecl"):
                 _pyrafglobals._use_ecl = True
             else:
                 print "Program bug, uninterpreted option", opt
