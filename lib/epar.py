@@ -268,13 +268,13 @@ class PyrafEparDialog(editpar.EditParDialog):
         fname = self._openMenuChoice.get()
         if fname == None: return
 
-        # Now load it: "Loading "+self.taskName+" param values from: "+fname
         newParList = irafpar.IrafParList(self.taskName, fname)
 
         # Set the GUI entries to these values (let the user Save after)
         self.setAllEntriesFromParList(newParList)
      
         self.freshenFocus()
+        self.showStatus("Loaded parameter values from: "+fname, keep=2)
 
 
     def _getSaveAsFilter(self):
