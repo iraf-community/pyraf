@@ -52,10 +52,7 @@ try:
     sys.path.remove(pyrafDir)
 except ValueError:
     pass
-
-absPyrafDir = os.path.abspath(os.path.join(pyrafDir,'..'))
-if absPyrafDir not in sys.path: sys.path.insert(0, absPyrafDir)
-del absPyrafDir, pyrafDir
+del pyrafDir
 
 if "." not in sys.path: sys.path.insert(0, ".")
 
