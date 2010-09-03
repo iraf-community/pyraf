@@ -996,11 +996,12 @@ _re_taskmeta = \
     re.compile(r'^# *TASKMETA *: *task *= *([^ ]*) *package *= *([^ \n]*)')
 
 
-def _updateSpecialParFileDict(dirToCheck=None):
+def _updateSpecialParFileDict(dirToCheck=None, strict=False):
     """ Search the disk in the given path (or .) for special-purpose parameter
     files.  These can have any name, end in .par, and have metadata comments
     which identify their associated task.  This function simply fills or
-    adds to our _specialUseParFileDict dictionary. """
+    adds to our _specialUseParFileDict dictionary. If strict is True then
+    any .par file found is expected to have our TASKMETA tag. """
 
     global _specialUseParFileDict
 
@@ -1015,7 +1016,7 @@ def _updateSpecialParFileDict(dirToCheck=None):
         uparmAux = iraf.envget("uparm_aux","")
         if 'UPARM_AUX' in os.environ: uparmAux = os.environ['UPARM_AUX']
         if len(uparmAux) > 0:
-            _updateSpecialParFileDict(dirToCheck=uparmAux)
+            _updateSpecialParFileDict(dirToCheck=uparmAux, strict=True)
             # If the _updateSpecialParFileDict processing is found to be
             # be taking too long, we could easily add a global flag here like
             # _alreadyCheckedUparmAux = True
@@ -1063,8 +1064,9 @@ def _updateSpecialParFileDict(dirToCheck=None):
             else:
                 _specialUseParFileDict[tupKey] = [supfname,]
         else:
-            warning("Syntax error in special use parameter file: "+supfname,
-                    level = -1)
+            if strict:
+                warning("Syntax error in special use .par file: "+supfname,
+                        level = -1)
 
 
 def newSpecialParFile(taskName, pkgName, pathName):
