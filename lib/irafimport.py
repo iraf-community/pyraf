@@ -18,16 +18,26 @@ import __builtin__
 import sys
 from pytools import minmatch
 
-importHasLvlArg = sys.version_info[0] > 2 or sys.version_info[1] >= 5 # no 1.*
+_importHasLvlArg = sys.version_info[0] > 2 or sys.version_info[1] >= 5 # no 1.*
+_reloadIsBuiltin = sys.version_info[0] < 3
 
 # Save the original hooks;  replaced at bottom of module...
 _originalImport = __builtin__.__import__
-_originalReload = __builtin__.reload
+if _reloadIsBuiltin:
+    _originalReload = __builtin__.reload
+else:
+    import imp
+    _originalReload = imp.reload
+
 
 def restoreBuiltins():
-    """ Called before exiting pyraf - this put's import and reload back. """
+    """ Called before exiting pyraf - this puts import and reload back. """
     __builtin__.__import__ = _originalImport
-    __builtin__.__reload__ = _originalReload
+    if _reloadIsBuiltin:
+        __builtin__.reload = _originalReload
+    else:
+        imp.reload = _originalReload
+
 
 def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     if fromlist and (name in ["iraf", "pyraf.iraf"]):
@@ -48,9 +58,10 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
         elif name == 'pyraf.filedlg':   name = 'pytools.filedlg'
         elif name == 'pyraf.alert':     name = 'pytools.alert'
         elif name == 'pyraf.irafglobals': name='pytools.irafglobals' # is diffnt
+        # Not planning to fix this until after 'pytools' is renamed.
         # !!! END TEMPORARY KLUDGE !!!
 
-        if importHasLvlArg:
+        if _importHasLvlArg:
             return _originalImport(name, globals, locals, fromlist, level)
         else:
             # we could assert here that level == -1, but it's safe to assume
@@ -63,6 +74,7 @@ def _irafReload(module):
         return module
     else:
         return _originalReload(module)
+
 
 class _irafModuleClass:
     """Proxy for iraf module that makes tasks appear as attributes"""
@@ -114,9 +126,13 @@ class _irafModuleClass:
         matches.extend(self.module.getAllTasks(taskname))
         return matches
 
+
 # Install our hooks
 __builtin__.__import__ = _irafImport
-__builtin__.reload = _irafReload
+if _reloadIsBuiltin:
+    __builtin__.reload = _irafReload
+else:
+    imp.reload = _irafReload
 
 # create the module proxy
 _irafModuleProxy = _irafModuleClass()
