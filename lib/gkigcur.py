@@ -213,7 +213,7 @@ class Gcursor:
         elif key == '=':
             # snap command - print the plot
             gki.printPlot(self.window)
-        elif key in string.uppercase:
+        elif key in string.ascii_uppercase:
             if key == 'I':
                 # I is equivalent to keyboard interrupt
                 self.window.gcurTerminate("interrupted by `I' keyboard command")

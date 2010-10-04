@@ -98,10 +98,10 @@ class Subprocess:
         """Fork a subprocess with designated COMMAND (default, self.cmd)."""
         if cmd: self.cmd = cmd
         if type(self.cmd) == types.StringType:
-            cmd = string.split(self.cmd)
+            cmd = self.cmd.split()
         else:
             cmd = self.cmd
-            self.cmd = string.join(cmd, " ")
+            self.cmd = " ".join(cmd)
         # Create pipes
         self.parentPipes = []
         childPipes = []
@@ -640,7 +640,7 @@ class ReadBuf:
         1024) characters."""
 
         if self.buf:
-            to = string.find(self.buf, '\n')
+            to = self.buf.find('\n')
             if to != -1:
                 got, self.buf = self.buf[:to+1], self.buf[to+1:]
                 return got                                              # ===>
@@ -671,7 +671,7 @@ class ReadBuf:
                 newgot = os.read(self.fd, self.chunkSize)
                 if newgot:
                     got = got + newgot
-                    to = string.find(got, '\n')
+                    to = got.find('\n')
                     if to != -1:
                         got, self.buf = got[:to+1], got[to+1:]
                         return got                                      # ===>
@@ -756,7 +756,7 @@ class RecordFile:
         line = f.readline()[:-1]
         if line:
             try:
-                l = string.atoi(line)
+                l = int(line)
             except ValueError:
                 raise IOError("corrupt %s file structure"
                                      % self.__class__.__name__)
@@ -838,9 +838,8 @@ class Ph:
                 raise ValueError("ph failed match: '%s'" % response)
             for line in response:
                 # convert to a dict:
-                line = string.splitfields(line, ':')
-                it[string.strip(line[0])] = (
-                        string.strip(string.join(line[1:])))
+                line = line.split(':')
+                it[line[0].strip()] = ' '.join(line[1:]).strip()
 
     def getreply(self):
         """Consume next response from ph, returning list of lines or string
@@ -883,7 +882,7 @@ class Ph:
         while iterations < maxIter:
             got = got + self.proc.readPendingChars()
             # Strip out all but the last incomplete line:
-            got = string.splitfields(got, '\n')[-1]
+            got = got.split('\n')[-1]
             if got == 'ph> ': return        # Ok.                       ===>
             time.sleep(pause)
         raise SubprocessError('ph not responding within %s secs' %

@@ -81,7 +81,7 @@ class GenericScanner:
                 rv.append(self.makeRE(name))
 
         rv.append(self.makeRE('t_default'))
-        return string.join(rv,'|')
+        return '|'.join(rv)
 
     def error(self, s, pos):
         print "Lexical error at position %s" % pos
@@ -128,7 +128,7 @@ class GenericParser:
     def preprocess(self, rule, func):       return rule, func
 
     def addRule(self, doc, func):
-        rules = string.split(doc)
+        rules = doc.split()
 
         index = []
         for i in range(len(rules)):

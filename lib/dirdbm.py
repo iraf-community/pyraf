@@ -65,7 +65,7 @@ class _Database(object):
             raise IOError("Directory "+directory+" is not readable")
         for fname in flist:
             # replace hyphens and add newline in base64
-            key = _string.replace(fname, '-', '/') + '\n'
+            key = fname.replace('-', '/') + '\n'
             try:
                 key = _binascii.a2b_base64(key)
                 self._dict[key] = None
@@ -79,7 +79,7 @@ class _Database(object):
 
         filename = _binascii.b2a_base64(key)
         # get rid of trailing newline in base64 and replace slashes
-        filename = _string.replace(filename[:-1], '/', '-')
+        filename = filename[:-1].replace('/', '-')
         return _os.path.join(self._directory, filename)
 
     def __getitem__(self, key):

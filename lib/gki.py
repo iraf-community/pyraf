@@ -544,7 +544,7 @@ class GkiKernel:
         if badlist:
             raise SyntaxError("Bug: error in definition of class %s\n"
                 "Special method name is incorrect: %s" %
-                (self.__class__.__name__, string.join(badlist," ")))
+                (self.__class__.__name__, " ".join(badlist)))
 
     def control(self, gkiMetacode):
         gkiTranslate(gkiMetacode, self.controlFunctionTable)
@@ -959,7 +959,7 @@ class GkiController(GkiProxy):
     def control_openws(self, arg):
 
         mode = arg[0]
-        device = string.strip(arg[2:].astype(numpy.int8).tostring())
+        device = arg[2:].astype(numpy.int8).tostring().strip()
         self.openKernel(device)
 
     def openKernel(self, device=None):
@@ -1019,7 +1019,7 @@ class GkiController(GkiProxy):
                 s.reverse()
                 raise iraf.IrafError(
                     "Circular definition in graphcap for device\n%s"
-                    % (string.join(s,' -> '),))
+                    % ' -> '.join(s))
             else:
                 tried[devstr] = pdevstr
         return devstr
@@ -1487,7 +1487,7 @@ class StatusLine:
             return s
 
     def write(self, text):
-        self.status.updateIO(text=string.strip(text))
+        self.status.updateIO(text=text.strip())
 
     def flush(self):
         self.status.update_idletasks()

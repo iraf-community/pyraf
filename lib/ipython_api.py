@@ -214,7 +214,7 @@ class IPython_PyRAF_Integrator(object):
             if line[i:i+1] == "" or line[i] == "(":
                 return line
             if line[i] not in self.string.digits and \
-               line[i] not in self.string.letters and \
+               line[i] not in self.string.ascii_letters and \
                line[i] not in "<>|":
                 # this does not look like an IRAF command
                 return line
