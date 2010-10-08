@@ -70,7 +70,7 @@ class Token:
             if self.type in ["STRING", "QSTRING"]:
                 # add quotes to strings
                 # but replace double escapes with single escapes
-                return string.replace(`self.attr`,'\\\\','\\')
+                return repr(self.attr).replace('\\\\','\\')
             else:
                 rv = self.attr
                 if rv is None: rv = self.type
@@ -129,11 +129,11 @@ class Token:
         if self.type == "FLOAT":
             # convert d exponents to e for Python
             value = self.attr
-            i = string.find(value, 'd')
+            i = value.find('d')
             if i>=0:
                 value = value[:i] + 'e' + value[i+1:]
             else:
-                i = string.find(value, 'D')
+                i = value.find('D')
                 if i>=0:
                     value = value[:i] + 'E' + value[i+1:]
             return float(value)
@@ -142,7 +142,7 @@ class Token:
             return float(_str2int(self.attr))
         elif self.type == "SEXAGESIMAL":
             # convert d:m:s values directly to float
-            flist = string.split(self.attr, ':')
+            flist = self.attr.split(':')
             flist.reverse()
             value = float(flist[0])
             for v in flist[1:]:
@@ -171,7 +171,7 @@ class Token:
         elif self.type == "INDEF":
             return INDEF
         elif self.type in ["STRING", "QSTRING"]:
-            keyword = string.lower(self.attr)
+            keyword = self.attr.lower()
             if keyword in ["yes", "y"]:
                 return "yes"
             elif keyword in ["no", "n"]:
@@ -187,7 +187,7 @@ class Token:
 def _str2int(value):
     # convert integer string to python int
     # handles IRAF octal, hex values
-    last = string.lower(value[-1])
+    last = value[-1].lower()
     if last == 'b':
         # octal
         return eval('0'+value[:-1])

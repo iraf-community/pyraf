@@ -1148,7 +1148,7 @@ def nint(x):
     if x == INDEF: return INDEF
     return int(round(x))
 
-_radixDigits = list(_string.digits+_string.uppercase)
+_radixDigits = list(_string.digits+_string.ascii_uppercase)
 
 def radix(value, base=10, length=0):
     """Convert integer value to string expressed using given base
@@ -1379,8 +1379,7 @@ def osfn(filename):
 
     if filename == INDEF: return INDEF
     ename = Expand(filename)
-    dlist = ename.split(_os.sep)
-    dlist = map(_string.strip, dlist)
+    dlist = [s.strip() for s in ename.split(_os.sep)]
     if len(dlist)==1 and dlist[0] not in [_os.curdir,_os.pardir]:
         return dlist[0]
 
@@ -2693,7 +2692,7 @@ _reFormat = _re.compile(r"%(?P<w>-?\d*)(?P<d>(?:\.\d*)?)(?P<c>[a-zHM])")
 
 # dispatch table for format conversions
 _fDispatch = {}
-for b in _string.lowercase: _fDispatch[b] = None
+for b in _string.ascii_lowercase: _fDispatch[b] = None
 
 # formats that get quietly converted to uppercase and translated to %s
 badList = ["b"]

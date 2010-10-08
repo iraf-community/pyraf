@@ -10,33 +10,33 @@ def merge(inlines):
     out = []
     outbuff = []
     for inline in inlines:
-        tline = string.strip(inline)
+        tline = inline.strip()
         if len(tline) > 0 and tline[0] != '#':
             if tline[-1] == '\\':
                 # continuation
                 outbuff.append(tline[:-1])
             else:
                 outbuff.append(tline)
-                out.append(string.join(outbuff,''))
+                out.append(''.join(outbuff))
                 outbuff = []
     return out
 
 def getAliases(entry):
     # return list of aliases (and dump the comment)
-    aend = string.find(entry,':')
+    aend = entry.find(':')
     if aend<0:
         raise ValueError("Graphcap entry does not have any colons\n%s" % entry)
-    return string.split(entry[:aend], "|")[:-1]
+    return entry[:aend].split("|")[:-1]
 
 def getAttributes(entry):
-    abeg = string.find(entry,':')
+    abeg = entry.find(':')
     if abeg<0:
         raise ValueError("Graphcap entry does not have any colons\n%s" % entry)
     astring = entry[abeg+1:]
     attr = {}
-    attrlist = string.split(astring,':')
+    attrlist = astring.split(':')
     for attrstr in attrlist:
-        if string.strip(attrstr):
+        if attrstr.strip():
             attrname = attrstr[:2]
             attrval = attrstr[2:]
             if len(attrstr) <= 2:

@@ -159,8 +159,8 @@ class _BasicScanner_3:
         if s[0] == '\n':
             parent.addToken(type='NEWLINE')
             parent.lineno = parent.lineno + 1
-        cmd = string.strip(s)[1:]
-        parent.addToken(type='OSESCAPE', attr=string.strip(cmd))
+        cmd = s.strip()[1:]
+        parent.addToken(type='OSESCAPE', attr=cmd.strip())
 
     def t_singlequote(self, s, m, parent):
         r"' [^'\\\n]* ( ( ((\\(.|\n)|\n)[\s?]*) | '' ) [^'\\\n]* )*'"
@@ -880,10 +880,10 @@ class CLScanner(ContextSensitiveScanner):
         # Note keywords may be in any case
         # For normal (non-keyword) identifiers, goes to mode
 
-        keyword = string.lower(name)
+        keyword = name.lower()
         if usekey and _keywordDict.has_key(keyword):
 
-            self.addToken(type=string.upper(keyword), attr=keyword)
+            self.addToken(type=keyword.upper(), attr=keyword)
             if keyword == "procedure":
                 # Procedure scripts are always in compute mode
                 self.default_mode = _COMPUTE_START_MODE
@@ -904,7 +904,7 @@ class CLScanner(ContextSensitiveScanner):
         elif keyword == "indef" or keyword == "eof":
 
             # INDEF, EOF always get recognized
-            self.addToken(type=string.upper(keyword))
+            self.addToken(type=keyword.upper())
 
         elif keyword == "epsilon":
 
@@ -912,7 +912,7 @@ class CLScanner(ContextSensitiveScanner):
             self.addToken(type="FLOAT", attr=keyword)
             # xxx self.addToken(type="FLOAT")
             #     AttributeError: 'NoneType' object has no attribute 'find'
-            # xxx self.addToken(type=string.upper(keyword))
+            # xxx self.addToken(type=keyword.upper())
             #     epsilon was quoted
 
         elif _boolDict.has_key(keyword):
@@ -956,10 +956,10 @@ class CLScanner(ContextSensitiveScanner):
 def _countNewlines(s):
     """Return number of newlines in string"""
     n = 0
-    i = string.find(s, '\n')
+    i = s.find('\n')
     while (i>=0):
         n = n+1
-        i = string.find(s, '\n', i+1)
+        i = s.find('\n', i+1)
     return n
 
 

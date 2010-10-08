@@ -86,7 +86,7 @@ def describeParams(func, name = None):
                 else:
                     p = p + 1
             if vars:
-                a[i] = "(" + string.join(vars, ", ") + ")"
+                a[i] = "(" + ", ".join(vars) + ")"
     if func.func_defaults:
         # defaults
         i = n - len(func.func_defaults)
@@ -114,7 +114,7 @@ def describe(func, name = None):
             args.append(arg)
         else:
             args.append("%s=%s" % (arg[0], repr(arg[1])))
-    args = string.join(args, ", ")
+    args = ", ".join(args)
 
     # function name
     if not name:

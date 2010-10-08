@@ -267,7 +267,7 @@ class IrafCompleter(Completer):
         if line == text:
             # at start of line, special handling for iraf.xxx and
             # taskname.xxx
-            fields = string.split(text,".")
+            fields = text.split(".")
             if fields[0] == "":
                 # line starts with dot, look in executive commands
                 return self.executive_matches(text)
@@ -294,7 +294,7 @@ class IrafCompleter(Completer):
             #XXX where same tests are done
             m = self.taskpat.match(line)
             if m is None or keyword.iskeyword(m.group(1)):
-                fields = string.split(text,".")
+                fields = text.split(".")
                 if fields[0] == "iraf":
                     return self.taskdot_matches(fields)
                 else:
@@ -310,7 +310,7 @@ class IrafCompleter(Completer):
 
     def taskdot_matches(self, fields):
         """Return matches for iraf.package.task.param..."""
-        head = string.join(fields[:-1],".")
+        head = ".".join(fields[:-1])
         tail = fields[-1]
         matches = eval("%s.getAllMatches(%s)" % (head, `tail`))
         def addhead(s, head=head+"."): return head+s

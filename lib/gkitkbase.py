@@ -605,7 +605,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         scroll.pack(side=Tkinter.RIGHT, fill=Tkinter.Y)
 
         # Insert each line of the helpString into the box
-        listing = string.split(helpString, '\n')
+        listing = helpString.split('\n')
         for line in listing:
             hb.list.insert(Tkinter.END, line)
 

@@ -413,7 +413,7 @@ class IrafProcess:
         for key, value in envdict.items():
             outenvstr.append("set %s=%s\n" % (key, str(value)))
         outenvstr.append("chdir %s\n" % os.getcwd())
-        if outenvstr: self.writeString(string.join(outenvstr,""))
+        if outenvstr: self.writeString("".join(outenvstr))
         self.envVarList = []
 
         # end set up mode
@@ -476,7 +476,7 @@ class IrafProcess:
 
         # update IRAF environment variables if necessary
         if self.envVarList:
-            self.writeString(string.join(self.envVarList,''))
+            self.writeString(''.join(self.envVarList))
             self.envVarList = []
 
         # if stdout is a terminal, set the lines & columns sizes
@@ -895,7 +895,7 @@ class IrafProcess:
         """
         msg = self.msg
         try:
-            i = string.find(msg,",",5)
+            i = msg.find(",",5)
             if i<0 or msg[-2:] != ")\n": raise ValueError
             chan = int(msg[5:i])
             nbytes = int(msg[i+1:-2])
@@ -912,14 +912,14 @@ class IrafProcess:
         mcmd = _re_clcmd.match(self.msg)
         if mcmd is None:
             # general command
-            i = string.find(self.msg,"\n")
+            i = self.msg.find("\n")
             if i>=0:
                 cmd = self.msg[:i+1]
                 self.msg = self.msg[i+1:]
             else:
                 cmd = self.msg
                 self.msg = ""
-            if not (string.find(cmd, IPCOUT) >= 0):
+            if not (cmd.find(IPCOUT) >= 0):
                 # normal case -- execute the CL script code
                 # redirect I/O (but don't use graphics status line)
                 iraf.clExecute(cmd, Stdout=self.default_stdout,

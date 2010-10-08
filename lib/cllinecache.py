@@ -83,7 +83,7 @@ def updateCLscript(filename):
         stat = os.stat(fullname)
         size = stat[ST_SIZE]
         mtime = stat[ST_MTIME]
-        lines = string.split(taskobj.getCode(),'\n')
+        lines = taskobj.getCode().split('\n')
         cache[filename] = size, mtime, lines, taskname
         return lines
     except (iraf.IrafError, KeyError, AttributeError):
