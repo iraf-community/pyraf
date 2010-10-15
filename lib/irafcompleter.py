@@ -253,12 +253,17 @@ class IrafCompleter(Completer):
         # If only a single directory matches, get a list of the files
         # in the directory too.  This has the side benefit of suppressing
         # the extra space added to the name by readline.
-        #
         # Include directory itself in the list to avoid autocompleting
         # parts of filenames when the directory has just been filled in.
 
-        if len(flist)==1 and flist[0][-1] == os.sep:
-            flist.extend(self._dir_matches(flist[0], dir))
+        #---------------------------------------------------------------------
+        # Commented out on 12 Oct 2010.  While some people may enjoy this
+        # convenience, it seems to be disturbing to the majority of users, see
+        # ticket #113.  Will comment out but leave code here.
+#       if len(flist)==1 and flist[0][-1] == os.sep:
+#           flist.extend(self._dir_matches(flist[0], dir))
+        #---------------------------------------------------------------------
+
         return flist
 
     def attr_matches(self, text):

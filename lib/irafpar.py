@@ -1063,10 +1063,10 @@ def _updateSpecialParFileDict(dirToCheck=None, strict=False):
                     _specialUseParFileDict[tupKey].append(supfname)
             else:
                 _specialUseParFileDict[tupKey] = [supfname,]
-        else:
-            if strict:
-                warning("Syntax error in special use .par file: "+supfname,
-                        level = -1)
+        # If it does not have the TASKMETA line, then it is likely a regular
+        # IRAF .par file.  How it got here we don't know, but it got dropped
+        # here somehow and warning the user continuously about this would be 
+        # very annoying, so be quiet about it.
 
 
 def newSpecialParFile(taskName, pkgName, pathName):

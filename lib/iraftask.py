@@ -940,7 +940,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             self._defaultParpath = ""
 
         # uparm has scrunched version of par filename with saved parameters
-        self._scrunchParpath = "uparm$" + self.scrunchName() + ".par"
+        # (also handle if they forgot the end-slash on the uparm var)
+        self._scrunchParpath = "uparm$/"+self.scrunchName()+".par"
 
     def _noParFile(self):
         """Decide what to do if .par file is not found"""
