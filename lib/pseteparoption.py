@@ -29,7 +29,7 @@ class PsetEparOption(eparoption.EparOption):
             self.valueWidth = self.valueWidth - 6
 
         # Generate the button
-        self.entry = Button(self.master.frame,
+        self.entry = Button(self.master_frame,
                                  width   = self.valueWidth,
                                  text    = "PSET " + self.buttonText,
                                  relief  = RAISED,
@@ -51,7 +51,7 @@ class PsetEparOption(eparoption.EparOption):
                 child.top.tkraise()
                 return
         childPsetHandle = epar.PyrafEparDialog(self.buttonText,
-                                          parent  = self.master.frame,
+                                          parent  = self.master_frame,
                                           isChild = 1,
                                           childList = parentToplevel.childList,
                                           title   = "PSET Parameter Editor")
