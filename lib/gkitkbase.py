@@ -233,10 +233,12 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
         """Make status display at bottom of window"""
 
-        self.top.status = msgiobuffer.MsgIOBuffer(self.top, width=600)
-        self.top.status.msgIO.pack(side=Tkinter.BOTTOM, fill = Tkinter.X)
-#       self.top.status = msgiowidget.MsgIOWidget(self.top, width=600)
-#       self.top.status.pack(side=Tkinter.BOTTOM, fill = Tkinter.X)
+        if 'PYRAF_BETA_STATUS' in os.environ:
+            self.top.status = msgiowidget.MsgIOWidget(self.top, width=600)
+            self.top.status.pack(side=Tkinter.BOTTOM, fill = Tkinter.X)
+        else:
+            self.top.status = msgiobuffer.MsgIOBuffer(self.top, width=600)
+            self.top.status.msgIO.pack(side=Tkinter.BOTTOM, fill = Tkinter.X)
 
     # -----------------------------------------------
     # Menu bar definitions
