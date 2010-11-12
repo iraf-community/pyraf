@@ -175,11 +175,9 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # be an excellent spot to redraw!  If we are an interactive task (yes
         # since they want a gcur) AND if we haven't been drawing because we
         # are saving draws for performance-sake, then do so now.
-        if self.__savingDraws:
-            if not self.__allowDrawing:
-                self.__allowDrawing = True
-                self.gki_flush(None)
-            # else, we have already allowed drawing, so no need to flush here
+        if self.__savingDraws and not self.__allowDrawing:
+            self.gki_flush(None, force=True)
+        # else, we have already been drawing, so no need to flush here
 
         # Now, do what we came here for.
         return self.__gcursorObject()
@@ -192,6 +190,13 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
             # end the gcur mainloop -- this is what allows
             # closing the window to act the same as EOF
             self.top.quit()
+
+    def pre_imcur(self):
+        """ Override this so as to redraw if needed """
+        # Just like in gcur(), this may be an excellent time to redraw.
+        if self.__savingDraws and not self.__allowDrawing:
+            self.gki_flush(None, force=True)
+        # else, we have already been drawing, so no need to flush here
 
     def taskStart(self, name):
         """ Because of redirection, this is not always called on the first plot
@@ -209,15 +214,13 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # Tk plot, but this version does not seem to suffer from the bug.
 #       self.doubleRedrawHack()
 
-        if self.__savingDraws: # no need to draw now, UNLESS we haven't yet
+        # No need to draw now, UNLESS we haven't yet
+        if self.__savingDraws and not self.__allowDrawing:
             # If we have not yet made our first draw, then we need to now.
             # For interactive tasks, we should have drawn already (see gcur).
             # For non-interactive tasks, we will not have drawn yet.
-            if not self.__allowDrawing:
-                self.__allowDrawing = True
-                self.gki_flush(None)
-                # if we set it to False here, would that affect win resizes?
-            # else, we have already allowed drawing, so no need to flush here
+            self.gki_flush(None, force=True)
+        # else, we have already been drawing, so no need to flush here
 
     def update(self):
 
@@ -349,14 +352,16 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # Note this explicitly (not for redrawing) since _plotAppend isn't used
 #       self._noteGkiCmd(self.gki_cancel)
 
-    def gki_flush(self, arg):
+    def gki_flush(self, arg, force=False):
 
         """ Asked to render current plot immediately.  Also used by redraw().
         NOTE: This is called multiple times (~8) for a single prow
         call.  There is a performance improvement gained by skipping the
-        resize calculation between taskStart() and taskDone(). """
+        resize calculation between taskStart() and taskDone().  This class
+        adds the 'force' arg which forces it to redraw once whether we are
+        "saving draws" or not. """
         # don't put flush command into the draw buffer
-        if not self.__savingDraws or self.__allowDrawing:
+        if not self.__savingDraws or self.__allowDrawing or force:
             self.resizeGraphics(self.__xsz, self.__ysz) # do NOT use adjusted y!
             self.__mca.draw()
             self.__mca.flush()
