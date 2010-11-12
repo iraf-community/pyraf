@@ -215,7 +215,7 @@ def getActiveWindowName():
     if _g and _g.windowVar:
         return _g.windowVar.get() or None
 
-def getActiveWindow():
+def getActiveWindowGwidget():
 
     """Get the active window widget (None if none defined)"""
 
