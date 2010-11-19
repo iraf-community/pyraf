@@ -592,6 +592,10 @@ class GkiKernel:
         """Hook for stuff that needs to be done at completion of task"""
         pass
 
+    def pre_imcur(self):
+        """Hook for stuff that needs to be done right before imcur() call"""
+        pass
+
     def undoN(self, nUndo=1):
 
         # Remove the last nUndo interactive appends to the metacode buffer

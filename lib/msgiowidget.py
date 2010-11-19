@@ -1,7 +1,7 @@
 """ 'msgiowidget.py' -- this is a replacement for the msgiobuffer module.
    This contains the MsgIOWidget class, which is an optionally hidden
    scrolling canvas composed of a text widget and frame.  When "hidden",
-   it turn into a single-line text widget.
+   it turns into a single-line text widget.
    $Id$
 """
 from __future__ import division # confidence high
@@ -37,8 +37,8 @@ class MsgIOWidget(Tki.Frame):
         self._expBttnHasTxt = True
         btxt= '+'
         if USING_X:
-           px = 2
-           py = 0
+            px = 2
+            py = 0
         else: # Aqua ?
             px = 5
             py = 3
@@ -84,7 +84,7 @@ class MsgIOWidget(Tki.Frame):
         self._spacer = Tki.Label(self._nowFrame, text='', takefocus=False)
         self._spacer.pack(side=Tki.LEFT, expand=False, padx=5)
 
-        self._nowFrame.pack(side=Tki.TOP, fill=Tki.X)
+        self._nowFrame.pack(side=Tki.TOP, fill=Tki.X, expand=True)
 
         self._hasHistory = False
         self._histScrl = Tki.Scrollbar(self._histFrame)
@@ -122,7 +122,7 @@ class MsgIOWidget(Tki.Frame):
             if self._expBttnHasTxt:
                 self._expBttn.configure(text='+')
         else:   # need to expand
-            self._histFrame.pack(side=Tki.TOP, fill=Tki.X)
+            self._histFrame.pack(side=Tki.TOP, fill=Tki.BOTH, expand=True) #.X)
             if self._expBttnHasTxt:
                 self._expBttn.configure(text='-')
             if self._hasHistory:

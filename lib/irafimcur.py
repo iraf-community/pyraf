@@ -11,7 +11,7 @@ from __future__ import division # confidence high
 import sys,string
 from pytools import irafutils
 from pytools.irafglobals import Verbose, IrafError
-import irafdisplay, gki, iraf
+import irafdisplay, gki, gwm, iraf
 
 # dictionary of devices to support multiple active displays
 _devices = {}
@@ -60,6 +60,11 @@ def imcur(displayname=None):
     """
 
     try:
+        # give kernel a chance to do anything it needs right before imcur
+        gkrnl = gwm.getActiveGraphicsWindow()
+        if gkrnl:
+            gkrnl.pre_imcur()
+        # get device
         device = _getDevice(displayname)
         # Read cursor position at keystroke
         result = device.readCursor()
