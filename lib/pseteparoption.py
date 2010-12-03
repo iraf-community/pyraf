@@ -28,6 +28,8 @@ class PsetEparOption(eparoption.EparOption):
         else:
             self.valueWidth = self.valueWidth - 6
 
+        self.isSelectable = False
+
         # Generate the button
         self.entry = Button(self.master_frame,
                                  width   = self.valueWidth,
