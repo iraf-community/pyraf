@@ -319,28 +319,40 @@ def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
 # initialized when this module is imported)
 
 unsavedVars = [
+                        'BITS_PER_LONG',
                         'EOF',
+                        'FP_EPSILON',
                         'IrafError',
+                        'SubprocessError',
                         '_NullFileList',
                         '_NullPath',
                         '__builtins__',
                         '__doc__',
+                        '__package__',
                         '__file__',
                         '__name__',
                         '__re_var_match',
                         '__re_var_paren',
                         '_badFormats',
+                        '_backDir',
                         '_clearString',
+                        '_denode_pat',
                         '_exitCommands',
-                        '_unsavedVarsDict',
+                        '_nscan',
+                        '_fDispatch',
                         '_radixDigits',
                         '_re_taskname',
                         '_reFormat',
                         '_sttyArgs',
-                        '_fDispatch',
+                        '_tmpfileCounter',
                         '_clExecuteCount',
+                        '_unsavedVarsDict',
                         'IrafTask',
                         'IrafPkg',
+                        'cl',
+                        'division',
+                        'epsilon',
+                        'iraf',
                         'no',
                         'yes',
                         'userWorkingHome',
@@ -387,17 +399,18 @@ def saveToFile(savefile, **kw):
         doclose = 1
     # make a shallow copy of the dictionary and edit out
     # functions, modules, and objects named in _unsavedVarsDict
-    dict = globals().copy()
-    for key in dict.keys():
-        item = dict[key]
+    gdict = globals().copy()
+    for key in gdict.keys():
+        item = gdict[key]
         if isinstance(item, (_types.FunctionType, _types.ModuleType)) or \
                         _unsavedVarsDict.has_key(key):
-            del dict[key]
+            del gdict[key]
+#   print('\n\n\n',gdict.keys()) # DBG: debug line
     # save just the value of Verbose, not the object
     global Verbose
-    dict['Verbose'] = Verbose.get()
+    gdict['Verbose'] = Verbose.get()
     p = _pickle.Pickler(fh,1)
-    p.dump(dict)
+    p.dump(gdict)
     if doclose:
         fh.close()
 
@@ -2194,6 +2207,8 @@ _clearString = None
 def clear(*args):
     """Clear screen if output is terminal"""
     global _clearString
+    if not _os.path.exists('/usr/bin/tput'):
+        _clearString = ''
     if _clearString is None:
         # get the clear command by running system clear
         fh = _StringIO.StringIO()
