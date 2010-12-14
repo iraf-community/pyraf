@@ -439,7 +439,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                             return
                         else:
                             raise iraf.IrafError("Attempt to set unknown parameter " +
-                                    qualifiedName)
+                                    qualifiedName+' for task '+task)
             # Not one of our dictionaries, so must find the relevant task
             if package: task = package + '.' + task
             try:
@@ -475,7 +475,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                         field=field,check=check)
                 return
         else:
-            raise iraf.IrafError("Attempt to set unknown parameter " +
+            raise iraf.IrafError("Attempt to set unknown lone parameter " +
                     qualifiedName)
 
     def getParam(self,qualifiedName,native=1,mode=None,exact=0,prompt=1):
