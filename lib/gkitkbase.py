@@ -472,7 +472,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         else:
             menu.entryconfigure(button.lastNum, state=Tkinter.DISABLED)
         # Delete everything past the separator
-        menu.delete(button.sepNum,10000)
+        menu.delete(str(button.sepNum),'10000')
         menu.add_separator()
         # Add radio buttons for pages
         # Only show limited window around active page
@@ -552,7 +552,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         winList = self.manager.windowNames()
         winList.sort()
         # Delete everything past the separator
-        menu.delete(1,10000)
+        menu.delete('1','10000')
         menu.add_separator()
         # Add radio buttons for windows
         for i in range(len(winList)):
