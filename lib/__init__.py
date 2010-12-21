@@ -10,7 +10,7 @@ R. White, 2000 February 18
 """
 from __future__ import division # confidence high
 
-__version__ = "1.9.1"
+__version__ = "1.10"
 
 try:
     from svn_version import __svn_version__
