@@ -81,6 +81,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.__allowDrawing = False # like taskStart, but can't rely on that
         self.__savingDraws = 'PYRAF_ORIG_MPL_DRAWING' not in os.environ
         # eventually assume __savingDraws is always True and rm it from the code
+        self._forceNextFinalFlush = False
 #       self.__lastGkiCmds = (None, None, None) # unused for now
 
         self.colorManager = tkColorManager(self.irafGkiConfig)
@@ -197,6 +198,10 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         if self.__savingDraws and not self.__allowDrawing:
             self.gki_flush(None, force=True)
         # else, we have already been drawing, so no need to flush here
+
+    def prePageSelect(self):
+        """ Override this so as to redraw when needed """
+        self._forceNextFinalFlush = True # make sure flush at end of redraw!
 
     def taskStart(self, name):
         """ Because of redirection, this is not always called on the first plot
@@ -655,6 +660,12 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # resizes!  Using the drawBuffer is too slow and unnecessary.  Resizes
         # should only be hooking into resizeGraphics() for performance sake.
 
+        # Handle hook made for page menu selections
+        frc = False
+        if self._forceNextFinalFlush:
+            frc = True
+            self._forceNextFinalFlush = False
+
         # Clear the screen
         self.clearMplData()
         # Plot the current buffer
@@ -662,7 +673,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         for (function, args) in self.drawBuffer.get():
             apply(function, args)
         self.__skipPlotAppends = False
-        self.gki_flush(None) # does: resize-calc's; draw; flush
+        self.gki_flush(None, force=frc) # does: resize-calc's; draw; flush
 
 
 #-----------------------------------------------

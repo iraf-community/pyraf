@@ -209,10 +209,15 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         self.StatusLine = gki.StatusLine(self.top.status, self.windowName)
         self.history = [(self.gkibuffer, self.wcs, "", self.getHistory())]
         self._currentPage = 0
+        # Master page variable, pageVar, any change to it is watched & acted on
         self.pageVar = Tkinter.IntVar()
         self.pageVar.set(self._currentPage)
         # _setPageVar is callback for changes to pageVar
         self.pageVar.trace('w', self._setPageVar)
+        # Also hold a var just for the # of the selected page button: bttnVar
+        # This one causes no events when it is set!
+        self.bttnVar = Tkinter.IntVar()
+        self.bttnVar.set(0)
         windowID = self.gwidget.winfo_id()
         self.flush()
         if sys.platform != 'darwin': # this step is unneeded on OSX
@@ -330,7 +335,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         num = num+1
         button.redrawOriginalNum = num
 
-        button.menu.add_command(label="Refresh", command=self.gRedraw)
+        button.menu.add_command(label="Refresh", command=self.refreshPage)
         num = num+1
         button.redrawNum = num
 
@@ -405,6 +410,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         # ensure that redraw happens
         self._currentPage = -1
         self.pageVar.set(n)
+        self.bttnVar.set(n)
 
     def deleteAllPlots(self):
 
@@ -418,6 +424,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             # ensure that redraw happens
             self._currentPage = -1
             self.pageVar.set(0)
+            self.bttnVar.set(0)
 
     def makePageMenu(self, menubar):
 
@@ -497,9 +504,11 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
                 label = ">> %s" % task
             else:
                 label = "%2d %s" % (i+1,task)
-            menu.add_radiobutton(label=label, value=i, variable=self.pageVar)
+            menu.add_radiobutton(label=label, command=self.selectedPage,
+                                 value=i, variable=self.bttnVar)
         # Make sure pageVar matches the real index value
         self.pageVar.set(self._currentPage)
+        self.bttnVar.set(self._currentPage)
 
     def _setPageVar(self, *args):
 
@@ -516,21 +525,40 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             self.pageMenuInit()
 
     def backPage(self):
-
-        self.pageVar.set(max(0,self._currentPage-1))
+        self.prePageSelect()
+        n = max(0,self._currentPage-1)
+        self.pageVar.set(n)
+        self.bttnVar.set(n)
 
     def nextPage(self):
-
-        self.pageVar.set(
-                max(0,min(self._currentPage+1, len(self.history)-1)))
+        self.prePageSelect()
+        n = max(0,min(self._currentPage+1, len(self.history)-1))
+        self.pageVar.set(n)
+        self.bttnVar.set(n)
 
     def firstPage(self):
-
+        self.prePageSelect()
         self.pageVar.set(0)
+        self.bttnVar.set(0)
 
     def lastPage(self):
-
+        self.prePageSelect()
         self.pageVar.set(len(self.history)-1)
+        self.bttnVar.set(len(self.history)-1)
+
+    def selectedPage(self):
+        self.prePageSelect()
+        self.pageVar.set(self.bttnVar.get())
+
+    def refreshPage(self):
+        self.prePageSelect()
+        self.gRedraw()
+
+    def prePageSelect(self):
+        """ This is called right before a Page Menu selection is handled,
+        usually causing a redraw.  This is ONLY meant to be used for manual
+        selections of the Page menu, no other task events. To be overridden. """
+        pass
 
     def makeWindowMenu(self, menubar):
 
@@ -750,6 +778,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             self.history.append(
                     (self.gkibuffer, self.wcs, name, self.getHistory()) )
             self.pageVar.set(len(self.history)-1)
+            self.bttnVar.set(len(self.history)-1)
             self.StatusLine.write(text=" ")
             if self._toWriteAtNextClear and self.StatusLine:
                 # Often clear() is called at the start of a task, and we (or
