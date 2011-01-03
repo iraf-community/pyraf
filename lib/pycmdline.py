@@ -258,7 +258,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             import readline
             readline.set_history_length(hlen)  # hlen<0 means unlimited
             readline.write_history_file(hfile) # clobber any old version
-        except IOError:
+        except (ImportError, IOError):
             pass
 
         # any irafinst tmp files?

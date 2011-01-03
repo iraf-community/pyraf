@@ -16,13 +16,19 @@ RLW, 2000 February 13
 """
 from __future__ import division # confidence high
 
-from rlcompleter import Completer
-import readline
 import __builtin__
 import __main__
 import string, re, keyword, glob, os, sys
 import iraf
 from pytools import minmatch
+try:
+    import readline
+    from rlcompleter import Completer
+except ImportError:
+    readline = None
+    Completer = object
+    print('readline is not installed, some functionality will be lost')
+
 
 # dictionaries mapping between characters and readline names
 char2lab = {}
@@ -75,6 +81,8 @@ class IrafCompleter(Completer):
 
     def activate(self, char="\t"):
         """Turn on completion using the specified character"""
+        if readline == None:
+            return
         self.deactivate()
         lab = char2lab.get(char, char)
         if lab==char: char = lab2char.get(lab, lab)
@@ -94,7 +102,7 @@ class IrafCompleter(Completer):
 
     def deactivate(self):
         """Turn off completion, restoring old behavior for character"""
-        if self.completionChar:
+        if readline != None and self.completionChar:
             # restore normal behavior for previous completion character
             lab = char2lab.get(self.completionChar, self.completionChar)
             readline.parse_and_bind("%s: self-insert" % lab)
@@ -131,8 +139,11 @@ class IrafCompleter(Completer):
         """Returns current line through cursor position with leading
         whitespace stripped
         """
-        line = readline.get_line_buffer()[:readline.get_endidx()]
-        return line.lstrip()
+        if readline == None:
+            return ''
+        else:
+            line = readline.get_line_buffer()[:readline.get_endidx()]
+            return line.lstrip()
 
     def primary_matches(self, text):
         """Return matches when text is at beginning of the line"""
