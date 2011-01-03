@@ -6,7 +6,7 @@ $Id$
 
 from __future__ import division # confidence high
 
-import math, sys, numpy, os, readline
+import math, sys, numpy, os
 import Tkinter as Tki
 import matplotlib
 # (done in mca file) matplotlib.use('TkAgg') # set backend
@@ -18,6 +18,10 @@ import gki, gkitkbase, textattrib
 import gkigcur
 import MplCanvasAdapter as mca
 from wutil import moveCursorTo
+try:
+    import readline
+except ImportError:
+    readline = None
 
 # MPL version
 MPL_MAJ_MIN = matplotlib.__version__.split('.') # tmp var
@@ -204,8 +208,9 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # We take this opportuninty to simply set our draw-saving flag.
         self.__allowDrawing = False
         # Note the task command given to be shown in the status widget
-        self._toWriteAtNextClear = readline.get_history_item(
-                                   readline.get_current_history_length())
+        if readline != None:
+            self._toWriteAtNextClear = readline.get_history_item(
+                                       readline.get_current_history_length())
 
     def taskDone(self, name):
 
