@@ -14,6 +14,7 @@ from __future__ import division
 import os, sys, copy, re
 from pytools import basicpar, minmatch, irafutils, irafglobals, taskpars
 import subproc, irafinst, iraf, irafpar, irafexecute, epar, tpar, cl2py
+import fnmatch
 
 
 # may be set to function to monitor task execution
@@ -45,16 +46,65 @@ _IrafTask_attr_dict = {
         '_foreign': 0,
         }
 
+
+# This is a list of all the IrafTask objects that have been created.
+# There are variables in pyraf.iraffunctions that superficially
+# resemble this, but none of them contain the complete list, so I
+# keep it here.  This is currently used only for the "taskinfo"
+# operation.  
+#
+# We generally approach this list interactively and with a wildcards.
+# I don't see any particularly useful indexing, so it is just a plain
+# linear search.
+#
+all_task_definitions = [ ] 
+
+
 # use empty "tag" class from irafglobals as base class
 
 class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
     """IRAF task class"""
 
+    # We remember parameters to the __init__ function
+    #
+    # prefix
+    #       ? - see obj._saved_prefix
+    #
+    # name
+    #       the name of the task.  We don't actually save this, but
+    #       obj._name contains the name as we may have modified it.
+    #
+    # suffix
+    #       ? - see obj._saved_suffix
+    #
+    # filename
+    #       ? - obviously more than just a file name.  obj._filename
+    #       is the modified value
+    #
+    # pkgname
+    #       the name of the package that this task is in.  see obj._pkgname
+    #
+    # pkgbinary
+    #       places that the binary may be.  see obj._pkgbinary
+    #
+
+
     def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
+
         # for this heavily used code, pull out the dictionary and
         # initialize it directly to avoid calls to __setattr__
+        #
+        # b.t.w. do not try to set the attributes directly - it doesn't 
+        # work. (not sure if that is a bug or a "feature")
         objdict = self.__dict__
+
+        # remember the task definition in case we want to see it later
+        all_task_definitions.append( self )
+
+        objdict['_saved_suffix'] = suffix
+        objdict['_saved_prefix'] = prefix
+
         # stuff all the parameters into the object
         objdict.update(_IrafTask_attr_dict)
         sname = name.replace('.', '_')
@@ -1765,3 +1815,50 @@ def _splitName(qualifiedName):
     else:
         slist[3:3] = [None]
     return slist
+
+#
+# When a user has a problem, I often wonder where the task they are
+# using came from and how it is defined.  This set of tools shows a
+# hierarchy of the task/package definitions that led us here.
+#
+# (I would also like to know what file contained the task definition, but
+# that information is not available)
+#
+# This is used by the task "taskinfo" in iraffunctions.py; there is some
+# user documentation there.
+#
+
+# find all the task definitions that match a particular wildcard
+def gettask( name ) :
+    return [ x for x in all_task_definitions if fnmatch.fnmatch(x._name, name) ]
+
+
+# make a printable line about a single task object - this doesn't say everything,
+# but it may say enough without being too cluttered.
+def printable_task_def(x) :
+    cl = str(x.__class__)
+    if '.' in cl :
+        cl=cl.split('.')[-1]
+
+    # I wonder if there is a significance to using getFullpath instead of _filename
+
+    s= "%s : %s - pkgbinary=%s class=%s"% ( x._name, x.getFullpath(), x._pkgbinary, cl )
+    return s
+
+# show a task line, then show the package that task may have come from, then where
+# that came from, and so on.  The top level is normally "clpackage" which is its
+# own parent.
+def showtasklong(name, level=0) :
+    l = gettask(name)
+    if len(l) < 1 :
+        print ("    "*level)+'%s : NOT FOUND'%name
+    else :
+        l.sort()
+        for x in l :
+            print ("    "*level)+printable_task_def(x)
+            next_name = x._pkgname
+            if (next_name == name) or ( level > 15 ) :
+                pass
+            else :
+                showtasklong(next_name, level=level+1)
+
