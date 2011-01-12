@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from __future__ import division # confidence high
 
-import os, os.path, sys, commands
+import os, os.path, shutil, sys, commands
 import distutils.core
 import distutils.sysconfig
 import string
@@ -72,9 +72,16 @@ PYRAF_EXTENSIONS = [distutils.core.Extension('pyraf.sscanfmodule', ['src/sscanfm
                               include_dirs=add_inc_dirs,
                               library_dirs=add_lib_dirs,
                               libraries = [x_libraries])]
-if sys.platform == 'win32': PYRAF_EXTENSIONS = []
-
 pkg = "pyraf"
+
+if sys.platform.startswith('win'):
+    PYRAF_EXTENSIONS = []
+    if not os.path.exists('wintmp'):
+        os.mkdir('wintmp')
+    if os.path.exists('wintmp'+os.sep+'runpyraf.py'):
+        os.remove('wintmp'+os.sep+'runpyraf.py')
+    shutil.copy('lib'+os.sep+'pyraf', 'wintmp'+os.sep+'runpyraf.py')
+
 
 DATA_FILES = [ ( pkg,
                     ['data/blankcursor.xbm',
@@ -99,6 +106,8 @@ setupargs = {
     'data_files' :			DATA_FILES,
     'scripts' :			    ['lib/pyraf'],
     'ext_modules' :			PYRAF_EXTENSIONS
-
 }
 
+
+if sys.platform.startswith('win'):
+    setupargs['scripts'] = ['lib/pyraf', 'wintmp/runpyraf.py', 'lib/pyraf.bat']
