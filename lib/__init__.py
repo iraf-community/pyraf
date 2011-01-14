@@ -10,7 +10,7 @@ R. White, 2000 February 18
 """
 from __future__ import division # confidence high
 
-__version__ = "1.9.1.dev"
+__version__ = "1.10.1.dev"
 
 try:
     from svn_version import __svn_version__
@@ -51,7 +51,7 @@ import irafnames
 executable = sys.argv[0]
 while os.path.islink(executable):
     executable = os.readlink(executable)
-_pyrafMain = os.path.split(executable)[1] != 'pyraf'
+_pyrafMain = os.path.split(executable)[1] in ('pyraf', 'runpyraf.py')
 del executable
 
 runCmd = None
@@ -74,7 +74,7 @@ if '-h' not in sys.argv and '--help' not in sys.argv:
 
 
 # now get ready to do the serious IRAF initialization
-if _pyrafMain:
+if not _pyrafMain:
     # if not executing as pyraf main, just initialize iraf module
     # quietly load initial iraf symbols and packages
     import iraf

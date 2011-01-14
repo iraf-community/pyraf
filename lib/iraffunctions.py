@@ -941,6 +941,35 @@ def whereis(*args):
         else:
             _writeError(arg+": task not found.")
 
+
+@handleRedirAndSaveKwds
+def taskinfo(*args):
+    '''
+    show information about task definitions
+
+    taskinfo [ pattern(s) ] 
+
+        pattern is a glob pattern describing the package or task
+        name that you are interested in.
+
+        The output is a hierarchical view of the task definitions
+        that match the input pattern.  Each line shows the task
+        name, the file name, pkgbinary and class.  
+
+        pkgbinary is a list of where you look for the file if it 
+        is not where you expect.
+
+        class is the type of task definition from iraftask.py
+
+        At this point, this is not exactly friendly for an end-user,
+        but an SE could use it or ask the user to run it and send in
+        the output.
+    '''
+
+    for x in args :
+        _iraftask.showtasklong( x )
+
+
 # -----------------------------------------------------
 # IRAF utility functions
 # -----------------------------------------------------
