@@ -42,7 +42,8 @@ from __future__ import division
 
 import numpy
 from types import *
-import os, sys, string, re, wutil, graphcap, iraf
+import os, sys, string, re
+import wutil, graphcap, iraf
 import fontdata
 from textattrib import *
 import irafgwcs

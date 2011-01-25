@@ -51,8 +51,9 @@ except Exception, e:
     urwid.Pile = FakeClass()
     urwid.the_error = str(e)
 
+import cStringIO
 # PyRAF modules
-import iraf, irafpar, irafhelp, iraftask, cStringIO, iraffunctions
+import iraf, irafpar, irafhelp, iraftask, iraffunctions
 
 TPAR_HELP_EMACS = """                                EDIT COMMANDS (emacs)
 

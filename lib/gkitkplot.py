@@ -6,9 +6,9 @@ $Id$
 
 from __future__ import division # confidence high
 
-import numpy, sys, string, wutil
+import numpy, sys, string
 import Tkinter
-import Ptkplot
+import wutil, Ptkplot
 import gki, gkitkbase, gkigcur, tkplottext, textattrib, irafgwcs
 
 TK_LINE_STYLE_PATTERNS = ['.','.','_','.','.._']

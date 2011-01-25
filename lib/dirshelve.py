@@ -14,7 +14,8 @@ R. White, 2000 Sept 26
 
 from __future__ import division # confidence high
 
-import dirdbm, shelve
+import shelve
+import dirdbm
 
 # tuple of errors that can be raised
 error = (dirdbm.error, )

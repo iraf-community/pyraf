@@ -55,7 +55,8 @@ def _writeError(msg):
 import sys, os, string, re, math, struct, types, time, fnmatch, glob, tempfile
 import linecache
 from pytools import minmatch, irafutils, teal
-import numpy, subproc, wutil
+import numpy
+import subproc, wutil
 import irafnames, irafinst, iraftask, irafpar, irafexecute, cl2py
 import iraf
 import gki
@@ -449,7 +450,9 @@ def restoreFromFile(savefile, doprint=1, **kw):
     # this does not replace references in parameters, unfortunately
     INDEF = dict['INDEF']
     from pytools import irafglobals
-    import __main__, pyraf, iraf, irafpar, cltoken
+    import __main__
+    import pyraf
+    import iraf, irafpar, cltoken
     for module in (__main__, pyraf, iraf, irafpar, irafglobals, cltoken):
         if hasattr(module,'INDEF'): module.INDEF = INDEF
 

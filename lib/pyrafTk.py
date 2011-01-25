@@ -6,7 +6,8 @@ R. L. White, 2000 November 17
 """
 from __future__ import division # confidence high
 
-import sys, Tkinter, wutil
+import sys, Tkinter
+import wutil
 
 class _PyrafTk(Tkinter.Tk):
 

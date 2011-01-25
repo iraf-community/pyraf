@@ -5,8 +5,8 @@ $Id$
 """
 from __future__ import division # confidence high
 
-import numpy, os, sys, string, wutil, time
-import Tkinter, msgiobuffer, msgiowidget
+import numpy, os, sys, string, time, Tkinter
+import msgiobuffer, msgiowidget, wutil
 from pytools import filedlg
 from pytools.irafglobals import IrafError, userWorkingHome
 import gki, textattrib, irafgwcs
