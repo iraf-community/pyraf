@@ -491,7 +491,8 @@ def parse(tokens, fname=None):
 
 if __name__ == '__main__':
 
-    import clscan, time
+    import time
+    import clscan
 
     t0 = time.time()
 

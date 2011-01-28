@@ -44,7 +44,8 @@ copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
 # with changes of the CL file contents when the script is
 # being developed.
 
-import dirshelve, stat, hashlib
+import dirshelve
+import stat, hashlib
 
 _versionKey = 'CACHE_VERSION'
 

@@ -4,7 +4,8 @@ $Id$
 """
 from __future__ import division # confidence high
 
-import string, filecache
+import string
+import filecache
 
 def merge(inlines):
     out = []
