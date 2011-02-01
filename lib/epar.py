@@ -12,7 +12,7 @@ if capable.OF_GRAPHICS:
     from tkMessageBox import askokcancel, showwarning, showerror
     import os, stat, sys, cStringIO
     from pytools import filedlg, listdlg, eparoption, editpar
-    import iraf, irafpar, irafhelp, wutil, pseteparoption
+    import iraf, irafpar, irafhelp, wutil
     from pyrafglobals import pyrafDir
 else:
     wutil = None
@@ -245,6 +245,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         """ Override to allow use of PsetEparOption.
             Return None or a class which derives from EparOption. """
         if paramTypeStr == "pset":
+            import pseteparoption
             return pseteparoption.PsetEparOption
         else:
             return None

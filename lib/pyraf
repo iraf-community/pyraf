@@ -77,7 +77,8 @@ if os.environ.has_key("PYTHONSTARTUP") and \
     execfile(os.environ["PYTHONSTARTUP"])
 
 # now we get into pyraf's __init__.py
-from pyraf import doCmdline, _use_ipython_shell, iraf, runCmd, __version__
+from pyraf import doCmdline, _use_ipython_shell, runCmd, __version__
+from pyraf import iraf
 from pyraf.irafpar import makeIrafPar
 from pytools.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
