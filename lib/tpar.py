@@ -17,17 +17,13 @@ from __future__ import division # confidence high
 
 import os, sys, string, commands, re
 
-# Fake out import of urwid if it fails to keep tpar from bringing down
+# Fake out import of urwid if it fails, to keep tpar from bringing down
 # all of PyRAF.
 class FakeModule:
-    def __new__(*args, **keys):
-        pass
     def __init__(*args, **keys):
         pass
 
 class FakeClass:
-    def __new__(*args, **keys):
-        pass
     def __init__(*args, **keys):
         pass
 

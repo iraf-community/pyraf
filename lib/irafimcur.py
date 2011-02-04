@@ -11,7 +11,7 @@ from __future__ import division # confidence high
 import sys,string
 from pytools import irafutils
 from pytools.irafglobals import Verbose, IrafError
-import irafdisplay, gki, gwm, iraf
+import irafdisplay, gwm, iraf
 
 # dictionary of devices to support multiple active displays
 _devices = {}
@@ -27,7 +27,7 @@ def _getDevice(displayname=None):
 
     # look up display info in graphcap
     try:
-        device = gki.getGraphcap()[displayname]
+        device = gwm.gki.getGraphcap()[displayname]
         dd = device['DD'].split(',')
         if len(dd)>1 and dd[1] != '':
             imtdev = 'fifo:%si:%so' % (dd[1],dd[1])

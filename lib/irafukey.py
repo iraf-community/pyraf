@@ -5,9 +5,8 @@ $Id$
 """
 from __future__ import division # confidence high
 
-import sys
+import os, string, sys
 import wutil
-import sys, os, string
 from pytools import irafutils
 
 try:

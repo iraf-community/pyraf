@@ -13,7 +13,7 @@ from __future__ import division
 
 import os, sys, copy, re
 from pytools import basicpar, minmatch, irafutils, irafglobals, taskpars
-import subproc, irafinst, iraf, irafpar, irafexecute, epar, tpar, cl2py
+import subproc, irafinst, iraf, irafpar, irafexecute, cl2py
 import fnmatch
 
 
@@ -57,7 +57,7 @@ _IrafTask_attr_dict = {
 # I don't see any particularly useful indexing, so it is just a plain
 # linear search.
 #
-all_task_definitions = [ ] 
+all_task_definitions = [ ]
 
 
 # use empty "tag" class from irafglobals as base class
@@ -623,6 +623,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         self.initTask(force=1)
         #XXX always runs on current par list, not running par list?
         if self._currentParList:
+            import epar
             epar.epar(self)
         else:
             sys.stderr.write("Task %s has no parameter file\n" % self._name)
@@ -633,6 +634,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         self.initTask(force=1)
         #XXX always runs on current par list, not running par list?
         if self._currentParList:
+            import tpar
             tpar.tpar(self)
         else:
             sys.stderr.write("Task %s has no parameter file\n" % self._name)

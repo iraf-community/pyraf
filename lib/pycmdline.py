@@ -188,7 +188,7 @@ class PyCmdLine(CmdConsole):
         self.do_complete(default=self.complete)
         # install special error handler for Tk tracebacks
         if capable.OF_GRAPHICS:
-            import pyrafTk
+            from pyraf import pyrafTk
             pyrafTk.setTkErrorHandler(self.showtraceback)
 
     def runsource(self, source, filename="<input>", symbol="single"):
@@ -480,4 +480,5 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             list[len(list):] = traceback.format_exception_only(type, value)
         finally:
             tbmod = tblist = tb = None
-        map(self.write, list)
+        for item in list:
+            self.write(item)

@@ -15,8 +15,7 @@ import pyrafglobals
 
 import copy_reg, marshal, types
 try:
-    import cPickle
-    pickle = cPickle
+    import cPickle as pickle
 except ImportError:
     import pickle
 
@@ -74,12 +73,16 @@ class _CodeCache:
         cacheList = []
         flist = []
         nwrite = 0
-        for file in cacheFileList:
-            db = self._cacheOpen(file)
-            if db is not None:
-                cacheList.append(db[0:2])
-                nwrite = nwrite+db[0]
-                flist.append(db[2])
+        if sys.version_info[0] > 2:
+            db = None
+            print("Warning: the CodeCache class is not yet ported to Py3K")
+        else:
+            for file in cacheFileList:
+                db = self._cacheOpen(file)
+                if db is not None:
+                    cacheList.append(db[0:2])
+                    nwrite = nwrite+db[0]
+                    flist.append(db[2])
         self.clFileDict = _FileContentsCache()
         self.cacheList = cacheList
         self.cacheFileList = flist
@@ -87,7 +90,7 @@ class _CodeCache:
         # flag indicating preference for system cache
         self.useSystem = 0
         if not cacheList:
-            self.warning("Unable to open any CL script cache, "
+            self.warning("Warning: unable to open any CL script cache, "
                     "performance will be slow")
         elif nwrite == 0:
             self.warning("Unable to open any CL script cache for writing")
