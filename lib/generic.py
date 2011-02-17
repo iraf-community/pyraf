@@ -305,10 +305,6 @@ class GenericParser:
 
         # optimize inner loops
         state_append = state.append
-        tree_has_key = tree.has_key
-        completed_has_key = completed.has_key
-        predicted_has_key = predicted.has_key
-        rules_has_key = self.rules.has_key
         tokenRules_get = self.tokenRules.get
         for item in state:
             rule, pos, parent = item
@@ -320,7 +316,7 @@ class GenericParser:
             if pos == len(rhs):
                 # track items completed within this rule
                 if parent == i:
-                    if completed_has_key(lhs):
+                    if lhs in completed:
                         completed[lhs].append((item,i))
                     else:
                         completed[lhs] = [(item,i)]
@@ -331,7 +327,7 @@ class GenericParser:
                     if prhs[ppos:ppos+1] == lhstuple:
                         new = (prule, ppos+1, pparent)
                         key = (new, i)
-                        if tree_has_key(key):
+                        if key in tree:
                             tree[key].append((item, i))
                         else:
                             state_append(new)
@@ -343,17 +339,17 @@ class GenericParser:
             #
             #  A -> a . B (predictor)
             #
-            if rules_has_key(nextSym):
-                if predicted_has_key(nextSym):
+            if nextSym in self.rules:
+                if nextSym in predicted:
                     #
                     # this was already predicted -- but if it was
                     # also completed entirely within this step, then
                     # need to add completed version here too
                     #
-                    if completed_has_key(nextSym):
+                    if nextSym in completed:
                         new = (rule, pos+1, parent)
                         key = (new, i)
-                        if tree_has_key(key):
+                        if key in tree:
                             tree[key].extend(completed[nextSym])
                         else:
                             state_append(new)
