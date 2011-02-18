@@ -262,8 +262,9 @@ class ErrorTracker:
     """Mixin class that does error tracking during AST traversal"""
 
     def _error_init(self):
-        self.errlist = []
-        self.warnlist = []
+        self.errlist = []  # list of 2-tuples
+        self.warnlist = [] # list of 2-tuples
+        self.comments = [] # list of strings
 
     def error(self, msg, node=None):
 
@@ -278,6 +279,13 @@ class ErrorTracker:
 
         if not hasattr(self, 'errlist'): self._error_init()
         self.warnlist.append((self.getlineno(node),"Warning: %s" % msg))
+
+    def comment(self, msg):
+
+        """Add comments to the list - to be helpful to the debugging soul"""
+
+        if not hasattr(self, 'errlist'): self._error_init()
+        self.comments.append(msg)
 
     def getlineno(self, node):
         # find terminal token that contains the line number
@@ -294,6 +302,7 @@ class ErrorTracker:
         if not hasattr(self, 'errlist'): self._error_init()
         self.errlist.extend(other.errlist)
         self.warnlist.extend(other.warnlist)
+        self.comments.extend(other.comments)
 
     def printerrors(self):
 
@@ -313,6 +322,8 @@ class ErrorTracker:
                     errmsg.append("%s (line %d)" % (msg, lineno))
                 else:
                     errmsg.append(msg)
+            for comment in self.comments:
+                errmsg.append(comment)
             raise SyntaxError("\n".join(errmsg))
         elif self.warnlist:
             self.warnlist.sort()
@@ -325,6 +336,8 @@ class ErrorTracker:
                     warnmsg.append("%s (line %d)" % (msg, lineno))
                 else:
                     warnmsg.append(msg)
+            for comment in self.comments:
+                errmsg.append(comment)
             warnmsg = "\n".join(warnmsg)
             sys.stdout.flush()
             sys.stderr.write(warnmsg)
@@ -1468,8 +1481,11 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.code_buffer.close()
         del self.code_buffer
 
-##         print "-"*50
-##         print self.code
+        if self.filename == 'string_proc':
+            self.comment('The code for "string_proc":')
+            self.comment('-'*80)
+            self.comment(self.code)
+            self.comment('-'*80)
         
         self.printerrors()
 
