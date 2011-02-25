@@ -1966,6 +1966,12 @@ def set(*args, **kw):
                 if keyword == "erract":
                     irafecl.erract.adjust(svalue)
                 else:
+                    # add keyword:svalue to the dict, but first check for '#'
+                    if svalue.find('#') > 0 and svalue.find("'") < 0 and \
+                       svalue.find('"') < 0:
+                        # this can happen when translating .cl scripts with
+                        # vars with sequential commented-out continuation lines
+                        svalue = svalue[0:svalue.find('#')]
                     _varDict[keyword] = svalue
                 msg.append("set %s=%s\n" % (keyword, svalue))
             _irafexecute.processCache.setenv("".join(msg))
