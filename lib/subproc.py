@@ -51,6 +51,28 @@ import errno, os, select, signal, string, subprocess, sys, time, types
 
 OS_HAS_FORK = hasattr(os, 'fork')
 
+def ascii_read(fd, sz):
+   """ Perform an os.read in a way that can handle both Python2 and Python3
+   IO.  Assume we are always piping only ASCII characters (since that is all
+   we have ever done with IRAF).  Either way, return the read data as a str.
+   """
+   if sys.version_info[0] > 2:
+       return os.read(fd, sz).decode('ascii')
+   else:
+       return os.read(fd, sz)
+
+
+def ascii_write(fd, bufstr):
+   """ Perform an os.write in a way that can handle both Python2 and Python3
+   IO.  Assume we are always piping only ASCII characters (since that is all
+   we have ever done with IRAF).  Either way, write the byte data to fd.
+   """
+   if sys.version_info[0] > 2:
+       return os.write(fd, bufstr.encode('ascii'))
+   else:
+       return os.write(fd, bufstr)
+
+
 try:
     class SubprocessError(Exception):
         pass
@@ -230,7 +252,7 @@ class Subprocess:
                 ## if totalwait: print "waiting for subprocess..."
                 totalwait = totalwait + printtime
                 if select.select([],self.toChild_fdlist,[],printtime)[1]:
-                    if os.write(self.toChild, strval) != len(strval):
+                    if ascii_write(self.toChild, strval) != len(strval):
                         raise SubprocessError("Write error to %s" % self)
                     return                                              # ===>
             raise SubprocessError("Write to %s blocked" % self)
@@ -562,7 +584,7 @@ class ReadBuf:
             self.eof = 1
             return ''
         if sel[0]:
-            self.buf = os.read(self.fd, self.chunkSize)
+            self.buf = ascii_read(self.fd, self.chunkSize)
             if self.buf:
                 return self.buf[0]                                      # ===>
             else:
@@ -588,7 +610,7 @@ class ReadBuf:
             self.eof = 1
             return ''
         if sel[0]:
-            self.buf = os.read(self.fd, self.chunkSize)
+            self.buf = ascii_read(self.fd, self.chunkSize)
             if self.buf:
                 got, self.buf = self.buf[0], self.buf[1:]
                 return got
@@ -620,7 +642,7 @@ class ReadBuf:
             self.eof = 1
             return ''
         if sel[0]:
-            got = os.read(self.fd, self.chunkSize)
+            got = ascii_read(self.fd, self.chunkSize)
             if got:
                 if max and (len(got) > max):
                     self.buf = got[max:]
@@ -668,7 +690,7 @@ class ReadBuf:
                 self.eof = 1
                 return got
             if sel[0]:
-                newgot = os.read(self.fd, self.chunkSize)
+                newgot = ascii_read(self.fd, self.chunkSize)
                 if newgot:
                     got = got + newgot
                     to = got.find('\n')
@@ -713,7 +735,7 @@ class ReadBuf:
                 self.eof = 1
                 return got
             if sel[0]:
-                newgot = os.read(self.fd, self.chunkSize)
+                newgot = ascii_read(self.fd, self.chunkSize)
                 if newgot:
                     got = got + newgot
                     if len(got) >= nchars:
