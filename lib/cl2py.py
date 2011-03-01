@@ -945,8 +945,8 @@ def _getCLVarType(name):
     global _CLVarDict
     try:
         if not _CLVarDict:
-            import iraf
-            d = iraf.cl.getParDict()
+            import pyraf.iraf
+            d = pyraf.iraf.cl.getParDict()
             # construct type dictionary for all variables
             # don't use minimum matching -- require exact match
             for pname, pobj in d.items():
