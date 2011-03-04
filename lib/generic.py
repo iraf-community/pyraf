@@ -508,7 +508,7 @@ class GenericASTBuilder(GenericParser):
 #  preorder traversal.
 #
 
-class GenericASTTraversalPruningException:
+class GenericASTTraversalPruningException(Exception):
     pass
 
 class GenericASTTraversal:

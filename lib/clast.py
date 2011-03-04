@@ -46,8 +46,11 @@ class AST:
         return self._kids[i]
     def __len__(self):
         return len(self._kids)
+    # __setslice__ is deprec.d, out in Py3; use __setitem__ instead
     def __setslice__(self, low, high, seq):
         self._kids[low:high] = seq
+    def __setitem__(self, idx, val):
+        self._kids[idx] = val
     def __cmp__(self, o):
         return cmp(self.type, o)
     def __repr__(self):
