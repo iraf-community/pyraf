@@ -935,7 +935,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         else:
             # first look in the task binary directories
             exelist = []
-            for pbin in self._pkgbinary:
+            for pbin in self._pkgbinary: # e.g. ['bin$']
                 try:
                     exelist.append(iraf.Expand(pbin + basename))
                 except iraf.IrafError, e:
