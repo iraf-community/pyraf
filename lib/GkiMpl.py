@@ -85,7 +85,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.__allowDrawing = False # like taskStart, but can't rely on that
         self.__savingDraws = 'PYRAF_ORIG_MPL_DRAWING' not in os.environ
         # eventually assume __savingDraws is always True and rm it from the code
-        self._forceNextFinalFlush = False
+        self._forceNextDraw = False
 #       self.__lastGkiCmds = (None, None, None) # unused for now
 
         self.colorManager = tkColorManager(self.irafGkiConfig)
@@ -205,7 +205,11 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
 
     def prePageSelect(self):
         """ Override this so as to redraw when needed """
-        self._forceNextFinalFlush = True # make sure flush at end of redraw!
+        self._forceNextDraw = True # make sure to flush at end of redraw!
+
+    def forceNextDraw(self):
+        """ Override this so as to force a redraw at the next opportunity """
+        self._forceNextDraw = True
 
     def taskStart(self, name):
         """ Because of redirection, this is not always called on the first plot
@@ -313,7 +317,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # we can avoid taking that hit until after gcur() is 1st called and
         # we are waiting on a human.  We *could* look into checking what the
         # actual incr/change was and see if it is worth redrawing.
-        if self.gwidget and (not self.__savingDraws or self.__allowDrawing):
+        if self.gwidget and \
+        (not self.__savingDraws or self.__allowDrawing or self._forceNextDraw):
             active = self.gwidget.isSWCursorActive()
             if active:
                 self.gwidget.deactivateSWCursor()
@@ -325,6 +330,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
             # keeps its own data cache and doesn't use the drawBuffer that way.
             if active:
                 self.gwidget.activateSWCursor()
+            # reset this no matter what
+            self._forceNextDraw = False
 
     # special methods that go into the function tables
 
@@ -378,7 +385,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
 
         # Note this explicitly (not for redrawing) since _plotAppend isn't used
 #       self._noteGkiCmd(self.gki_flush)
-            
+
 
     def gki_polyline(self, arg):
 
@@ -413,7 +420,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # While we are here and obviously getting drawing commands from the
         # task, set our draw-saving flag.  This covers the case of the
         # interactive task during a redraw from a user-typed 'r'.  That entire
-        # case goes: 1) no drawing during initial plot creation, 2) task is 
+        # case goes: 1) no drawing during initial plot creation, 2) task is
         # done giving us gki commands when gcur() seen, so drawing is allowed
         # 3) user types 'r' or similar to cause a redraw so this turns off
         # drawing again (to speed it up) until the next gcur() is seen.
@@ -659,17 +666,15 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         preparations.
         """
         # Argument o is not needed because we only get redraw
-        # events for our own gwidget.  
+        # events for our own gwidget.
         #
         # DESIGN NOTE:  Make sure this is not getting called for window
         # resizes!  Using the drawBuffer is too slow and unnecessary.  Resizes
         # should only be hooking into resizeGraphics() for performance sake.
 
-        # Handle hook made for page menu selections
-        frc = False
-        if self._forceNextFinalFlush:
-            frc = True
-            self._forceNextFinalFlush = False
+        # See if we need to force the flush (of course wait until the end)
+        frc = self._forceNextDraw
+        self._forceNextDraw = False
 
         # Clear the screen
         self.clearMplData()
