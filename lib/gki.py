@@ -561,7 +561,8 @@ class GkiKernel:
 
     def translate(self, gkiMetacode, redraw=0):
         # Note, during the perf. testing of #122 it was noticed that this
-        # doesn't seem to get called - look into.
+        # doesn't seem to get called; should be by self.append/undoN/redoN
+        # (looks to be hidden in subclasses, by GkiInteractiveTkBase.translate)
         gkiTranslate(gkiMetacode, self.functionTable)
 
     def errorMessage(self, text):
