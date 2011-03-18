@@ -697,6 +697,13 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         self.gwidget = None
         self.top.after_idle(self.manager.delete, self.windowName)
 
+    def forceNextDraw(self):
+        """ This is a hook meant to be overridden.  In general, if this is
+        called, it means that the caller knows that the very next draw should
+        surely be done (not skipped, e.g. for performance sake).  This will
+        only be useful to subclasses which are sparing with graphics draws. """
+        pass
+
     # -----------------------------------------------
     # the following methods implement the FocusEntity interface
     # used by wutil.FocusController

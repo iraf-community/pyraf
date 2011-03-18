@@ -222,6 +222,8 @@ class Gcursor:
             elif key == 'T':
                 textString = self.readString(prompt="Annotation string: ")
                 metacode = gkicmd.text(textString,x,y)
+                self.window.forceNextDraw() # we can afford a perf hit here,
+                                            # a human just typed in text
                 self.appendMetacode(metacode)
             elif key == 'U':
                 self.window.undoN()
