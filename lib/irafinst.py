@@ -257,3 +257,14 @@ def getIrafVer():
     # get the 'release' par and then get it's value
     release = [p.value for p in plist if p.name == 'release']
     return release[0] # only 1 item in list
+
+def getIrafVerTup():
+    """ Return current IRAF version as a tuple (ints until last item) """
+    verlist = getIrafVer().split('.')
+    outlist = []
+    for v in verlist:
+        if v.isdigit():
+            outlist.append(int(v))
+        else:
+            outlist.append(v)
+    return tuple(outlist)

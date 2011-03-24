@@ -11,15 +11,34 @@ from __future__ import division # confidence high
 
 import struct, numpy, math
 from pytools.irafglobals import IrafError
+import irafinst
 
 WCS_SLOTS = 16
-WCS_RECORD_SIZE = 22  # (in 2 byte integers)
+WCS_RECORD_SIZE = 0
 LINEAR = 0
 LOG = 1
 ELOG = 2
 DEFINED = 1
 CLIP = 2 # needed for this?
 NEWFORMAT = 4
+
+
+def init_wcs_sizes():
+    """ Make sure WCS_RECORD_SIZE has been defined correctly """
+    global WCS_RECORD_SIZE
+    # WCS_RECORD_SIZE is 24 in v2.15, but was 22 in prior versions.
+    # It counts in 2 byte integers, ie. it was 11 shorts when it was size=22.
+    # Either way however, there are still only 11 pieces of information - in
+    # the case of size=24, it is padded by/in IRAF.
+    if WCS_RECORD_SIZE != 0:
+        return # been here already
+
+    # Define WCS_RECORD_SIZE, need to get IRAF ver
+    vertup = irafinst.getIrafVerTup()
+    WCS_RECORD_SIZE = 22
+    if vertup[0] > 2 or vertup[1] > 14:
+        WCS_RECORD_SIZE = 24
+
 
 def elog(x):
     """Extended range log scale. Handles negative and positive values.
@@ -60,40 +79,51 @@ class IrafGWcs:
 
     def set(self, arg=None):
         """Set wcs from metacode stream"""
+        init_wcs_sizes()
         if arg is None:
             # commit immediately if arg=None
             self.wcs = _setWCSDefault()
             self.pending = None
-            #print "Default WCS set for plotting window. Plot may not display properly."
+            # print "Default WCS set for plotting window."
             return
         wcsStruct = arg[1:].astype(numpy.int16)
         if arg[0] != len(wcsStruct):
-            raise IrafError("Inconsistency in length of WCS graphics structure")
+            raise IrafError("Inconsistency in length of WCS graphics struct: "+\
+                            str(arg[0]))
+        if len(wcsStruct) != WCS_RECORD_SIZE*WCS_SLOTS:
+            raise IrafError("Unexpected length of WCS graphics struct: "+\
+                            str(len(wcsStruct)))
         self.pending = [None]*WCS_SLOTS
         for i in xrange(WCS_SLOTS):
             record = wcsStruct[WCS_RECORD_SIZE*i:WCS_RECORD_SIZE*(i+1)]
-            # read 8 4 byte floats from beginning of record
+            # read 8 4-byte floats from beginning of record
             fvals = numpy.fromstring(record[:8*2].tostring(),numpy.float32)
-            # read 3 4 byte ints after that
-            ivals = numpy.fromstring(record[8*2:].tostring(),numpy.int32)
+            # read 3 4-byte ints after that
+            ivals = numpy.fromstring(record[8*2:11*2].tostring(),numpy.int32)
             self.pending[i] = tuple(fvals) + tuple(ivals)
+            if len(self.pending[i]) != 11:
+                raise IrafError("Unexpected WCS struct record length")
         if self.wcs is None:
             self.commit()
 
     def pack(self):
-
         """Return the WCS in the original IRAF format"""
-
+        init_wcs_sizes()
         self.commit()
-        wcsStruct = numpy.zeros(WCS_RECORD_SIZE * WCS_SLOTS, numpy.int16)
+        wcsStruct = numpy.zeros(WCS_RECORD_SIZE*WCS_SLOTS, numpy.int16)
+        pad = '\x00\x00\x00\x00'
         for i in xrange(WCS_SLOTS):
             x = self.wcs[i]
             farr = numpy.array(x[:8],numpy.float32)
-            iarr = numpy.array(x[8:],numpy.int32)
-            wcsStruct[WCS_RECORD_SIZE*i:
-                      WCS_RECORD_SIZE*(i+1)] = \
-                      numpy.fromstring(farr.tostring() + iarr.tostring(),
-                                                             numpy.int16)
+            iarr = numpy.array(x[8:11],numpy.int32)
+            if len(farr)+len(iarr) == (WCS_RECORD_SIZE//2):
+               pad=''
+            # Pack the wcsStruct - this will throw "ValueError: shape mismatch"
+            # if the padding doesn't bring the size out to exactly the
+            # correct length (WCS_RECORD_SIZE)
+            wcsStruct[WCS_RECORD_SIZE*i:WCS_RECORD_SIZE*(i+1)] = \
+                      numpy.fromstring(farr.tostring()+iarr.tostring()+pad,\
+                                       numpy.int16)
         return wcsStruct.tostring()
 
 
