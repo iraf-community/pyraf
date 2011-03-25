@@ -13,6 +13,7 @@ import struct, numpy, math
 from pytools.irafglobals import IrafError
 import irafinst
 
+IRAF64BIT = False
 WCS_SLOTS = 16
 WCS_RECORD_SIZE = 0
 LINEAR = 0
@@ -23,15 +24,22 @@ CLIP = 2 # needed for this?
 NEWFORMAT = 4
 
 
-def init_wcs_sizes():
+def init_wcs_sizes(forceResetAs64 = False):
     """ Make sure WCS_RECORD_SIZE has been defined correctly """
-    global WCS_RECORD_SIZE
+    global WCS_RECORD_SIZE, IRAF64BIT
     # WCS_RECORD_SIZE is 24 in v2.15, but was 22 in prior versions.
     # It counts in 2 byte integers, ie. it was 11 shorts when it was size=22.
     # Either way however, there are still only 11 pieces of information - in
     # the case of size=24, it is padded by/in IRAF.
-    if WCS_RECORD_SIZE != 0:
+    if WCS_RECORD_SIZE != 0 and not forceResetAs64:
         return # been here already
+
+    # 64-bit IRAF tasks?
+    if forceResetAs64: # thus this func can be called twice in one run
+        IRAF64BIT = True
+        # no need to check ver here, we know it must be v2.15 or higher
+        WCS_RECORD_SIZE = 48
+        return
 
     # Define WCS_RECORD_SIZE, need to get IRAF ver
     vertup = irafinst.getIrafVerTup()
@@ -86,23 +94,51 @@ class IrafGWcs:
             self.pending = None
             # print "Default WCS set for plotting window."
             return
+
+        # Even in v2.14, arg[] elements are of type int64, but here we cast to
+        # int16 and assume we lose no data
         wcsStruct = arg[1:].astype(numpy.int16)
+
+        # See if we are being called by a 64-bit IRAF (disable this code if
+        # we somehow get a faster/better/smarter way to check IRAF's
+        # 64-bit-ness while inside of irafinst...)
+        if arg[0] == WCS_RECORD_SIZE*WCS_SLOTS*2:
+            init_wcs_sizes(forceResetAs64=True)
+
+        # Check that eveything is sized as expected
         if arg[0] != len(wcsStruct):
             raise IrafError("Inconsistency in length of WCS graphics struct: "+\
                             str(arg[0]))
         if len(wcsStruct) != WCS_RECORD_SIZE*WCS_SLOTS:
             raise IrafError("Unexpected length of WCS graphics struct: "+\
                             str(len(wcsStruct)))
+
+        # Read through the input to populate self.pending
+        SZ = 2
+        if IRAF64BIT: SZ = 4
         self.pending = [None]*WCS_SLOTS
         for i in xrange(WCS_SLOTS):
             record = wcsStruct[WCS_RECORD_SIZE*i:WCS_RECORD_SIZE*(i+1)]
             # read 8 4-byte floats from beginning of record
-            fvals = numpy.fromstring(record[:8*2].tostring(),numpy.float32)
+            fvals = numpy.fromstring(record[:8*SZ].tostring(),numpy.float32)
+            if IRAF64BIT:
+                # seems to send an extra 0-valued int32 after each 4 bytes
+                fvalsView = fvals.reshape(-1,2).transpose()
+                if fvalsView[1].sum() != 0:
+                    raise IrafError("Assumed WCS float padding is non-zero")
+                fvals = fvalsView[0]
             # read 3 4-byte ints after that
-            ivals = numpy.fromstring(record[8*2:11*2].tostring(),numpy.int32)
+            ivals = numpy.fromstring(record[8*SZ:11*SZ].tostring(),numpy.int32)
+            if IRAF64BIT:
+                # seems to send an extra 0-valued int32 after each 4 bytes
+                ivalsView = ivals.reshape(-1,2).transpose()
+                if ivalsView[1].sum() != 0:
+                    raise IrafError("Assumed WCS int padding is non-zero")
+                ivals = ivalsView[0]
             self.pending[i] = tuple(fvals) + tuple(ivals)
             if len(self.pending[i]) != 11:
-                raise IrafError("Unexpected WCS struct record length")
+                raise IrafError("Unexpected WCS struct record length: "+\
+                                str(len(self.pending[i])))
         if self.wcs is None:
             self.commit()
 
@@ -112,12 +148,30 @@ class IrafGWcs:
         self.commit()
         wcsStruct = numpy.zeros(WCS_RECORD_SIZE*WCS_SLOTS, numpy.int16)
         pad = '\x00\x00\x00\x00'
+        if IRAF64BIT:
+            pad = '\x00\x00\x00\x00\x00\x00\x00\x00'
         for i in xrange(WCS_SLOTS):
             x = self.wcs[i]
             farr = numpy.array(x[:8],numpy.float32)
             iarr = numpy.array(x[8:11],numpy.int32)
+            if IRAF64BIT:
+                # see notes in set(); adding 0-padding after every data point
+                lenf = len(farr) # should be 8
+                farr_rs = farr.reshape(lenf,1) # turn array into single column
+                farr = numpy.append(farr_rs,
+                                    numpy.zeros((lenf,1), numpy.float32),
+                                    axis=1)
+                farr = farr.flatten()
+                leni = len(iarr) # should be 3
+                iarr_rs = iarr.reshape(leni,1) # turn array into single column
+                iarr = numpy.append(iarr_rs,
+                                    numpy.zeros((leni,1), numpy.int32),
+                                    axis=1)
+                iarr = iarr.flatten()
+            # end-pad?
             if len(farr)+len(iarr) == (WCS_RECORD_SIZE//2):
-               pad=''
+               pad='' # for IRAF 2.14 or prior; all new vers need the end-pad
+
             # Pack the wcsStruct - this will throw "ValueError: shape mismatch"
             # if the padding doesn't bring the size out to exactly the
             # correct length (WCS_RECORD_SIZE)
