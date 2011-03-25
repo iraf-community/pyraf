@@ -3,7 +3,8 @@ is not present.  This is NOT a replacement for any major parts of IRAF.
 For now, in general, we assume that IRAF exists until we are told otherwise.
 
 Obviously, this module should refrain as much as possible from importing any
-IRAF related code, since this is heavily relied upon in non-IRAF situations.
+IRAF related code (at least globally), since this is heavily relied upon in
+non-IRAF situations.
 
 $Id$
 """
@@ -96,7 +97,7 @@ line,struct,h,,,,line
 version,s,h,"12-Nov-83"
 mode,s,h,ql
 """
-    
+
     else:
         # For now that's it - this must be a file we don't handle
         raise RuntimeError('Unexpected .par file: '+fname)
@@ -126,7 +127,7 @@ def getNoIrafClFor(fname, useTmpFile=False):
     # First call ourselves to get the text if we need to write it to a tmp file
     if useTmpFile:
         return _writeTmpFile(fname, getNoIrafClFor(fname, useTmpFile=False))
-        
+
     # bare-bones clpackage.cl
     if fname == 'clpackage.cl':
         return """
@@ -246,3 +247,24 @@ keep
 
     # For now that's it - this must be a file we don't handle
     raise RuntimeError('Unexpected .cl file: '+fname)
+
+def getIrafVer():
+    """ Return current IRAF version as a string """
+    import iraffunctions
+    cltask = iraffunctions.getTask('cl')
+    # must use default par list, in case they have a local override
+    plist = cltask.getDefaultParList()
+    # get the 'release' par and then get it's value
+    release = [p.value for p in plist if p.name == 'release']
+    return release[0] # only 1 item in list
+
+def getIrafVerTup():
+    """ Return current IRAF version as a tuple (ints until last item) """
+    verlist = getIrafVer().split('.')
+    outlist = []
+    for v in verlist:
+        if v.isdigit():
+            outlist.append(int(v))
+        else:
+            outlist.append(v)
+    return tuple(outlist)
