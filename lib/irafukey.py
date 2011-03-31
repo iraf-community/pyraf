@@ -7,7 +7,7 @@ from __future__ import division # confidence high
 
 import os, string, sys
 import wutil
-from pytools import irafutils
+from pytools import capable, irafutils
 
 try:
     import termios
@@ -43,7 +43,10 @@ def getSingleTTYChar():
     try:
         # allow Tk mainloop to run while waiting...
         # vanilla version would be c = os.read(fd, 1)
-        c = irafutils.tkread(fd, 1)
+        if capable.OF_GRAPHICS:
+            c = irafutils.tkread(fd, 1)
+        else:
+            c = os.read(fd, 1)
     finally:
         termios.tcsetattr(fd, TERMIOS.TCSAFLUSH, old)
         return c
