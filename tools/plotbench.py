@@ -20,7 +20,7 @@ CASES=(None, 'point', 'box', 'plus', 'cross', 'circle')
 
 
 def manyPoints(task, pkind):
-   """ Plot a bunch of point, return the time it took (s). """
+   """ Plot a bunch of points, return the time it took (s). """
 
    assert task in ('prow','graph','surface','contour'), \
           "Unexpected task: "+str(task)
