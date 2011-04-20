@@ -3024,7 +3024,7 @@ def clExecute(s, locals=None, mode="proc",
         taskname = "CL%s" % (_clExecuteCount,)
         scriptname = "<CL script %s>" % (taskname,)
         code = pycode.code.lstrip() #XXX needed?
-        codeObject = compile(code,scriptname,'exec')
+        codeObject = compile(code,scriptname,'exec',0,1)
         # add this script to linecache
         codeLines = code.split('\n')
         _linecache.cache[scriptname] = (0,0,codeLines,taskname)

@@ -1363,7 +1363,7 @@ class IrafCLTask(IrafTask):
             else:
                 # null pkgname -- just use task in name
                 scriptname = '<CL script %s>' % self._name
-            self._codeObject = compile(self._pycode.code, scriptname, 'exec')
+            self._codeObject = compile(self._pycode.code,scriptname,'exec',0,1)
 
         if self._clFunction is None:
             # Execute the code to define the Python function in clDict
