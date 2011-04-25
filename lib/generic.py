@@ -544,7 +544,12 @@ class GenericASTTraversal:
             return
 
         for kid in node:
-            self.preorder(kid)
+#          if kid.type=='term' and len(kid._kids)==3 and kid._kids[1].type=='/':
+#              # Not the place to check for integer divsion - the type is
+#              # either INTEGER or IDENT (and we dont know yet what the
+#              # underlying type of the IDENT is...)
+#              print(kid._kids[0].type, kid._kids[1].type, kid._kids[2].type)
+           self.preorder(kid)
 
         func = self.exitrules.get(name)
         if func is not None:

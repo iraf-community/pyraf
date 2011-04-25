@@ -1037,6 +1037,10 @@ class TypeCheck(GenericASTTraversal):
         assert len(node)==3
         node.exprType = _arithType(node[0], node[2])
         node.requireType = node.exprType
+        if node[0].exprType=='int' and node[2].exprType=='int' and \
+           node[1].type=='/':
+            # mark this node, we want it to use integer division (truncating)
+            node[1].trunc_int_div = True # only place we add this attr
 
     def n_concat_expr(self, node):
         assert len(node)==3
@@ -1486,7 +1490,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.comment('-'*80)
             self.comment(self.code)
             self.comment('-'*80)
-        
+
         self.printerrors()
 
 
@@ -1539,9 +1543,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.column = 0
 
     def writeIndent(self, value=None):
-        
+
         """Write newline and indent"""
-        
         self.write("\n")
         for i in range(self.indent):
             self.write("\t")
@@ -1551,7 +1554,6 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
     def writeProcHeader(self):
 
         """Write function definition and other header info"""
-
         # save printPass flag -- if it is set, the body of
         # the procedure is currently empty and so 'pass' may be added
         printPass = self.printPass[1]
@@ -1730,7 +1732,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             # other code generation as well.  Vars does all the type
             # conversions and applies constraints.
             #XXX Note we are not doing minimum match on parameter names
-            
+
             self.write('Vars.'+s, node.requireType, node.exprType)
         elif '.' in s:
 
@@ -1865,7 +1867,10 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
                 self.write(" ")
             elif _bothSpaceList.has_key(node.type):
                 self.write(" ")
-                self.write(`node`, requireType, exprType)
+                if hasattr(node, 'trunc_int_div'):
+                    self.write('//', requireType, exprType)
+                else:
+                    self.write(`node`, requireType, exprType)
                 self.write(" ")
             else:
                 self.write(`node`, requireType, exprType)
@@ -1880,7 +1885,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
     def n_term(self, node):
         if pyrafglobals._use_ecl and node[1] in ['/','%']:
-            kind = {"/" : "divide", "%":"modulo"}[node[1]]
+            kind = {"/":"divide", "%":"modulo"}[node[1]]
             self.write("taskObj._ecl_safe_%s(" % kind)
             self.preorder(node[0])
             self.write(",")
@@ -1889,7 +1894,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.prune()
         else:
             self.default(node)
-            
+
     #------------------------------
     # block indentation control
     #------------------------------
@@ -1930,7 +1935,6 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 ##             else:
             self._ecl_clline = FindLineNumber(node).lineno
             self.writeIndent()
-                             
 
     #------------------------------
     # statements
@@ -1976,7 +1980,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # iferr_stmt    ::= if_kind guarded_stmt opt_newline THEN except_action
         # iferr_stmt    ::= if_kind guarded_stmt opt_newline THEN except_action opt_newline ELSE else_action
         # if_kind ::= IFERR
-        # if_kind ::= IFNOERR                
+        # if_kind ::= IFNOERR
         # guarded_stmt  ::=  { opt_newline statement_list }
         # except_action ::= compound_stmt
         # else_action   ::= compound_stmt
@@ -1989,32 +1993,28 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         if ifkind.type == "IFNOERR":
             except_action, else_action = else_action, except_action
 
-        self.writeIndent("taskObj._ecl_push_err()\n")        
+        self.writeIndent("taskObj._ecl_push_err()\n")
 
         self._ecl_iferr_entered += 1
         self.preorder(guarded_stmt)
         self._ecl_iferr_entered -= 1
-        
-        self.write("\n")        
+
+        self.write("\n")
         self.writeIndent("if taskObj._ecl_pop_err()")
-        
+
         self.preorder(except_action)
         if else_action:
             self.writeIndent("else")
             self.preorder(else_action)
         self.prune()
 
-##         self.writeIndent("try:")        
+##         self.writeIndent("try:")
 ##         self.incrIndent()
-        
 ##         self._ecl_iferr_entered += 1
 ##         self.preorder(guarded_stmt)
 ##         self._ecl_iferr_entered -= 1
-
 ##         self.decrIndent()
-        
 ##         self.writeIndent("except")
-        
 ##         self.preorder(except_action)
 ##         if else_action:
 ##             self.writeIndent("else")
@@ -2361,7 +2361,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.write(redir + '=')
         self.preorder(node[1])
         self.prune()
-        
+
     def n_keyword_arg(self, node):
         # This is needed to handle cursor parameters, which should
         # be passed as objects rather than by value.
