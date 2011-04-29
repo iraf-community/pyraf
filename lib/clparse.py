@@ -69,7 +69,7 @@ class CLStrictParser(GenericASTBuilder):
 
 
     def parse(self, tokens, fname=None):
-        """ Override this, only so we can add the optional fname arg. 
+        """ Override this, only so we can add the optional fname arg.
             Delegate all parse logic to parent. """
         self._currentFname = fname
         return GenericASTBuilder.parse(self, tokens)
@@ -364,7 +364,7 @@ class EclParser(CLParser):
                 iferr_stmt    ::= if_kind guarded_stmt opt_newline THEN except_action
                 iferr_stmt    ::= if_kind guarded_stmt opt_newline THEN except_action opt_newline ELSE else_action
                 if_kind ::= IFERR
-                if_kind ::= IFNOERR                
+                if_kind ::= IFNOERR
                 guarded_stmt  ::=  { opt_newline statement_list }
                 except_action ::= compound_stmt
                 else_action   ::= compound_stmt
