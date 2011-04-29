@@ -2217,7 +2217,8 @@ def unlearn(*args):
                 else:
                     _writeError('Error: multiple user-owned files found to'+ \
                                 ' "unlearn" for task '+taskname+ \
-                                '\nNone were deleted:\n'+str(flist))
+                                '\nNone were deleted.  Please review and '+ \
+                                'move/delete these files:\n'+str(flist))
             except _teal.cfgpars.NoCfgFileError:
                 _writeError("Warning: Could not find task %s to unlearn" %
                             taskname)
