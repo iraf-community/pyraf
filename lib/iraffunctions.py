@@ -2201,9 +2201,15 @@ def update(*args):
             _writeError("Warning: Could not find task %s for update" %
                     taskname)
 
-@handleRedirAndSaveKwds
-def unlearn(*args):
+@handleRedirAndSaveKwdsPlus
+def unlearn(*args, **kw):
     """Unlearn task parameters -- restore to defaults"""
+    force = False
+    if 'force' in kw:
+        force = kw['force'] in (True, '+', 'yes')
+        del kw['force']
+    if len(kw):
+        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
     for taskname in args:
         try: # maybe it is an IRAF task name
             getTask(taskname).unlearn()
@@ -2215,10 +2221,16 @@ def unlearn(*args):
                 elif len(flist) == 1:
                     _os.remove(flist[0]) # don't be chatty here either
                 else:
-                    _writeError('Error: multiple user-owned files found to'+ \
-                                ' "unlearn" for task '+taskname+ \
-                                '\nNone were deleted.  Please review and '+ \
-                                'move/delete these files:\n'+str(flist))
+                    if force:
+                        for f in flist:
+                            _os.remove(f) # don't be chatty
+                    else:
+                        _writeError('Error: multiple user-owned files found'+ \
+                            ' to unlearn for task "'+taskname+ \
+                            '".\nNone were deleted.  Please review and move/'+ \
+                            'delete these files:\n\t'+\
+                            '\n\t'.join(flist)+ \
+                            '\n\nor type "unlearn '+taskname+' force=yes"')
             except _teal.cfgpars.NoCfgFileError:
                 _writeError("Warning: Could not find task %s to unlearn" %
                             taskname)
