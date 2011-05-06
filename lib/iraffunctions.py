@@ -2144,6 +2144,8 @@ def eparam(*args):
                 except _teal.cfgpars.NoCfgFileError:
                     _writeError("Warning: Could not find task %s for epar\n" %
                             taskname)
+                except RuntimeError, re:
+                    _writeError(str(re).replace('\n\n','\n'))
 
 @handleRedirAndSaveKwds
 def tparam(*args):
