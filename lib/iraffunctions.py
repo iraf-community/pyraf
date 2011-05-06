@@ -2238,7 +2238,7 @@ def unlearn(*args, **kw):
 
 @handleRedirAndSaveKwdsPlus
 def teal(taskArg, **kw):
-    """ Open the TEAL GUI but keep login in eparam. There is no return dict."""
+    """ Open the TEAL GUI but keep logic in eparam. There is no return dict."""
     eparam(taskArg, **kw)
 
 @handleRedirAndSaveKwds
