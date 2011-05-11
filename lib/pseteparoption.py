@@ -1,5 +1,5 @@
 """pseteparoption.py: module for defining the specific parameter display
-   options to be used for PSETs in the parameter editor task.  Code was 
+   options to be used for PSETs in the parameter editor task.  Code was
    broken out from eparoption.py.
 
 $Id$
