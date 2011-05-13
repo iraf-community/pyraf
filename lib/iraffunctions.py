@@ -2140,10 +2140,10 @@ def eparam(*args):
                 getTask(taskname).eParam()
             except (KeyError, TypeError):
                 try: # maybe it is a task which uses .cfg files
-                    _teal.teal(taskname, returnDict=False)
+                    # use simple-auto-close mode (like EPAR) by no return dict
+                    _teal.teal(taskname, returnDict=False, errorsToTerm=True)
                 except _teal.cfgpars.NoCfgFileError:
-                    _writeError("Warning: Could not find task %s for epar\n" %
-                            taskname)
+                    _writeError('Warning: Could not find task "'+taskname+'"')
 
 @handleRedirAndSaveKwds
 def tparam(*args):
@@ -2238,12 +2238,8 @@ def unlearn(*args, **kw):
 
 @handleRedirAndSaveKwdsPlus
 def teal(taskArg, **kw):
-    """ Call the TEAL GUI but use simple-auto-close mode (like EPAR) by setting
-    returnDict=False.  This call will return nothing. """
-    try:
-        _teal.teal(taskArg, returnDict=False, **kw)
-    except _teal.cfgpars.NoCfgFileError:
-        _writeError("Warning: Could not find task "+taskArg+" for teal\n")
+    """ Open the TEAL GUI but keep logic in eparam. There is no return dict."""
+    eparam(taskArg, **kw)
 
 @handleRedirAndSaveKwds
 def edit(*args):
