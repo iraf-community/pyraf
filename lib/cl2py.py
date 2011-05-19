@@ -109,8 +109,8 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
         if usecache:
             index, pycode = codeCache.get(None,mode=mode,source=clInput)
             if pycode is not None:
-                if Verbose>1:
-                    print "Found in CL script cache: ",clInput.strip()[:20]
+#               if Verbose>1:
+#                   print "Found in CL script cache: ",clInput.strip()[:20]
                 return pycode
         else:
             index = None
