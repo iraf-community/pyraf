@@ -273,8 +273,44 @@ class _CodeCache:
             self.warning("Did not find %s in CL script cache" % filename, 2)
 
 
-# create code cache
+# simple class to mimic pycode, for unittest (save us from importing others)
+class DummyCodeObj:
+    def setFilename(self, f):
+        self.filename = f
+    def __str__(self):
+        if hasattr(self, 'code'):
+            return '<DummyCodeObj: file='+self.filename+', code='+self.code+'>'
+        else:
+            return '<DummyCodeObj: file='+self.filename+'>'
 
+
+def unittest():
+    """ Just run through the paces """
+    global codeCache
+    import os
+
+    print('Starting codeCache is: '+str(codeCache.cacheList))
+    print('keys = '+str(codeCache.clFileDict.keys()))
+
+    for fname in ('clcache.py', 'filecache.py'):
+        # lets cache this file
+        print('\ncaching: '+fname)
+        idx = codeCache.getIndex(fname)
+        pc = DummyCodeObj()
+        pc.code = 'print(123)'
+        print('fname:', fname, ', idx:', idx)
+        codeCache.add(idx, pc) # goes in here
+        codeCache.add(idx, pc) # NOT duplicated here
+        codeCache.add(idx, pc) # or here
+        print('And now, codeCache is: '+str(codeCache.cacheList))
+        print('keys = '+str(codeCache.clFileDict.keys()))
+        # try to get it out
+        newidx, newpycode = codeCache.get(fname)
+        assert newidx==idx, 'ERROR: was'+str(idx)+', but now is: '+str(newidx)
+        print('The -get- gave us: '+str(newpycode))
+
+
+# create code cache
 userCacheDir = os.path.join(userIrafHome,'pyraf')
 if not os.path.exists(userCacheDir):
     try:
