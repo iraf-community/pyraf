@@ -326,3 +326,6 @@ codeCache = _CodeCache([
         os.path.join(pyrafglobals.pyrafDir,dbfile),
         ])
 del userCacheDir, dbfile
+
+if __name__ == '__main__':
+    unittest()
