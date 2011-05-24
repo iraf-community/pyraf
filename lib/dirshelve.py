@@ -15,7 +15,10 @@ R. White, 2000 Sept 26
 from __future__ import division # confidence high
 
 import shelve
-import dirdbm
+if __name__.find('.') < 0: # for unit test
+   import dirdbm # revert to simple import after 2to3
+else:
+   import dirdbm
 
 # tuple of errors that can be raised
 error = (dirdbm.error, )
