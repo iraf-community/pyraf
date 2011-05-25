@@ -79,16 +79,12 @@ class _CodeCache:
         cacheList = []
         flist = []
         nwrite = 0
-        if sys.version_info[0] > 2:
-            db = None
-            print("Warning: the CodeCache class is not yet ported to Py3K")
-        else:
-            for file in cacheFileList:
-                db = self._cacheOpen(file)
-                if db is not None:
-                    cacheList.append(db[0:2])
-                    nwrite = nwrite+db[0]
-                    flist.append(db[2])
+        for file in cacheFileList:
+            db = self._cacheOpen(file)
+            if db is not None:
+                cacheList.append(db[0:2])
+                nwrite = nwrite+db[0]
+                flist.append(db[2])
         self.clFileDict = _FileContentsCache()
         self.cacheList = cacheList
         self.cacheFileList = flist
@@ -191,7 +187,6 @@ class _CodeCache:
         self.close()
 
     def getIndex(self, filename, source=None):
-
         """Get cache key for a file or filehandle"""
 
         if filename:
@@ -199,11 +194,15 @@ class _CodeCache:
         elif source:
             # there is no filename, but return md5 digest of source as key
             h = hashlib.md5()
-            h.update(source)
-            return h.digest()
+
+            if sys.version_info[0] > 2: # unicode must be encoded to be hashed
+                h.update(source.encode('utf-8'))
+                return h.hexdigest()
+            else:
+                h.update(source)
+                return h.digest()
 
     def add(self, index, pycode):
-
         """Add pycode to cache with key = index.  Ignores if index=None."""
 
         if index is None or self.nwrite==0: return
@@ -279,7 +278,7 @@ class _CodeCache:
             self.warning("Did not find %s in CL script cache" % filename, 2)
 
 
-# simple class to mimic pycode, for unittest (save us from importing others)
+# simple class to mimic pycode, for unit test (save us from importing others)
 class DummyCodeObj:
     def setFilename(self, f):
         self.filename = f
@@ -290,7 +289,7 @@ class DummyCodeObj:
             return '<DummyCodeObj: file='+self.filename+'>'
 
 
-def unittest():
+def test():
     """ Just run through the paces """
     global codeCache
     import os
@@ -334,4 +333,4 @@ codeCache = _CodeCache([
 del userCacheDir, dbfile
 
 if __name__ == '__main__':
-    unittest()
+    test()

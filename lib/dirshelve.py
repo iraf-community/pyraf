@@ -14,7 +14,7 @@ R. White, 2000 Sept 26
 
 from __future__ import division # confidence high
 
-import shelve
+import shelve, sys
 if __name__.find('.') < 0: # for unit test
    import dirdbm # revert to simple import after 2to3
 else:
@@ -62,8 +62,13 @@ class DirectoryShelf(Shelf):
 
 def open(filename, flag='c'):
     """Open a persistent dictionary for reading and writing.
-
     Argument is the filename for the dirdbm database.
+    Start using builtin shelve.DbfilenameShelf class as of Python 3.
     """
 
-    return DirectoryShelf(filename, flag)
+    if sys.version_info[0] > 2:
+       if flag == 'w':
+          flag = 'c' # it needs c or n, c is create unless exists
+       return shelve.DbfilenameShelf(filename, flag)
+    else:
+       return DirectoryShelf(filename, flag)
