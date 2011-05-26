@@ -156,7 +156,7 @@ class MD5Cache(FileCache):
         h = hashlib.md5()
         if sys.version_info[0] > 2: # unicode must be encoded to be hashed
             h.update(contents.encode('utf-8'))
-            self.value = h.hexdigest()
+            self.value = str(h.digest())
         else:
             h.update(contents)
             self.value = h.digest()

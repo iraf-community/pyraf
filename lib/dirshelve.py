@@ -67,8 +67,9 @@ def open(filename, flag='c'):
     """
 
     if sys.version_info[0] > 2:
-       if flag == 'w':
-          flag = 'c' # it needs c or n, c is create unless exists
-       return shelve.DbfilenameShelf(filename, flag)
+        try:
+            return shelve.DbfilenameShelf(filename, flag)
+        except Exception as ex: # is dbm.error
+            raise dirdbm.error(str(ex))
     else:
        return DirectoryShelf(filename, flag)

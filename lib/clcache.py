@@ -197,7 +197,7 @@ class _CodeCache:
 
             if sys.version_info[0] > 2: # unicode must be encoded to be hashed
                 h.update(source.encode('utf-8'))
-                return h.hexdigest()
+                return str(h.digest())
             else:
                 h.update(source)
                 return h.digest()
