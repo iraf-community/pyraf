@@ -283,10 +283,11 @@ class DummyCodeObj:
     def setFilename(self, f):
         self.filename = f
     def __str__(self):
-        if hasattr(self, 'code'):
-            return '<DummyCodeObj: file='+self.filename+', code='+self.code+'>'
-        else:
-            return '<DummyCodeObj: file='+self.filename+'>'
+        retval = '<DummyCodeObj:'
+        if hasattr(self, 'filename'): retval += ' filename="'+self.filename+'"'
+        if hasattr(self, 'code'):     retval += ' code="'+self.code+'"'
+        retval += '>'
+        return retval
 
 
 def test():
