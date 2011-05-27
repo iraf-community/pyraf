@@ -7,7 +7,7 @@ $Id$
 
 from __future__ import division # confidence high
 
-import os, struct, Tkinter
+import os, struct, time, Tkinter
 import objc
 import AppKit
 
@@ -39,16 +39,20 @@ def focusOnGui():
     if err: raise Exception("SetFrontProcess: "+str(err))
 
 
-def focusOnTerm():
+def focusOnTerm(after=0):
     """ Set focus to terminal """
     global __termPSN
+    if after > 0:
+        time.sleep(after)
     err = SetFrontProcess(__termPSN)
     if err: raise Exception("SetFrontProcess: "+str(err))
 
 
-def guiHasFocus():
+def guiHasFocus(after=0):
     """ Return True if GUI has focus """
     global __objcReqsVoids
+    if after > 0:
+        time.sleep(after)
     if __objcReqsVoids:
         err, aPSN = GetFrontProcess(None)
     else:
@@ -133,6 +137,21 @@ def getPointerGlobalPosition():
 def getPointerPosition(windowID):
     """ Cursor position with respect to a window corner is not supported. """
     return None
+
+
+def redeclareTerm():
+    """ Sometimes the terminal process isn't chosen correctly.  This is used
+    to fix that by declaring again which process is the terminal.  Call this
+    from the terminal ONLY when it is foremost on the desktop. """
+    global __termPSN, __objcReqsVoids
+    oldval = __termPSN
+    if __objcReqsVoids:
+        err, __termPSN = GetFrontProcess(None)
+    else:
+        err, __termPSN = GetFrontProcess()
+    if err:
+        __termPSN = oldval
+        raise Exception("GetFrontProcess: "+str(err))
 
 
 def __doPyobjcWinInit():
