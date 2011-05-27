@@ -2140,10 +2140,22 @@ def eparam(*args):
                 getTask(taskname).eParam()
             except (KeyError, TypeError):
                 try: # maybe it is a task which uses .cfg files
-                    # use simple-auto-close mode (like EPAR) by no return dict
-                    _teal.teal(taskname, returnDict=False, errorsToTerm=True)
+                    _wrapTeal(taskname)
                 except _teal.cfgpars.NoCfgFileError:
                     _writeError('Warning: Could not find task "'+taskname+'"')
+
+def _wrapTeal(taskname):
+    """ Wrap the call to TEAL.  Try to use focus switching here. """
+    # place focus on gui
+    oldFoc = _wutil.getFocalWindowID()
+    _wutil.forceFocusToNewWindow()
+    # pop up TEAL
+    try:
+        # use simple-auto-close mode (like EPAR) by no return dict
+        _teal.teal(taskname, returnDict=False, errorsToTerm=True)
+    # put focus back on terminal, even if there is an exception
+    finally:
+        _wutil.setFocusTo(oldFoc)
 
 @handleRedirAndSaveKwds
 def tparam(*args):
@@ -2238,7 +2250,8 @@ def unlearn(*args, **kw):
 
 @handleRedirAndSaveKwdsPlus
 def teal(taskArg, **kw):
-    """ Open the TEAL GUI but keep logic in eparam. There is no return dict."""
+    """ Synonym for epar.  Open the TEAL GUI but keep logic in eparam.
+    There is no return dict."""
     eparam(taskArg, **kw)
 
 @handleRedirAndSaveKwds
