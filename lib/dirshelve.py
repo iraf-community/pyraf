@@ -69,7 +69,7 @@ def open(filename, flag='c'):
     if sys.version_info[0] > 2:
         try:
             return shelve.DbfilenameShelf(filename, flag)
-        except Exception as ex: # is dbm.error
+        except Exception, ex: # is dbm.error
             raise dirdbm.error(str(ex))
     else:
        return DirectoryShelf(filename, flag)
