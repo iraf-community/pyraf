@@ -14,8 +14,11 @@ R. White, 2000 Sept 26
 
 from __future__ import division # confidence high
 
-import shelve
-import dirdbm
+import shelve, sys
+if __name__.find('.') < 0: # for unit test
+   import dirdbm # revert to simple import after 2to3
+else:
+   import dirdbm
 
 # tuple of errors that can be raised
 error = (dirdbm.error, )
@@ -59,8 +62,14 @@ class DirectoryShelf(Shelf):
 
 def open(filename, flag='c'):
     """Open a persistent dictionary for reading and writing.
-
     Argument is the filename for the dirdbm database.
+    Start using builtin shelve.DbfilenameShelf class as of Python 3.
     """
 
-    return DirectoryShelf(filename, flag)
+    if sys.version_info[0] > 2:
+        try:
+            return shelve.DbfilenameShelf(filename, flag)
+        except Exception as ex: # is dbm.error
+            raise dirdbm.error(str(ex))
+    else:
+       return DirectoryShelf(filename, flag)

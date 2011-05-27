@@ -20,6 +20,12 @@ except:
 
 import os, sys, __main__
 
+# Show version at earliest possible moment when in debugging/verbose mode
+# (find all cmd-line args with '-v', if any found, we are verbose)
+if len([j for j in sys.argv if j.find('-v')>=0]) > 0:
+    print('PyRAF version '+__version__)
+
+
 def usage():
     print __main__.__doc__
     sys.stdout.flush()

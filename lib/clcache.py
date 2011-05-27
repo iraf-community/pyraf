@@ -7,9 +7,16 @@ R. White, 2000 January 19
 from __future__ import division # confidence high
 
 import os, sys
-import filecache
 from pytools.irafglobals import Verbose, userIrafHome
-import pyrafglobals
+if __name__.find('.') < 0: # for unit test
+   import filecache # revert to simple import after 2to3
+   import pyrafglobals # revert to simple import after 2to3
+   import dirshelve # revert to simple import after 2to3
+else:
+   import filecache
+   import pyrafglobals
+   import dirshelve
+
 
 # set up pickle so it can pickle code objects
 
@@ -43,7 +50,6 @@ copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
 # with changes of the CL file contents when the script is
 # being developed.
 
-import dirshelve
 import stat, hashlib
 
 _versionKey = 'CACHE_VERSION'
@@ -73,16 +79,12 @@ class _CodeCache:
         cacheList = []
         flist = []
         nwrite = 0
-        if sys.version_info[0] > 2:
-            db = None
-            print("Warning: the CodeCache class is not yet ported to Py3K")
-        else:
-            for file in cacheFileList:
-                db = self._cacheOpen(file)
-                if db is not None:
-                    cacheList.append(db[0:2])
-                    nwrite = nwrite+db[0]
-                    flist.append(db[2])
+        for file in cacheFileList:
+            db = self._cacheOpen(file)
+            if db is not None:
+                cacheList.append(db[0:2])
+                nwrite = nwrite+db[0]
+                flist.append(db[2])
         self.clFileDict = _FileContentsCache()
         self.cacheList = cacheList
         self.cacheFileList = flist
@@ -185,7 +187,6 @@ class _CodeCache:
         self.close()
 
     def getIndex(self, filename, source=None):
-
         """Get cache key for a file or filehandle"""
 
         if filename:
@@ -193,11 +194,15 @@ class _CodeCache:
         elif source:
             # there is no filename, but return md5 digest of source as key
             h = hashlib.md5()
-            h.update(source)
-            return h.digest()
+
+            if sys.version_info[0] > 2: # unicode must be encoded to be hashed
+                h.update(source.encode('utf-8'))
+                return str(h.digest())
+            else:
+                h.update(source)
+                return h.digest()
 
     def add(self, index, pycode):
-
         """Add pycode to cache with key = index.  Ignores if index=None."""
 
         if index is None or self.nwrite==0: return
@@ -273,8 +278,45 @@ class _CodeCache:
             self.warning("Did not find %s in CL script cache" % filename, 2)
 
 
-# create code cache
+# simple class to mimic pycode, for unit test (save us from importing others)
+class DummyCodeObj:
+    def setFilename(self, f):
+        self.filename = f
+    def __str__(self):
+        retval = '<DummyCodeObj:'
+        if hasattr(self, 'filename'): retval += ' filename="'+self.filename+'"'
+        if hasattr(self, 'code'):     retval += ' code="'+self.code+'"'
+        retval += '>'
+        return retval
 
+
+def test():
+    """ Just run through the paces """
+    global codeCache
+    import os
+
+    print('Starting codeCache is: '+str(codeCache.cacheList))
+    print('keys = '+str(codeCache.clFileDict.keys()))
+
+    for fname in ('clcache.py', 'filecache.py'):
+        # lets cache this file
+        print('\ncaching: '+fname)
+        idx = codeCache.getIndex(fname)
+        pc = DummyCodeObj()
+        pc.code = 'print(123)'
+        print('fname:', fname, ', idx:', idx)
+        codeCache.add(idx, pc) # goes in here
+        codeCache.add(idx, pc) # NOT duplicated here
+        codeCache.add(idx, pc) # or here
+        print('And now, codeCache is: '+str(codeCache.cacheList))
+        print('keys = '+str(codeCache.clFileDict.keys()))
+        # try to get it out
+        newidx, newpycode = codeCache.get(fname)
+        assert newidx==idx, 'ERROR: was'+str(idx)+', but now is: '+str(newidx)
+        print('The -get- gave us: '+str(newpycode))
+
+
+# create code cache
 userCacheDir = os.path.join(userIrafHome,'pyraf')
 if not os.path.exists(userCacheDir):
     try:
@@ -290,3 +332,6 @@ codeCache = _CodeCache([
         os.path.join(pyrafglobals.pyrafDir,dbfile),
         ])
 del userCacheDir, dbfile
+
+if __name__ == '__main__':
+    test()
