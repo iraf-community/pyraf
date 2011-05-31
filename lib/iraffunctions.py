@@ -2152,7 +2152,8 @@ def _wrapTeal(taskname):
     # pop up TEAL
     try:
         # use simple-auto-close mode (like EPAR) by no return dict
-        _teal.teal(taskname, returnDict=False, errorsToTerm=True)
+        _teal.teal(taskname, returnDict=False, errorsToTerm=True,
+                   raiseUnfound=True)
     # put focus back on terminal, even if there is an exception
     finally:
         _wutil.setFocusTo(oldFoc)
