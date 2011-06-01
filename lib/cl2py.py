@@ -337,7 +337,7 @@ class ErrorTracker:
                 else:
                     warnmsg.append(msg)
             for comment in self.comments:
-                errmsg.append(comment)
+                warnmsg.append(comment)
             warnmsg = "\n".join(warnmsg)
             sys.stdout.flush()
             sys.stderr.write(warnmsg)

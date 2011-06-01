@@ -273,7 +273,6 @@ class PyrafEparDialog(editpar.EditParDialog):
 
         # Set the GUI entries to these values (let the user Save after)
         self.setAllEntriesFromParList(newParList)
-     
         self.freshenFocus()
         self.showStatus("Loaded parameter values from: "+fname, keep=2)
 
@@ -290,7 +289,7 @@ class PyrafEparDialog(editpar.EditParDialog):
 
     def _saveAsPreSave_Hook(self, fnameToBeUsed):
         """ Override to check for (and warn about) PSETs. """
-        # Notify them that pset children will not be saved as part of 
+        # Notify them that pset children will not be saved as part of
         # their special version
         pars = []
         for par in self.paramList:
