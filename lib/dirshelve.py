@@ -64,12 +64,18 @@ def open(filename, flag='c'):
     """Open a persistent dictionary for reading and writing.
     Argument is the filename for the dirdbm database.
     Start using builtin shelve.DbfilenameShelf class as of Python 3.
+
+    Note - flags to the anydbm.open() function mean:
+           'r'     Open existing database for reading only (default)
+           'w'     Open existing database for reading and writing
+           'c'     Open db for read and write, creating if it doesn't exist
+           'n'     Always create a new, empty db, open for reading and writing
     """
 
     if sys.version_info[0] > 2:
         try:
             return shelve.DbfilenameShelf(filename, flag)
-        except Exception as ex: # is dbm.error
+        except Exception, ex: # is dbm.error
             raise dirdbm.error(str(ex))
     else:
        return DirectoryShelf(filename, flag)

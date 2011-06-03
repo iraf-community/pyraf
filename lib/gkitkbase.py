@@ -286,15 +286,18 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
         """Save metacode in a file"""
 
+        curdir = os.getcwd()
         fd = filedlg.PersistSaveFileDialog(self.top, "Save Metacode", "*")
         if fd.Show() != 1:
             fd.DialogCleanup()
+            os.chdir(curdir) # in case file dlg moved us
             return
         fname = fd.GetFileName()
         fd.DialogCleanup()
         fh = open(fname, 'w')
         fh.write(self.gkibuffer.get().tostring())
         fh.close()
+        os.chdir(curdir) # in case file dlg moved us
 
     def load(self, fname=None):
 
