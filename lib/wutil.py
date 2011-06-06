@@ -504,7 +504,11 @@ if _skipDisplay:
     # But DO warn for interactive sessions where they didn't use '-s'
     if sys.argv[0].find('pyraf') >= 0 and \
        '-s' not in sys.argv and '--silent' not in sys.argv:
-        print "No graphics display intended for this session."
+        # Warn, but be specific about why
+        if 'PYRAF_NO_DISPLAY' in os.environ:
+            print "No graphics/display intended for this session."
+        else:
+            print "No graphics/display possible for this session."
 else:
     if _hasXWin or _hasAqua:
         hasGraphics = focusController.hasGraphics
