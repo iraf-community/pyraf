@@ -72,8 +72,9 @@ def _cleanup():
     if hasattr(clcache,'codeCache'):
         del clcache.codeCache
 
-# register the exit handler, but only if 'pyraf' is going to import fully
-if '-h' not in sys.argv and '--help' not in sys.argv:
+# Register the exit handler, but only if 'pyraf' is going to import fully
+# But, always register it when in Python-API mode (CNSHD817031)
+if not _pyrafMain or ('-h' not in sys.argv and '--help' not in sys.argv):
     import atexit
     atexit.register(_cleanup)
     del atexit
