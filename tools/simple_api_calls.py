@@ -4,6 +4,7 @@
 API for use in testing, starting with the very simplest of function calls.
 This test is useful in special installations, such as one without IRAF. """
 
+import sys
 from pyraf import iraf
 import pyraf
 print("pwd is...")
@@ -14,3 +15,4 @@ print("imheader of dev$pix is ... (requires IRAF)")
 iraf.images(_doprint=0) # load images
 iraf.imutil(_doprint=0) # load imutil
 iraf.imheader("dev$pix")
+sys.exit(0)
