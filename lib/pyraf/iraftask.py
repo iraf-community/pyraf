@@ -12,7 +12,7 @@ here which also support ECL syntax like "iferr" and $errno.
 from __future__ import division
 
 import os, sys, copy, re
-from pytools import basicpar, minmatch, irafutils, irafglobals, taskpars
+from stsci.tools import basicpar, minmatch, irafutils, irafglobals, taskpars
 import subproc, irafinst, iraf, irafpar, irafexecute, cl2py
 import fnmatch
 

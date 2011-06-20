@@ -20,7 +20,7 @@ import __builtin__
 import __main__
 import string, re, keyword, glob, os, sys
 import iraf
-from pytools import minmatch
+from stsci.tools import minmatch
 try:
     import readline
     from rlcompleter import Completer

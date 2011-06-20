@@ -27,7 +27,7 @@ R. White, 2000 February 20
 from __future__ import division # confidence high
 
 import string, re, os, sys, code, keyword, traceback, linecache
-from pytools import capable, minmatch
+from stsci.tools import capable, minmatch
 import iraf, irafinst, wutil
 from pyrafglobals import pyrafDir
 

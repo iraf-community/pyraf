@@ -14,8 +14,8 @@ from cltoken import Token
 import clscan, clparse
 from clcache import codeCache
 
-from pytools.irafglobals import Verbose
-from pytools import basicpar, minmatch, irafutils
+from stsci.tools.irafglobals import Verbose
+from stsci.tools import basicpar, minmatch, irafutils
 import irafpar, pyrafglobals
 
 # The parser object can be constructed once and used many times.
@@ -1572,7 +1572,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         if not noHdr:
             self.write("from pyraf import iraf")
             self.writeIndent("from pyraf.irafpar import makeIrafPar, IrafParList")
-            self.writeIndent("from pytools.irafglobals import *")
+            self.writeIndent("from stsci.tools.irafglobals import *")
             self.writeIndent("from pyraf.pyrafglobals import *")
             self.write("\n")
 

@@ -9,8 +9,8 @@ $Id$
 from __future__ import division # confidence high
 
 import sys,string
-from pytools import irafutils
-from pytools.irafglobals import Verbose, IrafError
+from stsci.tools import irafutils
+from stsci.tools.irafglobals import Verbose, IrafError
 import irafdisplay, gwm, iraf
 
 # dictionary of devices to support multiple active displays

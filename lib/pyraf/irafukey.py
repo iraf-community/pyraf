@@ -7,7 +7,7 @@ from __future__ import division # confidence high
 
 import os, string, sys
 import wutil
-from pytools import capable, irafutils
+from stsci.tools import capable, irafutils
 
 try:
     import termios

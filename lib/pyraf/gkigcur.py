@@ -6,7 +6,7 @@ $Id$
 from __future__ import division # confidence high
 
 import string, os, sys, numpy, Tkinter
-from pytools import irafutils
+from stsci.tools import irafutils
 import gwm, wutil, iraf, gkicmd, gki
 
 # The following class attempts to emulate the standard IRAF gcursor

@@ -39,8 +39,8 @@ R. White, 1999 September 23
 from __future__ import division # confidence high
 
 import __main__, re, os, sys, types
-from pytools import minmatch, irafutils
-from pytools.irafglobals import IrafTask, IrafPkg
+from stsci.tools import minmatch, irafutils
+from stsci.tools.irafglobals import IrafTask, IrafPkg
 import describe, iraf
 
 # print info on numpy arrays if numpy is available

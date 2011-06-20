@@ -12,7 +12,7 @@ from cgeneric import ContextSensitiveScanner
 from generic import GenericScanner
 from cltoken import Token
 import string, re
-from pytools import irafutils
+from stsci.tools import irafutils
 import pyrafglobals
 
 # contexts for scanner

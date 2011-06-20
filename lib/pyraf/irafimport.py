@@ -16,7 +16,7 @@ from __future__ import division # confidence high
 
 import __builtin__
 import sys
-from pytools import minmatch
+from stsci.tools import minmatch
 
 _importHasLvlArg = sys.version_info[0] > 2 or sys.version_info[1] >= 5 # no 1.*
 _reloadIsBuiltin = sys.version_info[0] < 3
@@ -55,19 +55,21 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     elif (name == "iraf") or (name=='' and level==1 and \
          fromlist and 'iraf' in fromlist and len(fromlist)==1):
         return _irafModuleProxy
-    # e.g. "import sys" or "import pytools.alert"
+    # e.g. "import sys" or "import stsci.tools.alert"
     # e.g. Note! "import os, sys, re, glob" calls this 4 separate times, but
     #            "from . import gki, gwm, iraf" is only a single call here!
     else:
         # !!! TEMPORARY KLUDGE !!! working on why seeing pyraf.minmatch in cache
-        if   name == 'pyraf.minmatch':  name = 'pytools.minmatch'
-        elif name == 'pyraf.irafutils': name = 'pytools.irafutils'
-        elif name == 'pyraf.dialog':    name = 'pytools.dialog'
-        elif name == 'pyraf.listdlg':   name = 'pytools.listdlg'
-        elif name == 'pyraf.filedlg':   name = 'pytools.filedlg'
-        elif name == 'pyraf.alert':     name = 'pytools.alert'
-        elif name == 'pyraf.irafglobals': name='pytools.irafglobals' # is diffnt
+        if   name == 'pyraf.minmatch':  name = 'stsci.tools.minmatch'
+        elif name == 'pyraf.irafutils': name = 'stsci.tools.irafutils'
+        elif name == 'pyraf.dialog':    name = 'stsci.tools.dialog'
+        elif name == 'pyraf.listdlg':   name = 'stsci.tools.listdlg'
+        elif name == 'pyraf.filedlg':   name = 'stsci.tools.filedlg'
+        elif name == 'pyraf.alert':     name = 'stsci.tools.alert'
+        elif name == 'pyraf.irafglobals': name='stsci.tools.irafglobals' # is diffnt
         # Not planning to fix this until after 'pytools' is renamed.
+        # TODO: Well, pytools has been renamed :)  Not exactly clear what the
+        # problem is here though...
         # !!! END TEMPORARY KLUDGE !!!
 
         hadIrafInList = False

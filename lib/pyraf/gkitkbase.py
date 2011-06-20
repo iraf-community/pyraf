@@ -7,8 +7,8 @@ from __future__ import division # confidence high
 
 import numpy, os, sys, string, time, Tkinter
 import msgiobuffer, msgiowidget, wutil
-from pytools import filedlg
-from pytools.irafglobals import IrafError, userWorkingHome
+from stsci.tools import filedlg
+from stsci.tools.irafglobals import IrafError, userWorkingHome
 import gki, textattrib, irafgwcs
 from pyrafglobals import pyrafDir
 import tkMessageBox, tkSimpleDialog

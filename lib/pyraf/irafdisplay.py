@@ -31,7 +31,7 @@ $Id$
 from __future__ import division # confidence high
 
 import os, numpy, socket, sys
-from pytools import irafutils
+from stsci.tools import irafutils
 try:
     import fcntl
 except:

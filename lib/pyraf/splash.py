@@ -8,7 +8,7 @@ R. White, 2001 Dec 15
 from __future__ import division # confidence high
 
 import os, sys, Tkinter
-from pytools.irafglobals import IrafPkg
+from stsci.tools.irafglobals import IrafPkg
 import wutil
 
 logo = "pyraflogo_rgb_web.gif"

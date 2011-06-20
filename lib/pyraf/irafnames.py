@@ -9,7 +9,7 @@ R. White, 1999 March 26
 from __future__ import division # confidence high
 
 import __main__
-from pytools import irafglobals
+from stsci.tools import irafglobals
 import iraf
 
 def _addName(task, module):

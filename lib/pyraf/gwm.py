@@ -7,7 +7,7 @@ $Id$
 from __future__ import division # confidence high
 
 import os, string
-from pytools import capable
+from stsci.tools import capable
 if capable.OF_GRAPHICS:
     import Tkinter
 import wutil, gki

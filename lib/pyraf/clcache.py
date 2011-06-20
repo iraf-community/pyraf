@@ -7,7 +7,7 @@ R. White, 2000 January 19
 from __future__ import division # confidence high
 
 import os, sys
-from pytools.irafglobals import Verbose, userIrafHome
+from stsci.tools.irafglobals import Verbose, userIrafHome
 if __name__.find('.') < 0: # for unit test
    import filecache # revert to simple import after 2to3
    import pyrafglobals # revert to simple import after 2to3

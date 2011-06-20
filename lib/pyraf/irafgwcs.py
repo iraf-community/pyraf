@@ -10,7 +10,7 @@ $Id$
 from __future__ import division # confidence high
 
 import struct, numpy, math
-from pytools.irafglobals import IrafError
+from stsci.tools.irafglobals import IrafError
 import irafinst
 
 IRAF64BIT = False

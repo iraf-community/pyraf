@@ -62,7 +62,7 @@ del executable
 
 runCmd = None
 import irafexecute, clcache
-from pytools import capable
+from stsci.tools import capable
 
 # set up exit handler to close caches
 def _cleanup():

@@ -9,7 +9,7 @@ from __future__ import division # confidence high
 # System level modules
 import sys
 import Tkinter as Tki
-from pytools import tkrotext
+from stsci.tools import tkrotext
 
 USING_X = not sys.platform.startswith('win') # in most cases we use X
 if sys.platform == 'darwin':

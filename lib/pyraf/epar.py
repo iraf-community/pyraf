@@ -6,12 +6,12 @@ M.D. De La Pena, 2000 February 04
 """
 from __future__ import division # confidence high
 
-from pytools import capable
+from stsci.tools import capable
 if capable.OF_GRAPHICS:
     from Tkinter import *
     from tkMessageBox import askokcancel, showwarning, showerror
     import os, stat, sys, cStringIO
-    from pytools import filedlg, listdlg, eparoption, editpar
+    from stsci.tools import filedlg, listdlg, eparoption, editpar
     import iraf, irafpar, irafhelp, wutil
     from pyrafglobals import pyrafDir
 else:
@@ -19,7 +19,7 @@ else:
     class editpar():
         class EditParDialog():
             pass # dummy so that code below can import
-from pytools.irafglobals import IrafError
+from stsci.tools.irafglobals import IrafError
 
 
 # tool help

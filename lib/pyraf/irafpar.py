@@ -7,12 +7,13 @@ R. White, 2000 January 7
 from __future__ import division # confidence high
 
 import copy, glob, os, re, sys, types
-from pytools import basicpar, minmatch, irafutils, taskpars
-from pytools.irafglobals import INDEF, Verbose, yes, no
-from pytools.basicpar import warning, _StringMixin, IrafPar, IrafParS, _cmdlineFlag
+from stsci.tools import basicpar, minmatch, irafutils, taskpars
+from stsci.tools.irafglobals import INDEF, Verbose, yes, no
+from stsci.tools.basicpar import (warning, _StringMixin, IrafPar, IrafParS,
+                                  _cmdlineFlag)
 # also import basicpar.IrafPar* class names for cached scripts
-from pytools.basicpar import IrafParB,  IrafParI,  IrafParR
-from pytools.basicpar import IrafParAB, IrafParAI, IrafParAR, IrafParAS
+from stsci.tools.basicpar import (IrafParB,  IrafParI,  IrafParR
+                                  IrafParAB, IrafParAI, IrafParAR, IrafParAS)
 
 import irafimcur, irafukey, epar, tpar, gki, iraf
 

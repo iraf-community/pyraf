@@ -31,7 +31,7 @@ __license__ = Release.license
 import sys
 from pyraf import iraf, __version__
 from pyraf.irafpar import makeIrafPar
-from pytools.irafglobals import yes, no, INDEF, EOF
+from stsci.tools.irafglobals import yes, no, INDEF, EOF
 
 _locals = globals()
 

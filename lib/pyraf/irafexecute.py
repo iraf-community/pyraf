@@ -5,8 +5,8 @@ $Id$
 from __future__ import division # confidence high
 
 import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
-from pytools import irafutils
-from pytools.irafglobals import IrafTask
+from stsci.tools import irafutils
+from stsci.tools.irafglobals import IrafTask
 import subproc, filecache, wutil
 import iraf, gki, irafukey
 import irafgwcs

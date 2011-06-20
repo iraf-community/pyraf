@@ -10,7 +10,7 @@ from __future__ import division # confidence high
 from Tkinter import *
 
 # local modules
-from pytools import eparoption
+from stsci.tools import eparoption
 import epar
 
 

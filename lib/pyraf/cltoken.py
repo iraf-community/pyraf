@@ -30,7 +30,7 @@ from __future__ import division # confidence high
 #
 
 import string
-from pytools.irafglobals import INDEF
+from stsci.tools.irafglobals import INDEF
 
 verbose = 0
 
