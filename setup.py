@@ -8,6 +8,6 @@ except ImportError:
     from setuptools import setup
 
 setup(
-    setup_requires=['d2to1>=0.2.2', 'stsci.distutils>=0.2dev'],
+    setup_requires=['d2to1>=0.2.3', 'stsci.distutils>=0.2dev'],
     d2to1=True
 )
