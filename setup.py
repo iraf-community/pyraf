@@ -1,17 +1,34 @@
 #!/usr/bin/env python
 
-# We use the local copy of stsci_distutils_hack, unless
-# the user asks for the stpytools version
-from __future__ import division # confidence high
+try:
+    from setuptools import setup
+except ImportError:
+    from distribute_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup
 
-import os
-if os.getenv("USE_STPYTOOLS") :
-    import pytools.stsci_distutils_hack as H
-    pytools_version = "3.0"
-else :
-    import stsci_distutils_hack as H
-    pytools_version = None
+try:
+    from stsci.distutils.command.easier_install import easier_install
+except ImportError:
+    import os
+    import sys
+    stsci_distutils = os.path.abspath(os.path.join('..', 'distutils', 'lib'))
+    if os.path.exists(stsci_distutils) and stsci_distutils not in sys.path:
+        sys.path.append(stsci_distutils)
+    try:
+        from stsci.distutils.command.easier_install import easier_install
+        import setuptools.command.easy_install
+    except ImportError:
+        # If even this failed, we're not in an stsci_python source checkout,
+        # so there's nothing gained from using easier_install
+        from setuptools.command.easy_install import easy_install
+        easier_install = easy_install
+# This is required so that easier_install can be used for setup_requires
+import setuptools
+setuptools.command.easy_install.easy_install = easier_install
 
-H.run(pytools_version = pytools_version)
-
-
+setup(
+    setup_requires=['d2to1>=0.2.3', 'stsci.distutils>=0.2dev'],
+    d2to1=True,
+    use_2to3=True
+)
