@@ -60,16 +60,17 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     #            "from . import gki, gwm, iraf" is only a single call here!
     else:
         # !!! TEMPORARY KLUDGE !!! working on why seeing pyraf.minmatch in cache
-        if   name == 'pyraf.minmatch':  name = 'stsci.tools.minmatch'
-        elif name == 'pyraf.irafutils': name = 'stsci.tools.irafutils'
-        elif name == 'pyraf.dialog':    name = 'stsci.tools.dialog'
-        elif name == 'pyraf.listdlg':   name = 'stsci.tools.listdlg'
-        elif name == 'pyraf.filedlg':   name = 'stsci.tools.filedlg'
-        elif name == 'pyraf.alert':     name = 'stsci.tools.alert'
-        elif name == 'pyraf.irafglobals': name='stsci.tools.irafglobals' # is diffnt
-        # Not planning to fix this until after 'pytools' is renamed.
-        # TODO: Well, pytools has been renamed :)  Not exactly clear what the
-        # problem is here though...
+        for module in ['minmatch', 'irafutils', 'dialog', 'listdlg', 'filedlg',
+                       'alert', 'irafglobals']:
+            if name == ('pyraf.%s' % module):
+                name = 'stsci.tools.%s' % module
+        # Replace any instances of 'pytools' with 'stsci.tools'--the new name
+        # of the former pytools package
+        name = name.replace('pytools.', 'stsci.tools.')
+        # Same for everything in fromlist:
+        if fromlist:
+            fromlist = [item.replace('pytools', 'stsci.tools')
+                        for item in fromlist]
         # !!! END TEMPORARY KLUDGE !!!
 
         hadIrafInList = False
