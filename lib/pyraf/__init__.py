@@ -13,7 +13,8 @@ from __future__ import division # confidence high
 __version__ = "1.11.dev"
 
 try:
-    from svn_version import __svn_version__
+    from pyraf.svninfo import (__svn_version__, __full_svn_info__,
+                               __setup_datetime__)
     __version__ += " (r"+__svn_version__+')'
 except:
     pass
