@@ -72,9 +72,9 @@ if '-s' in sys.argv or '--silent' in sys.argv:
     del warnings
 
 # read the user's startup file (if there is one)
-if os.environ.has_key("PYTHONSTARTUP") and \
+if 'PYTHONSTARTUP' in os.environ and \
                 os.path.isfile(os.environ["PYTHONSTARTUP"]):
-    execfile(os.environ["PYTHONSTARTUP"])
+    exec(compile(open(os.environ["PYTHONSTARTUP"]).read(), os.environ["PYTHONSTARTUP"], 'exec'))
 
 # In next line we get into pyraf's __init__.py - this does ALL KINDS OF THINGS
 from pyraf import doCmdline, _use_ipython_shell, runCmd, __version__
@@ -105,9 +105,9 @@ if _use_ipython_shell:
     del pyraf, home, ip, pyrafrc_dest, pyrafrc_source
 else:
     if '-s' not in sys.argv and '--silent' not in sys.argv:
-       print "PyRAF", __version__, "Copyright (c) 2002 AURA"
+       print("PyRAF"+' '+__version__+' '+"Copyright (c) 2002 AURA")
        # just print first line of Python copyright (long in v2.0)
-       print "Python", sys.version.split()[0], sys.copyright.split('\n')[0]
+       print("Python"+' '+sys.version.split()[0]+' '+sys.copyright.split('\n')[0])
 
 # Run given command
 if runCmd:
