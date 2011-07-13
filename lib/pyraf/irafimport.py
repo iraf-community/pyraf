@@ -52,8 +52,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
         # must return a module for 'from' import
         return _irafModuleProxy.module
     # e.g. "import iraf" or "from . import iraf"
-    elif (name == "iraf") or (name=='' and level==1 and \
-         fromlist and 'iraf' in fromlist and len(fromlist)==1):
+    elif (name == "iraf") or (name=='' and level==1 and fromlist==['iraf']):
         return _irafModuleProxy
     # e.g. "import sys" or "import stsci.tools.alert"
     # e.g. Note! "import os, sys, re, glob" calls this 4 separate times, but
