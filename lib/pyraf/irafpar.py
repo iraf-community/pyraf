@@ -15,7 +15,8 @@ from stsci.tools.basicpar import (warning, _StringMixin, IrafPar, IrafParS,
 from stsci.tools.basicpar import (IrafParB,  IrafParI,  IrafParR,
                                   IrafParAB, IrafParAI, IrafParAR, IrafParAS)
 
-import irafimcur, irafukey, epar, tpar, gki, iraf
+if __name__.find('.') >= 0: # not a unit test
+    import irafimcur, irafukey, epar, tpar, gki, iraf
 
 
 # -----------------------------------------------------
@@ -1276,3 +1277,86 @@ def _readpar(filename,strict=0):
                 param_dict[par.name] = par
                 param_list.append(par)
     return param_list
+
+# -----------------------------------------------------------------------------
+
+def test_IrafParList():
+    """ Test the IrafParList class """
+    # create default, empty parlist for task 'bobs_task'
+    pl = IrafParList('bobs_pizza', 'bobs_pizza.par')
+    x = pl.getName()
+    assert x == 'bobs_pizza.par', "Unexpected name: "+str(x)
+    x = pl.getFilename()
+    assert x == 'bobs_pizza.par', "Unexpected fname: "+str(x)
+    x = pl.getPkgname()
+    assert x == '', "Unexpected pkg name: "+str(x)
+    assert not pl.hasPar('jojo'), "How did we get jojo?"
+    assert pl.hasPar('mode'), "We should have only: mode"
+    # length of 'empty' list is 2 - it has 'mode' and '$nargs'
+    assert len(pl) == 2, "Unexpected length: "+str(len(pl))
+    print("lParam should show 1 par (mode)")
+    pl.lParam()
+
+    # let's add some pars
+    par1 = basicpar.parFactory( \
+           ('caller','s','a','Ima Hungry','',None,'person calling Bobs'), True)
+    x = par1.dpar().strip()
+    assert x == "caller = 'Ima Hungry'", "par1 is off: "+str(x)
+    par2 = basicpar.parFactory( \
+           ('diameter','i','a','12','',None,'pizza size'), True)
+    x = par2.dpar().strip()
+    assert x == "diameter = 12", "par2 is off: "+str(x)
+    par3 = basicpar.parFactory( \
+           ('pi','r','a','3.14159','',None,'Bob makes circles!'), True)
+    x = par3.dpar().strip()
+    assert x == "pi = 3.14159", "par3 is off: "+str(x)
+    par4 = basicpar.parFactory( \
+           ('delivery','b','a','yes','',None,'delivery? (or pickup)'), True)
+    x = par4.dpar().strip()
+    assert x == "delivery = yes", "par4 is off: "+str(x)
+    par5 = basicpar.parFactory( \
+           ('topping','s','a','peps','|toms|peps|olives',None,'the choices'), True)
+    x = par5.dpar().strip()
+    assert x == "topping = 'peps'", "par5 is off: "+str(x)
+
+    pl.addParam(par1)
+    assert len(pl) == 3, "Unexpected length: "+str(len(pl))
+    pl.addParam(par2)
+    pl.addParam(par3)
+    pl.addParam(par4)
+    pl.addParam(par5)
+    assert len(pl) == 7, "Unexpected length: "+str(len(pl))
+
+    # now we have a decent IrafParList to play with - test some
+    print("lParam should show 6 actual pars (our 5 + mode)")
+    pl.lParam()
+    assert pl.__doc__ == 'List of Iraf parameters',"__doc__ = "+str(pl.__doc__)
+    x = sorted(pl.getAllMatches(''))
+    assert x==['$nargs','caller','delivery','diameter','mode','pi','topping'],\
+           "Unexpected all: "+str(x)
+    x = sorted(pl.getAllMatches('d'))
+    assert x == ['delivery','diameter'], "Unexpected d's: "+str(x)
+    x = sorted(pl.getAllMatches('jojo'))
+    assert x == [], "Unexpected empty list: "+str(x)
+    x = pl.getParDict()
+    assert 'caller' in x, "Bad dict? "+str(x)
+    x = pl.getParList()
+    assert par1 in x, "Bad list? "+str(x)
+    assert pl.hasPar('topping'), "hasPar call failed"
+    # change a par val
+    pl.setParam('topping','olives') # should be no prob
+    assert 'olives' == pl.getParDict()['topping'].value, \
+           "Topping error: "+str(pl.getParDict()['topping'].value)
+    try:
+       # the following setParam should fail - not in choice list
+       pl.setParam('topping','peanutbutter') # oh the horror
+       assert False, "The bad setParam didn't fail?"
+    except ValueError:
+       pass
+
+# If we get here, then all is well
+# sys.exit(0)
+
+
+if __name__ == '__main__':
+    test_IrafParList()
