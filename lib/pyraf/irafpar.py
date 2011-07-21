@@ -405,9 +405,12 @@ class IrafParUKey(IrafParL):
 # IRAF parameter list synchronized to disk file
 # -----------------------------------------------------
 
-from filecache import FileCache
+if __name__.find('.') < 0: # for unit test
+    import filecache # revert to simple import after 2to3
+else:
+    import filecache
 
-class ParCache(FileCache):
+class ParCache(filecache.FileCache):
 
     """Parameter cache that updates from .par file when necessary"""
 
@@ -417,14 +420,14 @@ class ParCache(FileCache):
         if filename is None or filename == 'string_proc':
             filename = ''
         try:
-            FileCache.__init__(self, filename)
+            filecache.FileCache.__init__(self, filename)
         except (OSError, IOError):
             # whoops, couldn't open that file
             # start with a null file instead unless strict is set
             if strict:
                 raise
             filename = ''
-            FileCache.__init__(self, filename)
+            filecache.FileCache.__init__(self, filename)
 
     def getValue(self):
         return self.pars, self.pardict, self.psetlist
@@ -1354,8 +1357,9 @@ def test_IrafParList():
     except ValueError:
        pass
 
-# If we get here, then all is well
-# sys.exit(0)
+    # If we get here, then all is well
+    # sys.exit(0)
+    print "Test successful"
 
 
 if __name__ == '__main__':
