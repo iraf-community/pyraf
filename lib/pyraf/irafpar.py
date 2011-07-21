@@ -809,19 +809,25 @@ class IrafParList(taskpars.TaskPars):
         tpar.tpar(self)
 
     def lParam(self,verbose=0):
+        print self.lParamStr(verbose=verbose)
+
+    def lParamStr(self,verbose=0):
         """List the task parameters"""
+        retval = []
         # Do the non-hidden parameters first
         for i in xrange(len(self.__pars)):
             p = self.__pars[i]
             if p.mode != 'h':
                 if Verbose>0 or p.name != '$nargs':
-                    print p.pretty(verbose=verbose or Verbose>0)
+                    retval.append(p.pretty(verbose=verbose or Verbose>0))
         # Now the hidden parameters
         for i in xrange(len(self.__pars)):
             p = self.__pars[i]
             if p.mode == 'h':
                 if Verbose>0 or p.name != '$nargs':
-                    print p.pretty(verbose=verbose or Verbose>0)
+                    retval.append(p.pretty(verbose=verbose or Verbose>0))
+        return '\n'.join(retval)
+
     def dParam(self, taskname="", cl=1):
         """Dump the task parameters in executable form
 
@@ -1283,8 +1289,11 @@ def _readpar(filename,strict=0):
 
 # -----------------------------------------------------------------------------
 
-def test_IrafParList():
+def test_IrafParList(fout = sys.stdout):
     """ Test the IrafParList class """
+    # check our input (may be stdout)
+    assert hasattr(fout, 'write'), "Input not a file object: "+str(fout)
+
     # create default, empty parlist for task 'bobs_task'
     pl = IrafParList('bobs_pizza', 'bobs_pizza.par')
     x = pl.getName()
@@ -1297,8 +1306,7 @@ def test_IrafParList():
     assert pl.hasPar('mode'), "We should have only: mode"
     # length of 'empty' list is 2 - it has 'mode' and '$nargs'
     assert len(pl) == 2, "Unexpected length: "+str(len(pl))
-    print("lParam should show 1 par (mode)")
-    pl.lParam()
+    fout.write("lParam should show 1 par (mode)\n"+pl.lParamStr()+'\n')
 
     # let's add some pars
     par1 = basicpar.parFactory( \
@@ -1331,8 +1339,8 @@ def test_IrafParList():
     assert len(pl) == 7, "Unexpected length: "+str(len(pl))
 
     # now we have a decent IrafParList to play with - test some
-    print("lParam should show 6 actual pars (our 5 + mode)")
-    pl.lParam()
+    fout.write("lParam should show 6 actual pars (our 5 + mode)\n"+\
+               pl.lParamStr()+'\n')
     assert pl.__doc__ == 'List of Iraf parameters',"__doc__ = "+str(pl.__doc__)
     x = sorted(pl.getAllMatches(''))
     assert x==['$nargs','caller','delivery','diameter','mode','pi','topping'],\
@@ -1359,7 +1367,7 @@ def test_IrafParList():
 
     # If we get here, then all is well
     # sys.exit(0)
-    print "Test successful"
+    fout.write("Test successful\n")
 
 
 if __name__ == '__main__':
