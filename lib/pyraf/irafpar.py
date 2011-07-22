@@ -1368,6 +1368,7 @@ def test_IrafParList(fout = sys.stdout):
     # If we get here, then all is well
     # sys.exit(0)
     fout.write("Test successful\n")
+    return pl
 
 
 if __name__ == '__main__':
