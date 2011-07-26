@@ -18,7 +18,7 @@ def psi_land_in_graphcap_test():
    """ Verify that the graphcap file supports psi_land """
    gc = gki.getGraphcap()
    assert gc, "default graphcap not found"
-   assert gc.has_key('psi_land'), "default graphcap does not support psi_land"
+   assert 'psi_land' in gc, "default graphcap does not support psi_land"
    theDev = gc['psi_land']
    assert theDev.devname=='psi_land', "Invalid graphcap device for psi_land"
 

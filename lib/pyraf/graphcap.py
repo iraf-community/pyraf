@@ -92,18 +92,20 @@ class GraphCap(filecache.FileCache):
 
     def __getitem__(self, key):
         """Get up-to-date version of dictionary"""
-        dict = self.get()
-        if not dict.has_key(key):
+        thedict = self.get()
+        if not key in thedict:
             print "Error: device not found in graphcap"
             raise KeyError
-        return Device(dict, key)
+        return Device(thedict, key)
 
-    def has_key(self, key):
-        dict = self.get()
-        if dict.has_key(key):
-            return 1
-        else:
-            return 0
+    def has_key(self, key): return self._has(key)
+
+    def __contains__(self, key): return self._has(key)
+
+    def _has(self, key):
+        thedict = self.get()
+        return key in thedict
+
 
 class Device:
 
@@ -112,16 +114,16 @@ class Device:
         self.devname = devname
 
     def getAttribute(self, attrName):
-        dict = self.dict[self.devname]
+        thedict = self.dict[self.devname]
         value = None
         while 1:
-            if dict.has_key(attrName):
-                value = dict[attrName]
+            if attrName in thedict:
+                value = thedict[attrName]
                 break
             else:
-                if dict.has_key('tc'):
-                    nextdev = dict['tc']
-                    dict = self.dict[nextdev]
+                if 'tc' in thedict:
+                    nextdev = thedict['tc']
+                    thedict = self.dict[nextdev]
                 else:
                     break
         return value
