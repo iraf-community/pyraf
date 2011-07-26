@@ -1141,9 +1141,9 @@ class IrafPythonTask(IrafTask):
             pass
         file = self._pyFunction.func_code.co_filename
         # oh well, replace _pyFunction in shallow copy of dictionary
-        dict = self.__dict__.copy()
-        dict['_pyFunction'] = None
-        return dict
+        sdict = self.__dict__.copy()
+        sdict['_pyFunction'] = None
+        return sdict
 
     #=========================================================
     # private methods
@@ -1409,9 +1409,9 @@ class IrafCLTask(IrafTask):
         if self._clFunction is None:
             return self.__dict__
         # replace _clFunction in shallow copy of dictionary
-        dict = self.__dict__.copy()
-        dict['_clFunction'] = None
-        return dict
+        sdict = self.__dict__.copy()
+        sdict['_clFunction'] = None
+        return sdict
 
     #=========================================================
     # private methods
