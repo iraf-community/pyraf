@@ -25,6 +25,17 @@ def setup_hook(config):
 
         config['files']['scripts'] += '\n' + '\n'.join(additional_scripts)
 
+        # This installs the shortcut-like launcher exe onto the desktop
+        if 'USERPROFILE' in os.environ:
+           dtop = os.environ['USERPROFILE']+os.sep+'Desktop'
+           if os.path.exists(dtop):
+               shutil.copy('data'+os.sep+'PyRAF.exe', dtop+os.sep+'PyRAF.exe')
+               print('Installing PyRAF.exe to -> '+dtop)
+           else:
+               print('Error: Desktop not found at: '+dtop)
+        else:
+           print('Error: Desktop location unknown')
+
 
 def build_ext_hook(command):
     """Adds the correct library directories for X11.  I've found that on Linux
