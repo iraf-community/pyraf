@@ -1361,9 +1361,50 @@ def test_IrafParList(fout = sys.stdout):
     try:
        # the following setParam should fail - not in choice list
        pl.setParam('topping','peanutbutter') # oh the horror
-       assert False, "The bad setParam didn't fail?"
+       raise RuntimeError("The bad setParam didn't fail?")
     except ValueError:
        pass
+
+    # Now try some direct access (also tests IrafPar basics)
+    assert pl.caller == "Ima Hungry", 'Ima? '+pl.getParDict()['caller'].value
+    pl.pi = 42
+    assert pl.pi == 42.0, "pl.pi not 42, ==> "+str(pl.pi)
+    try:
+       pl.pi = 'strings are not allowed' # should throw
+       raise RuntimeError("The bad pi assign didn't fail?")
+    except ValueError:
+       pass
+    pl.diameter = '9.7' # ok, string to float to int
+    assert pl.diameter == 9, "pl.diameter?, ==> "+str(pl.diameter)
+    try:
+       pl.diameter = 'twelve' # fails, not parseable to an int
+       raise RuntimeError("The bad diameter assign didn't fail?")
+    except ValueError:
+       pass
+    assert pl.diameter == 9, "pl.diameter after?, ==> "+str(pl.diameter)
+    pl.delivery = False # converts
+    assert pl.delivery == 'no', "pl.delivery not no? "+str(pl.delivery)
+    pl.delivery = 1 # converts
+    assert pl.delivery == 'yes', "pl.delivery not yes? "+str(pl.delivery)
+    pl.delivery = 'NO' # converts
+    assert pl.delivery == 'no', "pl.delivery not NO? "+str(pl.delivery)
+    try:
+       pl.delivery = "maybe, if he's not being recalcitrant"
+       raise RuntimeError("The bad delivery assign didn't fail?")
+    except ValueError:
+       pass
+    try:
+       pl.topping = 'peanutbutter' # try again
+       raise RuntimeError("The bad topping assign didn't fail?")
+    except ValueError:
+       pass
+    try:
+       x = pl.pumpkin_pie
+       raise RuntimeError("The pumpkin_pie access didn't fail?")
+    except KeyError:
+       pass
+
+
 
     # If we get here, then all is well
     # sys.exit(0)
@@ -1372,4 +1413,4 @@ def test_IrafParList(fout = sys.stdout):
 
 
 if __name__ == '__main__':
-    test_IrafParList()
+    pl = test_IrafParList()
