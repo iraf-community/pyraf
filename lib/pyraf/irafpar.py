@@ -1383,11 +1383,11 @@ def test_IrafParList(fout = sys.stdout):
        pass
     assert pl.diameter == 9, "pl.diameter after?, ==> "+str(pl.diameter)
     pl.delivery = False # converts
-    assert pl.delivery == 'no', "pl.delivery not no? "+str(pl.delivery)
+    assert pl.delivery == no, "pl.delivery not no? "+str(pl.delivery)
     pl.delivery = 1 # converts
-    assert pl.delivery == 'yes', "pl.delivery not yes? "+str(pl.delivery)
+    assert pl.delivery == yes, "pl.delivery not yes? "+str(pl.delivery)
     pl.delivery = 'NO' # converts
-    assert pl.delivery == 'no', "pl.delivery not NO? "+str(pl.delivery)
+    assert pl.delivery == no, "pl.delivery not NO? "+str(pl.delivery)
     try:
        pl.delivery = "maybe, if he's not being recalcitrant"
        raise RuntimeError("The bad delivery assign didn't fail?")
@@ -1403,8 +1403,6 @@ def test_IrafParList(fout = sys.stdout):
        raise RuntimeError("The pumpkin_pie access didn't fail?")
     except KeyError:
        pass
-
-
 
     # If we get here, then all is well
     # sys.exit(0)
