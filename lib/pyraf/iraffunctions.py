@@ -428,27 +428,27 @@ def restoreFromFile(savefile, doprint=1, **kw):
         fh = open(savefile, 'rb')
         doclose = 1
     u = _pickle.Unpickler(fh)
-    udict = u.load()
+    dict = u.load()
     if doclose:
         fh.close()
 
     # restore the value of Verbose
 
     global Verbose
-    Verbose.set(udict['Verbose'])
-    del udict['Verbose']
+    Verbose.set(dict['Verbose'])
+    del dict['Verbose']
 
     # replace the contents of loadedPath
     global loadedPath
-    loadedPath[:] = udict['loadedPath']
-    del udict['loadedPath']
+    loadedPath[:] = dict['loadedPath']
+    del dict['loadedPath']
 
     # update the values
-    globals().update(udict)
+    globals().update(dict)
 
     # replace INDEF everywhere we can find it
     # this does not replace references in parameters, unfortunately
-    INDEF = udict['INDEF']
+    INDEF = dict['INDEF']
     from stsci.tools import irafglobals
     import __main__
     import pyraf

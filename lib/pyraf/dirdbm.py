@@ -119,12 +119,11 @@ class _Database(object):
         del self._dict[key]
         if self._writable: _os.remove(self._getFilename(key))
 
-    def has_key(self, key): return self._has(key)
+    def has_key(self, key):
+        return self._dict.has_key(key) or _os.path.exists(self._getFilename(key))
 
-    def __contains__(self, key): return self._has(key)
-
-    def _has(self, key):
-        return key in self._dict or _os.path.exists(self._getFilename(key))
+    def __contains__(self, key):
+        return self.has_key(key)
 
     def __len__(self):
         return len(self._dict)

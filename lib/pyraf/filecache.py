@@ -209,11 +209,7 @@ class FileCacheDict:
         abspath = self.abspath(filename)
         del self.data[abspath]
 
-    def has_key(self, key): return self._has(key)
-
-    def __contains__(self, key): return self._has(key)
-
-    def _has(self, filename):
+    def has_key(self, filename):
         abspath = self.abspath(filename)
         return self.data.has_key(abspath)
 

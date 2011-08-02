@@ -701,13 +701,10 @@ class VarList(GenericASTTraversal, ErrorTracker):
         self.parList = irafpar.IrafParList(self.getProcName(),
                                 filename=self.filename, parlist=p)
 
-    def has_key(self, key): return self._has(key)
-
-    def __contains__(self, key): return self._has(key)
-
-    def _has(self, name):
+    def has_key(self, name):
         """Check both local and procedure dictionaries for this name"""
-        return name in self.proc_args_dict or name in self.local_vars_dict
+        return self.proc_args_dict.has_key(name) or \
+                        self.local_vars_dict.has_key(name)
 
     def get(self, name):
         """Return entry from local or procedure dictionary (None if none)"""
@@ -1146,13 +1143,9 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
         labels.sort()
         return labels
 
-    def __contains__(self, key): return self._has(key)
-
-    def has_key(self, key): return self._has(key)
-
-    def _has(self, label):
+    def has_key(self, label):
         """Check if label is used in a GOTO"""
-        return label in self.goto_blockidlist
+        return self.goto_blockidlist.has_key(label)
 
     #------------------------------------
     # methods called during AST traversal

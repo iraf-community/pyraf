@@ -859,15 +859,15 @@ class TparDisplay(Binder):
             # whoops, lengths don't match
             raise ValueError("Mismatch between default, current par lists"
             " for task %s (try unlearn)" % self.taskName)
-        pardict = {}
+        dict = {}
         for par in dlist:
-            pardict[par.name] = par
+            dict[par.name] = par
 
         # Build default list sorted into same order as current list
         try:
             dsort = []
             for par in self.paramList:
-                dsort.append(pardict[par.name])
+                dsort.append(dict[par.name])
         except KeyError:
             raise ValueError("Mismatch between default, current par lists"
                      " for task %s (try unlearn)" % self.taskName)
