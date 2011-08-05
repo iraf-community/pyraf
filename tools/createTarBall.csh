@@ -81,6 +81,7 @@ endif
 cd $workDir/$pyr/required_pkgs/tools
 /bin/cp setup.cfg setup.cfg.orig
 cat setup.cfg.orig | sed 's/^\(  *pyfits .*\)/#\1/' > setup.cfg
+echo DIFF for pyfits
 diff setup.cfg.orig setup.cfg
 
 # edit pyraf setup stuff to use the required_pkgs sub-dir
@@ -88,13 +89,15 @@ cd $workDir/$pyr
 # change line to: find-links = required_pkgs
 /bin/cp setup.cfg setup.cfg.orig
 cat setup.cfg.orig | sed 's/^ *find-links *=.*/find-links = required_pkgs/' > setup.cfg
+echo DIFF for find-links
 diff setup.cfg.orig setup.cfg
 # change line to use: os.path.abspath("required_pkgs/distutils/lib")
 /bin/cp setup.py setup.py.orig
 cat setup.py.orig | sed 's/^\( *stsci_distutils *=\).*/\1 os.path.abspath("required_pkgs"+os.sep+"distutils"+os.sep+"lib")/' > setup.py
+echo DIFF for required_pkgs
 diff setup.py.orig setup.py
 
-# tar and zip it
+# tar and zip it - regular (non-win) version
 cd $workDir
 tar cf $pyr.tar $pyr
 if ($status != 0) then
@@ -106,6 +109,25 @@ if ($status != 0) then
    echo ERROR gzipping
    exit 1
 endif
-#
-echo DONE
 
+# Now make the Windows version (have to edit setup.cfg - can't do in Python?)
+cd $workDir/$pyr
+/bin/cp setup.cfg setup.cfg.winorig
+cat setup.cfg.winorig | grep -v sscanfmodule | grep -v xutil | grep -v X11 > setup.cfg
+echo DIFF for removed extensions
+diff setup.cfg.winorig setup.cfg
+
+# tar and zip Windows version
+cd $workDir
+tar cf ${pyr}-win.tar $pyr
+if ($status != 0) then
+   echo ERROR tarring up
+   exit 1
+endif
+gzip ${pyr}-win.tar
+if ($status != 0) then
+   echo ERROR gzipping
+   exit 1
+endif
+
+echo Successfully created tar-ball
