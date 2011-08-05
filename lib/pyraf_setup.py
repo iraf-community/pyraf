@@ -61,6 +61,9 @@ def _find_x(xdir=None):
     lib_dirs = []
     inc_dirs = []
 
+    if sys.platform.startswith('win'):
+       return lib_dirs, inc_dirs
+
     if xdir is not None:
         lib_dirs.append(os.path.join(xdir, 'lib64'))
         lib_dirs.append(os.path.join(xdir, 'lib'))
