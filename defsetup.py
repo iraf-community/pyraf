@@ -77,11 +77,23 @@ pkg = "pyraf"
 
 if sys.platform.startswith('win'):
     PYRAF_EXTENSIONS = []
+    # Install main "runpyraf.py"
     if not os.path.exists('wintmp'):
         os.mkdir('wintmp')
     if os.path.exists('wintmp'+os.sep+'runpyraf.py'):
         os.remove('wintmp'+os.sep+'runpyraf.py')
-    shutil.copy('lib'+os.sep+'pyraf', 'wintmp'+os.sep+'runpyraf.py')
+    shutil.copy('scripts'+os.sep+'pyraf', 'wintmp'+os.sep+'runpyraf.py')
+    # Install optional launcher binary onto desktop "PyRAF.exe"
+    if 'USERPROFILE' in os.environ:
+       dtop = os.environ['USERPROFILE']+os.sep+'Desktop'
+       if os.path.exists(dtop):
+           shutil.copy('data'+os.sep+'PyRAF.exe', dtop+os.sep+'PyRAF.exe')
+           print('Installing PyRAF.exe to -> '+dtop)
+       else:
+           print('Error: User desktop not found at: '+dtop)
+    else:
+       print('Error: User desktop location unknown')
+
 
 
 DATA_FILES = [ ( pkg,
@@ -89,7 +101,7 @@ DATA_FILES = [ ( pkg,
                     'data/epar.optionDB',
                     'data/pyraflogo_rgb_web.gif',
                     'data/ipythonrc-pyraf',
-                    'lib/LICENSE.txt',
+                    'LICENSE.txt',
                     ]
                 ),
                 (pkg+'/clcache',  [ "data/clcache/*" ] )
@@ -105,10 +117,11 @@ setupargs = {
     'license' :			    "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
     'platforms' :			["unix"],
     'data_files' :			DATA_FILES,
-    'scripts' :			    ['lib/pyraf'],
-    'ext_modules' :			PYRAF_EXTENSIONS
+    'scripts' :			    ['scripts/pyraf', 'scripts/pyraf.bat'],
+    'ext_modules' :			PYRAF_EXTENSIONS,
+    'package_dir' :         { 'pyraf' : 'lib/pyraf' },
 }
 
 
 if sys.platform.startswith('win'):
-    setupargs['scripts'] = ['lib/pyraf', 'wintmp/runpyraf.py', 'lib/pyraf.bat']
+    setupargs['scripts'] = ['wintmp/runpyraf.py', 'scripts/pyraf.bat']

@@ -5,13 +5,11 @@
 from __future__ import division # confidence high
 
 import os
-if os.getenv("USE_STPYTOOLS") :
-    import pytools.stsci_distutils_hack as H
-    pytools_version = "3.0"
-else :
+try :
+    import stsci.tools.stsci_distutils_hack as H
+except ImportError :
     import stsci_distutils_hack as H
-    pytools_version = None
 
-H.run(pytools_version = pytools_version)
+H.run()
 
 
