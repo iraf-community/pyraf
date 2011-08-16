@@ -12,7 +12,7 @@ add_lib_dirs = [ distutils.sysconfig.get_python_lib(plat_specific=1, standard_li
 
 add_inc_dirs = [ distutils.sysconfig.get_python_inc(plat_specific=1) ]
 
-
+in_stsci_python = os.path.exists('pyraf') 
 
 def find_x(xdir=""):
     if xdir != "":
@@ -53,7 +53,8 @@ def find_x(xdir=""):
                     #break
                     add_inc_dirs.append(os.path.join(os.path.dirname(lib_list[ind + 2]), '../include'))
 
-find_x()
+if not sys.platform.startswith('win'):
+	find_x()
 
 def dir_clean(list) :
     # We have a list of directories.  Remove any that don't exist.
@@ -81,7 +82,12 @@ if sys.platform.startswith('win'):
         os.mkdir('wintmp')
     if os.path.exists('wintmp'+os.sep+'runpyraf.py'):
         os.remove('wintmp'+os.sep+'runpyraf.py')
-    shutil.copy('lib'+os.sep+'pyraf', 'wintmp'+os.sep+'runpyraf.py')
+    ffrom = 'scripts/pyraf'
+    to = 'wintmp/runpyraf.py'
+    if in_stsci_python :
+        ffrom = 'pyraf/' + ffrom
+        to = 'pyraf/' + to
+    shutil.copy(ffrom,to)
 
 
 DATA_FILES = [ ( pkg,
@@ -112,4 +118,4 @@ setupargs = {
 
 
 if sys.platform.startswith('win'):
-    setupargs['scripts'] = ['lib/pyraf', 'wintmp/runpyraf.py', 'lib/pyraf.bat']
+    setupargs['scripts'] = ['scripts/pyraf', 'wintmp/runpyraf.py', 'scripts/pyraf.bat']
