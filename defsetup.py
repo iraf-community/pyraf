@@ -78,17 +78,6 @@ pkg = "pyraf"
 
 if sys.platform.startswith('win'):
     PYRAF_EXTENSIONS = []
-    if not os.path.exists('wintmp'):
-        os.mkdir('wintmp')
-    if os.path.exists('wintmp'+os.sep+'runpyraf.py'):
-        os.remove('wintmp'+os.sep+'runpyraf.py')
-    ffrom = 'scripts/pyraf'
-    to = 'wintmp/runpyraf.py'
-    if in_stsci_python :
-        ffrom = 'pyraf/' + ffrom
-        to = 'pyraf/' + to
-    shutil.copy(ffrom,to)
-
 
 DATA_FILES = [ ( pkg,
                     ['data/blankcursor.xbm',
@@ -118,4 +107,4 @@ setupargs = {
 
 
 if sys.platform.startswith('win'):
-    setupargs['scripts'] = ['scripts/pyraf', 'wintmp/runpyraf.py', 'scripts/pyraf.bat']
+    setupargs['scripts'] = ['scripts/pyraf', 'scripts/runpyraf.py', 'scripts/pyraf.bat']
