@@ -2227,22 +2227,14 @@ def unlearn(*args, **kw):
             getTask(taskname).unlearn()
         except KeyError, e:
             try: # maybe it is a task which uses .cfg files
-                flist = _teal.cfgpars.getUsrCfgFilesForPyPkg(taskname)
-                if flist == None or len(flist) == 0:
-                    pass # no need to be verbose
-                elif len(flist) == 1:
-                    _os.remove(flist[0]) # don't be chatty here either
-                else:
-                    if force:
-                        for f in flist:
-                            _os.remove(f) # don't be chatty
-                    else:
-                        _writeError('Error: multiple user-owned files found'+ \
-                            ' to unlearn for task "'+taskname+ \
-                            '".\nNone were deleted.  Please review and move/'+ \
-                            'delete these files:\n\t'+\
-                            '\n\t'.join(flist)+ \
-                            '\n\nor type "unlearn '+taskname+' force=yes"')
+                ans = _teal.unlearn(taskname, deleteAll=force)
+                if ans != 0:
+                    _writeError('Error: multiple user-owned files found'+ \
+                        ' to unlearn for task "'+taskname+ \
+                        '".\nNone were deleted.  Please review and move/'+ \
+                        'delete these files:\n\n\t'+\
+                        '\n\t'.join(ans)+ \
+                        '\n\nor type "unlearn '+taskname+' force=yes"')
             except _teal.cfgpars.NoCfgFileError:
                 _writeError("Warning: Could not find task %s to unlearn" %
                             taskname)
