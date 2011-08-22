@@ -137,6 +137,10 @@ Help menu:
              be displayed in a web browser by modifying the Options.
     EPAR Help
              Display this help.
+    Show Log
+             Display the historical log of all the status messages that so
+             far have been displayed in the status area at the very bottom
+             of the user interface.
 
 
 Toolbar Buttons
@@ -228,7 +232,7 @@ class PyrafEparDialog(editpar.EditParDialog):
 
         self._showExtraHelpButton = True
 
-        self._appName             = "Epar"
+        self._appName             = "EPAR"
         self._appHelpString       = eparHelpString
         self._unpackagedTaskTitle = "Filename"
         self._defaultsButtonTitle = "Unlearn"
