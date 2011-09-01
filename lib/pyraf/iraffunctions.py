@@ -428,27 +428,27 @@ def restoreFromFile(savefile, doprint=1, **kw):
         fh = open(savefile, 'rb')
         doclose = 1
     u = _pickle.Unpickler(fh)
-    dict = u.load()
+    udict = u.load()
     if doclose:
         fh.close()
 
     # restore the value of Verbose
 
     global Verbose
-    Verbose.set(dict['Verbose'])
-    del dict['Verbose']
+    Verbose.set(udict['Verbose'])
+    del udict['Verbose']
 
     # replace the contents of loadedPath
     global loadedPath
-    loadedPath[:] = dict['loadedPath']
-    del dict['loadedPath']
+    loadedPath[:] = udict['loadedPath']
+    del udict['loadedPath']
 
     # update the values
-    globals().update(dict)
+    globals().update(udict)
 
     # replace INDEF everywhere we can find it
     # this does not replace references in parameters, unfortunately
-    INDEF = dict['INDEF']
+    INDEF = udict['INDEF']
     from stsci.tools import irafglobals
     import __main__
     import pyraf
@@ -2152,8 +2152,7 @@ def _wrapTeal(taskname):
     # pop up TEAL
     try:
         # use simple-auto-close mode (like EPAR) by no return dict
-        _teal.teal(taskname, returnDict=False, errorsToTerm=True,
-                   raiseUnfound=True)
+        _teal.teal(taskname, returnDict=False, errorsToTerm=True, strict=True)
     # put focus back on terminal, even if there is an exception
     finally:
         _wutil.setFocusTo(oldFoc)
@@ -2228,22 +2227,14 @@ def unlearn(*args, **kw):
             getTask(taskname).unlearn()
         except KeyError, e:
             try: # maybe it is a task which uses .cfg files
-                flist = _teal.cfgpars.getUsrCfgFilesForPyPkg(taskname)
-                if flist == None or len(flist) == 0:
-                    pass # no need to be verbose
-                elif len(flist) == 1:
-                    _os.remove(flist[0]) # don't be chatty here either
-                else:
-                    if force:
-                        for f in flist:
-                            _os.remove(f) # don't be chatty
-                    else:
-                        _writeError('Error: multiple user-owned files found'+ \
-                            ' to unlearn for task "'+taskname+ \
-                            '".\nNone were deleted.  Please review and move/'+ \
-                            'delete these files:\n\t'+\
-                            '\n\t'.join(flist)+ \
-                            '\n\nor type "unlearn '+taskname+' force=yes"')
+                ans = _teal.unlearn(taskname, deleteAll=force)
+                if ans != 0:
+                    _writeError('Error: multiple user-owned files found'+ \
+                        ' to unlearn for task "'+taskname+ \
+                        '".\nNone were deleted.  Please review and move/'+ \
+                        'delete these files:\n\n\t'+\
+                        '\n\t'.join(ans)+ \
+                        '\n\nor type "unlearn '+taskname+' force=yes"')
             except _teal.cfgpars.NoCfgFileError:
                 _writeError("Warning: Could not find task %s to unlearn" %
                             taskname)
