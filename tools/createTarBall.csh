@@ -51,6 +51,16 @@ if ($status != 0) then
    exit 1
 endif
 
+# for now, add svninfo file manually
+cd $workDir/$pyr
+set rev = `svn info | grep '^Revision:' | sed 's/.* //'`
+cd $workDir/$pyr/lib/pyraf
+if (!(-e svninfo.py)) then
+   echo '__svn_version__ = "'${rev}'"' > svninfo.py
+   echo '__full_svn_info__ = ""' >> svninfo.py
+   echo '__setup_datetime__ = ""' >> svninfo.py
+endif
+
 # get extra pkgs into a subdir
 cd $workDir/$pyr
 mkdir required_pkgs
