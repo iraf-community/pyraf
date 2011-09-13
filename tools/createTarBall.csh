@@ -78,6 +78,7 @@ if ($status != 0) then
 endif
 echo This build will show a version number of:
 grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py
+grep '__svn_version__' $workDir/$pyr/lib/pyraf/sv*.py
 
 # remove svn dirs
 cd $workDir/$pyr
