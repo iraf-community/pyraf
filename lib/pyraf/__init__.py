@@ -15,7 +15,7 @@ __version__ = "1.12.dev"
 try:
     from pyraf.svninfo import (__svn_version__, __full_svn_info__,
                                __setup_datetime__)
-    __version__ += " (r"+__svn_version__+')'
+    __version__ += "-r"+__svn_version__
 except:
     pass
 
