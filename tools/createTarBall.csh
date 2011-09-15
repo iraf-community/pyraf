@@ -76,9 +76,12 @@ if ($status != 0) then
    echo ERROR svn-ing tools
    exit 1
 endif
-echo This build will show a version number of:
-grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py
-grep '__svn_version__' $workDir/$pyr/lib/pyraf/sv*.py
+
+# get version info
+set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py`
+set verinfo2 = `grep '__svn_version__' $workDir/$pyr/lib/pyraf/sv*.py`
+echo "This build will show a version number of: $verinfo1 $verinfo2"
+echo "`date` -> $verinfo1 $verinfo2" > ~/.pyraf-tarball-ver
 
 # remove svn dirs
 cd $workDir/$pyr
