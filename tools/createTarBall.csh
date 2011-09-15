@@ -78,10 +78,10 @@ if ($status != 0) then
 endif
 
 # get version info
-set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py`
-set verinfo2 = `grep '__svn_version__' $workDir/$pyr/lib/pyraf/sv*.py`
+set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py | sed 's/.*= *//'`
+set verinfo2 = `grep '__svn_version__' $workDir/$pyr/lib/pyraf/sv*.py | sed 's/.*= *//'`
 echo "This build will show a version number of: $verinfo1 $verinfo2"
-echo "`date` -> $verinfo1 $verinfo2" > ~/.pyraf-tarball-ver
+echo "`date` -> $verinfo1 $verinfo2" > ~/.pyraf_tar_ball_ver
 
 # remove svn dirs
 cd $workDir/$pyr
