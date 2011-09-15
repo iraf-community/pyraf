@@ -21,6 +21,13 @@ except:
 
 import os, sys, __main__
 
+# Dump version and exit here, if requested
+if '-V' in sys.argv or '--version' in sys.argv:
+    print __version__
+    sys.stdout.flush()
+    os._exit(0) # see note in usage()
+
+
 # Show version at earliest possible moment when in debugging/verbose mode
 # (find all cmd-line args with '-v', if any found, we are verbose)
 if len([j for j in sys.argv if j.find('-v')>=0]) > 0:
