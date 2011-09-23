@@ -1474,6 +1474,15 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
     # new public methods for package
     #=========================================================
 
+    def __str__(self):
+        """ Describe this object. """
+        retval = "IrafPkg:  name="+self.getName()+", pkg="+self.getPkgname()+ \
+                 ", file="+self.getFilename()+"\n"
+        retval += "tasks: "+str(self._tasks)+"\n"
+        retval += "subtasks: "+str(self._subtasks)+"\n"
+        retval += "packages: "+str(self._pkgs)+"\n"
+        return retval
+
     def isLoaded(self):
         """Returns true if this package has already been loaded"""
         return self._loaded
