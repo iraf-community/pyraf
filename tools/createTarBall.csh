@@ -23,7 +23,8 @@ endif
 if ($isdev == 1) then
    set pyr = "pyraf-dev"
    set co_pyraf = 'co -q -r HEAD http://svn6.assembla.com/svn/pyraf/trunk'
-   set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/distutils'
+#  set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/distutils'
+   set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/distutils-standalone'
    set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/tools'
 else
    set pyr = "pyraf-1.11"
