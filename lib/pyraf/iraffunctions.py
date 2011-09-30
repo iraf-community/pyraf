@@ -2853,7 +2853,7 @@ def chdir(directory=None):
     if not isinstance(directory, (str,unicode)):
         raise IrafError("Illegal non-string value for directory:"+ \
               +repr(directory))
-    if iraf.Verbose > 2: print('chdir to: '+str(directory))
+    if Verbose > 2: print('chdir to: '+str(directory))
     # Check for (1) local directory and (2) iraf variable
     # when given an argument like 'dev'.  In IRAF 'cd dev' is
     # the same as 'cd ./dev' if there is a local directory named
