@@ -3220,8 +3220,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
     _addTask(newtask)
     return newtask
 
-def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
-        redefine=0):
+def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
 
     """Returns a new or existing IrafPset object
 
@@ -3257,8 +3256,7 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
     _addTask(newtask)
     return newtask
 
-def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
-        redefine=0):
+def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
 
     """Returns a new or existing IrafPkg object
 
