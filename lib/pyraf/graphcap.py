@@ -5,6 +5,7 @@ $Id$
 from __future__ import division # confidence high
 
 import string
+from stsci.tools import compmixin
 import filecache
 
 def merge(inlines):
@@ -107,7 +108,7 @@ class GraphCap(filecache.FileCache):
         return key in thedict
 
 
-class Device:
+class Device(compmixin.ComparableMixin):
 
     def __init__(self, devices, devname):
         self.dict = devices
@@ -128,12 +129,12 @@ class Device:
                     break
         return value
 
-    def __cmp__(self, other):
+    def _compare(self, other, method):
         if isinstance(other, Device):
-            return cmp(id(self.dict[self.devname]),
-                            id(other.dict[other.devname]))
+            return method(id(self.dict[self.devname]),
+                          id(other.dict[other.devname]))
         else:
-            return cmp(id(self), id(other))
+            return method(id(self), id(other))
 
     def __getitem__(self, key):
         return self.getAttribute(key)
