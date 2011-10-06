@@ -29,8 +29,10 @@ from __future__ import division # confidence high
 #  Minimal AST class -- N-ary trees.
 #
 
-class AST:
-    def __init__(self, type):
+from stsci.tools import compmixin
+
+class AST(compmixin.ComparableMixin):
+    def __init__(self, type=None):
         self.type = type
         self._kids = []
 
@@ -40,7 +42,7 @@ class AST:
     #  __getitem__          GenericASTTraversal, GenericASTMatcher
     #  __len__              GenericASTBuilder
     #  __setslice__         GenericASTBuilder
-    #  __cmp__              GenericASTMatcher
+    #  _compare             GenericASTMatcher
     #
     def __getitem__(self, i):
         return self._kids[i]
@@ -51,7 +53,10 @@ class AST:
         self._kids[low:high] = seq
     def __setitem__(self, idx, val):
         self._kids[idx] = val
-    def __cmp__(self, o):
-        return cmp(self.type, o)
     def __repr__(self):
         return self.type
+    def _compare(self, other, method):
+        if isinstance(other, AST):
+            return method(self.type, other.type)
+        else:
+            return method(self.type, other)
