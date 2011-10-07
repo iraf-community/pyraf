@@ -51,21 +51,24 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
                 pkg.run(_doprint=0, _hush=1)
         # must return a module for 'from' import
         return _irafModuleProxy.module
-    # e.g. "import iraf" or "from . import iraf"
-    elif (name == "iraf") or (name=='' and level==1 and fromlist==['iraf']):
+    # e.g. "import iraf" or "from . import iraf" (um, fromlist is list OR tuple)
+    elif (name == "iraf") or \
+         (name=='' and level==1 and len(fromlist)==1 and fromlist[0]=='iraf'):
         return _irafModuleProxy
     # e.g. "import sys" or "import stsci.tools.alert"
     # e.g. Note! "import os, sys, re, glob" calls this 4 separate times, but
     #            "from . import gki, gwm, iraf" is only a single call here!
     else:
         # !!! TEMPORARY KLUDGE !!! working on why seeing pyraf.minmatch in cache
-        for module in ['minmatch', 'irafutils', 'dialog', 'listdlg', 'filedlg',
-                       'alert', 'irafglobals']:
-            if name == ('pyraf.%s' % module):
-                name = 'stsci.tools.%s' % module
-        # Replace any instances of 'pytools' with 'stsci.tools'--the new name
-        # of the former pytools package
-        name = name.replace('pytools.', 'stsci.tools.')
+        if name:
+            for module in ['minmatch', 'irafutils', 'dialog', 'listdlg',
+                           'filedlg', 'alert', 'irafglobals']:
+                if name == ('pyraf.%s' % module):
+                    name = 'stsci.tools.%s' % module
+            # Replace any instances of 'pytools' with 'stsci.tools' -- the
+            # new name of the former pytools package
+            name = name.replace('pytools.', 'stsci.tools.')
+
         # Same for everything in fromlist:
         if fromlist:
             fromlist = [item.replace('pytools', 'stsci.tools')
