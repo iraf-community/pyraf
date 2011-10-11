@@ -19,8 +19,11 @@ print(str(irafinst.EXISTS))
 if not irafinst.EXISTS:
    sys.exit(0)
 
-print("simple #6 - imheader of dev$pix is ... (requires IRAF)")
+print("simple #6 - imaccess to dev$pix is ... (requires IRAF)")
 iraf.images(_doprint=0) # load images
 iraf.imutil(_doprint=0) # load imutil
+print(iraf.imaccess("dev$pix"))
+print("simple #7 - imheader of dev$pix is ... (requires IRAF)")
 iraf.imheader("dev$pix")
+
 sys.exit(0)
