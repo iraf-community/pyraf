@@ -45,6 +45,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
     if IMPORT_DEBUG:
         print("irafimport called: "+name+", "+str(fromlist)+", "+str(level))
+
     # e.g. "from iraf import stsdas, noao" or "from .iraf import noao"
     if fromlist and (name in ["iraf", "pyraf.iraf", ".iraf"]):
         for task in fromlist:
@@ -55,50 +56,54 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
         if IMPORT_DEBUG:
             print("irafimport: case: from "+name+" import "+str(fromlist))
         return _irafModuleProxy.module
+
     # e.g. "import iraf" or "from . import iraf" (um, fromlist is list OR tuple)
-    elif (name == "iraf") or \
-         (name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
+    if (name == "iraf") or \
+       (name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
         if IMPORT_DEBUG:
             print("irafimport: case of: import iraf OR from . import iraf")
         return _irafModuleProxy
+
+    # ALL OTHER CASES (PASS-THROUGH)
     # e.g. "import sys" or "import stsci.tools.alert"
     # e.g. Note! "import os, sys, re, glob" calls this 4 separate times, but
     #            "from . import gki, gwm, iraf" is only a single call here!
+
+    # !!! TEMPORARY KLUDGE !!! keep this code until cache files are updated
+    if name:
+        for module in ['minmatch', 'irafutils', 'dialog', 'listdlg',
+                       'filedlg', 'alert', 'irafglobals']:
+            if name == ('pyraf.%s' % module):
+                name = 'stsci.tools.%s' % module
+        # Replace any instances of 'pytools' with 'stsci.tools' -- the
+        # new name of the former pytools package
+        name = name.replace('pytools.', 'stsci.tools.')
+
+    # Same for everything in fromlist:
+    if fromlist:
+        fromlist = [item.replace('pytools', 'stsci.tools')
+                    for item in fromlist]
+    # !!! END TEMPORARY KLUDGE !!!
+
+    hadIrafInList = False
+    if fromlist and 'iraf' in fromlist and name == '' and level > 0:
+        fromlist = tuple([j for j in fromlist if j != 'iraf'])
+        hadIrafInList = True
+
+    if IMPORT_DEBUG:
+        print("irafimport - PASSTHRU: n="+name+", fl="+str(fromlist)+", l="+str(level))
+    if _importHasLvlArg:
+        retval = _originalImport(name, globals, locals, fromlist, level)
     else:
-        # !!! TEMPORARY KLUDGE !!! working on why seeing pyraf.minmatch in cache
-        if name:
-            for module in ['minmatch', 'irafutils', 'dialog', 'listdlg',
-                           'filedlg', 'alert', 'irafglobals']:
-                if name == ('pyraf.%s' % module):
-                    name = 'stsci.tools.%s' % module
-            # Replace any instances of 'pytools' with 'stsci.tools' -- the
-            # new name of the former pytools package
-            name = name.replace('pytools.', 'stsci.tools.')
+        # we could assert here that level == -1, but it's safe to assume
+        retval = _originalImport(name, globals, locals, fromlist)
 
-        # Same for everything in fromlist:
-        if fromlist:
-            fromlist = [item.replace('pytools', 'stsci.tools')
-                        for item in fromlist]
-        # !!! END TEMPORARY KLUDGE !!!
+    if hadIrafInList:
+        # same as above (see "from_dot_iraf")
+        retval.__setattr__('iraf', _irafModuleProxy)
 
-        hadIrafInList = False
-        if fromlist and 'iraf' in fromlist and name == '' and level > 0:
-            fromlist = tuple([j for j in fromlist if j != 'iraf'])
-            hadIrafInList = True
+    return retval
 
-        if IMPORT_DEBUG:
-            print("irafimport - PASSTHRU: n="+name+", fl="+str(fromlist)+", l="+str(level))
-        if _importHasLvlArg:
-            retval = _originalImport(name, globals, locals, fromlist, level)
-        else:
-            # we could assert here that level == -1, but it's safe to assume
-            retval = _originalImport(name, globals, locals, fromlist)
-
-        if hadIrafInList:
-            # same as above (see "from_dot_iraf")
-            retval.__setattr__('iraf', _irafModuleProxy)
-
-        return retval
 
 def _irafReload(module):
     if isinstance(module, _irafModuleClass):
