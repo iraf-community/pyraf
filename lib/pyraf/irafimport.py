@@ -21,6 +21,8 @@ from stsci.tools import minmatch
 _importHasLvlArg = sys.version_info[0] > 2 or sys.version_info[1] >= 5 # no 1.*
 _reloadIsBuiltin = sys.version_info[0] < 3
 
+IMPORT_DEBUG = False
+
 # Save the original hooks;  replaced at bottom of module...
 _originalImport = __builtin__.__import__
 if _reloadIsBuiltin:
@@ -41,8 +43,8 @@ def restoreBuiltins():
 
 def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
-#   print("% % % > "+name+", "+str(fromlist)+", "+str(level))
-
+    if IMPORT_DEBUG:
+        print("irafimport called: "+name+", "+str(fromlist)+", "+str(level))
     # e.g. "from iraf import stsdas, noao" or "from .iraf import noao"
     if fromlist and (name in ["iraf", "pyraf.iraf", ".iraf"]):
         for task in fromlist:
@@ -50,10 +52,14 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
             if pkg is not None and not pkg.isLoaded():
                 pkg.run(_doprint=0, _hush=1)
         # must return a module for 'from' import
+        if IMPORT_DEBUG:
+            print("irafimport: case: from "+name+" import "+str(fromlist))
         return _irafModuleProxy.module
     # e.g. "import iraf" or "from . import iraf" (um, fromlist is list OR tuple)
     elif (name == "iraf") or \
-         (name=='' and level==1 and len(fromlist)==1 and fromlist[0]=='iraf'):
+         (name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
+        if IMPORT_DEBUG:
+            print("irafimport: case of: import iraf OR from . import iraf")
         return _irafModuleProxy
     # e.g. "import sys" or "import stsci.tools.alert"
     # e.g. Note! "import os, sys, re, glob" calls this 4 separate times, but
@@ -80,6 +86,8 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
             fromlist = tuple([j for j in fromlist if j != 'iraf'])
             hadIrafInList = True
 
+        if IMPORT_DEBUG:
+            print("irafimport - PASSTHRU: n="+name+", fl="+str(fromlist)+", l="+str(level))
         if _importHasLvlArg:
             retval = _originalImport(name, globals, locals, fromlist, level)
         else:
@@ -87,6 +95,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
             retval = _originalImport(name, globals, locals, fromlist)
 
         if hadIrafInList:
+            # same as above (see "from_dot_iraf")
             retval.__setattr__('iraf', _irafModuleProxy)
 
         return retval
@@ -163,3 +172,7 @@ _irafModuleProxy = _irafModuleClass()
 
 # import iraf module using original mechanism
 iraf = _originalImport('iraf', globals(), locals(), [])
+
+# leaving
+if IMPORT_DEBUG:
+    print("irafimport: passed final import")
