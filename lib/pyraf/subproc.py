@@ -107,7 +107,7 @@ class Subprocess:
                              maxChunkSize=1024):
         """Launch a subprocess, given command string COMMAND."""
         self.cmd = cmd
-        self.pid = None
+        self.pid = None # pid of child, as known by parent only
         self.expire_noisily = expire_noisily    # Announce subproc destruction?
         self.control_stderr = control_stderr
         self.control_stdout = control_stdout
@@ -119,7 +119,7 @@ class Subprocess:
     def fork(self, cmd=None):
         """Fork a subprocess with designated COMMAND (default, self.cmd)."""
         if cmd: self.cmd = cmd
-        if type(self.cmd) == types.StringType:
+        if isinstance(self.cmd, (str, unicode)):
             cmd = self.cmd.split()
         else:
             cmd = self.cmd
@@ -193,6 +193,7 @@ class Subprocess:
             # close child ends of pipes
             for i in childPipes: os.close(i)
             try:
+                # this is useless since the child may not have erred yet
                 pid, err = os.waitpid(self.pid, os.WNOHANG)
             except os.error, (errnum, msg):
                 if errnum == 10:
@@ -856,7 +857,7 @@ class Ph:
                 it = {}
             if not response:
                 return got                                              # ===>
-            elif type(response) == types.StringType:
+            elif isinstance(response, (str, unicode)):
                 raise ValueError("ph failed match: '%s'" % response)
             for line in response:
                 # convert to a dict:
@@ -1071,7 +1072,9 @@ class RedirProcess(Subprocess):
 #####                           Test                                    #####
 #############################################################################
 
-def test():
+def test(fout = sys.stdout):
+    fout.write("Starting Test ...\n")
+    assert hasattr(fout, 'write'), "Input not a file object: "+str(fout)
     print "\tOpening subprocess:"
     p = Subprocess('cat', expire_noisily=1)        # set to expire noisily...
     print p
@@ -1079,38 +1082,43 @@ def test():
     try:
         # grab stderr just to make sure the error message still appears
         b = Subprocess('/', 1, expire_noisily=1)
-        print "\tOops!  Null-named subprocess startup *succeeded*?!?"
+        assert b.wait(1) == True, 'How is this still alive after 1 sec?'
     except SubprocessError:
         print "\t...yep, it failed."
     print '\tWrite, then read, two newline-terminated lines, using readline:'
-    p.write('first full line written\n'); p.write('second.\n')
-    print `p.readline()`
-    print `p.readline()`
+    p.write('first full line written\n')
+    p.write('second\n')
+    x = p.readline(); print repr(x)
+    y = p.readline(); print repr(y)
+    assert x == 'first full line written\n'
+    assert y == 'second\n'
     print '\tThree lines, last sans newline, read using combination:'
     p.write('first\n'); p.write('second\n'); p.write('third, (no cr)')
     print '\tFirst line via readline:'
-    print `p.readline()`
+    x = p.readline()
+    assert x == 'first\n'
     print '\tRest via readPendingChars:'
-    print p.readPendingChars()
+    y = p.readPendingChars()
+    assert y == 'second\nthird, (no cr)'
     print "\tStopping then continuing subprocess (verbose):"
-    if not p.stop(1):                                       # verbose stop
-        print '\t** Stop seems to have failed!'
-    else:
-        print '\tWriting line while subprocess is paused...'
-        p.write('written while subprocess paused\n')
-        print '\tNonblocking read of paused subprocess (should be empty):'
-        print p.readPendingChars()
-        print '\tContinuing subprocess (verbose):'
-        if not p.cont(1):                                   # verbose continue
-            print '\t** Continue seems to have failed!      Probably lost subproc...'
-            return p
-        else:
-            print '\tReading accumulated line, blocking read:'
-            print p.readline()
-            print "\tDeleting subproc, which was set to die noisily:"
-            del p
-            print "\tDone."
-            return None
+    # verbose stop
+    assert p.stop(1), 'Stop seems to have failed!'
+    print '\tWriting line while subprocess is paused...'
+    p.write('written while subprocess paused\n')
+    print '\tNonblocking read of paused subprocess (should be empty):'
+    x = p.readPendingChars()
+    assert x == '', 'should have been empty'
+    print '\tContinuing subprocess (verbose):'
+    # verbose continue
+    assert p.cont(1), 'Continue seems to have failed! Probably lost subproc...'
+    print '\tReading accumulated line, blocking read:'
+    x = p.readline()
+    assert x == 'written while subprocess paused\n'
+    print "\tDeleting subproc (pid "+str(p.pid)+"), which was to die noisily:"
+    del p
+    print "\tTest Successful!"
+    fout.write("Finished Test Successfully!\n")
+    return True
 
 if __name__ == "__main__":
     test()
