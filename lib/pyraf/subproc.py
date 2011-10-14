@@ -51,23 +51,40 @@ import errno, os, select, signal, string, subprocess, sys, time, types
 
 OS_HAS_FORK = hasattr(os, 'fork')
 
-def ascii_read(fd, sz):
+# Handle the 'bytes' type, even back before 2.6.
+# NOTE: after we abandon 2.5, get rid of tobytes()
+def tobytes(s):
+    if sys.version_info[0] > 2:
+        if isinstance(s, bytes):
+            return s
+        else:
+            return bytes(s, 'ascii')
+    else:
+        # for py2.6 on (before 3.0), bytes is same as str;  2.5 has no bytes
+        return s
+
+try:
+    BNULLSTR = tobytes('')   # after dropping 2.5, change to: b''
+    BNEWLINE = tobytes('\n') # after dropping 2.5, change to: b'\n'
+except:
+    BNULLSTR = ''
+    BNEWLINE = '\n'
+
+
+def bytes_read(fd, sz):
    """ Perform an os.read in a way that can handle both Python2 and Python3
    IO.  Assume we are always piping only ASCII characters (since that is all
-   we have ever done with IRAF).  Either way, return the read data as a str.
+   we have ever done with IRAF).  Either way, return the data as bytes.
    """
-   if sys.version_info[0] > 2:
-       return os.read(fd, sz).decode('ascii')
-   else:
-       return os.read(fd, sz)
+   return os.read(fd, sz)
 
 
-def ascii_write(fd, bufstr):
+def bytes_write(fd, bufstr):
    """ Perform an os.write in a way that can handle both Python2 and Python3
    IO.  Assume we are always piping only ASCII characters (since that is all
-   we have ever done with IRAF).  Either way, write the byte data to fd.
+   we have ever done with IRAF).  Either way, write the binary data to fd.
    """
-   if sys.version_info[0] > 2:
+   if sys.version_info[0] > 2 and isinstance(bufstr, str):
        return os.write(fd, bufstr.encode('ascii'))
    else:
        return os.write(fd, bufstr)
@@ -102,9 +119,9 @@ class Subprocess:
     the subprocess stderr stream."""
 
     def __init__(self, cmd,
-                             control_stderr=0, control_stdout=1, control_stdin=1,
-                             expire_noisily=0, in_fd=0, out_fd=1, err_fd=2,
-                             maxChunkSize=1024):
+                 control_stderr=0, control_stdout=1, control_stdin=1,
+                 expire_noisily=0, in_fd=0, out_fd=1, err_fd=2,
+                 maxChunkSize=1024):
         """Launch a subprocess, given command string COMMAND."""
         self.cmd = cmd
         self.pid = None # pid of child, as known by parent only
@@ -253,7 +270,7 @@ class Subprocess:
                 ## if totalwait: print "waiting for subprocess..."
                 totalwait = totalwait + printtime
                 if select.select([],self.toChild_fdlist,[],printtime)[1]:
-                    if ascii_write(self.toChild, strval) != len(strval):
+                    if bytes_write(self.toChild, strval) != len(strval):
                         raise SubprocessError("Write error to %s" % self)
                     return                                              # ===>
             raise SubprocessError("Write to %s blocked" % self)
@@ -624,16 +641,16 @@ class ReadBuf:
         """Consume uncomsumed output from FILE, or empty string if nothing
         pending."""
 
-        if (max is not None) and (max <= 0): return ''                  # ===>
+        if (max is not None) and (max <= 0): return BNULLSTR            # ===>
 
         if self.buf:
             if max and (len(self.buf) > max):
                 got, self.buf = self.buf[0:max], self.buf[max:]
             else:
-                got, self.buf = self.buf, ''
+                got, self.buf = self.buf, BNULLSTR
             return got                                                  # ===>
 
-        if self.eof: return ''                                          # ===>
+        if self.eof: return BNULLSTR                                    # ===>
 
         try:
             sel = select.select([self.fd], [], [self.fd], 0)
@@ -641,9 +658,9 @@ class ReadBuf:
             # select error occurs if self.fd been closed
             # treat like EOF
             self.eof = 1
-            return ''
+            return BNULLSTR                                             # ===>
         if sel[0]:
-            got = ascii_read(self.fd, self.chunkSize)
+            got = bytes_read(self.fd, self.chunkSize)
             if got:
                 if max and (len(got) > max):
                     self.buf = got[max:]
@@ -652,8 +669,8 @@ class ReadBuf:
                     return got                                          # ===>
             else:
                 self.eof = 1
-                return ''                                               # ===>
-        else: return ''                                                 # ===>
+                return BNULLSTR                                         # ===>
+        else: return BNULLSTR                                           # ===>
 
     def readPendingLine(self, block=0):
         """Return pending output from FILE, up to first newline (inclusive).
@@ -663,15 +680,15 @@ class ReadBuf:
         1024) characters."""
 
         if self.buf:
-            to = self.buf.find('\n')
+            to = self.buf.find(BNEWLINE)
             if to != -1:
                 got, self.buf = self.buf[:to+1], self.buf[to+1:]
                 return got                                              # ===>
-            got, self.buf = self.buf, ''
+            got, self.buf = self.buf, BNULLSTR
         elif self.eof:
-            return ''                                                   # ===>
+            return BNULLSTR                                             # ===>
         else:
-            got = ''
+            got = BNULLSTR
 
         # 'got' contains the (former) contents of the buffer, but it
         # doesn't include a newline.
@@ -691,10 +708,10 @@ class ReadBuf:
                 self.eof = 1
                 return got
             if sel[0]:
-                newgot = ascii_read(self.fd, self.chunkSize)
+                newgot = bytes_read(self.fd, self.chunkSize)
                 if newgot:
                     got = got + newgot
-                    to = got.find('\n')
+                    to = got.find(BNEWLINE)
                     if to != -1:
                         got, self.buf = got[:to+1], got[to+1:]
                         return got                                      # ===>
@@ -715,16 +732,16 @@ class ReadBuf:
         """Read nchars from input, blocking until they are available.
         Returns a shorter string on EOF."""
 
-        if nchars <= 0: return ''
+        if nchars <= 0: return BNULLSTR
         if self.buf:
             if len(self.buf) >= nchars:
                 got, self.buf = self.buf[:nchars], self.buf[nchars:]
                 return got                                              # ===>
-            got, self.buf = self.buf, ''
+            got, self.buf = self.buf, BNULLSTR
         elif self.eof:
-            return ''                                                   # ===>
+            return BNULLSTR                                             # ===>
         else:
-            got = ''
+            got = BNULLSTR
 
         fdlist = [self.fd]
         while 1:
@@ -736,7 +753,7 @@ class ReadBuf:
                 self.eof = 1
                 return got
             if sel[0]:
-                newgot = ascii_read(self.fd, self.chunkSize)
+                newgot = bytes_read(self.fd, self.chunkSize)
                 if newgot:
                     got = got + newgot
                     if len(got) >= nchars:
@@ -1073,7 +1090,7 @@ class RedirProcess(Subprocess):
 #############################################################################
 
 def test(fout = sys.stdout):
-    fout.write("Starting Test ...\n")
+    fout.write("Starting test ...\n")
     assert hasattr(fout, 'write'), "Input not a file object: "+str(fout)
     print "\tOpening subprocess:"
     p = Subprocess('cat', expire_noisily=1)        # set to expire noisily...
@@ -1090,16 +1107,16 @@ def test(fout = sys.stdout):
     p.write('second\n')
     x = p.readline(); print repr(x)
     y = p.readline(); print repr(y)
-    assert x == 'first full line written\n'
-    assert y == 'second\n'
+    assert x == tobytes('first full line written\n')
+    assert y == tobytes('second\n')
     print '\tThree lines, last sans newline, read using combination:'
     p.write('first\n'); p.write('second\n'); p.write('third, (no cr)')
     print '\tFirst line via readline:'
     x = p.readline()
-    assert x == 'first\n'
+    assert x == tobytes('first\n')
     print '\tRest via readPendingChars:'
     y = p.readPendingChars()
-    assert y == 'second\nthird, (no cr)'
+    assert y == tobytes('second\nthird, (no cr)')
     print "\tStopping then continuing subprocess (verbose):"
     # verbose stop
     assert p.stop(1), 'Stop seems to have failed!'
@@ -1107,13 +1124,13 @@ def test(fout = sys.stdout):
     p.write('written while subprocess paused\n')
     print '\tNonblocking read of paused subprocess (should be empty):'
     x = p.readPendingChars()
-    assert x == '', 'should have been empty'
+    assert len(x)==0, 'should have been empty'
     print '\tContinuing subprocess (verbose):'
     # verbose continue
     assert p.cont(1), 'Continue seems to have failed! Probably lost subproc...'
     print '\tReading accumulated line, blocking read:'
     x = p.readline()
-    assert x == 'written while subprocess paused\n'
+    assert x == tobytes('written while subprocess paused\n')
     print "\tDeleting subproc (pid "+str(p.pid)+"), which was to die noisily:"
     del p
     print "\tTest Successful!"
