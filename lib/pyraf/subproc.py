@@ -1107,16 +1107,16 @@ def test(fout = sys.stdout):
     p.write('second\n')
     x = p.readline(); print repr(x)
     y = p.readline(); print repr(y)
-    assert x == tobytes('first full line written\n')
-    assert y == tobytes('second\n')
+    assert x == tobytes('first full line written\n'), 'was: '+str(x)
+    assert y == tobytes('second\n'), 'was: '+str(y)
     print '\tThree lines, last sans newline, read using combination:'
     p.write('first\n'); p.write('second\n'); p.write('third, (no cr)')
     print '\tFirst line via readline:'
     x = p.readline()
-    assert x == tobytes('first\n')
+    assert x == tobytes('first\n'), 'was: '+str(x)
     print '\tRest via readPendingChars:'
     y = p.readPendingChars()
-    assert y == tobytes('second\nthird, (no cr)')
+    assert y == tobytes('second\nthird, (no cr)'), 'was: '+str(y)
     print "\tStopping then continuing subprocess (verbose):"
     # verbose stop
     assert p.stop(1), 'Stop seems to have failed!'
@@ -1130,7 +1130,7 @@ def test(fout = sys.stdout):
     assert p.cont(1), 'Continue seems to have failed! Probably lost subproc...'
     print '\tReading accumulated line, blocking read:'
     x = p.readline()
-    assert x == tobytes('written while subprocess paused\n')
+    assert x == tobytes('written while subprocess paused\n'), 'was: '+str(x)
     print "\tDeleting subproc (pid "+str(p.pid)+"), which was to die noisily:"
     del p
     print "\tTest Successful!"
