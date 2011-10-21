@@ -1144,12 +1144,11 @@ def real(x):
         x = x.strip()
         if x.find(':') >= 0:
             #...handle the special a:b:c case here...
+            sign = 1
             if x[0] in ["-", "+"]:
                 if x[0] == "-":
                     sign = -1.
                 x = x[1:]
-            else:
-                sign = 1.
             m = _re.search(r"[^0-9:.]", x)
             if m:
                 x = x[0:m.start()]
