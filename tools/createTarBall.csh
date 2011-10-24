@@ -96,7 +96,7 @@ endif
 # edit setup to comment our pyfits requirement (we dont need it for pyraf)
 cd $workDir/$pyr/required_pkgs/tools
 /bin/cp setup.cfg setup.cfg.orig
-cat setup.cfg.orig | sed 's/^\(  *pyfits .*\)/#\1/' > setup.cfg
+cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' |sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
 echo DIFF for pyfits
 diff setup.cfg.orig setup.cfg
 
