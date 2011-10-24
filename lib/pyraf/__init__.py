@@ -48,6 +48,16 @@ if "." not in sys.path: sys.path.insert(0, ".")
 # Grab the terminal window's id at the earliest possible moment
 import wutil
 
+# Since numpy as absolutely required for any PyRAF use, go ahead and
+# import it now, just to check it
+if _verbosity_ > 0: print "pyraf: importing numpy"
+try:
+    import numpy
+except ImportError:
+    print "The numpy package is required by PyRAF and was not found.  Please visit http://numpy.scipy.org"
+    os._exit(1)
+if _verbosity_ > 0: print "pyraf: imported numpy"
+
 # Modify the standard import mechanism to make it more
 # convenient for the iraf module
 if _verbosity_ > 0: print "pyraf: importing irafimport"
