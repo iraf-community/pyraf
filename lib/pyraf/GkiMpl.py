@@ -83,8 +83,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.__firstPlotDone  = 0
         self.__skipPlotAppends = False # allow gki_ funcs to be reused
         self.__allowDrawing = False # like taskStart, but can't rely on that
-        self.__savingDraws = 'PYRAF_ORIG_MPL_DRAWING' not in os.environ
-        # eventually assume __savingDraws is always True and rm it from the code
         self._forceNextDraw = False
 #       self.__lastGkiCmds = (None, None, None) # unused for now
 
@@ -180,7 +178,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # be an excellent spot to redraw!  If we are an interactive task (yes
         # since they want a gcur) AND if we haven't been drawing because we
         # are saving draws for performance-sake, then do so now.
-        if self.__savingDraws and not self.__allowDrawing:
+        if not self.__allowDrawing:
             self.gki_flush(None, force=True)
         # else, we have already been drawing, so no need to flush here
 
@@ -199,7 +197,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
     def pre_imcur(self):
         """ Override this so as to redraw if needed """
         # Just like in gcur(), this may be an excellent time to redraw.
-        if self.__savingDraws and not self.__allowDrawing:
+        if not self.__allowDrawing:
             self.gki_flush(None, force=True)
         # else, we have already been drawing, so no need to flush here
 
@@ -229,7 +227,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
 #       self.doubleRedrawHack()
 
         # No need to draw now, UNLESS we haven't yet
-        if self.__savingDraws and not self.__allowDrawing:
+        if not self.__allowDrawing:
             # If we have not yet made our first draw, then we need to now.
             # For interactive tasks, we should have drawn already (see gcur).
             # For non-interactive tasks, we will not have drawn yet.
@@ -317,8 +315,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # we can avoid taking that hit until after gcur() is 1st called and
         # we are waiting on a human.  We *could* look into checking what the
         # actual incr/change was and see if it is worth redrawing.
-        if self.gwidget and \
-        (not self.__savingDraws or self.__allowDrawing or self._forceNextDraw):
+        if self.gwidget and (self.__allowDrawing or self._forceNextDraw):
             active = self.gwidget.isSWCursorActive()
             if active:
                 self.gwidget.deactivateSWCursor()
@@ -378,7 +375,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         adds the 'force' arg which forces it to redraw once whether we are
         "saving draws" or not. """
         # don't put flush command into the draw buffer
-        if not self.__savingDraws or self.__allowDrawing or force:
+        if self.__allowDrawing or force:
             self.resizeGraphics(self.__xsz, self.__ysz) # do NOT use adjusted y!
             self.__mca.draw()
             self.__mca.flush()

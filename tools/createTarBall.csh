@@ -23,7 +23,8 @@ endif
 if ($isdev == 1) then
    set pyr = "pyraf-dev"
    set co_pyraf = 'co -q -r HEAD http://svn6.assembla.com/svn/pyraf/trunk'
-   set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/distutils'
+#  set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/distutils'
+   set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/distutils-standalone'
    set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/tools'
 else
    set pyr = "pyraf-1.11"
@@ -51,6 +52,16 @@ if ($status != 0) then
    exit 1
 endif
 
+# for now, add svninfo file manually
+cd $workDir/$pyr
+set rev = `svn info | grep '^Revision:' | sed 's/.* //'`
+cd $workDir/$pyr/lib/pyraf
+if (!(-e svninfo.py)) then
+   echo '__svn_version__ = "'${rev}'"' > svninfo.py
+   echo '__full_svn_info__ = ""' >> svninfo.py
+   echo '__setup_datetime__ = ""' >> svninfo.py
+endif
+
 # get extra pkgs into a subdir
 cd $workDir/$pyr
 mkdir required_pkgs
@@ -66,8 +77,13 @@ if ($status != 0) then
    echo ERROR svn-ing tools
    exit 1
 endif
-echo This build will show a version number of:
-grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py
+
+# get version info
+set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py | sed 's/.*= *//' | sed 's/"//g'`
+set verinfo2 = `grep '__svn_version__' $workDir/$pyr/lib/pyraf/sv*.py | sed 's/.*= *//' | sed 's/"//g'`
+set verinfo3 = "${verinfo1}-r$verinfo2"
+echo "This build will show a version number of:  $verinfo3"
+echo "$verinfo3" > ~/.pyraf_tar_ball_ver
 
 # remove svn dirs
 cd $workDir/$pyr
@@ -80,7 +96,7 @@ endif
 # edit setup to comment our pyfits requirement (we dont need it for pyraf)
 cd $workDir/$pyr/required_pkgs/tools
 /bin/cp setup.cfg setup.cfg.orig
-cat setup.cfg.orig | sed 's/^\(  *pyfits .*\)/#\1/' > setup.cfg
+cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' |sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
 echo DIFF for pyfits
 diff setup.cfg.orig setup.cfg
 

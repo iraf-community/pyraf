@@ -16,6 +16,7 @@ or more of:
   -m      Run command line wrapper to provide extra capabilities (default)
   -n      No splash screen during startup
   -s      Silent initialization (does not print startup messages)
+  -V      Print version info and exit
   -v      Set verbosity level (may be repeated to increase verbosity)
   -y      Run the IPython shell instead of the normal PyRAF command shell
 
@@ -27,6 +28,7 @@ Long versions of options:
   -m  --commandwrapper=yes
   -n  --nosplash
   -s  --silent
+  -V  --version
   -v  --verbose
   -y  --ipython
 """

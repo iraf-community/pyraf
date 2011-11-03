@@ -8,9 +8,7 @@ from __future__ import division # confidence high
 
 import linecache, string, os, sys
 from stat import *
-
-# this is better than what 2to3 does, since the iraf import is circular
-import pyraf.iraf
+from stsci.tools.irafglobals import IrafError
 
 
 def checkcache(filename=None,orig_checkcache=linecache.checkcache):
@@ -31,6 +29,8 @@ def checkcache(filename=None,orig_checkcache=linecache.checkcache):
         else:
             return
 
+    import iraf # used below
+
     for filename in filenames:
 #    for filename in cache.keys():
         if filename[:10] == "<CL script":
@@ -43,12 +43,12 @@ def checkcache(filename=None,orig_checkcache=linecache.checkcache):
             else:
                 size, mtime, lines, taskname = entry
                 try:
-                    taskobj = pyraf.iraf.getTask(taskname)
+                    taskobj = iraf.getTask(taskname)
                     fullname = taskobj.getFullpath()
                     stat = os.stat(fullname)
                     newsize = stat[ST_SIZE]
                     newmtime = stat[ST_MTIME]
-                except (os.error, pyraf.iraf.IrafError):
+                except (os.error, IrafError):
                     continue
                 if size == newsize and mtime == newmtime:
                     # save the ones that didn't change
@@ -79,8 +79,9 @@ def updateCLscript(filename):
     if cache.has_key(filename):
         del cache[filename]
     try:
+        import iraf
         taskname = filename[11:-1]
-        taskobj = pyraf.iraf.getTask(taskname)
+        taskobj = iraf.getTask(taskname)
         fullname = taskobj.getFullpath()
         stat = os.stat(fullname)
         size = stat[ST_SIZE]
@@ -88,7 +89,7 @@ def updateCLscript(filename):
         lines = taskobj.getCode().split('\n')
         cache[filename] = size, mtime, lines, taskname
         return lines
-    except (pyraf.iraf.IrafError, KeyError, AttributeError):
+    except (IrafError, KeyError, AttributeError):
         return []
 
 

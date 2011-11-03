@@ -21,6 +21,8 @@ from stsci.tools import minmatch
 _importHasLvlArg = sys.version_info[0] > 2 or sys.version_info[1] >= 5 # no 1.*
 _reloadIsBuiltin = sys.version_info[0] < 3
 
+IMPORT_DEBUG = False
+
 # Save the original hooks;  replaced at bottom of module...
 _originalImport = __builtin__.__import__
 if _reloadIsBuiltin:
@@ -41,7 +43,8 @@ def restoreBuiltins():
 
 def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
-#   print("% % % > "+name+", "+str(fromlist)+", "+str(level))
+    if IMPORT_DEBUG:
+        print("irafimport called: "+name+", "+str(fromlist)+", "+str(level))
 
     # e.g. "from iraf import stsdas, noao" or "from .iraf import noao"
     if fromlist and (name in ["iraf", "pyraf.iraf", ".iraf"]):
@@ -50,43 +53,69 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
             if pkg is not None and not pkg.isLoaded():
                 pkg.run(_doprint=0, _hush=1)
         # must return a module for 'from' import
+        if IMPORT_DEBUG:
+            print("irafimport: case: from "+name+" import "+str(fromlist))
         return _irafModuleProxy.module
-    # e.g. "import iraf" or "from . import iraf"
-    elif (name == "iraf") or (name=='' and level==1 and fromlist==['iraf']):
+
+    # e.g. "import iraf" or "from . import iraf" (um, fromlist is list OR tuple)
+    if (name == "iraf") or \
+       (name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
+        if IMPORT_DEBUG:
+            print("irafimport: case of: import iraf OR from . import iraf")
         return _irafModuleProxy
+
+    # e.g. "import pyraf.iraf" (return module is for pyraf, not iraf)
+    if not fromlist and name == 'pyraf.iraf' and level == 0:
+        assert 'pyraf' in sys.modules, 'Unexpected import error - contact STScI'
+        if IMPORT_DEBUG:
+            print("irafimport: pyraf.iraf case: n="+name+", fl="+str(fromlist)+
+                  ", l="+str(level)+", will modify pyraf module")
+        # builtin import below will return pyraf module, after having set up an
+        # attr of it called 'iraf' which is the iraf module.  Instead we want 
+        # to set the attr to be our proxy.
+        retval = sys.modules['pyraf']
+        retval.iraf = _irafModuleProxy
+        return retval
+
+    # ALL OTHER CASES (PASS-THROUGH)
     # e.g. "import sys" or "import stsci.tools.alert"
     # e.g. Note! "import os, sys, re, glob" calls this 4 separate times, but
     #            "from . import gki, gwm, iraf" is only a single call here!
-    else:
-        # !!! TEMPORARY KLUDGE !!! working on why seeing pyraf.minmatch in cache
-        for module in ['minmatch', 'irafutils', 'dialog', 'listdlg', 'filedlg',
-                       'alert', 'irafglobals']:
+
+    # !!! TEMPORARY KLUDGE !!! keep this code until cache files are updated
+    if name:
+        for module in ['minmatch', 'irafutils', 'dialog', 'listdlg',
+                       'filedlg', 'alert', 'irafglobals']:
             if name == ('pyraf.%s' % module):
                 name = 'stsci.tools.%s' % module
-        # Replace any instances of 'pytools' with 'stsci.tools'--the new name
-        # of the former pytools package
+        # Replace any instances of 'pytools' with 'stsci.tools' -- the
+        # new name of the former pytools package
         name = name.replace('pytools.', 'stsci.tools.')
-        # Same for everything in fromlist:
-        if fromlist:
-            fromlist = [item.replace('pytools', 'stsci.tools')
-                        for item in fromlist]
-        # !!! END TEMPORARY KLUDGE !!!
 
-        hadIrafInList = False
-        if fromlist and 'iraf' in fromlist and name == '' and level > 0:
-            fromlist = tuple([j for j in fromlist if j != 'iraf'])
-            hadIrafInList = True
+    # Same for everything in fromlist (which is a tuple in Py3)
+    if fromlist:
+        fromlist = tuple([item.replace('pytools', 'stsci.tools')
+                         for item in fromlist])
+    # !!! END TEMPORARY KLUDGE !!!
 
-        if _importHasLvlArg:
-            retval = _originalImport(name, globals, locals, fromlist, level)
-        else:
-            # we could assert here that level == -1, but it's safe to assume
-            retval = _originalImport(name, globals, locals, fromlist)
+    hadIrafInList = fromlist and 'iraf' in fromlist and name=='' and level>0
 
-        if hadIrafInList:
-            retval.__setattr__('iraf', _irafModuleProxy)
+    if IMPORT_DEBUG:
+        print("irafimport - PASSTHRU: n="+name+", fl="+str(fromlist)+", l="+
+              str(level))
+    if _importHasLvlArg:
+        retval = _originalImport(name, globals, locals, fromlist, level)
+    else:
+        # we could assert here that level == -1, but it's safe to assume
+        retval = _originalImport(name, globals, locals, fromlist)
 
-        return retval
+    if hadIrafInList:
+        # Use case is: "from . import gki, gwm, iraf"
+        # Overwrite with our proxy (see pyraf.iraf case)
+        retval.__setattr__('iraf', _irafModuleProxy)
+
+    return retval
+
 
 def _irafReload(module):
     if isinstance(module, _irafModuleClass):
@@ -160,3 +189,7 @@ _irafModuleProxy = _irafModuleClass()
 
 # import iraf module using original mechanism
 iraf = _originalImport('iraf', globals(), locals(), [])
+
+# leaving
+if IMPORT_DEBUG:
+    print("irafimport: passed final import")

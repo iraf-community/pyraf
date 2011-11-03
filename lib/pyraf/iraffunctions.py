@@ -1144,12 +1144,11 @@ def real(x):
         x = x.strip()
         if x.find(':') >= 0:
             #...handle the special a:b:c case here...
+            sign = 1
             if x[0] in ["-", "+"]:
                 if x[0] == "-":
                     sign = -1.
                 x = x[1:]
-            else:
-                sign = 1.
             m = _re.search(r"[^0-9:.]", x)
             if m:
                 x = x[0:m.start()]
@@ -2227,22 +2226,14 @@ def unlearn(*args, **kw):
             getTask(taskname).unlearn()
         except KeyError, e:
             try: # maybe it is a task which uses .cfg files
-                flist = _teal.cfgpars.getUsrCfgFilesForPyPkg(taskname)
-                if flist == None or len(flist) == 0:
-                    pass # no need to be verbose
-                elif len(flist) == 1:
-                    _os.remove(flist[0]) # don't be chatty here either
-                else:
-                    if force:
-                        for f in flist:
-                            _os.remove(f) # don't be chatty
-                    else:
-                        _writeError('Error: multiple user-owned files found'+ \
-                            ' to unlearn for task "'+taskname+ \
-                            '".\nNone were deleted.  Please review and move/'+ \
-                            'delete these files:\n\t'+\
-                            '\n\t'.join(flist)+ \
-                            '\n\nor type "unlearn '+taskname+' force=yes"')
+                ans = _teal.unlearn(taskname, deleteAll=force)
+                if ans != 0:
+                    _writeError('Error: multiple user-owned files found'+ \
+                        ' to unlearn for task "'+taskname+ \
+                        '".\nNone were deleted.  Please review and move/'+ \
+                        'delete these files:\n\n\t'+\
+                        '\n\t'.join(ans)+ \
+                        '\n\nor type "unlearn '+taskname+' force=yes"')
             except _teal.cfgpars.NoCfgFileError:
                 _writeError("Warning: Could not find task %s to unlearn" %
                             taskname)
@@ -2861,7 +2852,7 @@ def chdir(directory=None):
     if not isinstance(directory, (str,unicode)):
         raise IrafError("Illegal non-string value for directory:"+ \
               +repr(directory))
-    if iraf.Verbose > 2: print('chdir to: '+str(directory))
+    if Verbose > 2: print('chdir to: '+str(directory))
     # Check for (1) local directory and (2) iraf variable
     # when given an argument like 'dev'.  In IRAF 'cd dev' is
     # the same as 'cd ./dev' if there is a local directory named
@@ -3228,8 +3219,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
     _addTask(newtask)
     return newtask
 
-def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
-        redefine=0):
+def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
 
     """Returns a new or existing IrafPset object
 
@@ -3265,8 +3255,7 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
     _addTask(newtask)
     return newtask
 
-def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
-        redefine=0):
+def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
 
     """Returns a new or existing IrafPkg object
 
