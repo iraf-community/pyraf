@@ -6,10 +6,10 @@ from __future__ import division # confidence high
 
 import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
 from stsci.tools import irafutils
-from stsci.tools.irafglobals import IrafTask
+from stsci.tools.irafglobals import IrafError, IrafTask, Verbose
 import subproc, filecache, wutil
-import iraf, gki, irafukey
-import irafgwcs
+import iraf
+import gki, irafukey, irafgwcs
 
 #stdgraph = None
 
@@ -101,7 +101,7 @@ class _ProcessCache:
 
     def error(self, msg, level=0):
         """Write an error message if Verbose is set"""
-        if iraf.Verbose>level:
+        if Verbose>level:
             sys.stderr.write(msg)
             sys.stderr.flush()
 
@@ -304,7 +304,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
     try:
         # Start 'er up
         irafprocess = processCache.get(task, envdict)
-    except (iraf.IrafError, subproc.SubprocessError, IrafProcessError), value:
+    except (IrafError, subproc.SubprocessError, IrafProcessError), value:
         raise
         raise IrafProcessError("Cannot start IRAF executable\n%s" % value)
 
@@ -338,7 +338,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
         # On keyboard interrupt (^C), kill the subprocess
         processCache.kill(irafprocess)
         raise
-    except (iraf.IrafError, IrafProcessError), exc:
+    except (IrafError, IrafProcessError), exc:
         # on error, kill the subprocess, then re-raise the original exception
         try:
             processCache.kill(irafprocess)
@@ -516,7 +516,7 @@ class IrafProcess:
         try:
             self.process.die()
         except subproc.SubprocessError, e:
-            if iraf.Verbose>0:
+            if Verbose>0:
                 # too bad, if we can't kill it assume it is already dead
                 self.stderr.write("Warning: cannot terminate process %s\n" %
                                         (e,))
@@ -724,7 +724,7 @@ class IrafProcess:
             self.task.setParam(paramname,newvalue)
         except ValueError, e:
             # on ValueError, just print warning and then force set
-            if iraf.Verbose>0:
+            if Verbose>0:
                 self.stderr.write('Warning: %s\n' % (e,))
                 self.stderr.flush()
             self.task.setParam(paramname,newvalue,check=0)

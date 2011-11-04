@@ -57,7 +57,7 @@ import linecache
 from stsci.tools import minmatch, irafutils, teal
 import numpy
 import subproc, wutil
-import irafnames, irafinst, iraftask, irafpar, irafexecute, cl2py
+import irafnames, irafinst, irafpar, iraftask, irafexecute, cl2py
 import iraf
 import gki
 import irafecl
@@ -70,17 +70,14 @@ except:
         raise
 
 try:
-    import cPickle
-    pickle = cPickle
+    import cPickle as pickle
 except ImportError:
     import pickle
 
 try:
-    import cStringIO
-    StringIO = cStringIO
-    del cStringIO
+    import cStringIO as StringIO
 except ImportError:
-    import StringIO
+    import StringIO as StringIO # survives 2to3
 
 # hide these modules so we can use 'from iraffunctions import *'
 _sys = sys
@@ -1692,11 +1689,13 @@ def bool2str(value):
 def boolean(value):
     """Convert Python native types (string, int, float) to IRAF boolean
 
-    Accepts integer/float values 0,1 or string 'yes','no'
-    Also allows INDEF as value
+    Accepts integer/float values 0,1 or string 'no','yes'
+    Also allows INDEF as value, or existing IRAF boolean type.
     """
     if value in [0,1]:
         return value
+    elif value in (no, yes):
+        return int(value)
     elif value in [INDEF, "", None]:
         return INDEF
     if isinstance(value, (str,unicode)):
