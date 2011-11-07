@@ -590,7 +590,7 @@ def load(pkgname,args=(),kw=None,doprint=1,hush=0,save=1):
     if not kw.has_key('_doprint'): kw['_doprint'] = doprint
     if not kw.has_key('_hush'): kw['_hush'] = hush
     if not kw.has_key('_save'): kw['_save'] = save
-    apply(p.run, tuple(args), kw)
+    p.run(*tuple(args), **kw)
 
 # -----------------------------------------------------
 # run: Run an IRAF task by name
@@ -605,7 +605,7 @@ def run(taskname,args=(),kw=None,save=1):
     if kw is None: kw = {}
     if not kw.has_key('_save'): kw['_save'] = save
 ##     if not kw.has_key('_parent'): kw['parent'] = "'iraf.cl'"
-    apply(t.run, tuple(args), kw)
+    t.run(*tuple(args), **kw)
 
 
 # -----------------------------------------------------
@@ -1909,7 +1909,8 @@ def scan(locals, *namelist, **kw):
             _nscan = 0
             return EOF
         else:
-            return apply(fscan, (locals, `line`) + namelist, kw)
+            args = (locals, repr(line),) + namelist
+            return fscan(*args, **kw)
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
@@ -1934,7 +1935,8 @@ def scanf(locals, format, *namelist, **kw):
             _nscan = 0
             return EOF
         else:
-            return apply(fscanf, (locals, `line`, format) + namelist, kw)
+            args = (locals, repr(line), format,) + namelist
+            return fscanf(*args, **kw)
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
@@ -2276,7 +2278,7 @@ def clear(*args):
 @handleRedirAndSaveKwds
 def flprcache(*args):
     """Flush process cache.  Takes optional list of tasknames."""
-    apply(_irafexecute.processCache.flush, args)
+    _irafexecute.processCache.flush(*args)
     if Verbose>0: print "Flushed process cache"
 
 @handleRedirAndSaveKwds
@@ -2297,7 +2299,7 @@ def prcacheOn():
 def prcache(*args):
     """Print process cache.  If args are given, locks tasks into cache."""
     if args:
-        apply(_irafexecute.processCache.lock, args)
+        _irafexecute.processCache.lock(*args)
     else:
         _irafexecute.processCache.list()
 
@@ -2603,7 +2605,7 @@ def task(*args, **kw):
 def redefine(*args, **kw):
     """Redefine an existing task"""
     kw['Redefine'] = 1
-    apply(task, args, kw)
+    task(*args, **kw)
 
 def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
     """Define IRAF package, returning tuple with new package name and binary

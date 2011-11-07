@@ -164,7 +164,7 @@ class EclBase:
 
         # set parameters
         kw['_setMode'] = 1
-        apply(self.setParList,args,kw)
+        self.setParList(*args, **kw)
 
         if Verbose>1:
             print "run %s (%s: %s)" % (self._name,

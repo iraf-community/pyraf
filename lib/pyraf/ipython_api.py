@@ -169,7 +169,7 @@ class IPython_PyRAF_Integrator(object):
         else:
             # if in cmddict, there must be a method by this name
             f = getattr(self, method_name)
-            return apply(f, (line, i))
+            return f(line, i)
 
     def _default(self, cmd, line, i):
         """Check for IRAF task calls and use CL emulation mode if needed

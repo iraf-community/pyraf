@@ -382,7 +382,7 @@ def _irafHelp(taskname, irafkw):
         taskname = iraf.Expand(taskname,noerror=1)
     try:
         if not irafkw.has_key('page'): irafkw['page'] = 1
-        apply(iraf.system.help, (taskname,), irafkw)
+        iraf.system.help(taskname, **irafkw)
         return 1
     except iraf.IrafError, e:
         print str(e)

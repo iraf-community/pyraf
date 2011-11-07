@@ -134,7 +134,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
             # render new contents of glBuffer
             self.activate()
             for (function, args) in self.drawBuffer.getNewCalls():
-                apply(function, args)
+                function(*args)
             gwidget.flush()
             if active:
                 gwidget.activateSWCursor()
@@ -276,7 +276,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.tkplot_fillarea(numpy.array([0.,0.,1.,0.,1.,1.,0.,1.]))
         # Plot the current buffer
         for (function, args) in self.drawBuffer.get():
-            apply(function, args)
+            function(*args)
         self.gwidget.flush()
 
     #-----------------------------------------------
@@ -309,7 +309,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         scaled = (numpy.array([w,-h]) *
                   (numpy.reshape(vertices, (npts, 2))
                    - numpy.array([0.,1.])))
-        apply(gw.create_line,tuple(scaled.ravel().astype(numpy.int32)),options)
+        gw.create_line(*(tuple(scaled.ravel().astype(numpy.int32))), **options)
 
     def tkplot_polymarker(self, vertices):
 
@@ -354,9 +354,9 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
                    - numpy.array([0.,1.])))
         coords = tuple(scaled.ravel().astype(numpy.int32))
         if fa.fillstyle == 1: # hollow
-            apply(gw.create_line, coords+(coords[0],coords[1]), options)
+            gw.create_line(*(coords+(coords[0],coords[1])), **options)
         else: # solid or clear cases
-            apply(gw.create_polygon, coords, options)
+            gw.create_polygon(*coords, **options)
 
 
     def tkplot_setcursor(self, cursornumber, x, y):
