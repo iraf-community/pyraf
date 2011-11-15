@@ -138,7 +138,7 @@ def findAllTmpPskFiles():
    Return the list. """
    # Usually the files are dropped in the $tmp directory
    if PSDEV.find('dump') >= 0:
-       flistCur = glob.glob(os.environ['tmp']+os.sep+'irafdmp*')
+       flistCur = glob.glob('/tmp/irafdmp*') # always in /tmp
    else:
        flistCur = glob.glob(os.environ['tmp']+os.sep+'psk*')
    # sometimes the tmp files disappear on Solaris
@@ -168,7 +168,7 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
    flistAft = findAllTmpPskFiles()
    assert len(flistAft) > len(theBeforeList), \
           'No postcript file(s) generated during: "'+title+'": '+ \
-          str(theBeforeList)
+          str(theBeforeList)+' : looking in: '+os.environ['tmp']
    for f in theBeforeList: flistAft.remove(f)
    if preferred == None:
        # In this case, we expect only a single ps file.
