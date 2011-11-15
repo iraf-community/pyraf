@@ -38,7 +38,8 @@ def controlList_test():
       assert gki.control2name[ctl] == 'control_unknown'
 
 def run_all():
-   tsts = [x for x in globals().keys() if x.find('test')>=0]
+   tsts = sorted([x for x in globals().keys() if x.find('test')>=0], reverse=1)
+
    for t in tsts:
       func = eval(t)
       print func.__doc__.strip()
