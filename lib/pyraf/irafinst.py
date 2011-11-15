@@ -149,7 +149,10 @@ keep
     # basic login.cl for the case of no IRAF
     if fname == 'login.cl':
         usr = None
-        if hasattr(os, 'getlogin'): usr = os.getlogin()
+        try:
+            if hasattr(os, 'getlogin'): usr = os.getlogin()
+        except OSError:
+            pass # "Inappropriate ioctl for device" - happens in a cron job
         if not usr and 'USER'     in os.environ: usr = os.environ['USER']
         if not usr and 'USERNAME' in os.environ: usr = os.environ['USERNAME']
         if not usr and 'LOGNAME'  in os.environ: usr = os.environ['LOGNAME']
