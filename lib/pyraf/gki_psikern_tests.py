@@ -208,13 +208,13 @@ def run_all():
       func()
       ran += 1
 
-#   PSDEV = 'psdump'
-#   EXP2IGNORE = '(NOAO/IRAF '
-#   for t in tsts:
-#      func = eval(t)
-#      print PSDEV, ':', func.__doc__.strip()
-#      func()
-#      ran += 1
+   PSDEV = 'psdump'
+   EXP2IGNORE = '(NOAO/IRAF '
+   for t in tsts:
+      func = eval(t)
+      print PSDEV, ':', func.__doc__.strip()
+      func()
+      ran += 1
 
    # If we get here with no exception, we have passed all of the tests
    print "\nSuccessfully passed "+str(ran)+" tests"
