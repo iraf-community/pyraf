@@ -163,7 +163,7 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
    flistAft = findAllTmpPskFiles()
    assert len(flistAft) > len(theBeforeList), \
           'No postcript file(s) generated during: "'+title+'": '+ \
-          str(theBeforeList)+' : looking in: '+os.environ['tmp']
+          str(theBeforeList)+' : PSDEV is: '+PSDEV
    for f in theBeforeList: flistAft.remove(f)
    if preferred == None:
        # In this case, we expect only a single ps file.
