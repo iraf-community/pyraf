@@ -21,9 +21,14 @@ PSDEV = EXP2IGNORE = None
 
 def diffit(exp2ig, f_new, f_ref, cleanup=True):
    """ Run the diff and check the return status """
-   # don't do the diff if the nw file isn't there and non-empty
+   # don't do the diff if the new file isn't there or if it is empty
    assert os.path.exists(f_new), "New file unfound: "+f_new
-   assert os.path.getsize(f_new) > 0, "New file is empty: "+f_new
+   sz = os.path.getsize(f_new)
+   if sz < 1:
+      # sometimes the psdump kernel takes a moment to write+close
+      time.sleep(1)
+   sz = os.path.getsize(f_new)
+   assert sz > 0, "New file is empty: "+f_new
    cmd = diff+" -I '"+exp2ig+"' "+f_ref+" "+f_new
    assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
    if cleanup:
@@ -91,6 +96,7 @@ def gki_2_prows_no_append_test():
    if os.uname()[0] == 'SunOS': prf = '.eps' # Solaris can leave extras here
    psOut = getNewTmpPskFile(flistBef, "2_prows_no_append - A", preferred=prf)
    # diff
+   # NOTE - this seems to get 0-len files when (not stdin.isatty()) for psdump
    diffit(EXP2IGNORE, psOut,
           os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256.ps")
    # NOW flush second
