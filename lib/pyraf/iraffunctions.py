@@ -1725,7 +1725,7 @@ def boolean(value):
 
 _nscan = 0
 
-def fscan(locals, line, *namelist, **kw):
+def fscan(theLocals, line, *namelist, **kw):
     """fscan function sets parameters from a string or list parameter
 
     Uses local dictionary (passed as first argument) to set variables
@@ -1746,16 +1746,16 @@ def fscan(locals, line, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        line = eval(line, {'iraf': iraf}, locals)
+        line = eval(line, {'iraf': iraf}, theLocals)
     except EOFError:
-        _weirdEOF(locals, namelist)
+        _weirdEOF(theLocals, namelist)
         _nscan = 0
         return EOF
     f = line.split()
     n = min(len(f),len(namelist))
     # a tricky thing -- null input is OK if the first variable is
     # a struct
-    if n==0 and namelist and _isStruct(locals, namelist[0]):
+    if n==0 and namelist and _isStruct(theLocals, namelist[0]):
         f = ['']
         n = 1
     if kw.has_key('strconv'):
@@ -1769,7 +1769,7 @@ def fscan(locals, line, *namelist, **kw):
     for i in range(n):
         # even messier: special handling for struct type variables, which
         # consume the entire remaining string
-        if _isStruct(locals, namelist[i]):
+        if _isStruct(theLocals, namelist[i]):
             if i < len(namelist)-1:
                 raise TypeError("Struct type param `%s' must be the final"
                         " argument to scan" % namelist[i])
@@ -1798,14 +1798,14 @@ def fscan(locals, line, *namelist, **kw):
         else:
             cmd = namelist[i] + ' = ' + `f[i]`
         try:
-            exec cmd in locals
+            exec(cmd, theLocals)
             n_actual += 1
         except ValueError:
             break
     _nscan = n_actual
     return n_actual
 
-def fscanf(locals, line, format, *namelist, **kw):
+def fscanf(theLocals, line, format, *namelist, **kw):
     """fscanf function sets parameters from a string/list parameter with format
 
     Implementation is similar to fscan but is a bit simpler because
@@ -1821,11 +1821,11 @@ def fscanf(locals, line, format, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        line = eval(line, {'iraf': iraf}, locals)
+        line = eval(line, {'iraf': iraf}, theLocals)
         # format also needs to be evaluated
-        format = eval(format, locals)
+        format = eval(format, theLocals)
     except EOFError:
-        _weirdEOF(locals, namelist)
+        _weirdEOF(theLocals, namelist)
         _nscan = 0
         return EOF
     if sscanf == None:
@@ -1843,27 +1843,27 @@ def fscanf(locals, line, format, *namelist, **kw):
     for i in range(n):
         cmd = namelist[i] + ' = ' + `f[i]`
         try:
-            exec cmd in locals
+            exec(cmd, theLocals)
             n_actual += 1
         except ValueError:
             break
     _nscan = n_actual
     return n_actual
 
-def _weirdEOF(locals, namelist):
+def _weirdEOF(theLocals, namelist):
     # Replicate a weird IRAF behavior -- if the argument list
     # consists of a single struct-type variable, and it does not
     # currently have a defined value, set it to the null string.
     # (I warned you to abandon hope!)
-    if namelist and _isStruct(locals, namelist[0], checklegal=1):
+    if namelist and _isStruct(theLocals, namelist[0], checklegal=1):
         if len(namelist) > 1:
             raise TypeError("Struct type param `%s' must be the final"
                     " argument to scan" % namelist[0])
         # it is an undefined struct, so set it to null string
         cmd = namelist[0] + ' = ""'
-        exec cmd in locals
+        exec(cmd, theLocals)
 
-def _isStruct(locals, name, checklegal=0):
+def _isStruct(theLocals, name, checklegal=0):
     """Returns true if the variable `name' is of type struct
 
     If checklegal is true, returns true only if variable is struct and
@@ -1875,13 +1875,13 @@ def _isStruct(locals, name, checklegal=0):
         c[-1] = 'getParObject(%s)' % `c[-1]`
     fname = '.'.join(c)
     try:
-        par = eval(fname, locals)
+        par = eval(fname, theLocals)
     except KeyboardInterrupt:
         raise
     except:
         # assume all failures mean this is not an IrafPar
         return 0
-    if (isinstance(par, _irafpar.IrafPar) and par.type == 'struct'):
+    if isinstance(par, _irafpar.IrafPar) and par.type == 'struct':
         if checklegal:
             return (not par.isLegal())
         else:
@@ -1889,7 +1889,7 @@ def _isStruct(locals, name, checklegal=0):
     else:
         return 0
 
-def scan(locals, *namelist, **kw):
+def scan(theLocals, *namelist, **kw):
     """Scan function sets parameters from line read from stdin
 
     This can be used either as a function or as a task (it accepts
@@ -1904,18 +1904,18 @@ def scan(locals, *namelist, **kw):
         line = _irafutils.tkreadline()
         # null line means EOF
         if line == "":
-            _weirdEOF(locals, namelist)
+            _weirdEOF(theLocals, namelist)
             global _nscan
             _nscan = 0
             return EOF
         else:
-            args = (locals, repr(line),) + namelist
+            args = (theLocals, repr(line),) + namelist
             return fscan(*args, **kw)
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
 
-def scanf(locals, format, *namelist, **kw):
+def scanf(theLocals, format, *namelist, **kw):
     """Formatted scan function sets parameters from line read from stdin
 
     This can be used either as a function or as a task (it accepts
@@ -1930,12 +1930,12 @@ def scanf(locals, format, *namelist, **kw):
         line = _irafutils.tkreadline()
         # null line means EOF
         if line == "":
-            _weirdEOF(locals, namelist)
+            _weirdEOF(theLocals, namelist)
             global _nscan
             _nscan = 0
             return EOF
         else:
-            args = (locals, repr(line), format,) + namelist
+            args = (theLocals, repr(line), format,) + namelist
             return fscanf(*args, **kw)
     finally:
         # note return value not used here
@@ -2442,14 +2442,14 @@ def _clProcedure(*args, **kw):
     if _sys.stdin == _sys.__stdin__:
         return
     # initialize environment
-    locals = {}
-    exec 'from pyraf import iraf' in locals
-    exec 'from pyraf.irafpar import makeIrafPar' in locals
-    exec 'from stsci.tools.irafglobals import *' in locals
-    exec 'from pyraf.pyrafglobals import *' in locals
+    theLocals = {}
+    exec('from pyraf import iraf', theLocals)
+    exec('from pyraf.irafpar import makeIrafPar', theLocals)
+    exec('from stsci.tools.irafglobals import *', theLocals)
+    exec('from pyraf.pyrafglobals import *', theLocals)
     # feed the input to clExecute
     # redirect input to sys.__stdin__ after reading the CL script from sys.stdin
-    clExecute(_sys.stdin.read(), locals=locals, Stdin=_sys.__stdin__)
+    clExecute(_sys.stdin.read(), locals=theLocals, Stdin=_sys.__stdin__)
 
 def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     """Run CL commands from a file (cl < input) -- OBSOLETE
@@ -2940,15 +2940,15 @@ def clCompatibilityMode(verbose=0, _save=0):
     else:
         logfile = None
 
-    locals = {}
+    theLocals = {}
     local_vars_dict = {}
     local_vars_list = []
     # initialize environment
-    exec 'from pyraf import iraf' in locals
-    exec 'from pyraf.irafpar import makeIrafPar' in locals
-    exec 'from stsci.tools.irafglobals import *' in locals
-    exec 'from pyraf.pyrafglobals import *' in locals
-    exec 'from pyraf.irafecl import EclState' in locals
+    exec('from pyraf import iraf', theLocals)
+    exec('from pyraf.irafpar import makeIrafPar', theLocals)
+    exec('from stsci.tools.irafglobals import *', theLocals)
+    exec('from pyraf.pyrafglobals import *', theLocals)
+    exec('from pyraf.irafecl import EclState', theLocals)
     prompt2 = '>>> '
     while (1):
         try:
@@ -2967,9 +2967,9 @@ def clCompatibilityMode(verbose=0, _save=0):
                 break
             elif line[:2] == '!P':
                 # Python escape -- execute Python code
-                exec line[2:].strip() in locals
+                exec(line[2:].strip(), theLocals)
             elif line and (line[0] != '#'):
-                code = clExecute(line, locals=locals, mode='single',
+                code = clExecute(line, locals=theLocals, mode='single',
                         local_vars_dict=local_vars_dict,
                         local_vars_list=local_vars_list)
                 if logfile is not None:
@@ -3039,15 +3039,18 @@ def clExecute(s, locals=None, mode="proc",
         taskname = "CL%s" % (_clExecuteCount,)
         scriptname = "<CL script %s>" % (taskname,)
         code = pycode.code.lstrip() #XXX needed?
+#       DBG('*'*80)
+#       DBG('pycode for task,script='+str((taskname,scriptname,))+':\n'+code)
+#       DBG('*'*80)
         # force compile to inherit future division so we don't rely on 2.x div.
         codeObject = compile(code,scriptname,'exec',0,0)
         # add this script to linecache
         codeLines = code.split('\n')
         _linecache.cache[scriptname] = (0,0,codeLines,taskname)
         if locals is None: locals = {}
-        exec codeObject in locals
+        exec(codeObject, locals)
         if pycode.vars.proc_name:
-            exec pycode.vars.proc_name+"(taskObj=iraf.cl)" in locals
+            exec(pycode.vars.proc_name+"(taskObj=iraf.cl)", locals)
         return code
     finally:
         _clExecuteCount = _clExecuteCount - 1

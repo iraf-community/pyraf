@@ -1371,7 +1371,7 @@ class IrafCLTask(IrafTask):
         if self._clFunction is None:
             # Execute the code to define the Python function in clDict
             clDict = {}
-            exec self._codeObject in clDict
+            exec(self._codeObject, clDict)
             self._clFunction = clDict[self._pycode.vars.proc_name]
 
             # get parameter list from CL code
