@@ -167,6 +167,13 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
    found set. Returns a single string filename. """
 
    flistAft = findAllTmpPskFiles()
+   assert len(flistAft) >= len(theBeforeList), \
+          "How can the list size be SMALLER now? ("+title+","+PSDEV+")\n"+ \
+          str(theBeforeList)+"\n"+str(flistAft)
+   if len(flistAft) == len(theBeforeList):
+      # sometimes the psdump kernel takes a moment to write+close (or start!)
+      time.sleep(1)
+      flistAft = findAllTmpPskFiles()
    assert len(flistAft) > len(theBeforeList), \
           'No postcript file(s) generated during: "'+title+'": '+ \
           str(theBeforeList)+' : PSDEV is: '+PSDEV
