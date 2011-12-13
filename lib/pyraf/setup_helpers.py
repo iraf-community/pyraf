@@ -5,6 +5,31 @@ import subprocess
 import sys
 
 
+in_pyraf_setup = False
+
+
+def set_in_pyraf_setup():
+    """Determine if we're being imported from within our own setup.py"""
+
+    import __main__
+
+    global in_pyraf_setup
+
+    if not hasattr(__main__, '__file__'):
+        return
+
+    here = os.path.abspath(os.path.dirname(__file__))
+    # The top of the source tree is two levels up
+    srcdir = os.path.abspath(os.path.join(here, os.pardir, os.pardir))
+    mainpath, mainfile = os.path.split(__main__.__file__)
+    if mainfile == 'setup.py' and os.path.abspath(mainpath) == srcdir:
+        in_pyraf_setup = True
+
+
+set_in_pyraf_setup()
+del set_in_pyraf_setup
+
+
 def setup_hook(config):
     """
     This setup hook adds additional script files in the platform is Windows.
@@ -27,8 +52,9 @@ def setup_hook(config):
 
 
 def build_ext_hook(command):
-    """Adds the correct library directories for X11.  I've found that on Linux
-    (or at least RHEL5, though presumably most other common distros) this is
+    """
+    Adds the correct library directories for X11.  I've found that on Linux (or
+    at least RHEL5, though presumably most other common distros) this is
     unncessary.  But on OSX it probably is.  It probably depends on what the
     system default LD_LIBARARY_PATH is.
     """

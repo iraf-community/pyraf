@@ -11,6 +11,9 @@ R. White, 2000 February 18
 
 from __future__ import division  # confidence high
 
+import __main__
+import os
+import sys
 
 from .version import (__version__, __svn_revision__, __svn_full_info__,
                       __setup_datetime__)
@@ -18,8 +21,8 @@ from .version import (__version__, __svn_revision__, __svn_full_info__,
 __svn_version__ = __svn_revision__
 __full_svn_info__ = __svn_full_info__
 
+from . import setup_helpers
 
-import os, sys, __main__
 
 # Show version at earliest possible moment when in debugging/verbose mode
 # (find all cmd-line args with '-v', if any found, we are verbose)
@@ -36,7 +39,6 @@ def usage():
     os._exit(0)
 
 # set search path to include current directory
-
 if "." not in sys.path: sys.path.insert(0, ".")
 
 # Grab the terminal window's id at the earliest possible moment
@@ -64,6 +66,11 @@ del executable
 runCmd = None
 import irafexecute, clcache
 from stsci.tools import capable
+# Newer versions of stsci.tools should do this, but older versions might now
+try:
+    import Tkinter
+except ImportError:
+    capable.OF_GRAPHICS = False
 
 # set up exit handler to close caches
 def _cleanup():
@@ -82,12 +89,12 @@ if not _pyrafMain or ('-h' not in sys.argv and '--help' not in sys.argv):
 
 
 # now get ready to do the serious IRAF initialization
-if not _pyrafMain:
+if not _pyrafMain and not setup_helpers.in_pyraf_setup:
     # if not executing as pyraf main, just initialize iraf module
     # quietly load initial iraf symbols and packages
     import iraf
     iraf.Init(doprint=0, hush=1)
-else:
+elif _pyrafMain:
     # special initialization when this is the main program
 
     # command-line options
