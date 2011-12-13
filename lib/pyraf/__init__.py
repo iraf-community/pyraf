@@ -8,15 +8,16 @@ $Id$
 
 R. White, 2000 February 18
 """
-from __future__ import division # confidence high
 
-__version__ = "1.11.dev"
+from __future__ import division  # confidence high
 
-try:
-    from svn_version import __svn_version__
-    __version__ += " (r"+__svn_version__+')'
-except:
-    pass
+
+from .version import (__version__, __svn_revision__, __svn_full_info__,
+                      __setup_datetime__)
+# For backwards compatibility
+__svn_version__ = __svn_revision__
+__full_svn_info__ = __svn_full_info__
+
 
 import os, sys, __main__
 
