@@ -58,7 +58,6 @@ from stsci.tools import minmatch, irafutils, teal
 import numpy
 import subproc, wutil
 import irafnames, irafinst, iraftask, irafpar, irafexecute, cl2py
-import iraf
 import gki
 import irafecl
 try:
@@ -950,16 +949,16 @@ def taskinfo(*args):
     '''
     show information about task definitions
 
-    taskinfo [ pattern(s) ] 
+    taskinfo [ pattern(s) ]
 
         pattern is a glob pattern describing the package or task
         name that you are interested in.
 
         The output is a hierarchical view of the task definitions
         that match the input pattern.  Each line shows the task
-        name, the file name, pkgbinary and class.  
+        name, the file name, pkgbinary and class.
 
-        pkgbinary is a list of where you look for the file if it 
+        pkgbinary is a list of where you look for the file if it
         is not where you expect.
 
         class is the type of task definition from iraftask.py
@@ -1599,6 +1598,7 @@ def _searchext(root, extlist):
 def imaccess(filename):
     """Returns true if image matching name exists and is readable"""
 
+    from . import iraf
     if filename == INDEF: return INDEF
     # See if the filename contains any wildcard characters.
     # First strip any extension or section specification.
@@ -2850,6 +2850,9 @@ def pwd():
 @handleRedirAndSaveKwds
 def chdir(directory=None):
     """Change working directory"""
+
+    from . import iraf
+
     global _backDir
     try:
         _newBack = _os.getcwd()

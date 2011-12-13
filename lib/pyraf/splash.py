@@ -7,14 +7,19 @@ R. White, 2001 Dec 15
 
 from __future__ import division # confidence high
 
-import os, sys, Tkinter
+import os
+import sys
+import Tkinter
+
 from stsci.tools.irafglobals import IrafPkg
+
 import wutil
+
 
 logo = "pyraflogo_rgb_web.gif"
 
-class SplashScreen(Tkinter.Toplevel):
 
+class SplashScreen(Tkinter.Toplevel):
     """Base class for splash screen
 
     Subclass and override createWidgets().
@@ -26,10 +31,11 @@ class SplashScreen(Tkinter.Toplevel):
     Based closely on news posting by Alexander Schliep, 07 Apr 1999
     """
 
-    def __init__(self, master=None, borderwidth=4, relief=Tkinter.RAISED, **kw):
+    def __init__(self, master=None, borderwidth=4, relief=Tkinter.RAISED,
+                 **kw):
         Tkinter.Toplevel.__init__(self, master, relief=relief,
             borderwidth=borderwidth, **kw)
-        if self.master.master != None: # Why?
+        if self.master.master is not None:  # Why?
             self.master.master.withdraw()
         self.master.withdraw()
         self.overrideredirect(1)
@@ -56,7 +62,6 @@ class SplashScreen(Tkinter.Toplevel):
 
 
 class PyrafSplash(SplashScreen):
-
     """PyRAF splash screen
 
     Contains an image and one or more text lines underneath.  The number
@@ -68,11 +73,19 @@ class PyrafSplash(SplashScreen):
 
     def __init__(self, filename=logo, text=None, textcolor="blue", **kw):
         # look for file in both local directory and this script's directory
+        # then check to see if we're running out of a source checkout
         if not os.path.exists(filename):
-            tfilename = os.path.join(os.path.dirname(__file__),filename)
-            if not os.path.exists(tfilename):
-                raise ValueError("Splash image `%s' not found" % filename)
-            filename = tfilename
+            here = os.path.abspath(os.path.dirname(__file__))
+            path = os.path.join(here, filename)
+            if not os.path.exists(path):
+                # Check two levels up
+                pardir = os.path.abspath(os.path.join(here, os.pardir,
+                                                      os.pardir))
+                setup_py = os.path.join(pardir, 'setup.py')
+                path = os.path.join(pardir, 'data', filename)
+                if not (os.path.exists(setup_py) and os.path.exists(path)):
+                    raise ValueError("Splash image `%s' not found" % filename)
+            filename = path
         self.filename = filename
         self.nlines = 1
         self.textcolor = textcolor
@@ -86,7 +99,7 @@ class PyrafSplash(SplashScreen):
         # put focus on this app (Mac only)
         self.__termWin = None
         if wutil.hasGraphics and wutil.WUTIL_ON_MAC:
-            self.__termWin = wutil.getFocalWindowID() # the terminal window
+            self.__termWin = wutil.getFocalWindowID()  # the terminal window
             wutil.forceFocusToNewWindow()
         # create it
         SplashScreen.__init__(self, **kw)
@@ -154,8 +167,8 @@ class PyrafSplash(SplashScreen):
         if self.__termWin:
             wutil.setFocusTo(self.__termWin)
 
-class IrafMonitorSplash(PyrafSplash):
 
+class IrafMonitorSplash(PyrafSplash):
     """PyRAF splash screen that also acts as IRAF task execution monitor
 
     Usually start this by calling the splash() function in this module.
@@ -198,6 +211,7 @@ class IrafMonitorSplash(PyrafSplash):
         if iraftask.executionMonitor == self.monitor:
             iraftask.executionMonitor = None
         PyrafSplash.Destroy(self, event)
+
 
 def splash(label="PyRAF Execution Monitor", background="LightYellow", **kw):
     """Display the PyRAF splash screen

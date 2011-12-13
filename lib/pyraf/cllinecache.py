@@ -4,17 +4,19 @@ CL scripts have special filename "<CL script taskname>"
 
 $Id$
 """
-from __future__ import division # confidence high
 
-import linecache, string, os, sys
-from stat import *
+from __future__ import division  # confidence high
+
+import linecache
+import os
+import stat
+
 
 # this is better than what 2to3 does, since the iraf import is circular
-import pyraf.iraf
+from . import iraf
 
 
-def checkcache(filename=None,orig_checkcache=linecache.checkcache):
-
+def checkcache(filename=None, orig_checkcache=linecache.checkcache):
     """Discard cache entries that are out of date.
     (This is not checked upon each call!)"""
 
@@ -43,12 +45,12 @@ def checkcache(filename=None,orig_checkcache=linecache.checkcache):
             else:
                 size, mtime, lines, taskname = entry
                 try:
-                    taskobj = pyraf.iraf.getTask(taskname)
+                    taskobj = iraf.getTask(taskname)
                     fullname = taskobj.getFullpath()
                     stat = os.stat(fullname)
-                    newsize = stat[ST_SIZE]
-                    newmtime = stat[ST_MTIME]
-                except (os.error, pyraf.iraf.IrafError):
+                    newsize = stat[stat.ST_SIZE]
+                    newmtime = stat[stat.ST_MTIME]
+                except (os.error, iraf.IrafError):
                     continue
                 if size == newsize and mtime == newmtime:
                     # save the ones that didn't change
@@ -80,15 +82,15 @@ def updateCLscript(filename):
         del cache[filename]
     try:
         taskname = filename[11:-1]
-        taskobj = pyraf.iraf.getTask(taskname)
+        taskobj = iraf.getTask(taskname)
         fullname = taskobj.getFullpath()
         stat = os.stat(fullname)
-        size = stat[ST_SIZE]
-        mtime = stat[ST_MTIME]
+        size = stat[stat.ST_SIZE]
+        mtime = stat[stat.ST_MTIME]
         lines = taskobj.getCode().split('\n')
         cache[filename] = size, mtime, lines, taskname
         return lines
-    except (pyraf.iraf.IrafError, KeyError, AttributeError):
+    except (iraf.IrafError, KeyError, AttributeError):
         return []
 
 
