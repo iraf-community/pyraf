@@ -13,10 +13,11 @@ import Tkinter
 
 from stsci.tools.irafglobals import IrafPkg
 
-import wutil
+from . import wutil
+from .pyrafglobals import get_resource_filename
 
 
-logo = "pyraflogo_rgb_web.gif"
+LOGO = "pyraflogo_rgb_web.gif"
 
 
 class SplashScreen(Tkinter.Toplevel):
@@ -71,22 +72,13 @@ class PyrafSplash(SplashScreen):
     method.
     """
 
-    def __init__(self, filename=logo, text=None, textcolor="blue", **kw):
+    def __init__(self, filename=LOGO, text=None, textcolor="blue", **kw):
         # look for file in both local directory and this script's directory
         # then check to see if we're running out of a source checkout
-        if not os.path.exists(filename):
-            here = os.path.abspath(os.path.dirname(__file__))
-            path = os.path.join(here, filename)
-            if not os.path.exists(path):
-                # Check two levels up
-                pardir = os.path.abspath(os.path.join(here, os.pardir,
-                                                      os.pardir))
-                setup_py = os.path.join(pardir, 'setup.py')
-                path = os.path.join(pardir, 'data', filename)
-                if not (os.path.exists(setup_py) and os.path.exists(path)):
-                    raise ValueError("Splash image `%s' not found" % filename)
-            filename = path
-        self.filename = filename
+        try:
+            self.filename = get_resource_filename(filename)
+        except IOError:
+            raise ValueError("Splash image `%s' not found" % filename)
         self.nlines = 1
         self.textcolor = textcolor
         if text:

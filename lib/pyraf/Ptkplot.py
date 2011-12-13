@@ -5,23 +5,17 @@
 $Id$
 """
 
-from __future__ import division # confidence high
+from __future__ import division  # confidence high
 
-import os
 from Tkinter import _default_root
 from Tkinter import *
-import wutil
-import sys, time
+
+from . import wutil
+from .pyrafglobals import get_resource_filename
+
 
 # XBM file for cursor is in same directory as this module
-_blankcursor = 'blankcursor.xbm'
-dirname = os.path.dirname(__file__)
-if os.path.isabs(dirname):
-    _blankcursor = os.path.join(dirname, _blankcursor)
-else:
-    # change relative directory paths to absolute
-    _blankcursor = os.path.join(os.getcwd(), dirname, _blankcursor)
-del dirname
+_BLANKCURSOR = get_resource_filename('blankcursor.xbm')
 
 _TK_HAS_NONE_CURSOR = True # assume True until we learn otherwise
 
@@ -83,7 +77,6 @@ def hideTkCursor(theCanvas):
     # platforms, so we need to use 'none' or 'tcross' for now.
 
     global _TK_HAS_NONE_CURSOR
-    global _blankcursor
 
     if _TK_HAS_NONE_CURSOR:
         # See if this supports the 'none' cursor
@@ -96,7 +89,7 @@ def hideTkCursor(theCanvas):
     # If we get here, the 'none' cursor is not yet supported.  Load the blank
     # one, or use 'tcross'.
     if wutil.WUTIL_USING_X:
-        theCanvas['cursor'] = '@' + _blankcursor + ' black'
+        theCanvas['cursor'] = '@' + _BLANKCURSOR + ' black'
     else:
         theCanvas['cursor'] = 'tcross' # this'll do for now
 
@@ -250,7 +243,7 @@ class PyrafCanvas(Canvas):
             self.tkRedraw()
 
 class FullWindowCursor:
-    """This implements a full window crosshair cursor.  This class can 
+    """This implements a full window crosshair cursor.  This class can
        operate in the xutil-wrapping mode or in a Tkinter-only mode. """
     # Perhaps this should inherit from an abstract Cursor class eventually
 

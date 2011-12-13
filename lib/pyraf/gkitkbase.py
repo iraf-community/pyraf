@@ -3,15 +3,24 @@ Tk gui implementation for the gki plot widget
 
 $Id$
 """
-from __future__ import division # confidence high
 
-import numpy, os, sys, string, time, Tkinter
-import msgiobuffer, msgiowidget, wutil
+from __future__ import division  # confidence high
+
+import os
+import sys
+import time
+import Tkinter
+import tkMessageBox
+import tkSimpleDialog
+
+import numpy
+
 from stsci.tools import filedlg
 from stsci.tools.irafglobals import IrafError, userWorkingHome
-import gki, textattrib, irafgwcs
-from pyrafglobals import pyrafDir
-import tkMessageBox, tkSimpleDialog
+
+from . import msgiobuffer, msgiowidget, wutil, gki, textattrib, irafgwcs
+from .pyrafglobals import get_resource_filename
+
 
 nIrafColors = 16
 
@@ -181,12 +190,13 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         # Read the epar options database file
         optfile = "epar.optionDB"
         try:
-            self.top.option_readfile(os.path.join(os.curdir,optfile))
+            self.top.option_readfile(os.path.join(os.curdir, optfile))
         except Tkinter.TclError:
             try:
-                self.top.option_readfile(os.path.join(userWorkingHome,optfile))
+                self.top.option_readfile(os.path.join(userWorkingHome,
+                                                      optfile))
             except Tkinter.TclError:
-                self.top.option_readfile(os.path.join(pyrafDir,optfile))
+                self.top.option_readfile(get_resource_filename(optfile))
         self.top.title(windowName)
         self.top.iconname(windowName)
         self.top.protocol("WM_DELETE_WINDOW", self.gwdestroy)
