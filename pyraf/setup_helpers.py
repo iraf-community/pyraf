@@ -19,8 +19,8 @@ def set_in_pyraf_setup():
         return
 
     here = os.path.abspath(os.path.dirname(__file__))
-    # The top of the source tree is two levels up
-    srcdir = os.path.abspath(os.path.join(here, os.pardir, os.pardir))
+    # The top of the source tree should be just one level up
+    srcdir = os.path.abspath(os.path.join(here, os.pardir))
     mainpath, mainfile = os.path.split(__main__.__file__)
     if mainfile == 'setup.py' and os.path.abspath(mainpath) == srcdir:
         in_pyraf_setup = True
