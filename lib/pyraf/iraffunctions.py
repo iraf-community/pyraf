@@ -58,14 +58,17 @@ from stsci.tools import minmatch, irafutils, teal
 import numpy
 import subproc, wutil
 import irafnames, irafinst, irafpar, iraftask, irafexecute, cl2py
-import iraf
 import gki
 import irafecl
 try:
-    import sscanf
+    import sscanf # !!! in py3k should be: from . import sscanf
 except:
     if 0==sys.platform.find('win'): # not on win*, but IS on darwin & cygwin
         sscanf = None
+        print "Warning: sscanf library not installed on "+sys.platform
+    elif sys.version_info[0] > 2:
+        sscanf = None
+        print "Warning: sscanf library not installed correctly on Python 3"
     else:
         raise
 
@@ -449,7 +452,7 @@ def restoreFromFile(savefile, doprint=1, **kw):
     from stsci.tools import irafglobals
     import __main__
     import pyraf
-    import iraf, irafpar, cltoken
+    import iraf, irafpar, cltoken # !!! fix this !!!
     for module in (__main__, pyraf, iraf, irafpar, irafglobals, cltoken):
         if hasattr(module,'INDEF'): module.INDEF = INDEF
 
@@ -1611,7 +1614,8 @@ def imaccess(filename):
     # Any error output is taken to mean failure.
     sout = _StringIO.StringIO()
     serr = _StringIO.StringIO()
-    iraf.imhead(filename, Stdout=sout, Stderr=serr)
+    import pyraf.iraf
+    pyraf.iraf.imhead(filename, Stdout=sout, Stderr=serr)
     errstr = serr.getvalue().lower()
     outstr = sout.getvalue().lower()
     if errstr:
@@ -1643,8 +1647,8 @@ def deftask(taskname):
     """Returns true if CL task is defined"""
     if taskname == INDEF: return INDEF
     try:
-        import iraf
-        t = getattr(iraf, taskname)
+        import pyraf.iraf
+        t = getattr(pyraf.iraf, taskname)
         return 1
     except AttributeError, e:
         # treat all errors (including ambiguous task names) as a missing task
@@ -1746,7 +1750,8 @@ def fscan(theLocals, line, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        line = eval(line, {'iraf': iraf}, theLocals)
+        import pyraf.iraf
+        line = eval(line, {'iraf': pyraf.iraf}, theLocals)
     except EOFError:
         _weirdEOF(theLocals, namelist)
         _nscan = 0
@@ -1821,7 +1826,8 @@ def fscanf(theLocals, line, format, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        line = eval(line, {'iraf': iraf}, theLocals)
+        import pyraf.iraf
+        line = eval(line, {'iraf': pyraf.iraf}, theLocals)
         # format also needs to be evaluated
         format = eval(format, theLocals)
     except EOFError:
@@ -1911,6 +1917,8 @@ def scan(theLocals, *namelist, **kw):
         else:
             args = (theLocals, repr(line),) + namelist
             return fscan(*args, **kw)
+    except Exception, ex:
+        print 'iraf.scan exception: '+str(ex)
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
@@ -1937,6 +1945,8 @@ def scanf(theLocals, format, *namelist, **kw):
         else:
             args = (theLocals, repr(line), format,) + namelist
             return fscanf(*args, **kw)
+    except Exception, ex:
+        print 'iraf.scanf exception: '+str(ex)
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
@@ -2152,10 +2162,17 @@ def _wrapTeal(taskname):
     # pop up TEAL
     try:
         # use simple-auto-close mode (like EPAR) by no return dict
-        _teal.teal(taskname, returnDict=False, errorsToTerm=True, strict=True)
+        _teal.teal(taskname, returnDict=False, errorsToTerm=True, strict=False)
     # put focus back on terminal, even if there is an exception
     finally:
-        _wutil.setFocusTo(oldFoc)
+        # Turns out, for the majority of TEAL-enabled tasks, users don't like
+        # having the focus jump back to the terminal for them (especially if
+        # it is a long-running task) after executing, so disable this
+        # feature for now - CDS 21Dec2011
+#       _wutil.setFocusTo(oldFoc)
+        pass
+        # though we might add code to set focus only on dialog cancel...
+        # ask users; would have to change teal() API (need no Close bttn)
 
 @handleRedirAndSaveKwds
 def tparam(*args):
@@ -2447,6 +2464,7 @@ def _clProcedure(*args, **kw):
     exec('from pyraf.irafpar import makeIrafPar', theLocals)
     exec('from stsci.tools.irafglobals import *', theLocals)
     exec('from pyraf.pyrafglobals import *', theLocals)
+
     # feed the input to clExecute
     # redirect input to sys.__stdin__ after reading the CL script from sys.stdin
     clExecute(_sys.stdin.read(), locals=theLocals, Stdin=_sys.__stdin__)
