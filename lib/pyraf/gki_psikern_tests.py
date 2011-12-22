@@ -27,6 +27,9 @@ def diffit(exp2ig, f_new, f_ref, cleanup=True):
    if sz < 1:
       # sometimes the psdump kernel takes a moment to write+close
       time.sleep(1)
+      sz = os.path.getsize(f_new)
+      if sz < 1:
+         time.sleep(5)
    sz = os.path.getsize(f_new)
    assert sz > 0, "New file is empty: "+f_new
    cmd = diff+" -I '"+exp2ig+"' "+f_ref+" "+f_new
