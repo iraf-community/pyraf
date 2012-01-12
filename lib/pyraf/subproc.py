@@ -1115,7 +1115,7 @@ def test(fout = sys.stdout):
     x = p.readline()
     assert x == tobytes('first\n'), 'was: "'+str(x)+'"'
     print '\tRest via readPendingChars:'
-    time.sleep(0.5) # seems like we are sometimes too fast for the subproc
+    time.sleep(3) # seems like we are sometimes too fast for the subproc
     y = p.readPendingChars()
     assert y == tobytes('second\nthird, (no cr)'), 'was: "'+str(y)+'"'
     print "\tStopping then continuing subprocess (verbose):"
