@@ -1,4 +1,5 @@
-"""Contains python routines to do special Window manipulations not
+"""
+Contains python routines to do special Window manipulations not
 possible in Tkinter.
 These are python stubs that are overloaded by a c version implementations.
 If the c versions do not exist, then these routines will do nothing
@@ -6,14 +7,18 @@ If the c versions do not exist, then these routines will do nothing
 
 $Id$
 """
-from __future__ import division # confidence high
 
-import struct, sys, os
+from __future__ import division  # confidence high
+
+import os
+import struct
+import sys
+
 try:
     import fcntl
 except:
-    if 0==sys.platform.find('win') or sys.platform=='cygwin':
-        fcntl = None # not used on win (yet) but IS on darwin
+    if sys.platform.startswith('win') or sys.platform == 'cygwin':
+        fcntl = None  # not used on win (yet) but IS on darwin
     else:
         raise
 
@@ -39,7 +44,7 @@ WUTIL_USING_X = not WUTIL_ON_WIN
 
 # For a while we may support both versions (X or Aqua) on OSX
 if WUTIL_ON_MAC:
-    if os.environ.has_key('PYRAF_WUTIL_USING_AQUA'):
+    if 'PYRAF_WUTIL_USING_AQUA' in os.environ:
         WUTIL_USING_X = False
     else:
         # Do this check for them; look at the python exec - is it X11-linked?
@@ -160,7 +165,7 @@ def getTopID(WindowID):
         else:
             return wid # everything is its own top
 
-    if topIDmap.has_key(wid):
+    if wid in topIDmap:
         return topIDmap[wid]
     try:
         oid = wid
@@ -368,13 +373,12 @@ class FocusController:
     def addFocusEntity(self, name, focusEntity):
         if name == 'terminal':
             return # ignore any attempts to change terminal entity
-        if self.focusEntities.has_key(name):
+        if name in self.focusEntities:
             return # ignore for now, not sure what proper behavior is
         self.focusEntities[name] = focusEntity
 
     def removeFocusEntity(self, focusEntityName):
-
-        if self.focusEntities.has_key(focusEntityName):
+        if focusEntityName in self.focusEntities:
             entity = self.focusEntities[focusEntityName]
             del self.focusEntities[focusEntityName]
             try:
@@ -384,7 +388,6 @@ class FocusController:
                 pass
 
     def restoreLast(self):
-
         if not self.hasGraphics:
             return
         if len(self.focusStack) > 1:
@@ -396,7 +399,6 @@ class FocusController:
             self.focusStack[-1].forceFocus()
 
     def setCurrent(self, force=0):
-
         """This is to be used in cases where focus has been lost to
         a window not part of this scheme (dialog boxes for example)
         and it is desired to return focus to the entity currently considered
@@ -412,9 +414,9 @@ class FocusController:
             self.setCurrent()
 
     def getCurrentFocusEntity(self):
-
         """Return the focus entity that currently has focus.
         Return None if focus is not in the focus family"""
+
         if not self.hasGraphics:
             return None, None
         currentFocusWinID = getFocalWindowID()

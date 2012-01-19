@@ -42,16 +42,16 @@ def usage():
 if "." not in sys.path: sys.path.insert(0, ".")
 
 # Grab the terminal window's id at the earliest possible moment
-import wutil
+from . import wutil
 
 # Modify the standard import mechanism to make it more
 # convenient for the iraf module
-import irafimport
+from . import irafimport
 
 # this gives more useful tracebacks for CL scripts
-import cllinecache
+from . import cllinecache
 
-import irafnames
+from . import irafnames
 
 # initialization is silent unless program name is 'pyraf' or
 # silent flag is set on command line
@@ -64,8 +64,9 @@ _pyrafMain = os.path.split(executable)[1] in ('pyraf', 'runpyraf.py')
 del executable
 
 runCmd = None
-import irafexecute, clcache
+from . import irafexecute, clcache
 from stsci.tools import capable
+
 # Newer versions of stsci.tools should do this, but older versions might now
 try:
     import Tkinter
@@ -92,14 +93,14 @@ if not _pyrafMain or ('-h' not in sys.argv and '--help' not in sys.argv):
 if not _pyrafMain and not setup_helpers.in_pyraf_setup:
     # if not executing as pyraf main, just initialize iraf module
     # quietly load initial iraf symbols and packages
-    import iraf
+    from . import iraf
     iraf.Init(doprint=0, hush=1)
 elif _pyrafMain:
     # special initialization when this is the main program
 
     # command-line options
 
-    import pyrafglobals as _pyrafglobals
+    from . import pyrafglobals as _pyrafglobals
     import getopt
     try:
         optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsney",
@@ -152,7 +153,7 @@ elif _pyrafMain:
     if "epyraf" in sys.argv[0]:  # See also -e and --ecl switches
         _pyrafglobals._use_ecl = True
 
-    import iraf
+    from . import iraf
     iraf.setVerbose(verbose)
     del getopt, verbose, usage, optlist
 
@@ -163,7 +164,7 @@ elif _pyrafMain:
     else:
         _initkw = {}
         if _dosplash:
-            import splash
+            from . import splash
             _splash = splash.splash('PyRAF '+__version__)
         else:
             _splash = None
