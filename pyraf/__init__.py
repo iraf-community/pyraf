@@ -24,11 +24,18 @@ __full_svn_info__ = __svn_full_info__
 from . import setup_helpers
 
 
-# Show version at earliest possible moment when in debugging/verbose mode
-# (find all cmd-line args with '-v', if any found, we are verbose)
-if len([j for j in sys.argv if j.find('-v')>=0]) > 0:
-    print('PyRAF version '+__version__)
+# Dump version and exit here, if requested
+if '-V' in sys.argv or '--version' in sys.argv:
+    print __version__
+    sys.stdout.flush()
+    os._exit(0) # see note in usage()
 
+# Do a quick, non-intrusive check to see how verbose we are.  This is
+# just for here.  This does not correctly count -v vs. -vv, -vvv, etc.
+_verbosity_ = len([j for j in sys.argv if j in ('--verbose','-v','-vv','-vvv')])
+
+# Show version at earliest possible moment when in debugging/verbose mode.
+if _verbosity_ > 0: print 'pyraf version '+__version__
 
 def usage():
     print __main__.__doc__
@@ -44,8 +51,19 @@ if "." not in sys.path: sys.path.insert(0, ".")
 # Grab the terminal window's id at the earliest possible moment
 from . import wutil
 
+# Since numpy as absolutely required for any PyRAF use, go ahead and
+# import it now, just to check it
+if _verbosity_ > 0: print "pyraf: importing numpy"
+try:
+    import numpy
+except ImportError:
+    print "The numpy package is required by PyRAF and was not found.  Please visit http://numpy.scipy.org"
+    os._exit(1)
+if _verbosity_ > 0: print "pyraf: imported numpy"
+
 # Modify the standard import mechanism to make it more
 # convenient for the iraf module
+if _verbosity_ > 0: print "pyraf: imported irafimport"
 from . import irafimport
 
 # this gives more useful tracebacks for CL scripts
@@ -55,6 +73,7 @@ from . import irafnames
 
 # initialization is silent unless program name is 'pyraf' or
 # silent flag is set on command line
+if _verbosity_ > 0: print "pyraf: setting _pyrafMain"
 
 # follow links to get to the real executable filename
 executable = sys.argv[0]
@@ -67,12 +86,13 @@ runCmd = None
 from . import irafexecute, clcache
 from stsci.tools import capable
 
-# Newer versions of stsci.tools should do this, but older versions might now
+# Newer versions of stsci.tools should do this, but older versions might not
 try:
     import Tkinter
 except ImportError:
     capable.OF_GRAPHICS = False
 
+if _verbosity_ > 0: print "pyraf: setting exit handler"
 # set up exit handler to close caches
 def _cleanup():
     if iraf: iraf.gflush()
@@ -88,18 +108,21 @@ if not _pyrafMain or ('-h' not in sys.argv and '--help' not in sys.argv):
     atexit.register(_cleanup)
     del atexit
 
-
+if _verbosity_ > 0: print "pyraf: finished all work prior to IRAF use"
 # now get ready to do the serious IRAF initialization
 if not _pyrafMain and not setup_helpers.in_pyraf_setup:
     # if not executing as pyraf main, just initialize iraf module
     # quietly load initial iraf symbols and packages
+    if _verbosity_ > 0: print "pyraf: initializing IRAF"
     from . import iraf
+    if _verbosity_ > 0: print "pyraf: imported iraf"
     iraf.Init(doprint=0, hush=1)
+    if _verbosity_ > 0: print "pyraf: initialized IRAF"
 elif _pyrafMain:
+    if _verbosity_ > 0: print "pyraf: is main program"
     # special initialization when this is the main program
 
     # command-line options
-
     from . import pyrafglobals as _pyrafglobals
     import getopt
     try:
@@ -153,7 +176,11 @@ elif _pyrafMain:
     if "epyraf" in sys.argv[0]:  # See also -e and --ecl switches
         _pyrafglobals._use_ecl = True
 
+    if _verbosity_ > 0: print "pyraf: finished arg parsing"
+
     from . import iraf
+
+    if _verbosity_ > 0: print "pyraf: imported iraf"
     iraf.setVerbose(verbose)
     del getopt, verbose, usage, optlist
 
@@ -169,16 +196,19 @@ elif _pyrafMain:
         else:
             _splash = None
 
+    if _verbosity_ > 0: print "pyraf: splashed"
+
     # load initial iraf symbols and packages
     if args:
         iraf.Init(savefile=args[0], **_initkw)
     else:
         iraf.Init(**_initkw)
     del args
+    if _verbosity_ > 0: print "pyraf: finished iraf.Init"
 
     if _splash:
         _splash.Destroy()
     del _splash, _silent, _dosplash
 
+del _verbosity_
 help = iraf.help
-

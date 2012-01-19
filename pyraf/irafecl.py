@@ -3,9 +3,12 @@
 
 from __future__ import division # confidence high
 
-import inspect
-import sys
-import iraf, pyrafglobals, iraftask, irafexecute, irafecl
+import inspect, sys
+from stsci.tools.irafglobals import Verbose
+import pyrafglobals, iraftask, irafexecute
+
+# this is better than what 2to3 does, since the iraf import is circular
+import pyraf.iraf
 
 executionMonitor = None
 
@@ -32,6 +35,7 @@ def getTaskModule():
     language mode,  either ECL or classic CL.
     """
     if pyrafglobals._use_ecl:
+        import irafecl
         return irafecl
     else:
         return iraftask
@@ -102,7 +106,7 @@ def _ecl_parent_task():
     while f and not _ecl_runframe(f):
         f = f.f_back
     if not f:
-        return iraf.cl
+        return pyraf.iraf.cl
     return f.f_locals["self"]
 
 def _ecl_interpreted_frame(frame=None):
@@ -156,13 +160,13 @@ class EclBase:
         specialKW = self._specialKW(kw)
 
         # Special Stdout, Stdin, Stderr keywords are used to redirect IO
-        redirKW, closeFHList = iraf.redirProcess(kw)
+        redirKW, closeFHList = pyraf.iraf.redirProcess(kw)
 
         # set parameters
         kw['_setMode'] = 1
-        apply(self.setParList,args,kw)
+        self.setParList(*args, **kw)
 
-        if iraf.Verbose>1:
+        if Verbose>1:
             print "run %s (%s: %s)" % (self._name,
                     self.__class__.__name__, self._fullpath)
             if self._runningParList:
@@ -183,7 +187,8 @@ class EclBase:
                     executionMonitor(self)
                 self._run(redirKW, specialKW)
                 self._updateParList(save)
-                if iraf.Verbose>1: print 'Successful task termination'
+                if Verbose>1:
+                    print >> sys.stderr, 'Successful task termination'
             finally:
                 rv = self._resetRedir(resetList, closeFHList)
                 self._deleteRunningParList()
@@ -204,7 +209,7 @@ class EclBase:
 
     def _run(self, redirKW, specialKW):
         # OVERRIDE IrafTask._run for primitive (SPP, C, etc.) tasks to avoid exception trap.
-        apply(irafexecute.IrafExecute, (self, iraf.getVarDict()), redirKW)
+        irafexecute.IrafExecute(self, pyraf.iraf.getVarDict(), **redirKW)
 
     def _ecl_push_err(self):
         """Method call emitted in compiled CL code to start an iferr
@@ -228,7 +233,7 @@ class EclBase:
         """IrafTask version of handle error:  register error with calling task but continue."""
         self._ecl_record_error(e)
         if erract.flpr:
-            iraf.flpr(self)
+            pyraf.iraf.flpr(self)
         parent = _ecl_parent_task()
         parent._ecl_record_error(e)
         self._ecl_trace(parent._ecl_err_msg(e))
@@ -306,7 +311,7 @@ class EclBase:
                                 (self._ecl_get_lineno(), self._name), self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
-                iraf.error(1, "divide by zero", self._name, suppress=False)
+                pyraf.iraf.error(1, "divide by zero", self._name, suppress=False)
         return a / b
 
     def _ecl_safe_modulo(self, a, b):
@@ -317,7 +322,7 @@ class EclBase:
                                 (self._ecl_get_lineno(), self._name), self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
-                iraf.error(1, "modulo by zero", self._name, suppress=False)
+                pyraf.iraf.error(1, "modulo by zero", self._name, suppress=False)
         return a % b
 
 class SimpleTraceback(EclBase):
@@ -426,7 +431,6 @@ class EclForeignTask(SimpleTraceback, iraftask.IrafForeignTask):
         iraftask.IrafForeignTask.__init__(self, *args, **kw)
     def _run(self, *args, **kw):
         return iraftask.IrafForeignTask._run(self, *args, **kw)
-
 IrafForeignTask = EclForeignTask
 
 class EclPkg(EclTraceback, iraftask.IrafPkg):

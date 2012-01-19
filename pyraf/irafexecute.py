@@ -6,14 +6,14 @@ from __future__ import division # confidence high
 
 import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
 from stsci.tools import irafutils
-from stsci.tools.irafglobals import IrafTask
+from stsci.tools.irafglobals import IrafError, IrafTask, Verbose
 import subproc, filecache, wutil
-import iraf, gki, irafukey
-import irafgwcs
+import iraf
+import gki, irafukey, irafgwcs
 
 #stdgraph = None
 
-IPC_PREFIX = numpy.array([01120],numpy.int16).tostring()
+IPC_PREFIX = numpy.array([01120],numpy.int16).tostring() # is 'bytes' in Py3
 
 # weirdo protocol to get output from task back to subprocess
 # definitions from cl/task.h and lib/clio.h
@@ -21,17 +21,8 @@ IPCOUT = "IPC$IPCIO-OUT"
 IPCDONEMSG = "# IPC$IPCIO-FINISHED\n"
 
 # set flag indicating big endian or little endian byte order
-try:
-    # sys.byteorder was added in Python 2.0
-    isBigEndian = (sys.byteorder == "big")
-except AttributeError:
-    i = 1
-    tup = struct.unpack('hh',struct.pack('=i',i))
-    if tup[1] == 1:
-        isBigEndian = 1
-    else:
-        isBigEndian = 0
-    del i, tup
+# sys.byteorder was added in Python 2.0
+isBigEndian = sys.byteorder == "big"
 
 # Create an instance of the stdimage kernel
 stdimagekernel = gki.GkiController()
@@ -53,7 +44,7 @@ def _getExecutable(arg):
         return arg.executable
     elif isinstance(arg, IrafTask):
         return arg.getFullpath()
-    elif isinstance(arg, types.StringType):
+    elif isinstance(arg, (str, unicode)):
         if os.path.exists(arg):
             return arg
         task = iraf.getTask(arg, found=1)
@@ -110,7 +101,7 @@ class _ProcessCache:
 
     def error(self, msg, level=0):
         """Write an error message if Verbose is set"""
-        if iraf.Verbose>level:
+        if Verbose>level:
             sys.stderr.write(msg)
             sys.stderr.flush()
 
@@ -313,7 +304,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
     try:
         # Start 'er up
         irafprocess = processCache.get(task, envdict)
-    except (iraf.IrafError, subproc.SubprocessError, IrafProcessError), value:
+    except (IrafError, subproc.SubprocessError, IrafProcessError), value:
         raise
         raise IrafProcessError("Cannot start IRAF executable\n%s" % value)
 
@@ -347,7 +338,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
         # On keyboard interrupt (^C), kill the subprocess
         processCache.kill(irafprocess)
         raise
-    except (iraf.IrafError, IrafProcessError), exc:
+    except (IrafError, IrafProcessError), exc:
         # on error, kill the subprocess, then re-raise the original exception
         try:
             processCache.kill(irafprocess)
@@ -525,7 +516,7 @@ class IrafProcess:
         try:
             self.process.die()
         except subproc.SubprocessError, e:
-            if iraf.Verbose>0:
+            if Verbose>0:
                 # too bad, if we can't kill it assume it is already dead
                 self.stderr.write("Warning: cannot terminate process %s\n" %
                                         (e,))
@@ -578,9 +569,10 @@ class IrafProcess:
                 #  number of following bytes
                 #  data
                 dsection = data[i:i+block]
+                # the arg parts to the following are all type bytes in Py3
                 self.process.write(IPC_PREFIX +
-                                                struct.pack('=h',len(dsection)) +
-                                                dsection)
+                                   struct.pack('=h',len(dsection)) +
+                                   dsection)
                 i = i + block
         except subproc.SubprocessError, e:
             raise IrafProcessError("Error in write: %s" % str(e))
@@ -594,7 +586,7 @@ class IrafProcess:
             header = self.process.read(4)
             if (header[0:2] != IPC_PREFIX):
                 raise IrafProcessError("Not a legal IRAF pipe record")
-            ntemp = struct.unpack('=h',header[2:])
+            ntemp = struct.unpack('=h', header[2:])
             nbytes = ntemp[0]
             # read the rest
             data = self.process.read(nbytes)
@@ -697,7 +689,7 @@ class IrafProcess:
         try:
             try:
                 pmsg = self.task.getParam(paramname, native=0)
-                if type(pmsg) != types.StringType:
+                if not isinstance(pmsg, (str, unicode)):
                     # Only psets should return a non-string type (they
                     # return the task object).
                     # Work a little to get the underlying string value.
@@ -732,7 +724,7 @@ class IrafProcess:
             self.task.setParam(paramname,newvalue)
         except ValueError, e:
             # on ValueError, just print warning and then force set
-            if iraf.Verbose>0:
+            if Verbose>0:
                 self.stderr.write('Warning: %s\n' % (e,))
                 self.stderr.flush()
             self.task.setParam(paramname,newvalue,check=0)
@@ -985,10 +977,27 @@ class IrafProcess:
 def Asc2IrafString(ascii_string):
     """translate ascii to IRAF 16-bit string format"""
     inarr = numpy.fromstring(ascii_string, numpy.int8)
-    return inarr.astype(numpy.int16).tostring()
+    retval = inarr.astype(numpy.int16).tostring()
+#   log_task_comm('Asc2IrafString', retval, False)
+    return retval
 
 def Iraf2AscString(iraf_string):
     """translate 16-bit IRAF characters to ascii"""
     inarr = numpy.fromstring(iraf_string, numpy.int16)
-    return inarr.astype(numpy.int8).tostring()
+    retval = inarr.astype(numpy.int8).tostring()
+#   log_task_comm('Iraf2AscString', retval, True)
+    return retval
 
+def log_task_comm(pfx, strbuf, expectAsStr, shorten=True):
+    import some_pkg_w_a_log_func as L
+    assert isinstance(strbuf, (str,unicode,bytes)), "?!: "+str(type(strbuf))
+    if expectAsStr:
+        assert isinstance(strbuf, str), "Unexpected type: "+str(type(strbuf))
+    if isinstance(strbuf, (str, unicode)):
+        out = strbuf.strip()
+        if shorten: out = out[0:30]
+        L.log(pfx+' (str): '+out)
+    else:
+        out = strbuf.decode().strip()
+        if shorten: out = out[0:30]
+        L.log(pfx+' (byt): '+out)

@@ -11,9 +11,7 @@ import linecache
 import os
 import stat
 
-
-# this is better than what 2to3 does, since the iraf import is circular
-from . import iraf
+from stsci.tools.irafglobals import IrafError
 
 
 def checkcache(filename=None, orig_checkcache=linecache.checkcache):
@@ -33,6 +31,8 @@ def checkcache(filename=None, orig_checkcache=linecache.checkcache):
         else:
             return
 
+    from . import iraf
+
     for filename in filenames:
 #    for filename in cache.keys():
         if filename[:10] == "<CL script":
@@ -50,7 +50,7 @@ def checkcache(filename=None, orig_checkcache=linecache.checkcache):
                     stat = os.stat(fullname)
                     newsize = stat[stat.ST_SIZE]
                     newmtime = stat[stat.ST_MTIME]
-                except (os.error, iraf.IrafError):
+                except (os.error, IrafError):
                     continue
                 if size == newsize and mtime == newmtime:
                     # save the ones that didn't change
@@ -81,6 +81,7 @@ def updateCLscript(filename):
     if cache.has_key(filename):
         del cache[filename]
     try:
+        from . import iraf
         taskname = filename[11:-1]
         taskobj = iraf.getTask(taskname)
         fullname = taskobj.getFullpath()
@@ -90,7 +91,7 @@ def updateCLscript(filename):
         lines = taskobj.getCode().split('\n')
         cache[filename] = size, mtime, lines, taskname
         return lines
-    except (iraf.IrafError, KeyError, AttributeError):
+    except (IrafError, KeyError, AttributeError):
         return []
 
 

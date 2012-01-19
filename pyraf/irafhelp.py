@@ -40,8 +40,12 @@ from __future__ import division # confidence high
 
 import __main__, re, os, sys, types
 from stsci.tools import minmatch, irafutils
-from stsci.tools.irafglobals import IrafTask, IrafPkg
-import describe, iraf
+from stsci.tools.irafglobals import IrafError, IrafTask, IrafPkg
+import describe
+
+# this is better than what 2to3 does, since the iraf import is circular
+import pyraf.iraf
+
 
 # print info on numpy arrays if numpy is available
 
@@ -123,7 +127,7 @@ Other keywords are passed on to the IRAF help task if it is called.
 """
 
     # handle I/O redirection keywords
-    redirKW, closeFHList = iraf.redirProcess(kw)
+    redirKW, closeFHList = pyraf.iraf.redirProcess(kw)
     if kw.has_key('_save'): del kw['_save']
 
     # get the keywords using minimum-match
@@ -136,11 +140,11 @@ Other keywords are passed on to the IRAF help task if it is called.
                 irafkw[fullkey] = kw[key]
             else:
                 # this is a Python help function keyword
-                exec fullkey + ' = ' + `kw[key]`
+                exec(fullkey+' = '+repr(kw[key]))
         except KeyError, e:
             raise e.__class__("Error in keyword "+key+"\n"+str(e))
 
-    resetList = iraf.redirApply(redirKW)
+    resetList = pyraf.iraf.redirApply(redirKW)
 
     # try block for I/O redirection
 
@@ -148,7 +152,7 @@ Other keywords are passed on to the IRAF help task if it is called.
         _help(object, variables, functions, modules,
                 tasks, packages, hidden, padchars, regexp, html, irafkw)
     finally:
-        rv = iraf.redirReset(resetList, closeFHList)
+        rv = pyraf.iraf.redirReset(resetList, closeFHList)
     return rv
 
 def _help(object, variables, functions, modules,
@@ -165,7 +169,7 @@ def _help(object, variables, functions, modules,
     if isinstance(object,str):
         if re.match(r'[A-Za-z_][A-Za-z0-9_.]*$',object) or \
           (re.match(r'[^\0]*$',object) and \
-                    os.path.exists(iraf.Expand(object, noerror=1))):
+                    os.path.exists(pyraf.iraf.Expand(object, noerror=1))):
             if _printIrafHelp(object, html, irafkw): return
 
     vlist = None
@@ -379,12 +383,12 @@ def _irafHelp(taskname, irafkw):
         taskname = taskname.getName()
     else:
         # expand IRAF variables in case this is name of a help file
-        taskname = iraf.Expand(taskname,noerror=1)
+        taskname = pyraf.iraf.Expand(taskname,noerror=1)
     try:
         if not irafkw.has_key('page'): irafkw['page'] = 1
-        apply(iraf.system.help, (taskname,), irafkw)
+        pyraf.iraf.system.help(taskname, **irafkw)
         return 1
-    except iraf.IrafError, e:
+    except IrafError, e:
         print str(e)
         return 0
 

@@ -715,7 +715,7 @@ def gkiTranslate(metacode, functionTable):
     while opcode != None:
         f = functionTable[opcode]
         if f is not None:
-            apply(f,(arg,))
+            f(arg)
 # ! DEBUG ! timer("in gkiTranslate, for: "+opcode2name[opcode]) # good dbg spot
         opcode, arg = gkiBuffer.getNextCode()
 

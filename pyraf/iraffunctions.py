@@ -57,7 +57,7 @@ import linecache
 from stsci.tools import minmatch, irafutils, teal
 import numpy
 import subproc, wutil
-import irafnames, irafinst, iraftask, irafpar, irafexecute, cl2py
+import irafnames, irafinst, irafpar, iraftask, irafexecute, cl2py
 import gki
 import irafecl
 try:
@@ -69,17 +69,14 @@ except:
         raise
 
 try:
-    import cPickle
-    pickle = cPickle
+    import cPickle as pickle
 except ImportError:
     import pickle
 
 try:
-    import cStringIO
-    StringIO = cStringIO
-    del cStringIO
+    import cStringIO as StringIO
 except ImportError:
-    import StringIO
+    import StringIO as StringIO # survives 2to3
 
 # hide these modules so we can use 'from iraffunctions import *'
 _sys = sys
@@ -427,27 +424,27 @@ def restoreFromFile(savefile, doprint=1, **kw):
         fh = open(savefile, 'rb')
         doclose = 1
     u = _pickle.Unpickler(fh)
-    dict = u.load()
+    udict = u.load()
     if doclose:
         fh.close()
 
     # restore the value of Verbose
 
     global Verbose
-    Verbose.set(dict['Verbose'])
-    del dict['Verbose']
+    Verbose.set(udict['Verbose'])
+    del udict['Verbose']
 
     # replace the contents of loadedPath
     global loadedPath
-    loadedPath[:] = dict['loadedPath']
-    del dict['loadedPath']
+    loadedPath[:] = udict['loadedPath']
+    del udict['loadedPath']
 
     # update the values
-    globals().update(dict)
+    globals().update(udict)
 
     # replace INDEF everywhere we can find it
     # this does not replace references in parameters, unfortunately
-    INDEF = dict['INDEF']
+    INDEF = udict['INDEF']
     from stsci.tools import irafglobals
     import __main__
     import pyraf
@@ -592,7 +589,7 @@ def load(pkgname,args=(),kw=None,doprint=1,hush=0,save=1):
     if not kw.has_key('_doprint'): kw['_doprint'] = doprint
     if not kw.has_key('_hush'): kw['_hush'] = hush
     if not kw.has_key('_save'): kw['_save'] = save
-    apply(p.run, tuple(args), kw)
+    p.run(*tuple(args), **kw)
 
 # -----------------------------------------------------
 # run: Run an IRAF task by name
@@ -607,7 +604,7 @@ def run(taskname,args=(),kw=None,save=1):
     if kw is None: kw = {}
     if not kw.has_key('_save'): kw['_save'] = save
 ##     if not kw.has_key('_parent'): kw['parent'] = "'iraf.cl'"
-    apply(t.run, tuple(args), kw)
+    t.run(*tuple(args), **kw)
 
 
 # -----------------------------------------------------
@@ -1143,12 +1140,11 @@ def real(x):
         x = x.strip()
         if x.find(':') >= 0:
             #...handle the special a:b:c case here...
+            sign = 1
             if x[0] in ["-", "+"]:
                 if x[0] == "-":
                     sign = -1.
                 x = x[1:]
-            else:
-                sign = 1.
             m = _re.search(r"[^0-9:.]", x)
             if m:
                 x = x[0:m.start()]
@@ -1693,11 +1689,13 @@ def bool2str(value):
 def boolean(value):
     """Convert Python native types (string, int, float) to IRAF boolean
 
-    Accepts integer/float values 0,1 or string 'yes','no'
-    Also allows INDEF as value
+    Accepts integer/float values 0,1 or string 'no','yes'
+    Also allows INDEF as value, or existing IRAF boolean type.
     """
     if value in [0,1]:
         return value
+    elif value in (no, yes):
+        return int(value)
     elif value in [INDEF, "", None]:
         return INDEF
     if isinstance(value, (str,unicode)):
@@ -1727,7 +1725,7 @@ def boolean(value):
 
 _nscan = 0
 
-def fscan(locals, line, *namelist, **kw):
+def fscan(theLocals, line, *namelist, **kw):
     """fscan function sets parameters from a string or list parameter
 
     Uses local dictionary (passed as first argument) to set variables
@@ -1748,16 +1746,16 @@ def fscan(locals, line, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        line = eval(line, {'iraf': iraf}, locals)
+        line = eval(line, {'iraf': iraf}, theLocals)
     except EOFError:
-        _weirdEOF(locals, namelist)
+        _weirdEOF(theLocals, namelist)
         _nscan = 0
         return EOF
     f = line.split()
     n = min(len(f),len(namelist))
     # a tricky thing -- null input is OK if the first variable is
     # a struct
-    if n==0 and namelist and _isStruct(locals, namelist[0]):
+    if n==0 and namelist and _isStruct(theLocals, namelist[0]):
         f = ['']
         n = 1
     if kw.has_key('strconv'):
@@ -1771,7 +1769,7 @@ def fscan(locals, line, *namelist, **kw):
     for i in range(n):
         # even messier: special handling for struct type variables, which
         # consume the entire remaining string
-        if _isStruct(locals, namelist[i]):
+        if _isStruct(theLocals, namelist[i]):
             if i < len(namelist)-1:
                 raise TypeError("Struct type param `%s' must be the final"
                         " argument to scan" % namelist[i])
@@ -1800,14 +1798,14 @@ def fscan(locals, line, *namelist, **kw):
         else:
             cmd = namelist[i] + ' = ' + `f[i]`
         try:
-            exec cmd in locals
+            exec(cmd, theLocals)
             n_actual += 1
         except ValueError:
             break
     _nscan = n_actual
     return n_actual
 
-def fscanf(locals, line, format, *namelist, **kw):
+def fscanf(theLocals, line, format, *namelist, **kw):
     """fscanf function sets parameters from a string/list parameter with format
 
     Implementation is similar to fscan but is a bit simpler because
@@ -1823,11 +1821,11 @@ def fscanf(locals, line, format, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        line = eval(line, {'iraf': iraf}, locals)
+        line = eval(line, {'iraf': iraf}, theLocals)
         # format also needs to be evaluated
-        format = eval(format, locals)
+        format = eval(format, theLocals)
     except EOFError:
-        _weirdEOF(locals, namelist)
+        _weirdEOF(theLocals, namelist)
         _nscan = 0
         return EOF
     if sscanf == None:
@@ -1845,27 +1843,27 @@ def fscanf(locals, line, format, *namelist, **kw):
     for i in range(n):
         cmd = namelist[i] + ' = ' + `f[i]`
         try:
-            exec cmd in locals
+            exec(cmd, theLocals)
             n_actual += 1
         except ValueError:
             break
     _nscan = n_actual
     return n_actual
 
-def _weirdEOF(locals, namelist):
+def _weirdEOF(theLocals, namelist):
     # Replicate a weird IRAF behavior -- if the argument list
     # consists of a single struct-type variable, and it does not
     # currently have a defined value, set it to the null string.
     # (I warned you to abandon hope!)
-    if namelist and _isStruct(locals, namelist[0], checklegal=1):
+    if namelist and _isStruct(theLocals, namelist[0], checklegal=1):
         if len(namelist) > 1:
             raise TypeError("Struct type param `%s' must be the final"
                     " argument to scan" % namelist[0])
         # it is an undefined struct, so set it to null string
         cmd = namelist[0] + ' = ""'
-        exec cmd in locals
+        exec(cmd, theLocals)
 
-def _isStruct(locals, name, checklegal=0):
+def _isStruct(theLocals, name, checklegal=0):
     """Returns true if the variable `name' is of type struct
 
     If checklegal is true, returns true only if variable is struct and
@@ -1877,13 +1875,13 @@ def _isStruct(locals, name, checklegal=0):
         c[-1] = 'getParObject(%s)' % `c[-1]`
     fname = '.'.join(c)
     try:
-        par = eval(fname, locals)
+        par = eval(fname, theLocals)
     except KeyboardInterrupt:
         raise
     except:
         # assume all failures mean this is not an IrafPar
         return 0
-    if (isinstance(par, _irafpar.IrafPar) and par.type == 'struct'):
+    if isinstance(par, _irafpar.IrafPar) and par.type == 'struct':
         if checklegal:
             return (not par.isLegal())
         else:
@@ -1891,7 +1889,7 @@ def _isStruct(locals, name, checklegal=0):
     else:
         return 0
 
-def scan(locals, *namelist, **kw):
+def scan(theLocals, *namelist, **kw):
     """Scan function sets parameters from line read from stdin
 
     This can be used either as a function or as a task (it accepts
@@ -1906,17 +1904,18 @@ def scan(locals, *namelist, **kw):
         line = _irafutils.tkreadline()
         # null line means EOF
         if line == "":
-            _weirdEOF(locals, namelist)
+            _weirdEOF(theLocals, namelist)
             global _nscan
             _nscan = 0
             return EOF
         else:
-            return apply(fscan, (locals, `line`) + namelist, kw)
+            args = (theLocals, repr(line),) + namelist
+            return fscan(*args, **kw)
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
 
-def scanf(locals, format, *namelist, **kw):
+def scanf(theLocals, format, *namelist, **kw):
     """Formatted scan function sets parameters from line read from stdin
 
     This can be used either as a function or as a task (it accepts
@@ -1931,12 +1930,13 @@ def scanf(locals, format, *namelist, **kw):
         line = _irafutils.tkreadline()
         # null line means EOF
         if line == "":
-            _weirdEOF(locals, namelist)
+            _weirdEOF(theLocals, namelist)
             global _nscan
             _nscan = 0
             return EOF
         else:
-            return apply(fscanf, (locals, `line`, format) + namelist, kw)
+            args = (theLocals, repr(line), format,) + namelist
+            return fscanf(*args, **kw)
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
@@ -2152,11 +2152,18 @@ def _wrapTeal(taskname):
     # pop up TEAL
     try:
         # use simple-auto-close mode (like EPAR) by no return dict
-        _teal.teal(taskname, returnDict=False, errorsToTerm=True,
-                   raiseUnfound=True)
+        _teal.teal(taskname, returnDict=False, errorsToTerm=True, strict=False)
     # put focus back on terminal, even if there is an exception
     finally:
-        _wutil.setFocusTo(oldFoc)
+        # Turns out, for the majority of TEAL-enabled tasks, users don't like
+        # having the focus jump back to the terminal for them (especially if
+        # it is a long-running task) after executing, so disable this
+        # feature for now - CDS 21Dec2011
+#       _wutil.setFocusTo(oldFoc)
+        pass
+        # though we might add code to set focus only on dialog cancel...
+        # ask users; would have to change teal() API (need no Close bttn)
+
 
 @handleRedirAndSaveKwds
 def tparam(*args):
@@ -2228,22 +2235,14 @@ def unlearn(*args, **kw):
             getTask(taskname).unlearn()
         except KeyError, e:
             try: # maybe it is a task which uses .cfg files
-                flist = _teal.cfgpars.getUsrCfgFilesForPyPkg(taskname)
-                if flist == None or len(flist) == 0:
-                    pass # no need to be verbose
-                elif len(flist) == 1:
-                    _os.remove(flist[0]) # don't be chatty here either
-                else:
-                    if force:
-                        for f in flist:
-                            _os.remove(f) # don't be chatty
-                    else:
-                        _writeError('Error: multiple user-owned files found'+ \
-                            ' to unlearn for task "'+taskname+ \
-                            '".\nNone were deleted.  Please review and move/'+ \
-                            'delete these files:\n\t'+\
-                            '\n\t'.join(flist)+ \
-                            '\n\nor type "unlearn '+taskname+' force=yes"')
+                ans = _teal.unlearn(taskname, deleteAll=force)
+                if ans != 0:
+                    _writeError('Error: multiple user-owned files found'+ \
+                        ' to unlearn for task "'+taskname+ \
+                        '".\nNone were deleted.  Please review and move/'+ \
+                        'delete these files:\n\n\t'+\
+                        '\n\t'.join(ans)+ \
+                        '\n\nor type "unlearn '+taskname+' force=yes"')
             except _teal.cfgpars.NoCfgFileError:
                 _writeError("Warning: Could not find task %s to unlearn" %
                             taskname)
@@ -2287,7 +2286,7 @@ def clear(*args):
 @handleRedirAndSaveKwds
 def flprcache(*args):
     """Flush process cache.  Takes optional list of tasknames."""
-    apply(_irafexecute.processCache.flush, args)
+    _irafexecute.processCache.flush(*args)
     if Verbose>0: print "Flushed process cache"
 
 @handleRedirAndSaveKwds
@@ -2308,7 +2307,7 @@ def prcacheOn():
 def prcache(*args):
     """Print process cache.  If args are given, locks tasks into cache."""
     if args:
-        apply(_irafexecute.processCache.lock, args)
+        _irafexecute.processCache.lock(*args)
     else:
         _irafexecute.processCache.list()
 
@@ -2451,14 +2450,14 @@ def _clProcedure(*args, **kw):
     if _sys.stdin == _sys.__stdin__:
         return
     # initialize environment
-    locals = {}
-    exec 'from pyraf import iraf' in locals
-    exec 'from pyraf.irafpar import makeIrafPar' in locals
-    exec 'from stsci.tools.irafglobals import *' in locals
-    exec 'from pyraf.pyrafglobals import *' in locals
+    theLocals = {}
+    exec('from pyraf import iraf', theLocals)
+    exec('from pyraf.irafpar import makeIrafPar', theLocals)
+    exec('from stsci.tools.irafglobals import *', theLocals)
+    exec('from pyraf.pyrafglobals import *', theLocals)
     # feed the input to clExecute
     # redirect input to sys.__stdin__ after reading the CL script from sys.stdin
-    clExecute(_sys.stdin.read(), locals=locals, Stdin=_sys.__stdin__)
+    clExecute(_sys.stdin.read(), locals=theLocals, Stdin=_sys.__stdin__)
 
 def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     """Run CL commands from a file (cl < input) -- OBSOLETE
@@ -2614,7 +2613,7 @@ def task(*args, **kw):
 def redefine(*args, **kw):
     """Redefine an existing task"""
     kw['Redefine'] = 1
-    apply(task, args, kw)
+    task(*args, **kw)
 
 def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
     """Define IRAF package, returning tuple with new package name and binary
@@ -2865,7 +2864,7 @@ def chdir(directory=None):
     if not isinstance(directory, (str,unicode)):
         raise IrafError("Illegal non-string value for directory:"+ \
               +repr(directory))
-    if iraf.Verbose > 2: print('chdir to: '+str(directory))
+    if Verbose > 2: print('chdir to: '+str(directory))
     # Check for (1) local directory and (2) iraf variable
     # when given an argument like 'dev'.  In IRAF 'cd dev' is
     # the same as 'cd ./dev' if there is a local directory named
@@ -2952,15 +2951,15 @@ def clCompatibilityMode(verbose=0, _save=0):
     else:
         logfile = None
 
-    locals = {}
+    theLocals = {}
     local_vars_dict = {}
     local_vars_list = []
     # initialize environment
-    exec 'from pyraf import iraf' in locals
-    exec 'from pyraf.irafpar import makeIrafPar' in locals
-    exec 'from stsci.tools.irafglobals import *' in locals
-    exec 'from pyraf.pyrafglobals import *' in locals
-    exec 'from pyraf.irafecl import EclState' in locals
+    exec('from pyraf import iraf', theLocals)
+    exec('from pyraf.irafpar import makeIrafPar', theLocals)
+    exec('from stsci.tools.irafglobals import *', theLocals)
+    exec('from pyraf.pyrafglobals import *', theLocals)
+    exec('from pyraf.irafecl import EclState', theLocals)
     prompt2 = '>>> '
     while (1):
         try:
@@ -2979,9 +2978,9 @@ def clCompatibilityMode(verbose=0, _save=0):
                 break
             elif line[:2] == '!P':
                 # Python escape -- execute Python code
-                exec line[2:].strip() in locals
+                exec(line[2:].strip(), theLocals)
             elif line and (line[0] != '#'):
-                code = clExecute(line, locals=locals, mode='single',
+                code = clExecute(line, locals=theLocals, mode='single',
                         local_vars_dict=local_vars_dict,
                         local_vars_list=local_vars_list)
                 if logfile is not None:
@@ -3051,15 +3050,18 @@ def clExecute(s, locals=None, mode="proc",
         taskname = "CL%s" % (_clExecuteCount,)
         scriptname = "<CL script %s>" % (taskname,)
         code = pycode.code.lstrip() #XXX needed?
+#       DBG('*'*80)
+#       DBG('pycode for task,script='+str((taskname,scriptname,))+':\n'+code)
+#       DBG('*'*80)
         # force compile to inherit future division so we don't rely on 2.x div.
         codeObject = compile(code,scriptname,'exec',0,0)
         # add this script to linecache
         codeLines = code.split('\n')
         _linecache.cache[scriptname] = (0,0,codeLines,taskname)
         if locals is None: locals = {}
-        exec codeObject in locals
+        exec(codeObject, locals)
         if pycode.vars.proc_name:
-            exec pycode.vars.proc_name+"(taskObj=iraf.cl)" in locals
+            exec(pycode.vars.proc_name+"(taskObj=iraf.cl)", locals)
         return code
     finally:
         _clExecuteCount = _clExecuteCount - 1
@@ -3232,8 +3234,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
     _addTask(newtask)
     return newtask
 
-def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
-        redefine=0):
+def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
 
     """Returns a new or existing IrafPset object
 
@@ -3269,8 +3270,7 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
     _addTask(newtask)
     return newtask
 
-def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
-        redefine=0):
+def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
 
     """Returns a new or existing IrafPkg object
 

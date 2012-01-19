@@ -31,11 +31,12 @@ from __future__ import division # confidence high
 
 import string
 from stsci.tools.irafglobals import INDEF
+from stsci.tools import compmixin
 
 verbose = 0
 
-class Token:
-    def __init__(self, type, attr=None, lineno=None):
+class Token(compmixin.ComparableMixin):
+    def __init__(self, type=None, attr=None, lineno=None):
         self.type = type
         self.attr = attr
         self.lineno = lineno
@@ -43,15 +44,17 @@ class Token:
     #
     #  Not all these may be needed:
     #
-    #  __cmp__      required for GenericParser, required for
+    #  _compare     required for GenericParser, required for
     #                       GenericASTMatcher only if your ASTs are
     #                       heterogeneous (i.e., AST nodes and tokens)
     #  __repr__     recommended for nice error messages in GenericParser
     #  __getitem__  only if you have heterogeneous ASTs
     #
-    def __cmp__(self, o):
-        # raise RuntimeError("Remove comparisons of tokens")
-        return cmp(self.type, o)
+    def _compare(self, other, method):
+        if isinstance(other, Token):
+            return method(self.type, other.type)
+        else:
+            return method(self.type, other)
 
     def __hash__(self):
         return hash(self.type)

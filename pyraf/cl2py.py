@@ -151,7 +151,13 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     if index is not None: codeCache.add(index, pycode)
     pycode.index = index
     if Verbose>1:
-        print "File `%s' compiled by cl2py" % efilename
+        if efilename == 'string_proc':
+            print >> sys.stderr, "Code-string compiled by cl2py:"
+            print >> sys.stderr, "-"*80
+            print >> sys.stderr, clInput
+            print >> sys.stderr, "-"*80
+        else:
+            print >> sys.stderr, "Code-file compiled by cl2py:"+efilename
     return pycode
 
 def checkCache(filename, pycode):
@@ -701,10 +707,13 @@ class VarList(GenericASTTraversal, ErrorTracker):
         self.parList = irafpar.IrafParList(self.getProcName(),
                                 filename=self.filename, parlist=p)
 
-    def has_key(self, name):
+    def has_key(self, key): return self._has(key)
+
+    def __contains__(self, key): return self._has(key)
+
+    def _has(self, name):
         """Check both local and procedure dictionaries for this name"""
-        return self.proc_args_dict.has_key(name) or \
-                        self.local_vars_dict.has_key(name)
+        return name in self.proc_args_dict or name in self.local_vars_dict
 
     def get(self, name):
         """Return entry from local or procedure dictionary (None if none)"""
@@ -1143,9 +1152,13 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
         labels.sort()
         return labels
 
-    def has_key(self, label):
+    def __contains__(self, key): return self._has(key)
+
+    def has_key(self, key): return self._has(key)
+
+    def _has(self, label):
         """Check if label is used in a GOTO"""
-        return self.goto_blockidlist.has_key(label)
+        return label in self.goto_blockidlist
 
     #------------------------------------
     # methods called during AST traversal
