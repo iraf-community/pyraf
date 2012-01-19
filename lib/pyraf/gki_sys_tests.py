@@ -14,13 +14,18 @@ from pyraf import iraf
 from pyraf import gki
 
 
-def psi_land_in_graphcap_test():
-   """ Verify that the graphcap file supports psi_land """
+def psdevs_in_graphcap_test():
+   """ Verify that the graphcap file supports psdump and psi_land """
+   is_in_graphcap('psdump')
+   is_in_graphcap('psi_land')
+
+def is_in_graphcap(devname):
+   """ Verify that the graphcap file supports a given device name """
    gc = gki.getGraphcap()
    assert gc, "default graphcap not found"
-   assert 'psi_land' in gc, "default graphcap does not support psi_land"
-   theDev = gc['psi_land']
-   assert theDev.devname=='psi_land', "Invalid graphcap device for psi_land"
+   assert devname in gc, "default graphcap does not support "+devname
+   theDev = gc[devname]
+   assert theDev.devname==devname, "Invalid graphcap device for "+devname
 
 def opcodeList_test():
    """ Simple aliveness test for the opcode2name dict """
@@ -33,7 +38,8 @@ def controlList_test():
       assert gki.control2name[ctl] == 'control_unknown'
 
 def run_all():
-   tsts = [x for x in globals().keys() if x.find('test')>=0]
+   tsts = sorted([x for x in globals().keys() if x.find('test')>=0], reverse=1)
+
    for t in tsts:
       func = eval(t)
       print func.__doc__.strip()

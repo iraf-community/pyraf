@@ -10,7 +10,9 @@ from __future__ import division # confidence high
 
 import __main__
 from stsci.tools import irafglobals
-import iraf
+# this is better than what 2to3 does, since the iraf import is circular
+import pyraf.iraf
+
 
 def _addName(task, module):
     """Add a task object to the module namespace
@@ -43,7 +45,7 @@ class IrafNameStrategy:
 
 class IrafNameClean(IrafNameStrategy):
     def addTask(self,task):
-        _addName(task, iraf)
+        _addName(task, pyraf.iraf)
 
 # IrafNamePkg also adds packages to __main__ name space
 
@@ -55,7 +57,7 @@ class IrafNamePkg(IrafNameClean):
 
 class IrafNameTask(IrafNameClean):
     def addTask(self,task):
-        _addName(task, iraf)
+        _addName(task, pyraf.iraf)
         _addName(task, __main__)
 
 def setPkgStrategy():

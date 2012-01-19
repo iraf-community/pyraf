@@ -109,7 +109,9 @@ def _writeTmpFile(base_fname, text):
     """ Utility function for writing our tmp files. Return the full fname."""
     global _tmp_dir
     if not _tmp_dir:
-        _tmp_dir = tempfile.mkdtemp(prefix='pyraf_tmp_', suffix='.no-iraf')
+        u = os.environ.get('USER','')
+        if not u: u = os.environ.get('LOGNAME','')
+        _tmp_dir = tempfile.mkdtemp(prefix='pyraf_'+u+'_tmp_',suffix='.no-iraf')
     tmpf = _tmp_dir+os.sep+base_fname
     if os.path.exists(tmpf): os.remove(tmpf)
     f = open(tmpf, 'w')
@@ -149,7 +151,10 @@ keep
     # basic login.cl for the case of no IRAF
     if fname == 'login.cl':
         usr = None
-        if hasattr(os, 'getlogin'): usr = os.getlogin()
+        try:
+            if hasattr(os, 'getlogin'): usr = os.getlogin()
+        except OSError:
+            pass # "Inappropriate ioctl for device" - happens in a cron job
         if not usr and 'USER'     in os.environ: usr = os.environ['USER']
         if not usr and 'USERNAME' in os.environ: usr = os.environ['USERNAME']
         if not usr and 'LOGNAME'  in os.environ: usr = os.environ['LOGNAME']

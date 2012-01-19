@@ -16,6 +16,27 @@ diff = "diff"
 if 'PYRAF_TEST_DIFF' in os.environ:
    diff = os.environ['PYRAF_TEST_DIFF']
 
+PSDEV = EXP2IGNORE = None
+
+
+def diffit(exp2ig, f_new, f_ref, cleanup=True):
+   """ Run the diff and check the return status """
+   # don't do the diff if the new file isn't there or if it is empty
+   assert os.path.exists(f_new), "New file unfound: "+f_new
+   sz = os.path.getsize(f_new)
+   if sz < 1:
+      # sometimes the psdump kernel takes a moment to write+close
+      time.sleep(1)
+      sz = os.path.getsize(f_new)
+      if sz < 1:
+         time.sleep(5)
+   sz = os.path.getsize(f_new)
+   assert sz > 0, "New file is empty: "+f_new
+   cmd = diff+" -I '"+exp2ig+"' "+f_ref+" "+f_new
+   assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
+   if cleanup:
+      os.remove(f_new)
+
 
 def gki_single_prow_test():
    """ Test a prow-plot of a single row from dev$pix to .ps """
@@ -23,16 +44,13 @@ def gki_single_prow_test():
    # get look at tmp dir before plot/flush
    flistBef = findAllTmpPskFiles()
    # plot
-   iraf.prow("dev$pix", row=256, dev="psi_land") # plot
+   iraf.prow("dev$pix", row=256, dev=PSDEV) # plot
    iraf.gflush()
    # get output postscript temp file name
    psOut = getNewTmpPskFile(flistBef, "single_prow")
    # diff
-   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
-         os.sep+"prow_256.ps "+psOut
-   assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
-   # clean up
-   os.remove(psOut)
+   diffit(EXP2IGNORE, psOut,
+          os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256.ps")
 
 
 def gki_prow_1_append_test():
@@ -41,17 +59,14 @@ def gki_prow_1_append_test():
    # get look at tmp dir before plot/flush
    flistBef = findAllTmpPskFiles()
    # plot
-   iraf.prow("dev$pix", row=256, dev="psi_land") # plot
-   iraf.prow("dev$pix", row=250, dev="psi_land", append=True) # append #1
+   iraf.prow("dev$pix", row=256, dev=PSDEV) # plot
+   iraf.prow("dev$pix", row=250, dev=PSDEV, append=True) # append #1
    iraf.gflush()
    # get output postscript temp file name
    psOut = getNewTmpPskFile(flistBef, "prow_1_append")
    # diff
-   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
-         os.sep+"prow_256_250.ps "+psOut
-   assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
-   # clean up
-   os.remove(psOut)
+   diffit(EXP2IGNORE, psOut,
+          os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256_250.ps")
 
 
 def gki_prow_2_appends_test():
@@ -60,18 +75,15 @@ def gki_prow_2_appends_test():
    # get look at tmp dir before plot/flush
    flistBef = findAllTmpPskFiles()
    # plot
-   iraf.prow("dev$pix", row=256, dev="psi_land") # plot
-   iraf.prow("dev$pix", row=250, dev="psi_land", append=True) # append #1
-   iraf.prow("dev$pix", row=200, dev="psi_land", append=True) # append #1
+   iraf.prow("dev$pix", row=256, dev=PSDEV) # plot
+   iraf.prow("dev$pix", row=250, dev=PSDEV, append=True) # append #1
+   iraf.prow("dev$pix", row=200, dev=PSDEV, append=True) # append #1
    iraf.gflush()
    # get output postscript temp file name
    psOut = getNewTmpPskFile(flistBef, "prow_2_appends")
    # diff
-   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
-         os.sep+"prow_256_250_200.ps "+psOut
-   assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
-   # clean up
-   os.remove(psOut)
+   diffit(EXP2IGNORE, psOut,
+          os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256_250_200.ps")
 
 
 def gki_2_prows_no_append_test():
@@ -80,17 +92,16 @@ def gki_2_prows_no_append_test():
    # get look at tmp dir before plot/flush
    flistBef = findAllTmpPskFiles()
    # plot
-   iraf.prow("dev$pix", row=256, dev="psi_land") # plot
-   iraf.prow("dev$pix", row=250, dev="psi_land") # plot again (flushes 1st)
+   iraf.prow("dev$pix", row=256, dev=PSDEV) # plot
+   iraf.prow("dev$pix", row=250, dev=PSDEV) # plot again (flushes 1st)
    # get output postscript temp file name
    prf = None
    if os.uname()[0] == 'SunOS': prf = '.eps' # Solaris can leave extras here
    psOut = getNewTmpPskFile(flistBef, "2_prows_no_append - A", preferred=prf)
    # diff
-   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
-         os.sep+"prow_256.ps "+psOut
-   assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
-   os.remove(psOut)
+   # NOTE - this seems to get 0-len files when (not stdin.isatty()) for psdump
+   diffit(EXP2IGNORE, psOut,
+          os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256.ps")
    # NOW flush second
    flistBef = findAllTmpPskFiles()
    iraf.gflush()
@@ -99,11 +110,8 @@ def gki_2_prows_no_append_test():
    if os.uname()[0] == 'SunOS': prf = '.eps' # Solaris can leave extras here
    psOut = getNewTmpPskFile(flistBef, "2_prows_no_append - B", preferred=prf)
    # diff
-   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
-         os.sep+"prow_250.ps "+psOut
-   assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
-   # clean up
-   os.remove(psOut)
+   diffit(EXP2IGNORE, psOut,
+          os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_250.ps")
 
 
 def gki_prow_to_different_devices_test():
@@ -114,17 +122,14 @@ def gki_prow_to_different_devices_test():
    # use a fake printer name so we don't waste a sheet of paper with each test
    os.environ['LPDEST'] = "hp_dev_null"
    # plot
-   iraf.prow("dev$pix", row=256, dev="psi_land") # plot (no .ps file yet)
+   iraf.prow("dev$pix", row=256, dev=PSDEV) # plot (no .ps file yet)
    iraf.prow("dev$pix", row=250, dev="lw") # plot to fake printer, should flush
                                            # last plot, and should warn @ fake
    # get output postscript temp file name
    psOut = getNewTmpPskFile(flistBef, "prow_to_different_devices")
    # diff
-   cmd = diff+" -I '.*CreationDate: .*' "+os.environ['PYRAF_TEST_DATA']+ \
-         os.sep+"prow_256.ps "+psOut
-   assert 0==os.system(cmd), "Diff of postscript failed!  Command = "+cmd
-   # clean up
-   os.remove(psOut)
+   diffit(EXP2IGNORE, psOut,
+          os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256.ps")
    # NOW flush - should do nothing
    flistBef = findAllTmpPskFiles()
    iraf.gflush()
@@ -136,7 +141,10 @@ def findAllTmpPskFiles():
    """ Do a glob in the tmp dir (and cwd) looking for psikern files.
    Return the list. """
    # Usually the files are dropped in the $tmp directory
-   flistCur = glob.glob(os.environ['tmp']+os.sep+'psk*')
+   if PSDEV.find('dump') >= 0:
+       flistCur = glob.glob('/tmp/irafdmp*.ps') # always in /tmp
+   else:
+       flistCur = glob.glob(os.environ['tmp']+os.sep+'psk*')
    # sometimes the tmp files disappear on Solaris
    if sys.platform=='sunos5':
        time.sleep(1)
@@ -146,7 +154,10 @@ def findAllTmpPskFiles():
                print "This existed then did not: "+f
                flistCur.remove(f)
    # for some reason, on Solaris (at least), some files are dumped to cwd
-   flistCur += glob.glob(os.getcwd()+os.sep+'psk*')
+   if PSDEV.find('dump') >= 0:
+       flistCur += glob.glob(os.getcwd()+os.sep+'irafdmp*.ps')
+   else:
+       flistCur += glob.glob(os.getcwd()+os.sep+'psk*')
    return flistCur
 
 
@@ -159,9 +170,16 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
    found set. Returns a single string filename. """
 
    flistAft = findAllTmpPskFiles()
+   assert len(flistAft) >= len(theBeforeList), \
+          "How can the list size be SMALLER now? ("+title+","+PSDEV+")\n"+ \
+          str(theBeforeList)+"\n"+str(flistAft)
+   if len(flistAft) == len(theBeforeList):
+      # sometimes the psdump kernel takes a moment to write+close (or start!)
+      time.sleep(1)
+      flistAft = findAllTmpPskFiles()
    assert len(flistAft) > len(theBeforeList), \
           'No postcript file(s) generated during: "'+title+'": '+ \
-          str(theBeforeList)
+          str(theBeforeList)+' : PSDEV is: '+PSDEV
    for f in theBeforeList: flistAft.remove(f)
    if preferred == None:
        # In this case, we expect only a single ps file.
@@ -186,19 +204,46 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
            if f.find(preferred) >= 0: return f
 
    return flistAft[0]
-       
+
+
+def preTestCleanup():
+   """ For some reason, with the psdump kernel at least, having existing files
+   in place during the test seems to affect whether new are 0-length. """
+   # So let's just start with a fresh area
+   oldFlist = findAllTmpPskFiles()
+   for f in oldFlist:
+      try:
+         os.remove(f)
+      except:
+         pass # may belong to another user - don't be chatty
 
 
 def run_all():
+   global PSDEV, EXP2IGNORE
    tsts = [x for x in globals().keys() if x.find('test')>=0]
+   ran = 0
+
+   PSDEV = 'psi_land'
+   EXP2IGNORE = '.*CreationDate: .*'
    for t in tsts:
+      preTestCleanup()
       func = eval(t)
-      print func.__doc__.strip()
+      print PSDEV, ':', func.__doc__.strip()
       func()
+      ran += 1
+
+   PSDEV = 'psdump'
+   EXP2IGNORE = '(NOAO/IRAF '
+   for t in tsts:
+      preTestCleanup()
+      func = eval(t)
+      print PSDEV, ':', func.__doc__.strip()
+      func()
+      ran += 1
 
    # If we get here with no exception, we have passed all of the tests
-   print "\nSuccessfully passed "+str(len(tsts))+" tests"
-   return len(tsts)
+   print "\nSuccessfully passed "+str(ran)+" tests"
+   return ran
 
 
 #

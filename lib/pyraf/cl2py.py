@@ -151,7 +151,13 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     if index is not None: codeCache.add(index, pycode)
     pycode.index = index
     if Verbose>1:
-        print "File `%s' compiled by cl2py" % efilename
+        if efilename == 'string_proc':
+            print >> sys.stderr, "Code-string compiled by cl2py:"
+            print >> sys.stderr, "-"*80
+            print >> sys.stderr, clInput
+            print >> sys.stderr, "-"*80
+        else:
+            print >> sys.stderr, "Code-file compiled by cl2py:"+efilename
     return pycode
 
 def checkCache(filename, pycode):

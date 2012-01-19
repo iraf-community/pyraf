@@ -29,7 +29,7 @@ def checkcache(filename=None,orig_checkcache=linecache.checkcache):
         else:
             return
 
-    import iraf # used below
+    import pyraf.iraf # used below
 
     for filename in filenames:
 #    for filename in cache.keys():
@@ -43,7 +43,7 @@ def checkcache(filename=None,orig_checkcache=linecache.checkcache):
             else:
                 size, mtime, lines, taskname = entry
                 try:
-                    taskobj = iraf.getTask(taskname)
+                    taskobj = pyraf.iraf.getTask(taskname)
                     fullname = taskobj.getFullpath()
                     stat = os.stat(fullname)
                     newsize = stat[ST_SIZE]

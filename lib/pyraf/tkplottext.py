@@ -129,6 +129,6 @@ def softText(win,x,y,textstr):
                             - sinrot*(yf + nchar*dy) + xNetOffset + xwin*x
             vertex[:,1]=ywin-(sinrot*(xf + nchar*dx) \
                             + cosrot*(yf + nchar*dy) + yNetOffset + ywin*y)
-            apply(gw.create_line, tuple(vertex.ravel().astype(numpy.int32)),
-                      options)
+            gw.create_line(*(tuple(vertex.ravel().astype(numpy.int32))),
+                           **options)
         nchar = nchar + 1

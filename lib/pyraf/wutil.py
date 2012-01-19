@@ -56,6 +56,10 @@ if WUTIL_ON_MAC:
 # Give the user (Mac or other) a way to still run remotely with no display.
 from stsci.tools import capable
 _skipDisplay = not capable.OF_GRAPHICS
+if sys.version_info[0] > 2:
+    print "Warning: graphics code calls are not yet ported to Python 3"
+    _skipDisplay = True
+    capable.OF_GRAPHICS = False
 
 # attempt to override with xutil or aqua versions
 _hasAqua = 0

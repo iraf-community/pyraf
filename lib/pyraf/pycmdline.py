@@ -144,7 +144,7 @@ class CmdConsole(code.InteractiveConsole):
         else:
             # if in cmddict, there must be a method by this name
             f = getattr(self, method_name)
-            return apply(f, (line, i))
+            return f(line, i)
 
     def default(self, cmd, line, i):
         """Hook to handle other commands (this version does nothing)"""
