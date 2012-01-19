@@ -49,6 +49,13 @@ class IrafImporter(object):
         elif fullname.startswith('pytools.'):
             _, rest = fullname.split('.', 1)
             modname = 'stsci.tools.' + rest
+        elif fullname.startswith('pyraf.'):
+            # !!! TEMPORARY KLUDGE !!! keep this code until cache files are
+            # updated
+            mod = fullname.split('.')[1]
+            if mod in ['minmatch', 'irafutils', 'dialog', 'listdlg',
+                       'filedlg', 'alert', 'irafglobals']:
+                modname = 'stsci.tools.' + mod
 
         if modname is not None:
             return IrafLoader(modname, *_find_module_in_package(modname, path))
