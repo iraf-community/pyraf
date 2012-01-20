@@ -10,8 +10,8 @@ from __future__ import division # confidence high
 
 import __main__
 from stsci.tools import irafglobals
-# this is better than what 2to3 does, since the iraf import is circular
-import pyraf.iraf
+
+from . import iraf
 
 
 def _addName(task, module):
@@ -20,6 +20,7 @@ def _addName(task, module):
     Skip if there is a collision with another name
     unless it is an IrafTask
     """
+
     name = task.getName()
     if hasattr(module, name):
         p = getattr(module, name)
@@ -29,15 +30,15 @@ def _addName(task, module):
         setattr(module, name, task)
     else:
         if irafglobals.Verbose>0:
-            print "Warning: " + module.__name__ + "." + \
-                    name + " was not redefined as Iraf Task"
+            print ("Warning: %s.%s was not redefined as Iraf Task" %
+                   (module.__name__, name))
 
 # Basic namespace strategy class (does nothing)
 
 class IrafNameStrategy:
-    def addTask(self,task):
+    def addTask(self, task):
         pass
-    def addPkg(self,pkg):
+    def addPkg(self, pkg):
         pass
 
 # NameClean implementation puts tasks and packages in iraf module name space
@@ -45,19 +46,19 @@ class IrafNameStrategy:
 
 class IrafNameClean(IrafNameStrategy):
     def addTask(self,task):
-        _addName(task, pyraf.iraf)
+        _addName(task, iraf.module)
 
 # IrafNamePkg also adds packages to __main__ name space
 
 class IrafNamePkg(IrafNameClean):
-    def addPkg(self,pkg):
+    def addPkg(self, pkg):
         _addName(pkg, __main__)
 
 # IrafNameTask puts everything (tasks and packages) in __main__ name space
 
 class IrafNameTask(IrafNameClean):
     def addTask(self,task):
-        _addName(task, pyraf.iraf)
+        _addName(task, iraf.module)
         _addName(task, __main__)
 
 def setPkgStrategy():

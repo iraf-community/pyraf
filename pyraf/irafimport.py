@@ -16,9 +16,12 @@ R. White, 1999 August 17
 from __future__ import division  # confidence high
 
 import imp
+import inspect
 import sys
 
 from stsci.tools import minmatch
+
+import pyraf
 
 
 def _find_module_in_package(fullname, path=None):
@@ -74,12 +77,14 @@ class IrafLoader(object):
         if self.fullname in sys.modules:
             return sys.modules[self.fullname]
 
-        mod = imp.load_module(self.fullname, self.fileobj, self.pathname,
-                              self.description)
+        if self.fullname != 'pyraf.iraf':
+            mod = imp.load_module(self.fullname, self.fileobj, self.pathname,
+                                  self.description)
+            mod.__loader__ = self
+        else:
+            mod = _IrafModuleProxy(self)
 
-        mod.__loader__ = self
         if self.fullname == 'pyraf.iraf':
-            mod = _IrafModuleProxy(mod)
             sys.modules['pyraf.iraf'] = mod
         elif self.fullname == 'stsci.tools':
             sys.modules['pytools'] = mod
@@ -94,23 +99,37 @@ class _IrafModuleProxy(object):
     """Proxy for iraf module that makes tasks appear as attributes"""
 
     __instance = None
+    module = None
 
     def __new__(cls, *args, **kwargs):
         if cls.__instance is not None:
             return cls.__instance
 
-        return super(_IrafModuleProxy, cls).__new__(cls, *args, **kwargs)
+        cls.__instance = super(_IrafModuleProxy, cls).__new__(cls, *args,
+                                                              **kwargs)
+        return cls.__instance
 
-    def __init__(self, module):
-        self.mmdict = minmatch.MinMatchDict(vars(module))
-        self.__name__ = module.__name__
-        self.module = module
+    def __init__(self, loader):
+        self.loader = loader
+        self.__name__ = self.loader.fullname
+        self.mmdict = None
 
     def __repr__(self):
-        return repr(self.module)
+        if self.module is not None:
+            return repr(self.module)
+        return super(_IrafModuleProxy, self).__repr__()
 
     def __getattr__(self, attr):
-        from .iraftask import IrafPkg
+        if self.module is None:
+            module = imp.load_module(self.loader.fullname, self.loader.fileobj,
+                                     self.loader.pathname,
+                                     self.loader.description)
+            module.__loader__ = self.loader
+            self.mmdict = minmatch.MinMatchDict(vars(module))
+            self.module = module
+            # Fix up sys.modules again so importing tasks from pyraf.iraf still
+            # works
+            sys.modules[module.__name__] = self
 
         # first try getting this attribute directly from the usual module
         try:
@@ -129,20 +148,26 @@ class _IrafModuleProxy(object):
                 except KeyError:
                     raise AttributeError("Undefined IRAF task `%s'" % (attr,))
 
-        if isinstance(val, IrafPkg):
+        from .iraftask import IrafPkg
+        if not self.__cl and isinstance(val, IrafPkg) and not val.isLoaded():
             val.run(_doprint=0, _hush=1)
 
         return val
 
     def __setattr__(self, attr, value):
         # add an attribute to the module itself
-        if hasattr(self, 'module'):
+        if self.module is not None:
             setattr(self.module, attr, value)
             self.mmdict.add(attr, value)
         else:
             super(_IrafModuleProxy, self).__setattr__(attr, value)
 
-    def get_all_matches(self, taskname):
+    @property
+    def __cl(self):
+        return (hasattr(pyraf, '_pyrafMain') and pyraf._pyrafMain and
+                pyraf.doCmdline)
+
+    def getAllMatches(self, taskname):
         """Get list of names of all tasks that may match taskname
 
         Useful for command completion.
