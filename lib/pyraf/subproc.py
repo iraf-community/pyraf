@@ -1128,7 +1128,7 @@ def test(fout = sys.stdout):
     p.write('written while subprocess paused\n')
     print '\tNonblocking read of paused subprocess (should be empty):'
     x = p.readPendingChars()
-    assert len(x)==0, 'should have been empty'
+    assert len(x)==0, 'should have been empty, but had: "'+str(x)+'"'
     print '\tContinuing subprocess (verbose):'
     # verbose continue
     assert p.cont(1), 'Continue seems to have failed! Probably lost subproc...'
