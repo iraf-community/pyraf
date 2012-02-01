@@ -11,7 +11,7 @@ if capable.OF_GRAPHICS:
     from Tkinter import *
     from tkMessageBox import askokcancel, showwarning, showerror
     import os, stat, sys, cStringIO
-    from stsci.tools import filedlg, listdlg, eparoption, editpar
+    from stsci.tools import listdlg, eparoption, editpar
     import iraf, irafpar, irafhelp, wutil
     from pyrafglobals import pyrafDir
 else:
@@ -236,6 +236,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         self._appHelpString       = eparHelpString
         self._unpackagedTaskTitle = "Filename"
         self._defaultsButtonTitle = "Unlearn"
+        self._defSaveAsExt        = '.par'
 
         if not wutil.WUTIL_USING_X:
             x = "#ccccff"
