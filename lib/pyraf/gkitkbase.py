@@ -7,11 +7,11 @@ from __future__ import division # confidence high
 
 import numpy, os, sys, string, time, Tkinter
 import msgiobuffer, msgiowidget, wutil
-from stsci.tools import filedlg
+from stsci.tools import capable, filedlg
 from stsci.tools.irafglobals import IrafError, userWorkingHome
 import gki, textattrib, irafgwcs
 from pyrafglobals import pyrafDir
-import tkMessageBox, tkSimpleDialog
+import tkFileDialog, tkMessageBox, tkSimpleDialog
 
 nIrafColors = 16
 
@@ -285,36 +285,50 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     def save(self):
 
         """Save metacode in a file"""
-
         curdir = os.getcwd()
-        fd = filedlg.PersistSaveFileDialog(self.top, "Save Metacode", "*")
-        if fd.Show() != 1:
+        if capable.OF_TKFD_IN_EPAR:
+            fname = tkFileDialog.asksaveasfilename(parent=self.top,
+                                                   title="Save Metacode")
+        else:
+            fd = filedlg.PersistSaveFileDialog(self.top, "Save Metacode", "*")
+            if fd.Show() != 1:
+                fd.DialogCleanup()
+                os.chdir(curdir) # in case file dlg moved us
+                return
+            fname = fd.GetFileName()
             fd.DialogCleanup()
-            os.chdir(curdir) # in case file dlg moved us
-            return
-        fname = fd.GetFileName()
-        fd.DialogCleanup()
+        os.chdir(curdir) # in case file dlg moved us
+        if not fname: return
         fh = open(fname, 'w')
         fh.write(self.gkibuffer.get().tostring())
         fh.close()
-        os.chdir(curdir) # in case file dlg moved us
+
+
 
     def load(self, fname=None):
 
         """Load metacode from a file"""
 
-        if fname is None:
-            fd = filedlg.PersistLoadFileDialog(self.top, "Load Metacode", "*")
-            if fd.Show() != 1:
+        if not fname:
+            if capable.OF_TKFD_IN_EPAR:
+                fname = tkFileDialog.askopenfilename(parent=self.top,
+                                                     title="Load Metacode")
+            else:
+                fd = filedlg.PersistLoadFileDialog(self.top,
+                             "Load Metacode", "*")
+                if fd.Show() != 1:
+                    fd.DialogCleanup()
+                    return
+                fname = fd.GetFileName()
                 fd.DialogCleanup()
-                return
-            fname = fd.GetFileName()
-            fd.DialogCleanup()
+        if not fname: return
         fh = open(fname, 'r')
         metacode = numpy.fromstring(fh.read(), numpy.int16)
         fh.close()
         self.clear(name=fname)
         self.append(metacode,isUndoable=1)
+        self.forceNextDraw()
+        self.redraw()
 
     def iconify(self):
 

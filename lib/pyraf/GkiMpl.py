@@ -587,10 +587,17 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # record this operation as a tuple in the draw buffer
         self._plotAppend(self.gki_plset, arg)
 
+        # Handle case where some terms (eg. xgterm) allow higher values,
+        # by looping over the possible visible patterns.  (ticket #172)
+        arg0 = arg[0]
+        if arg0 >= len(GKI_TO_MPL_LINESTYLE):
+            num_visible = len(GKI_TO_MPL_LINESTYLE)-1
+            arg0 = 1 + (arg0 % num_visible)
+
         # Note that GkiTkplotKernel saves color (arg[2]) in numeric format,
         # but we keep it in the rgb strng form which mpl can readily use.
         # Same note for linestyle, changed from number to mpl symbol.
-        self.lineAttributes.set(GKI_TO_MPL_LINESTYLE[arg[0]], # linestyle
+        self.lineAttributes.set(GKI_TO_MPL_LINESTYLE[arg0],   # linestyle
                                 arg[1]/gki.GKI_FLOAT_FACTOR,  # linewidth
                                 self.colorManager.setDrawingColor(arg[2]))
 

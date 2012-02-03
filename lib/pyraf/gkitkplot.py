@@ -204,6 +204,11 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
     def gki_plset(self, arg):
 
         linetype = arg[0]
+        # Handle case where some terms (eg. xgterm) allow higher values,
+        # by looping over the possible visible patterns.  (ticket #172)
+        if linetype >= len(TK_LINE_STYLE_PATTERNS):
+            num_visible = len(TK_LINE_STYLE_PATTERNS)-1
+            linetype = 1 + (linetype % num_visible)
         linewidth = arg[1]/gki.GKI_FLOAT_FACTOR
         color = arg[2]
         self._tkplotAppend(self.tkplot_plset, linetype, linewidth, color)
