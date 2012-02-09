@@ -297,7 +297,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         # Notify them that pset children will not be saved as part of
         # their special version
         pars = []
-        for par in self.paramList:
+        for par in self._taskParsObj.getParList():
             if par.type == "pset": pars.append(par.name)
         if len(pars):
             msg = "If you have made any changes to the PSET "+ \
