@@ -68,14 +68,10 @@ add_lib_dirs = dir_clean(add_lib_dirs)
 add_inc_dirs = dir_clean(add_inc_dirs)
 
 PYRAF_EXTENSIONS=[distutils.core.Extension('pyraf.sscanfmodule', ['src/sscanfmodule.c'],
-                      extra_compile_args = ['-arch','i386','-arch','x86_64'],
-                      extra_link_args =    ['-arch','i386','-arch','x86_64'],
                       include_dirs=add_inc_dirs),
                   distutils.core.Extension('pyraf.xutilmodule',['src/xutil.c'],
                       include_dirs=add_inc_dirs,
                       library_dirs=add_lib_dirs,
-                      extra_compile_args = ['-arch','i386','-arch','x86_64'],
-                      extra_link_args =    ['-arch','i386','-arch','x86_64'],
                       libraries = [x_libraries])]
 
 pkg = "pyraf"
