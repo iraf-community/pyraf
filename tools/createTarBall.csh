@@ -135,14 +135,9 @@ diff setup.cfg.winorig setup.cfg
 
 # tar and zip Windows version
 cd $workDir
-tar cf ${pyr}-win.tar $pyr
+zip -rq ${pyr}-win $pyr
 if ($status != 0) then
    echo ERROR tarring up
-   exit 1
-endif
-gzip ${pyr}-win.tar
-if ($status != 0) then
-   echo ERROR gzipping
    exit 1
 endif
 
