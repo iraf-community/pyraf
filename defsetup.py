@@ -53,7 +53,8 @@ def find_x(xdir=""):
                     #break
                     add_inc_dirs.append(os.path.join(os.path.dirname(lib_list[ind + 2]), '../include'))
 
-find_x()
+if not sys.platform.startswith('win'):
+    find_x()
 
 def dir_clean(list) :
     # We have a list of directories.  Remove any that don't exist.
@@ -66,12 +67,12 @@ def dir_clean(list) :
 add_lib_dirs = dir_clean(add_lib_dirs)
 add_inc_dirs = dir_clean(add_inc_dirs)
 
-PYRAF_EXTENSIONS = [distutils.core.Extension('pyraf.sscanfmodule', ['src/sscanfmodule.c'],
-                              include_dirs=add_inc_dirs),
-                    distutils.core.Extension('pyraf.xutilmodule', ['src/xutil.c'],
-                              include_dirs=add_inc_dirs,
-                              library_dirs=add_lib_dirs,
-                              libraries = [x_libraries])]
+PYRAF_EXTENSIONS=[distutils.core.Extension('pyraf.sscanfmodule', ['src/sscanfmodule.c'],
+                      include_dirs=add_inc_dirs),
+                  distutils.core.Extension('pyraf.xutilmodule',['src/xutil.c'],
+                      include_dirs=add_inc_dirs,
+                      library_dirs=add_lib_dirs,
+                      libraries = [x_libraries])]
 
 pkg = "pyraf"
 
