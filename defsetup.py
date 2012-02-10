@@ -84,17 +84,41 @@ if sys.platform.startswith('win'):
     if os.path.exists('wintmp'+os.sep+'runpyraf.py'):
         os.remove('wintmp'+os.sep+'runpyraf.py')
     shutil.copy('scripts'+os.sep+'pyraf', 'wintmp'+os.sep+'runpyraf.py')
-    # Install optional launcher binary onto desktop "PyRAF.exe"
+    # Install optional launcher onto desktop
     if 'USERPROFILE' in os.environ:
        dtop = os.environ['USERPROFILE']+os.sep+'Desktop'
        if os.path.exists(dtop):
-           shutil.copy('data'+os.sep+'PyRAF.exe', dtop+os.sep+'PyRAF.exe')
-           print('Installing PyRAF.exe to -> '+dtop)
+           shortcut = dtop+os.sep+"PyRAF.bat"
+           if os.path.exists(shortcut):
+               os.remove(shortcut)
+           target = sys.exec_prefix+os.sep+"Scripts"+os.sep+"runpyraf.py"
+           f = open(shortcut, 'w')
+           f.write('@echo off\necho.\ncd %APPDATA%\n')
+           f.write('echo Launching PyRAF ...\necho.\n')
+           f.write(target)
+           f.write('\necho.\npause\n')
+           f.close()
+           print('Installing PyRAF.bat to -> '+dtop)
        else:
            print('Error: User desktop not found at: '+dtop)
     else:
        print('Error: User desktop location unknown')
 
+    # NOTE: a much better solution would be to use something (bdist) to 
+    # create installer binaries for Windows, since they are: 1) easier on
+    # the win user, and 2) can be used to create actual desktop shortcuts,
+    # not this kludgy .bat file.  If we take out the two libraries built
+    # from the bdist run (which aren't used on Win anyway) then we can
+    # automate this build from Linux (yes, for Windows), via:
+    #    python setup.py bdist_wininst --no-target-compile --plat-name=win32
+    # and
+    #    python setup.py bdist_wininst --no-target-compile --plat-name=win-amd64
+    # We would need to provide both 32- and 64-bit versions since the
+    # installer will fail gracelessly if you try to install one and the Win
+    # node only has the other (listed in its registry).  The above 64-bit bdist
+    # fails currently on thor but the 32-bit bdist works.  Need to investigate.
+
+    # Another option to create the shortcut is to bundle win32com w/ installer.
 
 
 DATA_FILES = [ ( pkg,
