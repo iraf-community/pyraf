@@ -83,7 +83,11 @@ if sys.platform.startswith('win'):
         os.mkdir('wintmp')
     if os.path.exists('wintmp'+os.sep+'runpyraf.py'):
         os.remove('wintmp'+os.sep+'runpyraf.py')
-    shutil.copy('scripts'+os.sep+'pyraf', 'wintmp'+os.sep+'runpyraf.py')
+    if os.path.exists("pyraf") :
+        shutil.copy('pyraf\\scripts'+os.sep+'pyraf', 'wintmp'+os.sep+'runpyraf.py')
+    else :
+        shutil.copy('scripts'+os.sep+'pyraf', 'wintmp'+os.sep+'runpyraf.py')
+    
     # Install optional launcher onto desktop
     if 'USERPROFILE' in os.environ:
        dtop = os.environ['USERPROFILE']+os.sep+'Desktop'
