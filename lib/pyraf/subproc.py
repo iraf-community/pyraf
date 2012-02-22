@@ -1122,6 +1122,7 @@ def test(fout = sys.stdout):
 #   assert y == tobytes('second\nthird, (no cr)'), 'was: "'+str(y)+'"'
     assert y.startswith(tobytes('second\n')), 'was: "'+str(y)+'"'
     print "\tStopping then continuing subprocess (verbose):"
+    junk = p.readPendingChars() # discard any data left over from previous test
     # verbose stop
     assert p.stop(1), 'Stop seems to have failed!'
     print '\tWriting line while subprocess is paused...'
