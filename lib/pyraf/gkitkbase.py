@@ -744,7 +744,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             gwidget.lastX = x
             gwidget.lastY = y
 
-    def forceFocus(self):
+    def forceFocus(self, cursorToo=True):
 
         # only force focus if window is viewable
         if not wutil.isViewable(self.top.winfo_id()):
@@ -762,11 +762,12 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
                 else:
                     gw.lastX = int(gw.winfo_width()/2.)
                     gw.lastY = int(gw.winfo_height()/2.)
-            wutil.moveCursorTo(gw.winfo_id(),
-                               gw.winfo_rootx(),
-                               gw.winfo_rooty(),
-                               gw.lastX,
-                               gw.lastY)
+            if cursorToo:
+                wutil.moveCursorTo(gw.winfo_id(),
+                                   gw.winfo_rootx(),
+                                   gw.winfo_rooty(),
+                                   gw.lastX,
+                                   gw.lastY)
 
             # On non-X, "focus_force()" places focus on the gwidget canvas, but
             # this may not have the global focus; it may only be the widget seen
@@ -864,6 +865,13 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             # set _slowraise to 1 so that tkraise will never be called again
             # during this session.
             if int(_etime - _stime) > 1: self._slowraise = 1
+        if wutil.GRAPHICS_ALWAYS_ON_TOP:
+            # This code runs for all graphics wins but is only useful for wins
+            # like prow (non-interactive graphics wins).  For these, we don't
+            # want the mouse to move too.  The interactive graphics windows
+            # will call forceFocus via another route due to the gcur obj
+            # and will move the mouse then, so for them it will get done.
+            self.forceFocus(cursorToo=False)
 
     def control_clearws(self, arg):
 
@@ -927,4 +935,5 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             if self.stderr:
                 self.stderr.close()
                 self.stderr = None
-        wutil.focusController.restoreLast()
+        if not wutil.GRAPHICS_ALWAYS_ON_TOP:
+            wutil.focusController.restoreLast()
