@@ -519,6 +519,8 @@ if _skipDisplay:
             print "No graphics/display intended for this session."
         else:
             print "No graphics/display possible for this session."
+            if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
+                print "Tkinter import failed."
 else:
     if _hasXWin or _hasAqua:
         hasGraphics = focusController.hasGraphics
