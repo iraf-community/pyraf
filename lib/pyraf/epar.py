@@ -229,6 +229,7 @@ class PyrafEparDialog(editpar.EditParDialog):
 
         self._saveAndCloseOnExec  = True
         self._showSaveCloseOnExec = False
+        self._showFlaggingChoice  = False
 
         self._showExtraHelpButton = True
 

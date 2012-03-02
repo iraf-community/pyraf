@@ -39,7 +39,7 @@ WUTIL_USING_X = not WUTIL_ON_WIN
 
 # For a while we may support both versions (X or Aqua) on OSX
 if WUTIL_ON_MAC:
-    if os.environ.has_key('PYRAF_WUTIL_USING_AQUA'):
+    if 'PYRAF_WUTIL_USING_AQUA' in os.environ:
         WUTIL_USING_X = False
     else:
         # Do this check for them; look at the python exec - is it X11-linked?
@@ -60,6 +60,11 @@ if sys.version_info[0] > 2:
     print "Warning: graphics code calls are not yet ported to Python 3"
     _skipDisplay = True
     capable.OF_GRAPHICS = False
+
+# Experimental new (2012) mode some have requested (OSX mostly) where all
+# graphics windows drawn are popped to the foreground and left there with
+# the focus (focus not placed back onto terminal).  Except the splash win.
+GRAPHICS_ALWAYS_ON_TOP = 'PYRAF_GRAPHICS_ALWAYS_ON_TOP' in os.environ
 
 # attempt to override with xutil or aqua versions
 _hasAqua = 0
@@ -164,7 +169,7 @@ def getTopID(WindowID):
         else:
             return wid # everything is its own top
 
-    if topIDmap.has_key(wid):
+    if wid in topIDmap:
         return topIDmap[wid]
     try:
         oid = wid
@@ -236,7 +241,7 @@ class FocusEntity:
         # raise exceptions to ensure implemenation of required methods
         raise RuntimeError("Bug: class FocusEntity cannot be used directly")
 
-    def forceFocus(self):
+    def forceFocus(self, cursorToo=True):
         """When called, the object should force focus to the window it
         represents and warp the cursor to it using the last saved cursor
         position."""
@@ -276,7 +281,7 @@ class TerminalFocusEntity(FocusEntity):
     def getWindowID(self):
         return self.windowID
 
-    def forceFocus(self):
+    def forceFocus(self, cursorToo=True):
         if WUTIL_ON_MAC and WUTIL_USING_X:
             return # X ver. under dev. on OSX...  (was broken anyway)
         if not (self.windowID and isViewable(self.windowID)):
@@ -286,13 +291,14 @@ class TerminalFocusEntity(FocusEntity):
             # focus is already here
             return
         if _hasAqua:
-            if self.lastScreenX is not None:
+            if self.lastScreenX is not None and cursorToo:
                 moveCursorTo(self.windowID, self.lastScreenX, self.lastScreenY,
                              0, 0)
         else: # WUTIL_USING_X
-            if self.lastX is not None:
+            if self.lastX is not None and cursorToo:
                 moveCursorTo(self.windowID, 0, 0, self.lastX, self.lastY)
-        setFocusTo(self.windowID)
+        if not GRAPHICS_ALWAYS_ON_TOP:
+            setFocusTo(self.windowID)
 
     def saveCursorPos(self):
         if (not self.windowID) or (self.windowID != getFocalWindowID()):
@@ -372,13 +378,13 @@ class FocusController:
     def addFocusEntity(self, name, focusEntity):
         if name == 'terminal':
             return # ignore any attempts to change terminal entity
-        if self.focusEntities.has_key(name):
+        if name in self.focusEntities:
             return # ignore for now, not sure what proper behavior is
         self.focusEntities[name] = focusEntity
 
     def removeFocusEntity(self, focusEntityName):
 
-        if self.focusEntities.has_key(focusEntityName):
+        if focusEntityName in self.focusEntities:
             entity = self.focusEntities[focusEntityName]
             del self.focusEntities[focusEntityName]
             try:
@@ -513,6 +519,8 @@ if _skipDisplay:
             print "No graphics/display intended for this session."
         else:
             print "No graphics/display possible for this session."
+            if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
+                print "Tkinter import failed."
 else:
     if _hasXWin or _hasAqua:
         hasGraphics = focusController.hasGraphics
