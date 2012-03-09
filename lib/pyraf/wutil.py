@@ -126,13 +126,11 @@ except ImportError:
     platform = sys.platform
     if platform == 'sunos5':
         magicConstant = ord('T')*256 + 104
-    elif platform == 'linux2':
-        magicConstant = 0x5413
-    elif platform == 'linux-i386':
+    elif platform.startswith('linux'):
         magicConstant = 0x5413
     elif platform[:4] == 'osf1':
         magicConstant = 0x40087468
-    elif platform == 'win32':
+    elif platform.startswith('win'):
         magicConstant = None # this is unused on windows (so far)
     elif platform == 'darwin':
         try:
