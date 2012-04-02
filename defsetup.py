@@ -76,7 +76,7 @@ PYRAF_EXTENSIONS=[distutils.core.Extension('pyraf.sscanfmodule', ['src/sscanfmod
 
 pkg = "pyraf"
 
-if sys.platform.startswith('win'):
+if 0 and sys.platform.startswith('win'):
     PYRAF_EXTENSIONS = []
     # Install main "runpyraf.py"
     if not os.path.exists('wintmp'):
@@ -152,5 +152,5 @@ setupargs = {
 }
 
 
-if sys.platform.startswith('win'):
+if 0 and sys.platform.startswith('win'):
     setupargs['scripts'] = ['wintmp/runpyraf.py', 'scripts/pyraf.bat']
