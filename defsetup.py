@@ -89,9 +89,9 @@ add_inc_dirs = dir_clean(add_inc_dirs)
 # user probably does not have a compiler, and these extensions just
 # aren't that important.
 
-if not ms_windows or build_scanf :
+if not ms_windows or build_c :
     # windows users have to do without the CL sscanf() function,
-    # unless you explicitly set build_scanf true.
+    # unless you explicitly set build_c true.
     PYRAF_EXTENSIONS.append( 
 	    distutils.core.Extension(
             'pyraf.sscanfmodule',
