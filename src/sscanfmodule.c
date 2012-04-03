@@ -398,7 +398,16 @@ static struct PyMethodDef sscanf_methods[] = {
 };
 
 
-/* Initialization function for the module (*must* be called initsscanf) */
+/* 
+* Initialization function for the module 
+* - must be called initsscanf on linux/mac
+* - must be called initssscanfmodule on windows
+*	(idiots.)
+*/
+
+#ifdef _WIN32
+#define initsscanf initsscanfmodule
+#endif
 
 static char sscanf_module_documentation[] = 
 ""
