@@ -130,8 +130,8 @@ if ms_windows :
 
     # copy the pyraf main program to the name we want it installed as
     shutil.copy( 
-        os.path.join( scriptdir + [ 'pyraf' ]) ,
-        os.path.join( scriptdir + [ 'runpyraf.py' ])
+        os.path.join( * ( scriptdir + [ 'pyraf' ] ) ) ,
+        os.path.join( * ( scriptdir + [ 'runpyraf.py' ] ) )
         )
 
     # list of scripts for windows
