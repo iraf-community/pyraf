@@ -18,22 +18,22 @@ build_c = not ms_windows
 # default to no C extensions; add to this list when necessary
 PYRAF_EXTENSIONS=[ ]
 
+# get the python libraries for use by C extensions
+# (why? doesn't distutils already reference those?)
+add_lib_dirs = [ distutils.sysconfig.get_python_lib(plat_specific=1, standard_lib = 1) ]
+add_inc_dirs = [ distutils.sysconfig.get_python_inc(plat_specific=1) ]
+
 ## x windows specific features
 
 x_libraries = 'X11'
 
-add_lib_dirs = [ distutils.sysconfig.get_python_lib(plat_specific=1, standard_lib = 1) ]
-
-add_inc_dirs = [ distutils.sysconfig.get_python_inc(plat_specific=1) ]
 
 def find_x(xdir=""):
-    print "FIND X", sys.platform
     if xdir != "":
         add_lib_dirs.append(os.path.join(xdir,'lib64'))
         add_lib_dirs.append(os.path.join(xdir,'lib'))
         add_inc_dirs.append(os.path.join(xdir,'include'))
     elif sys.platform == 'darwin' or sys.platform.startswith('linux'):
-        print "HERE"
         add_lib_dirs.append('/usr/X11R6/lib64')
         add_lib_dirs.append('/usr/X11R6/lib')
         add_inc_dirs.append('/usr/X11R6/include')
@@ -68,6 +68,8 @@ def find_x(xdir=""):
                     add_inc_dirs.append(os.path.join(os.path.dirname(lib_list[ind + 2]), '../include'))
 
 if not ms_windows :
+    # Should we do something about X if we're using aqua on a mac?
+    # Apparently it doesn't cause any problems.
     find_x()
 
 #
@@ -118,11 +120,11 @@ if not ms_windows :
 
 if ms_windows :
     # On windows, you use "runpyraf.py" -  it can't be pyraf.py
-    # because then you can't "import pyraf" from in the script.
-    # Instead, you double-click the icon for runpyraf.py or
-    # type "runpyraf.py" or type "pyraf" to get pyraf.bat.
+    # because then you can't "import pyraf" in the script.
+    # Instead, you ( double-click the icon for runpyraf.py ) or
+    # ( type "runpyraf.py" ) or ( type "pyraf" to get pyraf.bat ).
 
-    # adapt to installin in the pyraf package or installing stsci_python
+    # adapt to installing in the pyraf package or installing stsci_python
     if os.path.exists('pyraf'):
         scriptdir = [ 'pyraf', 'scripts' ]
     else :
