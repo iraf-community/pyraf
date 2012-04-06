@@ -6,12 +6,26 @@ import distutils.core
 import distutils.sysconfig
 import string
 
-x_libraries = 'X11'
 
+## conditional flags, defaults
+
+# conditional for if we are running on Windows
+ms_windows = sys.platform.startswith('win')
+
+# conditional for if we should build the C code
+build_c = not ms_windows
+
+# default to no C extensions; add to this list when necessary
+PYRAF_EXTENSIONS=[ ]
+
+# get the python libraries for use by C extensions
+# (why? doesn't distutils already reference those?)
 add_lib_dirs = [ distutils.sysconfig.get_python_lib(plat_specific=1, standard_lib = 1) ]
-
 add_inc_dirs = [ distutils.sysconfig.get_python_inc(plat_specific=1) ]
 
+## x windows specific features
+
+x_libraries = 'X11'
 
 
 def find_x(xdir=""):
@@ -53,8 +67,12 @@ def find_x(xdir=""):
                     #break
                     add_inc_dirs.append(os.path.join(os.path.dirname(lib_list[ind + 2]), '../include'))
 
-if not sys.platform.startswith('win'):
+if not ms_windows :
+    # Should we do something about X if we're using aqua on a mac?
+    # Apparently it doesn't cause any problems.
     find_x()
+
+#
 
 def dir_clean(list) :
     # We have a list of directories.  Remove any that don't exist.
@@ -67,27 +85,67 @@ def dir_clean(list) :
 add_lib_dirs = dir_clean(add_lib_dirs)
 add_inc_dirs = dir_clean(add_inc_dirs)
 
-PYRAF_EXTENSIONS=[distutils.core.Extension('pyraf.sscanfmodule', ['src/sscanfmodule.c'],
-                      include_dirs=add_inc_dirs),
-                  distutils.core.Extension('pyraf.xutilmodule',['src/xutil.c'],
-                      include_dirs=add_inc_dirs,
-                      library_dirs=add_lib_dirs,
-                      libraries = [x_libraries])]
+## C extensions
 
-pkg = "pyraf"
+# by default, we don't build any C extensions on MS Windows.  The
+# user probably does not have a compiler, and these extensions just
+# aren't that important.
 
-if sys.platform.startswith('win'):
-    PYRAF_EXTENSIONS = []
-    # Install main "runpyraf.py"
-    if not os.path.exists('wintmp'):
-        os.mkdir('wintmp')
-    if os.path.exists('wintmp'+os.sep+'runpyraf.py'):
-        os.remove('wintmp'+os.sep+'runpyraf.py')
-    if os.path.exists("pyraf") :
-        shutil.copy('pyraf\\scripts'+os.sep+'pyraf', 'wintmp'+os.sep+'runpyraf.py')
+if not ms_windows or build_c :
+    # windows users have to do without the CL sscanf() function,
+    # unless you explicitly set build_c true.
+    PYRAF_EXTENSIONS.append( 
+	    distutils.core.Extension(
+            'pyraf.sscanfmodule',
+            ['src/sscanfmodule.c'],
+            include_dirs=add_inc_dirs
+        )
+    )
+
+if not ms_windows :
+    # windows users do not have X windows, so we never need the X
+    # support
+    PYRAF_EXTENSIONS.append( 
+	    distutils.core.Extension(
+            'pyraf.xutilmodule',
+            ['src/xutil.c'],
+	        include_dirs=add_inc_dirs,
+            library_dirs=add_lib_dirs,
+            libraries = [x_libraries]
+        )
+    )
+
+
+## what scripts do we install
+
+if ms_windows :
+    # On windows, you use "runpyraf.py" -  it can't be pyraf.py
+    # because then you can't "import pyraf" in the script.
+    # Instead, you ( double-click the icon for runpyraf.py ) or
+    # ( type "runpyraf.py" ) or ( type "pyraf" to get pyraf.bat ).
+
+    # adapt to installing in the pyraf package or installing stsci_python
+    if os.path.exists('pyraf'):
+        scriptdir = [ 'pyraf', 'scripts' ]
     else :
-        shutil.copy('scripts'+os.sep+'pyraf', 'wintmp'+os.sep+'runpyraf.py')
-    
+        scriptdir = [ 'scripts' ]
+
+    # copy the pyraf main program to the name we want it installed as
+    shutil.copy( 
+        os.path.join( * ( scriptdir + [ 'pyraf' ] ) ) ,
+        os.path.join( * ( scriptdir + [ 'runpyraf.py' ] ) )
+        )
+
+    # list of scripts for windows
+    scriptlist = ['scripts/runpyraf.py', 'scripts/pyraf.bat']
+
+else :
+    # on linux/mac, you have just the one main program
+    scriptlist = ['scripts/pyraf' ]
+
+## icon on the desktop
+
+if ms_windows :
     # Install optional launcher onto desktop
     if 'USERPROFILE' in os.environ:
        dtop = os.environ['USERPROFILE']+os.sep+'Desktop'
@@ -124,6 +182,13 @@ if sys.platform.startswith('win'):
 
     # Another option to create the shortcut is to bundle win32com w/ installer.
 
+## the defsetup interface is here:
+
+## pkg
+
+pkg = "pyraf"
+
+# data files
 
 DATA_FILES = [ ( pkg,
                     ['data/blankcursor.xbm',
@@ -132,10 +197,19 @@ DATA_FILES = [ ( pkg,
                     'data/ipythonrc-pyraf',
                     'LICENSE.txt',
                     ]
-                ),
+                )
+        ]
+
+if not ms_windows :
+    # clcache is a pre-loaded set of CL files already converted to
+    # python.  There are none on Windows, so we don't need them.
+    # Leaving them out makes the install go a lot faster.
+    DATA_FILES += [ 
                 (pkg+'/clcache',  [ "data/clcache/*" ] )
         ]
 
+
+## setupargs
 
 setupargs = {
     'version' :			    "1.x", # see lib's __init__.py
@@ -146,11 +220,9 @@ setupargs = {
     'license' :			    "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
     'platforms' :			["unix"],
     'data_files' :			DATA_FILES,
-    'scripts' :			    ['scripts/pyraf', 'scripts/pyraf.bat'],
+    'scripts' :			    scriptlist,
     'ext_modules' :			PYRAF_EXTENSIONS,
     'package_dir' :         { 'pyraf' : 'lib/pyraf' },
 }
 
 
-if sys.platform.startswith('win'):
-    setupargs['scripts'] = ['wintmp/runpyraf.py', 'scripts/pyraf.bat']
