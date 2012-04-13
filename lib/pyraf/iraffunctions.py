@@ -2150,19 +2150,20 @@ def _wrapTeal(taskname):
     oldFoc = _wutil.getFocalWindowID()
     _wutil.forceFocusToNewWindow()
     # pop up TEAL
+    x = 0
     try:
         # use simple-auto-close mode (like EPAR) by no return dict
-        _teal.teal(taskname, returnDict=False, errorsToTerm=True, strict=False)
+        x = _teal.teal(taskname, returnAs="status",
+                       errorsToTerm=True, strict=False,
+                       autoClose=True)
     # put focus back on terminal, even if there is an exception
     finally:
         # Turns out, for the majority of TEAL-enabled tasks, users don't like
         # having the focus jump back to the terminal for them (especially if
-        # it is a long-running task) after executing, so disable this
-        # feature for now - CDS 21Dec2011
-#       _wutil.setFocusTo(oldFoc)
-        pass
-        # though we might add code to set focus only on dialog cancel...
-        # ask users; would have to change teal() API (need no Close bttn)
+        # it is a long-running task) after executing, so only move focus
+        # back if they didn't execute
+        if x < 1:
+            _wutil.setFocusTo(oldFoc)
 
 
 @handleRedirAndSaveKwds

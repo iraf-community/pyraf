@@ -167,6 +167,22 @@ def _help(object, variables, functions, modules,
         if _printIrafHelp(object, html, irafkw): return
 
     if isinstance(object,str):
+        # Python task names
+        if object in sys.modules: # e.g. help drizzlepac
+            theMod = sys.modules[object]
+            if hasattr(theMod, 'help'):
+                theMod.help()
+                return
+        # sub-module Python task names
+        else: # e.g. help astrodrizzle (when really drizzlepac.astrodrizzle)
+            keyMatches = \
+                [m for m in sys.modules.keys() if m.endswith('.'+object)]
+            for theKey in keyMatches:
+                theMod = sys.modules[theKey]
+                if hasattr(theMod, 'help'):
+                    theMod.help()
+                    return
+        # IRAF task names
         if re.match(r'[A-Za-z_][A-Za-z0-9_.]*$',object) or \
           (re.match(r'[^\0]*$',object) and \
                     os.path.exists(pyraf.iraf.Expand(object, noerror=1))):
