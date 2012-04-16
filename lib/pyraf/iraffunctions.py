@@ -1821,6 +1821,11 @@ def test_sscanf():
     # hex
     l = sscanf.sscanf("0xabc90", "%x")
     assert l==[703632], 'Unexpected!  l = '+str(l)
+    # API error
+    try:
+        l = sscanf.sscanf()
+    except TypeError:
+        pass # this is expected - anything else should raise
 
     # finished successfully
     print 'test_sscanf successful'
