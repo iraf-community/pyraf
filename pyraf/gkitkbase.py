@@ -15,8 +15,11 @@ import tkSimpleDialog
 
 import numpy
 
-from stsci.tools import filedlg
+from stsci.tools import capable, filedlg
 from stsci.tools.irafglobals import IrafError, userWorkingHome
+import gki, textattrib, irafgwcs
+from pyrafglobals import pyrafDir
+import tkFileDialog, tkMessageBox, tkSimpleDialog
 
 from . import msgiobuffer, msgiowidget, wutil, gki, textattrib, irafgwcs
 from .pyrafglobals import get_resource_filename
@@ -295,36 +298,50 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     def save(self):
 
         """Save metacode in a file"""
-
         curdir = os.getcwd()
-        fd = filedlg.PersistSaveFileDialog(self.top, "Save Metacode", "*")
-        if fd.Show() != 1:
+        if capable.OF_TKFD_IN_EPAR:
+            fname = tkFileDialog.asksaveasfilename(parent=self.top,
+                                                   title="Save Metacode")
+        else:
+            fd = filedlg.PersistSaveFileDialog(self.top, "Save Metacode", "*")
+            if fd.Show() != 1:
+                fd.DialogCleanup()
+                os.chdir(curdir) # in case file dlg moved us
+                return
+            fname = fd.GetFileName()
             fd.DialogCleanup()
-            os.chdir(curdir) # in case file dlg moved us
-            return
-        fname = fd.GetFileName()
-        fd.DialogCleanup()
+        os.chdir(curdir) # in case file dlg moved us
+        if not fname: return
         fh = open(fname, 'w')
         fh.write(self.gkibuffer.get().tostring())
         fh.close()
-        os.chdir(curdir) # in case file dlg moved us
+
+
 
     def load(self, fname=None):
 
         """Load metacode from a file"""
 
-        if fname is None:
-            fd = filedlg.PersistLoadFileDialog(self.top, "Load Metacode", "*")
-            if fd.Show() != 1:
+        if not fname:
+            if capable.OF_TKFD_IN_EPAR:
+                fname = tkFileDialog.askopenfilename(parent=self.top,
+                                                     title="Load Metacode")
+            else:
+                fd = filedlg.PersistLoadFileDialog(self.top,
+                             "Load Metacode", "*")
+                if fd.Show() != 1:
+                    fd.DialogCleanup()
+                    return
+                fname = fd.GetFileName()
                 fd.DialogCleanup()
-                return
-            fname = fd.GetFileName()
-            fd.DialogCleanup()
+        if not fname: return
         fh = open(fname, 'r')
         metacode = numpy.fromstring(fh.read(), numpy.int16)
         fh.close()
         self.clear(name=fname)
         self.append(metacode,isUndoable=1)
+        self.forceNextDraw()
+        self.redraw()
 
     def iconify(self):
 
@@ -740,7 +757,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             gwidget.lastX = x
             gwidget.lastY = y
 
-    def forceFocus(self):
+    def forceFocus(self, cursorToo=True):
 
         # only force focus if window is viewable
         if not wutil.isViewable(self.top.winfo_id()):
@@ -758,11 +775,12 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
                 else:
                     gw.lastX = int(gw.winfo_width()/2.)
                     gw.lastY = int(gw.winfo_height()/2.)
-            wutil.moveCursorTo(gw.winfo_id(),
-                               gw.winfo_rootx(),
-                               gw.winfo_rooty(),
-                               gw.lastX,
-                               gw.lastY)
+            if cursorToo:
+                wutil.moveCursorTo(gw.winfo_id(),
+                                   gw.winfo_rootx(),
+                                   gw.winfo_rooty(),
+                                   gw.lastX,
+                                   gw.lastY)
 
             # On non-X, "focus_force()" places focus on the gwidget canvas, but
             # this may not have the global focus; it may only be the widget seen
@@ -860,6 +878,13 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             # set _slowraise to 1 so that tkraise will never be called again
             # during this session.
             if int(_etime - _stime) > 1: self._slowraise = 1
+        if wutil.GRAPHICS_ALWAYS_ON_TOP:
+            # This code runs for all graphics wins but is only useful for wins
+            # like prow (non-interactive graphics wins).  For these, we don't
+            # want the mouse to move too.  The interactive graphics windows
+            # will call forceFocus via another route due to the gcur obj
+            # and will move the mouse then, so for them it will get done.
+            self.forceFocus(cursorToo=False)
 
     def control_clearws(self, arg):
 
@@ -923,4 +948,5 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             if self.stderr:
                 self.stderr.close()
                 self.stderr = None
-        wutil.focusController.restoreLast()
+        if not wutil.GRAPHICS_ALWAYS_ON_TOP:
+            wutil.focusController.restoreLast()

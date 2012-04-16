@@ -1122,13 +1122,14 @@ def test(fout = sys.stdout):
 #   assert y == tobytes('second\nthird, (no cr)'), 'was: "'+str(y)+'"'
     assert y.startswith(tobytes('second\n')), 'was: "'+str(y)+'"'
     print "\tStopping then continuing subprocess (verbose):"
+    junk = p.readPendingChars() # discard any data left over from previous test
     # verbose stop
     assert p.stop(1), 'Stop seems to have failed!'
     print '\tWriting line while subprocess is paused...'
     p.write('written while subprocess paused\n')
     print '\tNonblocking read of paused subprocess (should be empty):'
     x = p.readPendingChars()
-    assert len(x)==0, 'should have been empty'
+    assert len(x)==0, 'should have been empty, but had: "'+str(x)+'"'
     print '\tContinuing subprocess (verbose):'
     # verbose continue
     assert p.cont(1), 'Continue seems to have failed! Probably lost subproc...'

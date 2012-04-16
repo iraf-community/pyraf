@@ -11,7 +11,9 @@
 /* $Id$ */
 
 /* Windows and cursor manipulations not provided by Tkinter or any other
-** standard python library
+** standard python library.  This file handles Python 3 as well.
+** see also: http://python3porting.com/cextensions.html
+** see also: http://www.copypastecode.com/31895
 */
 
 /* the following macro is used to trap x window exceptions and trigger
@@ -404,7 +406,7 @@ PyObject *wrap_drawCursor(PyObject *self, PyObject *args) {
   return Py_None;
 }
 
-static PyMethodDef xutilMethods[] = {
+static PyMethodDef xutil_funcs[] = {
   { "moveCursorTo",wrap_moveCursorTo, 1},
   { "getFocalWindowID",wrap_getFocalWindowID, 1},
   { "setFocusTo",wrap_setFocusTo, 1},
@@ -419,7 +421,29 @@ static PyMethodDef xutilMethods[] = {
   {NULL, NULL}
 };
 
-void initxutil(void) {
-  PyObject *m;
-  m = Py_InitModule("xutil", xutilMethods);
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "xutil",
+        NULL,
+        -1,
+        xutil_funcs,
+        NULL, NULL, NULL, NULL,
+};      
+PyObject* PyInit_xutil(void)
+#else
+void initxutil(void)
+#endif
+{
+   PyObject *m;
+#if PY_MAJOR_VERSION >= 3
+   m = PyModule_Create(&moduledef);
+#else 
+   m = Py_InitModule("xutil", xutil_funcs);
+#endif
+
+/* in Py2.*: just return */
+#if PY_MAJOR_VERSION >= 3
+   return m;
+#endif
 }

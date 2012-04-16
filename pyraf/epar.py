@@ -10,8 +10,8 @@ from stsci.tools import capable
 if capable.OF_GRAPHICS:
     from Tkinter import *
     from tkMessageBox import askokcancel, showwarning, showerror
-    import os, stat, sys, cStringIO
-    from stsci.tools import filedlg, listdlg, eparoption, editpar
+    import os, sys, cStringIO
+    from stsci.tools import listdlg, eparoption, editpar, irafutils
     import iraf, irafpar, irafhelp, wutil
     from pyrafglobals import pyrafDir
 else:
@@ -193,7 +193,7 @@ class PyrafEparDialog(editpar.EditParDialog):
             # theTask must be a string name of, or an IrafTask object
             self._taskParsObj = iraf.getTask(theTask)
 
-    def _doActualSave(self, filename, comment, set_ro=False):
+    def _doActualSave(self, filename, comment, set_ro=False, overwriteRO=False):
         """ Overridden version, so as to check for a special case. """
         # Skip the save if the thing being edited is an IrafParList without
         # an associated file (in which case the changes are just being
@@ -204,17 +204,15 @@ class PyrafEparDialog(editpar.EditParDialog):
         else:
             retval = ''
             try:
+                if filename and os.path.exists(filename) and overwriteRO:
+                    irafutils.setWritePrivs(filename, True)
                 retval = self._taskParsObj.saveParList(filename=filename,
                                                        comment=comment)
             except IOError:
                 retval="Error saving to "+str(filename)+".  Please check privileges."
                 showerror(message=retval, title='Error Saving File')
             if set_ro:
-                privs = os.stat(filename).st_mode
-                try:
-                    os.chmod(filename, privs ^ stat.S_IWUSR)
-                except OSError:
-                    pass # just try, don't whine
+                irafutils.setWritePrivs(filename, False, ignoreErrors=True)
             return retval
 
     def _showOpenButton(self):
@@ -229,6 +227,7 @@ class PyrafEparDialog(editpar.EditParDialog):
 
         self._saveAndCloseOnExec  = True
         self._showSaveCloseOnExec = False
+        self._showFlaggingChoice  = False
 
         self._showExtraHelpButton = True
 
@@ -236,6 +235,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         self._appHelpString       = eparHelpString
         self._unpackagedTaskTitle = "Filename"
         self._defaultsButtonTitle = "Unlearn"
+        self._defSaveAsExt        = '.par'
 
         if not wutil.WUTIL_USING_X:
             x = "#ccccff"
@@ -296,7 +296,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         # Notify them that pset children will not be saved as part of
         # their special version
         pars = []
-        for par in self.paramList:
+        for par in self._taskParsObj.getParList():
             if par.type == "pset": pars.append(par.name)
         if len(pars):
             msg = "If you have made any changes to the PSET "+ \
