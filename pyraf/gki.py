@@ -1,4 +1,3 @@
-
 """
 IRAF GKI interpreter -- abstract implementation
 
@@ -38,15 +37,16 @@ graphics kernels as directed by commands embedded in the metacode stream.
 
 $Id$
 """
+
 from __future__ import division
 
+import re
+import sys
+
 import numpy
-from types import *
-import os, sys, string, re
-import wutil, graphcap, iraf
-import fontdata
-from textattrib import *
-import irafgwcs
+
+from . import wutil, graphcap, iraf, fontdata, irafgwcs
+from .textattrib import *
 
 nIrafColors = 16
 
@@ -971,6 +971,9 @@ class GkiController(GkiProxy):
     def openKernel(self, device=None):
 
         """Open kernel specified by device or by current value of stdgraph"""
+
+        from . import gwm, gkiiraf
+
         device = self.getDevice(device)
         graphcap = getGraphcap()
 
@@ -978,7 +981,7 @@ class GkiController(GkiProxy):
         # is the most complex, and it needs to be revisited (when the Device
         # class is refactored) but suffice it to say we only want to compare
         # the dict for the device, not the "master dict".
-        if None == self.lastDevice or \
+        if self.lastDevice is None or \
            device != self.lastDevice or \
            graphcap[device].dict[device] != graphcap.get(self.lastDevice)[self.lastDevice]:
             self.flush()
@@ -1065,7 +1068,7 @@ class GkiRedirection(GkiKernel):
     """A graphics kernel whose only responsibility is to redirect
     metacode to a file-like object. Currently doesn't handle WCS
     get or set commands.
-    
+
     (This is needed for situations when you append to a graphics
     file - RIJ)"""
 
@@ -1168,8 +1171,12 @@ def printPlot(window=None):
     """
 
     if window is None:
+        from . import gwm
+
         window = gwm.getActiveGraphicsWindow()
-        if window is None: return
+        if window is None:
+            return
+
     gkibuff = window.gkibuffer.get()
     if len(gkibuff):
         graphcap = getGraphcap()
@@ -1517,16 +1524,14 @@ def ndcpairs(intarr):
     return f[0::2],f[1::2]
 
 
-# import these last so everything in this module is defined
-
-import gwm, gkiiraf
-
 # This is the proxy for the current graphics kernel
 
 kernel = GkiController()
 
 # Beware! This is highly experimental and was made only for a test case.
 def _resetGraphicsKernel():
+    from . import gwm
+
     global kernel
     if kernel:
        kernel.clearReturnData()
