@@ -12,8 +12,9 @@
 
 /* Windows and cursor manipulations not provided by Tkinter or any other
 ** standard python library.  This file handles Python 3 as well.
+** see also: http://docs.python.org/py3k/extending
+** see also: http://docs.python.org/howto/cporting.html
 ** see also: http://python3porting.com/cextensions.html
-** see also: http://www.copypastecode.com/31895
 */
 
 /* the following macro is used to trap x window exceptions and trigger
