@@ -71,7 +71,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
             print("irafimport: pyraf.iraf case: n="+name+", fl="+str(fromlist)+
                   ", l="+str(level)+", will modify pyraf module")
         # builtin import below will return pyraf module, after having set up an
-        # attr of it called 'iraf' which is the iraf module.  Instead we want 
+        # attr of it called 'iraf' which is the iraf module.  Instead we want
         # to set the attr to be our proxy.
         retval = sys.modules['pyraf']
         retval.iraf = _irafModuleProxy

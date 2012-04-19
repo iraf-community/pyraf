@@ -26,7 +26,7 @@ def manyPoints(task, pkind):
           "Unexpected task: "+str(task)
    assert pkind in (None, 'point','box','plus','cross','circle'), \
           'Unknown: '+str(pkind)
-   
+
    # plot 10 rows.  in dev$pix this is 5120 pts
    start = time.time()
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
    os.environ['PYRAFGRAPHICS'] = 'matplotlib'
    os.environ['PYRAF_ORIG_MPL_DRAWING'] = '1'
    runAllCases('MPL-ORIG', res)
-   
+
    # MPL kernel with smart draws
    if 'PYRAF_ORIG_MPL_DRAWING' in os.environ:
       del os.environ['PYRAF_ORIG_MPL_DRAWING']

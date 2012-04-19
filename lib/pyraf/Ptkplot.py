@@ -253,7 +253,7 @@ class PyrafCanvas(Canvas):
             self.tkRedraw()
 
 class FullWindowCursor:
-    """This implements a full window crosshair cursor.  This class can 
+    """This implements a full window crosshair cursor.  This class can
        operate in the xutil-wrapping mode or in a Tkinter-only mode. """
     # Perhaps this should inherit from an abstract Cursor class eventually
 

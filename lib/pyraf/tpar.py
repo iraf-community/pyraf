@@ -1007,7 +1007,7 @@ class TparDisplay(Binder):
         # Tpar apparently does nothing with children (PSETs), so skip the
         # check or set or save of them
 
-        # Notify them that pset children will not be saved as part of 
+        # Notify them that pset children will not be saved as part of
         # their special version
         pars = []
         for par in self.paramList:

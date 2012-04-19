@@ -1065,7 +1065,7 @@ class GkiRedirection(GkiKernel):
     """A graphics kernel whose only responsibility is to redirect
     metacode to a file-like object. Currently doesn't handle WCS
     get or set commands.
-    
+
     (This is needed for situations when you append to a graphics
     file - RIJ)"""
 

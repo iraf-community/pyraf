@@ -37,19 +37,19 @@ _ACCEPT_REDIR_MODE = 6          # mode at points where redirection allowed
 
 comment_pat = re.compile(r'\\\s*\n\s*#.*\n\s*')
 
-# needed to prevent certain escapes to be protected to match IRAF 
+# needed to prevent certain escapes to be protected to match IRAF
 # string behavior (only \\, \b, \n, \r, \t, \digits are converted into
 # special characters, all other's are left as is)
 
 special_escapes = re.compile(r'[\\\\]*(\\[^fnrt\\\'"\d])')
 
 def filterEscapes(instr):
-    """Turn all backslashes that aren't special character for IRAF into 
+    """Turn all backslashes that aren't special character for IRAF into
     double backslashes"""
-   
+
     return special_escapes.sub(r'\\\1', instr)
-    
-    
+
+
 #---------------------------------------------------------------------
 # Scanners for various contexts
 #---------------------------------------------------------------------
@@ -804,7 +804,7 @@ class CLScanner(ContextSensitiveScanner):
     """CL scanner class"""
 
     def __init__(self, strict=0):
-        
+
         if pyrafglobals._use_ecl:
             _keywordDict["iferr"] = 1
             _keywordDict["ifnoerr"] = 1

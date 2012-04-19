@@ -51,7 +51,7 @@ _IrafTask_attr_dict = {
 # There are variables in pyraf.iraffunctions that superficially
 # resemble this, but none of them contain the complete list, so I
 # keep it here.  This is currently used only for the "taskinfo"
-# operation.  
+# operation.
 #
 # We generally approach this list interactively and with a wildcards.
 # I don't see any particularly useful indexing, so it is just a plain
@@ -95,7 +95,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # for this heavily used code, pull out the dictionary and
         # initialize it directly to avoid calls to __setattr__
         #
-        # b.t.w. do not try to set the attributes directly - it doesn't 
+        # b.t.w. do not try to set the attributes directly - it doesn't
         # work. (not sure if that is a bug or a "feature")
         objdict = self.__dict__
 

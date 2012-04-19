@@ -152,7 +152,7 @@ class MsgIOWidget(Tki.Frame):
         lblTxtLen = len(lblTxt.strip())
         lblTxtLen -= 3
         self._msgLabel.configure(width=min(self._msgLabelMaxWidth, lblTxtLen))
-        
+
         # Enable the entry widget
         self._entry.configure(state=Tki.NORMAL, relief=Tki.SUNKEN, width=15,
                               takefocus=True, highlightthickness=2)

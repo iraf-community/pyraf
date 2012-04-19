@@ -36,7 +36,7 @@ static GC gc;
 static XWindowAttributes wa;
 static int last_win = -1;
 static Colormap cmap;
-static XColor colorfg, colorbg, color; 
+static XColor colorfg, colorbg, color;
 
 #define TrapXlibErrors \
     oldIOErrorHandler = XSetIOErrorHandler(&MyXlibIOErrorHandler); \
@@ -380,16 +380,16 @@ void drawCursor(int win, double x, double y, int width, int height) {
        return;
     }
     color.pixel = colorfg.pixel ^ colorbg.pixel;
-    XSetFunction(d, gc, GXxor);  
+    XSetFunction(d, gc, GXxor);
     XSetForeground(d, gc, color.pixel);
-  }  
+  }
   /*if (!XGetGeometry(d,w,&wroot, &xr, &yr, &width, &height, &border, &depth)) {
     printf("could not get window geometry\n");
     return;
   }*/
   XDrawLine(d, w, gc, (int) (x*width), 0, (int) (x*width),  height);
   XDrawLine(d, w, gc, 0, (int) ((1.-y)*height),  width, (int) ((1.-y)*height));
-  XFlush(d); 
+  XFlush(d);
 }
 
 PyObject *wrap_drawCursor(PyObject *self, PyObject *args) {
@@ -430,7 +430,7 @@ static struct PyModuleDef moduledef = {
         -1,
         xutil_funcs,
         NULL, NULL, NULL, NULL,
-};      
+};
 PyObject* PyInit_xutil(void)
 #else
 void initxutil(void)
@@ -439,7 +439,7 @@ void initxutil(void)
    PyObject *m;
 #if PY_MAJOR_VERSION >= 3
    m = PyModule_Create(&moduledef);
-#else 
+#else
    m = Py_InitModule("xutil", xutil_funcs);
 #endif
 

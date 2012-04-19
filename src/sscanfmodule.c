@@ -206,7 +206,7 @@ sscanf_sscanf( PyObject *self, PyObject *args )
         errno = 0;
         item = NULL;
 
-        if (c == 'c') {    
+        if (c == 'c') {
 
             /* Character field */
             if (*start == '\0')
@@ -414,8 +414,8 @@ static struct PyMethodDef sscanf_methods[] = {
 };
 
 
-/* 
-* Initialization function for the module 
+/*
+* Initialization function for the module
 * - must be called initsscanf on linux/mac
 * - must be called initsscanfmodule on windows
 *	(idiots.)

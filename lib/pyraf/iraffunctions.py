@@ -947,16 +947,16 @@ def taskinfo(*args):
     '''
     show information about task definitions
 
-    taskinfo [ pattern(s) ] 
+    taskinfo [ pattern(s) ]
 
         pattern is a glob pattern describing the package or task
         name that you are interested in.
 
         The output is a hierarchical view of the task definitions
         that match the input pattern.  Each line shows the task
-        name, the file name, pkgbinary and class.  
+        name, the file name, pkgbinary and class.
 
-        pkgbinary is a list of where you look for the file if it 
+        pkgbinary is a list of where you look for the file if it
         is not where you expect.
 
         class is the type of task definition from iraftask.py
