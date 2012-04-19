@@ -299,8 +299,8 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             fd.DialogCleanup()
         os.chdir(curdir) # in case file dlg moved us
         if not fname: return
-        fh = open(fname, 'w')
-        fh.write(self.gkibuffer.get().tostring())
+        fh = open(fname, 'wb')
+        fh.write(self.gkibuffer.get().tostring()) # OK: bytes in PY3K
         fh.close()
 
 
@@ -322,8 +322,8 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
                 fname = fd.GetFileName()
                 fd.DialogCleanup()
         if not fname: return
-        fh = open(fname, 'r')
-        metacode = numpy.fromstring(fh.read(), numpy.int16)
+        fh = open(fname, 'rb')
+        metacode = numpy.fromstring(fh.read(), numpy.int16) # OK: bytes in PY3K
         fh.close()
         self.clear(name=fname)
         self.append(metacode,isUndoable=1)
