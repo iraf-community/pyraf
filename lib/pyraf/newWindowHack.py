@@ -68,22 +68,22 @@ def __init__(self, parent, title = None):
 tkSimpleDialog.Dialog.__init__ = __init__
 
 
- 
+
 """
 Here are some more notes from my "investigation":
 
 ====================================================================================
- 
+
 http://mail.python.org/pipermail/python-list/2005-April/275761.html
- 
+
 Tkinter "withdraw" and "askstring" problem
 Jeff Epler jepler at unpythonic.net
 Tue Apr 12 15:58:22 CEST 2005
- 
+
     * Previous message: Tkinter "withdraw" and "askstring" problem
     * Next message: os.open() i flaga lock
     * Messages sorted by: [ date ] [ thread ] [ subject ] [ author ]
- 
+
 The answer has to do with a concept Tk calls "transient".
     wm transient window ?master?
         If master is specified, then the window manager is informed that
@@ -96,29 +96,29 @@ The answer has to do with a concept Tk calls "transient".
         transient  window  will  mirror  state changes in the master and
         inherit the state of the master when initially mapped. It is  an
         error to attempt to make a window a transient of itself.
- 
+
 In tkSimpleDialog, the dialog window is unconditionally made transient
 for the master.  Windows is simply following the documentation: The
 askstring window "inherit[s] the state of the master [i.e., withdrawn]
 when initially mapped".
- 
+
 The fix is to modify tkSimpleDialog.Dialog.__init__ to only make the
 dialog transient for its master when the master is viewable.  This
 mirrors what is done in dialog.tcl in Tk itself.  You can either change
 tkSimpleDialog.py, or you can include a new definition of __init__ with
 these lines at the top, and the rest of the function the same:
- 
+
     def __init__(self, parent, title = None):
         ''' the docstring ... '''
         Toplevel.__init__(self, parent)
         if parent.winfo_viewable():
             self.transient(parent)
         ...
- 
+
     # Thanks for being so dynamic, Python!
     tkSimpleDialog.Dialog.__init__ = __init__; del __init__
- 
+
 Jeff
- 
+
 
 """

@@ -1076,7 +1076,7 @@ def _updateSpecialParFileDict(dirToCheck=None, strict=False):
                 _specialUseParFileDict[tupKey] = [supfname,]
         # If it does not have the TASKMETA line, then it is likely a regular
         # IRAF .par file.  How it got here we don't know, but it got dropped
-        # here somehow and warning the user continuously about this would be 
+        # here somehow and warning the user continuously about this would be
         # very annoying, so be quiet about it.
 
 

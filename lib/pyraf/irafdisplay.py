@@ -32,6 +32,9 @@ from __future__ import division # confidence high
 
 import os, numpy, socket, sys
 from stsci.tools import irafutils
+
+PY3K = sys.version_info[0] > 2
+
 try:
     import fcntl
 except:
@@ -204,7 +207,10 @@ class ImageDisplay:
         try:
             n = len(s)
             while n>0:
-                nwritten = os.write(self._fdout, s[-n:])
+                if PY3K:
+                    nwritten = os.write(self._fdout, s[-n:].encode('ascii'))
+                else:
+                    nwritten = os.write(self._fdout, s[-n:])
                 n -= nwritten
                 if nwritten <= 0:
                     raise IOError("Error writing to image display")

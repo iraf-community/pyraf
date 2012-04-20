@@ -2,7 +2,7 @@
 """
 Copyright (C) 2003 Association of Universities for Research in Astronomy
 (AURA)
-See LICENSE.txt in the docs directory of the source distribution for the 
+See LICENSE.txt in the docs directory of the source distribution for the
 terms of use.
 
 Usage: pyraf [options] [savefile]

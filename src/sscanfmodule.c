@@ -92,6 +92,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 static char scanset[1 << BITSPERCHAR];
 
 
+/*
+ * Use PyStr_FromStringAndSize to support both Python 2 and 3.
+ * We use them here the same way.
+ */
+#if PY_MAJOR_VERSION >= 3
+#define PyStr_FromStringAndSize PyUnicode_FromStringAndSize
+#else
+#define PyStr_FromStringAndSize PyString_FromStringAndSize
+#endif
+
 /* ----------------------------------------------------- */
 
 static char sscanf_sscanf__doc__[] =
@@ -196,7 +206,7 @@ sscanf_sscanf( PyObject *self, PyObject *args )
         errno = 0;
         item = NULL;
 
-        if (c == 'c') {    
+        if (c == 'c') {
 
             /* Character field */
             if (*start == '\0')
@@ -204,7 +214,7 @@ sscanf_sscanf( PyObject *self, PyObject *args )
             if (width < 1)
                 width = 1;
             if (doassign)
-                item = PyString_FromStringAndSize(start, width);
+                item = PyStr_FromStringAndSize(start, width);
             inptr += width;
 
         } else if (c == 'd' || c == 'i' || c == 'l' ||
@@ -259,7 +269,11 @@ sscanf_sscanf( PyObject *self, PyObject *args )
                 if (end == s)
                     break;
                 if (doassign)
+#if PY_MAJOR_VERSION >= 3
+                    item = PyLong_FromLong(lval);
+#else
                     item = PyInt_FromLong(lval);
+#endif
             }
             inptr += end - start;
 
@@ -291,7 +305,11 @@ sscanf_sscanf( PyObject *self, PyObject *args )
                 if (ellmod) {
                     item = PyLong_FromLong(lval);
                 } else {
+#if PY_MAJOR_VERSION >= 3
+                    item = PyLong_FromLong(lval);
+#else
                     item = PyInt_FromLong(lval);
+#endif
                 }
             }
 
@@ -305,7 +323,7 @@ sscanf_sscanf( PyObject *self, PyObject *args )
             if (end == s)
                 break;
             if (doassign)
-                item = PyString_FromStringAndSize(s, end - s);
+                item = PyStr_FromStringAndSize(s, end - s);
             inptr += end - start;
 
         } else if (c == '[') {
@@ -355,8 +373,7 @@ sscanf_sscanf( PyObject *self, PyObject *args )
             if (end == start)
                 break;
             if (doassign)
-                item = PyString_FromStringAndSize(start,
-                    end - start);
+                item = PyStr_FromStringAndSize(start, end - start);
             inptr += end - start;
 
         } else {
@@ -393,36 +410,48 @@ fail:
 
 static struct PyMethodDef sscanf_methods[] = {
     {"sscanf",    sscanf_sscanf,    1,    sscanf_sscanf__doc__},
- 
     {NULL,        NULL}        /* sentinel */
 };
 
 
-/* 
-* Initialization function for the module 
+/*
+* Initialization function for the module
 * - must be called initsscanf on linux/mac
-* - must be called initssscanfmodule on windows
+* - must be called initsscanfmodule on windows
 *	(idiots.)
 */
-
 #ifdef _WIN32
 #define initsscanf initsscanfmodule
+#define PyInit_sscanf PyInit_sscanfmodule
 #endif
 
-static char sscanf_module_documentation[] = 
-""
-;
-
-void
-initsscanf(void)
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "sscanf",
+        NULL,
+        -1,
+        sscanf_methods,
+        NULL, NULL, NULL, NULL,
+};
+PyObject* PyInit_sscanf(void)
+#else
+void initsscanf(void)
+#endif
 {
-    /* Create the module and add the functions */
-    (void) Py_InitModule4("sscanf", sscanf_methods,
-        sscanf_module_documentation,
-        (PyObject *) NULL, PYTHON_API_VERSION);
+   /* Create the module and add the functions */
+   PyObject *m;
+#if PY_MAJOR_VERSION >= 3
+   m = PyModule_Create(&moduledef);
+#else
+   m = Py_InitModule4("sscanf", sscanf_methods,
+       (char *)NULL, (PyObject *) NULL, PYTHON_API_VERSION);
+   if (PyErr_Occurred())
+       Py_FatalError("can't initialize module sscanf");
+#endif
 
-    /* Check for errors */
-    if (PyErr_Occurred())
-        Py_FatalError("can't initialize module sscanf");
+/* in Py2.*: just return */
+#if PY_MAJOR_VERSION >= 3
+   return m;
+#endif
 }
-

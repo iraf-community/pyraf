@@ -947,16 +947,16 @@ def taskinfo(*args):
     '''
     show information about task definitions
 
-    taskinfo [ pattern(s) ] 
+    taskinfo [ pattern(s) ]
 
         pattern is a glob pattern describing the package or task
         name that you are interested in.
 
         The output is a hierarchical view of the task definitions
         that match the input pattern.  Each line shows the task
-        name, the file name, pkgbinary and class.  
+        name, the file name, pkgbinary and class.
 
-        pkgbinary is a list of where you look for the file if it 
+        pkgbinary is a list of where you look for the file if it
         is not where you expect.
 
         class is the type of task definition from iraftask.py
@@ -1804,6 +1804,31 @@ def fscan(theLocals, line, *namelist, **kw):
             break
     _nscan = n_actual
     return n_actual
+
+def test_sscanf():
+    """ A basic unit test that sscanf was built/imported correctly and
+    can run. """
+    assert sscanf!=None, 'Error importing sscanf during iraffunctions init'
+    # aliveness
+    l = sscanf.sscanf("seven 6 4.0 -7", "%s %d %g %d")
+    assert l==['seven', 6, 4.0, -7], 'Unexpected!  l = '+str(l)
+    # bad format
+    l = sscanf.sscanf("seven", "%d")
+    assert l==[], 'Unexpected!  l = '+str(l)
+    # %c
+    l = sscanf.sscanf("seven", "%c%3c%99c")
+    assert l==['s', 'eve', 'n'], 'Unexpected!  l = '+str(l)
+    # hex
+    l = sscanf.sscanf("0xabc90", "%x")
+    assert l==[703632], 'Unexpected!  l = '+str(l)
+    # API error
+    try:
+        l = sscanf.sscanf()
+    except TypeError:
+        pass # this is expected - anything else should raise
+
+    # finished successfully
+    print 'test_sscanf successful'
 
 def fscanf(theLocals, line, format, *namelist, **kw):
     """fscanf function sets parameters from a string/list parameter with format

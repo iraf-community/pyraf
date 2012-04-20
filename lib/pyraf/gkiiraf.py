@@ -23,7 +23,7 @@ class GkiIrafKernel(gki.GkiKernel):
     is shut down."""
 
     def __init__(self, device):
-        
+
         import irafecl
         module = irafecl.getTaskModule()
 

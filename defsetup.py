@@ -94,7 +94,7 @@ add_inc_dirs = dir_clean(add_inc_dirs)
 if not ms_windows or build_c :
     # windows users have to do without the CL sscanf() function,
     # unless you explicitly set build_c true.
-    PYRAF_EXTENSIONS.append( 
+    PYRAF_EXTENSIONS.append(
 	    distutils.core.Extension(
             'pyraf.sscanfmodule',
             ['src/sscanfmodule.c'],
@@ -105,7 +105,7 @@ if not ms_windows or build_c :
 if not ms_windows :
     # windows users do not have X windows, so we never need the X
     # support
-    PYRAF_EXTENSIONS.append( 
+    PYRAF_EXTENSIONS.append(
 	    distutils.core.Extension(
             'pyraf.xutilmodule',
             ['src/xutil.c'],
@@ -131,7 +131,7 @@ if ms_windows :
         scriptdir = [ 'scripts' ]
 
     # copy the pyraf main program to the name we want it installed as
-    shutil.copy( 
+    shutil.copy(
         os.path.join( * ( scriptdir + [ 'pyraf' ] ) ) ,
         os.path.join( * ( scriptdir + [ 'runpyraf.py' ] ) )
         )
@@ -166,7 +166,7 @@ if ms_windows :
     else:
        print('Error: User desktop location unknown')
 
-    # NOTE: a much better solution would be to use something (bdist) to 
+    # NOTE: a much better solution would be to use something (bdist) to
     # create installer binaries for Windows, since they are: 1) easier on
     # the win user, and 2) can be used to create actual desktop shortcuts,
     # not this kludgy .bat file.  If we take out the two libraries built
@@ -204,7 +204,7 @@ if not ms_windows :
     # clcache is a pre-loaded set of CL files already converted to
     # python.  There are none on Windows, so we don't need them.
     # Leaving them out makes the install go a lot faster.
-    DATA_FILES += [ 
+    DATA_FILES += [
                 (pkg+'/clcache',  [ "data/clcache/*" ] )
         ]
 

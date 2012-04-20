@@ -11,7 +11,10 @@
 /* $Id$ */
 
 /* Windows and cursor manipulations not provided by Tkinter or any other
-** standard python library
+** standard python library.  This file handles Python 3 as well.
+** see also: http://docs.python.org/py3k/extending
+** see also: http://docs.python.org/howto/cporting.html
+** see also: http://python3porting.com/cextensions.html
 */
 
 /* the following macro is used to trap x window exceptions and trigger
@@ -33,7 +36,7 @@ static GC gc;
 static XWindowAttributes wa;
 static int last_win = -1;
 static Colormap cmap;
-static XColor colorfg, colorbg, color; 
+static XColor colorfg, colorbg, color;
 
 #define TrapXlibErrors \
     oldIOErrorHandler = XSetIOErrorHandler(&MyXlibIOErrorHandler); \
@@ -377,16 +380,16 @@ void drawCursor(int win, double x, double y, int width, int height) {
        return;
     }
     color.pixel = colorfg.pixel ^ colorbg.pixel;
-    XSetFunction(d, gc, GXxor);  
+    XSetFunction(d, gc, GXxor);
     XSetForeground(d, gc, color.pixel);
-  }  
+  }
   /*if (!XGetGeometry(d,w,&wroot, &xr, &yr, &width, &height, &border, &depth)) {
     printf("could not get window geometry\n");
     return;
   }*/
   XDrawLine(d, w, gc, (int) (x*width), 0, (int) (x*width),  height);
   XDrawLine(d, w, gc, 0, (int) ((1.-y)*height),  width, (int) ((1.-y)*height));
-  XFlush(d); 
+  XFlush(d);
 }
 
 PyObject *wrap_drawCursor(PyObject *self, PyObject *args) {
@@ -404,7 +407,7 @@ PyObject *wrap_drawCursor(PyObject *self, PyObject *args) {
   return Py_None;
 }
 
-static PyMethodDef xutilMethods[] = {
+static PyMethodDef xutil_funcs[] = {
   { "moveCursorTo",wrap_moveCursorTo, 1},
   { "getFocalWindowID",wrap_getFocalWindowID, 1},
   { "setFocusTo",wrap_setFocusTo, 1},
@@ -419,7 +422,29 @@ static PyMethodDef xutilMethods[] = {
   {NULL, NULL}
 };
 
-void initxutil(void) {
-  PyObject *m;
-  m = Py_InitModule("xutil", xutilMethods);
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "xutil",
+        NULL,
+        -1,
+        xutil_funcs,
+        NULL, NULL, NULL, NULL,
+};
+PyObject* PyInit_xutil(void)
+#else
+void initxutil(void)
+#endif
+{
+   PyObject *m;
+#if PY_MAJOR_VERSION >= 3
+   m = PyModule_Create(&moduledef);
+#else
+   m = Py_InitModule("xutil", xutil_funcs);
+#endif
+
+/* in Py2.*: just return */
+#if PY_MAJOR_VERSION >= 3
+   return m;
+#endif
 }

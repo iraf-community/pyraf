@@ -126,7 +126,7 @@ def getPointerGlobalPosition():
     # get cursor position, but it is a private, questionable API (June 2008).
 
     # NSEvent supports a class-method to always hold the cursor loc.
-    # It gives us the values in NSPoint coords (pixels).  These are fine, 
+    # It gives us the values in NSPoint coords (pixels).  These are fine,
     # except that the NSPoint origin is the bottom left of the screen, so we
     # need to convert to the top-left origin.
     pos = AppKit.NSEvent.mouseLocation() # current mouse location

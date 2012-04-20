@@ -13,7 +13,7 @@ versions of urwid.  Many thanks to author Rebecca Breu.
 $Id$
 """
 from __future__ import division # confidence high
- 
+
 from urwid import *
 from urwid import WidgetWrap
 
@@ -47,7 +47,7 @@ class SelText(Text):
 class FileChooser(WidgetWrap):
    """
    Creates a dialog (FlowWidget) for choosing a file.
-   
+
    It displays the subdirectories and files in the selected directory in two
    different ListBoxes, and the whole filename of the selected file in an
    Edit widget. The user can choose from the ListBoxes, or type an arbitrary
@@ -64,9 +64,9 @@ class FileChooser(WidgetWrap):
 
    selection = None
    b_pressed = None
-  
+
    _blank = Text("")
-  
+
    def __init__(self, height, directory=".", file="", attr=(None, None),
                 show_hidden=False):
        """
@@ -81,7 +81,7 @@ class FileChooser(WidgetWrap):
        self.attr = attr
        self.height = height
        self.show_hidden=show_hidden
-      
+
        #Create dummy widgets for directory and file display:
        self.dir_widget = AttrWrap(BoxAdapter(ListBox([self._blank]),
                                                  self.height), self.attr[0])
@@ -104,7 +104,7 @@ class FileChooser(WidgetWrap):
                                        self.show_hidden,
                                        False, self._toggle_hidden),
                              button_grid])
-     
+
        self.outer_widget = Pile([columns,
                                 self._blank,
                                 Text(self.SELECTION_TEXT),
@@ -112,9 +112,9 @@ class FileChooser(WidgetWrap):
                                 self._blank,
                                 button_cols
                                 ])
-     
+
        self.update_widgets()
-     
+
        WidgetWrap.__init__(self, self.outer_widget)
 
 
@@ -123,7 +123,7 @@ class FileChooser(WidgetWrap):
        Get a list of all directories and files in directory.
        List contains hidden files/dirs only if self.show_hidden is True.
        """
-      
+
        dirlist = [".", ".."]
        filelist = []
 
@@ -168,7 +168,7 @@ class FileChooser(WidgetWrap):
            #Selection widget:
            selected_file = join(self.directory, self.file)
            self.select_widget.set_edit_text(selected_file)
-      
+
 
 
    def _focused_widgets(self):
@@ -187,7 +187,7 @@ class FileChooser(WidgetWrap):
                focused.append(widget)
 
        return focused
-  
+
 
    def _action(self, button):
        """
@@ -197,9 +197,9 @@ class FileChooser(WidgetWrap):
 
        if button.get_label() == "OK":
            self.selection = self.select_widget.get_edit_text()
-          
+
        self.b_pressed = button.get_label()
-      
+
 
 
    def _toggle_hidden(self, checkbox, new_state):
@@ -208,7 +208,7 @@ class FileChooser(WidgetWrap):
        ist toggled.
        Should not be called manually.
        """
-      
+
        self.show_hidden = new_state
        self.update_widgets(True, True)
 
@@ -241,7 +241,7 @@ class FileChooser(WidgetWrap):
                (self.directory, self.file) = os.path.split(path)
                self.update_widgets(True, True, False)
                return
-      
+
        return self.outer_widget.keypress(size, key)
 
 
@@ -252,7 +252,7 @@ class FileChooser(WidgetWrap):
        """
        handled = self.outer_widget.mouse_event(size, event, button, col, row,
                                                focus)
-      
+
        if event == "mouse press" and button == 1:
            focused = self._focused_widgets()
            if focused[-2] == self.dir_widget:
@@ -274,19 +274,19 @@ class FileChooser(WidgetWrap):
 
        return handled
 
-          
+
 
 ######################################################################
 #Endof module part
 ######################################################################
-   
+
 import urwid
 
 def main():
 
    global selection
    global ui
-  
+
    ui = urwid.curses_display.Screen()
 
    ui.register_palette(
@@ -296,13 +296,13 @@ def main():
         ])
 
    return ui.run_wrapper(run)
-  
+
 
 def run():
-  
+
    global selection
    global ui
-  
+
    ui.set_mouse_tracking()
    dim = ui.get_cols_rows()
 
@@ -314,20 +314,20 @@ def run():
    while True:
        if keys:
            ui.draw_screen(dim, widget.render(dim, True))
-          
+
        keys = ui.get_input()
 
        if widget.body.b_pressed == "OK":
            selection = "You selected: " + widget.body.selection
            return widget.body.selection
-      
+
        if widget.body.b_pressed == "Cancel":
            selection = "No file selected."
            return
-      
+
        if "window resize" in keys:
            dim = ui.get_cols_rows()
-          
+
        for k in keys:
            if urwid.is_mouse_event(k):
                event, button, col, row = k
@@ -336,7 +336,7 @@ def run():
                widget.keypress(dim, k)
 
 
- 
+
 if __name__ == "__main__":
     import urwid
     import urwid.curses_display

@@ -33,7 +33,10 @@ if _default_root is None:
     else:
         _default_root = Tkinter._default_root
     _default_root.withdraw()
-    del Tkinter
+    try:
+        del Tkinter
+    except NameError:
+        del tkinter # in case 2to3 tool didn't rename it correctly 2 lines up
 
 # This code is needed to avoid faults on sys.exit()
 # [DAA, Jan 1998]
@@ -250,7 +253,7 @@ class PyrafCanvas(Canvas):
             self.tkRedraw()
 
 class FullWindowCursor:
-    """This implements a full window crosshair cursor.  This class can 
+    """This implements a full window crosshair cursor.  This class can
        operate in the xutil-wrapping mode or in a Tkinter-only mode. """
     # Perhaps this should inherit from an abstract Cursor class eventually
 

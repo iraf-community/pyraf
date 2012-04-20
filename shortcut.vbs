@@ -20,7 +20,7 @@
 '
 ' This language is VBScript.
 
-sub make_shortcut( sp_folder ) 
+sub make_shortcut( sp_folder )
 	' look up the location of the special folder where we want the shortcut to appear
 	set sh = WScript.CreateObject("WScript.Shell" )
 	where = sh.SpecialFolders(sp_folder)

@@ -7,7 +7,7 @@ from __future__ import division # confidence high
 
 import string, os, sys, numpy, Tkinter
 from stsci.tools import irafutils
-import gwm, wutil, iraf, gkicmd, gki
+import wutil
 
 # The following class attempts to emulate the standard IRAF gcursor
 # mode of operation. That is to say, it is basically a keyboard driven
@@ -178,6 +178,7 @@ class Gcursor:
 
     def getKey(self, event):
 
+        import gkicmd
         # The main character handling routine where no special keys
         # are used (e.g., arrow keys)
         key = event.char
@@ -212,6 +213,7 @@ class Gcursor:
                     self._setRetString(key,x,y,colonString)
         elif key == '=':
             # snap command - print the plot
+            import gki
             gki.printPlot(self.window)
         elif key in string.ascii_uppercase:
             if key == 'I':
