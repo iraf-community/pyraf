@@ -101,10 +101,9 @@ if __name__ == '__main__':
    iraf.plot() # load plot pkg
 
    # clean slate
-   if 'PYRAF_ORIG_MPL_DRAWING' in os.environ:
-      del os.environ['PYRAF_ORIG_MPL_DRAWING']
    if 'PYRAFGRAPHICS' in os.environ:
       del os.environ['PYRAFGRAPHICS']
+   os.environ['PYRAF_GRAPHICS_ALWAYS_ON_TOP']='1' # rm display bounce dur test
    total = time.time()
 
    res = {} # mostly a dict of test case times, but 1 item is list of case names
@@ -115,19 +114,16 @@ if __name__ == '__main__':
 
    # MPL kernel
    os.environ['PYRAFGRAPHICS'] = 'matplotlib'
-   os.environ['PYRAF_ORIG_MPL_DRAWING'] = '1'
-   runAllCases('MPL-ORIG', res)
+   runAllCases('MPL', res)
 
-   # MPL kernel with smart draws
-   if 'PYRAF_ORIG_MPL_DRAWING' in os.environ:
-      del os.environ['PYRAF_ORIG_MPL_DRAWING']
-   runAllCases('MPL-NEW', res)
+   # MPL kernel (again, just for more data)
+   runAllCases('MPL-again', res)
 
    # report
    total = (time.time() - total)/60.
-   print "\nTOTAL TIME (min): %.1f" % total+"\n"
+   print("\nTOTAL TIME (min): %.1f" % total+"\n")
 
-   print "                TK               MPL-ORIG         MPL-NEW\n"
+   print("                TK               MPL              MPL again\n")
    for ccc in res['case names']:
       times = res[ccc]
       line = "%12s"%ccc+':   '
@@ -136,6 +132,4 @@ if __name__ == '__main__':
          line += "("+ ("%.5f"%(t/times[0]))[:4]+")"
          line += "   "
       line += ' secs'
-      print line
-
-#  pprint(res)
+      print(line)
