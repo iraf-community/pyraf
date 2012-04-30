@@ -48,7 +48,7 @@ class AST(compmixin.ComparableMixin):
         return self._kids[i]
     def __len__(self):
         return len(self._kids)
-    # __setslice__ is deprec.d, out in Py3; use __setitem__ instead
+    # __setslice__ is deprec.d, out in PY3K; use __setitem__ instead
     def __setslice__(self, low, high, seq):
         self._kids[low:high] = seq
     def __setitem__(self, idx, val):

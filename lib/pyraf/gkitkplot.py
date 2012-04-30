@@ -8,6 +8,7 @@ from __future__ import division # confidence high
 
 import numpy, sys, string
 import Tkinter
+from stsci.tools.for2to3 import ndarr2str
 import wutil, Ptkplot
 import gki, gkitkbase, gkigcur, tkplottext, textattrib, irafgwcs
 
@@ -181,7 +182,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.wcs.commit()
         x = gki.ndc(arg[0])
         y = gki.ndc(arg[1])
-        text = arg[3:].astype(numpy.int8).tostring()
+        text = ndarr2str(arg[3:].astype(numpy.int8))
         self._tkplotAppend(self.tkplot_text, x, y, text)
 
     def gki_fillarea(self, arg):

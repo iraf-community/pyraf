@@ -48,47 +48,9 @@ __version__ = "Revision: 1.7r "
 
 
 import errno, os, select, signal, string, subprocess, sys, time, types
+from stsci.tools.for2to3 import tobytes, BNULLSTR, BNEWLINE, bytes_read, bytes_write
 
 OS_HAS_FORK = hasattr(os, 'fork')
-
-# Handle the 'bytes' type, even back before 2.6.
-# NOTE: after we abandon 2.5, get rid of tobytes()
-def tobytes(s):
-    if sys.version_info[0] > 2:
-        if isinstance(s, bytes):
-            return s
-        else:
-            return bytes(s, 'ascii')
-    else:
-        # for py2.6 on (before 3.0), bytes is same as str;  2.5 has no bytes
-        return s
-
-try:
-    BNULLSTR = tobytes('')   # after dropping 2.5, change to: b''
-    BNEWLINE = tobytes('\n') # after dropping 2.5, change to: b'\n'
-except:
-    BNULLSTR = ''
-    BNEWLINE = '\n'
-
-
-def bytes_read(fd, sz):
-   """ Perform an os.read in a way that can handle both Python2 and Python3
-   IO.  Assume we are always piping only ASCII characters (since that is all
-   we have ever done with IRAF).  Either way, return the data as bytes.
-   """
-   return os.read(fd, sz)
-
-
-def bytes_write(fd, bufstr):
-   """ Perform an os.write in a way that can handle both Python2 and Python3
-   IO.  Assume we are always piping only ASCII characters (since that is all
-   we have ever done with IRAF).  Either way, write the binary data to fd.
-   """
-   if sys.version_info[0] > 2 and isinstance(bufstr, str):
-       return os.write(fd, bufstr.encode('ascii'))
-   else:
-       return os.write(fd, bufstr)
-
 
 try:
     class SubprocessError(Exception):
@@ -868,7 +830,7 @@ class Ph:
             response = self.getreply()      # Should get null on new prompt.
             errs = self.proc.readPendingErrChars()
             if errs:
-                sys.stderr.write(errs)
+                bytes_write(sys.stderr.fileno(), errs)
             if it:
                 got.append(it)
                 it = {}
@@ -1015,7 +977,7 @@ class RedirProcess(Subprocess):
                     # stderr
                     s = self.readPendingErrChars()
                     if s:
-                        sys.stderr.write(s)
+                        bytes_write(sys.stderr.fileno(), s)
                         sys.stderr.flush()
                     else:
                         # EOF
@@ -1028,7 +990,7 @@ class RedirProcess(Subprocess):
                     # stdout
                     s = self.readPendingChars()
                     if s:
-                        sys.stdout.write(s)
+                        bytes_write(sys.stdout.fileno(), s)
                         sys.stdout.flush()
                     else:
                         # EOF

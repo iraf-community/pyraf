@@ -56,10 +56,6 @@ if WUTIL_ON_MAC:
 # Give the user (Mac or other) a way to still run remotely with no display.
 from stsci.tools import capable
 _skipDisplay = not capable.OF_GRAPHICS
-if sys.version_info[0] > 2:
-    print "Warning: graphics code calls are not yet ported to Python 3"
-    _skipDisplay = True
-    capable.OF_GRAPHICS = False
 
 # Experimental new (2012) mode some have requested (OSX mostly) where all
 # graphics windows drawn are popped to the foreground and left there with
@@ -73,7 +69,7 @@ try:
     if WUTIL_USING_X and not _skipDisplay:
         # set an env var before importing xutil (see PyRAF FAQ on this)
         os.environ['XLIB_SKIP_ARGB_VISUALS'] = '1'
-        import xutil
+        from . import xutil
         #initGraphics = initXGraphics
         xutil.initXGraphics() # call here for lack of a better place for n
 
@@ -86,7 +82,7 @@ try:
 
         # Successful intialization. Reset dummy methods with
         # those from 'xutil' now.
-        from xutil import *
+        from .xutil import *
         _hasXWin = 1 # Flag to mark successful initialization of XWindow
         closeGraphics = closeXGraphics
 

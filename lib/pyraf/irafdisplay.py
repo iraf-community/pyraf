@@ -31,9 +31,8 @@ $Id$
 from __future__ import division # confidence high
 
 import os, numpy, socket, sys
+from stsci.tools.for2to3 import PY3K, bytes_write, ndarr2bytes
 from stsci.tools import irafutils
-
-PY3K = sys.version_info[0] > 2
 
 try:
     import fcntl
@@ -172,7 +171,7 @@ class ImageDisplay:
         sum = numpy.add.reduce(a)
         sum = 0xffff - (sum & 0xffff)
         a[3] = sum
-        self._write(a.tostring())
+        self._write(ndarr2bytes(a))
 
     def close(self, os_close=os.close):
 
@@ -207,10 +206,7 @@ class ImageDisplay:
         try:
             n = len(s)
             while n>0:
-                if PY3K:
-                    nwritten = os.write(self._fdout, s[-n:].encode('ascii'))
-                else:
-                    nwritten = os.write(self._fdout, s[-n:])
+                nwritten = bytes_write(self._fdout, s[-n:])
                 n -= nwritten
                 if nwritten <= 0:
                     raise IOError("Error writing to image display")
