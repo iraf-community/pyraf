@@ -29,7 +29,7 @@ else:
 # a ukey parameter and expects that the user will type a character in
 # response. The value of this character is then returned to the iraf task
 
-def getSingleTTYChar():
+def getSingleTTYChar(): # return type str in all Python versions
 
     """Returns None if Control-C is typed or any other exception occurs"""
 
