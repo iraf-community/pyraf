@@ -76,10 +76,7 @@ try:
 
         # Successful intialization. Reset dummy methods with
         # those from 'xutil' now.
-        try:
-            from .xutil import *
-        except SyntaxError: # for Python 2.5 only, where the above form isnt ok
-            from xutil import *
+        from pyraf.xutil import *
         _hasXWin = 1 # Flag to mark successful initialization of XWindow
         closeGraphics = closeXGraphics
 
