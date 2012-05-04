@@ -10,6 +10,7 @@ $Id$
 from __future__ import division # confidence high
 
 import struct, numpy, math
+from stsci.tools.for2to3 import ndarr2bytes, tobytes, BNULLSTR, PY3K
 from stsci.tools.irafglobals import IrafError
 import irafinst
 
@@ -135,7 +136,7 @@ class IrafGWcs:
         for i in xrange(WCS_SLOTS):
             record = wcsStruct[_WCS_RECORD_SIZE*i:_WCS_RECORD_SIZE*(i+1)]
             # read 8 4-byte floats from beginning of record
-            fvals = numpy.fromstring(record[:8*SZ].tostring(),numpy.float32)
+            fvals = numpy.fromstring(ndarr2bytes(record[:8*SZ]),numpy.float32)
             if _IRAF64BIT:
                 # seems to send an extra 0-valued int32 after each 4 bytes
                 fvalsView = fvals.reshape(-1,2).transpose()
@@ -143,7 +144,7 @@ class IrafGWcs:
                     raise IrafError("Assumed WCS float padding is non-zero")
                 fvals = fvalsView[0]
             # read 3 4-byte ints after that
-            ivals = numpy.fromstring(record[8*SZ:11*SZ].tostring(),numpy.int32)
+            ivals = numpy.fromstring(ndarr2bytes(record[8*SZ:11*SZ]),numpy.int32)
             if _IRAF64BIT:
                 # seems to send an extra 0-valued int32 after each 4 bytes
                 ivalsView = ivals.reshape(-1,2).transpose()
@@ -158,13 +159,13 @@ class IrafGWcs:
             self.commit()
 
     def pack(self):
-        """Return the WCS in the original IRAF format"""
+        """Return the WCS in the original IRAF format (in bytes-string)"""
         init_wcs_sizes()
         self.commit()
         wcsStruct = numpy.zeros(_WCS_RECORD_SIZE*WCS_SLOTS, numpy.int16)
-        pad = '\x00\x00\x00\x00'
+        pad = tobytes('\x00\x00\x00\x00')
         if _IRAF64BIT:
-            pad = '\x00\x00\x00\x00\x00\x00\x00\x00'
+            pad = tobytes('\x00\x00\x00\x00\x00\x00\x00\x00')
         for i in xrange(WCS_SLOTS):
             x = self.wcs[i]
             farr = numpy.array(x[:8],numpy.float32)
@@ -185,15 +186,14 @@ class IrafGWcs:
                 iarr = iarr.flatten()
             # end-pad?
             if len(farr)+len(iarr) == (_WCS_RECORD_SIZE//2):
-               pad='' # for IRAF 2.14 or prior; all new vers need the end-pad
+               pad = BNULLSTR #for IRAF2.14 or prior; all new vers need end-pad
 
             # Pack the wcsStruct - this will throw "ValueError: shape mismatch"
             # if the padding doesn't bring the size out to exactly the
             # correct length (_WCS_RECORD_SIZE)
             wcsStruct[_WCS_RECORD_SIZE*i:_WCS_RECORD_SIZE*(i+1)] = \
-                      numpy.fromstring(farr.tostring()+iarr.tostring()+pad,\
-                                       numpy.int16)
-        return wcsStruct.tostring()
+            numpy.fromstring(ndarr2bytes(farr)+ndarr2bytes(iarr)+pad, numpy.int16)
+        return ndarr2bytes(wcsStruct)
 
 
     def transform(self, x, y, wcsID):

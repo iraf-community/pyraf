@@ -48,47 +48,9 @@ __version__ = "Revision: 1.7r "
 
 
 import errno, os, select, signal, string, subprocess, sys, time, types
+from stsci.tools.for2to3 import tobytes, tostr, BNULLSTR, BNEWLINE, bytes_read, bytes_write
 
 OS_HAS_FORK = hasattr(os, 'fork')
-
-# Handle the 'bytes' type, even back before 2.6.
-# NOTE: after we abandon 2.5, get rid of tobytes()
-def tobytes(s):
-    if sys.version_info[0] > 2:
-        if isinstance(s, bytes):
-            return s
-        else:
-            return bytes(s, 'ascii')
-    else:
-        # for py2.6 on (before 3.0), bytes is same as str;  2.5 has no bytes
-        return s
-
-try:
-    BNULLSTR = tobytes('')   # after dropping 2.5, change to: b''
-    BNEWLINE = tobytes('\n') # after dropping 2.5, change to: b'\n'
-except:
-    BNULLSTR = ''
-    BNEWLINE = '\n'
-
-
-def bytes_read(fd, sz):
-   """ Perform an os.read in a way that can handle both Python2 and Python3
-   IO.  Assume we are always piping only ASCII characters (since that is all
-   we have ever done with IRAF).  Either way, return the data as bytes.
-   """
-   return os.read(fd, sz)
-
-
-def bytes_write(fd, bufstr):
-   """ Perform an os.write in a way that can handle both Python2 and Python3
-   IO.  Assume we are always piping only ASCII characters (since that is all
-   we have ever done with IRAF).  Either way, write the binary data to fd.
-   """
-   if sys.version_info[0] > 2 and isinstance(bufstr, str):
-       return os.write(fd, bufstr.encode('ascii'))
-   else:
-       return os.write(fd, bufstr)
-
 
 try:
     class SubprocessError(Exception):
@@ -109,13 +71,7 @@ class Subprocess:
 
     .readline will block until it gets a complete line.
 
-    .peekPendingChar does a non-blocking, non-consuming read for pending
-    output, and can be used before .readline to check non-destructively for
-    pending output.  .waitForPendingChar(timeout) blocks until
-    a new character is pending, or timeout secs pass, with granularity of
-    pollPause seconds.
-
-    There are corresponding read and peekPendingErrXXX routines, to read from
+    There are corresponding readXXX routines, to read from
     the subprocess stderr stream."""
 
     def __init__(self, cmd,
@@ -296,44 +252,6 @@ class Subprocess:
 
     ### Get output from subprocess ###
 
-    def peekPendingChar(self):
-        """Return, but (effectively) do not consume a single pending output
-        char, or return null string if none pending."""
-
-        if not self.control_stdout:
-            raise SubprocessError(
-                    "Haven't grabbed subprocess output stream for %s." % self)
-        return self.readbuf.peekPendingChar()
-
-    def peekPendingErrChar(self):
-        """Return, but (effectively) do not consume a single pending output
-        error char, or return null string if none pending."""
-
-        if not self.control_stderr:
-            raise SubprocessError(
-                    "Haven't grabbed subprocess error stream for %s." % self)
-        return self.errbuf.peekPendingChar()
-
-    def waitForPendingChar(self, timeout, pollPause=.1):
-        """Block max TIMEOUT secs until we peek a pending char, returning the
-        char, or '' if none encountered.
-        pollPause is included for backward compatibility, but does nothing."""
-
-        if not self.control_stdout:
-            raise SubprocessError(
-                    "Haven't grabbed subprocess output stream for %s." % self)
-        return self.readbuf.peekPendingChar(timeout)
-
-    def waitForPendingErrChar(self, timeout, pollPause=.1):
-        """Block max TIMEOUT secs until we peek a pending error char, returning the
-        char, or '' if none encountered.
-        pollPause is included for backward compatibility, but does nothing."""
-
-        if not self.control_stderr:
-            raise SubprocessError(
-                    "Haven't grabbed subprocess error stream for %s." % self)
-        return self.errbuf.peekPendingChar(timeout)
-
     def read(self, n=None):
         """Read N chars (blocking), or all pending if no N specified."""
         if not self.control_stdout:
@@ -354,14 +272,14 @@ class Subprocess:
         else:
             return self.errbuf.read(n)
 
-    def readPendingChars(self, max=None):
+    def readPendingChars(self, max=None): # returns bytes
         """Read all currently pending subprocess output as a single string."""
         if not self.control_stdout:
             raise SubprocessError(
                     "Haven't grabbed subprocess output stream for %s." % self)
         return self.readbuf.readPendingChars(max)
 
-    def readPendingErrChars(self, max=None):
+    def readPendingErrChars(self, max=None): # returns bytes
         """Read all currently pending subprocess error output as a single
         string."""
         if not self.control_stderr:
@@ -584,59 +502,6 @@ class ReadBuf:
     def fileno(self):
         return self.fd
 
-    def peekPendingChar(self,timeout=0):
-        """Return, but don't consume, first character of unconsumed output from
-        file, or empty string if none.  If timeout is set, waits maximum of
-        timeout seconds before returning.  Default is timeout=0 (do not wait
-        at all.)"""
-
-        if self.buf: return self.buf[0]                                 # ===>
-
-        if self.eof: return ''                                          # ===>
-
-        try:
-            sel = select.select([self.fd], [], [self.fd], timeout)
-        except select.error:
-            # select error occurs if self.fd been closed
-            # treat like EOF
-            self.eof = 1
-            return ''
-        if sel[0]:
-            self.buf = ascii_read(self.fd, self.chunkSize)
-            if self.buf:
-                return self.buf[0]                                      # ===>
-            else:
-                self.eof = 1
-                return ''                                               # ===>
-        else: return ''                                                 # ===>
-
-    def readPendingChar(self):
-        """Consume first character of unconsumed output from file, or empty
-        string if none."""
-
-        if self.buf:
-            got, self.buf = self.buf[0], self.buf[1:]
-            return got                                                  # ===>
-
-        if self.eof: return ''                                          # ===>
-
-        try:
-            sel = select.select([self.fd], [], [self.fd], 0)
-        except select.error:
-            # select error occurs if self.fd been closed
-            # treat like EOF
-            self.eof = 1
-            return ''
-        if sel[0]:
-            self.buf = ascii_read(self.fd, self.chunkSize)
-            if self.buf:
-                got, self.buf = self.buf[0], self.buf[1:]
-                return got
-            else:
-                self.eof = 1
-                return ''                                               # ===>
-        else: return ''                                                 # ===>
-
     def readPendingChars(self, max=None):
         """Consume uncomsumed output from FILE, or empty string if nothing
         pending."""
@@ -832,101 +697,6 @@ def record_trial(s):
     if r != s:
         raise IOError("String distorted:\n%s" % show)
 
-#############################################################################
-#####                   An example subprocess interfaces                #####
-#############################################################################
-
-class Ph:
-    """Convenient interface to CCSO 'ph' nameserver subprocess.
-
-    .query('string...') method takes a query and returns a list of dicts, each
-    of which represents one entry."""
-
-    # Note that i made this a class that handles a subprocess object, rather
-    # than one that inherits from it.  I didn't see any functional
-    # disadvantages, and didn't think that full support of the entire
-    # Subprocess functionality was in any way suitable for interaction with
-    # this specialized interface.  ?  klm 13-Jan-1995
-
-    def __init__(self):
-        try:
-            self.proc = Subprocess("ph", expire_noisily=1)
-        except:
-            raise SubprocessError("failure starting ph: %s" %
-                                  str(sys.exc_value))
-
-    def query(self, q):
-        """Send a query and return a list of dicts for responses.
-
-        Raise a ValueError if ph responds with an error."""
-
-        self.clear()
-
-        self.proc.writeline('query ' + q)
-        got = []; it = {}
-        while 1:
-            response = self.getreply()      # Should get null on new prompt.
-            errs = self.proc.readPendingErrChars()
-            if errs:
-                sys.stderr.write(errs)
-            if it:
-                got.append(it)
-                it = {}
-            if not response:
-                return got                                              # ===>
-            elif isinstance(response, (str, unicode)):
-                raise ValueError("ph failed match: '%s'" % response)
-            for line in response:
-                # convert to a dict:
-                line = line.split(':')
-                it[line[0].strip()] = ' '.join(line[1:]).strip()
-
-    def getreply(self):
-        """Consume next response from ph, returning list of lines or string
-        err."""
-        # Key on first char:  (First line may lack newline.)
-        #  - dash               discard line
-        #  - 'ph> '     conclusion of response
-        #  - number     error message
-        #  - whitespace beginning of next response
-
-        nextChar = self.proc.waitForPendingChar(60)
-        if not nextChar:
-            raise SubprocessError('ph subprocess not responding')
-        elif nextChar == '-':
-            # dashed line - discard it, and continue reading:
-            self.proc.readline()
-            return self.getreply()                                      # ===>
-        elif nextChar == 'p':
-            # 'ph> ' prompt - don't think we should hit this, but what the hay:
-            return ''                                                   # ===>
-        elif nextChar in '0123456789':
-            # Error notice - we're currently assuming single line errors:
-            return self.proc.readline()[:-1]                            # ===>
-        elif nextChar in ' \t':
-            # Get content, up to next dashed line:
-            got = []
-            while nextChar != '-' and nextChar != '':
-                got.append(self.proc.readline()[:-1])
-                nextChar = self.proc.peekPendingChar()
-            return got
-    def __repr__(self):
-        return "<Ph instance, %s at %s>\n" % (self.proc.status(),
-                                                hex(id(self))[2:])
-    def clear(self):
-        """Clear-out initial preface or residual subproc input and output."""
-        pause = .5; maxIter = 10                # 5 seconds to clear
-        iterations = 0
-        got = ''
-        self.proc.write('')
-        while iterations < maxIter:
-            got = got + self.proc.readPendingChars()
-            # Strip out all but the last incomplete line:
-            got = got.split('\n')[-1]
-            if got == 'ph> ': return        # Ok.                       ===>
-            time.sleep(pause)
-        raise SubprocessError('ph not responding within %s secs' %
-                                                        pause * maxIter)
 
 #############################################################################
 #####         Run a subprocess with Python I/O redirection              #####
@@ -1013,9 +783,9 @@ class RedirProcess(Subprocess):
                 # stderr is first in fromChild_fdlist (if present)
                 if doErr and (self.fromChild_fdlist[0] in readable):
                     # stderr
-                    s = self.readPendingErrChars()
+                    s = self.readPendingErrChars() # returns bytes
                     if s:
-                        sys.stderr.write(s)
+                        sys.stderr.write(tostr(s))
                         sys.stderr.flush()
                     else:
                         # EOF
@@ -1026,9 +796,9 @@ class RedirProcess(Subprocess):
                         self.control_stderr = 0
                 else:
                     # stdout
-                    s = self.readPendingChars()
+                    s = self.readPendingChars() # returns bytes
                     if s:
-                        sys.stdout.write(s)
+                        sys.stdout.write(tostr(s))
                         sys.stdout.flush()
                     else:
                         # EOF
@@ -1045,10 +815,10 @@ class RedirProcess(Subprocess):
             elif writable:
                 # stdin
                 try:
-                    s = sys.stdin.read(self.maxChunkSize)
+                    s = sys.stdin.read(self.maxChunkSize) # s is 'str' in PY3K
                     if s:
                         try:
-                            self.write(s)
+                            self.write(s) # inside, converts PY3K str to bytes
                         except IOError, (errnum, msg):
                             # broken pipe may be OK
                             # just call it an EOF and see what happens

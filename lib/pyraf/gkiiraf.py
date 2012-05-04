@@ -6,6 +6,7 @@ $Id$
 from __future__ import division # confidence high
 
 import sys, os, string
+from stsci.tools.for2to3 import ndarr2bytes
 import gki, irafgwcs, iraftask, iraf
 
 # kernels to flush frequently
@@ -73,12 +74,12 @@ class GkiIrafKernel(gki.GkiKernel):
 
     def flush(self):
         # grab last part of buffer and delete it
-        metacode = self.gkibuffer.delget().tostring()
+        metacode = ndarr2bytes(self.gkibuffer.delget())
         # only plot if buffer contains something
         if metacode:
             # write to a temporary file
             tmpfn = iraf.mktemp("iraf") + ".gki"
-            fout = open(tmpfn,'w')
+            fout = open(tmpfn,'wb')
             fout.write(metacode)
             fout.close()
             try:

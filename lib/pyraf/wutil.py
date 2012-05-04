@@ -30,36 +30,26 @@ def getDeepestVisual(): return 24
 def initGraphics(): pass
 def closeGraphics(): pass
 
-# Are we on MacOS X ?  Windows ?
-WUTIL_ON_MAC = sys.platform == 'darwin'
-WUTIL_ON_WIN = sys.platform.startswith('win')
-
-# Default to using X on most platforms, tho definitely not on windows
-WUTIL_USING_X = not WUTIL_ON_WIN
-
-# For a while we may support both versions (X or Aqua) on OSX
-if WUTIL_ON_MAC:
-    if 'PYRAF_WUTIL_USING_AQUA' in os.environ:
-        WUTIL_USING_X = False
-    else:
-        # Do this check for them; look at the python exec - is it X11-linked?
-        # We *could* do an "otool -L" on sys.executable and check for the
-        # X11 libs, but the following method is faster & nearly as effective.
-        # We assume that any python with a PyObjc package in its sys.path
-        # is NOT linked with any X11 libraries.  OSX python comes /w PyObjc.
-        junk = ",".join(sys.path)
-        WUTIL_USING_X = junk.lower().find('/pyobjc') < 0
-        del junk
-
 # On OSX, a terminal with no display causes us to fail pretty abruptly:
 # "INIT_Processeses(), could not establish the default connection to the WindowServer.Abort".
 # Give the user (Mac or other) a way to still run remotely with no display.
 from stsci.tools import capable
 _skipDisplay = not capable.OF_GRAPHICS
-if sys.version_info[0] > 2:
-    print "Warning: graphics code calls are not yet ported to Python 3"
-    _skipDisplay = True
-    capable.OF_GRAPHICS = False
+
+# Are we on MacOS X ?  Windows ?
+WUTIL_ON_MAC = sys.platform == 'darwin'
+WUTIL_ON_WIN = sys.platform.startswith('win')
+
+# WUTIL_USING_X: default to using X on most platforms, tho surely not on windows
+WUTIL_USING_X = not WUTIL_ON_WIN
+
+# More on WUTIL_USING_X: for now we support both versions (X or Aqua) on OSX
+if WUTIL_ON_MAC and not _skipDisplay:
+    if 'PYRAF_WUTIL_USING_AQUA' in os.environ:
+        WUTIL_USING_X = False
+    else:
+        # Do this check for them; look at the python binaries - are they X11-linked?
+        WUTIL_USING_X = capable.which_darwin_linkage() == "x11"
 
 # Experimental new (2012) mode some have requested (OSX mostly) where all
 # graphics windows drawn are popped to the foreground and left there with
@@ -73,7 +63,7 @@ try:
     if WUTIL_USING_X and not _skipDisplay:
         # set an env var before importing xutil (see PyRAF FAQ on this)
         os.environ['XLIB_SKIP_ARGB_VISUALS'] = '1'
-        import xutil
+        from . import xutil
         #initGraphics = initXGraphics
         xutil.initXGraphics() # call here for lack of a better place for n
 
@@ -86,7 +76,7 @@ try:
 
         # Successful intialization. Reset dummy methods with
         # those from 'xutil' now.
-        from xutil import *
+        from pyraf.xutil import *
         _hasXWin = 1 # Flag to mark successful initialization of XWindow
         closeGraphics = closeXGraphics
 

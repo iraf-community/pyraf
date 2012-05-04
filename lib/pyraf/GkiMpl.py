@@ -13,6 +13,7 @@ import matplotlib
 from matplotlib.lines import Line2D
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
+from stsci.tools.for2to3 import ndarr2str
 
 import gki, gkitkbase, textattrib
 import gkigcur
@@ -483,7 +484,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # add the text
         x = gki.ndc(arg[0])
         y = gki.ndc(arg[1])
-        text = arg[3:].astype(numpy.int8).tostring()
+        text = ndarr2str(arg[3:].astype(numpy.int8))
         ta = self.textAttributes
 
         # For now, force this to be non-bold for decent looking plots.  It

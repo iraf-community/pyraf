@@ -35,8 +35,8 @@ if _default_root is None:
     _default_root.withdraw()
     try:
         del Tkinter
-    except NameError:
-        del tkinter # in case 2to3 tool didn't rename it correctly 2 lines up
+    except NameError: # for PY3K situation, in case the 2to3 tool
+        del tkinter   # didn't rename it correctly 2 lines above this one
 
 # This code is needed to avoid faults on sys.exit()
 # [DAA, Jan 1998]

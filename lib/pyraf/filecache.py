@@ -151,7 +151,7 @@ class MD5Cache(FileCache):
 
         """Called when file has changed."""
 
-        contents = self._getFileHandle().read() # is unicode str in py3
+        contents = self._getFileHandle().read() # is unicode str in PY3K
         # md5 digest is the value associated with the file
         h = hashlib.md5()
         if sys.version_info[0] > 2: # unicode must be encoded to be hashed

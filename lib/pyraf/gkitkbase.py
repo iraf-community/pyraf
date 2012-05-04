@@ -9,6 +9,7 @@ import numpy, os, sys, string, time, Tkinter
 import msgiobuffer, msgiowidget, wutil
 from stsci.tools import capable, filedlg
 from stsci.tools.irafglobals import IrafError, userWorkingHome
+from stsci.tools.for2to3 import ndarr2bytes
 import gki, textattrib, irafgwcs
 from pyrafglobals import pyrafDir
 import tkFileDialog, tkMessageBox, tkSimpleDialog
@@ -300,7 +301,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         os.chdir(curdir) # in case file dlg moved us
         if not fname: return
         fh = open(fname, 'wb')
-        fh.write(self.gkibuffer.get().tostring()) # OK: bytes in PY3K
+        fh.write(ndarr2bytes(self.gkibuffer.get()))
         fh.close()
 
 
