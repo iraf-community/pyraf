@@ -121,9 +121,10 @@ def gki_prow_to_different_devices_test():
    flistBef = findAllTmpPskFiles()
    # use a fake printer name so we don't waste a sheet of paper with each test
    os.environ['LPDEST'] = "hp_dev_null"
+   os.environ['PRINTER'] = "hp_dev_null"
    # plot
    iraf.prow("dev$pix", row=256, dev=PSDEV) # plot (no .ps file yet)
-   iraf.prow("dev$pix", row=250, dev="lw") # plot to fake printer, should flush
+   iraf.prow("dev$pix", row=333, dev="lw") # plot to fake printer, should flush
                                            # last plot, and should warn @ fake
    # get output postscript temp file name
    psOut = getNewTmpPskFile(flistBef, "prow_to_different_devices")
@@ -222,6 +223,9 @@ def run_all():
    global PSDEV, EXP2IGNORE
    tsts = [x for x in globals().keys() if x.find('test')>=0]
    ran = 0
+
+   os.environ['LPDEST'] = "hp_dev_null"
+   os.environ['PRINTER'] = "hp_dev_null"
 
    PSDEV = 'psi_land'
    EXP2IGNORE = '.*CreationDate: .*'
