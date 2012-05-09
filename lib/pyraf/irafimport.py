@@ -61,7 +61,8 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     if (name == "iraf") or \
        (name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
         if IMPORT_DEBUG:
-            print("irafimport: case of: import iraf OR from . import iraf")
+            print("irafimport: iraf case: n="+name+", fl="+str(fromlist)+ \
+                  ", l="+str(level))
         return _irafModuleProxy
 
     # e.g. "import pyraf.iraf" (return module is for pyraf, not iraf)
@@ -92,7 +93,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
         # new name of the former pytools package
         name = name.replace('pytools.', 'stsci.tools.')
 
-    # Same for everything in fromlist (which is a tuple in Py3)
+    # Same for everything in fromlist (which is a tuple in PY3K)
     if fromlist:
         fromlist = tuple([item.replace('pytools', 'stsci.tools')
                          for item in fromlist])
