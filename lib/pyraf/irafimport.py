@@ -20,6 +20,7 @@ from stsci.tools import minmatch
 
 _importHasLvlArg = sys.version_info[0] > 2 or sys.version_info[1] >= 5 # no 1.*
 _reloadIsBuiltin = sys.version_info[0] < 3
+PY3K = sys.version_info[0] > 2
 
 IMPORT_DEBUG = False
 
@@ -57,9 +58,11 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
             print("irafimport: case: from "+name+" import "+str(fromlist))
         return _irafModuleProxy.module
 
-    # e.g. "import iraf" or "from . import iraf" (um, fromlist is list OR tuple)
-    if (name == "iraf") or \
-       (name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
+    # e.g. "import iraf" or "from . import iraf" (fromlist is a list OR tuple)
+    # (extra Python2 cases are not used in PY3K - double check this)
+    if (PY3K and not fromlist and name == 'iraf') or \
+       ((not PY3K) and (name == "iraf")) or \
+       ((not PY3K) and name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
         if IMPORT_DEBUG:
             print("irafimport: iraf case: n="+name+", fl="+str(fromlist)+ \
                   ", l="+str(level))
@@ -73,13 +76,14 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
                   ", l="+str(level)+", will modify pyraf module")
         # builtin import below will return pyraf module, after having set up an
         # attr of it called 'iraf' which is the iraf module.  Instead we want
-        # to set the attr to be our proxy.
+        # to set the attr to be our proxy (this case maybe unused in Python 2).
         retval = sys.modules['pyraf']
         retval.iraf = _irafModuleProxy
         return retval
 
     # ALL OTHER CASES (PASS-THROUGH)
     # e.g. "import sys" or "import stsci.tools.alert"
+    # e.g. "import pyraf" or "from pyraf import wutil, gki"
     # e.g. Note! "import os, sys, re, glob" calls this 4 separate times, but
     #            "from . import gki, gwm, iraf" is only a single call here!
 
