@@ -114,7 +114,12 @@ def gki_2_prows_no_append_test():
           os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_250.ps")
 
 
-def gki_prow_to_different_devices_test():
+# 10 May 2012 - rename to disable for now - is sending niightly prints to hpc84
+# It seems that the cups system takes the print to hp_dev_null and changes that
+# to an existing printer, knowing it is wrong ...
+# When there is time, look into a way to start this test up again without any
+# danger of prints going to an actual printer.
+def gki_prow_to_different_devices_tst(): # rename to disable for now
    """ Test 2 prow calls, each to different devices - one .ps written """
    iraf.plot(_doprint=0) # load plot for prow
    # get look at tmp dir before plot/flush
