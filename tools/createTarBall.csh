@@ -95,18 +95,22 @@ endif
 
 # edit setup to comment our pyfits requirement (we dont need it for pyraf)
 cd $workDir/$pyr/required_pkgs/tools
-/bin/cp setup.cfg setup.cfg.orig
-cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' |sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
-echo DIFF for pyfits
-diff setup.cfg.orig setup.cfg
+if (-e setup.cfg) then
+   /bin/cp setup.cfg setup.cfg.orig
+   cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' |sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
+   echo DIFF for pyfits
+   diff setup.cfg.orig setup.cfg
+endif
 
 # edit pyraf setup stuff to use the required_pkgs sub-dir
 cd $workDir/$pyr
 # change line to: find-links = required_pkgs
-/bin/cp setup.cfg setup.cfg.orig
-cat setup.cfg.orig | sed 's/^ *find-links *=.*/find-links = required_pkgs/' > setup.cfg
-echo DIFF for find-links
-diff setup.cfg.orig setup.cfg
+if (-e setup.cfg) then
+   /bin/cp setup.cfg setup.cfg.orig
+   cat setup.cfg.orig | sed 's/^ *find-links *=.*/find-links = required_pkgs/' > setup.cfg
+   echo DIFF for find-links
+   diff setup.cfg.orig setup.cfg
+endif
 # change line to use: os.path.abspath("required_pkgs/distutils/lib")
 /bin/cp setup.py setup.py.orig
 cat setup.py.orig | sed 's/^\( *stsci_distutils *=\).*/\1 os.path.abspath("required_pkgs"+os.sep+"distutils"+os.sep+"lib")/' > setup.py
@@ -128,10 +132,12 @@ endif
 
 # Now make the Windows version (have to edit setup.cfg - can't do in Python?)
 cd $workDir/$pyr
-/bin/cp setup.cfg setup.cfg.winorig
-cat setup.cfg.winorig | grep -v sscanfmodule | grep -v xutil | grep -v X11 > setup.cfg
-echo DIFF for removed extensions
-diff setup.cfg.winorig setup.cfg
+if (-e setup.cfg) then
+   /bin/cp setup.cfg setup.cfg.winorig
+   cat setup.cfg.winorig | grep -v sscanfmodule | grep -v xutil | grep -v X11 > setup.cfg
+   echo DIFF for removed extensions
+   diff setup.cfg.winorig setup.cfg
+endif
 
 # tar and zip Windows version
 cd $workDir

@@ -114,16 +114,22 @@ def gki_2_prows_no_append_test():
           os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_250.ps")
 
 
-def gki_prow_to_different_devices_test():
+# 10 May 2012 - rename to disable for now - is sending niightly prints to hpc84
+# It seems that the cups system takes the print to hp_dev_null and changes that
+# to an existing printer, knowing it is wrong ...
+# When there is time, look into a way to start this test up again without any
+# danger of prints going to an actual printer.
+def gki_prow_to_different_devices_tst(): # rename to disable for now
    """ Test 2 prow calls, each to different devices - one .ps written """
    iraf.plot(_doprint=0) # load plot for prow
    # get look at tmp dir before plot/flush
    flistBef = findAllTmpPskFiles()
    # use a fake printer name so we don't waste a sheet of paper with each test
    os.environ['LPDEST'] = "hp_dev_null"
+   os.environ['PRINTER'] = "hp_dev_null"
    # plot
    iraf.prow("dev$pix", row=256, dev=PSDEV) # plot (no .ps file yet)
-   iraf.prow("dev$pix", row=250, dev="lw") # plot to fake printer, should flush
+   iraf.prow("dev$pix", row=333, dev="lw") # plot to fake printer, should flush
                                            # last plot, and should warn @ fake
    # get output postscript temp file name
    psOut = getNewTmpPskFile(flistBef, "prow_to_different_devices")
@@ -222,6 +228,9 @@ def run_all():
    global PSDEV, EXP2IGNORE
    tsts = [x for x in globals().keys() if x.find('test')>=0]
    ran = 0
+
+   os.environ['LPDEST'] = "hp_dev_null"
+   os.environ['PRINTER'] = "hp_dev_null"
 
    PSDEV = 'psi_land'
    EXP2IGNORE = '.*CreationDate: .*'
