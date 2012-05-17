@@ -96,7 +96,7 @@ for key in irafkwnames:
     _irafkwdict[key] = 1
 del irafkwnames, key
 
-def help(object=__main__, variables=1, functions=1, modules=1,
+def help(an_obj=__main__, variables=1, functions=1, modules=1,
          tasks=0, packages=0, hidden=0, padchars=16, regexp=None, html=0,
          **kw):
 
@@ -149,13 +149,13 @@ Other keywords are passed on to the IRAF help task if it is called.
     # try block for I/O redirection
 
     try:
-        _help(object, variables, functions, modules,
+        _help(an_obj, variables, functions, modules,
                 tasks, packages, hidden, padchars, regexp, html, irafkw)
     finally:
         rv = pyraf.iraf.redirReset(resetList, closeFHList)
     return rv
 
-def _help(object, variables, functions, modules,
+def _help(an_obj, variables, functions, modules,
                 tasks, packages, hidden, padchars, regexp, html, irafkw):
 
     # for IrafTask object, display help and also print info on the object
@@ -163,50 +163,50 @@ def _help(object, variables, functions, modules,
     # on it too (XXX this is a bit risky, but I suppose people will not
     # often be asking for help with simple strings as an argument...)
 
-    if isinstance(object,IrafTask):
-        if _printIrafHelp(object, html, irafkw): return
+    if isinstance(an_obj,IrafTask):
+        if _printIrafHelp(an_obj, html, irafkw): return
 
-    if isinstance(object,str):
+    if isinstance(an_obj,str):
         # Python task names
-        if object in sys.modules: # e.g. help drizzlepac
-            theMod = sys.modules[object]
+        if an_obj in sys.modules: # e.g. help drizzlepac
+            theMod = sys.modules[an_obj]
             if hasattr(theMod, 'help'):
                 theMod.help()
                 return
         # sub-module Python task names
         else: # e.g. help astrodrizzle (when really drizzlepac.astrodrizzle)
             keyMatches = \
-                [m for m in sys.modules.keys() if m.endswith('.'+object)]
+                [m for m in sys.modules.keys() if m.endswith('.'+an_obj)]
             for theKey in keyMatches:
                 theMod = sys.modules[theKey]
                 if hasattr(theMod, 'help'):
                     theMod.help()
                     return
         # IRAF task names
-        if re.match(r'[A-Za-z_][A-Za-z0-9_.]*$',object) or \
-          (re.match(r'[^\0]*$',object) and \
-                    os.path.exists(pyraf.iraf.Expand(object, noerror=1))):
-            if _printIrafHelp(object, html, irafkw): return
+        if re.match(r'[A-Za-z_][A-Za-z0-9_.]*$',an_obj) or \
+          (re.match(r'[^\0]*$',an_obj) and \
+                    os.path.exists(pyraf.iraf.Expand(an_obj, noerror=1))):
+            if _printIrafHelp(an_obj, html, irafkw): return
 
     vlist = None
-    if not isinstance(object, _allSingleTypes):
+    if not isinstance(an_obj, _allSingleTypes):
         try:
-            vlist = vars(object)
+            vlist = vars(an_obj)
         except TypeError:
             pass
     if vlist is None:
         # simple object with no vars()
-        _valueHelp(object, padchars)
+        _valueHelp(an_obj, padchars)
         return
 
     # look inside the object
 
     tasklist, pkglist, functionlist, methodlist, modulelist, otherlist = \
-            _getContents(vlist, regexp, object)
+            _getContents(vlist, regexp, an_obj)
 
-    if isinstance(object, types.InstanceType):
+    if isinstance(an_obj, types.InstanceType):
         # for instances, print a help line for the object itself first
-        _valueHelp(object, padchars=0)
+        _valueHelp(an_obj, padchars=0)
 
     if modules and modulelist:
         # modules get listed in simple column format
@@ -234,9 +234,9 @@ def _help(object, variables, functions, modules,
         irafutils.printCols(tasklist)
         print
 
-    if isinstance(object, types.InstanceType) and functions:
+    if isinstance(an_obj, types.InstanceType) and functions:
         # for instances, call recursively to list class methods
-        help(object.__class__, functions=functions, tasks=tasks,
+        help(an_obj.__class__, functions=functions, tasks=tasks,
                 packages=packages, variables=variables, hidden=hidden,
                 padchars=padchars, regexp=regexp)
 
@@ -246,18 +246,18 @@ def _help(object, variables, functions, modules,
 
 # return 1 if they handle the object, 0 if they don't
 
-def _printIrafHelp(object, html, irafkw):
+def _printIrafHelp(an_obj, html, irafkw):
     if html:
-        _htmlHelp(object)
+        _htmlHelp(an_obj)
         return 0
     else:
-        return _irafHelp(object, irafkw)
+        return _irafHelp(an_obj, irafkw)
 
-def _valueHelp(object, padchars):
+def _valueHelp(an_obj, padchars):
     # just print info on the object itself
-    vstr = _valueString(object,verbose=1)
+    vstr = _valueString(an_obj,verbose=1)
     try:
-        name = object.__name__
+        name = an_obj.__name__
     except AttributeError:
         name = ''
     name = name + (padchars-len(name))*" "
@@ -267,7 +267,7 @@ def _valueHelp(object, padchars):
         # omit the colon if name is null
         print vstr
 
-def _getContents(vlist, regexp, object):
+def _getContents(vlist, regexp, an_obj):
     # Make one pass through names getting the type and sort order
     # Also split IrafTask and IrafPkg objects into separate lists and
     #  look into base classes if object is a class.
@@ -299,8 +299,8 @@ def _getContents(vlist, regexp, object):
                 sortlist[vorder].append((vname,value))
                 namedict[vname] = 1
     # add methods from base classes if this is a class
-    if isinstance(object, types.ClassType):
-        classlist = list(object.__bases__)
+    if isinstance(an_obj, types.ClassType):
+        classlist = list(an_obj.__bases__)
         for c in classlist:
             classlist.extend(list(c.__bases__))
             for vname, value in vars(c).items():
