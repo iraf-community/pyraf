@@ -635,6 +635,10 @@ class IrafParList(taskpars.TaskPars):
                 j = j+1
         return dpar
 
+    def _dlen(self):
+        """ For diagnostic use only: return length of class attr name dict. """
+        return len(self.__dict__)
+
     def clearFlags(self):
         """Clear all status flags for all parameters"""
         for p in self.__pars: p.setFlags(0)
