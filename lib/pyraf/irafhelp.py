@@ -41,9 +41,10 @@ from __future__ import division # confidence high
 import __main__, re, os, sys, types
 from stsci.tools import minmatch, irafutils
 from stsci.tools.irafglobals import IrafError, IrafTask, IrafPkg
+from stsci.tools.for2to3 import PY3K
 import describe
 
-# this is better than what 2to3 does, since the iraf import is circular
+# use this form since the iraf import is circular
 import pyraf.iraf
 
 
@@ -66,8 +67,11 @@ _functionTypes = (types.BuiltinFunctionType,
                   types.LambdaType)
 
 _methodTypes = (types.BuiltinMethodType,
-                types.MethodType,
-                types.UnboundMethodType)
+                types.MethodType)
+
+if not PY3K:
+   # in PY3K, UnboundMethodType is simply FunctionType
+   _methodTypes += (types.UnboundMethodType,)
 
 _listTypes = (list, tuple, dict)
 
@@ -95,6 +99,19 @@ for key in irafkwnames:
     _kwdict.add(key,key)
     _irafkwdict[key] = 1
 del irafkwnames, key
+
+def _isinstancetype(an_obj):
+    """ Transitional function to handle all basic cases which we care
+    about, in both Python 2 and 3, with both old and new-style classes.
+    Return True if the passed object is an instance of a class, else False. """
+    if an_obj is None: return False
+    if not PY3K:
+        return isinstance(an_obj, types.InstanceType)
+    typstr = str(type(t))
+    # the following logic works, as PyRAF users expect, in both v2 and v3
+    return typstr=="<type 'instance'>" or \
+           (typstr.startswith("<class '") and ('.' in typstr))
+
 
 def help(an_obj=__main__, variables=1, functions=1, modules=1,
          tasks=0, packages=0, hidden=0, padchars=16, regexp=None, html=0,
@@ -204,7 +221,7 @@ def _help(an_obj, variables, functions, modules,
     tasklist, pkglist, functionlist, methodlist, modulelist, otherlist = \
             _getContents(vlist, regexp, an_obj)
 
-    if isinstance(an_obj, types.InstanceType):
+    if _isinstancetype(an_obj):
         # for instances, print a help line for the object itself first
         _valueHelp(an_obj, padchars=0)
 
@@ -234,7 +251,7 @@ def _help(an_obj, variables, functions, modules,
         irafutils.printCols(tasklist)
         print
 
-    if isinstance(an_obj, types.InstanceType) and functions:
+    if _isinstancetype(an_obj) and functions:
         # for instances, call recursively to list class methods
         help(an_obj.__class__, functions=functions, tasks=tasks,
                 packages=packages, variables=variables, hidden=hidden,
@@ -299,7 +316,8 @@ def _getContents(vlist, regexp, an_obj):
                 sortlist[vorder].append((vname,value))
                 namedict[vname] = 1
     # add methods from base classes if this is a class
-    if isinstance(an_obj, types.ClassType):
+    if (not PY3K and isinstance(an_obj, types.ClassType)) or \
+       (PY3K and type(an_obj)==type(object)): # i.e. "<class 'type'>"
         classlist = list(an_obj.__bases__)
         for c in classlist:
             classlist.extend(list(c.__bases__))
@@ -358,7 +376,7 @@ def _valueString(value,verbose=0):
         vstr = vstr + ", "+ `value`
     elif issubclass(t, _numericTypes):
         vstr = vstr + ", value = "+ `value`
-    elif issubclass(t, types.InstanceType):
+    elif _isinstancetype(value):
         cls = value.__class__
         if cls.__module__ == '__main__':
             vstr = 'instance of class ' + cls.__name__
