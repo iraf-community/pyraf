@@ -39,6 +39,11 @@ R. White, 1999 September 23
 from __future__ import division # confidence high
 
 import __main__, re, os, sys, types
+try:
+    import io
+except ImportError: # only for Python 2.5
+    io = None
+
 from stsci.tools import minmatch, irafutils
 from stsci.tools.irafglobals import IrafError, IrafTask, IrafPkg
 from stsci.tools.for2to3 import PY3K
@@ -107,7 +112,7 @@ def _isinstancetype(an_obj):
     if an_obj is None: return False
     if not PY3K:
         return isinstance(an_obj, types.InstanceType)
-    typstr = str(type(t))
+    typstr = str(type(an_obj))
     # the following logic works, as PyRAF users expect, in both v2 and v3
     return typstr=="<type 'instance'>" or \
            (typstr.startswith("<class '") and ('.' in typstr))
@@ -372,7 +377,8 @@ def _valueString(value,verbose=0):
             vstr = vstr + ", value = "+ `value`
     elif issubclass(t, _listTypes):
         return "%s [%d entries]" % (vstr, len(value))
-    elif issubclass(t, file):
+    elif (PY3K and issubclass(t, io.IOBase)) or \
+         (not PY3K and issubclass(t, file)):
         vstr = vstr + ", "+ `value`
     elif issubclass(t, _numericTypes):
         vstr = vstr + ", value = "+ `value`
