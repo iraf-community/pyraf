@@ -7,6 +7,7 @@ R. White, 2000 January 19
 from __future__ import division # confidence high
 
 import os, sys
+from stsci.tools.for2to3 import PY3K
 from stsci.tools.irafglobals import Verbose, userIrafHome
 if __name__.find('.') < 0: # for unit test
    import filecache # revert to simple import after 2to3
@@ -327,10 +328,15 @@ if not os.path.exists(userCacheDir):
         print 'Could not create directory %s' % userCacheDir
 
 dbfile = 'clcache'
-codeCache = _CodeCache([
-        os.path.join(userCacheDir,dbfile),
-        os.path.join(pyrafglobals.pyrafDir,dbfile),
-        ])
+
+if PY3K:
+    # since CL code caching is turned off currently for PY3K,
+    # there won't be any installed there, but still play with user area
+    codeCache = _CodeCache([os.path.join(userCacheDir,dbfile),])
+else:
+    codeCache = _CodeCache([os.path.join(userCacheDir,dbfile),
+                            os.path.join(pyrafglobals.pyrafDir,dbfile)])
+
 del userCacheDir, dbfile
 
 if __name__ == '__main__':
