@@ -15,6 +15,7 @@ import clscan, clparse
 from clcache import codeCache
 
 from stsci.tools.irafglobals import Verbose
+from stsci.tools.for2to3 import PY3K
 from stsci.tools import basicpar, minmatch, irafutils
 import irafpar, pyrafglobals
 
@@ -29,7 +30,7 @@ import irafpar, pyrafglobals
 _parser = None
 
 def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
-        local_vars_dict=None, local_vars_list=None, usecache=1):
+          local_vars_dict=None, local_vars_list=None, usecache=1):
 
     """Read CL program from file and return pycode object with Python equivalent
 
@@ -64,6 +65,9 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     """
 
     global _parser, codeCache
+
+    if PY3K:
+        usecache = False # ! turn caching off until it is fully tested/worked
 
     if _parser is None:
         _parser = clparse.getParser()

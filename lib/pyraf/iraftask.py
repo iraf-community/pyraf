@@ -14,7 +14,10 @@ from __future__ import division
 import fnmatch, os, sys, copy, re
 from stsci.tools import basicpar, minmatch, irafutils, irafglobals, taskpars
 from stsci.tools.irafglobals import IrafError, Verbose
-import subproc, irafinst, iraf, irafpar, irafexecute, cl2py
+import subproc, irafinst, irafpar, irafexecute, cl2py
+
+# use this form since the iraf import is circular
+import pyraf.iraf
 
 
 # may be set to function to monitor task execution
@@ -328,7 +331,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         specialKW = self._specialKW(kw)
 
         # Special Stdout, Stdin, Stderr keywords are used to redirect IO
-        redirKW, closeFHList = iraf.redirProcess(kw)
+        redirKW, closeFHList = pyraf.iraf.redirProcess(kw)
 
         # set parameters
         kw['_setMode'] = 1
@@ -378,19 +381,19 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         if mode[:1] != "a": return mode
 
         # cl is the court of last resort, don't look at its packages
-        if self is iraf.cl: return "h"
+        if self is pyraf.iraf.cl: return "h"
 
         # package name is undefined only at very start of initialization
         # just use the standard default
         if not self._pkgname: return "ql"
 
         # up we go -- look in parent package
-        pkg = iraf.getPkg(self._pkgname)
+        pkg = pyraf.iraf.getPkg(self._pkgname)
         # clpackage is at top and is its own parent
         if pkg is not self:
             return pkg.getMode()
         # didn't find it in the package hierarchy, so use cl mode
-        mode = iraf.cl.mode
+        mode = pyraf.iraf.cl.mode
         # default is hidden if automatic all the way to top
         if mode[:1] == "a":
             return "h"
@@ -410,7 +413,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         """
         self.initTask(force=1)
 
-        if not self._currentParList:
+        if self._currentParList is None:
             return None
 
         # Special ParList parameter is used to pass in an entire
@@ -433,7 +436,10 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             newParList = self._runningParList
             parList = None
         else:
-            newParList = copy.deepcopy(parList or self._currentParList)
+            if parList:
+                newParList = copy.deepcopy(parList)
+            else:
+                newParList = copy.deepcopy(self._currentParList)
 
         if kw.has_key('_setMode'):
             _setMode = kw['_setMode']
@@ -494,7 +500,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             # Not one of our dictionaries, so must find the relevant task
             if package: task = package + '.' + task
             try:
-                tobj = iraf.getTask(task)
+                tobj = pyraf.iraf.getTask(task)
                 # reattach the index and/or field
                 if pindex: paramname = paramname + '[' + `pindex+1` + ']'
                 if field: paramname = paramname + '.' + field
@@ -543,6 +549,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         parameter is undefined.)
         """
 
+#       DBG "GP:", str(self._name), qualifiedName, native, mode, exact, prompt
         package, task, paramname, pindex, field = _splitName(qualifiedName)
 
         if (not task) or (task == self._name):
@@ -570,7 +577,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # Not one of our dictionaries, so must find the relevant task
         if package: task = package + '.' + task
         try:
-            tobj = iraf.getTask(task)
+            tobj = pyraf.iraf.getTask(task)
             return tobj._getParValue(paramname, pindex, field, native, mode="h",
                     prompt=prompt)
         except KeyError:
@@ -694,7 +701,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             if self._scrunchParpath and \
               (self._scrunchParpath == self._currentParpath):
                 try:
-                    os.remove(iraf.Expand(self._scrunchParpath, noerror=1))
+                    os.remove(pyraf.iraf.Expand(self._scrunchParpath,noerror=1))
                 except OSError:
                     pass
             self._currentParList = copy.deepcopy(self._defaultParList)
@@ -784,7 +791,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
     def _resetRedir(self, resetList, closeFHList):
         """Restore redirected I/O and close files"""
-        return iraf.redirReset(resetList, closeFHList)
+        return pyraf.iraf.redirReset(resetList, closeFHList)
 
     def _run(self, redirKW, specialKW):
         """Execute task after parameters, I/O redirection are prepared.
@@ -792,7 +799,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         The implementation of this can differ for each type of task.
         """
         try:
-            irafexecute.IrafExecute(self, iraf.getVarDict(), **redirKW)
+            irafexecute.IrafExecute(self, pyraf.iraf.getVarDict(), **redirKW)
         except irafexecute.IrafProcessError, value:
             raise IrafError("Error running IRAF task "+self._name+
                             "\n"+str(value))
@@ -866,12 +873,13 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
         # Next, parameters from the package to which the current task belongs
         # [Ticket 59: mimic behavior of param.c:lookup_param()]
-        pd = iraf.getTask(self.getPkgname()).getParDict()
-        if (pd): # do not include null dictionaries
+        task = pyraf.iraf.getTask(self.getPkgname())
+        pd = task.getParDict()
+        if pd: # do not include null dictionaries
             parDictList.append( (self.getPkgname(),pd) )
 
         # Lastly, cl parameters
-        cl = iraf.cl
+        cl = pyraf.iraf.cl
         if cl is not None:
             parDictList.append( (cl.getName(),cl.getParDict()) )
 
@@ -913,7 +921,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # found it tries the pathname given in the TASK declaration.
         # Expand iraf variables.  We will try both paths if the expand fails.
         try:
-            exename1 = iraf.Expand(self._filename)
+            exename1 = pyraf.iraf.Expand(self._filename)
             # get name of executable file without path
             basedir, basename = os.path.split(exename1)
         except IrafError, e:
@@ -940,7 +948,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             exelist = []
             for pbin in self._pkgbinary: # e.g. ['bin$']
                 try:
-                    exelist.append(iraf.Expand(pbin + basename))
+                    exelist.append(pyraf.iraf.Expand(pbin + basename))
                 except IrafError, e:
                     if Verbose>0:
                         print >> sys.stderr, "Error finding executable for: "+\
@@ -956,8 +964,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                 else:
                     self._fullpath = ""
                     exelist.append(exename1)
-                    raise IrafError("Cannot find executable for task %s\nTried %s" %
-                                    (self._name, ", ".join(exelist)))
+                    raise IrafError(
+                          "Cannot find executable for task %s\nTried %s" %
+                          (self._name, ", ".join(exelist)))
 
     def _initParpath(self):
         """Initialize parameter file paths"""
@@ -976,7 +985,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             return
 
         try:
-            exename1 = iraf.Expand(self._filename)
+            exename1 = pyraf.iraf.Expand(self._filename)
             basedir, basename = os.path.split(exename1)
             if basedir=="": basedir = "."
         except IrafError, e:
@@ -989,7 +998,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
         # default parameters are found with task
         self._defaultParpath = os.path.join(basedir,self._name + ".par")
-        if not os.path.exists(iraf.Expand(self._defaultParpath, noerror=1)):
+        if not os.path.exists(pyraf.iraf.Expand(self._defaultParpath,
+                              noerror=1)):
             self._noParFile()
             self._defaultParpath = ""
 
@@ -1013,13 +1023,16 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             return
 
         self._defaultParList = irafpar.IrafParList(self._name,
-                                                iraf.Expand(self._defaultParpath, noerror=1))
+                               pyraf.iraf.Expand(self._defaultParpath,
+                               noerror=1))
 
-        if self._scrunchParpath and \
-                        os.path.exists(iraf.Expand(self._scrunchParpath, noerror=1)):
+        codePath = 'a'
+        if self._scrunchParpath and os.path.exists(pyraf.iraf.Expand(
+                                    self._scrunchParpath, noerror=1)):
             self._currentParpath = self._scrunchParpath
             self._currentParList = irafpar.IrafParList(self._name,
-                                                    iraf.Expand(self._currentParpath, noerror=1))
+                                   pyraf.iraf.Expand(self._currentParpath,
+                                   noerror=1))
             # are lists consistent?
             if not self._isConsistentPar():
                 sys.stderr.write("uparm parameter list `%s' inconsistent "
@@ -1028,7 +1041,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                 sys.stderr.flush()
                 #XXX just toss it for now -- later can try to merge new,old
                 try:
-                    os.remove(iraf.Expand(self._scrunchParpath, noerror=1))
+                    os.remove(pyraf.iraf.Expand(self._scrunchParpath,noerror=1))
                 except OSError:
                     pass
                 self._currentParpath = self._defaultParpath
@@ -1036,6 +1049,13 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         else:
             self._currentParpath = self._defaultParpath
             self._currentParList = copy.deepcopy(self._defaultParList)
+            codePath = 'b'
+
+        assert self._defaultParList._dlen() == \
+            self._currentParList._dlen(), "Bad deep copy? "+ \
+            str(self._defaultParList._dlen())+" != "+ \
+            str(self._currentParList._dlen())+", cpath="+codePath
+
 
     def _isConsistentPar(self):
         """Check current par list and default par list for consistency"""
@@ -1110,8 +1130,9 @@ class IrafPythonTask(IrafTask):
         # filename is the .par file for this task
         IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
         if self.getForeign():
-            raise IrafError("Python task `%s' cannot be foreign (filename=`%s')" %
-                            (self.getName(), filename))
+            raise IrafError(
+                  "Python task `%s' cannot be foreign (filename=`%s')" %
+                  (self.getName(), filename))
         self.__dict__['_pyFunction'] = function
 
     def isConsistent(self, other):
@@ -1153,7 +1174,7 @@ class IrafPythonTask(IrafTask):
 
     def _applyRedir(self, redirKW):
         """Apply I/O redirection"""
-        return iraf.redirApply(redirKW)
+        return pyraf.iraf.redirApply(redirKW)
 
     def _run(self, redirKW, specialKW):
         """Execute task after parameters, I/O redirection are prepared."""
@@ -1319,7 +1340,7 @@ class IrafCLTask(IrafTask):
             return
 
         if filehandle is not None and self._filename:
-            self._fullpath = iraf.Expand(self._filename)
+            self._fullpath = pyraf.iraf.Expand(self._filename)
 
         IrafTask.initTask(self)
 
@@ -1389,7 +1410,8 @@ class IrafCLTask(IrafTask):
                     #XXX just toss it for now -- later can try to merge new,old
                     if self._currentParpath == self._scrunchParpath:
                         try:
-                            os.remove(iraf.Expand(self._scrunchParpath, noerror=1))
+                            os.remove(pyraf.iraf.Expand(self._scrunchParpath,
+                                      noerror=1))
                         except OSError:
                             pass
                     self._currentParpath = self._defaultParpath
@@ -1420,7 +1442,7 @@ class IrafCLTask(IrafTask):
 
     def _applyRedir(self, redirKW):
         """Apply I/O redirection"""
-        return iraf.redirApply(redirKW)
+        return pyraf.iraf.redirApply(redirKW)
 
     def _run(self, redirKW, specialKW):
         """Execute task after parameters, I/O redirection are prepared."""
@@ -1519,7 +1541,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
             # tasks in subpackages
             if not triedpkgs: triedpkgs = {}
             triedpkgs[id(self)] = 1
-            getPkg = iraf.getPkg
+            getPkg = pyraf.iraf.getPkg
             getTried = triedpkgs.get
             for fullname in self._pkgs.values():
                 p = getPkg(fullname)
@@ -1539,7 +1561,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
         else:
             # Loop over all tasks in the package
             for task in self._tasks.keys():
-                iraf.getTask(task).unlearn()
+                pyraf.iraf.getTask(task).unlearn()
 
     def __getattr__(self, name):
         """Return the task or param 'name' from this package (if it exists)."""
@@ -1556,7 +1578,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
                     " has not been loaded; no tasks are defined")
         fullname = self._getTaskFullname(name)
         if fullname:
-            return iraf.getTask(fullname)
+            return pyraf.iraf.getTask(fullname)
         else:
             raise AttributeError("Parameter %s not found" % name)
 
@@ -1589,7 +1611,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
         # search subpackages
         if not triedpkgs: triedpkgs = {}
         triedpkgs[id(self)] = 1
-        getPkg = iraf.getPkg
+        getPkg = pyraf.iraf.getPkg
         getTried = triedpkgs.get
         for fullname in self._pkgs.values():
             p = getPkg(fullname)
@@ -1619,31 +1641,31 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
             doprint = kw['_doprint']
             del kw['_doprint']
         else:
-            doprint = iraf.cl.menus
+            doprint = pyraf.iraf.cl.menus
         return {'doprint': doprint}
 
     def _run(self, redirKW, specialKW):
         """Execute task after parameters, I/O redirection are prepared."""
         doprint = specialKW['doprint']
-        # if already loaded, just add to iraf.loadedPath
-        iraf.loadedPath.append(self)
+        # if already loaded, just add to pyraf.iraf.loadedPath
+        pyraf.iraf.loadedPath.append(self)
         if not self._loaded:
             self._loaded = 1
-            iraf.addLoaded(self)
+            pyraf.iraf.addLoaded(self)
             if Verbose>1:
                 print >> sys.stderr, "Loading pkg: "+self.getName()+"("+\
                          self.getFullpath()+")"
-            menus = iraf.cl.menus
+            menus = pyraf.iraf.cl.menus
             try:
-                iraf.cl.menus = 0
+                pyraf.iraf.cl.menus = 0
                 self._runCode()
                 # if other packages were loaded, put this on the
                 # loadedPath list one more time
-                if iraf.loadedPath[-1] is not self:
-                    iraf.loadedPath.append(self)
-                if doprint: iraf.listTasks(self)
+                if pyraf.iraf.loadedPath[-1] is not self:
+                    pyraf.iraf.loadedPath.append(self)
+                if doprint: pyraf.iraf.listTasks(self)
             finally:
-                iraf.cl.menus = menus
+                pyraf.iraf.cl.menus = menus
 
     # -----------------------------------------------------
     # Turn an IrafCLTask into an IrafPkg
@@ -1741,7 +1763,7 @@ class IrafForeignTask(IrafTask):
 
     def _applyRedir(self, redirKW):
         """Apply I/O redirection"""
-        return iraf.redirApply(redirKW)
+        return pyraf.iraf.redirApply(redirKW)
 
     def _run(self, redirKW, specialKW):
         """Execute task after parameters, I/O redirection are prepared."""
@@ -1779,7 +1801,7 @@ class IrafForeignTask(IrafTask):
             elif n==0:
                 return self._name
             else:
-                return iraf.Expand(self._args[n-1])
+                return pyraf.iraf.Expand(self._args[n-1])
         n = mo.group('all')
         if n is not None:
             # $* -- append all arguments
@@ -1787,7 +1809,7 @@ class IrafForeignTask(IrafTask):
         n = mo.group('allparen')
         if n is not None:
             # $(*) -- append all arguments with virtual filenames converted
-            return ' '.join(map(iraf.Expand,self._args))
+            return ' '.join(map(pyraf.iraf.Expand,self._args))
         raise IrafError("Cannot handle foreign string `%s' "
                         "for task %s" % (self._filename, self._name))
 
@@ -1813,7 +1835,7 @@ def _splitName(qualifiedName):
         # no field
         slist.append(None)
     if len(slist) > 4:
-        raise IrafError("Illegal syntax for parameter: " + qualifiedName)
+        raise IrafError("Illegal syntax for parameter: "+qualifiedName)
     slist = [None]*(4-len(slist)) + slist
 
     # parse possible subscript and insert into list
