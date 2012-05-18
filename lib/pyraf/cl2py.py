@@ -68,6 +68,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
 
     if PY3K:
         usecache = False # ! turn caching off until it is fully tested/worked
+        # when this is turned on, see corresponding PY3K note in clcache.py!
 
     if _parser is None:
         _parser = clparse.getParser()
