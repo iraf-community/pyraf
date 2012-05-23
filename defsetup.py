@@ -200,9 +200,10 @@ DATA_FILES = [ ( pkg,
                 )
         ]
 
-if not ms_windows :
+if not ms_windows and sys.version_info[0] < 3:
     # clcache is a pre-loaded set of CL files already converted to
     # python.  There are none on Windows, so we don't need them.
+    # We also are not yet using them in PY3K.
     # Leaving them out makes the install go a lot faster.
     DATA_FILES += [
                 (pkg+'/clcache',  [ "data/clcache/*" ] )
