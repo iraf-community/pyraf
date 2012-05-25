@@ -8,6 +8,7 @@ from __future__ import division # confidence high
 
 import copy, glob, os, re, sys, types
 from stsci.tools import basicpar, minmatch, irafutils, taskpars
+from stsci.tools.for2to3 import PY3K
 from stsci.tools.irafglobals import INDEF, Verbose, yes, no
 from stsci.tools.basicpar import (warning, _StringMixin, IrafPar, IrafParS,
                                   _cmdlineFlag)
@@ -16,7 +17,8 @@ from stsci.tools.basicpar import (IrafParB,  IrafParI,  IrafParR,
                                   IrafParAB, IrafParAI, IrafParAR, IrafParAS)
 
 if __name__.find('.') >= 0: # not a unit test
-    import irafimcur, irafukey, epar, tpar, gki, iraf
+    # use this form since the iraf import is circular
+    import pyraf.iraf
 
 
 # -----------------------------------------------------
@@ -185,10 +187,10 @@ class IrafParPset(IrafParS):
         f = self.value.split('.')
         if len(f) <= 1 or f[-1] != 'par':
             # must be a task name
-            return iraf.getTask(self.value or self.name)
+            return pyraf.iraf.getTask(self.value or self.name)
         else:
             from iraffunctions import IrafTaskFactory
-            irf_val = iraf.Expand(self.value)
+            irf_val = pyraf.iraf.Expand(self.value)
             return IrafTaskFactory(taskname=irf_val.split(".")[0],
                                    value=irf_val)
 
@@ -265,7 +267,7 @@ class IrafParL(_StringMixin, IrafPar):
             # non-null value means we're reading from a file
             try:
                 if not self.fh:
-                    self.fh = open(iraf.Expand(self.value), "r")
+                    self.fh = open(pyraf.iraf.Expand(self.value), "r")
                     if self.fh.isatty():
                         self.lines = None
                     else:
@@ -374,6 +376,7 @@ class IrafParGCur(IrafParCursor):
 
     def _getNextValue(self):
         """Return next graphics cursor value"""
+        import gki # lazy import - reduce circular imports on startup
         return gki.kernel.gcur()
 
 # -----------------------------------------------------
@@ -386,6 +389,7 @@ class IrafParImCur(IrafParCursor):
 
     def _getNextValue(self):
         """Return next image display cursor value"""
+        import irafimcur # lazy import - reduce circular imports on startup
         return irafimcur.imcur()
 
 # -----------------------------------------------------
@@ -398,6 +402,7 @@ class IrafParUKey(IrafParL):
 
     def _getNextValue(self):
         """Return next typed character"""
+        import irafukey # lazy import - reduce circular imports on startup
         return irafukey.ukey()
 
 
@@ -501,6 +506,7 @@ class IrafParList(taskpars.TaskPars):
         Else if filename is specified, reads a .par file.
         If neither is specified, generates a default list.
         """
+        self.__pars = []
         self.__filename = filename
         self.__name = taskname
         self.__filecache = ParCache(filename, parlist)
@@ -650,7 +656,8 @@ class IrafParList(taskpars.TaskPars):
     # parameters are accessible as attributes
 
     def __getattr__(self,name):
-        if name[:1] == '_':
+#       DBG: id(self), len(self.__dict__), "__getattr__ for: "+str(name)
+        if name[0] == '_':
             raise AttributeError(name)
         try:
             return self.getValue(name,native=1)
@@ -658,10 +665,14 @@ class IrafParList(taskpars.TaskPars):
             raise AttributeError(str(e))
 
     def __setattr__(self,name,value):
+#       DBG: id(self), len(self.__dict__), "__setattr__ for: "+str(name)+", value: "+str(value)[0:20]
         # hidden Python parameters go into the standard dictionary
         # (hope there are none of these in IRAF tasks)
-        if name[:1] == '_':
-            self.__dict__[name] = value
+        if name[0] == '_':
+            if PY3K:
+                object.__setattr__(self, name, value) # new-style class objects
+            else:
+                self.__dict__[name] = value # for old-style classes
         else:
             self.setParam(name,value)
 
@@ -718,14 +729,14 @@ class IrafParList(taskpars.TaskPars):
         """
         par = self.getParObject(param)
         value = par.get(native=native, mode=mode, prompt=prompt)
-        if isinstance(value,str) and value[:1] == ")":
+        if isinstance(value,str) and value[0] == ")":
             # parameter indirection: ')task.param'
             try:
-                task = iraf.getTask(self.__name)
+                task = pyraf.iraf.getTask(self.__name)
                 value = task.getParam(value[1:],native=native,mode="h")
             except KeyError:
                 # if task is not known, use generic function to get param
-                value = iraf.clParGet(value[1:],native=native,mode="h",
+                value = pyraf.iraf.clParGet(value[1:],native=native,mode="h",
                         prompt=prompt)
         return value
 
@@ -807,9 +818,11 @@ class IrafParList(taskpars.TaskPars):
         self.setParam('$nargs',nargs)
 
     def eParam(self):
+        import epar
         epar.epar(self)
 
     def tParam(self):
+        import tpar
         tpar.tpar(self)
 
     def lParam(self,verbose=0):
@@ -854,7 +867,7 @@ class IrafParList(taskpars.TaskPars):
         if hasattr(filename,'write'):
             fh = filename
         else:
-            absFileName = iraf.Expand(filename)
+            absFileName = pyraf.iraf.Expand(filename)
             absDir = os.path.dirname(absFileName)
             if len(absDir) and not os.path.isdir(absDir): os.makedirs(absDir)
             fh = open(absFileName,'w')
@@ -878,14 +891,19 @@ class IrafParList(taskpars.TaskPars):
         """Return parameters for __init__ call in pickle"""
         return (self.__name, self.__filename, self.__pars)
 
-    def __getstate__(self):
-        """Return additional state for pickle"""
-        # nothing beyond init
-        return None
-
-    def __setstate__(self, state):
-        """Restore additional state from pickle"""
-        pass
+#
+#    These two methods were set to do nothing (they were previously
+#    needed for pickle) but having them this way makes PY3K deepcopy
+#    fail in an extremely difficult to diagnose way.
+#
+#    def __getstate__(self):
+#        """Return additional state for pickle"""
+#        # nothing beyond init
+#        return None
+#
+#    def __setstate__(self, state):
+#        """Restore additional state from pickle"""
+#        pass
 
     def __str__(self):
         s = '<IrafParList ' + self.__name + ' (' + self.__filename + ') ' + \
@@ -915,11 +933,11 @@ def _printVerboseDiff(list1, list2):
     _printDiff(pd1, pd2, 'positional')      # compare positional parameters
     _printDiff(hd1, hd2, 'hidden')          # compare hidden parameters
 
-def _extractDiffInfo(list):
+def _extractDiffInfo(alist):
     hflag = -1
     pd = {}
     hd = {}
-    for key, value in list.items():
+    for key, value in alist.items():
         if value[1] == hflag:
             hd[key] = value
         else:
@@ -1028,7 +1046,7 @@ def _updateSpecialParFileDict(dirToCheck=None, strict=False):
     # usual places (which calls us recursively).
     if dirToCheck == None:
         # Check the auxilliary par dir
-        uparmAux = iraf.envget("uparm_aux","")
+        uparmAux = pyraf.iraf.envget("uparm_aux","")
         if 'UPARM_AUX' in os.environ: uparmAux = os.environ['UPARM_AUX']
         if len(uparmAux) > 0:
             _updateSpecialParFileDict(dirToCheck=uparmAux, strict=True)

@@ -646,11 +646,11 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
 
     def gki_getcursor(self, arg):
 
-        raise RuntimeError(gki.standardNotImplemented %  "GKI_GETCURSOR")
+        raise NotImplementedError(gki.standardNotImplemented % "GKI_GETCURSOR")
 
     def gki_getcellarray(self, arg):
 
-        raise RuntimeError(gki.standardNotImplemented % "GKI_GETCELLARRAY")
+        raise NotImplementedError(gki.standardNotImplemented % "GKI_GETCELLARRAY")
 
     def gki_unknown(self, arg):
 

@@ -7,9 +7,7 @@ from __future__ import division # confidence high
 
 import os, string, sys
 import wutil
-from stsci.tools import capable, irafutils
-
-PY3K = sys.version_info[0] > 2
+from stsci.tools import capable, for2to3, irafutils
 
 try:
     import termios
@@ -49,7 +47,7 @@ def getSingleTTYChar(): # return type str in all Python versions
             c = irafutils.tkread(fd, 1)
         else:
             c = os.read(fd, 1)
-            if PY3K: c = c.decode('ascii')
+            if for2to3.PY3K: c = c.decode('ascii')
     finally:
         termios.tcsetattr(fd, TERMIOS.TCSAFLUSH, old)
         return c

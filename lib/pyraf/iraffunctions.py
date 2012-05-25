@@ -62,12 +62,11 @@ import iraf
 import gki
 import irafecl
 try:
-    import sscanf
+    from . import sscanf # sscanf import does not get 'fixed' during 2to3
 except:
-    if 0==sys.platform.find('win'): # not on win*, but IS on darwin & cygwin
-        sscanf = None
-    else:
-        raise
+    # basic usage does not actually require sscanf
+    sscanf = None
+    print "Warning: sscanf library not installed on "+sys.platform
 
 try:
     import cPickle as pickle
@@ -511,7 +510,7 @@ def _addTask(task, pkgname=None):
 # These decorators could all be combined into a single function with arguments
 # deciding their different capabilities, but that would add another level (i.e.
 # a function within a function within a function) and for the sake of simplicity
-# and robustness as we move into Py3K, we'll write them out separately for now.
+# and robustness as we move into PY3K, we'll write them out separately for now.
 # --------------------------------------------------------------------------
 
 def handleRedirAndSaveKwds(target):

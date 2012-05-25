@@ -227,18 +227,18 @@ class FocusEntity:
         not in the window or the window does not currently have focus, it
         should do nothing."""
         # raise exceptions to ensure implemenation of required methods
-        raise RuntimeError("Bug: class FocusEntity cannot be used directly")
+        raise NotImplementedError("class FocusEntity cannot be used directly")
 
     def forceFocus(self, cursorToo=True):
         """When called, the object should force focus to the window it
         represents and warp the cursor to it using the last saved cursor
         position."""
-        raise RuntimeError("Bug: class FocusEntity cannot be used directly")
+        raise NotImplementedError("class FocusEntity cannot be used directly")
 
     def getWindowID(self):
         """return a window ID that can be used to find the top window
         of the window heirarchy."""
-        raise RuntimeError("Bug: class FocusEntity cannot be used directly")
+        raise NotImplementedError("class FocusEntity cannot be used directly")
 
 
 # XXXX find more portable scheme for handling absence of FCNTL
