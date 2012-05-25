@@ -58,7 +58,6 @@ from stsci.tools import minmatch, irafutils, teal
 import numpy
 import subproc, wutil
 import irafnames, irafinst, irafpar, iraftask, irafexecute, cl2py
-import iraf
 import gki
 import irafecl
 try:
@@ -448,8 +447,8 @@ def restoreFromFile(savefile, doprint=1, **kw):
     from stsci.tools import irafglobals
     import __main__
     import pyraf
-    import iraf, irafpar, cltoken
-    for module in (__main__, pyraf, iraf, irafpar, irafglobals, cltoken):
+    import irafpar, cltoken
+    for module in (__main__, pyraf, irafpar, irafglobals, cltoken):
         if hasattr(module,'INDEF'): module.INDEF = INDEF
 
     # replace cl in the iraf module (and possibly other locations)
@@ -1610,7 +1609,8 @@ def imaccess(filename):
     # Any error output is taken to mean failure.
     sout = _StringIO.StringIO()
     serr = _StringIO.StringIO()
-    iraf.imhead(filename, Stdout=sout, Stderr=serr)
+    import pyraf.iraf
+    pyraf.iraf.imhead(filename, Stdout=sout, Stderr=serr)
     errstr = serr.getvalue().lower()
     outstr = sout.getvalue().lower()
     if errstr:
@@ -1642,8 +1642,8 @@ def deftask(taskname):
     """Returns true if CL task is defined"""
     if taskname == INDEF: return INDEF
     try:
-        import iraf
-        t = getattr(iraf, taskname)
+        import pyraf.iraf
+        t = getattr(pyraf.iraf, taskname)
         return 1
     except AttributeError, e:
         # treat all errors (including ambiguous task names) as a missing task
@@ -1745,7 +1745,8 @@ def fscan(theLocals, line, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        line = eval(line, {'iraf': iraf}, theLocals)
+        import pyraf.iraf
+        line = eval(line, {'iraf': pyraf.iraf}, theLocals)
     except EOFError:
         _weirdEOF(theLocals, namelist)
         _nscan = 0
@@ -1845,7 +1846,8 @@ def fscanf(theLocals, line, format, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        line = eval(line, {'iraf': iraf}, theLocals)
+        import pyraf.iraf
+        line = eval(line, {'iraf': pyraf.iraf}, theLocals)
         # format also needs to be evaluated
         format = eval(format, theLocals)
     except EOFError:
@@ -1935,6 +1937,8 @@ def scan(theLocals, *namelist, **kw):
         else:
             args = (theLocals, repr(line),) + namelist
             return fscan(*args, **kw)
+    except Exception, ex:
+        print 'iraf.scan exception: '+str(ex)
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
@@ -1961,6 +1965,8 @@ def scanf(theLocals, format, *namelist, **kw):
         else:
             args = (theLocals, repr(line), format,) + namelist
             return fscanf(*args, **kw)
+    except Exception, ex:
+        print 'iraf.scanf exception: '+str(ex)
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
@@ -2480,6 +2486,7 @@ def _clProcedure(*args, **kw):
     exec('from pyraf.irafpar import makeIrafPar', theLocals)
     exec('from stsci.tools.irafglobals import *', theLocals)
     exec('from pyraf.pyrafglobals import *', theLocals)
+
     # feed the input to clExecute
     # redirect input to sys.__stdin__ after reading the CL script from sys.stdin
     clExecute(_sys.stdin.read(), locals=theLocals, Stdin=_sys.__stdin__)
@@ -3373,8 +3380,8 @@ def redirProcess(kw):
                             'StdoutAppend': (1, "stdout", "a"),
                             'Stderr': (1, "stderr", "w"),
                             'StderrAppend': (1, "stderr", "a"),
-                            'StdoutG': (1, "stdgraph", "w"),
-                            'StdoutAppendG': (1, "stdgraph", "a")
+                            'StdoutG': (1, "stdgraph", "wb"),
+                            'StdoutAppendG': (1, "stdgraph", "ab")
                             }
     # Magic values that trigger special behavior
     magicValues = { "STDIN": 1, "STDOUT": 1, "STDERR": 1}
@@ -3416,7 +3423,7 @@ def redirProcess(kw):
                             # don't overwrite unless clobber is set
                             raise IOError("Output file `%s' already exists" %
                                     value)
-                    fh = open(value,openArgs)
+                    fh = open(value, openArgs)
                     # close this when we're done
                     closeFHList.append(fh)
             elif isinstance(value, int):
