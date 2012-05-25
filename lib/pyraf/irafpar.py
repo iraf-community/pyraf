@@ -657,7 +657,7 @@ class IrafParList(taskpars.TaskPars):
 
     def __getattr__(self,name):
 #       DBG: id(self), len(self.__dict__), "__getattr__ for: "+str(name)
-        if name[0] == '_':
+        if name and name[0] == '_':
             raise AttributeError(name)
         try:
             return self.getValue(name,native=1)
@@ -668,7 +668,7 @@ class IrafParList(taskpars.TaskPars):
 #       DBG: id(self), len(self.__dict__), "__setattr__ for: "+str(name)+", value: "+str(value)[0:20]
         # hidden Python parameters go into the standard dictionary
         # (hope there are none of these in IRAF tasks)
-        if name[0] == '_':
+        if name and name[0] == '_':
             if PY3K:
                 object.__setattr__(self, name, value) # new-style class objects
             else:
@@ -729,7 +729,7 @@ class IrafParList(taskpars.TaskPars):
         """
         par = self.getParObject(param)
         value = par.get(native=native, mode=mode, prompt=prompt)
-        if isinstance(value,str) and value[0] == ")":
+        if isinstance(value,str) and value and value[0] == ")":
             # parameter indirection: ')task.param'
             try:
                 task = pyraf.iraf.getTask(self.__name)
