@@ -131,7 +131,11 @@ if doCmdline:
            sys.argv = ["ipython","-nobanner","-p","pyraf"]
         else:
            sys.argv = ["ipython","-p","pyraf"]
-        IPython.Shell.start(user_ns=globals()).mainloop()
+        if hasattr(IPython, 'Shell'): # old versions
+           IPython.Shell.start(user_ns=globals()).mainloop()
+        else:
+           from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell
+           TerminalInteractiveShell(user_ns=globals()).mainloop()
         sys.exit()
     else:
         import pyraf.pycmdline
