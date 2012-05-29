@@ -1,14 +1,23 @@
 #!/bin/csh -f
 #
-if ($#argv > 1) then
-   echo "Usage: $0 [dev]"
+
+if ($#argv != 2) then
+   echo "usage: $0 [dev|rel] [2|3]"
    exit 1
 endif
 set isdev = 0
-if ($#argv == 1) then
-   if ($argv[1] == "dev") then
-      set isdev = 1
-   endif
+if ($argv[1] == "dev") then
+   set isdev = 1
+endif
+set pyver = 2
+if ($argv[2] == "3") then
+   set pyver = 3
+endif
+
+set py3bin = /user/sontag/info/usrlcl323/bin
+if (($pyver == 3) && (!(-e $py3bin))) then
+   echo ERROR - does not exist - $py3bin
+   exit 1
 endif
 
 set workDir = ~/.pyraf_tar_ball
@@ -27,7 +36,7 @@ if ($isdev == 1) then
    set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/distutils-standalone'
    set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/tools'
 else
-   set pyr = "pyraf-1.11"
+   set pyr = "pyraf-1.12"
    echo -n 'What will the pyraf dir name be? ('$pyr'): '
    set ans = $<
    if ($ans != '') then
@@ -51,6 +60,15 @@ if ($status != 0) then
    echo ERROR svn-ing pyraf
    exit 1
 endif
+# 2to3 it?
+if ($pyver == 3) then
+   cd $workDir
+   $py3bin/2to3 -w -n --no-diffs $pyr
+   if ($status != 0) then
+      echo ERROR 2to3-ing pyraf
+      exit 1
+   endif
+endif
 
 # for now, add svninfo file manually
 cd $workDir/$pyr
@@ -72,10 +90,26 @@ if ($status != 0) then
    echo ERROR svn-ing distutils
    exit 1
 endif
+if ($pyver == 3) then
+   cd $workDir/$pyr/required_pkgs
+   $py3bin/2to3 -w -n --no-diffs distutils
+   if ($status != 0) then
+      echo ERROR 2to3-ing distutils
+      exit 1
+   endif
+endif
 svn $co_tools tools
 if ($status != 0) then
    echo ERROR svn-ing tools
    exit 1
+endif
+if ($pyver == 3) then
+   cd $workDir/$pyr/required_pkgs
+   $py3bin/2to3 -w -n --no-diffs tools
+   if ($status != 0) then
+      echo ERROR 2to3-ing tools
+      exit 1
+   endif
 endif
 
 # get version info
