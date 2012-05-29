@@ -6,14 +6,17 @@ from __future__ import division # confidence high
 
 import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
 from stsci.tools import irafutils
+from stsci.tools.for2to3 import tobytes, ndarr2bytes, ndarr2str
 from stsci.tools.irafglobals import IrafError, IrafTask, Verbose
 import subproc, filecache, wutil
-import iraf
 import gki, irafukey, irafgwcs
+
+# use this form since the iraf import is circular
+import pyraf.iraf
 
 #stdgraph = None
 
-IPC_PREFIX = numpy.array([01120],numpy.int16).tostring() # is 'bytes' in Py3
+IPC_PREFIX = ndarr2bytes(numpy.array([01120],numpy.int16))
 
 # weirdo protocol to get output from task back to subprocess
 # definitions from cl/task.h and lib/clio.h
@@ -47,7 +50,7 @@ def _getExecutable(arg):
     elif isinstance(arg, (str, unicode)):
         if os.path.exists(arg):
             return arg
-        task = iraf.getTask(arg, found=1)
+        task = pyraf.iraf.getTask(arg, found=1)
         if task is not None:
             return task.getFullpath()
     raise IrafProcessError("Cannot find task or executable %s" % arg)
@@ -209,13 +212,13 @@ class _ProcessCache:
         if self._plimit <= len(self._locked):
             return
         for taskname in args:
-            task = iraf.getTask(taskname, found=1)
+            task = pyraf.iraf.getTask(taskname, found=1)
             if task is None:
                 print "No such task `%s'" % taskname
             elif task.__class__.__name__ == "IrafTask":
                 # cache only executable tasks (not CL tasks, etc.)
                 executable = task.getFullpath()
-                process = self.get(task, iraf.getVarDict())
+                process = self.get(task, pyraf.iraf.getVarDict())
                 self.add(process)
                 if self._data.has_key(executable):
                     self._locked[executable] = 1
@@ -266,7 +269,7 @@ class _ProcessCache:
         """
         if args:
             for taskname in args:
-                task = iraf.getTask(taskname, found=1)
+                task = pyraf.iraf.getTask(taskname, found=1)
                 if task is not None: self.terminate(task)
         else:
             for rank, proxy in self._data.values():
@@ -569,10 +572,10 @@ class IrafProcess:
                 #  number of following bytes
                 #  data
                 dsection = data[i:i+block]
-                # the arg parts to the following are all type bytes in Py3
+                # the arg parts to the following are all type bytes in PY3K
                 self.process.write(IPC_PREFIX +
-                                   struct.pack('=h',len(dsection)) +
-                                   dsection)
+                                   struct.pack('=h', len(dsection)) +
+                                   tobytes(dsection))
                 i = i + block
         except subproc.SubprocessError, e:
             raise IrafProcessError("Error in write: %s" % str(e))
@@ -580,16 +583,15 @@ class IrafProcess:
     def read(self):
 
         """Read binary data from IRAF pipe"""
-
         try:
-            # read pipe header first
-            header = self.process.read(4)
-            if (header[0:2] != IPC_PREFIX):
+            # read pipe header first (self.process is subproc.Subprocess)
+            header = self.process.read(4) # read returns bytes
+            if header[0:2] != IPC_PREFIX:
                 raise IrafProcessError("Not a legal IRAF pipe record")
             ntemp = struct.unpack('=h', header[2:])
             nbytes = ntemp[0]
             # read the rest
-            data = self.process.read(nbytes)
+            data = self.process.read(nbytes) # read returns bytes
             return data
         except subproc.SubprocessError, e:
             raise IrafProcessError("Error in read: %s" % str(e))
@@ -774,14 +776,14 @@ class IrafProcess:
             self.stderr.write(Iraf2AscString(xdata))
             self.stderr.flush()
         elif chan == 6:
-            gki.kernel.append(numpy.fromstring(xdata, dtype=numpy.int16))
+            gki.kernel.append(numpy.fromstring(xdata, dtype=numpy.int16)) # OK if str or uni
         elif chan == 7:
-            stdimagekernel.append(numpy.fromstring(xdata, dtype=numpy.int16))
+            stdimagekernel.append(numpy.fromstring(xdata, dtype=numpy.int16)) # OK if str or uni
         elif chan == 8:
             self.stdout.write("data for STDPLOT\n")
             self.stdout.flush()
         elif chan == 9:
-            sdata = numpy.fromstring(xdata, dtype=numpy.int16)
+            sdata = numpy.fromstring(xdata, dtype=numpy.int16) # OK if str or uni
             if isBigEndian:
                 # Actually, the channel destination is sent
                 # by the iraf process as a 4 byte int, the following
@@ -914,8 +916,8 @@ class IrafProcess:
             if not (cmd.find(IPCOUT) >= 0):
                 # normal case -- execute the CL script code
                 # redirect I/O (but don't use graphics status line)
-                iraf.clExecute(cmd, Stdout=self.default_stdout,
-                        Stdin=self.default_stdin, Stderr=self.default_stderr)
+                pyraf.iraf.clExecute(cmd, Stdout=self.default_stdout,
+                      Stdin=self.default_stdin, Stderr=self.default_stderr)
             else:
                 #
                 # Bizzaro protocol -- redirection to file with special
@@ -935,8 +937,8 @@ class IrafProcess:
                 # strip the redirection off and capture output of command
                 buffer = cStringIO.StringIO()
                 # redirect other I/O (but don't use graphics status line)
-                iraf.clExecute(cmd[:ll]+"\n", Stdout=buffer,
-                        Stdin=self.default_stdin, Stderr=self.default_stderr)
+                pyraf.iraf.clExecute(cmd[:ll]+"\n", Stdout=buffer,
+                      Stdin=self.default_stdin, Stderr=self.default_stderr)
                 # send it off to the task with special flag line at end
                 buffer.write(IPCDONEMSG)
                 self.writeString(buffer.getvalue())
@@ -954,14 +956,14 @@ class IrafProcess:
             self.msg = self.msg[mcmd.end():]
         elif mcmd.group('curpack'):
             # current package request
-            self.writeString(iraf.curpack() + '\n')
+            self.writeString(pyraf.iraf.curpack() + '\n')
             self.msg = self.msg[mcmd.end():]
         elif mcmd.group('sysescape'):
             # OS escape
             tmsg = mcmd.group('sys_cmd')
             # use my version of system command so redirection works
-            sysstatus = iraf.clOscmd(tmsg, Stdin=self.stdin,
-                    Stdout=self.stdout, Stderr=self.stderr)
+            sysstatus = pyraf.iraf.clOscmd(tmsg, Stdin=self.stdin,
+                        Stdout=self.stdout, Stderr=self.stderr)
             self.writeString(str(sysstatus)+"\n")
             self.msg = self.msg[mcmd.end():]
             # self.stdout.write(self.msg + "\n")
@@ -976,17 +978,19 @@ class IrafProcess:
 
 def Asc2IrafString(ascii_string):
     """translate ascii to IRAF 16-bit string format"""
-    inarr = numpy.fromstring(ascii_string, numpy.int8)
-    retval = inarr.astype(numpy.int16).tostring()
+    inarr = numpy.fromstring(ascii_string, numpy.int8) # OK if str or uni
+    retval = ndarr2bytes(inarr.astype(numpy.int16))
 #   log_task_comm('Asc2IrafString', retval, False)
     return retval
 
+
 def Iraf2AscString(iraf_string):
     """translate 16-bit IRAF characters to ascii"""
-    inarr = numpy.fromstring(iraf_string, numpy.int16)
-    retval = inarr.astype(numpy.int8).tostring()
+    inarr = numpy.fromstring(iraf_string, numpy.int16) # OK if str or uni
+    retval = ndarr2str(inarr.astype(numpy.int8))
 #   log_task_comm('Iraf2AscString', retval, True)
     return retval
+
 
 def log_task_comm(pfx, strbuf, expectAsStr, shorten=True):
     import some_pkg_w_a_log_func as L
@@ -997,7 +1001,7 @@ def log_task_comm(pfx, strbuf, expectAsStr, shorten=True):
         out = strbuf.strip()
         if shorten: out = out[0:30]
         L.log(pfx+' (str): '+out)
-    else:
+    else: # strbuf is bytes
         out = strbuf.decode().strip()
         if shorten: out = out[0:30]
         L.log(pfx+' (byt): '+out)

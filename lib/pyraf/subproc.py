@@ -252,7 +252,7 @@ class Subprocess:
 
     ### Get output from subprocess ###
 
-    def read(self, n=None):
+    def read(self, n=None): # returns bytes
         """Read N chars (blocking), or all pending if no N specified."""
         if not self.control_stdout:
             raise SubprocessError(
@@ -262,7 +262,7 @@ class Subprocess:
         else:
             return self.readbuf.read(n)
 
-    def readErr(self, n=None):
+    def readErr(self, n=None): # returns bytes
         """Read N chars from stderr (blocking), or all pending if no N specified."""
         if not self.control_stderr:
             raise SubprocessError(
@@ -287,7 +287,7 @@ class Subprocess:
                     "Haven't grabbed subprocess error stream for %s." % self)
         return self.errbuf.readPendingChars(max)
 
-    def readPendingLine(self):
+    def readPendingLine(self): # returns bytes
         """Read currently pending subprocess output, up to a complete line
         (newline inclusive)."""
         if not self.control_stdout:
@@ -295,7 +295,7 @@ class Subprocess:
                     "Haven't grabbed subprocess output stream for %s." % self)
         return self.readbuf.readPendingLine()
 
-    def readPendingErrLine(self):
+    def readPendingErrLine(self): # returns bytes
         """Read currently pending subprocess error output, up to a complete
         line (newline inclusive)."""
         if not self.control_stderr:
@@ -504,7 +504,7 @@ class ReadBuf:
 
     def readPendingChars(self, max=None):
         """Consume uncomsumed output from FILE, or empty string if nothing
-        pending."""
+        pending.  Returns bytes."""
 
         if (max is not None) and (max <= 0): return BNULLSTR            # ===>
 
@@ -539,6 +539,7 @@ class ReadBuf:
 
     def readPendingLine(self, block=0):
         """Return pending output from FILE, up to first newline (inclusive).
+        Returns bytes.
 
         Does not block unless optional arg BLOCK is true.  This may return
         a partial line if the input line is longer than chunkSize (default
@@ -595,7 +596,7 @@ class ReadBuf:
 
     def read(self, nchars):
         """Read nchars from input, blocking until they are available.
-        Returns a shorter string on EOF."""
+        Returns a shorter string on EOF.  Returns bytes."""
 
         if nchars <= 0: return BNULLSTR
         if self.buf:
