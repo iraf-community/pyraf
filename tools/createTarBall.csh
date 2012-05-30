@@ -1,5 +1,7 @@
 #!/bin/csh -f
 #
+# $Id$
+#
 
 if ($#argv != 2) then
    echo "usage:  $0  dev|rel  2|3"
@@ -14,7 +16,8 @@ if ($argv[2] == "3") then
    set pyver = 3
 endif
 
-set py3bin = /user/sontag/info/usrlcl323/bin
+set out2to3 = ~/.pyraf_2to3_out
+set py3bin = /user/${USER}/info/usrlcl323/bin
 if (($pyver == 3) && (!(-e $py3bin))) then
    echo ERROR - does not exist - $py3bin - needed for 2to3ing
    exit 1
@@ -60,14 +63,15 @@ if ($status != 0) then
    echo ERROR svn-ing pyraf
    exit 1
 endif
-# 2to3 it?
 if ($pyver == 3) then
    cd $workDir
-   $py3bin/2to3 -w -n --no-diffs $pyr
+   /bin/rm -f $out2to3.p
+   $py3bin/2to3 -w -n --no-diffs $pyr >& $out2to3.p
    if ($status != 0) then
       echo ERROR 2to3-ing pyraf
       exit 1
    endif
+   cat $out2to3.p |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/'
 endif
 
 # for now, add svninfo file manually
@@ -92,11 +96,13 @@ if ($status != 0) then
 endif
 if ($pyver == 3) then
    cd $workDir/$pyr/required_pkgs
-   $py3bin/2to3 -w -n --no-diffs distutils
+   /bin/rm -f $out2to3.d
+   $py3bin/2to3 -w -n --no-diffs distutils >& $out2to3.d
    if ($status != 0) then
       echo ERROR 2to3-ing distutils
       exit 1
    endif
+   cat $out2to3.d |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/'
 endif
 svn $co_tools tools
 if ($status != 0) then
@@ -105,11 +111,13 @@ if ($status != 0) then
 endif
 if ($pyver == 3) then
    cd $workDir/$pyr/required_pkgs
-   $py3bin/2to3 -w -n --no-diffs tools
+   /bin/rm -f $out2to3.t
+   $py3bin/2to3 -w -n --no-diffs tools >& $out2to3.t
    if ($status != 0) then
       echo ERROR 2to3-ing tools
       exit 1
    endif
+   cat $out2to3.t |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/'
 endif
 
 # get version info
