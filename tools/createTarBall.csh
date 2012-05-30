@@ -2,7 +2,7 @@
 #
 
 if ($#argv != 2) then
-   echo "usage: $0 [dev|rel] [2|3]"
+   echo "usage:  $0  dev|rel  2|3"
    exit 1
 endif
 set isdev = 0
@@ -16,11 +16,11 @@ endif
 
 set py3bin = /user/sontag/info/usrlcl323/bin
 if (($pyver == 3) && (!(-e $py3bin))) then
-   echo ERROR - does not exist - $py3bin
+   echo ERROR - does not exist - $py3bin - needed for 2to3ing
    exit 1
 endif
 
-set workDir = ~/.pyraf_tar_ball
+set workDir = ~/.pyraf_py${pyver}x_tar_ball
 echo Creating work area: $workDir
 /bin/rm -rf $workDir
 mkdir $workDir
