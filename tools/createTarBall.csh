@@ -20,7 +20,7 @@ if (($pyver == 3) && (!(-e $py3bin))) then
    exit 1
 endif
 
-set workDir = ~/.pyraf_py${pyver}x_tar_ball
+set workDir = ~/.pyraf_py${pyver}_tar_ball
 echo Creating work area: $workDir
 /bin/rm -rf $workDir
 mkdir $workDir
