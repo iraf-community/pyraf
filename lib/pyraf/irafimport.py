@@ -18,9 +18,9 @@ import __builtin__
 import sys
 from stsci.tools import minmatch
 
-_importHasLvlArg = sys.version_info[0] > 2 or sys.version_info[1] >= 5 # no 1.*
-_reloadIsBuiltin = sys.version_info[0] < 3
 PY3K = sys.version_info[0] > 2
+_importHasLvlArg = PY3K or sys.version_info[1] >= 5 # no 1.*
+_reloadIsBuiltin = sys.version_info[0] < 3
 
 IMPORT_DEBUG = False
 
