@@ -15,6 +15,7 @@ R. White, 2000 Sept 26
 from __future__ import division # confidence high
 
 import shelve, sys
+from stsci.tools.for2to3 import PY3K
 
 if __name__.find('.') < 0: # for unit test need absolute import
     exec('import dirdbm', globals()) # 2to3 messes up simpler form
@@ -73,7 +74,7 @@ def open(filename, flag='c'):
            'n'     Always create a new, empty db, open for reading and writing
     """
 
-    if sys.version_info[0] > 2:
+    if PY3K:
         try:
             return shelve.DbfilenameShelf(filename, flag)
         except Exception, ex: # is dbm.error

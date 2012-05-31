@@ -196,8 +196,8 @@ class _CodeCache:
             # there is no filename, but return md5 digest of source as key
             h = hashlib.md5()
 
-            if sys.version_info[0] > 2: # unicode must be encoded to be hashed
-                h.update(source.encode('utf-8'))
+            if PY3K: # unicode must be encoded to be hashed
+                h.update(source.encode('ascii'))
                 return str(h.digest())
             else:
                 h.update(source)

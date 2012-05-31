@@ -31,6 +31,7 @@ R. White, 2000 October 1
 from __future__ import division # confidence high
 
 import os, stat, sys, hashlib
+from stsci.tools.for2to3 import PY3K
 
 class FileCache:
 
@@ -154,8 +155,8 @@ class MD5Cache(FileCache):
         contents = self._getFileHandle().read() # is unicode str in PY3K
         # md5 digest is the value associated with the file
         h = hashlib.md5()
-        if sys.version_info[0] > 2: # unicode must be encoded to be hashed
-            h.update(contents.encode('utf-8'))
+        if PY3K: # unicode must be encoded to be hashed
+            h.update(contents.encode('ascii'))
             self.value = str(h.digest())
         else:
             h.update(contents)
