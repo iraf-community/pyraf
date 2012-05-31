@@ -15,10 +15,11 @@ R. White, 2000 Sept 26
 from __future__ import division # confidence high
 
 import shelve, sys
-if __name__.find('.') < 0: # for unit test
-   import dirdbm # revert to simple import after 2to3
+
+if __name__.find('.') < 0: # for unit test need absolute import
+    exec('import dirdbm', globals()) # 2to3 messes up simpler form
 else:
-   import dirdbm
+    import dirdbm
 
 # tuple of errors that can be raised
 error = (dirdbm.error, )
