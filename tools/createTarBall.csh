@@ -1,17 +1,29 @@
 #!/bin/csh -f
 #
-if ($#argv > 1) then
-   echo "Usage: $0 [dev]"
+# $Id$
+#
+
+if ($#argv != 2) then
+   echo "usage:  $0  dev|rel  2|3"
    exit 1
 endif
 set isdev = 0
-if ($#argv == 1) then
-   if ($argv[1] == "dev") then
-      set isdev = 1
-   endif
+if ($argv[1] == "dev") then
+   set isdev = 1
+endif
+set pyver = 2
+if ($argv[2] == "3") then
+   set pyver = 3
 endif
 
-set workDir = ~/.pyraf_tar_ball
+set out2to3 = ~/.pyraf_2to3_out
+set py3bin = /user/${USER}/info/usrlcl323/bin
+if (($pyver == 3) && (!(-e $py3bin))) then
+   echo ERROR - does not exist - $py3bin - needed for 2to3ing
+   exit 1
+endif
+
+set workDir = ~/.pyraf_py${pyver}_tar_ball
 echo Creating work area: $workDir
 /bin/rm -rf $workDir
 mkdir $workDir
@@ -27,7 +39,7 @@ if ($isdev == 1) then
    set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/distutils-standalone'
    set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/tools'
 else
-   set pyr = "pyraf-1.11"
+   set pyr = "pyraf-1.12"
    echo -n 'What will the pyraf dir name be? ('$pyr'): '
    set ans = $<
    if ($ans != '') then
@@ -51,6 +63,16 @@ if ($status != 0) then
    echo ERROR svn-ing pyraf
    exit 1
 endif
+if ($pyver == 3) then
+   cd $workDir
+   /bin/rm -f $out2to3.p
+   $py3bin/2to3 -w -n --no-diffs $pyr >& $out2to3.p
+   if ($status != 0) then
+      echo ERROR 2to3-ing pyraf
+      exit 1
+   endif
+   cat $out2to3.p |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
+endif
 
 # for now, add svninfo file manually
 cd $workDir/$pyr
@@ -72,10 +94,30 @@ if ($status != 0) then
    echo ERROR svn-ing distutils
    exit 1
 endif
+if ($pyver == 3) then
+   cd $workDir/$pyr/required_pkgs
+   /bin/rm -f $out2to3.d
+   $py3bin/2to3 -w -n --no-diffs distutils >& $out2to3.d
+   if ($status != 0) then
+      echo ERROR 2to3-ing distutils
+      exit 1
+   endif
+   cat $out2to3.d |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
+endif
 svn $co_tools tools
 if ($status != 0) then
    echo ERROR svn-ing tools
    exit 1
+endif
+if ($pyver == 3) then
+   cd $workDir/$pyr/required_pkgs
+   /bin/rm -f $out2to3.t
+   $py3bin/2to3 -w -n --no-diffs tools >& $out2to3.t
+   if ($status != 0) then
+      echo ERROR 2to3-ing tools
+      exit 1
+   endif
+   cat $out2to3.t |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
 endif
 
 # get version info
