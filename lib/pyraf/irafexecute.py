@@ -587,7 +587,8 @@ class IrafProcess:
             # read pipe header first (self.process is subproc.Subprocess)
             header = self.process.read(4) # read returns bytes
             if header[0:2] != IPC_PREFIX:
-                raise IrafProcessError("Not a legal IRAF pipe record")
+                raise IrafProcessError("Not a legal IRAF pipe record: "+\
+                      str(header[0:2]))
             ntemp = struct.unpack('=h', header[2:])
             nbytes = ntemp[0]
             # read the rest
