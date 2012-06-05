@@ -172,20 +172,11 @@ if ($status != 0) then
    exit 1
 endif
 
-# Now make the Windows version (have to edit setup.cfg - can't do in Python?)
-cd $workDir/$pyr
-if (-e setup.cfg) then
-   /bin/cp setup.cfg setup.cfg.winorig
-   cat setup.cfg.winorig | grep -v sscanfmodule | grep -v xutil | grep -v X11 > setup.cfg
-   echo DIFF for removed extensions
-   diff setup.cfg.winorig setup.cfg
-endif
-
-# tar and zip Windows version
+# Now tar/zip the Windows version (via "zip")
 cd $workDir
 zip -rq ${pyr}-win $pyr
 if ($status != 0) then
-   echo ERROR tarring up
+   echo ERROR zipping up
    exit 1
 endif
 
