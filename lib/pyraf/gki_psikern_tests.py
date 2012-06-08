@@ -77,7 +77,7 @@ def gki_prow_2_appends_test():
    # plot
    iraf.prow("dev$pix", row=256, dev=PSDEV) # plot
    iraf.prow("dev$pix", row=250, dev=PSDEV, append=True) # append #1
-   iraf.prow("dev$pix", row=200, dev=PSDEV, append=True) # append #1
+   iraf.prow("dev$pix", row=200, dev=PSDEV, append=True) # append #2
    iraf.gflush()
    # get output postscript temp file name
    psOut = getNewTmpPskFile(flistBef, "prow_2_appends")
