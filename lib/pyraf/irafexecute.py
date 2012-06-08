@@ -111,7 +111,7 @@ class _ProcessCache:
     def get(self, task, envdict):
         """Get process for given task.  Create a new one if needed."""
         executable = _getExecutable(task)
-        if self._data.has_key(executable):
+        if executable in self._data:
             # use existing process
             rank, proxy = self._data[executable]
             process = proxy.getProcess(envdict)
@@ -140,7 +140,7 @@ class _ProcessCache:
         """Add process to cache or update its rank if already there"""
         self._pcount = self._pcount+1
         executable = process.executable
-        if self._data.has_key(executable):
+        if executable in self._data:
             # don't replace current cached process
             rank, proxy = self._data[executable]
             oldprocess = proxy.process
@@ -172,7 +172,7 @@ class _ProcessCache:
             for rank, proxy in values:
                 process = proxy.process
                 executable = process.executable
-                if not (self._locked.has_key(executable) or process.running):
+                if not (executable in self._locked or process.running):
                     # terminate it
                     self.terminate(executable)
                     return
@@ -220,7 +220,7 @@ class _ProcessCache:
                 executable = task.getFullpath()
                 process = self.get(task, pyraf.iraf.getVarDict())
                 self.add(process)
-                if self._data.has_key(executable):
+                if executable in self._data:
                     self._locked[executable] = 1
                 else:
                     self.error("Cannot cache %s\n" % taskname)
@@ -232,14 +232,14 @@ class _ProcessCache:
         executable filename.
         """
         executable = _getExecutable(process)
-        if self._data.has_key(executable):
+        if executable in self._data:
             rank, proxy = self._data[executable]
             if not isinstance(process, IrafProcess):
                 process = proxy.process
             # don't delete from cache if this is a duplicate process
             if process == proxy.process:
                 del self._data[executable]
-                if self._locked.has_key(executable):
+                if executable in self._locked:
                     del self._locked[executable]
                     # could restart the process if locked?
         return process
@@ -274,7 +274,7 @@ class _ProcessCache:
         else:
             for rank, proxy in self._data.values():
                 executable = proxy.process.executable
-                if not self._locked.has_key(executable):
+                if not executable in self._locked:
                     self.terminate(executable)
 
     def list(self):
@@ -286,7 +286,7 @@ class _ProcessCache:
         for rank, proxy in values:
             n = n+1
             executable = proxy.process.executable
-            if self._locked.has_key(executable):
+            if executable in self._locked:
                 print "%2d: L %s" % (n, executable)
             else:
                 print "%2d:   %s" % (n, executable)

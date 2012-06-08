@@ -244,7 +244,7 @@ class Binder(object):
         if key is None:
             return
         if key is "ready":  # Handle the "ready" binding specially to keep the rest simple.
-            if self.bindings.has_key("ready"):
+            if "ready" in self.bindings:
                 return self.bindings["ready"]()
             else:
                 return "ready"
@@ -256,7 +256,7 @@ class Binder(object):
             key = " ".join(self.chord + [key])
             self.chord = []
         visited = []
-        while self.bindings.has_key(key) and key not in visited:
+        while key in self.bindings and key not in visited:
             visited.append(key)
             f = self.bindings[key]
             if f is None:

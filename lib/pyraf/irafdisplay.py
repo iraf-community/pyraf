@@ -94,7 +94,7 @@ def _open(imtdev=None):
     if not imtdev:
         # try defaults
         defaults = list(_default_imtdev)
-        if os.environ.has_key('IMTDEV'):
+        if 'IMTDEV' in os.environ:
             defaults.insert(0, os.environ['IMTDEV'])
         for imtdev in defaults:
             try:

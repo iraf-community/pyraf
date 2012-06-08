@@ -371,7 +371,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             # if CL emulation is turned off then just return
             return line
         elif keyword.iskeyword(cmd) or \
-          (os.__builtins__.has_key(cmd) and cmd not in ['type', 'dir', 'help', 'set']):
+          (cmd in os.__builtins__ and cmd not in ['type', 'dir', 'help', 'set']):
             # don't mess with Python keywords or built-in functions
             # except allow 'type', 'dir, 'help' to be used in simple syntax
             return line
@@ -438,7 +438,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
     def isLocal(self, value):
         """Returns true if value is local variable"""
         ff = value.split('.')
-        return self.locals.has_key(ff[0])
+        return ff[0] in self.locals
 
     def start(self, banner="Python/CL command line wrapper\n"
                     "  .help describes executive commands"):

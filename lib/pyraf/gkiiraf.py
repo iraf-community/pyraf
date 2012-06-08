@@ -30,7 +30,7 @@ class GkiIrafKernel(gki.GkiKernel):
 
         gki.GkiKernel.__init__(self)
         graphcap = gki.getGraphcap()
-        if not graphcap.has_key(device):
+        if not device in graphcap:
             raise iraf.IrafError(
                     "No entry found for specified stdgraph device `%s'" %
                     device)
@@ -39,7 +39,7 @@ class GkiIrafKernel(gki.GkiKernel):
         self.executable = executable = gentry['kf']
         self.taskname = taskname = gentry['tn']
         self.wcs = None
-        if not _kernelDict.has_key(taskname):
+        if not taskname in _kernelDict:
             # create special IRAF task object for this kernel
             _kernelDict[taskname] = module.IrafGKITask(taskname, executable)
         self.task = _kernelDict[taskname]
@@ -48,7 +48,7 @@ class GkiIrafKernel(gki.GkiKernel):
         # control_openws precedes gki_openws, so trigger on it to
         # send everything before the open to the device
         mode = arg[0]
-        if mode == 5 or _alwaysFlush.has_key(self.taskname):
+        if mode == 5 or self.taskname in _alwaysFlush:
             self.flush()
 
     def control_setwcs(self, arg):
@@ -65,11 +65,11 @@ class GkiIrafKernel(gki.GkiKernel):
     def gki_closews(self, arg):
         # gki_closews follows control_closews, so trigger on it to
         # send everything up through the close to the device
-        if _alwaysFlush.has_key(self.taskname):
+        if self.taskname in _alwaysFlush:
             self.flush()
 
     def gki_flush(self, arg):
-        if _alwaysFlush.has_key(self.taskname):
+        if self.taskname in _alwaysFlush:
             self.flush()
 
     def flush(self):

@@ -76,7 +76,7 @@ def updatecache(filename, module_globals=None, orig_updatecache=linecache.update
 
 def updateCLscript(filename):
     cache = linecache.cache
-    if cache.has_key(filename):
+    if filename in cache:
         del cache[filename]
     try:
         import iraf

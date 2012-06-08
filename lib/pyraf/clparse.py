@@ -317,15 +317,15 @@ class CLStrictParser(GenericASTBuilder):
         #       print len(rhs), rule
         return list[0]
 
-    def nonterminal(self, type, args):
+    def nonterminal(self, atype, args):
         #
         # Flatten AST a bit by not making nodes if there's only
         # one child, but retain a few primary structural
         # elements.
         #
-        if len(args) == 1 and not self.primaryTypes.has_key(type):
+        if len(args) == 1 and not atype in self.primaryTypes:
             return args[0]
-        return GenericASTBuilder.nonterminal(self, type, args)
+        return GenericASTBuilder.nonterminal(self, atype, args)
 
 class CLParser(CLStrictParser):
 

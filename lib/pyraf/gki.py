@@ -535,12 +535,12 @@ class GkiKernel:
                     gkidict[name] = 0
         # now loop over all methods that might be present
         for opcode, name in opcode2name.items():
-            if gkidict.has_key(name):
+            if name in gkidict:
                 self.functionTable[opcode] = getattr(self, name)
                 gkidict[name] = 1
         # do same for control methods
         for opcode, name in control2name.items():
-            if gkidict.has_key(name):
+            if name in gkidict:
                 self.controlFunctionTable[opcode] = getattr(self, name)
                 gkidict[name] = 1
         # did we use all the gkidict methods?
@@ -1015,14 +1015,14 @@ class GkiController(GkiProxy):
         # protect against circular definitions
         devstr = device
         tried = {devstr: None}
-        while not graphcap.has_key(devstr):
+        while not devstr in graphcap:
             pdevstr = devstr
             devstr = pyraf.iraf.envget(pdevstr,"")
             if not devstr:
                 raise IrafError(
                     "No entry found for specified stdgraph device `%s'" %
                     device)
-            elif tried.has_key(devstr):
+            elif devstr in tried:
                 # track back through circular definition
                 s = [devstr]
                 next = pdevstr
@@ -1162,7 +1162,7 @@ def getGraphcap(filename=None):
     """Get graphcap file from filename (or cached version if possible)"""
     if filename is None:
         filename = pyraf.iraf.osfn(pyraf.iraf.envget('graphcap','dev$graphcap'))
-    if not graphcapDict.has_key(filename):
+    if not filename in graphcapDict:
         graphcapDict[filename] = graphcap.GraphCap(filename)
     return graphcapDict[filename]
 
@@ -1183,7 +1183,7 @@ def printPlot(window=None):
         stdplot = pyraf.iraf.envget('stdplot','')
         if not stdplot:
             msg = "No hardcopy device defined in stdplot"
-        elif not graphcap.has_key(stdplot):
+        elif not stdplot in graphcap:
             msg = "Unknown hardcopy device stdplot=`%s'" % stdplot
         else:
             printer = gkiiraf.GkiIrafKernel(stdplot)
