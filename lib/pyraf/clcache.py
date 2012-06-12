@@ -234,7 +234,7 @@ class _CodeCache:
 
         for i in range(len(self.cacheList)):
             writeflag, cache = self.cacheList[i]
-            if cache.has_key(index):
+            if index in cache:
                 pycode = cache[index]
                 pycode.index = index
                 pycode.setFilename(filename)
@@ -265,7 +265,7 @@ class _CodeCache:
         nremoved = 0
         for i in irange:
             writeflag, cache = self.cacheList[i]
-            if cache.has_key(index):
+            if index in cache:
                 if writeflag:
                     del cache[index]
                     self.warning("Removed %s from CL script cache %s" % \

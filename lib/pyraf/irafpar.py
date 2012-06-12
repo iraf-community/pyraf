@@ -684,7 +684,7 @@ class IrafParList(taskpars.TaskPars):
         """Test existence of parameter named param"""
         if self.__psetlist: self.__addPsetParams()
         param = irafutils.untranslateName(param)
-        return self.__pardict.has_key(param)
+        return param in self.__pardict
 
     def getFilename(self):
         return self.__filename
@@ -768,7 +768,7 @@ class IrafParList(taskpars.TaskPars):
                 if i<=0:
                     raise e
                 param = (self.getParObject(key[:i]).name, key[i+1:])
-            if fullkw.has_key(param):
+            if param in fullkw:
                 if param[1]:
                     pname = '.'.join(param)
                 else:
@@ -789,7 +789,7 @@ class IrafParList(taskpars.TaskPars):
                 raise SyntaxError("Too many positional parameters for task " +
                         self.__name)
             param = (self.__pars[ipar].name, '')
-            if fullkw.has_key(param):
+            if param in fullkw:
                 raise SyntaxError("Multiple values given for parameter " +
                         param[0] + " in task " + self.__name)
             fullkw[param] = value
@@ -946,12 +946,12 @@ def _extractDiffInfo(alist):
 
 def _printHiddenDiff(pd1,hd1,pd2,hd2):
     for key in pd1.keys():
-        if hd2.has_key(key):
+        if key in hd2:
             print "Parameter `%s' is hidden in list 2 but not list 1" % (key,)
             del pd1[key]
             del hd2[key]
     for key in pd2.keys():
-        if hd1.has_key(key):
+        if key in hd1:
             print "Parameter `%s' is hidden in list 1 but not list 2" % (key,)
             del pd2[key]
             del hd1[key]
@@ -977,13 +977,13 @@ def _printDiff(pd1, pd2, label):
                 i2 = i2+1
             else:
                 # one or both parameters missing
-                if not pd2.has_key(key1):
+                if not key1 in pd2:
                     print "Extra %s parameter `%s' (type `%s') in list 1" % \
                             (label, key1, pd1[key1][0])
                     # delete the extra parameter
                     del pd1[key1]
                     i1 = i1+1
-                if not pd1.has_key(key2):
+                if not key2 in pd1:
                     print "Extra %s parameter `%s' (type `%s') in list 2" % \
                             (label, key2, pd2[key2][0])
                     del pd2[key2]
@@ -1300,7 +1300,7 @@ def _readpar(filename,strict=0):
                     traceback.print_exc()
                 raise SyntaxError(filename + "\n" + line + "\n" + \
                         str(flist) + "\n" + str(exc))
-            if param_dict.has_key(par.name):
+            if par.name in param_dict:
                 warning(filename + "\n" + line + "\n" +
                                 "Duplicate parameter " + par.name,
                                 strict)
