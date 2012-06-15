@@ -83,7 +83,7 @@ class _Database(object):
         return _os.path.join(self._directory, filename)
 
     def __getitem__(self, key):
-        if self._dict.has_key(key) and self._dict[key]:
+        if key in self._dict and self._dict[key]:
             return self._dict[key]
         # look for file even if dict doesn't have key because
         # another process could create it

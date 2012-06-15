@@ -192,10 +192,10 @@ class IrafCompleter(Completer):
                 else:
                     # redirection -- just match filenames
                     return self.filename_matches(text, line[:lt])
-            elif taskArgDict.has_key(taskname):
+            elif taskname in taskArgDict:
                 # task takes task names as arguments
                 return iraf.getAllTasks(text)
-            elif pkgArgDict.has_key(taskname):
+            elif taskname in pkgArgDict:
                 # task takes package names as arguments
                 return iraf.getAllPkgs(text)
             else:

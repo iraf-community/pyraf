@@ -149,7 +149,7 @@ class IPython_PyRAF_Integrator(object):
     def isLocal(self, value):
         """Returns true if value is local variable"""
         ff = value.split('.')
-        return self.locals.has_key(ff[0])
+        return ff[0] in self.locals
 
     def cmd(self, line):
         """Check for and execute commands from dictionary."""
@@ -193,7 +193,7 @@ class IPython_PyRAF_Integrator(object):
             # if CL emulation is turned off then just return
             return line
         elif keyword.iskeyword(cmd) or \
-          (os.__builtins__.has_key(cmd) and cmd not in ['type', 'dir', 'help', 'set']):
+          (cmd in os.__builtins__ and cmd not in ['type', 'dir', 'help', 'set']):
             # don't mess with Python keywords or built-in functions
             # except allow 'type', 'dir, 'help' to be used in simple syntax
             return line

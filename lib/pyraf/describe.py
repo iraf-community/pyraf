@@ -128,7 +128,7 @@ def describe(func, name = None):
 def __getmethods(c, m):
     for k, v in c.__dict__.items():
         if type(v) == type(__getmethods): # and k[0] != "_":
-            if not m.has_key(k):
+            if not k in m:
                 m[k] = describe(v, k), c.__name__
     for c in c.__bases__:
         __getmethods(c, m)

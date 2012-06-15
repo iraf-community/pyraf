@@ -34,7 +34,7 @@ def _getDevice(displayname=None):
         else:
             imtdev = None
         # multiple stdimage/graphcap entries can share the same device
-        if not _devices.has_key(imtdev):
+        if not imtdev in _devices:
             _devices[imtdev] = irafdisplay.ImageDisplayProxy(imtdev)
         device = _devices[displayname] = _devices[imtdev]
         return device

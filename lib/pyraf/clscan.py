@@ -881,7 +881,7 @@ class CLScanner(ContextSensitiveScanner):
         # For normal (non-keyword) identifiers, goes to mode
 
         keyword = name.lower()
-        if usekey and _keywordDict.has_key(keyword):
+        if usekey and keyword in _keywordDict:
 
             self.addToken(type=keyword.upper(), attr=keyword)
             if keyword == "procedure":
@@ -894,7 +894,7 @@ class CLScanner(ContextSensitiveScanner):
                 # Other keywords put us into _COMPUTE_MODE
                 self.current.append(_COMPUTE_MODE)
 
-        elif usekey and _typeDict.has_key(keyword) and \
+        elif usekey and keyword in _typeDict and \
                         self.current[-1] == _START_LINE_MODE:
 
             # types are treated as keywords only if first token on line
@@ -915,7 +915,7 @@ class CLScanner(ContextSensitiveScanner):
             # xxx self.addToken(type=keyword.upper())
             #     epsilon was quoted
 
-        elif _boolDict.has_key(keyword):
+        elif keyword in _boolDict:
 
             # boolean yes, no always gets recognized
             self.addToken(type='BOOL', attr=keyword)

@@ -81,7 +81,7 @@ if not PY3K:
 _listTypes = (list, tuple, dict)
 
 _numericTypes = (float, int, long, complex)
-if globals().has_key('bool'):
+if 'bool' in globals():
     _numericTypes = _numericTypes + (bool,)
 
 _allSingleTypes = _functionTypes + _methodTypes + _listTypes + _numericTypes
@@ -150,14 +150,14 @@ Other keywords are passed on to the IRAF help task if it is called.
 
     # handle I/O redirection keywords
     redirKW, closeFHList = pyraf.iraf.redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
+    if '_save' in kw: del kw['_save']
 
     # get the keywords using minimum-match
     irafkw = {}
     for key in kw.keys():
         try:
             fullkey = _kwdict[key]
-            if _irafkwdict.has_key(fullkey):
+            if fullkey in _irafkwdict:
                 # this is an IRAF help keyword
                 irafkw[fullkey] = kw[key]
             else:
@@ -327,7 +327,7 @@ def _getContents(vlist, regexp, an_obj):
         for c in classlist:
             classlist.extend(list(c.__bases__))
             for vname, value in vars(c).items():
-                if not namedict.has_key(vname) and \
+                if not vname in namedict and \
                   ((regexp is None) or re_check.match(vname)):
                     vorder = _sortOrder(type(value))
                     sortlist[vorder].append((vname,value))
@@ -425,7 +425,7 @@ def _irafHelp(taskname, irafkw):
         # expand IRAF variables in case this is name of a help file
         taskname = pyraf.iraf.Expand(taskname,noerror=1)
     try:
-        if not irafkw.has_key('page'): irafkw['page'] = 1
+        if not 'page' in irafkw: irafkw['page'] = 1
         pyraf.iraf.system.help(taskname, **irafkw)
         return 1
     except IrafError, e:

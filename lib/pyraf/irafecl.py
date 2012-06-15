@@ -150,7 +150,7 @@ class EclBase:
         # Special _save keyword turns on parameter-saving.
         # Default is *not* to save parameters (so it is necessary
         # to use _save=1 to get parameter changes to be persistent.)
-        if kw.has_key('_save'):
+        if '_save' in kw:
             save = kw['_save']
             del kw['_save']
         else:

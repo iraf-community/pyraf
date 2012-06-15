@@ -51,7 +51,7 @@ class GraphicsWindowManager(gki.GkiProxy):
         number = 1
         while 1:
             windowName = root + str(number)
-            if not self.windows.has_key(windowName):
+            if not windowName in self.windows:
                 return windowName
             number = number + 1
 
@@ -61,7 +61,7 @@ class GraphicsWindowManager(gki.GkiProxy):
             windowName = str(windowName).strip()
         if not windowName:
             windowName = self.getNewWindowName()
-        if not self.windows.has_key(windowName):
+        if not windowName in self.windows:
             self.windows[windowName] = self.GkiKernelClass(windowName, self)
             self.createList.append(windowName)
         if self.windowVar is None:
@@ -108,7 +108,7 @@ class GraphicsWindowManager(gki.GkiProxy):
                 # change to most recently created window
                 while self.createList:
                     wname = self.createList.pop()
-                    if self.windows.has_key(wname):
+                    if wname in self.windows:
                         self.createList.append(wname)
                         break
                 else:
@@ -135,7 +135,7 @@ def _setGraphicsWindowManager():
     This is only meant to be called internally! """
     if wutil.hasGraphics:
         # see which kernel to use
-        if os.environ.has_key('PYRAFGRAPHICS'):
+        if 'PYRAFGRAPHICS' in os.environ:
             kernelname = os.environ['PYRAFGRAPHICS'].lower()
             if kernelname == "tkplot":
                 import gkitkplot
@@ -158,7 +158,7 @@ def _setGraphicsWindowManager():
         else:
             kernelname = "default"
 
-        if os.environ.has_key('PYRAFGRAPHICS_TEST'):
+        if 'PYRAFGRAPHICS_TEST' in os.environ:
             print "Using graphics kernel: "+kernelname
         if kernelname == "default":
             import gkitkplot

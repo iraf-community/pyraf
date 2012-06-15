@@ -184,7 +184,7 @@ def Init(doprint=1,hush=0,savefile=None):
             try:
                 d = _getIrafEnv()
                 for key, value in d.items():
-                    if not _os.environ.has_key(key):
+                    if not key in _os.environ:
                         _os.environ[key] = value
                 iraf = _os.environ['iraf']
                 arch = _os.environ['IRAFARCH']
@@ -399,7 +399,7 @@ def saveToFile(savefile, **kw):
     for key in gdict.keys():
         item = gdict[key]
         if isinstance(item, (_types.FunctionType, _types.ModuleType)) or \
-                        _unsavedVarsDict.has_key(key):
+                        key in _unsavedVarsDict:
             del gdict[key]
 #   print('\n\n\n',gdict.keys()) # DBG: debug line
     # save just the value of Verbose, not the object
@@ -523,7 +523,7 @@ def handleRedirAndSaveKwds(target):
     def wrapper(*args, **kw):
         # handle redirection and save keywords
         redirKW, closeFHList = redirProcess(kw)
-        if kw.has_key('_save'): del kw['_save']
+        if '_save' in kw: del kw['_save']
         if len(kw):
             raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
         resetList = redirApply(redirKW)
@@ -548,7 +548,7 @@ def handleRedirAndSaveKwdsPlus(target):
     def wrapper(*args, **kw):
         # handle redirection and save keywords
         redirKW, closeFHList = redirProcess(kw)
-        if kw.has_key('_save'): del kw['_save']
+        if '_save' in kw: del kw['_save']
         # the missing check here on len(kw) is the main difference between
         # this and handleRedirAndSaveKwds (also the sig. of target())
         resetList = redirApply(redirKW)
@@ -585,9 +585,9 @@ def load(pkgname,args=(),kw=None,doprint=1,hush=0,save=1):
     else:
         p = getPkg(pkgname)
     if kw is None: kw = {}
-    if not kw.has_key('_doprint'): kw['_doprint'] = doprint
-    if not kw.has_key('_hush'): kw['_hush'] = hush
-    if not kw.has_key('_save'): kw['_save'] = save
+    if not '_doprint' in kw: kw['_doprint'] = doprint
+    if not '_hush' in kw: kw['_hush'] = hush
+    if not '_save' in kw: kw['_save'] = save
     p.run(*tuple(args), **kw)
 
 # -----------------------------------------------------
@@ -601,8 +601,8 @@ def run(taskname,args=(),kw=None,save=1):
     else:
         t = getTask(taskname)
     if kw is None: kw = {}
-    if not kw.has_key('_save'): kw['_save'] = save
-##     if not kw.has_key('_parent'): kw['parent'] = "'iraf.cl'"
+    if not '_save' in kw: kw['_save'] = save
+##     if not '_parent' in kw: kw['parent'] = "'iraf.cl'"
     t.run(*tuple(args), **kw)
 
 
@@ -873,12 +873,12 @@ def listTasks(pkglist=None, hidden=0, **kw):
             if pkg == lastpkg:
                 tlist.append(task)
             else:
-                if len(tlist) and pkgdict.has_key(lastpkg):
+                if len(tlist) and lastpkg in pkgdict:
                     print lastpkg + '/:'
                     _irafutils.printCols(tlist)
                 tlist = [task]
                 lastpkg = pkg
-    if len(tlist) and pkgdict.has_key(lastpkg):
+    if len(tlist) and lastpkg in pkgdict:
         print lastpkg + '/:'
         _irafutils.printCols(tlist)
 
@@ -1486,7 +1486,7 @@ def access(filename):
     filename = _denode(filename)
     # Magic values that trigger special behavior
     magicValues = { "STDIN": 1, "STDOUT": 1, "STDERR": 1}
-    return magicValues.has_key(filename) or _os.path.exists(Expand(filename))
+    return filename in magicValues or _os.path.exists(Expand(filename))
 
 def fp_equal(x, y):
     """Floating point compare  to within machine precision. This logic is
@@ -1636,7 +1636,7 @@ def imaccess(filename):
 def defvar(varname):
     """Returns true if CL variable is defined"""
     if varname == INDEF: return INDEF
-    return _varDict.has_key(varname) or _os.environ.has_key(varname)
+    return varname in _varDict or varname in _os.environ
 
 def deftask(taskname):
     """Returns true if CL task is defined"""
@@ -1758,7 +1758,7 @@ def fscan(theLocals, line, *namelist, **kw):
     if n==0 and namelist and _isStruct(theLocals, namelist[0]):
         f = ['']
         n = 1
-    if kw.has_key('strconv'):
+    if 'strconv' in kw:
         strconv = kw['strconv']
         del kw['strconv']
     else:
@@ -1924,7 +1924,7 @@ def scan(theLocals, *namelist, **kw):
     # handle redirection and save keywords
     # other keywords are passed on to fscan
     redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
+    if '_save' in kw: del kw['_save']
     resetList = redirApply(redirKW)
     try:
         line = _irafutils.tkreadline()
@@ -1952,7 +1952,7 @@ def scanf(theLocals, format, *namelist, **kw):
     # handle redirection and save keywords
     # other keywords are passed on to fscan
     redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
+    if '_save' in kw: del kw['_save']
     resetList = redirApply(redirKW)
     try:
         line = _irafutils.tkreadline()
@@ -2048,7 +2048,7 @@ def unset(*args):
     variables.
     """
     for arg in args:
-        if _varDict.has_key(arg):
+        if arg in _varDict:
             del _varDict[arg]
 
 @handleRedirAndSaveKwds
@@ -2074,7 +2074,7 @@ def clOscmd(s, **kw):
 
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
+    if '_save' in kw: del kw['_save']
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
     resetList = redirApply(redirKW)
@@ -2124,7 +2124,7 @@ def stty(terminal=None, **kw):
     expkw = _sttyArgs.copy()
     if terminal is not None: expkw['terminal'] = terminal
     for key, item in kw.items():
-        if _sttyArgs.has_key(key):
+        if key in _sttyArgs:
             expkw[key] = item
         else:
             raise TypeError('unexpected keyword argument: '+key)
@@ -2150,7 +2150,7 @@ def stty(terminal=None, **kw):
         set(terminal=expkw['terminal'])
         # They are setting the terminal type.  Let's at least try to
         # get the dimensions if not given. This is more than the CL does.
-        if (not kw.has_key('nlines')) and (not kw.has_key('ncols')) and \
+        if (not 'nlines' in kw) and (not 'ncols' in kw) and \
            _sys.stdout.isatty():
             try:
                 nlines,ncols = _wutil.getTermWindowSize()
@@ -2227,7 +2227,7 @@ def dparam(*args, **kw):
     """Dump parameters for task in executable form"""
     # only keyword: pyraf-specific 'cl=' used to specify CL or Python syntax
     cl = 1
-    if kw.has_key('cl'):
+    if 'cl' in kw:
         cl = kw['cl']
         del kw['cl']
     if len(kw):
@@ -2357,15 +2357,15 @@ def pyexecute(filename, **kw):
     """
     # these keyword parameters are relevant only outside PyRAF
     for keyword in ['_save', 'verbose', 'tasknames']:
-        if kw.has_key(keyword):
+        if keyword in kw:
             del kw[keyword]
     # get package info
-    if kw.has_key('PkgName'):
+    if 'PkgName' in kw:
         pkgname = kw['PkgName']
         del kw['PkgName']
     else:
         pkgname = curpack()
-    if kw.has_key('PkgBinary'):
+    if 'PkgBinary' in kw:
         pkgbinary = kw['PkgBinary']
         del kw['PkgBinary']
     else:
@@ -2502,11 +2502,11 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     """
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
+    if '_save' in kw: del kw['_save']
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
     # get the input
-    if redirKW.has_key('stdin'):
+    if 'stdin' in redirKW:
         stdin = redirKW['stdin']
         del redirKW['stdin']
         if hasattr(stdin,'name'):
@@ -2571,21 +2571,21 @@ def task(*args, **kw):
     """Define IRAF tasks"""
     redefine = 0
     iscmdstring = False
-    if kw.has_key('Redefine'):
+    if 'Redefine' in kw:
         redefine = kw['Redefine']
         del kw['Redefine']
     # get package info
-    if kw.has_key('PkgName'):
+    if 'PkgName' in kw:
         pkgname = kw['PkgName']
         del kw['PkgName']
     else:
         pkgname = curpack()
-    if kw.has_key('PkgBinary'):
+    if 'PkgBinary' in kw:
         pkgbinary = kw['PkgBinary']
         del kw['PkgBinary']
     else:
         pkgbinary = curPkgbinary()
-    if kw.has_key('IsCmdString'):
+    if 'IsCmdString' in kw:
         iscmdstring = kw['IsCmdString']
         del kw['IsCmdString']
     # fix illegal package names
@@ -2661,7 +2661,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
 
     # handle redirection and save keywords
     redirKW, closeFHList = redirProcess(kw)
-    if kw.has_key('_save'): del kw['_save']
+    if '_save' in kw: del kw['_save']
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
     resetList = redirApply(redirKW)
@@ -2673,7 +2673,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
             lp.reverse()
             for pkg in lp:
                 pkgname = pkg.getName()
-                if not printed.has_key(pkgname):
+                if not pkgname in printed:
                     printed[pkgname] = 1
                     print '    %s' % pkgname
             rv1 = (PkgName, PkgBinary)
@@ -3003,7 +3003,7 @@ def clCompatibilityMode(verbose=0, _save=0):
             while line[-1:] == '\\':
                 line = line + '\n' + raw_input(prompt2)
             line = line.strip()
-            if _exitCommands.has_key(line):
+            if line in _exitCommands:
                 break
             elif line[:2] == '!P':
                 # Python escape -- execute Python code
@@ -3388,13 +3388,13 @@ def redirProcess(kw):
 
     PipeOut = None
     for key in redirDict.keys():
-        if kw.has_key(key):
+        if key in kw:
             outputFlag, standardName, openArgs = redirDict[key]
             # if it is a string, open as a file
             # otherwise assume it is a filehandle
             value = kw[key]
             if isinstance(value, str):
-                if magicValues.has_key(value):
+                if value in magicValues:
                     if outputFlag and value == "STDOUT":
                         fh = _sys.__stdout__
                     elif outputFlag and value == "STDERR":
@@ -3486,7 +3486,7 @@ def redirProcess(kw):
             del kw[key]
     # Now handle IRAF semantics for redirection of stderr to mean stdout
     # also redirects to stderr file handle if Stdout not also specified
-    if redirKW.has_key('stderr') and not redirKW.has_key('stdout'):
+    if 'stderr' in redirKW and not 'stdout' in redirKW:
         redirKW['stdout'] = redirKW['stderr']
     return redirKW, closeFHList
 
@@ -3501,7 +3501,7 @@ def redirApply(redirKW):
     sysDict = { 'stdin': 1, 'stdout': 1, 'stderr': 1 }
     resetList = []
     for key, value in redirKW.items():
-        if sysDict.has_key(key):
+        if key in sysDict:
             resetList.append((key, getattr(_sys,key)))
             setattr(_sys,key,value)
         elif key == 'stdgraph':

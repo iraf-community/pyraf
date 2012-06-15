@@ -178,7 +178,7 @@ class FileCacheDict:
     def add(self, filename):
         """Add filename to dictionary.  Does not overwrite existing entry."""
         abspath = self.abspath(filename)
-        if not self.data.has_key(abspath):
+        if not abspath in self.data:
             self.data[abspath] = self.__Class(abspath)
 
     def abspath(self, filename):
@@ -216,7 +216,7 @@ class FileCacheDict:
 
     def _has(self, filename):
         abspath = self.abspath(filename)
-        return self.data.has_key(abspath)
+        return abspath in self.data
 
     def keys(self):
         return self.data.keys()
