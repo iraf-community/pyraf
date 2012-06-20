@@ -552,7 +552,7 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
             # apparently not an array (but this may change later
             # if multiple initial values are found)
             shape = None
-        if self.var_dict.has_key(name):
+        if name in self.var_dict:
             if self.var_dict[name]:
                 self.error("Variable `%s' is multiply declared" % name, node)
                 self.prune()
@@ -639,7 +639,7 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
             else:
                 optvalue = vnode[1].get()
         optdict = self.current_var.options
-        if not optdict.has_key(optname):
+        if optname not in optdict:
             errmsg = "Unknown option `%s' for variable `%s'" % (optname, self.current_var.name)
             self.error(errmsg, node)
         else:
@@ -706,7 +706,7 @@ class VarList(GenericASTTraversal, ErrorTracker):
         # convert procedure arguments to IrafParList
         p = []
         for var in self.proc_args_list:
-            if not _SpecialArgs.has_key(var):
+            if var not in _SpecialArgs:
                 arg = self.proc_args_dict[var].toPar()
                 p.append(arg)
         self.parList = irafpar.IrafParList(self.getProcName(),
@@ -744,19 +744,19 @@ class VarList(GenericASTTraversal, ErrorTracker):
 
     def addSpecial(self, name, type, value):
         # just delete $nargs and add it back if it is already present
-        if self.proc_args_dict.has_key(name):
+        if name in self.proc_args_dict:
             self.proc_args_list.remove(name)
             del self.proc_args_dict[name]
 
         targ = irafutils.translateName(name)
-        if not self.proc_args_dict.has_key(targ):
+        if targ not in self.proc_args_dict:
             self.proc_args_list.append(targ)
             self.proc_args_dict[targ] = Variable(targ, type, init_value=value)
 
     def addSpecialArgs(self):
         """Add mode, $nargs, other special parameters to all tasks"""
 
-        if not self.proc_args_dict.has_key('mode'):
+        if 'mode' not in self.proc_args_dict:
             self.proc_args_list.append('mode')
             self.proc_args_dict['mode'] = Variable('mode','string',
                     init_value='al')
@@ -769,7 +769,7 @@ class VarList(GenericASTTraversal, ErrorTracker):
 ##         self.addSpecial("$err_dzvalue", 'int', 1)
 
         for parg, ivalue in _SpecialArgs.items():
-            if not self.proc_args_dict.has_key(parg):
+            if parg not in self.proc_args_dict:
                 self.proc_args_list.append(parg)
                 self.proc_args_dict[parg] = ivalue
 
@@ -778,7 +778,7 @@ class VarList(GenericASTTraversal, ErrorTracker):
 
         errlist = ["Error in procedure `%s'" % self.getProcName()]
         for v in self.local_vars_list:
-            if self.proc_args_dict.has_key(v):
+            if v in self.proc_args_dict:
                 errlist.append(
                         "Local variable `%s' overrides parameter of same name" %
                         (v,))
@@ -790,7 +790,7 @@ class VarList(GenericASTTraversal, ErrorTracker):
         print "Procedure arguments:"
         for var in self.proc_args_list:
             v =  self.proc_args_dict[var]
-            if _SpecialArgs.has_key(var):
+            if var in _SpecialArgs:
                 print 'Special',var,'=',v
             else:
                 print v
@@ -809,7 +809,7 @@ class VarList(GenericASTTraversal, ErrorTracker):
         self.setProcName(p.proc_name, node)
         self.proc_args_list = p.proc_args_list
         for arg in self.proc_args_list:
-            if self.proc_args_dict.has_key(arg):
+            if arg in self.proc_args_dict:
                 errmsg = "Argument `%s' repeated in procedure statement %s" % \
                         (arg,self.getProcName())
                 self.error(errmsg, node)
@@ -1132,7 +1132,7 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
 
         # check for missing labels
         for label in self.goto_blockidlist.keys():
-            if not self.label_blockid.has_key(label):
+            if label not in self.label_blockid:
                 node = self.goto_nodelist[label][0]
                 self.error("GOTO refers to unknown label `%s'" % label, node)
 
@@ -1142,7 +1142,7 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
         label_count = [0]*len(self.blocks)
         for label, ib in self.label_blockid.items():
             # only count labels that are actually used
-            if self.goto_blockidlist.has_key(label):
+            if label in self.goto_blockidlist:
                 label_count[ib] += 1
         for ib in range(len(self.blocks)):
             self.blocks[ib].node.label_count = label_count[ib]
@@ -1187,7 +1187,7 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
 
     def n_label_stmt(self, node):
         label = node[0].attr
-        if self.label_blockid.has_key(label):
+        if label in self.label_blockid:
             self.error("Duplicate statement label `%s'" % label, node)
         else:
             cblockid = self.current_blockid
@@ -1200,9 +1200,9 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
 
     def n_goto_stmt(self, node):
         label = str(node[1])
-        if self.label_blockid.has_key(label):
+        if label in self.label_blockid:
             self.error("Backwards GOTO to label `%s' is not allowed" % label, node)
-        elif self.goto_blockidlist.has_key(label):
+        elif label in self.goto_blockidlist:
             self.goto_blockidlist[label].append(self.current_blockid)
             self.goto_nodelist[label].append(node)
         else:
@@ -1330,7 +1330,7 @@ _stringTypes = { "string": 1,
                }
 
 def _convFunc(var, value):
-    if var.list_flag or _stringTypes.has_key(var.type):
+    if var.list_flag or var.type in _stringTypes:
         if value is None:
             return ""
         else:
@@ -1417,7 +1417,7 @@ class CheckArgList(GenericASTTraversal, ErrorTracker):
 
     def n_param_name(self, node):
         keyword = node[0].attr
-        if self.keywords[-1].has_key(keyword):
+        if keyword in self.keywords[-1]:
             self.error("Duplicate keyword `%s' in call to %s" %
                 (keyword, self.taskname[-1]), node)
         else:
@@ -1605,7 +1605,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
                 p = self.vars.proc_args_list[i]
                 v = self.vars.proc_args_dict[p]
                 namelist[i] = irafutils.translateName(p)
-                if _SpecialArgs.has_key(p):
+                if p in _SpecialArgs:
                     # special arguments are Python types
                     proclist[i] = p + '=' + str(v)
                     deflist[i] = ''
@@ -1636,7 +1636,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
                 self.write(", ".join(keylist))
                 wnewline = 1
 
-        if self.specialDict.has_key("PkgName"):
+        if "PkgName" in self.specialDict:
             self.writeIndent("PkgName = iraf.curpack(); "
                     "PkgBinary = iraf.curPkgbinary()")
             wnewline = 1
@@ -1741,7 +1741,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
     def n_IDENT(self, node, array_ref=0):
         s = irafutils.translateName(node.attr)
-        if self.vars.has_key(s) and not _SpecialArgs.has_key(s):
+        if s in self.vars and s not in _SpecialArgs:
 
             # Prepend 'Vars.' to all procedure and local variable references
             # except for special args, which are normal Python variables.
@@ -1761,7 +1761,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
             attribs = s.split('.')
             ipf = basicpar.isParField(attribs[-1])
-            if self.vars.has_key(attribs[0]):
+            if attribs[0] in self.vars:
                 attribs.insert(0, 'Vars')
             elif ipf and (len(attribs)==2):
                 attribs.insert(0, 'taskObj')
@@ -1810,7 +1810,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         if cf: self.write(")")
         # check for correct number of subscripts for local arrays
         s = irafutils.translateName(node[0].attr)
-        if self.vars.has_key(s):
+        if s in self.vars:
             v = self.vars.get(s)
             if nsub < len(v.shape):
                 self.error("Too few subscripts for array %s" % s, node)
@@ -1880,10 +1880,10 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             s = _translateList.get(node.type)
             if s is not None:
                 self.write(s, requireType, exprType)
-            elif _trailSpaceList.has_key(node.type):
+            elif node.type in _trailSpaceList:
                 self.write(`node`, requireType, exprType)
                 self.write(" ")
-            elif _bothSpaceList.has_key(node.type):
+            elif node.type in _bothSpaceList:
                 self.write(" ")
                 if hasattr(node, 'trunc_int_div'):
                     self.write('//', requireType, exprType)
@@ -2113,7 +2113,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # labels translate to except statements
         # skip unsued labels
         label = node[0].attr
-        if self.gotos.has_key(label):
+        if label in self.gotos:
             self.decrIndent()
             self.writeIndent("except GoTo_%s:" % irafutils.translateName(label))
             self.incrIndent()
