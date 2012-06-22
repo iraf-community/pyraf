@@ -248,7 +248,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # most of the time it will be in the active task dictionary
         try:
             paramdict = self.getParDict()
-            if paramdict.has_key(paramname,exact=exact):
+            if paramdict._has(paramname,exact=exact):
                 return paramdict[paramname]
         except minmatch.AmbiguousKeyError, e:
             # re-raise the error with a bit more info
@@ -261,7 +261,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
             if self._parDictList is None: self._setParDictList()
             for dictname, paramdict in self._parDictList:
-                if paramdict.has_key(paramname,exact=exact):
+                if paramdict._has(paramname,exact=exact):
                     return paramdict[paramname]
 
         raise IrafError("Unknown parameter requested: "+paramname)
@@ -321,7 +321,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # Special _save keyword turns on parameter-saving.
         # Default is *not* to save parameters (so it is necessary
         # to use _save=1 to get parameter changes to be persistent.)
-        if kw.has_key('_save'):
+        if '_save' in kw:
             save = kw['_save']
             del kw['_save']
         else:
@@ -418,7 +418,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
         # Special ParList parameter is used to pass in an entire
         # parameter list
-        if kw.has_key('ParList'):
+        if 'ParList' in kw:
             parList = kw['ParList']
             del kw['ParList']
             if isinstance(parList, str):
@@ -441,7 +441,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             else:
                 newParList = copy.deepcopy(self._currentParList)
 
-        if kw.has_key('_setMode'):
+        if '_setMode' in kw:
             _setMode = kw['_setMode']
             del kw['_setMode']
         else:
@@ -490,7 +490,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                 if self._parDictList is None: self._setParDictList()
                 for dictname, paramdict in self._parDictList:
                     if dictname == task:
-                        if paramdict.has_key(paramname):
+                        if paramname in paramdict:
                             paramdict[paramname].set(newvalue,index=pindex,
                                     field=field,check=check)
                             return
@@ -517,7 +517,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # most of the time it will be in the active task dictionary
 
         paramdict = self.getParDict()
-        if paramdict.has_key(paramname,exact=exact):
+        if paramdict._has(paramname,exact=exact):
             paramdict[paramname].set(newvalue,index=pindex,
                     field=field,check=check)
             return
@@ -527,7 +527,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
         if self._parDictList is None: self._setParDictList()
         for dictname, paramdict in self._parDictList:
-            if paramdict.has_key(paramname,exact=exact):
+            if paramdict._has(paramname,exact=exact):
                 paramdict[paramname].set(newvalue,index=pindex,
                         field=field,check=check)
                 return
@@ -567,7 +567,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             if self._parDictList is None: self._setParDictList()
             for dictname, paramdict in self._parDictList:
                 if dictname == task:
-                    if paramdict.has_key(paramname):
+                    if paramname in paramdict:
                         return self._getParFromDict(paramdict, paramname,
                                         pindex, field, native, mode="h", prompt=prompt)
                     else:
@@ -593,7 +593,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # most of the time it will be in the active task dictionary
         paramdict = self.getParDict()
         try:
-            if paramdict.has_key(paramname,exact=exact):
+            if paramdict._has(paramname,exact=exact):
                 return self._getParFromDict(paramdict, paramname, pindex,
                                                 field, native, mode=mode, prompt=prompt)
         except minmatch.AmbiguousKeyError, e:
@@ -605,7 +605,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # complete parDictList (if necessary) and search them all
         if self._parDictList is None: self._setParDictList()
         for dictname, paramdict in self._parDictList:
-            if paramdict.has_key(paramname,exact=exact):
+            if paramdict._has(paramname,exact=exact):
                 return self._getParFromDict(paramdict, paramname, pindex,
                                                 field, native, mode="h", prompt=prompt)
         else:
@@ -1629,15 +1629,15 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
         # packages.  Default is to print output.
         # Implement by redirecting stdout to /dev/null (but don't override
         # other redirection requests)
-        if kw.has_key('_hush'):
+        if '_hush' in kw:
             if kw['_hush'] and \
-              not (kw.has_key('Stdout') or kw.has_key('StdoutAppend')):
+              not (('Stdout' in kw) or ('StdoutAppend' in kw)):
                 kw['Stdout'] = '/dev/null'
             del kw['_hush']
         # Special _doprint keyword is used to control whether tasks are listed
         # after package has been loaded.  Default is to list them if cl.menus
         # is set, or not to list them if it is not set.
-        if kw.has_key('_doprint'):
+        if '_doprint' in kw:
             doprint = kw['_doprint']
             del kw['_doprint']
         else:
@@ -1740,7 +1740,7 @@ class IrafForeignTask(IrafTask):
         Does not use IrafParList structure -- just keeps list of
         the arguments
         """
-        if kw.has_key('_setMode'):
+        if '_setMode' in kw:
             del kw['_setMode']
         if len(kw)>0:
             raise ValueError('Illegal keyword parameters %s for task %s' %

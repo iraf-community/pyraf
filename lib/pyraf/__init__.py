@@ -203,3 +203,40 @@ else:
 
 del _verbosity_
 help = iraf.help
+
+
+# We have too many users on systems that have stack limits that
+# are too low to run IRAF tasks.  Instead of waiting for all of
+# them to send us a help ticket and then telling them to raise
+# the limit, we raise it here.
+try :
+    import resource
+except ImportError :
+    # ok to skip this on Windows
+    pass
+else :
+    def raise_limit( which, howmuch ) :
+
+        # We have to know the old limit so we don't ask to go above that.
+        # Some systems don't let you use -1 for the max limit if the
+        # max limit is already set.
+        n = resource.getrlimit( which )
+
+        # Raise it to the max.
+        if ( howmuch is None ) or ( howmuch == -1 ) :
+            n = ( n[1], n[1] )
+        else :
+            n = ( howmuch, n[1] )
+
+        # Try to set it.
+        try :
+            resource.setrlimit( which, n )
+        except resource.error :
+            # Well, we tried; this is nothing worth killing pyraf over,
+            # though -- either we will get by anyway, or we will find
+            # out later.
+            pass
+
+    # Currently, we just raise the stack limit.
+    raise_limit( resource.RLIMIT_STACK, None )
+

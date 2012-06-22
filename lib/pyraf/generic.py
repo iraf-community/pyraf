@@ -51,7 +51,7 @@ def _namelist(instance):
         for b in c.__bases__:
             classlist.append(b)
         for name in c.__dict__.keys():
-            if not namedict.has_key(name):
+            if name not in namedict:
                 namelist.append(name)
                 namedict[name] = 1
     return namelist
@@ -143,7 +143,7 @@ class GenericParser:
 
             rule, fn = self.preprocess(rule, func)
 
-            if self.rules.has_key(lhs):
+            if lhs in self.rules:
                 self.rules[lhs].append(rule)
             else:
                 self.rules[lhs] = [ rule ]
@@ -187,9 +187,9 @@ class GenericParser:
                         # also track whether token derives epsilon; if it
                         # does, need to add FIRST set for next token too
                         derivesEpsilon = 0
-                        if not self.rules.has_key(token):
+                        if token not in self.rules:
                             # this is a terminal
-                            if not this.has_key(token):
+                            if token not in this:
                                 this[token] = 1
                                 changed = changed+1
                         else:
@@ -197,13 +197,13 @@ class GenericParser:
                             for ntkey in first[token].keys():
                                 if ntkey == "":
                                     derivesEpsilon = 1
-                                elif ntkey != key and not this.has_key(ntkey):
+                                elif ntkey != key and ntkey not in this:
                                     this[ntkey] = 1
                                     changed = changed+1
                         if not derivesEpsilon: break
                     else:
                         # if get all the way through, add epsilon too
-                        if not this.has_key(""):
+                        if "" not in this:
                             this[""] = 1
                             changed = changed+1
         # make the rule/token lists
@@ -218,13 +218,13 @@ class GenericParser:
         for key, rule in self.rules.items():
             for lhs, rhs in rule:
                 for token in rhs:
-                    if not self.rules.has_key(token):
+                    if token not in self.rules:
                         # this is a terminal
                         allTokens[token] = 1
         for nextSymbol, flist in first.items():
             for nextToken in flist.keys():
                 tokenRules[(nextSymbol, nextToken)] = []
-            if flist.has_key(""):
+            if "" in flist:
                 for nextToken in allTokens.keys():
                     tokenRules[(nextSymbol, nextToken)] = []
             for prule in self.rules[nextSymbol]:
@@ -233,17 +233,17 @@ class GenericParser:
                 for element in prhs:
                     pflist = first.get(element)
                     if pflist is not None:
-                        if not done.has_key(element):
+                        if element not in done:
                             done[element] = 1
                             # non-terminal
                             for nextToken in pflist.keys():
-                                if nextToken and not done.has_key(nextToken):
+                                if nextToken and nextToken not in done:
                                     done[nextToken] = 1
                                     tokenRules[(nextSymbol, nextToken)].append(prule)
-                        if not pflist.has_key(""): break
+                        if "" not in pflist: break
                     else:
                         # terminal token
-                        if not done.has_key(element):
+                        if element not in done:
                             done[element] = 1
                             tokenRules[(nextSymbol, element)].append(prule)
                         break
@@ -252,7 +252,7 @@ class GenericParser:
                     # add it to all FIRST symbols and to null list
                     tokenRules[(nextSymbol, "")].append(prule)
                     for nextToken in allTokens.keys():
-                        if not done.has_key(nextToken):
+                        if nextToken not in done:
                             done[nextToken] = 1
                             tokenRules[(nextSymbol, nextToken)].append(prule)
         self.tokenRules = tokenRules
@@ -380,7 +380,7 @@ class GenericParser:
 
         while pos > 0:
             want = ((rule, pos, parent), state)
-            if not tree.has_key(want):
+            if want not in tree:
                 #
                 #  Since pos > 0, it didn't come from closure,
                 #  and if it isn't in tree[], then there must
