@@ -81,7 +81,7 @@ cd $workDir/$pyr/lib/pyraf
 if (!(-e svninfo.py)) then
    echo '__svn_version__ = "'${rev}'"' > svninfo.py
    echo '__full_svn_info__ = ""' >> svninfo.py
-   echo '__setup_datetime__ = ""' >> svninfo.py
+   echo '__setup_datetime__ = "'`date`'"' >> svninfo.py
 endif
 
 # get extra pkgs into a subdir
@@ -89,21 +89,21 @@ cd $workDir/$pyr
 mkdir required_pkgs
 cd $workDir/$pyr/required_pkgs
 echo "Downloading source for: tools, distutils"
-svn $co_dist distutils
-if ($status != 0) then
-   echo ERROR svn-ing distutils
-   exit 1
-endif
-if ($pyver == 3) then
-   cd $workDir/$pyr/required_pkgs
-   /bin/rm -f $out2to3.d
-   $py3bin/2to3 -w -n --no-diffs distutils >& $out2to3.d
-   if ($status != 0) then
-      echo ERROR 2to3-ing distutils
-      exit 1
-   endif
-   cat $out2to3.d |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
-endif
+#svn $co_dist distutils
+#if ($status != 0) then
+#   echo ERROR svn-ing distutils
+#   exit 1
+#endif
+#if ($pyver == 3) then
+#   cd $workDir/$pyr/required_pkgs
+#   /bin/rm -f $out2to3.d
+#   $py3bin/2to3 -w -n --no-diffs distutils >& $out2to3.d
+#   if ($status != 0) then
+#      echo ERROR 2to3-ing distutils
+#      exit 1
+#   endif
+#   cat $out2to3.d |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
+#endif
 svn $co_tools tools
 if ($status != 0) then
    echo ERROR svn-ing tools
@@ -154,10 +154,10 @@ if (-e setup.cfg) then
    diff setup.cfg.orig setup.cfg
 endif
 # change line to use: os.path.abspath("required_pkgs/distutils/lib")
-/bin/cp setup.py setup.py.orig
-cat setup.py.orig | sed 's/^\( *stsci_distutils *=\).*/\1 os.path.abspath("required_pkgs"+os.sep+"distutils"+os.sep+"lib")/' > setup.py
-echo DIFF for required_pkgs
-diff setup.py.orig setup.py
+#/bin/cp setup.py setup.py.orig
+#cat setup.py.orig | sed 's/^\( *stsci_distutils *=\).*/\1 os.path.abspath("required_pkgs"+os.sep+"distutils"+os.sep+"lib")/' > setup.py
+#echo DIFF for required_pkgs
+#diff setup.py.orig setup.py
 
 # tar and zip it - regular (non-win) version
 cd $workDir
@@ -173,11 +173,13 @@ if ($status != 0) then
 endif
 
 # Now tar/zip the Windows version (via "zip")
-cd $workDir
-zip -rq ${pyr}-win $pyr
-if ($status != 0) then
-   echo ERROR zipping up
-   exit 1
+if ($isdev == 1) then
+   cd $workDir
+   zip -rq ${pyr}-win $pyr
+   if ($status != 0) then
+      echo ERROR zipping up
+      exit 1
+   endif
 endif
 
 echo Successfully created tar-ball
