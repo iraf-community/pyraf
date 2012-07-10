@@ -39,13 +39,13 @@ if ($isdev == 1) then
    set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/distutils-standalone'
    set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/tools'
 else
-   set pyr = "pyraf-1.12"
+   set pyr = "pyraf-2.1"
    echo -n 'What will the pyraf dir name be? ('$pyr'): '
    set ans = $<
    if ($ans != '') then
       set pyr = $ans
    endif
-   set brn = "release_2011_07"
+   set brn = "release_2013_07"
    echo -n 'What is branch name? ('$brn'): '
    set ans = $<
    if ($ans != '') then
@@ -84,6 +84,11 @@ if (!(-e svninfo.py)) then
    echo '__setup_datetime__ = "'`date`'"' >> svninfo.py
 endif
 
+# for now, remove new_setup* (it's confusing to users)
+cd $workDir/$pyr
+echo Removing:
+/bin/rm new_setup*
+
 # get extra pkgs into a subdir
 cd $workDir/$pyr
 mkdir required_pkgs
@@ -119,6 +124,11 @@ if ($pyver == 3) then
    endif
    cat $out2to3.t |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
 endif
+
+# for now, remove new_setup* (it's confusing to users)
+cd $workDir/$pyr/required_pkgs/tools
+echo Removing:
+/bin/rm new_setup*
 
 # get version info
 set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py | sed 's/.*= *//' | sed 's/"//g'`
