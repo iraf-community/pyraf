@@ -113,16 +113,15 @@ try:
     import IOCTL
     magicConstant = IOCTL.TIOCGWINSZ
 except ImportError:
-    platform = sys.platform
-    if platform == 'sunos5':
+    if sys.platform == 'sunos5':
         magicConstant = ord('T')*256 + 104
-    elif platform.startswith('linux'):
+    elif sys.platform.startswith('linux'):
         magicConstant = 0x5413
-    elif platform[:4] == 'osf1':
+    elif sys.platform[:4] == 'osf1':
         magicConstant = 0x40087468
-    elif platform.startswith('win'):
+    elif sys.platform.startswith('win'):
         magicConstant = None # this is unused on windows (so far)
-    elif platform == 'darwin':
+    elif sys.platform == 'darwin':
         try:
             import termios
             magicConstant = termios.TIOCGWINSZ
@@ -131,7 +130,7 @@ except ImportError:
     else:
         raise ImportError(
                 "wutil.py: Needs definition of TIOCGWINSZ constant for platform %s"
-                % platform)
+                % sys.platform)
 
 
 def getScreenDepth():
@@ -195,7 +194,7 @@ def getTermWindowSize():
     in characters"""
 
     if magicConstant is None:
-        raise Exception("platform isn't supported: "+platform)
+        raise Exception("platform isn't supported: "+sys.platform)
 
     # define string to serve as memory area to receive copy of structure
     # created by IOCTL call
@@ -336,7 +335,7 @@ class TerminalFocusEntity(FocusEntity):
         in characters"""
 
         if magicConstant is None:
-            raise Exception("platform isn't supported: "+platform)
+            raise Exception("platform isn't supported: "+sys.platform)
 
         # define string to serve as memory area to receive copy of structure
         # created by IOCTL call
@@ -494,7 +493,30 @@ class FocusController:
 terminal = TerminalFocusEntity()
 focusController = FocusController(terminal)
 
-# Do we have access to a graphics display?
+# debug helper
+def dumpspecs():
+    """ Dump various flags, settings, values to the terminal.  This is not to
+    be used internal to this module - it must wait until the module is fully
+    imported for all the values to be finalized. """
+    print "platform = "+str(sys.platform)
+    print "PY3K = "+str(capable.PY3K)
+    print "c.OF_GRAPHICS = "+str(capable.OF_GRAPHICS)
+    if not capable.OF_GRAPHICS: return
+    print "TclVersion = "+str(capable.Tkinter.TclVersion)
+    print "TkVersion = "+str(capable.Tkinter.TkVersion)
+    print "is_darwin_and_x = "+str(capable.is_darwin_and_x())
+    print "which_darwin_linkage = "+str(capable.which_darwin_linkage())
+    print "WUTIL_ON_MAC = "+str(WUTIL_ON_MAC)
+    print "WUTIL_ON_WIN = "+str(WUTIL_ON_WIN)
+    print "WUTIL_USING_X = "+str(WUTIL_USING_X)
+    print "skipDisplay = "+str(_skipDisplay)
+    print "hasGraphics = "+str(hasGraphics)
+    print "hasAqua = "+str(_hasAqua)
+    print "hasXWin = "+str(_hasXWin)
+
+
+
+# Finally, do we have access to a graphics display?
 hasGraphics = None
 if _skipDisplay:
     # A common _skipDisplay case is pyraf being imported in a script,
