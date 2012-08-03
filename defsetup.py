@@ -95,7 +95,7 @@ if not ms_windows or build_c :
     # windows users have to do without the CL sscanf() function,
     # unless you explicitly set build_c true.
     PYRAF_EXTENSIONS.append(
-	    distutils.core.Extension(
+        distutils.core.Extension(
             'pyraf.sscanfmodule',
             ['src/sscanfmodule.c'],
             include_dirs=add_inc_dirs
@@ -106,10 +106,10 @@ if not ms_windows :
     # windows users do not have X windows, so we never need the X
     # support
     PYRAF_EXTENSIONS.append(
-	    distutils.core.Extension(
+        distutils.core.Extension(
             'pyraf.xutilmodule',
             ['src/xutil.c'],
-	        include_dirs=add_inc_dirs,
+            include_dirs=add_inc_dirs,
             library_dirs=add_lib_dirs,
             libraries = [x_libraries]
         )
