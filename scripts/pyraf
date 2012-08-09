@@ -14,10 +14,11 @@ or more of:
   -h      Print this message
   -i      No command line wrapper, just run standard interactive Python shell
   -m      Run command line wrapper to provide extra capabilities (default)
-  -n      No splash screen during startup
+  -n      No splash screen during startup (also see -x)
   -s      Silent initialization (does not print startup messages)
   -V      Print version info and exit
   -v      Set verbosity level (may be repeated to increase verbosity)
+  -x      No graphics will be attempted/loaded during session
   -y      Run the IPython shell instead of the normal PyRAF command shell
 
 Long versions of options:
@@ -30,6 +31,7 @@ Long versions of options:
   -s  --silent
   -V  --version
   -v  --verbose
+  -x  --nographics
   -y  --ipython
 """
 
@@ -72,6 +74,14 @@ if '-s' in sys.argv or '--silent' in sys.argv:
     import warnings
     warnings.simplefilter("ignore")
     del warnings
+
+# allow them to specifiy no graphics, done before any imports
+if '-x' in sys.argv or '--nographics' in sys.argv:
+    os.environ['PYRAF_NO_DISPLAY'] = '1' # what the rest of PyRAF triggers on
+    if '-x' in sys.argv: # keep the option parsing simpler when we get to it
+        sys.argv.remove('-x')
+    else:
+        sys.argv.remove('--nographics')
 
 # read the user's startup file (if there is one)
 if 'PYTHONSTARTUP' in os.environ and \
