@@ -864,6 +864,13 @@ class IrafParList(taskpars.TaskPars):
             filename = self.__filename
         if not filename:
             raise ValueError("No filename specified to save parameters")
+        # but not if user turned off parameter writes
+        writepars = int(pyraf.iraf.envget("writepars", 1))
+        if writepars < 1:
+            msg = "No parameters written to disk."
+            print msg
+            return msg
+        # ok, go ahead and write 'em - set up file
         if hasattr(filename,'write'):
             fh = filename
         else:
