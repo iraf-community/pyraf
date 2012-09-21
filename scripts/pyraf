@@ -96,7 +96,8 @@ from pyraf.irafpar import makeIrafPar
 from stsci.tools.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
 
-# IPython Pyraf profile RC installation
+# IPython Pyraf profile RC installation - this is only done so that the next
+# step (below) can find/run the rc file (to execute some pyraf magic setup)
 if _use_ipython_shell:
     import pyraf
     home = None
@@ -137,10 +138,17 @@ if doCmdline:
     if _use_ipython_shell:
         import sys
         import IPython
-        if '-s' in sys.argv or '--silent' in sys.argv:
-           sys.argv = ["ipython","-nobanner","-p","pyraf"]
+
+        # rewrite sys.argv
+        sys.argv = ["ipython",]
+        if hasattr(IPython, 'Shell'): # old versions
+           if '-s' in sys.argv or '--silent' in sys.argv: sys.argv.append("-nobanner")
+           sys.argv.append("-p")
+           sys.argv.append("pyraf")
         else:
-           sys.argv = ["ipython","-p","pyraf"]
+           if '-s' in sys.argv or '--silent' in sys.argv: sys.argv.append("--no-banner")
+           sys.argv.append("--profile=pyraf")
+
         if hasattr(IPython, 'Shell'): # old versions
            IPython.Shell.start(user_ns=globals()).mainloop()
         else:
