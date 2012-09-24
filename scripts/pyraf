@@ -88,7 +88,9 @@ if 'PYTHONSTARTUP' in os.environ and \
                 os.path.isfile(os.environ["PYTHONSTARTUP"]):
     exec(compile(open(os.environ["PYTHONSTARTUP"]).read(), os.environ["PYTHONSTARTUP"], 'exec'))
 
+#------------------------------------------------------------------------------
 # In next line we get into pyraf's __init__.py - this does ALL KINDS OF THINGS
+#------------------------------------------------------------------------------
 from pyraf import doCmdline, _use_ipython_shell, runCmd, __version__
 # By now, the bulk of the startup work is done
 from pyraf import iraf
@@ -149,11 +151,16 @@ if doCmdline:
            if '-s' in sys.argv or '--silent' in sys.argv: sys.argv.append("--no-banner")
            sys.argv.append("--profile=pyraf")
 
-        if hasattr(IPython, 'Shell'): # old versions
+        if hasattr(IPython, 'Shell'): # old IPython versions
            IPython.Shell.start(user_ns=globals()).mainloop()
         else:
            from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell
-           TerminalInteractiveShell(user_ns=globals()).mainloop()
+           # import pyraf to write this shell obj to it's namespace
+           # we have already fully imported it above
+           import pyraf
+           # create and run the Ipython shell - it takes over from here
+           pyraf._ipyshell = TerminalInteractiveShell(user_ns=globals())
+           pyraf._ipyshell.mainloop()
         sys.exit()
     else:
         import pyraf.pycmdline

@@ -19,13 +19,16 @@ from __future__ import division # confidence high
 OLD_IPY = True # "old" means prior to v0.12
 try:
     from IPython.iplib import InteractiveShell
-except ImportError:
+except:
     OLD_IPY = False
 
 if OLD_IPY:
     from IPython import Release as release
+    import IPython.ipapi as ipapi
 else:
     from IPython.core import release
+    import IPython.core.ipapi as ipapi
+
 __license__ = release.license
 
 # set search path to include directory above this script and current directory
@@ -113,7 +116,6 @@ class IPython_PyRAF_Integrator(object):
     import string
 
     if OLD_IPY:
-        import IPython.ipapi
         from IPython.iplib import InteractiveShell
     else:
         from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
@@ -140,7 +142,7 @@ class IPython_PyRAF_Integrator(object):
         self.traceback_mode = "Context"
 
         if OLD_IPY:
-            self._ipython_api = IPython.ipapi.get()
+            self._ipython_api = ipapi.get()
 
             self._ipython_magic = self._ipython_api.IP.lsmagic() # skip %
 
@@ -160,12 +162,13 @@ class IPython_PyRAF_Integrator(object):
                 return self.prefilter(*args)
             self.InteractiveShell.prefilter = foo_filter
         else:
-            thisIpy = self.InteractiveShell._instance.get_ipython()
+            self._ipython_api = pyraf._ipyshell
+
             # this is pretty far into IPython, i.e. very breakable
             # lsmagic() returns a dict of 2 dicts: 'cell', and 'line'
-            self._ipython_magic = thisIpy.magics_manager.lsmagic()['line'].keys()
+            self._ipython_magic = self._ipython_api.magics_manager.lsmagic()['line'].keys()
             print "Warning: some PyRAF magic not exposed"
-            pfmgr = thisIpy.prefilter_manager
+            pfmgr = self._ipython_api.prefilter_manager
             self.priority = 0 # transformer needs this, low val = done first
             self.enabled = True # a transformer needs this
             pfmgr.register_transformer(self)
@@ -312,9 +315,9 @@ class IPython_PyRAF_Integrator(object):
         import linecache, traceback, sys, os
         import IPython.ultraTB
 
-        #get the color scheme from the user configuration file and pass
-        #it to the trace formatter
-        ip = IPython.ipapi.get()
+        # get the color scheme from the user configuration file and pass
+        # it to the trace formatter
+        ip = ipapi.get()
         csm = ip.options['colors']
 
         linecache.checkcache()
@@ -419,4 +422,3 @@ else:
 del fb
 
 del IPythonIrafCompleter, IPython_PyRAF_Integrator, IrafCompleter
-
