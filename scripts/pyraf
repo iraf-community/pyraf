@@ -101,6 +101,8 @@ logout = quit = exit = 'Use ".exit" to exit'
 # IPython Pyraf profile RC installation - this is only done so that the next
 # step (below) can find/run the rc file (to execute some pyraf magic setup)
 if _use_ipython_shell:
+    # the following should be removed soon, it is only used for versions
+    # of IPython older than 0.11
     import pyraf
     home = None
     ip = os.getenv("IPYTHONDIR")
@@ -160,6 +162,8 @@ if doCmdline:
            import pyraf
            # create and run the Ipython shell - it takes over from here
            pyraf._ipyshell = TerminalInteractiveShell(user_ns=globals())
+           pyraf._ipyshell.run_code('from pyraf import iraf, ipython_api')
+           # this is the equaivalent of running ipython with the above imports
            pyraf._ipyshell.mainloop()
         sys.exit()
     else:
