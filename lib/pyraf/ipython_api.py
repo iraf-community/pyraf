@@ -45,8 +45,8 @@ _locals = globals()
 
 # del iraf, __version__, makeIrafPar, yes, no, INDEF, EOF, logout, quit, exit
 
-if '-nobanner' not in sys.argv:
-    print "PyRAF", __version__, "Copyright (c) 2002 AURA"
+if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
+    print "\nPyRAF", __version__, "Copyright (c) 2002 AURA"
 
 # Start up command line wrapper keeping definitions in main name space
 # Keep the command-line object in namespace too for access to history
@@ -196,7 +196,16 @@ class IPython_PyRAF_Integrator(object):
             asciiline =  str(line)
         except:
             return line
-        # Now run it through our prefilter function
+
+        # Handle any weird special cases here.  Most all transformations
+        # should occur through the normal route (e.g. sent here, then
+        # translated below), but some items never get the chance in ipython
+        # to be prefiltered...
+        if asciiline == 'get_ipython().show_usage()':
+            # Hey! IPython translated '?' before we got a crack at it...
+            asciiline = '?' # put it back! (only for single '?' by itself)
+
+        # Now run it through our normal prefilter function
         return self.cmd(asciiline)
 
     def cmd(self, line):

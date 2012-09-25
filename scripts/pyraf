@@ -144,27 +144,36 @@ if doCmdline:
         import IPython
 
         # rewrite sys.argv
-        sys.argv = ["ipython",]
+        new_argv = ["ipython",]
         if hasattr(IPython, 'Shell'): # old versions
-           if '-s' in sys.argv or '--silent' in sys.argv: sys.argv.append("-nobanner")
-           sys.argv.append("-p")
-           sys.argv.append("pyraf")
+           if '-s' in sys.argv or '--silent' in sys.argv: new_argv.append("-nobanner")
+           new_argv.append("-p")
+           new_argv.append("pyraf")
         else:
-           if '-s' in sys.argv or '--silent' in sys.argv: sys.argv.append("--no-banner")
-           sys.argv.append("--profile=pyraf")
+           if '-s' in sys.argv or '--silent' in sys.argv: new_argv.append("--no-banner")
+        sys.argv = new_argv[:]; del new_argv
 
         if hasattr(IPython, 'Shell'): # old IPython versions
            IPython.Shell.start(user_ns=globals()).mainloop()
         else:
-           from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell
-           # import pyraf to write this shell obj to it's namespace
+           # Start the interactive shell.  Also, see IPython.embed() here:
+           #     http://ipython.org/ipython-doc/stable/interactive/ \
+           #     reference.html#embedding-ipython
+           from IPython.frontend.terminal.ipapp import TerminalIPythonApp
+# was:     from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell
+           app = TerminalIPythonApp.instance()
+           app.initialize()
+           # import pyraf to write this shell obj to its namespace
            # we have already fully imported it above
            import pyraf
            # create and run the Ipython shell - it takes over from here
-           pyraf._ipyshell = TerminalInteractiveShell(user_ns=globals())
+           pyraf._ipyshell = app.shell
+# was:     pyraf._ipyshell = TerminalInteractiveShell(user_ns=globals())
+           # in the end, with this run_code(), all of this is the equivalent
+           # of simply running ipython standalone with these imports
            pyraf._ipyshell.run_code('from pyraf import iraf, ipython_api')
-           # this is the equaivalent of running ipython with the above imports
-           pyraf._ipyshell.mainloop()
+           app.start()
+# was:     pyraf._ipyshell.mainloop()
         sys.exit()
     else:
         import pyraf.pycmdline
