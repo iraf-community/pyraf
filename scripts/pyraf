@@ -88,7 +88,9 @@ if 'PYTHONSTARTUP' in os.environ and \
                 os.path.isfile(os.environ["PYTHONSTARTUP"]):
     exec(compile(open(os.environ["PYTHONSTARTUP"]).read(), os.environ["PYTHONSTARTUP"], 'exec'))
 
+#------------------------------------------------------------------------------
 # In next line we get into pyraf's __init__.py - this does ALL KINDS OF THINGS
+#------------------------------------------------------------------------------
 from pyraf import doCmdline, _use_ipython_shell, runCmd, __version__
 # By now, the bulk of the startup work is done
 from pyraf import iraf
@@ -96,8 +98,11 @@ from pyraf.irafpar import makeIrafPar
 from stsci.tools.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
 
-# IPython Pyraf profile RC installation
+# IPython Pyraf profile RC installation - this is only done so that the next
+# step (below) can find/run the rc file (to execute some pyraf magic setup)
 if _use_ipython_shell:
+    # the following should be removed soon, it is only used for versions
+    # of IPython older than 0.11
     import pyraf
     home = None
     ip = os.getenv("IPYTHONDIR")
@@ -137,15 +142,38 @@ if doCmdline:
     if _use_ipython_shell:
         import sys
         import IPython
-        if '-s' in sys.argv or '--silent' in sys.argv:
-           sys.argv = ["ipython","-nobanner","-p","pyraf"]
-        else:
-           sys.argv = ["ipython","-p","pyraf"]
+
+        # rewrite sys.argv
+        new_argv = ["ipython",]
         if hasattr(IPython, 'Shell'): # old versions
+           if '-s' in sys.argv or '--silent' in sys.argv: new_argv.append("-nobanner")
+           new_argv.append("-p")
+           new_argv.append("pyraf")
+        else:
+           if '-s' in sys.argv or '--silent' in sys.argv: new_argv.append("--no-banner")
+        sys.argv = new_argv[:]; del new_argv
+
+        if hasattr(IPython, 'Shell'): # old IPython versions
            IPython.Shell.start(user_ns=globals()).mainloop()
         else:
-           from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell
-           TerminalInteractiveShell(user_ns=globals()).mainloop()
+           # Start the interactive shell.  Also, see IPython.embed() here:
+           #     http://ipython.org/ipython-doc/stable/interactive/ \
+           #     reference.html#embedding-ipython
+           from IPython.frontend.terminal.ipapp import TerminalIPythonApp
+# was:     from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell
+           app = TerminalIPythonApp.instance()
+           app.initialize()
+           # import pyraf to write this shell obj to its namespace
+           # we have already fully imported it above
+           import pyraf
+           # create and run the Ipython shell - it takes over from here
+           pyraf._ipyshell = app.shell
+# was:     pyraf._ipyshell = TerminalInteractiveShell(user_ns=globals())
+           # in the end, with this run_code(), all of this is the equivalent
+           # of simply running ipython standalone with these imports
+           pyraf._ipyshell.run_code('from pyraf import iraf, ipython_api')
+           app.start()
+# was:     pyraf._ipyshell.mainloop()
         sys.exit()
     else:
         import pyraf.pycmdline

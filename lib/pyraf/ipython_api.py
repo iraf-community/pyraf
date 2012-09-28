@@ -16,12 +16,20 @@ $Id$
 #*****************************************************************************
 from __future__ import division # confidence high
 
-from IPython import Release
+OLD_IPY = True # "old" means prior to v0.12
+try:
+    from IPython.iplib import InteractiveShell
+except:
+    OLD_IPY = False
 
-# comment out this line because it crashes epydoc
-# __author__  = '%s <%s>' % Release.authors['Fernando']
+if OLD_IPY:
+    from IPython import Release as release
+    import IPython.ipapi as ipapi
+else:
+    from IPython.core import release
+    import IPython.core.ipapi as ipapi
 
-__license__ = Release.license
+__license__ = release.license
 
 # set search path to include directory above this script and current directory
 # ... but do not want the pyraf package directory itself in the path, since
@@ -37,8 +45,8 @@ _locals = globals()
 
 # del iraf, __version__, makeIrafPar, yes, no, INDEF, EOF, logout, quit, exit
 
-if '-nobanner' not in sys.argv:
-    print "PyRAF", __version__, "Copyright (c) 2002 AURA"
+if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
+    print "\nPyRAF", __version__, "Copyright (c) 2002 AURA"
 
 # Start up command line wrapper keeping definitions in main name space
 # Keep the command-line object in namespace too for access to history
@@ -48,7 +56,10 @@ from pyraf.irafcompleter import IrafCompleter
 
 class IPythonIrafCompleter(IrafCompleter):
     import sys
-    from IPython.iplib import InteractiveShell
+    if OLD_IPY:
+        from IPython.iplib import InteractiveShell
+    else:
+        from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
 
     def __init__(self, IP):
         IrafCompleter.__init__(self)
@@ -103,8 +114,12 @@ class IPython_PyRAF_Integrator(object):
 
     """
     import string
-    import IPython.ipapi
-    from IPython.iplib import InteractiveShell
+
+    if OLD_IPY:
+        from IPython.iplib import InteractiveShell
+    else:
+        from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
+
 
     def __init__(self, clemulate=1, cmddict={},
                  cmdchars=("a-zA-Z_.","0-9")):
@@ -126,30 +141,71 @@ class IPython_PyRAF_Integrator(object):
 
         self.traceback_mode = "Context"
 
-        self._ipython_api = IPython.ipapi.get()
+        if OLD_IPY:
+            self._ipython_api = ipapi.get()
 
-        self._ipython_magic = self._ipython_api.IP.lsmagic() # skip %
+            self._ipython_magic = self._ipython_api.IP.lsmagic() # skip %
 
-        self._ipython_api.expose_magic(
-            "set_pyraf_magic", self.set_pyraf_magic)
-        self._ipython_api.expose_magic(
-            "use_pyraf_traceback", self.use_pyraf_traceback)
-        self._ipython_api.expose_magic(
-            "use_pyraf_cl_emulation", self.use_pyraf_cl_emulation)
-        self._ipython_api.expose_magic(
-            "use_pyraf_readline_completer", self.use_pyraf_completer)
+            self._ipython_api.expose_magic(
+                "set_pyraf_magic", self.set_pyraf_magic)
+            self._ipython_api.expose_magic(
+                "use_pyraf_traceback", self.use_pyraf_traceback)
+            self._ipython_api.expose_magic(
+                "use_pyraf_cl_emulation", self.use_pyraf_cl_emulation)
+            self._ipython_api.expose_magic(
+                "use_pyraf_readline_completer", self.use_pyraf_completer)
 
-        self._pyraf_completer = IPythonIrafCompleter(self._ipython_api.IP)
+            self._pyraf_completer = IPythonIrafCompleter(self._ipython_api.IP)
 
-        # Replace IPython prefilter with self.prefilter bound method.
-        def foo_filter(*args):
-            return self.prefilter(*args)
-        self.InteractiveShell.prefilter = foo_filter
+            # Replace IPython prefilter with self.prefilter bound method.
+            def foo_filter(*args):
+                return self.prefilter(*args)
+            self.InteractiveShell.prefilter = foo_filter
+        else:
+            self._ipython_api = pyraf._ipyshell
+
+            # this is pretty far into IPython, i.e. very breakable
+            # lsmagic() returns a dict of 2 dicts: 'cell', and 'line'
+            self._ipython_magic = self._ipython_api.magics_manager.lsmagic()['line'].keys()
+            pfmgr = self._ipython_api.prefilter_manager
+            self.priority = 0 # transformer needs this, low val = done first
+            self.enabled = True # a transformer needs this
+            pfmgr.register_transformer(self)
 
     def isLocal(self, value):
         """Returns true if value is local variable"""
         ff = value.split('.')
         return ff[0] in self.locals
+
+    def transform(self, line, continue_prompt):
+        """ This pre-processes input to do PyRAF substitutions before
+        passing it on to IPython.  Has this signature to match the
+        needed API for the new (0.12) IPython's PrefilterTransformer
+        instances.  This class is to look like such an instance.
+        """
+        # Check continue_prompt - we are not handling it currently
+        if continue_prompt:
+            return line
+        # PyRAF assumes ASCII but IPython deals in unicode.  We could handle
+        # that also by simply rewriting some of this class to use unicode
+        # string literals.  For now, convert and check - if not OK (not
+        # convertible to ASCII), simply move on (remove this assumption
+        # after we no longer support Python2)
+        try:
+            asciiline =  str(line)
+        except:
+            return line
+
+        # Handle any weird special cases here.  Most all transformations
+        # should occur through the normal route (e.g. sent here, then
+        # translated below), but some items never get the chance in ipython
+        # to be prefiltered...
+        if asciiline == 'get_ipython().show_usage()':
+            # Hey! IPython translated '?' before we got a crack at it...
+            asciiline = '?' # put it back! (only for single '?' by itself)
+
+        # Now run it through our normal prefilter function
+        return self.cmd(asciiline)
 
     def cmd(self, line):
         """Check for and execute commands from dictionary."""
@@ -267,9 +323,9 @@ class IPython_PyRAF_Integrator(object):
         import linecache, traceback, sys, os
         import IPython.ultraTB
 
-        #get the color scheme from the user configuration file and pass
-        #it to the trace formatter
-        ip = IPython.ipapi.get()
+        # get the color scheme from the user configuration file and pass
+        # it to the trace formatter
+        ip = ipapi.get()
         csm = ip.options['colors']
 
         linecache.checkcache()
@@ -289,6 +345,8 @@ class IPython_PyRAF_Integrator(object):
     def prefilter(self, IP, line, continuation):
         """prefilter pre-processes input to do PyRAF substitutions before
            passing it on to IPython.
+           NOTE: this is ONLY used for OLD_IPY, since we use the transform
+           hooks for the later versions.
         """
         line = self.cmd(str(line)) # use type str here, not unicode
         return self.InteractiveShell._prefilter(IP, line, continuation)
@@ -359,12 +417,17 @@ class IPython_PyRAF_Integrator(object):
             if feedback: self._debug("PyRAF readline completion off")
             self._pyraf_completer.deactivate()
 
+
 fb = "-nobanner" not in sys.argv
 __PyRAF = IPython_PyRAF_Integrator()
 # __PyRAF.use_pyraf_completer(feedback=fb) Can't do this yet...but it's hooked.
 # __PyRAF.use_pyraf_cl_emulation(feedback=fb)
-__PyRAF.use_pyraf_traceback(feedback=fb)
+
+if OLD_IPY:
+    __PyRAF.use_pyraf_traceback(feedback=fb)
+else:
+    if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
+        print "PyRAF traceback not enabled"
 del fb
 
 del IPythonIrafCompleter, IPython_PyRAF_Integrator, IrafCompleter
-
