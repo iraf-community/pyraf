@@ -171,7 +171,7 @@ if doCmdline:
 # was:     pyraf._ipyshell = TerminalInteractiveShell(user_ns=globals())
            # in the end, with this run_code(), all of this is the equivalent
            # of simply running ipython standalone with these imports
-           pyraf._ipyshell.run_code('from pyraf import iraf, ipython_api')
+           pyraf._ipyshell.run_code('from pyraf import iraf, ipython_api; from stsci.tools.irafglobals import INDEF, Verbose, yes, no')
            app.start()
 # was:     pyraf._ipyshell.mainloop()
         sys.exit()
