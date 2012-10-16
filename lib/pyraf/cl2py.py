@@ -1484,13 +1484,21 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # if we can identify more problems
         self.errorappend(self.gotos)
 
+        # This performs the actual translation.  It traverses the
+        # abstract syntax tree.  self has methods called n_WHATEVER
+        # for each WHATEVER node type in the tree.  Each method
+        # writes python source code to self.code_buffer.
         self.preorder()
         self.write("\n")
 
+        # Get the python source that is the translation of the cl.
         self.code = self.code_buffer.getvalue()
         self.code_buffer.close()
 
-        # write the header second so it can be minimal
+        # The translated python requires a header with initialization
+	    # code.  Now that we have performed the entire translation,
+        # we know which of the initialization steps we need.  Stick
+        # them on the front of the translated python.
         self.code_buffer = cStringIO.StringIO()
         self.writeProcHeader()
         header = self.code_buffer.getvalue()
@@ -1503,6 +1511,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.code_buffer.close()
         del self.code_buffer
 
+        #
+
         if self.filename == 'string_proc':
             self.comment('The code for "string_proc":')
             self.comment('-'*80)
@@ -1513,10 +1523,15 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
 
     def _ecl_linemapping(self, header):
-        lines = header.count("\n") + 2 # see below
+        lines = header.count("\n") + 2
+        # count + 2 because we will add two more lines to the header
+
+        # adjust all the line numbers up by the size of the header
         newmap = {}
         for key,value in self._ecl_linemap.items():
             newmap[ key + lines ] = value
+
+        # return a python assignment statement that initializes the dictionary
         return "_ecl_linemap_" + self.vars.proc_name + " = " + repr(newmap) + "\n\n"
 
     def incrIndent(self):
