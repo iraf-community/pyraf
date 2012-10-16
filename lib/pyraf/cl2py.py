@@ -1496,7 +1496,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.code_buffer.close()
 
         # The translated python requires a header with initialization
-	    # code.  Now that we have performed the entire translation,
+        # code.  Now that we have performed the entire translation,
         # we know which of the initialization steps we need.  Stick
         # them on the front of the translated python.
         self.code_buffer = cStringIO.StringIO()
