@@ -19,7 +19,7 @@ import sys
 from stsci.tools import minmatch
 
 PY3K = sys.version_info[0] > 2
-_importHasLvlArg = PY3K or sys.version_info[1] >= 5 # no 1.*
+_importHasLvlArg = PY3K or sys.version_info[1] >= 5 # is 2.*, handle no 1.*
 _reloadIsBuiltin = sys.version_info[0] < 3
 
 IMPORT_DEBUG = False
@@ -47,10 +47,14 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     if IMPORT_DEBUG:
         print("irafimport called: "+name+", "+str(fromlist)+", "+str(level))
 
+    # do first: the default value for level changed to 0 as of Python 3.3
+    if PY3K and sys.version_info[1] >= 3 and level < 0:
+        level = 0
+
     # e.g. "from iraf import stsdas, noao" or "from .iraf import noao"
     if fromlist and (name in ["iraf", "pyraf.iraf", ".iraf"]):
         for task in fromlist:
-            pkg = iraf.getPkg(task,found=1)
+            pkg = the_iraf_module.getPkg(task,found=1)
             if pkg is not None and not pkg.isLoaded():
                 pkg.run(_doprint=0, _hush=1)
         # must return a module for 'from' import
@@ -111,7 +115,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     if _importHasLvlArg:
         retval = _originalImport(name, globals, locals, fromlist, level)
     else:
-        # we could assert here that level == -1, but it's safe to assume
+        # we could assert here that level is default, but it's safe to assume
         retval = _originalImport(name, globals, locals, fromlist)
 
     if hadIrafInList:
@@ -137,9 +141,9 @@ class _irafModuleClass:
         self.__dict__['module'] = None
 
     def _moduleInit(self):
-        global iraf
-        self.__dict__['module'] = iraf
-        self.__dict__['__name__'] = iraf.__name__
+        global the_iraf_module
+        self.__dict__['module'] = the_iraf_module
+        self.__dict__['__name__'] = the_iraf_module.__name__
         # create minmatch dictionary of current module contents
         self.__dict__['mmdict'] = minmatch.MinMatchDict(vars(self.module))
 
@@ -193,7 +197,12 @@ else:
 _irafModuleProxy = _irafModuleClass()
 
 # import iraf module using original mechanism
-iraf = _originalImport('iraf', globals(), locals(), [])
+try:
+    the_iraf_module = _originalImport('iraf', globals(), locals(), [])
+except ImportError:
+    # necessary as of Python 3.3+ :  try "import pyraf.iraf"
+    pyrafmod = _originalImport('pyraf.iraf', globals(), locals(), [])
+    the_iraf_module = pyrafmod.iraf
 
 # leaving
 if IMPORT_DEBUG:
