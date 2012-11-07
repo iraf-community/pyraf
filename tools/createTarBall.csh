@@ -3,8 +3,8 @@
 # $Id$
 #
 
-if ($#argv != 2) then
-   echo "usage:  $0  dev|rel  2|3"
+if ($#argv != 3) then
+   echo "usage:  $0  dev|rel  2|3  py3-bin-dir (only used if py3)"
    exit 1
 endif
 set isdev = 0
@@ -15,11 +15,11 @@ set pyver = 2
 if ($argv[2] == "3") then
    set pyver = 3
 endif
+set py3bin = $argv[3]
 
 set out2to3 = ~/.pyraf_2to3_out
-set py3bin = /user/${USER}/info/usrlcl323/bin
 if (($pyver == 3) && (!(-e $py3bin))) then
-   echo ERROR - does not exist - $py3bin - needed for 2to3ing
+   echo ERROR - py3bin dir does not exist - $py3bin - needed for 2to3ing
    exit 1
 endif
 
