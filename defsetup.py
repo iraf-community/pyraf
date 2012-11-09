@@ -15,8 +15,12 @@ ms_windows = sys.platform.startswith('win')
 # conditional for if we should build the C code
 build_c = not ms_windows
 
+C_EXT_MODNAME_ENDING = 'module'
+if sys.version_info[0] > 2: # actually changes in Python 3.3, but why wait
+    C_EXT_MODNAME_ENDING = '' # needs not "sscanfmodule.so", but "sscanf.so"
+
 # default to no C extensions; add to this list when necessary
-PYRAF_EXTENSIONS=[ ]
+PYRAF_EXTENSIONS = []
 
 # get the python libraries for use by C extensions
 # (why? doesn't distutils already reference those?)
@@ -96,7 +100,7 @@ if not ms_windows or build_c :
     # unless you explicitly set build_c true.
     PYRAF_EXTENSIONS.append(
         distutils.core.Extension(
-            'pyraf.sscanfmodule',
+            'pyraf.sscanf'+C_EXT_MODNAME_ENDING,
             ['src/sscanfmodule.c'],
             include_dirs=add_inc_dirs
         )
@@ -107,7 +111,7 @@ if not ms_windows :
     # support
     PYRAF_EXTENSIONS.append(
         distutils.core.Extension(
-            'pyraf.xutilmodule',
+            'pyraf.xutil'+C_EXT_MODNAME_ENDING,
             ['src/xutil.c'],
             include_dirs=add_inc_dirs,
             library_dirs=add_lib_dirs,
