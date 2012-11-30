@@ -23,12 +23,15 @@ def diffit(exp2ig, f_new, f_ref, cleanup=True):
    """ Run the diff and check the return status """
    # don't do the diff if the new file isn't there or if it is empty
    assert os.path.exists(f_new), "New file unfound: "+f_new
+   assert os.path.exists(f_ref), "Ref file unfound: "+f_ref
+   # expect new file to at least be 80% as big as ref file, before we compare
+   expected_sz = int(0.8*os.path.getsize(f_ref))
    sz = os.path.getsize(f_new)
-   if sz < 1:
+   if sz < expected_sz:
       # sometimes the psdump kernel takes a moment to write+close
       time.sleep(1)
       sz = os.path.getsize(f_new)
-      if sz < 1:
+      if sz < expected_sz:
          time.sleep(5)
    sz = os.path.getsize(f_new)
    assert sz > 0, "New file is empty: "+f_new
