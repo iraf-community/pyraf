@@ -14,6 +14,17 @@ import gki, irafukey, irafgwcs
 # use this form since the iraf import is circular
 import pyraf.iraf
 
+# test_probe is a flag that a testing system can use to tell pyraf
+# (when used as a library, e.g. in stsci_regtest) to print various
+# diagnostic information that we think might be useful in test logs.
+# This is different from verbose, because it is more selective.
+#
+# There is no interface to activate this feature.  Use:
+#   import pyraf.irafexecute
+#   pyraf.irafexecute.test_probe = True
+test_probe = False
+
+
 #stdgraph = None
 
 IPC_PREFIX = ndarr2bytes(numpy.array([01120],numpy.int16))
@@ -90,7 +101,7 @@ class _ProcessProxy(filecache.FileCache):
         return self.process
 
 
-class _ProcessCache:
+class _ProcessCache(object):
 
     """Cache of active processes indexed by executable path"""
 
@@ -377,13 +388,16 @@ _re_clcmd = re.compile(
                         r'(?P<sysescape>' + _p_sysescape + ')'
                         )
 
-class IrafProcess:
+class IrafProcess(object):
 
     """IRAF process class"""
 
     def __init__(self, executable):
 
         """Start IRAF task executable."""
+
+        if test_probe :
+            sys.stdout.write("Starting IRAF process for %s\n"%executable)
 
         self.executable = executable
         self.process = subproc.Subprocess(executable+' -c')
@@ -436,6 +450,8 @@ class IrafProcess:
         getParObject(param): get parameter object
         """
 
+        if test_probe :
+            sys.stdout.write( "Running IRAF task %s from %s\n"% (task, self.executable) )
         self.task = task
         # set IO streams
         stdin = pstdin or sys.stdin
