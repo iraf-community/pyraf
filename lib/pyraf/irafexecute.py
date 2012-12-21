@@ -101,7 +101,7 @@ class _ProcessProxy(filecache.FileCache):
         return self.process
 
 
-class _ProcessCache(object):
+class _ProcessCache:
 
     """Cache of active processes indexed by executable path"""
 
@@ -388,7 +388,7 @@ _re_clcmd = re.compile(
                         r'(?P<sysescape>' + _p_sysescape + ')'
                         )
 
-class IrafProcess(object):
+class IrafProcess:
 
     """IRAF process class"""
 
