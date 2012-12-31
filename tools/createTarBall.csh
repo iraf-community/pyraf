@@ -93,12 +93,22 @@ echo Removing:
 cd $workDir/$pyr
 mkdir required_pkgs
 cd $workDir/$pyr/required_pkgs
-echo "Downloading source for: tools, distutils"
-#svn $co_dist distutils
-#if ($status != 0) then
-#   echo ERROR svn-ing distutils
-#   exit 1
-#endif
+echo "Downloading source for: tools, d2to1"
+if (-e /usr/stsci/ssbdev/bin/git) then
+   /usr/stsci/ssbdev/bin/git clone git://github.com/iguananaut/d2to1.git
+   if ($status != 0) then
+      echo ERROR gitting d2to1
+      exit 1
+   endif
+#else
+#   cp /eng/ssb/src/d2to1.tar.gz .
+#   gunzip d2to1.tar.gz
+#   tar xf d2to1.tar
+#   if ($status != 0) then
+#      echo ERROR copy/unzip/untarring d2to1
+#      exit 1
+#   endif
+endif
 #if ($pyver == 3) then
 #   cd $workDir/$pyr/required_pkgs
 #   /bin/rm -f $out2to3.d
