@@ -145,12 +145,13 @@ if ($status != 0) then
    exit 1
 endif
 
-# edit setup to comment our pyfits requirement (we dont need it for pyraf)
+# edit setup to comment out pyfits requirement (we dont need it for pyraf)
 cd $workDir/$pyr/required_pkgs/tools
 if (-e setup.cfg) then
    /bin/cp setup.cfg setup.cfg.orig
-   cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' |sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
-   echo DIFF for pyfits
+#  cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' |sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
+   cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' > setup.cfg
+   echo DIFF for pyfits required version
    diff setup.cfg.orig setup.cfg
 endif
 
