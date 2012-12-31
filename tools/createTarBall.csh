@@ -35,8 +35,6 @@ endif
 if ($isdev == 1) then
    set pyr = "pyraf-dev"
    set co_pyraf = 'co -q -r HEAD http://svn6.assembla.com/svn/pyraf/trunk'
-#  set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/distutils'
-   set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/distutils-standalone'
    set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/tools'
 else
    set pyr = "pyraf-2.1"
@@ -52,7 +50,6 @@ else
       set brn = $ans
    endif
    set co_pyraf = "co -q http://svn6.assembla.com/svn/pyraf/branches/$brn"
-   set co_dist  = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/$brn/distutils"
    set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/$brn/tools"
 endif
 
@@ -94,21 +91,19 @@ cd $workDir/$pyr
 mkdir required_pkgs
 cd $workDir/$pyr/required_pkgs
 echo "Downloading source for: tools, d2to1"
-if (-e /usr/stsci/ssbdev/bin/git) then
-   /usr/stsci/ssbdev/bin/git clone git://github.com/iguananaut/d2to1.git
-   if ($status != 0) then
-      echo ERROR gitting d2to1
-      exit 1
-   endif
-#else
-#   cp /eng/ssb/src/d2to1.tar.gz .
-#   gunzip d2to1.tar.gz
-#   tar xf d2to1.tar
-#   if ($status != 0) then
-#      echo ERROR copy/unzip/untarring d2to1
-#      exit 1
-#   endif
+#
+svn co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
+if ($status != 0) then
+   echo ERROR svn-ing d2to1
+   exit 1
 endif
+#
+svn co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci.distutils/trunk stsci.distutils
+if ($status != 0) then
+   echo ERROR svn-ing stsci.distutils
+   exit 1
+endif
+#
 #if ($pyver == 3) then
 #   cd $workDir/$pyr/required_pkgs
 #   /bin/rm -f $out2to3.d
@@ -159,9 +154,9 @@ endif
 cd $workDir/$pyr/required_pkgs/tools
 if (-e setup.cfg) then
    /bin/cp setup.cfg setup.cfg.orig
-#  cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' |sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
+#  sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
    cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' > setup.cfg
-   echo DIFF for pyfits required version
+   echo DIFF for all required pkgs/versions
    diff setup.cfg.orig setup.cfg
 endif
 
