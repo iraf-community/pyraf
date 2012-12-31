@@ -17,6 +17,11 @@ if ($argv[2] == "3") then
 endif
 set py3bin = $argv[3]
 
+set svnbin = svn
+if (`uname -n` == "arzach.stsci.edu") then
+   set svnbin = /usr/bin/svn
+endif
+
 set out2to3 = ~/.pyraf_2to3_out
 if (($pyver == 3) && (!(-e $py3bin))) then
    echo ERROR - py3bin dir does not exist - $py3bin - needed for 2to3ing
@@ -55,7 +60,7 @@ endif
 
 # get all source via SVN
 echo "Downloading source for: $pyr"
-svn $co_pyraf $pyr
+$svnbin $co_pyraf $pyr
 if ($status != 0) then
    echo ERROR svn-ing pyraf
    exit 1
@@ -73,7 +78,7 @@ endif
 
 # for now, add svninfo file manually
 cd $workDir/$pyr
-set rev = `svn info | grep '^Revision:' | sed 's/.* //'`
+set rev = `$svnbin info | grep '^Revision:' | sed 's/.* //'`
 cd $workDir/$pyr/lib/pyraf
 if (!(-e svninfo.py)) then
    echo '__svn_version__ = "'${rev}'"' > svninfo.py
@@ -92,13 +97,13 @@ mkdir required_pkgs
 cd $workDir/$pyr/required_pkgs
 echo "Downloading source for: tools, d2to1"
 #
-svn co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
+$svnbin co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
 if ($status != 0) then
    echo ERROR svn-ing d2to1
    exit 1
 endif
 #
-svn co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci.distutils/trunk stsci.distutils
+$svnbin co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci.distutils/trunk stsci.distutils
 if ($status != 0) then
    echo ERROR svn-ing stsci.distutils
    exit 1
@@ -114,7 +119,7 @@ endif
 #   endif
 #   cat $out2to3.d |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
 #endif
-svn $co_tools tools
+$svnbin $co_tools tools
 if ($status != 0) then
    echo ERROR svn-ing tools
    exit 1
