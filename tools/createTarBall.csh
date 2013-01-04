@@ -17,6 +17,11 @@ if ($argv[2] == "3") then
 endif
 set py3bin = $argv[3]
 
+set svnbin = svn
+if (`uname -n` == "arzach.stsci.edu") then
+   set svnbin = /usr/bin/svn
+endif
+
 set out2to3 = ~/.pyraf_2to3_out
 if (($pyver == 3) && (!(-e $py3bin))) then
    echo ERROR - py3bin dir does not exist - $py3bin - needed for 2to3ing
@@ -35,8 +40,6 @@ endif
 if ($isdev == 1) then
    set pyr = "pyraf-dev"
    set co_pyraf = 'co -q -r HEAD http://svn6.assembla.com/svn/pyraf/trunk'
-#  set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/distutils'
-   set co_dist  = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/distutils-standalone'
    set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/tools'
 else
    set pyr = "pyraf-2.1"
@@ -52,13 +55,12 @@ else
       set brn = $ans
    endif
    set co_pyraf = "co -q http://svn6.assembla.com/svn/pyraf/branches/$brn"
-   set co_dist  = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/$brn/distutils"
    set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/$brn/tools"
 endif
 
 # get all source via SVN
 echo "Downloading source for: $pyr"
-svn $co_pyraf $pyr
+$svnbin $co_pyraf $pyr
 if ($status != 0) then
    echo ERROR svn-ing pyraf
    exit 1
@@ -76,7 +78,7 @@ endif
 
 # for now, add svninfo file manually
 cd $workDir/$pyr
-set rev = `svn info | grep '^Revision:' | sed 's/.* //'`
+set rev = `$svnbin info | grep '^Revision:' | sed 's/.* //'`
 cd $workDir/$pyr/lib/pyraf
 if (!(-e svninfo.py)) then
    echo '__svn_version__ = "'${rev}'"' > svninfo.py
@@ -93,12 +95,20 @@ echo Removing:
 cd $workDir/$pyr
 mkdir required_pkgs
 cd $workDir/$pyr/required_pkgs
-echo "Downloading source for: tools, distutils"
-#svn $co_dist distutils
-#if ($status != 0) then
-#   echo ERROR svn-ing distutils
-#   exit 1
-#endif
+echo "Downloading source for: tools, d2to1"
+#
+$svnbin co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
+if ($status != 0) then
+   echo ERROR svn-ing d2to1
+   exit 1
+endif
+#
+$svnbin co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci.distutils/trunk stsci.distutils
+if ($status != 0) then
+   echo ERROR svn-ing stsci.distutils
+   exit 1
+endif
+#
 #if ($pyver == 3) then
 #   cd $workDir/$pyr/required_pkgs
 #   /bin/rm -f $out2to3.d
@@ -109,7 +119,7 @@ echo "Downloading source for: tools, distutils"
 #   endif
 #   cat $out2to3.d |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
 #endif
-svn $co_tools tools
+$svnbin $co_tools tools
 if ($status != 0) then
    echo ERROR svn-ing tools
    exit 1
@@ -145,12 +155,13 @@ if ($status != 0) then
    exit 1
 endif
 
-# edit setup to comment our pyfits requirement (we dont need it for pyraf)
+# edit setup to comment out pyfits requirement (we dont need it for pyraf)
 cd $workDir/$pyr/required_pkgs/tools
 if (-e setup.cfg) then
    /bin/cp setup.cfg setup.cfg.orig
-   cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' |sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
-   echo DIFF for pyfits
+#  sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
+   cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' > setup.cfg
+   echo DIFF for all required pkgs/versions
    diff setup.cfg.orig setup.cfg
 endif
 
