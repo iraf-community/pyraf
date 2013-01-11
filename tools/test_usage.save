@@ -1,0 +1,34 @@
+Copyright (C) 2003 Association of Universities for Research in Astronomy
+(AURA)
+See LICENSE.txt in the docs directory of the source distribution for the
+terms of use.
+
+Usage: pyraf [options] [savefile]
+
+where savefile is an optional save file to start from and options are one
+or more of:
+  -c cmd  Command passed in as string (any valid PyRAF command)
+  -e      Turn on ECL mode
+  -h      Print this message
+  -i      No command line wrapper, just run standard interactive Python shell
+  -m      Run command line wrapper to provide extra capabilities (default)
+  -n      No splash screen during startup (also see -x)
+  -s      Silent initialization (does not print startup messages)
+  -V      Print version info and exit
+  -v      Set verbosity level (may be repeated to increase verbosity)
+  -x      No graphics will be attempted/loaded during session
+  -y      Run the IPython shell instead of the normal PyRAF command shell
+
+Long versions of options:
+  -c  --comand=<cmd>
+  -e  --ecl
+  -h  --help
+  -i  --commandwrapper=no
+  -m  --commandwrapper=yes
+  -n  --nosplash
+  -s  --silent
+  -V  --version
+  -v  --verbose
+  -x  --nographics
+  -y  --ipython
+
