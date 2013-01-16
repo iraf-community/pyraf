@@ -97,7 +97,9 @@ mkdir required_pkgs
 cd $workDir/$pyr/required_pkgs
 echo "Downloading source for: tools, d2to1"
 #
-$svnbin co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
+$svnbin co -q -r '{2012-12-12}' https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
+# $svnbin co -q -r HEAD         https://...
+# the HEAD is not qwuite stable right now for PY3K uses - get back to this later
 if ($status != 0) then
    echo ERROR svn-ing d2to1
    exit 1
