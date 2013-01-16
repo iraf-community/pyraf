@@ -88,18 +88,17 @@ endif
 
 # for now, remove new_setup* (it's confusing to users)
 cd $workDir/$pyr
-echo Removing:
-/bin/rm new_setup*
+/bin/rm new_setup* >& /dev/null
 
 # get extra pkgs into a subdir
 cd $workDir/$pyr
 mkdir required_pkgs
 cd $workDir/$pyr/required_pkgs
-echo "Downloading source for: tools, d2to1"
+echo "Downloading source for: tools and dist. stuff"
 #
 $svnbin co -q -r '{2012-12-12}' https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
+# !!! the HEAD is not quite stable right now for PY3K uses - get back to this later !!!
 # $svnbin co -q -r HEAD         https://...
-# the HEAD is not qwuite stable right now for PY3K uses - get back to this later
 if ($status != 0) then
    echo ERROR svn-ing d2to1
    exit 1
@@ -111,22 +110,13 @@ if ($status != 0) then
    exit 1
 endif
 #
-#if ($pyver == 3) then
-#   cd $workDir/$pyr/required_pkgs
-#   /bin/rm -f $out2to3.d
-#   $py3bin/2to3 -w -n --no-diffs distutils >& $out2to3.d
-#   if ($status != 0) then
-#      echo ERROR 2to3-ing distutils
-#      exit 1
-#   endif
-#   cat $out2to3.d |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
-#endif
 $svnbin $co_tools tools
 if ($status != 0) then
    echo ERROR svn-ing tools
    exit 1
 endif
-if ($pyver == 3) then
+#
+if ($pyver == 3 && 0 == disable.for.now.as.tools.is.being.2to3d.on.the.fly) then
    cd $workDir/$pyr/required_pkgs
    /bin/rm -f $out2to3.t
    $py3bin/2to3 -w -n --no-diffs tools >& $out2to3.t
@@ -139,8 +129,7 @@ endif
 
 # for now, remove new_setup* (it's confusing to users)
 cd $workDir/$pyr/required_pkgs/tools
-echo Removing:
-/bin/rm new_setup*
+/bin/rm new_setup* >& /dev/null
 
 # get version info
 set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py | sed 's/.*= *//' | sed 's/"//g'`
