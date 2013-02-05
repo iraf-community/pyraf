@@ -40,7 +40,7 @@ endif
 if ($isdev == 1) then
    set pyr = "pyraf-dev"
    set co_pyraf = 'co -q -r HEAD http://svn6.assembla.com/svn/pyraf/trunk'
-   set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/trunk/tools'
+   set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/trunk'
 else
    set pyr = "pyraf-2.1"
    echo -n 'What will the pyraf dir name be? ('$pyr'): '
@@ -55,7 +55,7 @@ else
       set brn = $ans
    endif
    set co_pyraf = "co -q http://svn6.assembla.com/svn/pyraf/branches/$brn"
-   set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci_python/branches/$brn/tools"
+   set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/branches/$brn"
 endif
 
 # get all source via SVN
@@ -73,7 +73,7 @@ if ($pyver == 3) then
       echo ERROR 2to3-ing pyraf
       exit 1
    endif
-   cat $out2to3.p |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
+   cat $out2to3.p |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: stsci.tools/' |grep -v '^RefactoringTool: distutils/'
 endif
 
 # for now, add svninfo file manually
@@ -94,7 +94,7 @@ cd $workDir/$pyr
 cd $workDir/$pyr
 mkdir required_pkgs
 cd $workDir/$pyr/required_pkgs
-echo "Downloading source for: tools and dist. stuff"
+echo "Downloading source for: stsci.tools and dist. stuff"
 #
 $svnbin co -q -r '{2012-12-12}' https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
 # !!! the HEAD is not quite stable right now for PY3K uses - get back to this later !!!
@@ -110,25 +110,25 @@ if ($status != 0) then
    exit 1
 endif
 #
-$svnbin $co_tools tools
+$svnbin $co_tools stsci.tools
 if ($status != 0) then
-   echo ERROR svn-ing tools
+   echo ERROR svn-ing stsci.tools
    exit 1
 endif
 #
 if ($pyver == 3 && 0 == disable.for.now.as.tools.is.being.2to3d.on.the.fly) then
    cd $workDir/$pyr/required_pkgs
    /bin/rm -f $out2to3.t
-   $py3bin/2to3 -w -n --no-diffs tools >& $out2to3.t
+   $py3bin/2to3 -w -n --no-diffs stsci.tools >& $out2to3.t
    if ($status != 0) then
-      echo ERROR 2to3-ing tools
+      echo ERROR 2to3-ing stsci.tools
       exit 1
    endif
-   cat $out2to3.t |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: tools/' |grep -v '^RefactoringTool: distutils/'
+   cat $out2to3.t |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: stsci.tools/' |grep -v '^RefactoringTool: distutils/'
 endif
 
 # for now, remove new_setup* (it's confusing to users)
-cd $workDir/$pyr/required_pkgs/tools
+cd $workDir/$pyr/required_pkgs/stsci.tools
 /bin/rm new_setup* >& /dev/null
 
 # get version info
@@ -147,7 +147,7 @@ if ($status != 0) then
 endif
 
 # edit setup to comment out pyfits requirement (we dont need it for pyraf)
-cd $workDir/$pyr/required_pkgs/tools
+cd $workDir/$pyr/required_pkgs/stsci.tools
 if (-e setup.cfg) then
    /bin/cp setup.cfg setup.cfg.orig
 #  sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
