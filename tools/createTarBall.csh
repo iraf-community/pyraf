@@ -96,9 +96,8 @@ mkdir required_pkgs
 cd $workDir/$pyr/required_pkgs
 echo "Downloading source for: stsci.tools and dist. stuff"
 #
-$svnbin co -q -r '{2012-12-12}' https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
-# !!! the HEAD is not quite stable right now for PY3K uses - get back to this later !!!
-# $svnbin co -q -r HEAD         https://...
+# STABLE!: -q -r '{2013-02-11}', but continue to use HEAD if possible
+$svnbin co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
 if ($status != 0) then
    echo ERROR svn-ing d2to1
    exit 1
@@ -150,8 +149,7 @@ endif
 cd $workDir/$pyr/required_pkgs/stsci.tools
 if (-e setup.cfg) then
    /bin/cp setup.cfg setup.cfg.orig
-#  sed 's/^\(  *numpy .*\)/#\1/' > setup.cfg
-   cat setup.cfg.orig |sed 's/^\(  *pyfits .*\)/#\1/' > setup.cfg
+   cat setup.cfg.orig |grep -v 'pyfits *(' > setup.cfg
    echo DIFF for all required pkgs/versions
    diff setup.cfg.orig setup.cfg
 endif
@@ -165,11 +163,6 @@ if (-e setup.cfg) then
    echo DIFF for find-links
    diff setup.cfg.orig setup.cfg
 endif
-# change line to use: os.path.abspath("required_pkgs/distutils/lib")
-#/bin/cp setup.py setup.py.orig
-#cat setup.py.orig | sed 's/^\( *stsci_distutils *=\).*/\1 os.path.abspath("required_pkgs"+os.sep+"distutils"+os.sep+"lib")/' > setup.py
-#echo DIFF for required_pkgs
-#diff setup.py.orig setup.py
 
 # tar and zip it - regular (non-win) version
 cd $workDir
