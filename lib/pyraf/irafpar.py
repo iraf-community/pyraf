@@ -507,6 +507,7 @@ class IrafParList(taskpars.TaskPars):
         If neither is specified, generates a default list.
         """
         self.__pars = []
+        self.__hasPsets = False
         self.__filename = filename
         self.__name = taskname
         self.__filecache = ParCache(filename, parlist)
@@ -547,9 +548,19 @@ class IrafParList(taskpars.TaskPars):
             self.__filename = filename
 
     def __addPsetParams(self):
-        """Merge pset parameters into the parameter lists"""
+        """
+        Merge pset parameters into the parameter lists.
+        Developer note - the original intention of this may have been to ensure
+        that the pset par which appears in this list is NOT a copy of the
+        original par (from the pset) but a reference to the same object, and if
+        so, that would make things work smoothly, but it was found in Feb of
+        2013 that this is not happening correctly, and may be an unsafe plan.
+        Therefore the code was changed to allow clients to access both copies;
+        see getParObjects() and any related code. """
         # return immediately if they have already been added
         if self.__psetlist is None: return
+        # otherwise...
+        self.__hasPsets = True
         # Work from the pset's pardict because then we get
         # parameters from nested psets too
         for p in self.__psetlist:
@@ -704,6 +715,11 @@ class IrafParList(taskpars.TaskPars):
         return self.__pardict
 
     def getParObject(self,param):
+        """ Returns an IrafPar object matching the name given (param).
+        This looks only at the "top level" (which includes
+        any duplicated PSET pars via __addPsetParams), but does not look
+        down into PSETs. Note the difference between this and getParObjects
+        in their different return types. """
         if self.__psetlist: self.__addPsetParams()
         try:
             param = irafutils.untranslateName(param)
@@ -711,6 +727,55 @@ class IrafParList(taskpars.TaskPars):
         except KeyError, e:
             raise e.__class__("Error in parameter '" +
                     param + "' for task " + self.__name + "\n" + str(e))
+
+    def getParObjects(self, param):
+        """
+        Returns _all_ IrafPar objects matching the name given (param),
+        in the form of a dict like:
+            { scopename : <IrafPar instance>, ... }
+        where scope is '' if the par was found as a regular par in this list,
+        or, where scope is psetname if the par was found inside a PSET.
+        It is possible that some dict values will actually be the same object
+        in memory (see docs for __addPsetParams).
+
+        This _will_ raise a KeyError if the given param name was not
+        found at the "top level" (a regular par inside this par list)
+        even if it is also in a PSET.
+
+        Note the difference between this and getParObject in their
+        different return types.
+        """
+        if self.__psetlist: self.__addPsetParams()
+        param = irafutils.untranslateName(param)
+        retval = {}
+
+        # First find the single "top-level" matching par
+        try:
+            pobj = self.__pardict[param]
+            retval[''] = pobj
+        except KeyError, e:
+            raise e.__class__("Error in parameter '" +
+                    param + "' for task " + self.__name + "\n" + str(e))
+
+        # Next, see if there are any pars by this name inside any PSETs
+        if not self.__hasPsets:
+            return retval
+
+        # There is a PSET in here somewhere...
+        allpsets = [p for p in self.__pars if isinstance(p, IrafParPset)]
+        for pset in allpsets:
+            # Search its pars.  We definitely do NOT want a copy,
+            # we need the originals to edit.
+            its_plist = pset.get().getParList(docopy=0)
+            # might need to change next line to use minmatch dict
+            matching_pars = [pp for pp in its_plist if pp.name.startswith(param)]
+            if len(matching_pars) > 1:
+                raise RuntimeError('Unexpected multiple matches for par: '+ \
+                                   param+', are: '+str(matching_pars))
+            # add it to outgoing dict
+            if len(matching_pars) > 0:
+                retval[pset.name] = matching_pars[0]
+        return retval
 
     def getAllMatches(self,param):
         """Return list of all parameter names that may match param"""
@@ -744,7 +809,8 @@ class IrafParList(taskpars.TaskPars):
         """Set task parameter 'param' to value (with minimum-matching).
            scope, idxHint, and check are included for use as a task object
            but they are currently ignored."""
-        self.getParObject(param).set(value)
+        for par_obj in self.getParObjects(param).values():
+            par_obj.set(value)
 
     def setParList(self,*args,**kw):
         """Set value of multiple parameters from list"""
@@ -757,27 +823,61 @@ class IrafParList(taskpars.TaskPars):
                 del kw[okey]
                 kw[key] = value
 
-        # then expand all keywords to their full names
+        # then expand all keywords to their full names and add to fullkw
         fullkw = {}
+        dupl_pset_pars = []
         for key in kw.keys():
             try:
-                param = (self.getParObject(key).name, '')
+                # find par obj for this key
+                # (read docs for getParObjects - note the 's')
+                results_dict = self.getParObjects(key)
+
+                # results_dict is of form:  { psetname : <IrafPar instance> }
+                # if no KeyError, then there exists a top-level entry ('')
+                if '' not in results_dict:
+                    raise RuntimeError('No top-level match; expected KeyError')
+                # assume results_dict[''].name.startswith(key) or .name==key
+                # recall that key might be shortened version of par's .name
+                param = (results_dict[''].name, '')
+                results_dict.pop('')
+
+                # if there are others, then they are pars with the same name
+                # but located down inside a PSET.  So we save them for further
+                # handling down below.
+                for psetname in results_dict:
+                    if not results_dict[psetname].name.startswith(key):
+                        raise RuntimeError('PSET name non-match; par name: '+ \
+                              key+'; got: '+results_dict[psetname].name)
+                    dupl_pset_pars.append( (psetname, results_dict[psetname].name, key) )
             except KeyError, e:
-                # maybe it is pset.param
+                # Perhaps it is pset.param ? This would occur if the caller
+                # used kwargs like gemcube(..., geofunc.axis1 = 1, ...)
+                # (see help call #3454 for Mark Sim.)
                 i = key.find('.')
                 if i<=0:
                     raise e
+                # recall that key[:i] might be shortened version of par's .name
                 param = (self.getParObject(key[:i]).name, key[i+1:])
             if param in fullkw:
-                if param[1]:
-                    pname = '.'.join(param)
-                else:
-                    pname = param[0]
+                pname = param[0]
+                if param[1]: pname = '.'.join(param)
                 raise SyntaxError("Multiple values given for parameter " +
                         pname + " in task " + self.__name)
+            # Add it
             fullkw[param] = kw[key]
 
-        # add positional parameters to the keyword list, checking
+        # Now add any duplicated pars that were found, both up at top level and
+        # down inside a PSET (saved as dupl_pset_pars list).  The top level
+        # version has already been added to fullkw, so we add the PSET version.
+        for par_tup in dupl_pset_pars:
+            # par_tup is of form:
+            #    (pset name (full), par name (full), par name (short/given), )
+            if par_tup[0:2] not in fullkw:
+                # use par_tup[2]; its the given kw arg w/out the
+                # identifying pset name
+                fullkw[par_tup[0:2]] = kw[par_tup[2]]
+
+        # Now add positional parameters to the keyword list, checking
         # for duplicates
         ipar = 0
         for value in args:
@@ -795,9 +895,10 @@ class IrafParList(taskpars.TaskPars):
             fullkw[param] = value
             ipar = ipar+1
 
-        # now set all keyword parameters
+        # Now set all keyword parameters ...
         # clear changed flags and set cmdline flags for arguments
         self.clearFlags()
+
         # Count number of positional parameters set on cmdline
         # Note that this counts positional parameters set through
         # keywords in $nargs -- that is different from IRAF, which
@@ -807,8 +908,10 @@ class IrafParList(taskpars.TaskPars):
             param, tail = key
             p = self.getParObject(param)
             if tail:
-                # pset parameter - get parameter object from task
+                # is pset parameter - get parameter object from its task
                 p = p.get().getParObject(tail)
+                  # what if *this* p is a IrafParPset ? skip for now,
+                  # since we think no one is doubly nesting PSETs
             p.set(value)
             p.setFlags(_cmdlineFlag)
             if p.mode != "h": nargs = nargs+1

@@ -997,7 +997,7 @@ def Asc2IrafString(ascii_string):
     """translate ascii to IRAF 16-bit string format"""
     inarr = numpy.fromstring(ascii_string, numpy.int8) # OK if str or uni
     retval = ndarr2bytes(inarr.astype(numpy.int16))
-#   log_task_comm('Asc2IrafString', retval, False)
+#   log_task_comm('Asc2IrafString (write to task)', retval, False)
     return retval
 
 
