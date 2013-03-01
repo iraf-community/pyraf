@@ -333,7 +333,11 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # Special Stdout, Stdin, Stderr keywords are used to redirect IO
         redirKW, closeFHList = pyraf.iraf.redirProcess(kw)
 
-        # set parameters
+        # Set parameters ...
+        # The setParList call sets _runningParList, which is a copy that is
+        # only intended to live for the lifetime of the running task.  The
+        # _currentParList version lives longer - it represents the on-disk
+        # copy of the par list, during the life of this PyRAF session.
         kw['_setMode'] = 1
         self.setParList(*args, **kw)
 
@@ -446,11 +450,13 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             del kw['_setMode']
         else:
             _setMode = 0
+
         # create parlist copies for pset tasks too
         for p in newParList.getParList():
             if isinstance(p, irafpar.IrafParPset):
                 p.get().setParList()
-        # set the parameters
+
+        # now, finally, set the passed-in parameters
         newParList.setParList(*args, **kw)
         if _setMode:
             # set mode of automatic parameters
