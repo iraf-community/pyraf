@@ -1,37 +1,35 @@
 #!/usr/bin/env python
 
-# We use the local copy of stsci_distutils_hack, unless
-# the user asks for the stpytools version
-from __future__ import division # confidence high
-
-import os, sys
-HAS_TOOLS = True
-
-try :
-    import stsci.tools.stsci_distutils_hack as H
+try:
+    from setuptools import setup
 except ImportError:
+    from distribute_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup
+
+try:
+    from stsci.distutils.command.easier_install import easier_install
+except ImportError:
+    import os
+    import sys
+    stsci_distutils = os.path.abspath(os.path.join('..', 'distutils', 'lib'))
+    if os.path.exists(stsci_distutils) and stsci_distutils not in sys.path:
+        sys.path.append(stsci_distutils)
     try:
-        import stsci_distutils_hack as H
+        from stsci.distutils.command.easier_install import easier_install
+        import setuptools.command.easy_install
     except ImportError:
-        HAS_TOOLS = False
+        # If even this failed, we're not in an stsci_python source checkout,
+        # so there's nothing gained from using easier_install
+        from setuptools.command.easy_install import easy_install
+        easier_install = easy_install
+# This is required so that easier_install can be used for setup_requires
+import setuptools
+setuptools.command.easy_install.easy_install = easier_install
 
-# Needs latest version of tools
-reqdver = 3.1
-if HAS_TOOLS:
-   import stsci.tools as ST
-   HAS_TOOLS = float(ST.__version__[:3]) >= reqdver
-   del ST
-
-if HAS_TOOLS:
-   H.run()
-else:
-    print('The "stsci.tools" package (v%0.1f) is required by PyRAF.'%reqdver)
-    toolsLoc = os.path.abspath('.'+os.sep+'required_pkgs'+os.sep+'tools')
-    if os.path.exists(toolsLoc):
-        print("It has been included in your download, in the following directory.\n"+\
-              "Please install it first, and then install PyRAF.\n\t"+\
-              toolsLoc)
-    else:
-        print("Please download it from STScI and install it before installing PyRAF.\n"+\
-              "If you downloaded PyRAF, it is included under 'required_pkgs'.")
-    sys.exit(1)
+setup(
+    setup_requires=['d2to1>=0.2.3', 'stsci.distutils'],
+    d2to1=True,
+    use_2to3=True,
+    zip_safe=False
+)
