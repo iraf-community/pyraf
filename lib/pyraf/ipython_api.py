@@ -166,7 +166,10 @@ class IPython_PyRAF_Integrator(object):
 
             # this is pretty far into IPython, i.e. very breakable
             # lsmagic() returns a dict of 2 dicts: 'cell', and 'line'
-            self._ipython_magic = self._ipython_api.magics_manager.lsmagic()['line'].keys()
+            if hasattr(self._ipython_api, 'magics_manager'):
+                self._ipython_magic = self._ipython_api.magics_manager.lsmagic()['line'].keys()
+            else:
+                print('Please upgrade your version of IPython.')
             pfmgr = self._ipython_api.prefilter_manager
             self.priority = 0 # transformer needs this, low val = done first
             self.enabled = True # a transformer needs this
