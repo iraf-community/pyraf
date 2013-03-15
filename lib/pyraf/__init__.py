@@ -108,7 +108,23 @@ if not _pyrafMain:
     if _verbosity_ > 0: print "pyraf: initializing IRAF"
     import iraf
     if _verbosity_ > 0: print "pyraf: imported iraf"
-    iraf.Init(doprint=0, hush=1)
+
+    # If iraf.Init() throws an exception, we cannot be confident
+    # that it has initialized properly.  This can later lead to
+    # exceptions from an atexit function.  This results in a lot
+    # of help tickets about "gki", which are really caused by
+    # something wrong in login.cl
+    #
+    # By setting iraf=None in the case of an exception, the cleanup
+    # function skips the parts that don't work.  By re-raising the
+    # exception, we ensure that the user sees what really happened.
+    #
+    # This is the case for "import pyraf"
+    try :
+        iraf.Init(doprint=0, hush=1)
+    except :
+        iraf = None
+        raise
     if _verbosity_ > 0: print "pyraf: initialized IRAF"
 else:
     if _verbosity_ > 0: print "pyraf: is main program"
@@ -190,10 +206,26 @@ else:
     if _verbosity_ > 0: print "pyraf: splashed"
 
     # load initial iraf symbols and packages
-    if args:
-        iraf.Init(savefile=args[0], **_initkw)
-    else:
-        iraf.Init(**_initkw)
+
+    # If iraf.Init() throws an exception, we cannot be confident
+    # that it has initialized properly.  This can later lead to
+    # exceptions from an atexit function.  This results in a lot
+    # of help tickets about "gki", which are really caused by
+    # something wrong in login.cl
+    #
+    # By setting iraf=None in the case of an exception, the cleanup
+    # function skips the parts that don't work.  By re-raising the
+    # exception, we ensure that the user sees what really happened.
+    #
+    # This is the case for pyraf invoked from the command line.
+    try :
+        if args:
+            iraf.Init(savefile=args[0], **_initkw)
+        else:
+            iraf.Init(**_initkw)
+    except :
+        iraf = None
+        raise
     del args
     if _verbosity_ > 0: print "pyraf: finished iraf.Init"
 
