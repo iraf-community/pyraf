@@ -29,7 +29,15 @@ endif
 #   exit 1
 #endif
 
-set workDir = "~/.pyraf_tar_py${pyver}_`uname -n`"
+if (!(-d ~/.stsci_tmp)) then
+   mkdir ~/.stsci_tmp
+   if ($status != 0) then
+      echo "ERROR creating ~/.stsci_tmp"
+      exit 1
+   endif
+endif
+
+set workDir = "~/.stsci_tmp/pyraf_tar_py${pyver}_`uname -n`"
 echo Creating work area: $workDir
 /bin/rm -rf $workDir
 mkdir $workDir
