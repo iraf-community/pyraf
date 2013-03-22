@@ -2141,6 +2141,10 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.prune()
 
     def n_inspect_stmt(self, node):
+        # The following will create/call print as a statement, but is a function
+        # However, there may not be a valid use case to worry about here.
+        if PY3K:
+            raise RuntimeError("Error - this code is incorrect in Py3K")
         self.write("print ")
         if node[0].type == "=":
             # '= expr' version of inspect

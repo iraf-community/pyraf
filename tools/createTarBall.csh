@@ -22,11 +22,12 @@ if (`uname -n` == "arzach.stsci.edu") then
    set svnbin = /usr/bin/svn
 endif
 
-set out2to3 = ~/.pyraf_2to3_out
-if (($pyver == 3) && (!(-e $py3bin))) then
-   echo ERROR - py3bin dir does not exist - $py3bin - needed for 2to3ing
-   exit 1
-endif
+# disable for now - all are being 2to3'd on the fly
+#set out2to3 = ~/.pyraf_2to3_out
+#if (($pyver == 3) && (!(-e $py3bin))) then
+#   echo ERROR - py3bin dir does not exist - $py3bin - needed for 2to3ing
+#   exit 1
+#endif
 
 set workDir = "~/.pyraf_tar_py${pyver}_`uname -n`"
 echo Creating work area: $workDir
@@ -65,16 +66,17 @@ if ($status != 0) then
    echo ERROR svn-ing pyraf
    exit 1
 endif
-if ($pyver == 3) then
-   cd $workDir
-   /bin/rm -f $out2to3.p
-   $py3bin/2to3 -w -n --no-diffs $pyr >& $out2to3.p
-   if ($status != 0) then
-      echo ERROR 2to3-ing pyraf
-      exit 1
-   endif
-   cat $out2to3.p |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: stsci.tools/' |grep -v '^RefactoringTool: distutils/'
-endif
+# disable following for now as pyraf is being 2to3d on the fly
+#if ($pyver == 3) then
+#   cd $workDir
+#   /bin/rm -f $out2to3.p
+#   $py3bin/2to3 -w -n --no-diffs $pyr >& $out2to3.p
+#   if ($status != 0) then
+#      echo ERROR 2to3-ing pyraf
+#      exit 1
+#   endif
+#   cat $out2to3.p |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: stsci.tools/' |grep -v '^RefactoringTool: distutils/'
+#endif
 
 # for now, add svninfo file manually
 cd $workDir/$pyr
@@ -115,16 +117,17 @@ if ($status != 0) then
    exit 1
 endif
 #
-if ($pyver == 3 && 0 == disable.for.now.as.tools.is.being.2to3d.on.the.fly) then
-   cd $workDir/$pyr/required_pkgs
-   /bin/rm -f $out2to3.t
-   $py3bin/2to3 -w -n --no-diffs stsci.tools >& $out2to3.t
-   if ($status != 0) then
-      echo ERROR 2to3-ing stsci.tools
-      exit 1
-   endif
-   cat $out2to3.t |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: stsci.tools/' |grep -v '^RefactoringTool: distutils/'
-endif
+# disable following for now as tools is being 2to3d on the fly
+#if ($pyver == 3) then
+#   cd $workDir/$pyr/required_pkgs
+#   /bin/rm -f $out2to3.t
+#   $py3bin/2to3 -w -n --no-diffs stsci.tools >& $out2to3.t
+#   if ($status != 0) then
+#      echo ERROR 2to3-ing stsci.tools
+#      exit 1
+#   endif
+#   cat $out2to3.t |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: stsci.tools/' |grep -v '^RefactoringTool: distutils/'
+#endif
 
 # for now, remove new_setup* (it's confusing to users)
 cd $workDir/$pyr/required_pkgs/stsci.tools
