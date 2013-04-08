@@ -730,7 +730,7 @@ class IrafParList(taskpars.TaskPars):
 
     def getParObjects(self, param):
         """
-        Returns _all_ IrafPar objects matching the name given (param),
+        Returns _all_ IrafPar objects matching the string name given (param),
         in the form of a dict like:
             { scopename : <IrafPar instance>, ... }
         where scope is '' if the par was found as a regular par in this list,
@@ -764,14 +764,15 @@ class IrafParList(taskpars.TaskPars):
         # There is a PSET in here somewhere...
         allpsets = [p for p in self.__pars if isinstance(p, IrafParPset)]
         for pset in allpsets:
-            # Search its pars.  We definitely do NOT want a copy,
+            # Search the pset's pars.  We definitely do NOT want a copy,
             # we need the originals to edit.
-            its_plist = pset.get().getParList(docopy=0)
-            # might need to change next line to use minmatch dict
-            matching_pars = [pp for pp in its_plist if pp.name.startswith(param)]
+            its_task = pset.get()
+            its_plist = its_task.getParList(docopy=0)
+            # assume full paramname given (no min-matching inside of PSETs)
+            matching_pars = [pp for pp in its_plist if pp.name == param]
             if len(matching_pars) > 1:
                 raise RuntimeError('Unexpected multiple matches for par: '+ \
-                                   param+', are: '+str(matching_pars))
+                                   param+', are: '+str([p.name for p in matching_pars]))
             # add it to outgoing dict
             if len(matching_pars) > 0:
                 retval[pset.name] = matching_pars[0]
