@@ -1,4 +1,11 @@
 #include <Python.h>
+
+#ifndef _WIN32
+
+/*
+* Real X windows support for pyraf.  (There is a fake module later for Windows.)
+*/
+
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -448,3 +455,46 @@ void initxutil(void)
    return m;
 #endif
 }
+
+#else /* _WIN32 */
+
+/*
+* Fake X windows support to get us through the build on Windows.
+*
+* It is awkward to avoid compiling X11 support on Windows, so here
+* is a fake module that doesn't do anything.
+*/
+
+static PyMethodDef xutil_funcs[] = {
+  {NULL, NULL}
+};
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "xutil",
+        NULL,
+        -1,
+        xutil_funcs,
+        NULL, NULL, NULL, NULL,
+};
+PyObject* PyInit_xutil(void)
+#else
+void initxutilmodule(void)
+#endif
+{
+   PyObject *m;
+#if PY_MAJOR_VERSION >= 3
+   m = PyModule_Create(&moduledef);
+#else
+   m = Py_InitModule("xutil", xutil_funcs);
+#endif
+
+/* in Py2.*: just return */
+#if PY_MAJOR_VERSION >= 3
+   return m;
+#endif
+}
+
+#endif /* _WIN32 */
+
