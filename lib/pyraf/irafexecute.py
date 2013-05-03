@@ -412,6 +412,7 @@ class IrafProcess:
         self.stdinIsatty = 0
         self.stdoutIsatty = 0
         self.envVarList = []
+        self.par_set_msg_buf = ''
 
     def initialize(self, envdict):
 
@@ -627,6 +628,7 @@ class IrafProcess:
         par_get = self.par_get
         par_set = self.par_set
         executeClCommand = self.executeClCommand
+
         while 1:
 
             # each read may return multiple lines; only
@@ -650,13 +652,34 @@ class IrafProcess:
             else:
                 # pattern match to see what this message is
                 mcmd = re_match(msg)
-                if mcmd is None:
+
+                if (mcmd and mcmd.group('par_set')) or len(self.par_set_msg_buf) > 0:
+                    # enter this section if we got a par_set, OR if we are in the
+                    # middle of a par_set coming in multiple msgs...
+                    if msg.endswith('\nbye\n'):
+#                       L.log('FULL matched (ps):\n'+('='*60+'\n')+msg+'\n'+('"'*60))
+                        # we have the whole msg now (or maybe did in 1st shot)
+                        if len(self.par_set_msg_buf) > 0:
+                            self.par_set_msg_buf += msg
+                            mcmd = re_match(self.par_set_msg_buf)
+                            par_set(mcmd)
+                            self.par_set_msg_buf = '' # flag to not wait for more
+                            self.msg = 'bye\n'
+                        else:
+                            par_set(mcmd)
+                    else:
+                        # don't do any par_set-ing until we have the whole msg
+#                       L.log('PARTIAL matched (ps):\n'+('='*60+'\n')+msg+'\n'+('"'*60))
+                        self.par_set_msg_buf += msg
+                        # empty self.msg to trigger us to read more
+                        self.msg = ''
+                elif mcmd and mcmd.group('par_get'):
+#                   L.log('matched (pg):\n'+('='*60+'\n')+msg+'\n'+('"'*60))
+                    par_get(mcmd)
+                elif mcmd is None:
+#                   L.log('NO match!:\n'+('='*60+'\n')+msg+'\n'+('"'*60))
                     # Could be any legal CL command.
                     executeClCommand()
-                elif mcmd.group('par_get'):
-                    par_get(mcmd)
-                elif mcmd.group('par_set'):
-                    par_set(mcmd)
                 else:
                     # should never get here
                     raise RuntimeError("Program bug: uninterpreted message `%s'"
