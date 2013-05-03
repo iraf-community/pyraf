@@ -17,9 +17,9 @@ if ($argv[2] == "3") then
 endif
 set py3bin = $argv[3]
 
-set svnbin = svn
-if (`uname -n` == "arzach.stsci.edu") then
-   set svnbin = /usr/bin/svn
+set svnbin = /usr/bin/svn
+if (`uname -n` == "somenode.stsci.edu") then
+   set svnbin = svn
 endif
 
 # disable for now - all are being 2to3'd on the fly
