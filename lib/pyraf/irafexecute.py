@@ -653,35 +653,43 @@ class IrafProcess:
                 # pattern match to see what this message is
                 mcmd = re_match(msg)
 
+                # assume each par_set msg ends with either a 'bye' line or with a par_get line
                 if (mcmd and mcmd.group('par_set')) or len(self.par_set_msg_buf) > 0:
                     # enter this section if we got a par_set, OR if we are in the
                     # middle of a par_set coming in multiple msgs...
-                    if msg.endswith('\nbye\n'):
-#                       L.log('FULL matched (ps):\n'+('='*60+'\n')+msg+'\n'+('"'*60))
+                    msg_last_line = msg.strip().split('\n')[-1]
+                    # either way, first line of msg is a par_set, since our re matched,
+                    # but check the LAST line to see if this is the end
+                    if msg_last_line == 'bye' or msg_last_line.startswith('='):
                         # we have the whole msg now (or maybe did in 1st shot)
+#                       L.log('FULL matched (ps):\n'+('='*60+'\n')+msg+'\n'+('='*60))
                         if len(self.par_set_msg_buf) > 0:
+                            # is final part of a msg that came in parts
                             self.par_set_msg_buf += msg
                             mcmd = re_match(self.par_set_msg_buf)
                             par_set(mcmd)
                             self.par_set_msg_buf = '' # flag to not wait for more
                             self.msg = 'bye\n'
                         else:
+                            # is a normal par_set that came all in one shot
                             par_set(mcmd)
                     else:
-                        # don't do any par_set-ing until we have the whole msg
-#                       L.log('PARTIAL matched (ps):\n'+('='*60+'\n')+msg+'\n'+('"'*60))
+                        # We only have a partial message here, so don't
+                        # do any par_set-ing until we have the whole msg
+#                       L.log('PARTIAL matched (ps):\n'+('='*60+'\n')+msg+'\n'+('='*60))
                         self.par_set_msg_buf += msg
                         # empty self.msg to trigger us to read more
                         self.msg = ''
                 elif mcmd and mcmd.group('par_get'):
-#                   L.log('matched (pg):\n'+('='*60+'\n')+msg+'\n'+('"'*60))
+#                   L.log('matched (pg):\n'+('='*60+'\n')+msg+'\n'+('='*60))
                     par_get(mcmd)
                 elif mcmd is None:
-#                   L.log('NO match!:\n'+('='*60+'\n')+msg+'\n'+('"'*60))
+#                   L.log('NO match!:\n'+('='*60+'\n')+msg+'\n'+('='*60))
                     # Could be any legal CL command.
                     executeClCommand()
                 else:
                     # should never get here
+#                   L.log("Program bug: uninterpreted message: " + msg)
                     raise RuntimeError("Program bug: uninterpreted message `%s'"
                                     % (msg,))
 
