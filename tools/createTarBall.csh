@@ -57,14 +57,14 @@ else
    if ($ans != '') then
       set pyr = $ans
    endif
-   set brn = "release_2013_07"
+   set brn = "tags/release_2.1"
    echo -n 'What is branch name? ('$brn'): '
    set ans = $<
    if ($ans != '') then
       set brn = $ans
    endif
-   set co_pyraf = "co -q http://svn6.assembla.com/svn/pyraf/branches/$brn"
-   set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/branches/$brn"
+   set co_pyraf = "co -q http://svn6.assembla.com/svn/pyraf/${brn}"
+   set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/trunk"
 endif
 
 # get all source via SVN
