@@ -2608,14 +2608,16 @@ def task(*args, **kw):
         (fd, tmpCl) = _tempfile.mkstemp(suffix=".cl", prefix=str(s)+'_',
                                         dir=userIrafHome, text=True)
         _os.close(fd)
-        # check for invalid chars as far as python function names go.
+        # Check basename for invalid chars as far as python func. names go.
         # yes this goes against the use of mkstemp from a purity point
-        # of view but it can't much be helped
-        tmpClorig = tmpCl
-        tmpCl = tmpCl.replace('-','_')
-        tmpCl = tmpCl.replace('+','_')
-        assert tmpClorig == tmpCl or not _os.path.exists(tmpCl), \
-               'Abused mkstemp fname: '+tmpCl
+        # of view but it can't much be helped.  verify later is it unique
+        orig_tmpCl = tmpCl
+        tmpClPath, tmpClFname = _os.path.split(tmpCl)
+        tmpClFname = tmpClFname.replace('-','_')
+        tmpClFname = tmpClFname.replace('+','_')
+        tmpCl = _os.path.join(tmpClPath, tmpClFname)
+        assert tmpCl == orig_tmpCl or not _os.path.exists(tmpCl), \
+               'Abused mkstemp usage in some way; fname: '+tmpCl
         # write inline code to .cl file; len(kw) is checked below
         f = open(tmpCl, 'w')
         f.write(value+'\n')
