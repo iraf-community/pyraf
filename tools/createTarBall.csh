@@ -22,13 +22,6 @@ if (`uname -n` == "somenode.stsci.edu") then
    set svnbin = svn
 endif
 
-# disable for now - all are being 2to3'd on the fly
-#set out2to3 = ~/.pyraf_2to3_out
-#if (($pyver == 3) && (!(-e $py3bin))) then
-#   echo ERROR - py3bin dir does not exist - $py3bin - needed for 2to3ing
-#   exit 1
-#endif
-
 if (!(-d ~/.stsci_tmp)) then
    mkdir ~/.stsci_tmp
    if ($status != 0) then
@@ -57,14 +50,14 @@ else
    if ($ans != '') then
       set pyr = $ans
    endif
-   set brn = "release_2013_07"
+   set brn = "tags/release_2.1"
    echo -n 'What is branch name? ('$brn'): '
    set ans = $<
    if ($ans != '') then
       set brn = $ans
    endif
-   set co_pyraf = "co -q http://svn6.assembla.com/svn/pyraf/branches/$brn"
-   set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/branches/$brn"
+   set co_pyraf = "co -q http://svn6.assembla.com/svn/pyraf/${brn}"
+   set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/trunk"
 endif
 
 # get all source via SVN
@@ -74,17 +67,6 @@ if ($status != 0) then
    echo ERROR svn-ing pyraf
    exit 1
 endif
-# disable following for now as pyraf is being 2to3d on the fly
-#if ($pyver == 3) then
-#   cd $workDir
-#   /bin/rm -f $out2to3.p
-#   $py3bin/2to3 -w -n --no-diffs $pyr >& $out2to3.p
-#   if ($status != 0) then
-#      echo ERROR 2to3-ing pyraf
-#      exit 1
-#   endif
-#   cat $out2to3.p |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: stsci.tools/' |grep -v '^RefactoringTool: distutils/'
-#endif
 
 # for now, add svninfo file manually
 cd $workDir/$pyr
@@ -124,18 +106,6 @@ if ($status != 0) then
    echo ERROR svn-ing stsci.tools
    exit 1
 endif
-#
-# disable following for now as tools is being 2to3d on the fly
-#if ($pyver == 3) then
-#   cd $workDir/$pyr/required_pkgs
-#   /bin/rm -f $out2to3.t
-#   $py3bin/2to3 -w -n --no-diffs stsci.tools >& $out2to3.t
-#   if ($status != 0) then
-#      echo ERROR 2to3-ing stsci.tools
-#      exit 1
-#   endif
-#   cat $out2to3.t |grep -v ': Skipping implicit ' |grep -v 'gTool: Refactored ' |grep -v 'gTool: No changes to' |grep -v '^RefactoringTool: pyraf' |grep -v '^RefactoringTool: stsci.tools/' |grep -v '^RefactoringTool: distutils/'
-#endif
 
 # for now, remove new_setup* (it's confusing to users)
 cd $workDir/$pyr/required_pkgs/stsci.tools
@@ -162,16 +132,6 @@ if (-e setup.cfg) then
    /bin/cp setup.cfg setup.cfg.orig
    cat setup.cfg.orig |grep -v 'pyfits *(' > setup.cfg
    echo DIFF for all required pkgs/versions
-   diff setup.cfg.orig setup.cfg
-endif
-
-# edit pyraf setup stuff to use the required_pkgs sub-dir
-cd $workDir/$pyr
-# change line to: find-links = required_pkgs
-if (-e setup.cfg) then
-   /bin/cp setup.cfg setup.cfg.orig
-   cat setup.cfg.orig | sed 's/^ *find-links *=.*/find-links = required_pkgs/' > setup.cfg
-   echo DIFF for find-links
    diff setup.cfg.orig setup.cfg
 endif
 
