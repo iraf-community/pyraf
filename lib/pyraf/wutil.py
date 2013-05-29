@@ -504,11 +504,14 @@ def dumpspecs():
     if not capable.OF_GRAPHICS: return
     print "TclVersion = "+str(capable.Tkinter.TclVersion)
     print "TkVersion = "+str(capable.Tkinter.TkVersion)
-    print "is_darwin_and_x = "+str(capable.is_darwin_and_x())
-    print "which_darwin_linkage = "+str(capable.which_darwin_linkage())
     print "WUTIL_ON_MAC = "+str(WUTIL_ON_MAC)
     print "WUTIL_ON_WIN = "+str(WUTIL_ON_WIN)
     print "WUTIL_USING_X = "+str(WUTIL_USING_X)
+    print "is_darwin_and_x = "+str(capable.is_darwin_and_x())
+    if WUTIL_ON_MAC:
+        print "which_darwin_linkage = "+str(capable.which_darwin_linkage())
+    else:
+        print "which_darwin_linkage = (not darwin)"
     print "skipDisplay = "+str(_skipDisplay)
     print "hasGraphics = "+str(hasGraphics)
     print "hasAqua = "+str(_hasAqua)

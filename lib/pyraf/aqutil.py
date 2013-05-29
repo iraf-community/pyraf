@@ -158,6 +158,11 @@ def __doPyobjcWinInit():
     """ Initialize the Pyobjc bridging and make some calls to get our PSN and
     the parent terminal's PSN. Do only ONCE per process. """
 
+    # for #108, also see
+    #   http://www.fruitstandsoftware.com/blog/2012/08/quick-and-easy-debugging-of-unrecognized-selector-sent-to-instance/
+    # and
+    #   http://www.raywenderlich.com/10209/my-app-crashed-now-what-part-1
+
     global __thisPSN, __termPSN, __screenHeight, __initialized, __objcReqsVoids
     # Guard against accidental second calls
     if __initialized: return
