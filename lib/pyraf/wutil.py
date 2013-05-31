@@ -494,25 +494,35 @@ terminal = TerminalFocusEntity()
 focusController = FocusController(terminal)
 
 # debug helper
-def dumpspecs():
+def dumpspecs(outstream = None):
     """ Dump various flags, settings, values to the terminal.  This is not to
     be used internal to this module - it must wait until the module is fully
-    imported for all the values to be finalized. """
-    print "platform = "+str(sys.platform)
-    print "PY3K = "+str(capable.PY3K)
-    print "c.OF_GRAPHICS = "+str(capable.OF_GRAPHICS)
-    if not capable.OF_GRAPHICS: return
-    print "TclVersion = "+str(capable.Tkinter.TclVersion)
-    print "TkVersion = "+str(capable.Tkinter.TkVersion)
-    print "is_darwin_and_x = "+str(capable.is_darwin_and_x())
-    print "which_darwin_linkage = "+str(capable.which_darwin_linkage())
-    print "WUTIL_ON_MAC = "+str(WUTIL_ON_MAC)
-    print "WUTIL_ON_WIN = "+str(WUTIL_ON_WIN)
-    print "WUTIL_USING_X = "+str(WUTIL_USING_X)
-    print "skipDisplay = "+str(_skipDisplay)
-    print "hasGraphics = "+str(hasGraphics)
-    print "hasAqua = "+str(_hasAqua)
-    print "hasXWin = "+str(_hasXWin)
+    imported for all the values to be finalized.  If outstream is not given,
+    this will simply dump to sys.stdout. """
+
+    out = "platform = "+str(sys.platform)
+    out += "\nPY3K = "+str(capable.PY3K)
+    out += "\nc.OF_GRAPHICS = "+str(capable.OF_GRAPHICS)
+    if capable.OF_GRAPHICS:
+        out += "\nTclVersion = "+str(capable.Tkinter.TclVersion)
+        out += "\nTkVersion = "+str(capable.Tkinter.TkVersion)
+        out += "\nWUTIL_ON_MAC = "+str(WUTIL_ON_MAC)
+        out += "\nWUTIL_ON_WIN = "+str(WUTIL_ON_WIN)
+        out += "\nWUTIL_USING_X = "+str(WUTIL_USING_X)
+        out += "\nis_darwin_and_x = "+str(capable.is_darwin_and_x())
+        if WUTIL_ON_MAC:
+            out += "\nwhich_darwin_linkage = "+str(capable.which_darwin_linkage())
+        else:
+            out += "\nwhich_darwin_linkage = (not darwin)"
+        out += "\nskipDisplay = "+str(_skipDisplay)
+        out += "\nhasGraphics = "+str(hasGraphics)
+        out += "\nhasAqua = "+str(_hasAqua)
+        out += "\nhasXWin = "+str(_hasXWin)
+
+    if outstream:
+        outstream.write(out+'\n')
+    else:
+        print out
 
 
 
