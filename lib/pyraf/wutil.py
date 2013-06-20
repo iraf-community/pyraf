@@ -500,7 +500,16 @@ def dumpspecs(outstream = None):
     imported for all the values to be finalized.  If outstream is not given,
     this will simply dump to sys.stdout. """
 
-    out = "platform = "+str(sys.platform)
+    pyrver = 'unknown'
+    try:
+       from pyraf import __version__ as pyrver
+    except:
+       pass
+
+    out = "python exec = "+str(sys.executable)
+    out += "\npython ver = "+str(sys.version)
+    out += "\nplatform = "+str(sys.platform)
+    out += "\nPyRAF ver = "+pyrver
     out += "\nPY3K = "+str(capable.PY3K)
     out += "\nc.OF_GRAPHICS = "+str(capable.OF_GRAPHICS)
     if capable.OF_GRAPHICS:
