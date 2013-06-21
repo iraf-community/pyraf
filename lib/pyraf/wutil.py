@@ -494,13 +494,23 @@ terminal = TerminalFocusEntity()
 focusController = FocusController(terminal)
 
 # debug helper
-def dumpspecs(outstream = None):
+def dumpspecs(outstream = None, skip_volatiles = False):
     """ Dump various flags, settings, values to the terminal.  This is not to
     be used internal to this module - it must wait until the module is fully
     imported for all the values to be finalized.  If outstream is not given,
     this will simply dump to sys.stdout. """
 
-    out = "platform = "+str(sys.platform)
+    pyrver = 'unknown'
+    try:
+       from pyraf import __version__ as pyrver
+    except:
+       pass
+
+    out = "python exec = "+str(sys.executable)
+    out += "\npython ver = "+str(sys.version)
+    out += "\nplatform = "+str(sys.platform)
+    if not skip_volatiles:
+        out += "\nPyRAF ver = "+pyrver
     out += "\nPY3K = "+str(capable.PY3K)
     out += "\nc.OF_GRAPHICS = "+str(capable.OF_GRAPHICS)
     if capable.OF_GRAPHICS:
