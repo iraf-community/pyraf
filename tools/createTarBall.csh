@@ -130,7 +130,6 @@ endif
 #et verinfo3 = "${verinfo1}-r$verinfo2"
 set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/version.py |sed 's/.*= *//' |sed "s/'//g"`
 set verinfo2 = `grep '__svn_revision__ *=' $workDir/$pyr/lib/pyraf/version.py |head -1 |sed 's/.*= *//' |sed "s/'//g"`
-set verinfo3 = "${verinfo1}-r$verinfo2"
 set svn_says = `${svnbin}version |sed 's/M//'`
 
 # ---------------- HACK TO WORK AROUND BUGS IN stsci_distutils ---------------
@@ -149,12 +148,16 @@ if ("$junk" == "$verinfo2") then
    /bin/rm -rf dist
    python setup.py sdist >& $workDir/sdist2.out
    if ($status != 0) then
-       cat $workDir/sdist2.out
-       exit 1
-    endif
+      cat $workDir/sdist2.out
+      exit 1
+   endif
+
+   # now set verinfo2 correctly
+   set verinfo2 = "$svn_says"
 endif
 # ---------END OF  HACK TO WORK AROUND BUGS IN stsci_distutils ---------------
 
+set verinfo3 = "${verinfo1}-r$verinfo2"
 echo "This build will show a version number of:  $verinfo3 ... is same as r$svn_says ..."
 echo "$verinfo3" > ~/.pyraf_tar_ball_ver
 
