@@ -131,7 +131,30 @@ endif
 set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/version.py |sed 's/.*= *//' |sed "s/'//g"`
 set verinfo2 = `grep '__svn_revision__ *=' $workDir/$pyr/lib/pyraf/version.py |head -1 |sed 's/.*= *//' |sed "s/'//g"`
 set verinfo3 = "${verinfo1}-r$verinfo2"
-set svn_says = `${svnbin}version`
+set svn_says = `${svnbin}version |sed 's/M//'`
+
+# ---------------- HACK TO WORK AROUND BUGS IN stsci_distutils ---------------
+set junk = `echo $verinfo2 |grep Unable.to.determine`
+if ("$junk" == "$verinfo2") then
+   # __svn_revision__ did not get set, let's set it manually...
+   cd $workDir/$pyr/lib/pyraf
+   cp version.py version.py.orig
+   cat version.py.orig |sed 's/^\( *\)__svn_revision__ *=.*/\1__svn_revision__ = "'${svn_says}'"/' > version.py
+   echo 'DIFF of __svn_revision__ line(s)'
+   diff version.py.orig version.py
+
+   # now re-run the sdist
+   cd $workDir/$pyr
+   /bin/rm -rf *.egg
+   /bin/rm -rf dist
+   python setup.py sdist >& $workDir/sdist2.out
+   if ($status != 0) then
+       cat $workDir/sdist2.out
+       exit 1
+    endif
+endif
+# ---------END OF  HACK TO WORK AROUND BUGS IN stsci_distutils ---------------
+
 echo "This build will show a version number of:  $verinfo3 ... is same as r$svn_says ..."
 echo "$verinfo3" > ~/.pyraf_tar_ball_ver
 
