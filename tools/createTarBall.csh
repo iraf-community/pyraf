@@ -157,7 +157,13 @@ if ("$junk" == "$verinfo2") then
 endif
 # ---------END OF  HACK TO WORK AROUND BUGS IN stsci_distutils ---------------
 
-set verinfo3 = "${verinfo1}.${verinfo2}"
+# set full ver (verinfo3) to be n.m.devNNNNN (if dev) or n.m.rNNNNN (if not)
+set junk = `echo $verinfo1 |grep dev`
+if  ("$junk" == "$verinfo1") then
+   set verinfo3 = "${verinfo1}${verinfo2}"
+else
+   set verinfo3 = "${verinfo1}.r${verinfo2}"
+endif
 echo "This build will show a version number of:  $verinfo3 ... is same as r$svn_says ..."
 echo "$verinfo3" > ~/.pyraf_tar_ball_ver
 
