@@ -157,7 +157,7 @@ if ("$junk" == "$verinfo2") then
 endif
 # ---------END OF  HACK TO WORK AROUND BUGS IN stsci_distutils ---------------
 
-set verinfo3 = "${verinfo1}-r$verinfo2"
+set verinfo3 = "${verinfo1}.${verinfo2}"
 echo "This build will show a version number of:  $verinfo3 ... is same as r$svn_says ..."
 echo "$verinfo3" > ~/.pyraf_tar_ball_ver
 
