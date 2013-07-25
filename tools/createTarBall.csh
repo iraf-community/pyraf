@@ -124,6 +124,15 @@ if ($status != 0) then
    exit 1
 endif
 
+# ---------------- HACK 1 TO WORK AROUND BUGS IN stsci_distutils ---------------
+# change code to NOT run update_svn_info() on first import of version.py
+cd $workDir/$pyr/lib/pyraf
+cp version.py version.py.orig1
+cat version.py.orig1 |sed 's/^ *update_svn_info *(/#update_svn_info(/' > version.py
+echo 'DIFF of update_svn_info() line'
+diff version.py.orig1 version.py
+# --------- END OF HACK 1 TO WORK AROUND BUGS IN stsci_distutils ---------------
+
 # get version info
 #et verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py | sed 's/.*= *//' | sed 's/"//g'`
 #et verinfo2 = `grep '__svn_version__' $workDir/$pyr/lib/pyraf/sv*.py | sed 's/.*= *//' | sed 's/"//g'`
@@ -132,15 +141,15 @@ set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/version.py |sed 's
 set verinfo2 = `grep '__svn_revision__ *=' $workDir/$pyr/lib/pyraf/version.py |head -1 |sed 's/.*= *//' |sed "s/'//g"`
 set svn_says = `${svnbin}version |sed 's/M//'`
 
-# ---------------- HACK TO WORK AROUND BUGS IN stsci_distutils ---------------
+# ---------------- HACK 2 TO WORK AROUND BUGS IN stsci_distutils ---------------
 set junk = `echo $verinfo2 |grep Unable.to.determine`
 if ("$junk" == "$verinfo2") then
    # __svn_revision__ did not get set, let's set it manually...
    cd $workDir/$pyr/lib/pyraf
-   cp version.py version.py.orig
-   cat version.py.orig |sed 's/^\( *\)__svn_revision__ *=.*/\1__svn_revision__ = "'${svn_says}'"/' > version.py
+   cp version.py version.py.orig2
+   cat version.py.orig2 |sed 's/^\( *\)__svn_revision__ *=.*/\1__svn_revision__ = "'${svn_says}'"/' > version.py
    echo 'DIFF of __svn_revision__ line(s)'
-   diff version.py.orig version.py
+   diff version.py.orig2 version.py
 
    # now re-run the sdist
    cd $workDir/$pyr
@@ -155,7 +164,7 @@ if ("$junk" == "$verinfo2") then
    # now set verinfo2 correctly
    set verinfo2 = "$svn_says"
 endif
-# ---------END OF  HACK TO WORK AROUND BUGS IN stsci_distutils ---------------
+# ---------END OF  HACK 2 TO WORK AROUND BUGS IN stsci_distutils ---------------
 
 # set full ver (verinfo3) to be n.m.devNNNNN (if dev) or n.m.rNNNNN (if not)
 set junk = `echo $verinfo1 |grep dev`
