@@ -69,18 +69,14 @@ if ($status != 0) then
 endif
 
 # for now, add svninfo file manually
-cd $workDir/$pyr
-set rev = `$svnbin info | grep '^Revision:' | sed 's/.* //'`
-cd $workDir/$pyr/lib/pyraf
-if (!(-e svninfo.py)) then
-   echo '__svn_version__ = "'${rev}'"' > svninfo.py
-   echo '__full_svn_info__ = ""' >> svninfo.py
-   echo '__setup_datetime__ = "'`date`'"' >> svninfo.py
-endif
-
-# for now, remove new_setup* (it's confusing to users)
-cd $workDir/$pyr
-/bin/rm new_setup* >& /dev/null
+#cd $workDir/$pyr
+#set rev = `$svnbin info | grep '^Revision:' | sed 's/.* //'`
+#cd $workDir/$pyr/lib/pyraf
+#if (!(-e svninfo.py)) then
+#   echo '__svn_version__ = "'${rev}'"' > svninfo.py
+#   echo '__full_svn_info__ = ""' >> svninfo.py
+#   echo '__setup_datetime__ = "'`date`'"' >> svninfo.py
+#endif
 
 # get extra pkgs into a subdir
 cd $workDir/$pyr
@@ -107,25 +103,6 @@ if ($status != 0) then
    exit 1
 endif
 
-# for now, remove new_setup* (it's confusing to users)
-cd $workDir/$pyr/required_pkgs/stsci.tools
-/bin/rm new_setup* >& /dev/null
-
-# get version info
-set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py | sed 's/.*= *//' | sed 's/"//g'`
-set verinfo2 = `grep '__svn_version__' $workDir/$pyr/lib/pyraf/sv*.py | sed 's/.*= *//' | sed 's/"//g'`
-set verinfo3 = "${verinfo1}-r$verinfo2"
-echo "This build will show a version number of:  $verinfo3"
-echo "$verinfo3" > ~/.pyraf_tar_ball_ver
-
-# remove svn dirs
-cd $workDir/$pyr
-/bin/rm -rf `find . -name '.svn'`
-if ($status != 0) then
-   echo ERROR cleaning out .svn dirs
-   exit 1
-endif
-
 # edit setup to comment out pyfits requirement (we dont need it for pyraf)
 cd $workDir/$pyr/required_pkgs/stsci.tools
 if (-e setup.cfg) then
@@ -135,21 +112,104 @@ if (-e setup.cfg) then
    diff setup.cfg.orig setup.cfg
 endif
 
-# tar and zip it - regular (non-win) version
-cd $workDir
-tar cf $pyr.tar $pyr
+# Now that we have setup.cfg working better, run sdist to
+# generate the version.py file (this imports pyraf)
+# and generate the .tar.gz file
+cd $workDir/$pyr
+setenv PYRAF_NO_DISPLAY
+# any old python binary will do?
+python setup.py sdist >& $workDir/sdist.out
 if ($status != 0) then
-   echo ERROR tarring up
+   cat $workDir/sdist.out
    exit 1
 endif
-gzip $pyr.tar
+
+# ---------------- HACK 1 TO WORK AROUND BUGS IN stsci_distutils ---------------
+# change code to NOT run update_svn_info() on first import of version.py
+cd $workDir/$pyr/lib/pyraf
+cp version.py version.py.orig1
+cat version.py.orig1 |sed 's/^ *update_svn_info *(/#update_svn_info(/' > version.py
+echo 'DIFF of update_svn_info() line'
+diff version.py.orig1 version.py
+# --------- END OF HACK 1 TO WORK AROUND BUGS IN stsci_distutils ---------------
+
+# get version info
+#et verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py | sed 's/.*= *//' | sed 's/"//g'`
+#et verinfo2 = `grep '__svn_version__' $workDir/$pyr/lib/pyraf/sv*.py | sed 's/.*= *//' | sed 's/"//g'`
+#et verinfo3 = "${verinfo1}-r$verinfo2"
+set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/version.py |sed 's/.*= *//' |sed "s/'//g"`
+set verinfo2 = `grep '__svn_revision__ *=' $workDir/$pyr/lib/pyraf/version.py |head -1 |sed 's/.*= *//' |sed "s/'//g"`
+set svn_says = `${svnbin}version |sed 's/M//'`
+
+# ---------------- HACK 2 TO WORK AROUND BUGS IN stsci_distutils ---------------
+set junk = `echo $verinfo2 |grep Unable.to.determine`
+if ("$junk" == "$verinfo2") then
+   # __svn_revision__ did not get set, let's set it manually...
+   cd $workDir/$pyr/lib/pyraf
+   cp version.py version.py.orig2
+   cat version.py.orig2 |sed 's/^\( *\)__svn_revision__ *=.*/\1__svn_revision__ = "'${svn_says}'"/' > version.py
+   echo 'DIFF of __svn_revision__ line(s)'
+   diff version.py.orig2 version.py
+
+   # now re-run the sdist
+   cd $workDir/$pyr
+   /bin/rm -rf *.egg
+   /bin/rm -rf dist
+   python setup.py sdist >& $workDir/sdist2.out
+   if ($status != 0) then
+      cat $workDir/sdist2.out
+      exit 1
+   endif
+
+   # now set verinfo2 correctly
+   set verinfo2 = "$svn_says"
+endif
+# ---------END OF  HACK 2 TO WORK AROUND BUGS IN stsci_distutils ---------------
+
+# set full ver (verinfo3) to be n.m.devNNNNN (if dev) or n.m.rNNNNN (if not)
+set junk = `echo $verinfo1 |grep dev`
+if  ("$junk" == "$verinfo1") then
+   set verinfo3 = "${verinfo1}${verinfo2}"
+else
+   set verinfo3 = "${verinfo1}.r${verinfo2}"
+endif
+echo "This build will show a version number of:  $verinfo3 ... is same as r$svn_says ..."
+echo "$verinfo3" > ~/.pyraf_tar_ball_ver
+
+# remove svn dirs (not needed if we use sdist)
+cd $workDir/$pyr
+/bin/rm -rf `find . -name '.svn'`
 if ($status != 0) then
-   echo ERROR gzipping
+   echo ERROR cleaning out .svn dirs
+   exit 1
+endif
+
+# OLD - uses tar and gzip directly:
+## tar and zip it - regular (non-win) version
+#cd $workDir
+#tar cf $pyr.tar $pyr
+#if ($status != 0) then
+#   echo ERROR tarring up
+#   exit 1
+#endif
+#gzip $pyr.tar
+#if ($status != 0) then
+#   echo ERROR gzipping
+#   exit 1
+#endif
+
+# New - use the file generated by sdist:
+cd $workDir
+/bin/mv $pyr/dist/pyraf* $pyr.tar.gz
+if ($status != 0) then
+   echo ERROR finding sdist-created tarball
    exit 1
 endif
 
 # Now tar/zip the Windows version (via "zip")
 if ($isdev == 1) then
+   cd $workDir/$pyr
+   rm -rf dist
    cd $workDir
    zip -rq ${pyr}-win $pyr
    if ($status != 0) then

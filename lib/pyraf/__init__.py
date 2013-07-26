@@ -10,16 +10,14 @@ R. White, 2000 February 18
 """
 from __future__ import division # confidence high
 
-__version__ = "2.2.dev"
-
-try:
-    from pyraf.svninfo import (__svn_version__, __full_svn_info__,
-                               __setup_datetime__)
-    __version__ += "-r"+__svn_version__
-except:
-    pass
+from .version import *
 
 import os, sys, __main__
+
+# dev only: add revision number if possible (if not done yet)
+if __version__.endswith('dev') and len(__svn_revision__) > 0 and \
+   __svn_revision__[0].isdigit():
+    __version__ = __version__+__svn_revision__
 
 # Dump version and exit here, if requested
 if '-V' in sys.argv or '--version' in sys.argv:

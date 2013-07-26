@@ -2345,7 +2345,6 @@ def prcache(*args):
 @handleRedirAndSaveKwds
 def gflush():
     """Flush any buffered graphics output."""
-    import gki
     gki.kernel.flush()
 
 @handleRedirAndSaveKwdsPlus
