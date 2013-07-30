@@ -569,4 +569,5 @@ else:
         print "No graphics display available for this session."
         print "Graphics tasks that attempt to plot to an interactive " + \
                           "screen will fail."
+        print 'For help, search "PyRAF FAQ 5.13" or contact "help@stsci.edu".'
         print ""
