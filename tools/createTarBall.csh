@@ -4,7 +4,7 @@
 #
 
 if ($#argv != 3) then
-   echo "usage:  $0  dev|rel  2|3  py3-bin-dir (only used if py3)"
+   echo "usage:  $0  dev|rel  2|3  py-bin-dir"
    exit 1
 endif
 set isdev = 0
@@ -15,7 +15,7 @@ set pyver = 2
 if ($argv[2] == "3") then
    set pyver = 3
 endif
-set py3bin = $argv[3]
+set pybin = $argv[3]
 
 set svnbin = /usr/bin/svn
 if (`uname -n` == "somenode.stsci.edu") then
@@ -117,8 +117,7 @@ endif
 # and generate the .tar.gz file
 cd $workDir/$pyr
 setenv PYRAF_NO_DISPLAY
-# any old python binary will do?
-python setup.py sdist >& $workDir/sdist.out
+$pybin/python setup.py sdist >& $workDir/sdist.out
 if ($status != 0) then
    cat $workDir/sdist.out
    exit 1
@@ -155,7 +154,7 @@ if ("$junk" == "$verinfo2") then
    cd $workDir/$pyr
    /bin/rm -rf *.egg
    /bin/rm -rf dist
-   python setup.py sdist >& $workDir/sdist2.out
+   $pybin/python setup.py sdist >& $workDir/sdist2.out
    if ($status != 0) then
       cat $workDir/sdist2.out
       exit 1
