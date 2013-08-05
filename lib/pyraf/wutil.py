@@ -529,7 +529,7 @@ def dumpspecs(outstream = None, skip_volatiles = False):
         out += "\nhasAqua = "+str(_hasAqua)
         out += "\nhasXWin = "+str(_hasXWin)
 
-    if 'PYRAFGRAPHICS' in os.environ:
+    if capable.OF_GRAPHICS and 'PYRAFGRAPHICS' in os.environ:
         val = os.environ['PYRAFGRAPHICS']
         out += "\nPYRAFGRAPHICS = "+val
         if val == "matplotlib":
