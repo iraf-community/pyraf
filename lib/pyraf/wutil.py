@@ -529,6 +529,32 @@ def dumpspecs(outstream = None, skip_volatiles = False):
         out += "\nhasAqua = "+str(_hasAqua)
         out += "\nhasXWin = "+str(_hasXWin)
 
+    if 'PYRAFGRAPHICS' in os.environ:
+        val = os.environ['PYRAFGRAPHICS']
+        out += "\nPYRAFGRAPHICS = "+val
+        if val == "matplotlib":
+            mpl_ok = False
+            try:
+                import matplotlib as mpl
+                mpl_ok = True
+            except:
+                out += "\nCannot import matplotlib"
+            if mpl_ok:
+                if hasattr(mpl, 'tk_window_focus'):
+                    out += "\nmpl.tk_window_focus = "+str(mpl.tk_window_focus())
+                else:
+                    out += "\nmpl.tk_window_focus = function not supported"
+                mpldir = os.path.split(mpl.__file__)[0]
+                import glob
+                flist = glob.glob(mpldir+os.path.sep+'backends'+os.path.sep+'*.so')
+                flist = [os.path.split(f)[1] for f in flist]
+                out += "\nmpl backends = "+str(flist)
+                tkaggbknd = mpldir+'/backends/_tkagg.so'
+                if os.path.exists(tkaggbknd):
+                    out += "\ntry: /usr/bin/otool -L "+tkaggbknd
+    else:
+        out += "\nPYRAFGRAPHICS not set"
+
     if outstream:
         outstream.write(out+'\n')
     else:
