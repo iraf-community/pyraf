@@ -217,4 +217,4 @@ if ($isdev == 1) then
    endif
 endif
 
-echo Successfully created tar-ball
+echo "Successfully created tar-ball: $pyr.tar.gz"
