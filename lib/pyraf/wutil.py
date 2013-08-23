@@ -96,6 +96,7 @@ try:
             except:
                 _hasAqua = 0
                 print "Could not import aqutil, please see the online PyRAF FAQ"
+                print "http://www.stsci.edu/institute/software_hardware/pyraf/pyraf_faq#5.13"
 
 except ImportError:
     _hasXWin = 0 # Unsuccessful init of XWindow
