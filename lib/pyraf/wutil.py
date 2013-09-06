@@ -57,8 +57,8 @@ if WUTIL_ON_MAC and not _skipDisplay:
 GRAPHICS_ALWAYS_ON_TOP = 'PYRAF_GRAPHICS_ALWAYS_ON_TOP' in os.environ
 
 # attempt to override with xutil or aqua versions
-_hasAqua = 0
-_hasXWin = 0
+_has_aqutil = 0
+_has_xutil = 0
 try:
     if WUTIL_USING_X and not _skipDisplay:
         # set an env var before importing xutil (see PyRAF FAQ on this)
@@ -77,7 +77,7 @@ try:
         # Successful intialization. Reset dummy methods with
         # those from 'xutil' now.
         from pyraf.xutil import *
-        _hasXWin = 1 # Flag to mark successful initialization of XWindow
+        _has_xutil = 1 # Flag to mark successful initialization of XWindow
         closeGraphics = closeXGraphics
 
     else:
@@ -92,16 +92,16 @@ try:
                 # override the few Mac-specific functions needed
                 from aqutil import getFocalWindowID, setFocusTo, getParentID
                 from aqutil import moveCursorTo, getPointerPosition
-                _hasAqua = 1
+                _has_aqutil = 1
             except:
-                _hasAqua = 0
+                _has_aqutil = 0
                 print "Could not import aqutil, please see the online PyRAF FAQ"
                 print "http://www.stsci.edu/institute/software_hardware/pyraf/pyraf_faq#5.13"
 
 except ImportError:
-    _hasXWin = 0 # Unsuccessful init of XWindow
+    _has_xutil = 0 # Unsuccessful init of XWindow
 except EnvironmentError:
-    _hasXWin = 0 # Unsuccessful init of XWindow
+    _has_xutil = 0 # Unsuccessful init of XWindow
 
 # Clean up the namespace a bit...
 try:
@@ -152,7 +152,7 @@ def getTopID(WindowID):
 
     # a "top ID" makes less sense if we are not using X
     if not WUTIL_USING_X:
-        if _hasAqua:
+        if _has_aqutil:
             return aqutil.getTopIdFor(wid)
         else:
             return wid # everything is its own top
@@ -176,7 +176,7 @@ def forceFocusToNewWindow():
     actually in the front, where focus would be.  With X, any new window
     comes to the front anyway, so this is a no-op.  Currently this is
     only necessary under Aqua. """
-    if _hasAqua:
+    if _has_aqutil:
         aqutil.focusOnGui()
 
 def isViewable(WindowID):
@@ -257,7 +257,7 @@ class TerminalFocusEntity(FocusEntity):
             self.windowID = getFocalWindowID()
             if self.windowID == -1:
                 self.windowID = None
-            if _hasAqua:
+            if _has_aqutil:
                 scrnPosDict = aqutil.getPointerGlobalPosition()
                 self.lastScreenX = scrnPosDict['x']
                 self.lastScreenY = scrnPosDict['y']
@@ -278,7 +278,7 @@ class TerminalFocusEntity(FocusEntity):
         if self.windowID == getFocalWindowID():
             # focus is already here
             return
-        if _hasAqua:
+        if _has_aqutil:
             if self.lastScreenX is not None and cursorToo:
                 moveCursorTo(self.windowID, self.lastScreenX, self.lastScreenY,
                              0, 0)
@@ -291,7 +291,7 @@ class TerminalFocusEntity(FocusEntity):
     def saveCursorPos(self):
         if (not self.windowID) or (self.windowID != getFocalWindowID()):
             return
-        if _hasAqua:
+        if _has_aqutil:
             scrnPosDict = aqutil.getPointerGlobalPosition()
             self.lastScreenX = scrnPosDict['x']
             self.lastScreenY = scrnPosDict['y']
@@ -525,10 +525,10 @@ def dumpspecs(outstream = None, skip_volatiles = False):
             out += "\nwhich_darwin_linkage = "+str(capable.which_darwin_linkage())
         else:
             out += "\nwhich_darwin_linkage = (not darwin)"
-        out += "\nskipDisplay = "+str(_skipDisplay)
-        out += "\nhasGraphics = "+str(hasGraphics)
-        out += "\nhasAqua = "+str(_hasAqua)
-        out += "\nhasXWin = "+str(_hasXWin)
+        out += "\nskip display = "+str(_skipDisplay)
+        out += "\nhas graphics = "+str(hasGraphics)
+        out += "\nimported aqutil = "+str(bool(_has_aqutil))
+        out += "\nimported xutil = "+str(bool(_has_xutil))
 
         if 'PYRAFGRAPHICS' in os.environ:
             val = os.environ['PYRAFGRAPHICS']
@@ -579,7 +579,7 @@ if _skipDisplay:
             if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
                 print "Tkinter import failed."
 else:
-    if _hasXWin or _hasAqua:
+    if _has_xutil or _has_aqutil:
         hasGraphics = focusController.hasGraphics
     elif WUTIL_ON_MAC:
         # Handle case where we are on the Mac with no X and no PyObjc.  We can
