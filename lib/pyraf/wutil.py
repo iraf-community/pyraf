@@ -514,6 +514,9 @@ def dumpspecs(outstream = None, skip_volatiles = False):
         out += "\nPyRAF ver = "+pyrver
     out += "\nPY3K = "+str(capable.PY3K)
     out += "\nc.OF_GRAPHICS = "+str(capable.OF_GRAPHICS)
+    if hasattr(capable, 'get_dc_owner'): # rm hasattr at/after v2.2
+        out +="\n/dev/console owner = "+str(capable.get_dc_owner(False, True))
+
     if capable.OF_GRAPHICS:
         out += "\nTclVersion = "+str(capable.Tkinter.TclVersion)
         out += "\nTkVersion = "+str(capable.Tkinter.TkVersion)
