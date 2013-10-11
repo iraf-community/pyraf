@@ -520,7 +520,12 @@ def dumpspecs(outstream = None, skip_volatiles = False):
         else:
             out +="\n/dev/console owner = "+str(capable.get_dc_owner(False, True))
 
-    if capable.OF_GRAPHICS:
+    if not capable.OF_GRAPHICS:
+        if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
+            out += "\nTkinter import failed."
+        else:
+            out += "\nTkinter use unattempted."
+    else:
         out += "\nTclVersion = "+str(capable.Tkinter.TclVersion)
         out += "\nTkVersion = "+str(capable.Tkinter.TkVersion)
         out += "\nWUTIL_ON_MAC = "+str(WUTIL_ON_MAC)
