@@ -508,7 +508,7 @@ class IrafParList(taskpars.TaskPars):
         """
         self.__pars = []
         self.__hasPsets = False
-        self.__psetlist = None # is a list when populated
+        self.__psets2merge = None # is a list when populated
         self.__psetLock = False
         self.__filename = filename
         self.__name = taskname
@@ -518,9 +518,9 @@ class IrafParList(taskpars.TaskPars):
 
     def Update(self):
         """Check to make sure this list is in sync with parameter file"""
-        self.__pars, self.__pardict, self.__psetlist = \
+        self.__pars, self.__pardict, self.__psets2merge = \
                 self.__filecache.get()
-        if self.__psetlist: self.__addPsetParams()
+        if self.__psets2merge: self.__addPsetParams()
 
     def setFilename(self, filename):
         """Change filename and create ParCache object
@@ -562,16 +562,16 @@ class IrafParList(taskpars.TaskPars):
         see getParObjects() and any related code. """
         # return immediately if they have already been added or
         # if we are in the midst of a recursive call tree
-        if self.__psetLock or self.__psetlist is None:
+        if self.__psetLock or self.__psets2merge is None:
             return
         # otherwise, merge in any PSETs
-        if len(self.__psetlist) > 0:
+        if len(self.__psets2merge) > 0:
             self.__hasPsets = True # never reset
         self.__psetLock = True # prevent us from coming in recursively
 
         # Work from the pset's pardict because then we get
         # parameters from nested psets too
-        for p in self.__psetlist:
+        for p in self.__psets2merge:
             # silently ignore parameters from psets that already are defined
             psetdict = p.get().getParDict()
             for pname in psetdict.keys():
@@ -579,7 +579,7 @@ class IrafParList(taskpars.TaskPars):
                     self.__pardict.add(pname, psetdict[pname])
 
         # back to normal state
-        self.__psetlist = None
+        self.__psets2merge = None
         self.__psetLock = False
 
     def addParam(self, p):
@@ -616,13 +616,13 @@ class IrafParList(taskpars.TaskPars):
         self.__pardict.add(p.name, p)
         if isinstance(p, IrafParPset):
             # parameters from this pset will be added too
-            if self.__psetlist is None:
+            if self.__psets2merge is None:
                 # add immediately
-                self.__psetlist = [p]
+                self.__psets2merge = [p]
                 self.__addPsetParams()
             else:
                 # just add to the pset list
-                self.__psetlist.append(p)
+                self.__psets2merge.append(p)
                 # can't call __addPsetParams here as we may now be inside a call
 
     def isConsistent(self, other):
@@ -705,7 +705,7 @@ class IrafParList(taskpars.TaskPars):
 
     def hasPar(self,param):
         """Test existence of parameter named param"""
-        if self.__psetlist: self.__addPsetParams()
+        if self.__psets2merge: self.__addPsetParams()
         param = irafutils.untranslateName(param)
         return param in self.__pardict
 
@@ -723,7 +723,7 @@ class IrafParList(taskpars.TaskPars):
             return self.__pars
 
     def getParDict(self):
-        if self.__psetlist: self.__addPsetParams()
+        if self.__psets2merge: self.__addPsetParams()
         return self.__pardict
 
     def getParObject(self,param):
@@ -732,7 +732,7 @@ class IrafParList(taskpars.TaskPars):
         any duplicated PSET pars via __addPsetParams), but does not look
         down into PSETs. Note the difference between this and getParObjects
         in their different return types. """
-        if self.__psetlist: self.__addPsetParams()
+        if self.__psets2merge: self.__addPsetParams()
         try:
             param = irafutils.untranslateName(param)
             return self.__pardict[param]
@@ -775,8 +775,7 @@ class IrafParList(taskpars.TaskPars):
         # vars which happen to have the same names as PSET pars.  This is an
         # issue that we need to handle and be aware of (see typecheck arg).
 
-        # !!! in separate commit, change name to self.__psets2merge !!!
-        if self.__psetlist: self.__addPsetParams()
+        if self.__psets2merge: self.__addPsetParams()
         param = irafutils.untranslateName(param)
         retval = {}
 
