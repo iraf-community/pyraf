@@ -508,6 +508,8 @@ class IrafParList(taskpars.TaskPars):
         """
         self.__pars = []
         self.__hasPsets = False
+        self.__psetlist = None # is a list when populated
+        self.__psetLock = False
         self.__filename = filename
         self.__name = taskname
         self.__filecache = ParCache(filename, parlist)
@@ -518,6 +520,7 @@ class IrafParList(taskpars.TaskPars):
         """Check to make sure this list is in sync with parameter file"""
         self.__pars, self.__pardict, self.__psetlist = \
                 self.__filecache.get()
+        if self.__psetlist: self.__addPsetParams()
 
     def setFilename(self, filename):
         """Change filename and create ParCache object
@@ -557,10 +560,15 @@ class IrafParList(taskpars.TaskPars):
         2013 that this is not happening correctly, and may be an unsafe plan.
         Therefore the code was changed to allow clients to access both copies;
         see getParObjects() and any related code. """
-        # return immediately if they have already been added
-        if self.__psetlist is None: return
-        # otherwise...
-        self.__hasPsets = True
+        # return immediately if they have already been added or
+        # if we are in the midst of a recursive call tree
+        if self.__psetLock or self.__psetlist is None:
+            return
+        # otherwise, merge in any PSETs
+        if len(self.__psetlist) > 0:
+            self.__hasPsets = True # never reset
+        self.__psetLock = True # prevent us from coming in recursively
+
         # Work from the pset's pardict because then we get
         # parameters from nested psets too
         for p in self.__psetlist:
@@ -569,7 +577,10 @@ class IrafParList(taskpars.TaskPars):
             for pname in psetdict.keys():
                 if not self.__pardict.has_exact_key(pname):
                     self.__pardict.add(pname, psetdict[pname])
+
+        # back to normal state
         self.__psetlist = None
+        self.__psetLock = False
 
     def addParam(self, p):
         """Add a parameter to the list"""
@@ -612,6 +623,7 @@ class IrafParList(taskpars.TaskPars):
             else:
                 # just add to the pset list
                 self.__psetlist.append(p)
+                # can't call __addPsetParams here as we may now be inside a call
 
     def isConsistent(self, other):
         """Compare two IrafParLists for consistency
@@ -728,13 +740,13 @@ class IrafParList(taskpars.TaskPars):
             raise e.__class__("Error in parameter '" +
                     param + "' for task " + self.__name + "\n" + str(e))
 
-    def getParObjects(self, param):
+    def getParObjects(self, param, typecheck=False):
         """
-        Returns _all_ IrafPar objects matching the string name given (param),
+        Returns all IrafPar objects matching the string name given (param),
         in the form of a dict like:
             { scopename : <IrafPar instance>, ... }
-        where scope is '' if the par was found as a regular par in this list,
-        or, where scope is psetname if the par was found inside a PSET.
+        where scopename is '' if par was found as a regular par in this list,
+        or, where scopename is psetname if the par was found inside a PSET.
         It is possible that some dict values will actually be the same object
         in memory (see docs for __addPsetParams).
 
@@ -742,9 +754,28 @@ class IrafParList(taskpars.TaskPars):
         found at the "top level" (a regular par inside this par list)
         even if it is also in a PSET.
 
+        typecheck: If multiple par objects are found, and typecheck is set to
+        True, only the first (e.g. top level) will be returned if those
+        par objects have a different value for their .type attribute.
+        Otherwise all par objects found are returned in the dict.
+
         Note the difference between this and getParObject in their
         different return types.
         """
+        # Notes:
+        # To accomplish the parameter setting (e.g. setParam) this calls up
+        # all possible exact-name-matching pars in this par list, whether
+        # they be on the "top" level with that name (param), or down in some
+        # PSET with that name (param).  If we are simply an IRAFish task, then
+        # this is fine as we can assume the task likely does not have a par of
+        # its own and a PSET par, both of which have the same name. Thus any
+        # such case will acquire a copy of the PSET par at the top level. See
+        # discussion of this in __addPsetParams().
+        # BUT, if we are a CL script (e.g. mscombine.cl), we could have local
+        # vars which happen to have the same names as PSET pars.  This is an
+        # issue that we need to handle and be aware of (see typecheck arg).
+
+        # !!! in separate commit, change name to self.__psets2merge !!!
         if self.__psetlist: self.__addPsetParams()
         param = irafutils.untranslateName(param)
         retval = {}
@@ -773,9 +804,15 @@ class IrafParList(taskpars.TaskPars):
             if len(matching_pars) > 1:
                 raise RuntimeError('Unexpected multiple matches for par: '+ \
                                    param+', are: '+str([p.name for p in matching_pars]))
-            # add it to outgoing dict
+            # found one with that name; add it to outgoing dict
             if len(matching_pars) > 0:
-                retval[pset.name] = matching_pars[0]
+                addit = True
+                if typecheck and '' in retval:
+                    # in this case we already found a top-level and we've been
+                    # asked to make sure to return only same-type matches
+                    addit = matching_pars[0].type == retval[''].type # attr is a char
+                if addit:
+                    retval[pset.name] = matching_pars[0]
         return retval
 
     def getAllMatches(self,param):
@@ -810,7 +847,8 @@ class IrafParList(taskpars.TaskPars):
         """Set task parameter 'param' to value (with minimum-matching).
            scope, idxHint, and check are included for use as a task object
            but they are currently ignored."""
-        for par_obj in self.getParObjects(param).values():
+        matches_dict = self.getParObjects(param)
+        for par_obj in matches_dict.values():
             par_obj.set(value)
 
     def setParList(self,*args,**kw):
