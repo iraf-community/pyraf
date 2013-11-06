@@ -740,7 +740,7 @@ class IrafParList(taskpars.TaskPars):
             raise e.__class__("Error in parameter '" +
                     param + "' for task " + self.__name + "\n" + str(e))
 
-    def getParObjects(self, param, typecheck=False):
+    def getParObjects(self, param, typecheck=True):
         """
         Returns all IrafPar objects matching the string name given (param),
         in the form of a dict like:
