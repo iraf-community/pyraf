@@ -117,7 +117,8 @@ endif
 # and generate the .tar.gz file
 cd $workDir/$pyr
 setenv PYRAF_NO_DISPLAY
-$pybin/python setup.py sdist >& $workDir/sdist.out
+# FORCE_USE_PY27... $pybin/python setup.py sdist >& $workDir/sdist.out
+/user/${USER}/info/usrlcl273/bin/python setup.py sdist >& $workDir/sdist.out
 if ($status != 0) then
    cat $workDir/sdist.out
    exit 1
@@ -154,7 +155,8 @@ if ("$junk" == "$verinfo2") then
    cd $workDir/$pyr
    /bin/rm -rf *.egg
    /bin/rm -rf dist
-   $pybin/python setup.py sdist >& $workDir/sdist2.out
+   # FORCE_USE_PY27... $pybin/python setup.py sdist >& $workDir/sdist2.out
+   /user/${USER}/info/usrlcl273/bin/python setup.py sdist >& $workDir/sdist2.out
    if ($status != 0) then
       cat $workDir/sdist2.out
       exit 1
