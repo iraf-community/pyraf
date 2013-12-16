@@ -543,6 +543,8 @@ def dumpspecs(outstream = None, skip_volatiles = False):
         out += "\nimported aqutil = "+str(bool(_has_aqutil))
         out += "\nimported xutil = "+str(bool(_has_xutil))
 
+        # Case of WUTIL_USING_X and not _has_xutil means either they don't have
+        # xutil library installed, or they do but they can't draw to screen
         if WUTIL_USING_X and dco != 'root' and not bool(_has_xutil):
             # quick debug help here for case where xutil didn't build
             out += '\n\tWARNING!  PyRAF may be missing the "xutil" library. See PyRAF FAQ 1.9'
