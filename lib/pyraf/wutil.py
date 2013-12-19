@@ -514,11 +514,13 @@ def dumpspecs(outstream = None, skip_volatiles = False):
         out += "\nPyRAF ver = "+pyrver
     out += "\nPY3K = "+str(capable.PY3K)
     out += "\nc.OF_GRAPHICS = "+str(capable.OF_GRAPHICS)
+    dco = 'not yet known'
     if hasattr(capable, 'get_dc_owner'): # rm hasattr at/after v2.2
         if skip_volatiles:
             out +="\n/dev/console owner = <skipped>"
         else:
-            out +="\n/dev/console owner = "+str(capable.get_dc_owner(False, True))
+            dco = capable.get_dc_owner(False, True)
+            out +="\n/dev/console owner = "+str(dco)
 
     if not capable.OF_GRAPHICS:
         if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
@@ -541,6 +543,11 @@ def dumpspecs(outstream = None, skip_volatiles = False):
         out += "\nimported aqutil = "+str(bool(_has_aqutil))
         out += "\nimported xutil = "+str(bool(_has_xutil))
 
+        # Case of WUTIL_USING_X and not _has_xutil means either they don't have
+        # xutil library installed, or they do but they can't draw to screen
+        if WUTIL_USING_X and dco != 'root' and not bool(_has_xutil):
+            # quick debug help here for case where xutil didn't build
+            out += '\n\tWARNING!  PyRAF may be missing the "xutil" library. See PyRAF FAQ 1.9'
         if 'PYRAFGRAPHICS' in os.environ:
             val = os.environ['PYRAFGRAPHICS']
             out += "\nPYRAFGRAPHICS = "+val
