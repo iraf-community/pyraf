@@ -159,8 +159,12 @@ if doCmdline:
            # Start the interactive shell.  Also, see IPython.embed() here:
            #     http://ipython.org/ipython-doc/stable/interactive/ \
            #     reference.html#embedding-ipython
-           from IPython.frontend.terminal.ipapp import TerminalIPythonApp
-# was:     from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell
+           try:
+              # new location of terminal as of v1.*
+              from IPython.terminal.ipapp import TerminalIPythonApp
+           except:
+              from IPython.frontend.terminal.ipapp import TerminalIPythonApp
+# was:     from ..... import TerminalInteractiveShell
            app = TerminalIPythonApp.instance()
            app.initialize()
            # import pyraf to write this shell obj to its namespace

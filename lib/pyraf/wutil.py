@@ -508,7 +508,7 @@ def dumpspecs(outstream = None, skip_volatiles = False):
        pass
 
     out = "python exec = "+str(sys.executable)
-    out += "\npython ver = "+str(sys.version)
+    out += "\npython ver = "+sys.version.split()[0]
     out += "\nplatform = "+str(sys.platform)
     if not skip_volatiles:
         out += "\nPyRAF ver = "+pyrver
@@ -545,7 +545,8 @@ def dumpspecs(outstream = None, skip_volatiles = False):
 
         # Case of WUTIL_USING_X and not _has_xutil means either they don't have
         # xutil library installed, or they do but they can't draw to screen
-        if WUTIL_USING_X and dco != 'root' and not bool(_has_xutil):
+        if WUTIL_USING_X and capable.OF_GRAPHICS and \
+           not _skipDisplay and not bool(_has_xutil):
             # quick debug help here for case where xutil didn't build
             out += '\n\tWARNING!  PyRAF may be missing the "xutil" library. See PyRAF FAQ 1.9'
         if 'PYRAFGRAPHICS' in os.environ:

@@ -16,18 +16,21 @@ $Id$
 #*****************************************************************************
 from __future__ import division # confidence high
 
-OLD_IPY = True # "old" means prior to v0.12
+VERY_OLD_IPY = True # this means prior to v0.12
 try:
     from IPython.iplib import InteractiveShell
 except:
-    OLD_IPY = False
+    VERY_OLD_IPY = False
 
-if OLD_IPY:
+if VERY_OLD_IPY:
     from IPython import Release as release
     import IPython.ipapi as ipapi
 else:
     from IPython.core import release
-    import IPython.core.ipapi as ipapi
+    try:
+        import IPython.core.ipapi as ipapi
+    except:
+        ipapi = None # not available in v1.*
 
 __license__ = release.license
 
@@ -56,10 +59,15 @@ from pyraf.irafcompleter import IrafCompleter
 
 class IPythonIrafCompleter(IrafCompleter):
     import sys
-    if OLD_IPY:
+    if VERY_OLD_IPY:
         from IPython.iplib import InteractiveShell
     else:
-        from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
+        try:
+            # location of "terminal" as of v1.1
+            from IPython.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
+        except:
+            # location of "terminal" prior to v1.1
+            from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
 
     def __init__(self, IP):
         IrafCompleter.__init__(self)
@@ -115,10 +123,15 @@ class IPython_PyRAF_Integrator(object):
     """
     import string
 
-    if OLD_IPY:
+    if VERY_OLD_IPY:
         from IPython.iplib import InteractiveShell
     else:
-        from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
+        try:
+            # location of "terminal" as of v1.1
+            from IPython.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
+        except:
+            # location of "terminal" prior to v1.1
+            from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
 
 
     def __init__(self, clemulate=1, cmddict={},
@@ -141,7 +154,7 @@ class IPython_PyRAF_Integrator(object):
 
         self.traceback_mode = "Context"
 
-        if OLD_IPY:
+        if VERY_OLD_IPY:
             self._ipython_api = ipapi.get()
 
             self._ipython_magic = self._ipython_api.IP.lsmagic() # skip %
@@ -328,8 +341,10 @@ class IPython_PyRAF_Integrator(object):
 
         # get the color scheme from the user configuration file and pass
         # it to the trace formatter
-        ip = ipapi.get()
-        csm = ip.options['colors']
+        csm = 'Linux' # default
+        if ipapi:
+            ip = ipapi.get() # this works in vers prior to 1.*
+            csm = ip.options['colors']
 
         linecache.checkcache()
         tblist = traceback.extract_tb(tb)
@@ -348,7 +363,7 @@ class IPython_PyRAF_Integrator(object):
     def prefilter(self, IP, line, continuation):
         """prefilter pre-processes input to do PyRAF substitutions before
            passing it on to IPython.
-           NOTE: this is ONLY used for OLD_IPY, since we use the transform
+           NOTE: this is ONLY used for VERY_OLD_IPY, since we use the transform
            hooks for the later versions.
         """
         line = self.cmd(str(line)) # use type str here, not unicode
@@ -426,7 +441,7 @@ __PyRAF = IPython_PyRAF_Integrator()
 # __PyRAF.use_pyraf_completer(feedback=fb) Can't do this yet...but it's hooked.
 # __PyRAF.use_pyraf_cl_emulation(feedback=fb)
 
-if OLD_IPY:
+if VERY_OLD_IPY:
     __PyRAF.use_pyraf_traceback(feedback=fb)
 else:
     if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
