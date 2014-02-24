@@ -41,7 +41,8 @@ endif
 #
 if ($isdev == 1) then
    set pyr = "pyraf-dev"
-   set co_pyraf = 'co -q -r HEAD http://svn6.assembla.com/svn/pyraf/trunk'
+#  set co_pyraf = 'co -q -r HEAD http://svn6.assembla.com/svn/pyraf/trunk'
+   set co_pyraf = 'co -q -r HEAD https://aeon.stsci.edu/ssb/svn/pyraf/trunk'
    set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/trunk'
 else
    set pyr = "pyraf-2.1"
@@ -56,7 +57,7 @@ else
    if ($ans != '') then
       set brn = $ans
    endif
-   set co_pyraf = "co -q http://svn6.assembla.com/svn/pyraf/${brn}"
+   set co_pyraf = "co -q https://aeon.stsci.edu/ssb/svn/pyraf/${brn}"
    set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/trunk"
 endif
 
