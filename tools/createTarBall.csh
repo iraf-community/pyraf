@@ -62,7 +62,7 @@ else
 endif
 
 # get all source via SVN
-echo "Downloading source for: $pyr"
+echo "Downloading source for: $pyr from: `echo $co_pyraf | sed 's/.*:\/\///'` "
 $svnbin $co_pyraf $pyr
 if ($status != 0) then
    echo ERROR svn-ing pyraf
