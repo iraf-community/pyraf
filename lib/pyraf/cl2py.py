@@ -12,7 +12,7 @@ from generic import GenericASTTraversal
 from clast import AST
 from cltoken import Token
 import clscan, clparse
-from clcache import codeCache
+from clcache import codeCache, DISABLE_CLCACHING
 
 from stsci.tools.irafglobals import Verbose
 from stsci.tools.for2to3 import PY3K
@@ -66,7 +66,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
 
     global _parser, codeCache
 
-    if PY3K:
+    if PY3K or DISABLE_CLCACHING:
         usecache = False # ! turn caching off until it is fully tested/worked
         # when this is turned on, see corresponding PY3K note in clcache.py!
 
@@ -2144,7 +2144,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # The following will create/call print as a statement, but is a function
         # However, there may not be a valid use case to worry about here.
         if PY3K:
-            raise RuntimeError("Error - this code is incorrect in Py3K")
+            raise RuntimeError("Error - this code is incorrect in PY3K")
         self.write("print ")
         if node[0].type == "=":
             # '= expr' version of inspect

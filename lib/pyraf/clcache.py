@@ -18,6 +18,10 @@ else:
    import pyrafglobals
    import dirshelve
 
+# In case you wish to disable all CL script caching (for whatever reason)
+DISABLE_CLCACHING = False # enable caching by default
+if PY3K or 'PYRAF_NO_CLCACHE' in os.environ:
+   DISABLE_CLCACHING = True
 
 # set up pickle so it can pickle code objects
 
@@ -329,7 +333,7 @@ if not os.path.exists(userCacheDir):
 
 dbfile = 'clcache'
 
-if PY3K:
+if DISABLE_CLCACHING:
     # since CL code caching is turned off currently for PY3K,
     # there won't be any installed there, but still play with user area
     codeCache = _CodeCache([os.path.join(userCacheDir,dbfile),])
