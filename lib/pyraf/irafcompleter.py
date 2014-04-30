@@ -91,6 +91,10 @@ class IrafCompleter(Completer):
         readline.parse_and_bind("set bell-style none")
         readline.parse_and_bind("set show-all-if-ambiguous")
         self.completionChar = char
+        # remove dash from delimiter list (fix submitted by Joe N. 4/16/14)
+        delims = readline.get_completer_delims()
+        delims = delims.replace('-','')
+        readline.set_completer_delims(delims)
         # load any cmd history
         hfile = os.getenv('HOME','.')+os.sep+'.pyraf_history'
         if os.path.exists(hfile):
