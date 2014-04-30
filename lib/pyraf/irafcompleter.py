@@ -91,7 +91,7 @@ class IrafCompleter(Completer):
         readline.parse_and_bind("set bell-style none")
         readline.parse_and_bind("set show-all-if-ambiguous")
         self.completionChar = char
-        # remove dash from delimiter list (fix submitted by Joe N. 4/16/14)
+        # remove dash from delimiter set (fix submitted by Joe P. Ninan 4/16/14)
         delims = readline.get_completer_delims()
         delims = delims.replace('-','')
         readline.set_completer_delims(delims)

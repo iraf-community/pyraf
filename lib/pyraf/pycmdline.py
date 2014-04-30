@@ -94,6 +94,7 @@ class CmdConsole(code.InteractiveConsole):
                     prompt = self.ps2
                 else:
                     prompt = self.ps1
+# !!!               prompt = 'curpkg > '
                 # reset the focus to terminal if necessary
                 wutil.focusController.resetFocusHistory()
                 line = self.raw_input(prompt)
@@ -157,7 +158,7 @@ _cmdDict = minmatch.QuietMinMatchDict({
                                 '.clemulate': 'do_clemulate',
                                 '.logfile': 'do_logfile',
                                 '.exit': 'do_exit',
-#                               'lo': 'do_exit',
+                                'lo': 'do_exit',
                                 '.fulltraceback': 'do_fulltraceback',
                                 '.complete': 'do_complete',
                                 '.debug': 'do_debug',
