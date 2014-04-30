@@ -158,7 +158,7 @@ _cmdDict = minmatch.QuietMinMatchDict({
                                 '.clemulate': 'do_clemulate',
                                 '.logfile': 'do_logfile',
                                 '.exit': 'do_exit',
-                                'lo': 'do_exit',
+#                               'lo': 'do_exit',
                                 '.fulltraceback': 'do_fulltraceback',
                                 '.complete': 'do_complete',
                                 '.debug': 'do_debug',
