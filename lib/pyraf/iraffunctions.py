@@ -249,6 +249,8 @@ at the Unix command line.  The values will depend on your IRAF installation.
             fname = _os.path.abspath('login.cl')
         elif access('home$login.cl'):
             fname = 'home$login.cl'
+        elif access(_os.path.expanduser('~/.iraf/login.cl')):
+            fname = _os.path.expanduser('~/.iraf/login.cl')
         elif not _irafinst.EXISTS:
             fname = _irafinst.getNoIrafClFor('login.cl', useTmpFile=True)
         else:

@@ -94,6 +94,7 @@ class CmdConsole(code.InteractiveConsole):
                     prompt = self.ps2
                 else:
                     prompt = self.ps1
+# !!!               prompt = 'curpkg > '
                 # reset the focus to terminal if necessary
                 wutil.focusController.resetFocusHistory()
                 line = self.raw_input(prompt)
