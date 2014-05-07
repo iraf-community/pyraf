@@ -104,11 +104,11 @@ if ($status != 0) then
    exit 1
 endif
 
-# edit setup to comment out pyfits requirement (we dont need it for pyraf)
+# edit setup to comment out pyfits/astropy requirements (dont need for pyraf)
 cd $workDir/$pyr/required_pkgs/stsci.tools
 if (-e setup.cfg) then
    /bin/cp setup.cfg setup.cfg.orig
-   cat setup.cfg.orig |grep -v 'pyfits *(' > setup.cfg
+   cat setup.cfg.orig |grep -v 'pyfits *(' |grep -v 'astropy *(' > setup.cfg
    echo DIFF for all required pkgs/versions
    diff setup.cfg.orig setup.cfg
 endif
