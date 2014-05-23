@@ -190,12 +190,17 @@ def Init(doprint=1,hush=0,savefile=None):
                 arch = _os.environ['IRAFARCH']
             except IOError:
                 raise SystemExit("""
-Your iraf and IRAFARCH environment variables are not defined and could not
-be determined from /usr/local/bin/cl.  Before starting pyraf, define them
-by doing (for example)
-   setenv iraf /usr/local/iraf/
-   setenv IRAFARCH redhat
-at the Unix command line.  The values will depend on your IRAF installation.
+Your "iraf" and "IRAFARCH" environment variables are not defined and could not
+be determined from /usr/local/bin/cl.  These are needed to find IRAF tasks.
+Before starting pyraf, define them by doing (for example):
+
+    setenv iraf /iraf/iraf/
+    setenv IRAFARCH linux
+
+at the Unix command line. Actual values will depend on your IRAF installation,
+and they are set during the IRAF user installation (see iraf.net), or via
+Ureka installation (see http://ssb.stsci.edu/ureka).  Also be sure to run the
+"mkiraf" command to create a logion.cl (http://www.google.com/search?q=mkiraf).
 """)
 
          #stacksize problem on linux
