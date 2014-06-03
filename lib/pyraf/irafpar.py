@@ -187,7 +187,10 @@ class IrafParPset(IrafParS):
         f = self.value.split('.')
         if len(f) <= 1 or f[-1] != 'par':
             # must be a task name
-            return pyraf.iraf.getTask(self.value or self.name)
+            if self.value:
+                return pyraf.iraf.getTask(self.value)
+            else:
+                return pyraf.iraf.getTask(self.name)
         else:
             from iraffunctions import IrafTaskFactory
             irf_val = pyraf.iraf.Expand(self.value)
