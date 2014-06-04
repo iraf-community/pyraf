@@ -654,7 +654,6 @@ def getTask(taskname, found=0):
     taskname = _irafutils.untranslateName(taskname)
 
     # Try assuming fully qualified name first
-
     task = _tasks.get(taskname)
     if task is not None:
         if Verbose>1: print 'found',taskname,'in task list'
@@ -662,14 +661,13 @@ def getTask(taskname, found=0):
 
     # Look it up in the minimum-match dictionary
     # Note _mmtasks.getall returns list of full names of all matching tasks
-
     fullname = _mmtasks.getall(taskname)
     if not fullname:
         if found:
-
             return None
         else:
             raise KeyError("Task "+taskname+" is not defined")
+
     if len(fullname) == 1:
         # unambiguous match
         task = _tasks[fullname[0]]
