@@ -183,19 +183,30 @@ class IrafParPset(IrafParS):
 
         # assume there are no query or indirection pset parameters
 
-        # if parameter value has .par extension, it is a file name
+        # see if parameter value has .par extension, if so, it is a file name
         f = self.value.split('.')
-        if len(f) <= 1 or f[-1] != 'par':
-            # must be a task name
-            if self.value:
-                return pyraf.iraf.getTask(self.value)
-            else:
-                return pyraf.iraf.getTask(self.name)
-        else:
+        if len(f) > 1 and f[-1] == 'par':
+            # must be a file name
             from iraffunctions import IrafTaskFactory
             irf_val = pyraf.iraf.Expand(self.value)
             return IrafTaskFactory(taskname=irf_val.split(".")[0],
                                    value=irf_val)
+        else:
+            # must be a task name
+            if self.value:
+                # The normal case here is that the value is a task name string
+                # so we get&return that task. There is a quirky case where in
+                # some CL scripts (e.g. ccdproc.cl), the CL script writers use
+                # this place as a temporarty place to store values; handle that.
+                if self.value.startswith('<') and self.value.endswith('>') and self.name in self.value:
+                    # don't lookup task for self.value, it is something like:
+                    # "<IrafCLTask ccdproc (mscsrc$ccdproc.cl) Pkg: mscred Bin: mscbin$>"
+                    return pyraf.iraf.getTask(self.name)
+                    # this is only a safe assumption to make in a PSET
+                else:
+                    return pyraf.iraf.getTask(self.value)
+            else:
+                return pyraf.iraf.getTask(self.name)
 
 
 # -----------------------------------------------------
