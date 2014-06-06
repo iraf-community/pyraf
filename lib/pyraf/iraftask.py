@@ -601,7 +601,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         try:
             if paramdict._has(paramname,exact=exact):
                 return self._getParFromDict(paramdict, paramname, pindex,
-                                                field, native, mode=mode, prompt=prompt)
+                                            field, native, mode=mode, prompt=prompt)
         except minmatch.AmbiguousKeyError, e:
             # re-raise the error with a bit more info
             raise IrafError("Cannot get parameter `%s'\n%s" %
@@ -902,7 +902,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         if pmode == "a":
             pmode = mode or self.getMode()
         v = par.get(index=pindex,field=field,
-                                native=native,mode=pmode,prompt=prompt)
+                    native=native,mode=pmode,prompt=prompt)
         if isinstance(v,str) and v[:1] == ")":
 
             # parameter indirection: call getParam recursively
