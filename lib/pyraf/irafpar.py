@@ -879,18 +879,20 @@ class IrafParList(taskpars.TaskPars):
         fullkw = {}
         dupl_pset_pars = []
         for key in kw.keys():
+            # recall, kw is just simple { namestr: valstr, ... }
             try:
                 # find par obj for this key
                 # (read docs for getParObjects - note the 's')
                 results_dict = self.getParObjects(key)
 
                 # results_dict is of form:  { psetname : <IrafPar instance> }
+                # where results_dict may be (and most often is) empty string ''.
                 # if no KeyError, then there exists a top-level entry ('')
                 if '' not in results_dict:
                     raise RuntimeError('No top-level match; expected KeyError')
                 # assume results_dict[''].name.startswith(key) or .name==key
                 # recall that key might be shortened version of par's .name
-                param = (results_dict[''].name, '')
+                param = (results_dict[''].name, '') # this means (paramname, [unused])
                 results_dict.pop('')
 
                 # if there are others, then they are pars with the same name
@@ -910,13 +912,21 @@ class IrafParList(taskpars.TaskPars):
                     raise e
                 # recall that key[:i] might be shortened version of par's .name
                 param = (self.getParObject(key[:i]).name, key[i+1:])
+                # here param is  (pset name, par name)
             if param in fullkw:
-                pname = param[0]
-                if param[1]: pname = '.'.join(param)
+                msg_full_pname = param[0]
+                if param[1]: msg_full_pname = '.'.join(param)
+                # at this point, msg_full_pname is fully qualified
                 raise SyntaxError("Multiple values given for parameter " +
-                        pname + " in task " + self.__name)
+                                  msg_full_pname + " in task " + self.__name)
             # Add it
             fullkw[param] = kw[key]
+
+        # At this point, an example of fullkw might be:
+        # {('extname', ''): 'mef', ('long', ''): no, ('ccdtype', ''): ''}
+        # NOTE that the keys to this dict are EITHER in the form
+        # (top level par name, '') -OR- (pset name, par name)
+        # CDS June2014 - this is ugly - love to change this soon...
 
         # Now add any duplicated pars that were found, both up at top level and
         # down inside a PSET (saved as dupl_pset_pars list).  The top level
@@ -940,10 +950,23 @@ class IrafParList(taskpars.TaskPars):
                 # executed if we run out of non-hidden parameters
                 raise SyntaxError("Too many positional parameters for task " +
                         self.__name)
+            # at this point, ipar is set to index of next found non-hidden
+            # par in self.__pars
             param = (self.__pars[ipar].name, '')
             if param in fullkw:
-                raise SyntaxError("Multiple values given for parameter " +
-                        param[0] + " in task " + self.__name)
+                # uh-oh, it was already in our fullkw list, but now we got a
+                # positional value for it (occurs in _ccdtool; help call #5901)
+                msg_full_pname = param[0]
+                if param[1]: msg_full_pname = '.'.join(param)
+                msg_val_from_kw = fullkw[param]
+                msg_val_from_pos = value
+                # let's say we only care if the 2 values are, in fact, different
+                if msg_val_from_kw != msg_val_from_pos:
+                    raise SyntaxError('Both a positional value ("'+str(msg_val_from_pos)+ \
+                          '") and a keyword value ("'+str(msg_val_from_kw)+ \
+                          '") were given for parameter "'+msg_full_pname+ \
+                          '" in task "'+self.__name+'"')
+                # else:, we'll now just overwite the old value with the same new value
             fullkw[param] = value
             ipar = ipar+1
 
