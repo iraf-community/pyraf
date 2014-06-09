@@ -98,7 +98,7 @@ class _CodeCache:
         self.useSystem = 0
         if not cacheList:
             self.warning("Warning: unable to open any CL script cache, "
-                    "performance will be slow")
+                         "performance may be slow")
         elif nwrite == 0:
             self.warning("Unable to open any CL script cache for writing")
 
