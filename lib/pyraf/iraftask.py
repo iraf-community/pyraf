@@ -1561,10 +1561,10 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
 
     def unlearn(self):
         """Resets parameters for all tasks in the package to their default values"""
-        # If package isn't loaded, just unlearn the top-level package parameters
-        if not self._loaded:
-            IrafCLTask.unlearn(self)
-        else:
+        # If package isn't loaded, just unlearn the top-level package parameters,
+        # otherwise unlearn top-level ones AND all sub tasks.
+        IrafCLTask.unlearn(self)
+        if self._loaded:
             # Loop over all tasks in the package
             for task in self._tasks.keys():
                 pyraf.iraf.getTask(task).unlearn()
