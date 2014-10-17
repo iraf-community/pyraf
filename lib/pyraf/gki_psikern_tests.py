@@ -235,16 +235,18 @@ def run_all():
    os.environ['LPDEST'] = "hp_dev_null"
    os.environ['PRINTER'] = "hp_dev_null"
 
-   PSDEV = 'psi_land'
-   EXP2IGNORE = '.*CreationDate: .*'
-   for t in tsts:
-      preTestCleanup()
-      func = eval(t)
-      print PSDEV, ':', func.__doc__.strip()
-      func()
-      ran += 1
+   # the psi_land kernel seems not to be supported in default graphcap on OSX 10.9.5
+   if not sys.platform.lower().startswith('darwin'):
+       PSDEV = 'psi_land'
+       EXP2IGNORE = '.*CreationDate: .*'
+       for t in tsts:
+          preTestCleanup()
+          func = eval(t)
+          print PSDEV, ':', func.__doc__.strip()
+          func()
+          ran += 1
 
-   # this test (use of psdump kernel) is too temperamental on Linux
+   # this test (psdump kernel) is too temperamental on Linux
    if not sys.platform.lower().startswith('linux'):
       PSDEV = 'psdump'
       EXP2IGNORE = '(NOAO/IRAF '
