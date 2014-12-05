@@ -605,7 +605,10 @@ else:
         # still run, albeit without automatic mouse moving and focus jumping.
         hasGraphics = focusController.hasGraphics
         if hasGraphics:
-            print "\nLimited graphics available (aqutil not loaded)\n"
+            if capable.which_darwin_linkage() == 'aqua':
+                print "\nLimited graphics available on OSX (aqutil not loaded)\n"
+            else:
+                print "\nLimited graphics available on OSX (xutil not loaded)\n"
     elif WUTIL_ON_WIN:
         hasGraphics = 1 # try this, tho VERY limited (epar only I guess)
         print "\nLimited graphics available on win32 platform\n"
