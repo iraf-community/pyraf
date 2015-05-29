@@ -14,6 +14,10 @@ ms_windows = sys.platform.startswith('win')
 
 # conditional for if we should build the C code
 build_c = not ms_windows
+# so my 2.5 fink build works:
+if sys.version_info[:2] < (2,6):
+    build_c = False
+    ms_windows = True
 
 C_EXT_MODNAME_ENDING = 'module'
 if sys.version_info[0] > 2: # actually changes in Python 3.3, but why wait
@@ -51,9 +55,9 @@ def find_x(xdir=""):
             raise ImportError("Tkinter is not installed")
         tk=Tkinter.Tk()
         tk.withdraw()
-        tcl_lib = os.path.join((tk.getvar('tcl_library')), '../')
-        tcl_inc = os.path.join((tk.getvar('tcl_library')), '../../include')
-        tk_lib = os.path.join((tk.getvar('tk_library')), '../')
+        tcl_lib = os.path.join(str(tk.getvar('tcl_library')), '../')
+        tcl_inc = os.path.join(str(tk.getvar('tcl_library')), '../../include')
+        tk_lib = os.path.join(str(tk.getvar('tk_library')), '../')
         tkv = str(Tkinter.TkVersion)[:3]
         # yes, the version number of Tkinter really is a float...
         if Tkinter.TkVersion < 8.3:
@@ -102,6 +106,8 @@ if not ms_windows or build_c :
         distutils.core.Extension(
             'pyraf.sscanf'+C_EXT_MODNAME_ENDING,
             ['src/sscanfmodule.c'],
+#           extra_compile_args = ['-arch','i386','-arch','x86_64'],
+#           extra_link_args =    ['-arch','i386','-arch','x86_64'],
             include_dirs=add_inc_dirs
         )
     )
@@ -115,6 +121,8 @@ if not ms_windows :
             ['src/xutil.c'],
             include_dirs=add_inc_dirs,
             library_dirs=add_lib_dirs,
+#           extra_compile_args = ['-arch','i386','-arch','x86_64'],
+#           extra_link_args =    ['-arch','i386','-arch','x86_64'],
             libraries = [x_libraries]
         )
     )
