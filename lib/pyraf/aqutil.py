@@ -10,6 +10,7 @@ from __future__ import division # confidence high
 import os, struct, time, Tkinter
 import objc
 import AppKit
+from stsci.tools.for2to3 import tobytes
 
 
 # Arbitrary module constants for term vs. gui.  0 and negative numbers have
@@ -178,12 +179,13 @@ def __doPyobjcWinInit():
     OSErr  = objc._C_SHT
     OSStat = objc._C_INT
     CGErr  = objc._C_INT
-    INPSN  = 'n^{ProcessSerialNumber=LL}'
-    OUTPSN = 'o^{ProcessSerialNumber=LL}'
-    OUTPID = 'o^_C_ULNG'
-    WARPSIG = 'v{CGPoint=ff}'
+    INPSN  = tobytes('n^{ProcessSerialNumber=LL}')
+    OUTPSN = tobytes('o^{ProcessSerialNumber=LL}')
+    OUTPID = tobytes('o^_C_ULNG')
+    WARPSIG = tobytes('v{CGPoint=ff}')
     if struct.calcsize("l") > 4: # is 64-bit python
-        WARPSIG = 'v{CGPoint=dd}'
+        WARPSIG = tobytes('v{CGPoint=dd}')
+
 
     FUNCTIONS=[
          # These are public API
@@ -228,7 +230,7 @@ def __doPyobjcWinInit():
     if err: raise Exception("GetCurrentProcess: "+str(err))
 
     # Set Proc name
-    err = CPSSetProcessName(__thisPSN, 'PyRAF')
+    err = CPSSetProcessName(__thisPSN, tobytes('PyRAF'))
     if err: raise Exception("CPSSetProcessName: "+str(err))
     # Make us a FG app (need to be in order to use SetFrontProcess on us)
     # This must be done unless we are called with pythonw.
