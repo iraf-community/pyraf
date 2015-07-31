@@ -12,7 +12,7 @@ $Id$
 
 R. White, 1999 August 17
 """
-from __future__ import division # confidence high
+from __future__ import absolute_import, division # confidence high
 
 import __builtin__
 import sys
@@ -197,13 +197,13 @@ else:
 _irafModuleProxy = _irafModuleClass()
 
 # import iraf module using original mechanism
-try:
-    the_iraf_module = _originalImport('iraf', globals(), locals(), [])
-except ImportError:
+if PY3K:
     # necessary as of Python 3.3+ :  try "import pyraf.iraf"
     pyrafmod = _originalImport('pyraf.iraf', globals(), locals(), [])
     the_iraf_module = pyrafmod.iraf
-
+else:
+    the_iraf_module = _originalImport('iraf', globals(), locals(), [])
+ 
 # leaving
 if IMPORT_DEBUG:
     print("irafimport: passed final import")
