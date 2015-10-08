@@ -43,13 +43,16 @@ WUTIL_ON_WIN = sys.platform.startswith('win')
 # WUTIL_USING_X: default to using X on most platforms, tho surely not on windows
 WUTIL_USING_X = not WUTIL_ON_WIN
 
-# More on WUTIL_USING_X: for now we support both versions (X or Aqua) on OSX
+# More on this for OSX: for now we support both versions (X or Aqua) on OSX
+# Allow environment variable so any user can force their preference.
 if WUTIL_ON_MAC and not _skipDisplay:
     if 'PYRAF_WUTIL_USING_AQUA' in os.environ:
         WUTIL_USING_X = False
+    elif 'PYRAF_WUTIL_USING_X' in os.environ:
+        WUTIL_USING_X = True
     else:
-        # Do this check for them; look at the python binaries - are they X11-linked?
-        WUTIL_USING_X = capable.which_darwin_linkage() == "x11"
+        # Otherwise check for them; look at the python binaries - are they X11-linked?
+        WUTIL_USING_X = capable.is_darwin_and_x()
 
 # Experimental new (2012) mode some have requested (OSX mostly) where all
 # graphics windows drawn are popped to the foreground and left there with
@@ -85,7 +88,7 @@ try:
         def getWindowIdZero(): return 0
         getFocalWindowID = getWindowIdZero
 
-        # If on OSX, use aqutil
+        # If on OSX w/out X11, use aqutil
         if WUTIL_ON_MAC and not _skipDisplay: # as opposed to the PC (future?)
             try:
                 import aqutil
@@ -536,6 +539,7 @@ def dumpspecs(outstream = None, skip_volatiles = False):
         out += "\nis_darwin_and_x = "+str(capable.is_darwin_and_x())
         if WUTIL_ON_MAC:
             out += "\nwhich_darwin_linkage = "+str(capable.which_darwin_linkage())
+            out += "\nwhich_darwin_linkage2 = "+str(capable.which_darwin_linkage(force_otool_check=True))
         else:
             out += "\nwhich_darwin_linkage = (not darwin)"
         out += "\nskip display = "+str(_skipDisplay)
