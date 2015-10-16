@@ -227,7 +227,7 @@ if not ms_windows and sys.version_info[0] < 3:
 setupargs = {
     'version' :			    "2.x", # see lib's __init__.py
     'description' :		    "A Python based CL for IRAF",
-    'author' :			    "Rick White, Perry Greenfield",
+    'author' :			    "Rick White, Perry Greenfield, Chris Sontag",
     'maintainer_email' :	"help@stsci.edu",
     'url' :			        "http://www.stsci.edu/resources/software_hardware/pyraf",
     'license' :			    "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
