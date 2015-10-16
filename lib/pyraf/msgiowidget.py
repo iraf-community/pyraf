@@ -9,11 +9,19 @@ from __future__ import division # confidence high
 # System level modules
 import sys
 import Tkinter as Tki
+
+# Our modules
 from stsci.tools import tkrotext
 
-USING_X = not sys.platform.startswith('win') # in most cases we use X
-if sys.platform == 'darwin':
-    USING_X = ",".join(sys.path).lower().find('/pyobjc') < 0
+
+def is_USING_X():
+    """ This is specifically in a function and not at the top
+    of this module so that it is not done until needed.  We do
+    not want to casually import wutil anywhere. The import mechanism
+    makes this speedy on the 2nd-Nth attempt anyway. """
+    from . import wutil
+    return wutil.WUTIL_USING_X
+
 
 class MsgIOWidget(Tki.Frame):
 
@@ -36,10 +44,10 @@ class MsgIOWidget(Tki.Frame):
         # Put in the expand/collapse button (determine it's sizes)
         self._expBttnHasTxt = True
         btxt= '+'
-        if USING_X:
+        if is_USING_X():
             px = 2
             py = 0
-        else: # Aqua ?
+        else: # Aqua
             px = 5
             py = 3
             if Tki.TkVersion > 8.4:
