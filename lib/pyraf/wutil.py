@@ -46,13 +46,8 @@ WUTIL_USING_X = not WUTIL_ON_WIN
 # More on this for OSX: for now we support both versions (X or Aqua) on OSX
 # Allow environment variable so any user can force their preference.
 if WUTIL_ON_MAC and not _skipDisplay:
-    if 'PYRAF_WUTIL_USING_AQUA' in os.environ:
-        WUTIL_USING_X = False
-    elif 'PYRAF_WUTIL_USING_X' in os.environ:
-        WUTIL_USING_X = True
-    else:
-        # Otherwise check for them; look at the python binaries - are they X11-linked?
-        WUTIL_USING_X = capable.is_darwin_and_x()
+    # default to aqua as it is the 98% case now (post v2.1.9), X11 users will need the env. var
+    WUTIL_USING_X = 'PYRAF_WUTIL_USING_X' in os.environ
 
 # Experimental new (2012) mode some have requested (OSX mostly) where all
 # graphics windows drawn are popped to the foreground and left there with
@@ -99,7 +94,7 @@ try:
             except:
                 _has_aqutil = 0
                 print "Could not import aqutil, please see the online PyRAF FAQ"
-                print "http://www.stsci.edu/institute/software_hardware/pyraf/pyraf_faq#5.13"
+                print "http://www.stsci.edu/institute/software_hardware/pyraf/pyraf_faq#2.6"
 
 except ImportError:
     _has_xutil = 0 # Unsuccessful init of XWindow
@@ -604,7 +599,7 @@ if _skipDisplay:
 else:
     if _has_xutil or _has_aqutil:
         hasGraphics = focusController.hasGraphics
-    elif WUTIL_ON_MAC:
+    elif WUTIL_ON_MAC: # on a Mac but loaded no graphcs libs (aqutil/xutil)
         # Handle case where we are on the Mac with no X and no PyObjc.  We can
         # still run, albeit without automatic mouse moving and focus jumping.
         hasGraphics = focusController.hasGraphics
