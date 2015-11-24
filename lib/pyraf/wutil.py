@@ -531,12 +531,15 @@ def dumpspecs(outstream = None, skip_volatiles = False):
         out += "\nWUTIL_ON_MAC = "+str(WUTIL_ON_MAC)
         out += "\nWUTIL_ON_WIN = "+str(WUTIL_ON_WIN)
         out += "\nWUTIL_USING_X = "+str(WUTIL_USING_X)
-        out += "\nis_darwin_and_x = "+str(capable.is_darwin_and_x())
-        if WUTIL_ON_MAC:
-            out += "\nwhich_darwin_linkage = "+str(capable.which_darwin_linkage())
-            out += "\nwhich_darwin_linkage2 = "+str(capable.which_darwin_linkage(force_otool_check=True))
-        else:
-            out += "\nwhich_darwin_linkage = (not darwin)"
+        try: # the try/except handling here will be unneccessary after stsci.tools 3.4.2
+            out += "\nis_darwin_and_x = "+str(capable.is_darwin_and_x())
+            if WUTIL_ON_MAC:
+                out += "\nwhich_darwin_linkage = "+str(capable.which_darwin_linkage())
+                out += "\nwhich_darwin_linkage2 = "+str(capable.which_darwin_linkage(force_otool_check=True))
+            else:
+                out += "\nwhich_darwin_linkage = (not darwin)"
+        except Exception:
+            out += "\ndarwin linkage check threw exception"
         out += "\nskip display = "+str(_skipDisplay)
         out += "\nhas graphics = "+str(hasGraphics)
         out += "\nimported aqutil = "+str(bool(_has_aqutil))
@@ -604,10 +607,13 @@ else:
         # still run, albeit without automatic mouse moving and focus jumping.
         hasGraphics = focusController.hasGraphics
         if hasGraphics:
-            if capable.which_darwin_linkage() == 'aqua':
-                print "\nLimited graphics available on OSX (aqutil not loaded)\n"
-            else:
-                print "\nLimited graphics available on OSX (xutil not loaded)\n"
+            try: # the try/except handling here will be unneccessary after stsci.tools 3.4.2
+                if capable.which_darwin_linkage() == 'aqua':
+                    print "\nLimited graphics available on OSX (aqutil not loaded)\n"
+                else:
+                    print "\nLimited graphics available on OSX (xutil not loaded)\n"
+            except Exception:
+                print "\nLimited graphics available on OSX (library not loaded)\n"
     elif WUTIL_ON_WIN:
         hasGraphics = 1 # try this, tho VERY limited (epar only I guess)
         print "\nLimited graphics available on win32 platform\n"
