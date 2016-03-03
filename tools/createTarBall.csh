@@ -3,6 +3,10 @@
 # $Id$
 #
 
+# !!!
+#alias pause "env PYTHONPATH=${HOME}/scripts python -c 'import cds; cds.pause()'"
+
+set use_git = 0
 if ($#argv != 3) then
    echo "usage:  $0  dev|rel  2|3  py-bin-dir"
    exit 1
@@ -17,9 +21,13 @@ if ($argv[2] == "3") then
 endif
 set pybin = $argv[3]
 
-set svnbin = /usr/bin/svn
+set vcsbin = /usr/bin/svn
 if (`uname -n` == "somenode.stsci.edu") then
-   set svnbin = svn
+   set vcsbin = svn
+endif
+# trying git as of 3/3
+if ($use_git == "1") then
+   set vcsbin = git
 endif
 
 if (!(-d ~/.stsci_tmp)) then
@@ -63,21 +71,13 @@ endif
 
 # get all source via SVN
 echo "Downloading source for: $pyr from: `echo $co_pyraf | sed 's/.*:\/\///'` "
-$svnbin $co_pyraf $pyr
+$vcsbin $co_pyraf $pyr
 if ($status != 0) then
-   echo ERROR svn-ing pyraf
+   echo ERROR checking out pyraf
    exit 1
 endif
 
-# for now, add svninfo file manually
-#cd $workDir/$pyr
-#set rev = `$svnbin info | grep '^Revision:' | sed 's/.* //'`
-#cd $workDir/$pyr/lib/pyraf
-#if (!(-e svninfo.py)) then
-#   echo '__svn_version__ = "'${rev}'"' > svninfo.py
-#   echo '__full_svn_info__ = ""' >> svninfo.py
-#   echo '__setup_datetime__ = "'`date`'"' >> svninfo.py
-#endif
+# used to add version info manually right here
 
 # get extra pkgs into a subdir
 cd $workDir/$pyr
@@ -86,21 +86,21 @@ cd $workDir/$pyr/required_pkgs
 echo "Downloading source for: stsci.tools and dist. stuff"
 #
 # STABLE!: -q -r '{2013-02-11}', but continue to use HEAD if possible
-$svnbin co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
+$vcsbin co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/d2to1/trunk d2to1
 if ($status != 0) then
-   echo ERROR svn-ing d2to1
+   echo ERROR checking out d2to1
    exit 1
 endif
 #
-$svnbin co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci.distutils/trunk stsci.distutils
+$vcsbin co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci.distutils/trunk stsci.distutils
 if ($status != 0) then
-   echo ERROR svn-ing stsci.distutils
+   echo ERROR checking out stsci.distutils
    exit 1
 endif
 #
-$svnbin $co_tools stsci.tools
+$vcsbin $co_tools stsci.tools
 if ($status != 0) then
-   echo ERROR svn-ing stsci.tools
+   echo ERROR checking out stsci.tools
    exit 1
 endif
 
@@ -140,7 +140,11 @@ diff version.py.orig1 version.py
 #et verinfo3 = "${verinfo1}-r$verinfo2"
 set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/version.py |sed 's/.*= *//' |sed "s/'//g"`
 set verinfo2 = `grep '__svn_revision__ *=' $workDir/$pyr/lib/pyraf/version.py |head -1 |sed 's/.*= *//' |sed "s/'//g"`
-set svn_says = `${svnbin}version |sed 's/M//'`
+if ($use_git == "1") then
+   set vcs_says = 'need_git_revision'
+else
+   set vcs_says = `${vcsbin}version |sed 's/M//'`
+endif
 
 # ---------------- HACK 2 TO WORK AROUND BUGS IN stsci_distutils ---------------
 set junk = `echo $verinfo2 |grep Unable.to.determine`
@@ -148,7 +152,7 @@ if ("$junk" == "$verinfo2") then
    # __svn_revision__ did not get set, let's set it manually...
    cd $workDir/$pyr/lib/pyraf
    cp version.py version.py.orig2
-   cat version.py.orig2 |sed 's/^\( *\)__svn_revision__ *=.*/\1__svn_revision__ = "'${svn_says}'"/' > version.py
+   cat version.py.orig2 |sed 's/^\( *\)__svn_revision__ *=.*/\1__svn_revision__ = "'${vcs_says}'"/' > version.py
    echo 'DIFF of __svn_revision__ line(s)'
    diff version.py.orig2 version.py
 
@@ -164,7 +168,7 @@ if ("$junk" == "$verinfo2") then
    endif
 
    # now set verinfo2 correctly
-   set verinfo2 = "$svn_says"
+   set verinfo2 = "$vcs_says"
 endif
 # ---------END OF  HACK 2 TO WORK AROUND BUGS IN stsci_distutils ---------------
 
@@ -175,15 +179,23 @@ if  ("$junk" == "$verinfo1") then
 else
    set verinfo3 = "${verinfo1}.r${verinfo2}"
 endif
-echo "This build will show a version number of:  $verinfo3 ... is same as r$svn_says ..."
+echo "This build will show a version number of:  $verinfo3 ... is same as r$vcs_says ..."
 echo "$verinfo3" > ~/.pyraf_tar_ball_ver
 
 # remove svn dirs (not needed if we use sdist)
 cd $workDir/$pyr
-/bin/rm -rf `find . -name '.svn'`
-if ($status != 0) then
-   echo ERROR cleaning out .svn dirs
-   exit 1
+if ($use_git == "1") then
+   /bin/rm -rf `find . -name '.git*'`
+   if ($status != 0) then
+      echo ERROR cleaning out vcs dirs
+      exit 1
+   endif
+else
+   /bin/rm -rf `find . -name '.svn'`
+   if ($status != 0) then
+      echo ERROR cleaning out vcs dirs
+      exit 1
+   endif
 endif
 
 # OLD - uses tar and gzip directly:
