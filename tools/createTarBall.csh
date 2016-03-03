@@ -3,9 +3,6 @@
 # $Id$
 #
 
-# !!!
-#alias pause "env PYTHONPATH=${HOME}/scripts python -c 'import cds; cds.pause()'"
-
 set use_git = 0
 if ($#argv != 3) then
    echo "usage:  $0  dev|rel  2|3  py-bin-dir"
@@ -55,8 +52,6 @@ if ($isdev == 1) then
    if ($use_git == "1") then
       set co_pyraf = 'clone -q https://github.com/spacetelescope/pyraf.git'
       set co_tools = 'clone -q https://github.com/spacetelescope/stsci.tools.git'
-      echo trying it out but will bail here
-      exit 1
    endif
 else
    if ($use_git == "1") then
