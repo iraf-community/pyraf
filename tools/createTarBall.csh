@@ -164,7 +164,7 @@ if ($use_git != "1") then
    set vcs_says = `${vcsbin}version |sed 's/M//'`
    set verinfo2 = `grep '__svn_revision__ *=' $workDir/$pyr/lib/pyraf/version.py |head -1 |sed 's/.*= *//' |sed "s/'//g"`
 else
-   set vcs_says = `git rev-parse --verify HEAD`
+   set vcs_says = `git rev-parse --verify HEAD |sed 's/^\(........\).*/\1/'`
    set verinfo2 = "$vcs_says"
 endif
 
@@ -194,6 +194,18 @@ if ("$junk" == "$verinfo2") then
 endif
 # ---------END OF  HACK 2 TO WORK AROUND BUGS IN stsci_distutils ---------------
 
+# ---------------- HACK 3 TO ADD GIT REV INFO ----------------------------------
+if ($use_git == "1") then
+   cp version.py version.py.orig3
+   # crack file open at svn rev line and add a git rev line
+   cat version.py.orig3 |sed -n '1,/^__svn_revision__/ p'                               > version.py
+   echo "__vcs_revision__ = '"${vcs_says}"'"                                           >> version.py
+   cat version.py.orig3 |sed -n '/^__svn_revision__/,$ p' |grep -v '^__svn_revision__' >> version.py
+   echo 'DIFF of version.py for vcs line'
+   diff version.py.orig3 version.py
+endif
+# ---------END OF  HACK 3 TO ADD GIT REV INFO ----------------------------------
+
 # set full ver (verinfo3) to be n.m.devNNNNN (if dev) or n.m.rNNNNN (if not)
 set junk = `echo $verinfo1 |grep dev`
 if  ("$junk" == "$verinfo1") then
@@ -205,7 +217,7 @@ else
       set verinfo3 = "${verinfo1}.r${verinfo2}"
    endif
 endif
-echo "This build will show a version number of:  $verinfo3 ... is same as r$vcs_says ..."
+echo "This build will show a version number of:  $verinfo3 ... is same as $vcs_says ..."
 echo "$verinfo3" > ~/.pyraf_tar_ball_ver
 
 # remove svn dirs (not needed if we use sdist)
