@@ -3,7 +3,9 @@
 # $Id$
 #
 
-set use_git = 0
+set use_git = 1
+   # trying to do this from git repos as of nightly on 9 Mar 2016
+
 if ($#argv != 3) then
    echo "usage:  $0  dev|rel  2|3  py-bin-dir"
    exit 1
@@ -153,15 +155,17 @@ diff version.py.orig1 version.py
 # --------- END OF HACK 1 TO WORK AROUND BUGS IN stsci_distutils ---------------
 
 # get version info
+cd $workDir/$pyr/lib/pyraf
 #et verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/__init__.py | sed 's/.*= *//' | sed 's/"//g'`
 #et verinfo2 = `grep '__svn_version__' $workDir/$pyr/lib/pyraf/sv*.py | sed 's/.*= *//' | sed 's/"//g'`
 #et verinfo3 = "${verinfo1}-r$verinfo2"
 set verinfo1 = `grep '__version__ *=' $workDir/$pyr/lib/pyraf/version.py |sed 's/.*= *//' |sed "s/'//g"`
-set verinfo2 = `grep '__svn_revision__ *=' $workDir/$pyr/lib/pyraf/version.py |head -1 |sed 's/.*= *//' |sed "s/'//g"`
-if ($use_git == "1") then
-   set vcs_says = 'need_git_revision'
-else
+if ($use_git != "1") then
    set vcs_says = `${vcsbin}version |sed 's/M//'`
+   set verinfo2 = `grep '__svn_revision__ *=' $workDir/$pyr/lib/pyraf/version.py |head -1 |sed 's/.*= *//' |sed "s/'//g"`
+else
+   set vcs_says = `git rev-parse --verify HEAD`
+   set verinfo2 = "$vcs_says"
 endif
 
 # ---------------- HACK 2 TO WORK AROUND BUGS IN stsci_distutils ---------------
@@ -195,7 +199,11 @@ set junk = `echo $verinfo1 |grep dev`
 if  ("$junk" == "$verinfo1") then
    set verinfo3 = "${verinfo1}${verinfo2}"
 else
-   set verinfo3 = "${verinfo1}.r${verinfo2}"
+   if ($use_git == "1") then
+      set verinfo3 = "${verinfo1}.${verinfo2}"
+   else
+      set verinfo3 = "${verinfo1}.r${verinfo2}"
+   endif
 endif
 echo "This build will show a version number of:  $verinfo3 ... is same as r$vcs_says ..."
 echo "$verinfo3" > ~/.pyraf_tar_ball_ver
