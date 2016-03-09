@@ -17,8 +17,9 @@ import os, sys, __main__
 # dev only: add revision number if possible (if not done yet)
 if __version__.endswith('dev'):
     try: # did we set this via git?
+        from .version_vcs import __vcs_revision__
         __version__ = __version__+__vcs_revision__
-    except NameError: # must be using svn still
+    except: # must be using svn still
         if len(__svn_revision__) > 0 and __svn_revision__[0].isdigit():
             __version__ = __version__+__svn_revision__
 

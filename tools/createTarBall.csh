@@ -196,13 +196,10 @@ endif
 
 # ---------------- HACK 3 TO ADD GIT REV INFO ----------------------------------
 if ($use_git == "1") then
-   cp version.py version.py.orig3
-   # crack file open at svn rev line and add a git rev line
-   cat version.py.orig3 |sed -n '1,/^__svn_revision__/ p'                               > version.py
-   echo "__vcs_revision__ = '"${vcs_says}"'"                                           >> version.py
-   cat version.py.orig3 |sed -n '/^__svn_revision__/,$ p' |grep -v '^__svn_revision__' >> version.py
-   echo 'DIFF of version.py for vcs line'
-   diff version.py.orig3 version.py
+   echo '"This is automatically generated at package time.  Do not edit"' > version_vcs.py
+   echo "__vcs_revision__ = '${vcs_says}'"                               >> version_vcs.py
+   echo 'Added version_vcs.py:'
+   cat version_vcs.py
 endif
 # ---------END OF  HACK 3 TO ADD GIT REV INFO ----------------------------------
 
