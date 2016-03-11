@@ -206,8 +206,12 @@ endif
 
 # set full ver (verinfo3) to be n.m.devNNNNN (if dev) or n.m.rNNNNN (if not)
 set junk = `echo $verinfo1 |grep dev`
-if  ("$junk" == "$verinfo1") then
-   set verinfo3 = "${verinfo1}${verinfo2}"
+if ("$junk" == "$verinfo1") then
+   if ($use_git == "1") then
+       set verinfo3 = "${verinfo1}-${verinfo2}"
+   else
+       set verinfo3 = "${verinfo1}${verinfo2}"
+   endif
 else
    if ($use_git == "1") then
       set verinfo3 = "${verinfo1}.${verinfo2}"
