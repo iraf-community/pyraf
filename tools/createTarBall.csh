@@ -196,9 +196,10 @@ endif
 
 # ---------------- HACK 3 TO ADD GIT REV INFO ----------------------------------
 if ($use_git == "1") then
+   cd $workDir/$pyr/lib/pyraf
    echo '"This is automatically generated at package time.  Do not edit"' > version_vcs.py
    echo "__vcs_revision__ = '${vcs_says}'"                               >> version_vcs.py
-   echo 'Added version_vcs.py:'
+   echo 'ADDED version_vcs.py:'
    cat version_vcs.py
 endif
 # ---------END OF  HACK 3 TO ADD GIT REV INFO ----------------------------------
