@@ -133,9 +133,19 @@ if (-e setup.cfg) then
    diff setup.cfg.orig setup.cfg
 endif
 
+# ---------------- HACK TO ADD GIT REV INFO ----------------------------------
+if ($use_git == "1") then
+   cd $workDir/$pyr/lib/pyraf
+   set vcs_says = `git rev-parse --verify HEAD |sed 's/^\(........\).*/\1/'`
+   echo '"This is automatically generated at package time.  Do not edit"' > version_vcs.py
+   echo "__vcs_revision__ = '${vcs_says}'"                               >> version_vcs.py
+   echo 'ADDED version_vcs.py:'
+   cat version_vcs.py
+endif
+# ---------END OF  HACK TO ADD GIT REV INFO ----------------------------------
+
 # Now that we have setup.cfg working better, run sdist to
-# generate the version.py file (this imports pyraf)
-# and generate the .tar.gz file
+# generate the version.py file (this imports pyraf) AND generate the .tar.gz file
 cd $workDir/$pyr
 setenv PYRAF_NO_DISPLAY
 # FORCE_USE_PY27... $pybin/python setup.py sdist >& $workDir/sdist.out
@@ -164,7 +174,7 @@ if ($use_git != "1") then
    set vcs_says = `${vcsbin}version |sed 's/M//'`
    set verinfo2 = `grep '__svn_revision__ *=' $workDir/$pyr/lib/pyraf/version.py |head -1 |sed 's/.*= *//' |sed "s/'//g"`
 else
-   set vcs_says = `git rev-parse --verify HEAD |sed 's/^\(........\).*/\1/'`
+   # vcs_says is set above
    set verinfo2 = "$vcs_says"
 endif
 
@@ -193,16 +203,6 @@ if ("$junk" == "$verinfo2") then
    set verinfo2 = "$vcs_says"
 endif
 # ---------END OF  HACK 2 TO WORK AROUND BUGS IN stsci_distutils ---------------
-
-# ---------------- HACK 3 TO ADD GIT REV INFO ----------------------------------
-if ($use_git == "1") then
-   cd $workDir/$pyr/lib/pyraf
-   echo '"This is automatically generated at package time.  Do not edit"' > version_vcs.py
-   echo "__vcs_revision__ = '${vcs_says}'"                               >> version_vcs.py
-   echo 'ADDED version_vcs.py:'
-   cat version_vcs.py
-endif
-# ---------END OF  HACK 3 TO ADD GIT REV INFO ----------------------------------
 
 # set full ver (verinfo3) to be n.m.devNNNNN (if dev) or n.m.rNNNNN (if not)
 set junk = `echo $verinfo1 |grep dev`
