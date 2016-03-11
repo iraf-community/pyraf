@@ -15,9 +15,13 @@ from .version import *
 import os, sys, __main__
 
 # dev only: add revision number if possible (if not done yet)
-if __version__.endswith('dev') and len(__svn_revision__) > 0 and \
-   __svn_revision__[0].isdigit():
-    __version__ = __version__+__svn_revision__
+if __version__.endswith('dev'):
+    try: # did we set this via git?
+        from .version_vcs import __vcs_revision__
+        __version__ = __version__+__vcs_revision__
+    except: # must be using svn still
+        if len(__svn_revision__) > 0 and __svn_revision__[0].isdigit():
+            __version__ = __version__+__svn_revision__
 
 # Dump version and exit here, if requested
 if '-V' in sys.argv or '--version' in sys.argv:
