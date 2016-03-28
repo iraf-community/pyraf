@@ -1,3 +1,4 @@
+include RECON-INFO
 include setup.py MANIFEST MANIFEST.in
 recursive-include data blankcursor.xbm epar.optionDB pyraflogo_rgb_web.gif
 recursive-include data/clcache *
