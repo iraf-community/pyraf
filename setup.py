@@ -57,19 +57,17 @@ setup(
     package_data = {
         'pyraf': [
             'data/*',
+            'LICENSE.txt',
         ]
     },
-    scripts=[
-        '':'scripts/*'
-    ],
+    scripts=glob('scripts/*'),
     ext_modules=[
         Extension('pyraf.sscanfmodule',
-            ['src/sscanfmodule.c'],
-            optional=True,
-            fail_message='If this is Windows, it is ok.'),
+            sources=['src/sscanfmodule.c'],
+            optional=True),
 
-        Extension('pyraf.xutilmodule',
-            ['src/xutil.c'],
-            libraries=['X11']),
+       Extension('pyraf.xutilmodule',
+           sources=['src/xutil.c'],
+           libraries=['X11']),
     ],
 )
