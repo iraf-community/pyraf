@@ -7,8 +7,7 @@ terms of use.
 
 Usage: pyraf [options] [savefile]
 
-where savefile is an optional save file to start from, and options are one
-or more of:
+where savefile is an optional save file to start from, and options are:
   -c cmd  Command passed in as string (any valid PyRAF command)
   -e      Turn on ECL mode
   -h      Print this message
