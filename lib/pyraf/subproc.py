@@ -863,7 +863,7 @@ class RedirProcess(Subprocess):
 def test(fout = sys.stdout):
     fout.write("Starting test ...\n")
     assert hasattr(fout, 'write'), "Input not a file object: "+str(fout)
-    print "\tOpening subprocess (git 14jul):"
+    print "\tOpening subprocess (git 20jul):"
     p = Subprocess('cat', expire_noisily=1)        # set to expire noisily...
     print p
     print "\tOpening bogus subprocess, should fail:"
