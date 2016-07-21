@@ -506,7 +506,10 @@ def dumpspecs(outstream = None, skip_volatiles = False):
        pass
 
     out = "python exec = "+str(sys.executable)
-    out += "\npython ver = "+sys.version.split()[0]
+    if skip_volatiles:
+        out += "\npython ver = "+'.'.join([str(v) for v in sys.version_info[0:2]])
+    else:
+        out += "\npython ver = "+'.'.join([str(v) for v in sys.version_info[0:3]])
     out += "\nplatform = "+str(sys.platform)
     if not skip_volatiles:
         out += "\nPyRAF ver = "+pyrver
