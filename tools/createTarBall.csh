@@ -48,7 +48,6 @@ endif
 #
 if ($isdev == 1) then
    set pyr = "pyraf-dev"
-#  set co_pyraf = 'co -q -r HEAD http://svn6.assembla.com/svn/pyraf/trunk'
    set co_pyraf = 'co -q -r HEAD https://aeon.stsci.edu/ssb/svn/pyraf/trunk'
    set co_tools = 'co -q -r HEAD https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/trunk'
    if ($use_git == "1") then
@@ -56,24 +55,26 @@ if ($isdev == 1) then
       set co_tools = 'clone -q https://github.com/spacetelescope/stsci.tools.git'
    endif
 else
-   if ($use_git == "1") then
-      echo 'SORRY - this doesnt work yet - it needs some love first to be run with git'
-      exit 1
-   endif
-   set pyr = "pyraf-2.1"
+   set pyr = "pyraf-2.1.717"
    echo -n 'What will the pyraf dir name be? ('$pyr'): '
    set ans = $<
    if ($ans != '') then
       set pyr = $ans
    endif
-   set brn = "tags/release_2.1"
-   echo -n 'What is branch name? ('$brn'): '
-   set ans = $<
-   if ($ans != '') then
-      set brn = $ans
+
+   if ($use_git != "1") then
+      set brn = "tags/release_2.1.717"
+      echo -n 'What is branch name? ('$brn'): '
+      set ans = $<
+      if ($ans != '') then
+         set brn = $ans
+      endif
+      set co_pyraf = "co -q https://aeon.stsci.edu/ssb/svn/pyraf/${brn}"
+      set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/trunk"
+   else
+      set co_pyraf = 'clone -q https://github.com/spacetelescope/pyraf.git'
+      set co_tools = 'clone -q https://github.com/spacetelescope/stsci.tools.git'
    endif
-   set co_pyraf = "co -q https://aeon.stsci.edu/ssb/svn/pyraf/${brn}"
-   set co_tools = "co -q https://svn.stsci.edu/svn/ssb/stsci_python/stsci.tools/trunk"
 endif
 
 # get all source via SVN
