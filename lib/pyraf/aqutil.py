@@ -181,7 +181,7 @@ def __doPyobjcWinInit():
     CGErr  = objc._C_INT
     INPSN  = tobytes('n^{ProcessSerialNumber=LL}')
     OUTPSN = tobytes('o^{ProcessSerialNumber=LL}')
-    OUTPID = tobytes('o^_C_ULNG')
+#   OUTPID = tobytes('o^_C_ULNG') # invalid as of objc v3.2
     WARPSIG = tobytes('v{CGPoint=ff}')
     if struct.calcsize("l") > 4: # is 64-bit python
         WARPSIG = tobytes('v{CGPoint=dd}')
@@ -191,14 +191,14 @@ def __doPyobjcWinInit():
          # These are public API
          ( u'GetCurrentProcess', OSErr+OUTPSN),
          ( u'GetFrontProcess', OSErr+OUTPSN),
-         ( u'GetProcessPID', OSStat+INPSN+OUTPID),
+#        ( u'GetProcessPID', OSStat+INPSN+OUTPID), # see OUTPID note
          ( u'SetFrontProcess', OSErr+INPSN),
          ( u'CGWarpMouseCursorPosition', WARPSIG),
          ( u'CGMainDisplayID', objc._C_PTR+objc._C_VOID),
          ( u'CGDisplayPixelsHigh', objc._C_ULNG+objc._C_ULNG),
          ( u'CGDisplayHideCursor', CGErr+objc._C_ULNG),
          ( u'CGDisplayShowCursor', CGErr+objc._C_ULNG),
-         # This is undocumented SPI
+         # This is undocumented API
          ( u'CPSSetProcessName', OSErr+INPSN+objc._C_CHARPTR),
          ( u'CPSEnableForegroundOperation', OSErr+INPSN),
     ]
