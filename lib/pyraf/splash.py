@@ -7,13 +7,14 @@ R. White, 2001 Dec 15
 
 from __future__ import division # confidence high
 
-import os, sys, Tkinter
+import os, sys
+import Tkinter as TKNTR # requires 2to3
 from stsci.tools.irafglobals import IrafPkg
 import wutil
 
 logo = "pyraflogo_rgb_web.gif"
 
-class SplashScreen(Tkinter.Toplevel):
+class SplashScreen(TKNTR.Toplevel):
 
     """Base class for splash screen
 
@@ -26,8 +27,8 @@ class SplashScreen(Tkinter.Toplevel):
     Based closely on news posting by Alexander Schliep, 07 Apr 1999
     """
 
-    def __init__(self, master=None, borderwidth=4, relief=Tkinter.RAISED, **kw):
-        Tkinter.Toplevel.__init__(self, master, relief=relief,
+    def __init__(self, master=None, borderwidth=4, relief=TKNTR.RAISED, **kw):
+        TKNTR.Toplevel.__init__(self, master, relief=relief,
             borderwidth=borderwidth, **kw)
         if self.master.master != None: # Why?
             self.master.master.withdraw()
@@ -96,11 +97,11 @@ class PyrafSplash(SplashScreen):
 
     def createWidgets(self):
         """Create pyraf splash image"""
-        self.img = Tkinter.PhotoImage(file=self.filename)
+        self.img = TKNTR.PhotoImage(file=self.filename)
         width = self.img.width()+20
         iheight = self.img.height()
         height = iheight+10+15*self.nlines
-        self.canvas = Tkinter.Canvas(self, width=width, height=height,
+        self.canvas = TKNTR.Canvas(self, width=width, height=height,
             background=self["background"])
         self.image = self.canvas.create_image(width//2, 5+iheight//2, image=self.img)
         self.text = self.nlines*[None]
@@ -141,7 +142,7 @@ class PyrafSplash(SplashScreen):
     def Destroy(self, event=None):
         if event:
             # make sure button release occurred in window
-            # Tkinter should take care of this but doesn't
+            # tkinter should take care of this but doesn't
             if event.x<0 or event.x>=self.winfo_width() or \
                event.y<0 or event.y>=self.winfo_height():
                 self['cursor'] = self.defaultCursor
@@ -202,12 +203,12 @@ class IrafMonitorSplash(PyrafSplash):
 def splash(label="PyRAF Execution Monitor", background="LightYellow", **kw):
     """Display the PyRAF splash screen
 
-    Silently does nothing if Tkinter is not usable.
+    Silently does nothing if tkinter is not usable.
     """
     if wutil.hasGraphics:
         try:
             return IrafMonitorSplash(label, background=background, **kw)
-        except Tkinter.TclError:
+        except TKNTR.TclError:
             pass
     return None
 
