@@ -9,7 +9,7 @@ from __future__ import division # confidence high
 import os, string
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
-    import Tkinter
+    import Tkinter as TKNTR # requires 2to3
 import wutil, gki
 
 class GWMError(Exception):
@@ -66,7 +66,7 @@ class GraphicsWindowManager(gki.GkiProxy):
             self.createList.append(windowName)
         if self.windowVar is None:
             # create Tk string variable with active window name
-            self.windowVar = Tkinter.StringVar()
+            self.windowVar = TKNTR.StringVar()
             self.windowVar.trace('w', self._setWindowVar)
         self.windowVar.set(windowName)
 

@@ -7,7 +7,7 @@ $Id$
 from __future__ import division # confidence high
 
 import numpy, sys, string
-import Tkinter
+import Tkinter as TKNTR # requires 2to3
 from stsci.tools.for2to3 import ndarr2str
 import wutil, Ptkplot
 import gki, gkitkbase, gkigcur, tkplottext, textattrib, irafgwcs
@@ -154,7 +154,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.clear()
         # This is needed to clear all the previously plotted objects
         # within tkinter (it has its own buffer it uses to replot)
-        #self.gwidget.delete(Tkinter.ALL)
+        #self.gwidget.delete(TKNTR.ALL)
 
     def gki_cancel(self, arg):
 
@@ -276,7 +276,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         # finally ready to do the drawing
         self.activate()
         # Have Tk remove all previously plotted objects
-        self.gwidget.delete(Tkinter.ALL)
+        self.gwidget.delete(TKNTR.ALL)
         # Clear the screen
         self.tkplot_faset(0,0)
         self.tkplot_fillarea(numpy.array([0.,0.,1.,0.,1.,1.,0.,1.]))
@@ -438,7 +438,7 @@ class tkColorManager:
 
     def setDrawingColor(self, irafColorIndex):
 
-        """Return the specified iraf color usable by Tkinter"""
+        """Return the specified iraf color usable by TKNTR"""
         color = self.config.defaultColors[irafColorIndex]
         red = int(255*color[0])
         green = int(255*color[1])

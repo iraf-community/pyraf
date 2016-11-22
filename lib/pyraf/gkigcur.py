@@ -5,15 +5,16 @@ $Id$
 """
 from __future__ import division # confidence high
 
-import string, os, sys, numpy, Tkinter
+import string, os, sys, numpy
+import Tkinter as TKNTR
 from stsci.tools import irafutils
 import wutil
 
 # The following class attempts to emulate the standard IRAF gcursor
 # mode of operation. That is to say, it is basically a keyboard driven
 # system that uses the same keys that IRAF does for the same purposes.
-# The keyboard I/O will use Tkinter event handling instead of terminal
-# I/O primarily because it is simpler and it is necessary to use Tkinter
+# The keyboard I/O will use tkinter event handling instead of terminal
+# I/O primarily because it is simpler and it is necessary to use tkinter
 # anyway.
 
 class Gcursor:
@@ -54,7 +55,7 @@ class Gcursor:
                 self.active = 0
                 self.unbind()
                 self.cursorOff()
-            except Tkinter.TclError:
+            except TKNTR.TclError:
                 pass
         # EOF flag can get set by window-close event or 'I' keystroke
         # It should be set to string message

@@ -8,7 +8,7 @@ $Id$
 from __future__ import division # confidence high
 
 import os
-from Tkinter import _default_root
+from Tkinter import _default_root # requires 2to3
 from Tkinter import *
 import wutil
 import sys, time
@@ -26,17 +26,8 @@ del dirname
 _TK_HAS_NONE_CURSOR = True # assume True until we learn otherwise
 
 if _default_root is None:
-    # create the initial Tk window and immediately withdraw it
-    import Tkinter
-    if not Tkinter._default_root:
-        _default_root = Tkinter.Tk()
-    else:
-        _default_root = Tkinter._default_root
-    _default_root.withdraw()
-    try:
-        del Tkinter
-    except NameError: # for PY3K situation, in case the 2to3 tool
-        del tkinter   # didn't rename it correctly 2 lines above this one
+    from stsci.tools import irafutils
+    _default_root = irafutils.init_tk_default_root()
 
 # This code is needed to avoid faults on sys.exit()
 # [DAA, Jan 1998]
@@ -44,13 +35,13 @@ if _default_root is None:
 
 def cleanup():
     try:
-        from Tkinter import _default_root, TclError
-        import Tkinter
+        from Tkinter import _default_root, TclError # requires 2to3
+        import Tkinter as TKNTR
         try:
             if _default_root: _default_root.destroy()
         except TclError:
             pass
-        Tkinter._default_root = None
+        TKNTR._default_root = None
     except SystemError:
         # If cleanup() is called before pyraf fully loads, we will
         # see: "SystemError: Parent module 'pyraf' not loaded".  In that case,
@@ -254,7 +245,7 @@ class PyrafCanvas(Canvas):
 
 class FullWindowCursor:
     """This implements a full window crosshair cursor.  This class can
-       operate in the xutil-wrapping mode or in a Tkinter-only mode. """
+       operate in the xutil-wrapping mode or in a tkinter-only mode. """
     # Perhaps this should inherit from an abstract Cursor class eventually
 
     def __init__(self, x, y, window):

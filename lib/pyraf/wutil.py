@@ -1,5 +1,5 @@
 """Contains python routines to do special Window manipulations not
-possible in Tkinter.
+possible in tkinter.
 These are python stubs that are overloaded by a c version implementations.
 If the c versions do not exist, then these routines will do nothing
 
@@ -525,12 +525,12 @@ def dumpspecs(outstream = None, skip_volatiles = False):
 
     if not capable.OF_GRAPHICS:
         if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
-            out += "\nTkinter import failed."
+            out += "\ntkinter import failed."
         else:
-            out += "\nTkinter use unattempted."
+            out += "\ntkinter use unattempted."
     else:
-        out += "\nTclVersion = "+str(capable.Tkinter.TclVersion)
-        out += "\nTkVersion = "+str(capable.Tkinter.TkVersion)
+        out += "\nTclVersion = "+str(capable.TKNTR.TclVersion)
+        out += "\nTkVersion = "+str(capable.TKNTR.TkVersion)
         out += "\nWUTIL_ON_MAC = "+str(WUTIL_ON_MAC)
         out += "\nWUTIL_ON_WIN = "+str(WUTIL_ON_WIN)
         out += "\nWUTIL_USING_X = "+str(WUTIL_USING_X)
@@ -601,7 +601,7 @@ if _skipDisplay:
         else:
             print "No graphics/display possible for this session."
             if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
-                print "Tkinter import failed."
+                print "tkinter import failed."
 else:
     if _has_xutil or _has_aqutil:
         hasGraphics = focusController.hasGraphics

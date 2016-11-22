@@ -7,11 +7,9 @@ code:  the dialog is created,  but it is withdrawn just like the
 root window (!) so there is nothing to interact with and the system
 hangs.
 
-import Tkinter
-
-tk = Tkinter.Tk()
+import Tkinter as TKNTR
+tk = TKNTR.Tk()
 tk.withdraw()
-
 import tkSimpleDialog
 tkSimpleDialog.askstring("window title", "question?")
 
@@ -20,7 +18,7 @@ $Id$
 from __future__ import division # confidence high
 
 import tkSimpleDialog
-from Tkinter import *
+from Tkinter import * # requires 2to3
 
 def __init__(self, parent, title = None):
     '''Initialize a dialog.
@@ -76,11 +74,11 @@ Here are some more notes from my "investigation":
 
 http://mail.python.org/pipermail/python-list/2005-April/275761.html
 
-Tkinter "withdraw" and "askstring" problem
+tkinter "withdraw" and "askstring" problem
 Jeff Epler jepler at unpythonic.net
 Tue Apr 12 15:58:22 CEST 2005
 
-    * Previous message: Tkinter "withdraw" and "askstring" problem
+    * Previous message: tkinter "withdraw" and "askstring" problem
     * Next message: os.open() i flaga lock
     * Messages sorted by: [ date ] [ thread ] [ subject ] [ author ]
 
