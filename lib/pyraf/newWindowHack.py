@@ -20,7 +20,7 @@ $Id$
 from __future__ import division # confidence high
 
 import tkSimpleDialog
-from Tkinter import *
+from Tkinter import * # requires 2to3
 
 def __init__(self, parent, title = None):
     '''Initialize a dialog.
