@@ -9,7 +9,7 @@ $Id$
 from __future__ import division # confidence high
 
 # System level modules
-from Tkinter import *
+from Tkinter import * # requires 2to3
 import string
 
 class MsgIOBuffer(Frame):
