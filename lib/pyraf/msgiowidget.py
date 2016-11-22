@@ -8,10 +8,10 @@ from __future__ import division # confidence high
 
 # System level modules
 import sys
-import Tkinter as Tki
+import Tkinter as TKNTR # requires 2to3
 
 # Our modules
-from stsci.tools import tkrotext
+from stsci.tools import irafutils, tkrotext
 
 
 def is_USING_X():
@@ -23,7 +23,7 @@ def is_USING_X():
     return wutil.WUTIL_USING_X
 
 
-class MsgIOWidget(Tki.Frame):
+class MsgIOWidget(TKNTR.Frame):
 
     """MsgIOWidget class"""
 
@@ -31,14 +31,14 @@ class MsgIOWidget(Tki.Frame):
         """Constructor"""
 
         # We are the main frame that holds everything we do
-        Tki.Frame.__init__(self, parent)
+        TKNTR.Frame.__init__(self, parent)
         self._parent = parent
 
         # Create two sub-frames, one to hold the 1-liner msg I/O, and
         # the other one to hold the whole scrollable history.
-        self._nowFrame = Tki.Frame(self, bd=2, relief=Tki.SUNKEN,
+        self._nowFrame = TKNTR.Frame(self, bd=2, relief=TKNTR.SUNKEN,
                                    takefocus=False)
-        self._histFrame = Tki.Frame(self, bd=2, relief=Tki.SUNKEN,
+        self._histFrame = TKNTR.Frame(self, bd=2, relief=TKNTR.SUNKEN,
                                    takefocus=False)
 
         # Put in the expand/collapse button (determine it's sizes)
@@ -50,64 +50,64 @@ class MsgIOWidget(Tki.Frame):
         else: # Aqua
             px = 5
             py = 3
-            if Tki.TkVersion > 8.4:
+            if TKNTR.TkVersion > 8.4:
                 px = py = 0
                 btxt = ''
                 self._expBttnHasTxt = False
-        self._expBttn = Tki.Checkbutton(self._nowFrame, command=self._expand,
+        self._expBttn = TKNTR.Checkbutton(self._nowFrame, command=self._expand,
                                         padx=px, pady=py,
                                         text=btxt, indicatoron=0,
-                                        state = Tki.DISABLED)
-        self._expBttn.pack(side=Tki.LEFT, padx=3)#, ipadx=0)
+                                        state = TKNTR.DISABLED)
+        self._expBttn.pack(side=TKNTR.LEFT, padx=3)#, ipadx=0)
 
         # Overlay a label on the frame
-        self._msgLabelVar = Tki.StringVar()
+        self._msgLabelVar = TKNTR.StringVar()
         self._msgLabelVar.set(text)
         self._msgLabelMaxWidth = 65 # 70 works but causes plot redraws when
                                     # the history panel is opened/closed
-        self._msgLabel = Tki.Label(self._nowFrame,
+        self._msgLabel = TKNTR.Label(self._nowFrame,
                                    textvariable=self._msgLabelVar,
-                                   anchor=Tki.W,
-                                   justify=Tki.LEFT,
+                                   anchor=TKNTR.W,
+                                   justify=TKNTR.LEFT,
                                    width=self._msgLabelMaxWidth,
                                    wraplength=width-100,
                                    takefocus=False)
-        self._msgLabel.pack(side=Tki.LEFT,
-                            fill=Tki.X,
+        self._msgLabel.pack(side=TKNTR.LEFT,
+                            fill=TKNTR.X,
                             expand=False)
         self._msgLabel.bind('<Double-Button-1>', self._lblDblClk)
 
-        self._entry = Tki.Entry(self._nowFrame,
-                                state=Tki.DISABLED,
+        self._entry = TKNTR.Entry(self._nowFrame,
+                                state=TKNTR.DISABLED,
                                 width=1,
                                 takefocus=False,
-                                relief=Tki.FLAT,
+                                relief=TKNTR.FLAT,
                                 highlightthickness=0)
-        self._entry.pack(side=Tki.LEFT, fill=Tki.X, expand=True)
+        self._entry.pack(side=TKNTR.LEFT, fill=TKNTR.X, expand=True)
         self._entry.bind('<Return>', self._enteredText)
-        self._entryTyping = Tki.BooleanVar()
+        self._entryTyping = TKNTR.BooleanVar()
         self._entryTyping.set(False)
 
         # put in a spacer here for label height stability
-        self._spacer = Tki.Label(self._nowFrame, text='', takefocus=False)
-        self._spacer.pack(side=Tki.LEFT, expand=False, padx=5)
+        self._spacer = TKNTR.Label(self._nowFrame, text='', takefocus=False)
+        self._spacer.pack(side=TKNTR.LEFT, expand=False, padx=5)
 
-        self._nowFrame.pack(side=Tki.TOP, fill=Tki.X, expand=True)
+        self._nowFrame.pack(side=TKNTR.TOP, fill=TKNTR.X, expand=True)
 
         self._hasHistory = False
-        self._histScrl = Tki.Scrollbar(self._histFrame)
-        self._histScrl.pack(side=Tki.RIGHT, fill=Tki.Y)
+        self._histScrl = TKNTR.Scrollbar(self._histFrame)
+        self._histScrl.pack(side=TKNTR.RIGHT, fill=TKNTR.Y)
 
-        self._histText = tkrotext.ROText(self._histFrame, wrap=Tki.WORD,
+        self._histText = tkrotext.ROText(self._histFrame, wrap=TKNTR.WORD,
                          takefocus=False,
                          height=10, yscrollcommand=self._histScrl.set)
-# (use if just Tki.Text) state=Tki.DISABLED, takefocus=False,
+# (use if just TKNTR.Text) state=TKNTR.DISABLED, takefocus=False,
 #                        exportselection=True is the default
-        self._histText.pack(side=Tki.TOP, fill=Tki.X, expand=True)
+        self._histText.pack(side=TKNTR.TOP, fill=TKNTR.X, expand=True)
         self._histScrl.config(command=self._histText.yview)
 
         # don't pack this one now - start out with it hidden
-#       self._histFrame.pack(side=Tki.TOP, fill=Tki.X)
+#       self._histFrame.pack(side=TKNTR.TOP, fill=TKNTR.X)
 
         ### Do not pack the main frame here.  Let the application do it. ###
 
@@ -130,11 +130,11 @@ class MsgIOWidget(Tki.Frame):
             if self._expBttnHasTxt:
                 self._expBttn.configure(text='+')
         else:   # need to expand
-            self._histFrame.pack(side=Tki.TOP, fill=Tki.BOTH, expand=True) #.X)
+            self._histFrame.pack(side=TKNTR.TOP, fill=TKNTR.BOTH, expand=True) #.X)
             if self._expBttnHasTxt:
                 self._expBttn.configure(text='-')
             if self._hasHistory:
-                self._histText.see(Tki.END)
+                self._histText.see(TKNTR.END)
 
 
     def updateIO(self, text=""):
@@ -162,7 +162,7 @@ class MsgIOWidget(Tki.Frame):
         self._msgLabel.configure(width=min(self._msgLabelMaxWidth, lblTxtLen))
 
         # Enable the entry widget
-        self._entry.configure(state=Tki.NORMAL, relief=Tki.SUNKEN, width=15,
+        self._entry.configure(state=TKNTR.NORMAL, relief=TKNTR.SUNKEN, width=15,
                               takefocus=True, highlightthickness=2)
         self._entry.focus_set()
         self._entryTyping.set(True)
@@ -174,9 +174,9 @@ class MsgIOWidget(Tki.Frame):
         ans = self._entry.get().strip()
 
         # Clear and disable the entry widget
-        self._entry.delete(0, Tki.END)
-        self._entry.configure(state=Tki.DISABLED, takefocus=False, width=1,
-                              relief=Tki.FLAT, highlightthickness=0)
+        self._entry.delete(0, TKNTR.END)
+        self._entry.configure(state=TKNTR.DISABLED, takefocus=False, width=1,
+                              relief=TKNTR.FLAT, highlightthickness=0)
         self._entryTyping.set(False)
 
         # Expand the label back to normal width
@@ -204,26 +204,26 @@ class MsgIOWidget(Tki.Frame):
             return
 
         # enable widget temporarily so we can add text
-#       self._histText.config(state=Tki.NORMAL)
+#       self._histText.config(state=TKNTR.NORMAL)
 #       self._histText.delete(1.0, END)
 
         # add the new text
         if self._hasHistory:
-            self._histText.insert(Tki.END, '\n'+txt.strip(), force=True)
+            self._histText.insert(TKNTR.END, '\n'+txt.strip(), force=True)
         else:
-            self._histText.insert(Tki.END, txt.strip(), force=True)
+            self._histText.insert(TKNTR.END, txt.strip(), force=True)
             self._hasHistory = True
 
         # disable it again
-#       self._histText.config(state=Tki.DISABLED)
+#       self._histText.config(state=TKNTR.DISABLED)
 
         # show it
         if self._histFrame.winfo_ismapped():
-            self._histText.see(Tki.END)
+            self._histText.see(TKNTR.END)
 #       self._histFrame.update_idletasks()
 
         # finally, make sure expand/collapse button is enabled now
-        self._expBttn.configure(state = Tki.NORMAL)
+        self._expBttn.configure(state = TKNTR.NORMAL)
 
 
 # Test the above class
@@ -244,26 +244,22 @@ if __name__ == '__main__':
         out = m.readline()
 
     # create the initial Tk window and immediately withdraw it
-    if not Tki._default_root:
-        _default_root = Tki.Tk()
-    else:
-        _default_root = Tki._default_root
-    _default_root.withdraw()
+    irafutils.init_tk_default_root()
 
     # make our test window
-    top = Tki.Toplevel()
-    f = Tki.Frame(top, width=500, height=300)
-    b = Tki.Button(f, text='Click Me', command=clicked)
-    b.pack(side=Tki.LEFT, fill=Tki.X, expand=1)
-    q = Tki.Button(f, text='Buh-Bye', command=quit)
-    q.pack(side=Tki.LEFT)
-    f.pack(side=Tki.TOP, fill=Tki.X) # , expand=1)
-    p = Tki.Button(top, text='Prompt Me', command=ask)
-    p.pack(side=Tki.TOP, fill=Tki.X, expand=1)
-    fill = Tki.Frame(top, height=200, bg="green")
-    fill.pack(side=Tki.TOP, fill=Tki.BOTH, expand=1)
+    top = TKNTR.Toplevel()
+    f = TKNTR.Frame(top, width=500, height=300)
+    b = TKNTR.Button(f, text='Click Me', command=clicked)
+    b.pack(side=TKNTR.LEFT, fill=TKNTR.X, expand=1)
+    q = TKNTR.Button(f, text='Buh-Bye', command=quit)
+    q.pack(side=TKNTR.LEFT)
+    f.pack(side=TKNTR.TOP, fill=TKNTR.X) # , expand=1)
+    p = TKNTR.Button(top, text='Prompt Me', command=ask)
+    p.pack(side=TKNTR.TOP, fill=TKNTR.X, expand=1)
+    fill = TKNTR.Frame(top, height=200, bg="green")
+    fill.pack(side=TKNTR.TOP, fill=TKNTR.BOTH, expand=1)
     m = MsgIOWidget(top, 500, "Tiptop")
-    m.pack(side=Tki.BOTTOM, fill=Tki.X)
+    m.pack(side=TKNTR.BOTTOM, fill=TKNTR.X)
     for i in range(10):
         t = "Text " + str(i)
         m.updateIO(t)
