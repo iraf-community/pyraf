@@ -1,5 +1,5 @@
 """ Contains Python routines to do special Aqua (OSX) window manipulations
-not possible in Tkinter.  In general, an attempt is made to use the Pyobjc
+not possible in tkinter.  In general, an attempt is made to use the Pyobjc
 bridging package so that compiling another C extension is not needed.
 
 $Id$
@@ -7,7 +7,7 @@ $Id$
 
 from __future__ import division # confidence high
 
-import os, struct, time, Tkinter
+import os, struct, time
 import objc
 import AppKit
 from stsci.tools.for2to3 import tobytes
@@ -240,9 +240,9 @@ def __doPyobjcWinInit():
         raise Exception("CPSEnableForegroundOperation: "+str(err))
 
     # Get the display's absolute height (pixels).
-    # The next line assumes the Tkinter root window has already been created
+    # The next line assumes the tkinter root window has already been created
     # (and withdrawn), but it may have not yet been.
-#   __screenHeight = Tkinter._default_root.winfo_screenheight()
+#   __screenHeight = tkinter._default_root.winfo_screenheight()
     # So, we will use the less-simple but just as viable CoreGraphics funcs.
     dispIdPtr = CGMainDisplayID() # no need to keep around?
     __screenHeight = CGDisplayPixelsHigh(dispIdPtr)
