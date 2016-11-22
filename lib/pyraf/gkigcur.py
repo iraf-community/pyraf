@@ -5,7 +5,8 @@ $Id$
 """
 from __future__ import division # confidence high
 
-import string, os, sys, numpy, Tkinter
+import string, os, sys, numpy
+import Tkinter as TKNTR
 from stsci.tools import irafutils
 import wutil
 
@@ -54,7 +55,7 @@ class Gcursor:
                 self.active = 0
                 self.unbind()
                 self.cursorOff()
-            except Tkinter.TclError:
+            except TKNTR.TclError:
                 pass
         # EOF flag can get set by window-close event or 'I' keystroke
         # It should be set to string message
