@@ -189,7 +189,7 @@ class ImageDisplay:
     def _read(self, n):
         """Read n bytes from image display and return as string
 
-        Raises IOError on failure.  If a Tkinter widget exists, runs
+        Raises IOError on failure.  If a tkinter widget exists, runs
         a Tk mainloop while waiting for data so that the Tk widgets
         remain responsive.
         """
