@@ -47,7 +47,7 @@ def getSingleTTYChar(): # return type str in all Python versions
             c = irafutils.tkread(fd, 1)
         else:
             c = os.read(fd, 1)
-            if for2to3.PY3K: c = c.decode('ascii')
+            if for2to3.PY3K: c = c.decode('ascii', 'replace')
     finally:
         termios.tcsetattr(fd, TERMIOS.TCSAFLUSH, old)
         return c
