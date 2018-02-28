@@ -16,7 +16,7 @@ env:
         - ASTROPY_VERSION=stable
         - MAIN_CMD='python setup.py'
         - SETUP_CMD='test'
-        - PIP_DEPENDENCIES=''
+        - PIP_DEPENDENCIES='stsci.tools'
 
         # For this package-template, we include examples of Cython modules,
         # so Cython is required for testing. If your package does not include
@@ -30,12 +30,13 @@ env:
     matrix:
         # Make sure that egg_info works without dependencies
         - SETUP_CMD='egg_info'
-        # TODO: Enable this when we have real tests.
-        # Run actual tests
-        #- SETUP_CMD='test'
 
 matrix:
     include:
+        # DISABLED: Real tests are run on Jenkins
+        #- python: 2.7
+        #  env: MAIN_CMD='pytest lib/pyraf/tests' SETUP_CMD=''
+
         # DISABLED FOR NOW
         # Try Astropy development version
         #- python: 3.6
