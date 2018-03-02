@@ -1,24 +1,18 @@
 import os
-import sys
-from io import StringIO
 
 import pytest
+import six
 from astropy.io import fits
 from stsci.tools import capable
 
-try:
-    from pyraf import iraf
-    iraf.imhead("dev$pix")
-except:  # Only this can catch the error!
-    HAS_IRAF = False
-else:
-    HAS_IRAF = True
+from .utils import HAS_IRAF
 
-IS_PY2 = sys.version_info < (3, 0)
-capable.OF_GRAPHICS = False
+if HAS_IRAF:
+    from pyraf import iraf
 
 
 def setup_module():
+    capable.OF_GRAPHICS = False
     open('.hushiraf', 'a').close()
 
 
@@ -50,10 +44,8 @@ class TestPyraf(object):
                     'NOAO-IRAF FITS Image Kernel July 2003')
             assert f[0].data.shape == (512, 512)
 
-    @pytest.mark.skipif(
-        IS_PY2, reason='see https://github.com/spacetelescope/pyraf/issues/41')
     def test_imhead(self):
-        out = StringIO()
+        out = six.StringIO()
         iraf.imhead('dev$pix', Stdout=out)
         assert out.getvalue() == 'dev$pix[512,512][short]: m51  B  600s\n'
 

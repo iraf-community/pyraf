@@ -1,24 +1,20 @@
 """These were tests under cli in pandokia."""
-from __future__ import division
+from __future__ import absolute_import, division
 
-import os
+import sys
+import traceback
 
 import pytest
-from astropy.utils.data import get_pkg_data_contents
 
-try:
+from .utils import diff_outputs, HAS_IRAF
+
+if HAS_IRAF:
     from pyraf import iraf
-    iraf.imhead("dev$pix")
 
     # Turn off the test probe output since it comes with
     # path info that is ever changing
     import pyraf
     pyraf.irafexecute.test_probe = False
-
-except:  # Only this can catch the error!
-    HAS_IRAF = False
-else:
-    HAS_IRAF = True
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
@@ -54,20 +50,71 @@ def test_division(tmpdir):
         stripped = [l.replace('   ', ' ').replace('  ', ' ').strip()
                     for l in f_in.readlines()]
 
-    # Read in the answer
-    ans = get_pkg_data_contents('data/cli_div_output.ref').split(os.linesep)
-
-    for x, y in zip(stripped, ans):
-        assert x.strip(os.linesep) == y
+    diff_outputs(stripped, 'data/cli_div_output.ref')
 
 
-def test_sscanf():
-    pass
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+def test_sscanf(tmpdir):
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    outfile = str(tmpdir.join('output.txt'))
+
+    try:
+        with open(outfile, 'w') as f:
+            sys.stdout = sys.stderr = f  # redirect all output
+
+            # simple test of iraf.printf
+            # (assume MUST have at least that working)
+            iraf.printf('About to import sscanf and test it\n')
+            from pyraf import iraffunctions  # noqa
+            iraffunctions.test_sscanf()  # prints to stdout
+    except:
+        sys.stdout = old_stdout
+        raise IOError(traceback.format_exc())
+    finally:
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+
+    diff_outputs(outfile, 'data/cli_sscanf_output.ref')
 
 
-def test_whereis():
-    pass
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+def test_whereis(tmpdir):
+    iraf.plot(_doprint=0)
+    iraf.images(_doprint=0)
+    outfile = str(tmpdir.join('output.txt'))
+
+    cases = ("pw", "lang", "st", "std", "stdg", "stdpl", "star", "star man",
+             "vi", "noao", "impl", "ls", "surf", "surf man", "smart man",
+             "img", "prot", "pro", "prow", "prows", "prowss", "dis", "no")
+
+    # Test the whereis function
+    for arg in cases:
+        args = arg.split(" ")  # convert to a list
+        iraf.printf("--> whereis " + arg + '\n', StdoutAppend=outfile)
+        kw = {'StderrAppend': outfile}
+        iraf.whereis(*args, **kw)  # catches stdout+err
+
+    diff_outputs(outfile, 'data/cli_whereis_output.ref')
 
 
-def test_which():
-    pass
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+def test_which(tmpdir):
+    iraf.plot(_doprint=0)
+    iraf.images(_doprint=0)
+    outfile = str(tmpdir.join('output.txt'))
+
+    # To Test: normal case, disambiguation, ambiguous, not found, multiple
+    #          inputs for a single command
+    cases = ("pw", "lang", "stdg", "stdp", "star", "star man", "vi", "noao",
+             "impl", "ls", "surf", "surface", "img", "pro", "prot", "prow",
+             "prows", "prowss", "dis")
+
+    # Test the which function
+    for arg in cases:
+        args = arg.split(" ")  # convert to a list
+        iraf.printf("--> which " + arg + '\n', StdoutAppend=outfile)
+        kw = {"StderrAppend": outfile}
+        iraf.which(*args, **kw)  # catches stdout+err
+
+    diff_outputs(outfile, 'data/cli_which_output.ref')

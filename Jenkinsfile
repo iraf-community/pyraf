@@ -9,7 +9,7 @@ bc0.env_vars = ['IRAFARCH=linux']
 bc0.build_cmds = []
 bc0.test_cmds = ["conda config --set auto_update_conda false",
                  "conda config --add channels http://ssb.stsci.edu/astroconda",
-                 "conda install -y -q python=2.7",
+                 "conda install -y -q python=2.7 six",
                  "conda install -y -q --only-deps pyraf",
                  "conda install -y -q iraf-all",
                  "mkiraf -f xterm",
