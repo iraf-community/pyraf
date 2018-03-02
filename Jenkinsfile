@@ -5,11 +5,15 @@ if (utils.scm_checkout()) return
 bc0 = new BuildConfig()
 bc0.nodetype = "linux-stable"
 bc0.build_mode = "test"
-bc0.env_vars = []
+bc0.env_vars = ['IRAFARCH=linux']
 bc0.build_cmds = []
 bc0.test_cmds = ["conda config --set auto_update_conda false",
-                 "conda create -q -y --override-channels -c http://ssb.stsci.edu/astroconda -c defaults -n iraf27 python=2.7 iraf-all",
-                 "source activate iraf27; python setup.py install; pytest lib/pyraf/tests --basetemp=tests_output --junitxml results.xml"]
+                 "conda config --add channels http://ssb.stsci.edu/astroconda",
+                 "conda install -y -q python=2.7",
+                 "conda install -y -q --only-deps pyraf",
+                 "conda install -y -q iraf-all",
+                 "mkiraf -f xterm",
+                 "source activate base; python setup.py install; pytest lib/pyraf/tests --basetemp=tests_output --junitxml results.xml"]
 bc0.failedUnstableThresh = 1
 bc0.failedFailureThresh = 6
 
