@@ -95,7 +95,21 @@ def test_whereis(tmpdir):
         kw = {'StderrAppend': outfile}
         iraf.whereis(*args, **kw)  # catches stdout+err
 
-    diff_outputs(outfile, 'data/cli_whereis_output.ref')
+    with open(outfile) as f:
+        for line in f:
+            if 'task not found' in line:
+                continue
+
+            row = line.split()
+            if line.startswith('-->'):
+                cmd = row[2]
+                if len(row) > 3:
+                    cmd2 = row[3]
+            elif row[0] == 'user.man' and cmd2 == 'man':
+                pass
+            else:
+                assert all([s.split('.')[1].startswith(cmd) for s in row]), \
+                    '{}'.format(row)
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')

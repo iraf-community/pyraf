@@ -23,6 +23,11 @@ def diff_outputs(fin, reffile):
             lines = f.readlines()
 
     ans = get_pkg_data_contents(reffile).split(os.linesep)
+    all_bad_lines = []
 
     for x, y in zip(lines, ans):
-        assert x.strip(os.linesep) == y, '{} : {}'.format(x, y)
+        if x.strip(os.linesep) != y:
+            all_bad_lines.append('{} : {}'.format(x, y))
+
+    if len(all_bad_lines) > 0:
+        raise AssertionError(os.linesep.join(all_bad_lines))

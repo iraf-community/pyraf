@@ -38,7 +38,9 @@ sdist.build_mode = "sdist"
 sdist.build_cmds = ["${PY_SETUP} sdist"]
 matrix += sdist
 
+// TODO: Do we need this?
 // Generate installation compatibility matrix
+/*
 for (python_ver in matrix_python) {
     for (astropy_ver in matrix_astropy) {
         // Astropy >=3.0 no longer supports Python 2.7
@@ -59,10 +61,11 @@ for (python_ver in matrix_python) {
         matrix += install
     }
 }
+*/
 
-
-
+// TODO: Run real tests on dev build
 // Generate dev build compatibility matrix
+/*
 for (python_ver in matrix_python) {
     PIP_DEPS = ["git+https://github.com/spacetelescope/stsci.tools#egg=stsci.tools --upgrade --no-deps",
                 "numpy --upgrade --no-deps",
@@ -91,7 +94,7 @@ for (python_ver in matrix_python) {
                                 "pyraf --version"]
     matrix += install_pypi
 }
-
+*/
 
 // Iterate over configurations that define the (distibuted) build matrix.
 // Spawn a host of the given nodetype for each combination and run in parallel.
