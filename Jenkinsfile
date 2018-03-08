@@ -18,14 +18,14 @@ matrix = []
 test27 = new BuildConfig()
 test27.nodetype = "linux-stable"
 test27.build_mode = "test-suite"
-test27.env_vars = []
+test27.env_vars = ['PYRAF_NO_DISPLAY=1']
 test27.build_cmds = ["conda config --add channels http://ssb.stsci.edu/astroconda",
                      "${CONDA_INST} python=2.7 iraf-all six",
                      "${CONDA_INST} --only-deps pyraf",
-                     "${PY_SETUP} build",
-                     "${PY_SETUP} build_ext --inplace"]
+                     "${PY_SETUP} build_ext --inplace",
+                     "${PY_SETUP} install"]
 test27.test_cmds = ["with_env mkiraf -f xterm",
-                    "with_env pytest ${PYTEST_ARGS} lib/pyraf/tests"]
+                    "with_env pytest ${PYTEST_ARGS}"]
 test27.failedUnstableThresh = 1
 test27.failedFailureThresh = 6
 matrix += test27
@@ -98,4 +98,4 @@ for (python_ver in matrix_python) {
 
 // Iterate over configurations that define the (distibuted) build matrix.
 // Spawn a host of the given nodetype for each combination and run in parallel.
-utils.concurrent(matrix)
+utils.run(matrix)

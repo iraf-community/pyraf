@@ -7,7 +7,7 @@ __pycache__
 
 # Other generated files
 lib/pyraf/version.py
-login.cl
+login.cl*
 htmlcov
 .coverage
 MANIFEST
@@ -43,8 +43,10 @@ distribute-*.tar.gz
 .tox
 .*.sw[op]
 *~
+cmd*.cl
 .pytest_cache/
 clcache.v2
+uparm
 
 # Mac OSX
 .DS_Store
