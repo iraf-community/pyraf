@@ -83,7 +83,7 @@ def findAllTmpPskFiles():
         for f in flistCur:
             os.system("/bin/ls -ld "+f)
             if not os.path.exists(f):
-                print "This existed then did not: "+f
+                print("This existed then did not: ", f)
                 flistCur.remove(f)
     # for some reason, on Solaris (at least), some files are dumped to cwd
     if PSDEV.find('dump') >= 0:
@@ -127,7 +127,7 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
                     os.system("/bin/ls -ld "+f)
                 # Or, did the /tmp version suddenly get deleted?
                 if not os.path.exists(flistAft[0]):
-                    print ("Am somehow missing the deletes.  Test: {}".format(title))
+                    print("Am somehow missing the deletes.  Test: {}".format(title))
                     return flistAft[-1]
             # Either way, throw something
             raise Exception('Expected single postcript file during: "' +
@@ -175,6 +175,7 @@ def test_gkidecode(tmpdir):
     assert not open(gki_stderr).readlines()
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.parametrize('test_input', [
     'psdump',
     'psi_land',
@@ -190,18 +191,21 @@ def test_gki_postscript_in_graphcap(test_input):
         "Invalid graphcap device for {}".format(test_input)
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_gki_opcodes():
     """ Simple aliveness test for the opcode2name dict """
     for opc in gki.GKI_ILLEGAL_LIST:
         assert gki.opcode2name[opc] == 'gki_unknown'
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_gki_control_codes():
     """ Simple aliveness test for the control2name dict """
     for ctl in gki.GKI_ILLEGAL_LIST:
         assert gki.control2name[ctl] == 'control_unknown'
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.xfail(reason='Incomplete test')
 def test_gki_single_prow():
     """ Test a prow-plot of a single row from dev$pix to .ps """
@@ -218,6 +222,7 @@ def test_gki_single_prow():
            os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256.ps")
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.xfail(reason='Incomplete test')
 def test_gki_prow_1_append():
     """ Test a prow-plot with 1 append (2 rows total, dev$pix) to .ps """
@@ -235,6 +240,7 @@ def test_gki_prow_1_append():
            os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256_250.ps")
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.xfail(reason='Incomplete test')
 def test_gki_prow_2_appends():
     """ Test a prow-plot with 2 appends (3 rows total, dev$pix) to .ps """
@@ -253,6 +259,7 @@ def test_gki_prow_2_appends():
            os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256_250_200.ps")
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.xfail(reason='Incomplete test')
 def test_gki_2_prows_no_append():
     """ Test 2 prow calls with no append (2 dev$pix rows) to 2 .ps's """
@@ -284,6 +291,7 @@ def test_gki_2_prows_no_append():
            os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_250.ps")
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.skip(reason="Erroneously sends jobs to network printers")
 def test_gki_prow_to_different_devices():  # rename to disable for now
     """ Test 2 prow calls, each to different devices - one .ps written
@@ -332,9 +340,9 @@ def run_all():
         PSDEV = 'psi_land'
         EXP2IGNORE = '.*CreationDate: .*'
         for t in tsts:
-            preTestCleanup()
+            #preTestCleanup()
             func = eval(t)
-            print PSDEV, ':', func.__doc__.strip()
+            print(PSDEV, ':', func.__doc__.strip())
             func()
             ran += 1
 
@@ -343,12 +351,12 @@ def run_all():
         PSDEV = 'psdump'
         EXP2IGNORE = '(NOAO/IRAF '
         for t in tsts:
-            preTestCleanup()
+            #preTestCleanup()
             func = eval(t)
-            print PSDEV, ':', func.__doc__.strip()
+            print(PSDEV, ':', func.__doc__.strip())
             func()
             ran += 1
 
     # If we get here with no exception, we have passed all of the tests
-    print "\nSuccessfully passed "+str(ran)+" tests"
+    print("\nSuccessfully passed ", str(ran), " tests")
     return ran

@@ -1,11 +1,9 @@
-#!/usr/bin/env python
-#
-from .utils import HAS_IRAF, DATA_DIR
-
 import math
 import os
+
 import pytest
-import subprocess
+
+from .utils import HAS_IRAF, DATA_DIR
 
 if HAS_IRAF:
     os.environ['PYRAF_NO_DISPLAY'] = '1'
@@ -116,9 +114,9 @@ def test_task_min_match(_iraf_pset_init, _data):
 
     stdout, stderr = StringIO(), StringIO()
     iraf.msst(_data['pset']['input1'], arrays='science', clarray='science',
-                StdoutAppend=stdout, StderrAppend=stderr)
+              StdoutAppend=stdout, StderrAppend=stderr)
     iraf.mssta(_data['pset']['input1'], arrays='science', clarray='science',
-                StdoutAppend=stdout, StderrAppend=stderr)
+               StdoutAppend=stdout, StderrAppend=stderr)
     iraf.msstat(_data['pset']['input1'], arrays='science', clarray='science',
                 StdoutAppend=stdout, StderrAppend=stderr)
     iraf.msstati(_data['pset']['input1'], arrays='science', clarray='science',
@@ -140,6 +138,8 @@ def test_task_min_match(_iraf_pset_init, _data):
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_task_ambiguous_name_raises_exception(_iraf_pset_init, _data):
+    stdout, stderr = StringIO(), StringIO()
+
     with pytest.raises(AttributeError):
         iraf.m(_data['pset']['input1'], arrays='science', clarray='science',
                StdoutAppend=stdout, StderrAppend=stderr)

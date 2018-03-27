@@ -1,12 +1,12 @@
 """These were tests under core/irafparlist and core/subproc in pandokia."""
 from __future__ import absolute_import, division
 
-import pytest
-import random
 import time
 import uuid
 
-from .utils import diff_outputs, HAS_IRAF
+import pytest
+
+from .utils import HAS_IRAF
 
 if HAS_IRAF:
     from pyraf.irafpar import IrafParList
@@ -19,6 +19,8 @@ if HAS_IRAF:
 def _proc():
     return Subprocess('cat', expire_noisily=0)
 
+
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.xfail(reason="Child does not raise SubproccesError: It only "
                           "prints the error received from a raised exception.")
 def test_subproc_raise_on_impossible_execution():
@@ -30,6 +32,7 @@ def test_subproc_raise_on_impossible_execution():
         proc.wait(1)
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_write_readline(_proc):
     """Buffer readback test; readline
     """
@@ -41,6 +44,7 @@ def test_subproc_write_readline(_proc):
     assert _proc.readline() == 'test string two\n'
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_write_readPendingChars(_proc):
     """Buffer readback test; readPendingChars
     """
@@ -53,6 +57,7 @@ def test_subproc_write_readPendingChars(_proc):
     assert test_inputs == expected
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_stop_resume(_proc):
     """Ensure we can stop and resume a process
     """
@@ -60,6 +65,7 @@ def test_subproc_stop_resume(_proc):
     assert _proc.cont(1)
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_stop_resume_write_read(_proc):
     """Ensure we can stop the process, write data to the pipe,
     resume, then read the buffered data back from the pipe.
@@ -71,6 +77,7 @@ def test_subproc_stop_resume_write_read(_proc):
     assert _proc.readline() == 'test string\n'
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_kill_via_delete(_proc):
     """Kill the process by deleting the instance.
     We cannot assert anything, but an exception will bomb this out.
@@ -78,6 +85,7 @@ def test_subproc_kill_via_delete(_proc):
     del _proc
 
 
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_kill_via_die(_proc):
     """Kill the process the "right way."
     """
@@ -106,7 +114,7 @@ def _ipl(_ipl_defaults):
 def _pars():
     values = (
         (('caller', 's', 'a', 'Ima Hungry', '', None, 'person calling Bobs'), True),
-        (('diameter', 'i' , 'a', '12', '', None, 'pizza size'), True),
+        (('diameter', 'i', 'a', '12', '', None, 'pizza size'), True),
         (('pi', 'r', 'a', '3.14159', '', None, 'Bob makes circles!'), True),
         (('delivery', 'b', 'a', 'yes', '', None, 'delivery? (or pickup)'), True),
         (('topping', 's', 'a', 'peps', '|toms|peps|olives', None, 'the choices'), True),
@@ -212,6 +220,7 @@ def test_irafparlist_getParList(_ipl, _pars):
     for par in _pars:
         assert par.name in par_list
 
+
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_hasPar(_ipl, _pars):
     for par in _pars:
@@ -307,7 +316,7 @@ def test_irafparlist_boolean_convert_false(_ipl, _pars):
     test_inputs = (False, 0, 'NO')
     for test_input in test_inputs:
         setattr(_ipl, par.name, test_input)
-        assert getattr(_ipl, par.name) == False
+        assert getattr(_ipl, par.name) is False
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
@@ -322,4 +331,4 @@ def test_irafparlist_boolean_convert_true(_ipl, _pars):
     test_inputs = (True, 1, 'YES')
     for test_input in test_inputs:
         setattr(_ipl, par.name, test_input)
-        assert getattr(_ipl, par.name) == True
+        assert getattr(_ipl, par.name) is True

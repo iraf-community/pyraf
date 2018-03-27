@@ -2,9 +2,9 @@ import os
 
 import pytest
 import six
-import sys
 from astropy.io import fits
 from stsci.tools import capable
+
 from .utils import HAS_IRAF
 
 

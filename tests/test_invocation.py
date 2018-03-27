@@ -1,13 +1,10 @@
-from .utils import HAS_IRAF, HAS_PYRAF_EXEC
-import os
-import pytest
-import pyraf
-import re
-import shutil
 import subprocess
 import sys
-from distutils.spawn import find_executable
 
+import pytest
+
+import pyraf
+from .utils import HAS_IRAF, HAS_PYRAF_EXEC
 
 cl_cases = (
     (('print(1)'), '1'),
@@ -62,8 +59,8 @@ def _with_pyraf(tmpdir):
     return PyrafEx()
 
 
-@pytest.mark.skipif(not HAS_PYRAF_EXEC, reason='PyRAF must be installed to run')
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
+@pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
+                    reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input', [
     ('--version'),
     ('-V'),
@@ -76,8 +73,8 @@ def test_invoke_version(_with_pyraf, test_input):
     assert pyraf.__version__ in result.stdout
 
 
-@pytest.mark.skipif(not HAS_PYRAF_EXEC, reason='PyRAF must be installed to run')
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
+@pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
+                    reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', cl_cases)
 def test_invoke_command(_with_pyraf, test_input, expected):
     """Issue basic commands to CL parser
@@ -88,8 +85,8 @@ def test_invoke_command(_with_pyraf, test_input, expected):
     assert not result.code, result.stderr
 
 
-@pytest.mark.skipif(not HAS_PYRAF_EXEC, reason='PyRAF must be installed to run')
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
+@pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
+                    reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', cl_cases)
 def test_invoke_command_direct(_with_pyraf, test_input, expected):
     """Issue basic commands on pyraf's native shell
@@ -100,8 +97,8 @@ def test_invoke_command_direct(_with_pyraf, test_input, expected):
     assert not result.code, result.stderr
 
 
-@pytest.mark.skipif(not HAS_PYRAF_EXEC, reason='PyRAF must be installed to run')
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
+@pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
+                    reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', python_cases)
 def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected):
     """Issue basic commands on pyraf's passthrough shell
@@ -115,8 +112,8 @@ def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected):
     assert not result.code, result.stderr
 
 
-@pytest.mark.skipif(not HAS_PYRAF_EXEC, reason='PyRAF must be installed to run')
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
+@pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
+                    reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', ipython_cases)
 def test_invoke_command_ipython(_with_pyraf, test_input, expected):
     """Issue basic commands on pyraf's ipython shell wrapper
