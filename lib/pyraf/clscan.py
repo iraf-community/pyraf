@@ -986,13 +986,3 @@ def toklist(tlist,filename=None):
     if filename:
         sys.stdout.close()
         sys.stdout = sys.__stdout__
-
-if __name__ == '__main__':
-    s = CLScanner()
-
-    # scan file 'simple.cl'
-
-    lines = open('simple.cl').read()
-    tokens = s.tokenize(lines)
-
-    toklist(tokens[:30])

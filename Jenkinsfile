@@ -5,7 +5,7 @@ if (utils.scm_checkout()) return
 PIP_INST = "pip install"
 CONDA_INST = "conda install -y -q"
 PY_SETUP = "python setup.py"
-PYTEST_ARGS = "--basetemp=tests_output --junitxml results.xml"
+PYTEST_ARGS = "tests --basetemp=tests_output --junitxml results.xml"
 
 matrix_python = ["2.7", "3.5", "3.6"]
 matrix_astropy = ["2", "3"]

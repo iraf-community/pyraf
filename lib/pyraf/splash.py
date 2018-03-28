@@ -7,8 +7,9 @@ R. White, 2001 Dec 15
 
 from __future__ import division # confidence high
 
-import os, sys
-import Tkinter as TKNTR # requires 2to3
+import os
+import sys
+import Tkinter as TKNTR  # requires 2to3
 from stsci.tools.irafglobals import IrafPkg
 import wutil
 
@@ -211,10 +212,3 @@ def splash(label="PyRAF Execution Monitor", background="LightYellow", **kw):
         except TKNTR.TclError:
             pass
     return None
-
-
-if __name__ == "__main__":
-    import time
-    s = PyrafSplash()
-    print "Sleeping 2 seconds..."
-    time.sleep(2)

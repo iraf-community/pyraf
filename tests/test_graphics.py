@@ -1,13 +1,15 @@
 """These were tests under core/graphics_checks in pandokia."""
+from __future__ import absolute_import
+import six
+
 import glob
 import os
 import sys
 import time
 
 import pytest
-import six
 
-from .utils import IS_PY2, HAS_IRAF
+from .utils import IS_PY2, HAS_IRAF, DATA_DIR
 
 if HAS_IRAF:
     from pyraf import iraf
@@ -15,16 +17,34 @@ if HAS_IRAF:
     from pyraf import wutil
 
 REF = {}
+PSDEV = None
+EXP2IGNORE = None
 
 
 def setup_module():
     """ Does not work under Darwin, because c.OF_GRAPHICS is True
     TODO: ^Investigate^
     """
-    global REF
+    global REF, PSDEV, EXP2IGNORE
+
+    # TODO: Related to test_gki_prow_to_different_devices
+    #os.environ['LPDEST'] = "hp_dev_null"
+    #os.environ['PRINTER'] = "hp_dev_null"
 
     # first turn off display
     os.environ['PYRAF_NO_DISPLAY'] = '1'
+
+    # The psi_land kernel seems not to be supported in
+    # default graphcap on OSX 10.9.5.
+    # And psdump kernel is too temperamental on Linux.
+    if sys.platform.lower().startswith('linux'):
+        PSDEV = 'psi_land'
+        EXP2IGNORE = '.*CreationDate: .*'
+    elif sys.platform.lower().startswith('darwin'):
+        PSDEV = 'psdump'
+        EXP2IGNORE = '(NOAO/IRAF '
+    else:
+        raise OSError('Unsupported test platform: {}'.format(sys.platform))
 
     # EXPECTED RESULTS
     REF[('2', 'linux')] = """python ver = 2.7
@@ -91,6 +111,19 @@ def findAllTmpPskFiles():
     else:
         flistCur += glob.glob(os.getcwd()+os.sep+'psk*')
     return flistCur
+
+
+def preTstCleanup():
+    """For some reason, with the psdump kernel at least, having existing files
+    in place during the test seems to affect whether new are 0-length
+    """
+    # So let's just start with a fresh area
+    oldFlist = findAllTmpPskFiles()
+    for f in oldFlist:
+        try:
+            os.remove(f)
+        except Exception:
+            pass  # may belong to another user - don't be chatty
 
 
 def getNewTmpPskFile(theBeforeList, title, preferred=None):
@@ -206,7 +239,6 @@ def test_gki_control_codes():
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-@pytest.mark.xfail(reason='Incomplete test')
 def test_gki_single_prow():
     """ Test a prow-plot of a single row from dev$pix to .ps """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -218,12 +250,10 @@ def test_gki_single_prow():
     # get output postscript temp file name
     psOut = getNewTmpPskFile(flistBef, "single_prow")
     # diff
-    diffit(EXP2IGNORE, psOut,
-           os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256.ps")
+    diffit(EXP2IGNORE, psOut, os.path.join(DATA_DIR, PSDEV + "_prow_256.ps"))
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-@pytest.mark.xfail(reason='Incomplete test')
 def test_gki_prow_1_append():
     """ Test a prow-plot with 1 append (2 rows total, dev$pix) to .ps """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -237,11 +267,10 @@ def test_gki_prow_1_append():
     psOut = getNewTmpPskFile(flistBef, "prow_1_append")
     # diff
     diffit(EXP2IGNORE, psOut,
-           os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256_250.ps")
+           os.path.join(DATA_DIR, PSDEV + "_prow_256_250.ps"))
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-@pytest.mark.xfail(reason='Incomplete test')
 def test_gki_prow_2_appends():
     """ Test a prow-plot with 2 appends (3 rows total, dev$pix) to .ps """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -256,11 +285,10 @@ def test_gki_prow_2_appends():
     psOut = getNewTmpPskFile(flistBef, "prow_2_appends")
     # diff
     diffit(EXP2IGNORE, psOut,
-           os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256_250_200.ps")
+           os.path.join(DATA_DIR, PSDEV + "_prow_256_250_200.ps"))
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-@pytest.mark.xfail(reason='Incomplete test')
 def test_gki_2_prows_no_append():
     """ Test 2 prow calls with no append (2 dev$pix rows) to 2 .ps's """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -277,7 +305,7 @@ def test_gki_2_prows_no_append():
     # diff
     # NOTE - this seems to get 0-len files when (not stdin.isatty()) for psdump
     diffit(EXP2IGNORE, psOut,
-           os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256.ps")
+           os.path.join(DATA_DIR, PSDEV + "_prow_256.ps"))
     # NOW flush second
     flistBef = findAllTmpPskFiles()
     iraf.gflush()
@@ -288,19 +316,20 @@ def test_gki_2_prows_no_append():
     psOut = getNewTmpPskFile(flistBef, "2_prows_no_append - B", preferred=prf)
     # diff
     diffit(EXP2IGNORE, psOut,
-           os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_250.ps")
+           os.path.join(DATA_DIR, PSDEV + "_prow_250.ps"))
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+#@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.skip(reason="Erroneously sends jobs to network printers")
 def test_gki_prow_to_different_devices():  # rename to disable for now
-    """ Test 2 prow calls, each to different devices - one .ps written
+    """Test 2 prow calls, each to different devices - one .ps written.
 
-        10 May 2012 - rename to disable for now - is sending nightly prints to hpc84
-        It seems that the cups system takes the print to hp_dev_null and changes that
-        to an existing printer, knowing it is wrong ...
-        When there is time, look into a way to start this test up again without any
-        danger of prints going to an actual printer.
+    10 May 2012 - rename to disable for now - is sending nightly prints
+    to hpc84.
+    It seems that the cups system takes the print to hp_dev_null and
+    changes that to an existing printer, knowing it is wrong ...
+    When there is time, look into a way to start this test up again without any
+    danger of prints going to an actual printer.
     """
     iraf.plot(_doprint=0)  # load plot for prow
     # get look at tmp dir before plot/flush
@@ -317,46 +346,9 @@ def test_gki_prow_to_different_devices():  # rename to disable for now
     psOut = getNewTmpPskFile(flistBef, "prow_to_different_devices")
     # diff
     diffit(EXP2IGNORE, psOut,
-           os.environ['PYRAF_TEST_DATA']+os.sep+PSDEV+"_prow_256.ps")
+           os.path.join(DATA_DIR, PSDEV + "_prow_256.ps"))
     # NOW flush - should do nothing
     flistBef = findAllTmpPskFiles()
     iraf.gflush()
     flistAft = findAllTmpPskFiles()
     assert flistBef == flistAft, "Extra tmp .ps file written? "+str(flistAft)
-
-
-def run_all():
-    """ CONVERT AND REMOVE BELOW
-    """
-    global PSDEV, EXP2IGNORE
-    tsts = [x for x in globals().keys() if x.find('test') >= 0]
-    ran = 0
-
-    os.environ['LPDEST'] = "hp_dev_null"
-    os.environ['PRINTER'] = "hp_dev_null"
-
-    # the psi_land kernel seems not to be supported in default graphcap on OSX 10.9.5
-    if not sys.platform.lower().startswith('darwin'):
-        PSDEV = 'psi_land'
-        EXP2IGNORE = '.*CreationDate: .*'
-        for t in tsts:
-            #preTestCleanup()
-            func = eval(t)
-            print(PSDEV, ':', func.__doc__.strip())
-            func()
-            ran += 1
-
-    # this test (psdump kernel) is too temperamental on Linux
-    if not sys.platform.lower().startswith('linux'):
-        PSDEV = 'psdump'
-        EXP2IGNORE = '(NOAO/IRAF '
-        for t in tsts:
-            #preTestCleanup()
-            func = eval(t)
-            print(PSDEV, ':', func.__doc__.strip())
-            func()
-            ran += 1
-
-    # If we get here with no exception, we have passed all of the tests
-    print("\nSuccessfully passed ", str(ran), " tests")
-    return ran

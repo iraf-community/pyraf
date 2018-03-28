@@ -9,7 +9,7 @@ import pytest
 from .utils import diff_outputs, HAS_IRAF
 
 if HAS_IRAF:
-    from pyraf import iraf
+    from pyraf import iraf, sscanf
 
     # Turn off the test probe output since it comes with
     # path info that is ever changing
@@ -55,27 +55,31 @@ def test_division(tmpdir):
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_sscanf(tmpdir):
-    old_stdout = sys.stdout
-    old_stderr = sys.stderr
-    outfile = str(tmpdir.join('output.txt'))
+    """A basic unit test that sscanf was built/imported correctly and
+    can run.
+    """
+    assert sscanf is not None, \
+        'Error importing sscanf during iraffunctions init'
 
-    try:
-        with open(outfile, 'w') as f:
-            sys.stdout = sys.stderr = f  # redirect all output
+    # aliveness
+    l = sscanf.sscanf("seven 6 4.0 -7", "%s %d %g %d")
+    assert l == ['seven', 6, 4.0, -7]
 
-            # simple test of iraf.printf
-            # (assume MUST have at least that working)
-            iraf.printf('About to import sscanf and test it\n')
-            from pyraf import iraffunctions  # noqa
-            iraffunctions.test_sscanf()  # prints to stdout
-    except:
-        sys.stdout = old_stdout
-        raise IOError(traceback.format_exc())
-    finally:
-        sys.stdout = old_stdout
-        sys.stderr = old_stderr
+    # bad format
+    l = sscanf.sscanf("seven", "%d")
+    assert l == []
 
-    diff_outputs(outfile, 'data/cli_sscanf_output.ref')
+    # %c
+    l = sscanf.sscanf("seven", "%c%3c%99c")
+    assert l == ['s', 'eve', 'n']
+
+    # hex
+    l = sscanf.sscanf("0xabc90", "%x")
+    assert l == [703632]
+
+    # API error
+    with pytest.raises(TypeError):
+        sscanf.sscanf()
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')

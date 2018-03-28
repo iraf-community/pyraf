@@ -36,10 +36,10 @@ try:
     import urwid
     import urwutil
     import urwfiledlg
-    urwid.set_encoding("ascii")   #  gives better performance than 'utf8'
+    urwid.set_encoding("ascii")   # gives better performance than 'utf8'
     if 0==urwid.__version__.find('0.9.8') or 0==urwid.__version__.find('0.9.7'):
         URWID_PRE_9P9 = True
-except Exception, e:
+except Exception as e:
     urwid = FakeModule()
     urwid.Edit = FakeClass()
     urwid.Columns = FakeClass()
@@ -1391,4 +1391,3 @@ def tpar(taskName):
 
 if __name__ == "__main__":
     main()
-

@@ -1,12 +1,13 @@
+from __future__ import absolute_import
+import six
+
 import os
 
 import pytest
-import six
 from astropy.io import fits
 from stsci.tools import capable
 
 from .utils import HAS_IRAF
-
 
 if HAS_IRAF:
     from pyraf import iraf
