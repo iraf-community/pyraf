@@ -316,7 +316,7 @@ def test_irafparlist_boolean_convert_false(_ipl, _pars):
     test_inputs = (False, 0, 'NO')
     for test_input in test_inputs:
         setattr(_ipl, par.name, test_input)
-        assert getattr(_ipl, par.name) is False
+        assert getattr(_ipl, par.name) == 'no'
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
@@ -331,4 +331,4 @@ def test_irafparlist_boolean_convert_true(_ipl, _pars):
     test_inputs = (True, 1, 'YES')
     for test_input in test_inputs:
         setattr(_ipl, par.name, test_input)
-        assert getattr(_ipl, par.name) is True
+        assert getattr(_ipl, par.name) == 'yes'
