@@ -1336,7 +1336,7 @@ def _convFunc(var, value):
         else:
             return str(value)
     elif var.type == "int":
-        if value is None:
+        if value is None or value == "INDEF":  # (matches _INDEFClass object)
             return "INDEF"
         elif isinstance(value,str) and value[:1] == ")":
             # parameter indirection
@@ -1344,7 +1344,7 @@ def _convFunc(var, value):
         else:
             return int(value)
     elif var.type == "real":
-        if value is None:
+        if value is None or value == "INDEF":  # (matches _INDEFClass object)
             return "INDEF"
         elif isinstance(value,str) and value[:1] == ")":
             # parameter indirection
