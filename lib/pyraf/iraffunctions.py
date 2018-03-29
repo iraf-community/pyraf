@@ -14,7 +14,7 @@ $Id$
 
 R. White, 2000 January 20
 """
-from __future__ import division
+from __future__ import division, print_function
 
 # define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
 
@@ -65,7 +65,7 @@ try:
 except:
     # basic usage does not actually require sscanf
     sscanf = None
-    print "Warning: sscanf library not installed on "+sys.platform
+    print("Warning: sscanf library not installed on "+sys.platform)
 
 try:
     import cPickle as pickle
@@ -656,7 +656,7 @@ def getTask(taskname, found=0):
     # Try assuming fully qualified name first
     task = _tasks.get(taskname)
     if task is not None:
-        if Verbose>1: print 'found',taskname,'in task list'
+        if Verbose>1: print('found',taskname,'in task list')
         return task
 
     # Look it up in the minimum-match dictionary
@@ -671,7 +671,7 @@ def getTask(taskname, found=0):
     if len(fullname) == 1:
         # unambiguous match
         task = _tasks[fullname[0]]
-        if Verbose>1: print 'found',task.getName(),'in task list'
+        if Verbose>1: print('found',task.getName(),'in task list')
         return task
 
     # Ambiguous match is OK only if taskname is the full name
@@ -799,13 +799,13 @@ def getVarList():
 @handleRedirAndSaveKwds
 def listAll(hidden=0):
     """List IRAF packages, tasks, and variables"""
-    print 'Packages:'
+    print('Packages:')
     listPkgs()
-    print 'Loaded Packages:'
+    print('Loaded Packages:')
     listLoaded()
-    print 'Tasks:'
+    print('Tasks:')
     listTasks(hidden=hidden)
-    print 'Variables:'
+    print('Variables:')
     listVars()
 
 @handleRedirAndSaveKwds
@@ -813,7 +813,7 @@ def listPkgs():
     """List IRAF packages"""
     keylist = getPkgList()
     if len(keylist) == 0:
-        print 'No IRAF packages defined'
+        print('No IRAF packages defined')
     else:
         keylist.sort()
         # append '/' to identify packages
@@ -825,7 +825,7 @@ def listLoaded():
     """List loaded IRAF packages"""
     keylist = getLoadedList()
     if len(keylist) == 0:
-        print 'No IRAF packages loaded'
+        print('No IRAF packages loaded')
     else:
         keylist.sort()
         # append '/' to identify packages
@@ -840,7 +840,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
     """
     keylist = getTaskList()
     if len(keylist) == 0:
-        print 'No IRAF tasks defined'
+        print('No IRAF tasks defined')
         return
     # make a dictionary of pkgs to list
     if pkglist is None:
@@ -860,7 +860,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
             except KeyError, e:
                 _writeError(str(e))
     if not len(pkgdict):
-        print 'No packages to list'
+        print('No packages to list')
         return
 
     # print each package separately
@@ -879,12 +879,12 @@ def listTasks(pkglist=None, hidden=0, **kw):
                 tlist.append(task)
             else:
                 if len(tlist) and lastpkg in pkgdict:
-                    print lastpkg + '/:'
+                    print(lastpkg + '/:')
                     _irafutils.printCols(tlist)
                 tlist = [task]
                 lastpkg = pkg
     if len(tlist) and lastpkg in pkgdict:
-        print lastpkg + '/:'
+        print(lastpkg + '/:')
         _irafutils.printCols(tlist)
 
 @handleRedirAndSaveKwds
@@ -898,23 +898,23 @@ def listCurrent(n=1, hidden=0):
             plist[i] = loadedPath[-1-i].getName()
         listTasks(plist,hidden=hidden)
     else:
-        print 'No IRAF tasks defined'
+        print('No IRAF tasks defined')
 
 @handleRedirAndSaveKwdsPlus
 def listVars(prefix="", equals="\t= "):
     """List IRAF variables"""
     keylist = getVarList()
     if len(keylist) == 0:
-        print 'No IRAF variables defined'
+        print('No IRAF variables defined')
     else:
         keylist.sort()
         for word in keylist:
-            print "%s%s%s%s" % (prefix, word, equals, envget(word))
+            print("%s%s%s%s" % (prefix, word, equals, envget(word)))
 
 @handleRedirAndSaveKwds
 def gripes():
     """ Hide the system call - direct the user to support """
-    print "Please email your concern directly to support@stsci.edu"
+    print("Please email your concern directly to support@stsci.edu")
 gripe = gripes
 
 @handleRedirAndSaveKwds
@@ -922,13 +922,13 @@ def which(*args):
     """ Emulate the which function in IRAF. """
     for arg in args:
         try:
-            print getTask(arg).getPkgname()
+            print(getTask(arg).getPkgname())
             # or: getTask(arg).getPkgname()+"."+getTask(arg).getName()
         except _minmatch.AmbiguousKeyError, e:
-            print str(e)
+            print(str(e))
         except (KeyError, TypeError):
             if deftask(arg):
-                print 'language' # handle, e.g. 'which which', 'which cd'
+                print('language') # handle, e.g. 'which which', 'which cd'
             else:
                 _writeError(arg+": task not found.")
 
@@ -940,7 +940,7 @@ def whereis(*args):
         if matches:
             matches.reverse() # this reverse isn't necessary - they arrive
                               # in the right order, but CL seems to do this
-            print " ".join(matches)
+            print(" ".join(matches))
         else:
             _writeError(arg+": task not found.")
 
@@ -1007,7 +1007,7 @@ def envget(var,default=None):
                 # Return a default value for TERM
                 # TERM gets caught as it is found in the default
                 # login.cl file setup by IRAF.
-                print "Using default TERM value for session."
+                print("Using default TERM value for session.")
                 return 'xterm'
             else:
                 raise KeyError("Undefined environment variable `%s'" % var)
@@ -1810,7 +1810,6 @@ def fscan(theLocals, line, *namelist, **kw):
     _nscan = n_actual
     return n_actual
 
-
 def fscanf(theLocals, line, format, *namelist, **kw):
     """fscanf function sets parameters from a string/list parameter with format
 
@@ -1919,7 +1918,7 @@ def scan(theLocals, *namelist, **kw):
             args = (theLocals, repr(line),) + namelist
             return fscan(*args, **kw)
     except Exception, ex:
-        print 'iraf.scan exception: '+str(ex)
+        print('iraf.scan exception: '+str(ex))
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
@@ -1947,7 +1946,7 @@ def scanf(theLocals, format, *namelist, **kw):
             args = (theLocals, repr(line), format,) + namelist
             return fscanf(*args, **kw)
     except Exception, ex:
-        print 'iraf.scanf exception: '+str(ex)
+        print('iraf.scanf exception: '+str(ex))
     finally:
         # note return value not used here
         rv = redirReset(resetList, closeFHList)
@@ -2011,11 +2010,11 @@ reset = set
 def show(*args):
     """Print value of IRAF or OS environment variables"""
     if len(args) and args[0].startswith("erract"):
-        print irafecl.erract.states()
+        print(irafecl.erract.states())
     else:
         if args:
             for arg in args:
-                print envget(arg)
+                print(envget(arg))
         else:
             # print them all
             listVars("    ", "=")
@@ -2035,7 +2034,7 @@ def unset(*args):
 @handleRedirAndSaveKwds
 def time():
     """Print current time and date"""
-    print _time.strftime('%a %H:%M:%S %d-%b-%Y')
+    print(_time.strftime('%a %H:%M:%S %d-%b-%Y'))
 
 # Note - we really should not give this a default (should require an int),
 # because why run "sleep 0"?, but some legacy .cl scripts call it that way.
@@ -2120,8 +2119,8 @@ def stty(terminal=None, **kw):
                dftNlin = str(nlines)
         except: pass # No error message here - may not always be available
         # no args: print terminal type and size
-        print '%s ncols=%s nlines=%s' % (envget('terminal','undefined'),
-                envget('ttyncols',dftNcol), envget('ttynlines',dftNlin))
+        print('%s ncols=%s nlines=%s' % (envget('terminal','undefined'),
+                envget('ttyncols',dftNcol), envget('ttynlines',dftNlin)))
     elif expkw['resize'] or expkw['terminal'] == "resize":
         # resize: sets CL env parameters giving screen size; show errors
         if _sys.stdout.isatty():
@@ -2299,21 +2298,21 @@ def clear(*args):
 def flprcache(*args):
     """Flush process cache.  Takes optional list of tasknames."""
     _irafexecute.processCache.flush(*args)
-    if Verbose>0: print "Flushed process cache"
+    if Verbose>0: print("Flushed process cache")
 
 @handleRedirAndSaveKwds
 def prcacheOff():
     """Disable process cache.  No process cache will be employed
        for the rest of this session."""
     _irafexecute.processCache.setSize(0)
-    if Verbose>0: print "Disabled process cache"
+    if Verbose>0: print("Disabled process cache")
 
 @handleRedirAndSaveKwds
 def prcacheOn():
     """Re-enable process cache.  A process cache will again be employed
        for the rest of this session.  This may be useful after prcacheOff()."""
     _irafexecute.processCache.resetSize()
-    if Verbose>0: print "Enabled process cache"
+    if Verbose>0: print("Enabled process cache")
 
 @handleRedirAndSaveKwds
 def prcache(*args):
@@ -2384,8 +2383,8 @@ def history(n=20):
 @handleRedirAndSaveKwds
 def ehistory(*args):
     """Dummy history function"""
-    print 'ehistory command not required: Use arrow keys to recall commands'
-    print 'or ctrl-R to search for a string in the command history.'
+    print('ehistory command not required: Use arrow keys to recall commands')
+    print('or ctrl-R to search for a string in the command history.')
 
 # dummy routines (must allow *args and **kw)
 
@@ -2657,7 +2656,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
                 pkgname = pkg.getName()
                 if not pkgname in printed:
                     printed[pkgname] = 1
-                    print '    %s' % pkgname
+                    print('    %s' % pkgname)
             rv1 = (PkgName, PkgBinary)
         else:
             spkgname = pkgname.replace('.', '_')
@@ -2707,11 +2706,12 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
 @handleRedirAndSaveKwds
 def clPrint(*args):
     """CL print command -- emulates CL spacing and uses redirection keywords"""
-    for arg in args:
-        print arg,
-        # don't put spaces after string arguments
-        if isinstance(arg,(str,unicode)): _sys.stdout.softspace=0
-    print
+    nargs = len(args)
+    for n, arg in enumerate(args, start=1):
+        print(arg, end='')
+        # add separator space, except after string arguments and at the end
+        if n < nargs and not isinstance(arg, str): print(end=' ')
+    print()
 
 # printf format conversion utilities
 
@@ -2858,7 +2858,7 @@ _backDir = None
 @handleRedirAndSaveKwds
 def pwd():
     """Print working directory"""
-    print _os.getcwd()
+    print(_os.getcwd())
 
 @handleRedirAndSaveKwds
 def chdir(directory=None):
@@ -2875,7 +2875,7 @@ def chdir(directory=None):
     if not isinstance(directory, (str,unicode)):
         raise IrafError("Illegal non-string value for directory:"+ \
               +repr(directory))
-    if Verbose > 2: print('chdir to: '+str(directory))
+    if Verbose > 2: print(('chdir to: '+str(directory)))
     # Check for (1) local directory and (2) iraf variable
     # when given an argument like 'dev'.  In IRAF 'cd dev' is
     # the same as 'cd ./dev' if there is a local directory named
@@ -2909,7 +2909,7 @@ def back():
         # OSError for getcwd() means current directory does not exist
         _newBack = _backDir
     _os.chdir(_backDir)
-    print _backDir
+    print(_backDir)
     _irafexecute.processCache.setenv('chdir %s\n' % _backDir)
     _backDir = _newBack
 
@@ -2954,7 +2954,7 @@ def clCompatibilityMode(verbose=0, _save=0):
         vmode = ' (verbose)'
     else:
         vmode = ''
-    print 'Entering CL-compatibility%s mode...' % vmode
+    print('Entering CL-compatibility%s mode...' % vmode)
 
     # logging may be active if Monty is in use
     if hasattr(__main__,'_pycmdline'):
@@ -3002,9 +3002,9 @@ def clCompatibilityMode(verbose=0, _save=0):
                     logfile.write(code)
                     logfile.flush()
                 if verbose:
-                    print '----- Python -----'
-                    print code,
-                    print '------------------'
+                    print('----- Python -----')
+                    print(code, end=' ')
+                    print('------------------')
         except EOFError:
             break
         except KeyboardInterrupt:
@@ -3012,8 +3012,8 @@ def clCompatibilityMode(verbose=0, _save=0):
         except:
             _sys.stdout.flush()
             traceback.print_exc()
-    print
-    print 'Leaving CL-compatibility mode...'
+    print()
+    print('Leaving CL-compatibility mode...')
 
 # -----------------------------------------------------
 # clArray: IRAF array class with type checking
@@ -3238,7 +3238,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
             # new task is consistent with old task, so return old task
             if task.getPkgbinary() != newtask.getPkgbinary():
                 # package binary differs -- add it to search path
-                if Verbose>1: print 'Adding',pkgbinary,'to',task,'path'
+                if Verbose>1: print('Adding',pkgbinary,'to',task,'path')
                 task.addPkgbinary(pkgbinary)
             return task
     # add it to the task list
@@ -3324,7 +3324,7 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
                 return newpkg
         if pkg.getPkgbinary() != newpkg.getPkgbinary():
             # only package binary differs -- add it to search path
-            if Verbose>1: print 'Adding',pkgbinary,'to',pkg,'path'
+            if Verbose>1: print('Adding',pkgbinary,'to',pkg,'path')
             pkg.addPkgbinary(pkgbinary)
         if pkgname != pkg.getPkgname():
             # add existing task as an item in the new package
