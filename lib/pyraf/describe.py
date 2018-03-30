@@ -24,7 +24,6 @@
 
 from __future__ import division # confidence high
 
-import string
 from dis import opname, HAVE_ARGUMENT
 
 # --------------------------------------------------------------------
@@ -128,7 +127,7 @@ def describe(func, name = None):
 def __getmethods(c, m):
     for k, v in c.__dict__.items():
         if type(v) == type(__getmethods): # and k[0] != "_":
-            if not k in m:
+            if k not in m:
                 m[k] = describe(v, k), c.__name__
     for c in c.__bases__:
         __getmethods(c, m)
@@ -144,26 +143,3 @@ def describe_instance(self):
     "Return a dictionary describing all methods available in an instance"
 
     return describe_class(self.__class__)
-
-#
-# --------------------------------------------------------------------
-
-if __name__ == "__main__":
-
-    def foo(a, b=1, *c, **d):
-        e = a + b + c
-        f = None
-
-    bar = lambda a: 0
-
-    # from Duncan Booth
-    def baz(a, (b, c) = ('foo','bar'), (d, e, f) = (None, None, None), g = None):
-        pass
-
-    print "describeParams(foo)", describeParams(foo)
-    print "describeParams(bar)", describeParams(bar)
-    print "describeParams(baz)", describeParams(baz)
-
-    print describe(foo)
-    print describe(bar)
-    print describe(baz)

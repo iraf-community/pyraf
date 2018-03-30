@@ -4,13 +4,14 @@ $Id$
 
 R. White, 2000 January 19
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function  # confidence high
 
-import os, sys
+import os
+import sys
 from stsci.tools.for2to3 import PY3K
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
-if __name__.find('.') < 0: # for unit test need absolute import
+if __name__.find('.') < 0:  # for unit test need absolute import
    for mmm in ('filecache', 'pyrafglobals', 'dirshelve'):
        exec('import '+mmm, globals()) # 2to3 messes up simpler form
 else:
@@ -29,7 +30,7 @@ import copy_reg, marshal, types
 try:
     import cPickle as pickle
 except ImportError:
-    import pickle
+    import pickle  # noqa
 
 def code_unpickler(data):
     return marshal.loads(data)
@@ -55,7 +56,7 @@ copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
 # with changes of the CL file contents when the script is
 # being developed.
 
-import stat, hashlib
+import hashlib
 
 _versionKey = 'CACHE_VERSION'
 
@@ -138,14 +139,14 @@ class _CodeCache:
             elif fname.endswith(_currentVersion()):
                 # uh-oh, something is seriously wrong
                 msg.append("CL script cache %s has version mismatch, may be corrupt?" %
-                    fname)
+                           fname)
             elif oldVersion > _currentVersion():
                 msg.append(("CL script cache %s was created by " +
-                    "a newer version of pyraf (cache %s, this pyraf %s)") %
-                    (fname, `oldVersion`, `_currentVersion()`))
+                            "a newer version of pyraf (cache %s, this pyraf %s)") %
+                           (fname, repr(oldVersion), repr(_currentVersion())))
             else:
                 msg.append("CL script cache %s is obsolete version (old %s, current %s)" %
-                        (fname, `oldVersion`, `_currentVersion()`))
+                           (fname, repr(oldVersion), repr(_currentVersion())))
             fh.close()
         # failed to open either cache
         self.warning("\n".join(msg))
@@ -261,7 +262,7 @@ class _CodeCache:
                 filename = task.getFullpath()
             except (AttributeError, TypeError):
                 raise TypeError(
-                        "Filename parameter must be a string or IrafCLTask")
+                    "Filename parameter must be a string or IrafCLTask")
         index = self.getIndex(filename)
         # system cache is last in list
         irange = range(len(self.cacheList))
@@ -272,53 +273,15 @@ class _CodeCache:
             if index in cache:
                 if writeflag:
                     del cache[index]
-                    self.warning("Removed %s from CL script cache %s" % \
-                            (filename,self.cacheFileList[i]), 2)
+                    self.warning("Removed %s from CL script cache %s" %
+                                 (filename,self.cacheFileList[i]), 2)
                     nremoved = nremoved+1
                 else:
                     self.warning("Cannot remove %s from read-only "
-                            "CL script cache %s" % \
-                            (filename,self.cacheFileList[i]))
+                                 "CL script cache %s" %
+                                 (filename,self.cacheFileList[i]))
         if nremoved==0:
             self.warning("Did not find %s in CL script cache" % filename, 2)
-
-
-# simple class to mimic pycode, for unit test (save us from importing others)
-class DummyCodeObj:
-    def setFilename(self, f):
-        self.filename = f
-    def __str__(self):
-        retval = '<DummyCodeObj:'
-        if hasattr(self, 'filename'): retval += ' filename="'+self.filename+'"'
-        if hasattr(self, 'code'):     retval += ' code="'+self.code+'"'
-        retval += '>'
-        return retval
-
-
-def test():
-    """ Just run through the paces """
-    global codeCache
-    import os
-
-    print('Starting codeCache is: '+str(codeCache.cacheList))
-    print('keys = '+str(codeCache.clFileDict.keys()))
-
-    for fname in ('clcache.py', 'filecache.py'):
-        # lets cache this file
-        print('\ncaching: '+fname)
-        idx = codeCache.getIndex(fname)
-        pc = DummyCodeObj()
-        pc.code = 'print(123)'
-        print('fname:', fname, ', idx:', idx)
-        codeCache.add(idx, pc) # goes in here
-        codeCache.add(idx, pc) # NOT duplicated here
-        codeCache.add(idx, pc) # or here
-        print('And now, codeCache is: '+str(codeCache.cacheList))
-        print('keys = '+str(codeCache.clFileDict.keys()))
-        # try to get it out
-        newidx, newpycode = codeCache.get(fname)
-        assert newidx==idx, 'ERROR: was'+str(idx)+', but now is: '+str(newidx)
-        print('The -get- gave us: '+str(newpycode))
 
 
 # create code cache
@@ -327,9 +290,9 @@ if not os.path.exists(userCacheDir):
     try:
         os.mkdir(userCacheDir)
         if '-s' not in sys.argv and '--silent' not in sys.argv:
-            print 'Created directory %s for cache' % userCacheDir
+            print('Created directory %s for cache' % userCacheDir)
     except OSError:
-        print 'Could not create directory %s' % userCacheDir
+        print('Could not create directory %s' % userCacheDir)
 
 dbfile = 'clcache'
 
@@ -342,6 +305,3 @@ else:
                             os.path.join(pyrafglobals.pyrafDir,dbfile)])
 
 del userCacheDir, dbfile
-
-if __name__ == '__main__':
-    test()

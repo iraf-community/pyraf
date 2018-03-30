@@ -487,26 +487,3 @@ def getParser():
 def parse(tokens, fname=None):
     global _parser
     return _parser.parse(tokens, fname=fname)
-
-
-if __name__ == '__main__':
-
-    import time
-    import clscan
-
-    t0 = time.time()
-
-    # scan file 'simple.cl'
-
-    fnm = 'simple.cl'
-    lines = open(fnm).read()
-    scanner = clscan.CLScanner()
-    tokens = scanner.tokenize(lines)
-    t1 = time.time()
-
-    # parse
-    p = getParser()
-    tree = p.parse(tokens, fname=fnm)
-    t2 = time.time()
-
-    print 'Scan:', t1-t0, 'sec, Parse:', t2-t1, 'sec'

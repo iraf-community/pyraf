@@ -211,28 +211,3 @@ class MsgIOBuffer(Frame):
         self.msgIO.canvas.itemconfigure(1, height = scrollHgt)
         self.msgIO.canvas.configure(scrollregion = (0, 0, 0, scrollHgt))
         self.msgIO.canvas.yview_moveto(1)
-
-
-
-# Test the MsgIOBuffer class
-if __name__ == '__main__':
-
-    width   = 500
-    height  = 300
-    vheight = 50
-    text    = "Tiptop"
-
-    top = Toplevel()
-    f   = Frame(top, width = width, height = height, bg = "red")
-    m   = MsgIOBuffer(top, width, vheight, text)
-    m.msgIO.pack(side=BOTTOM, fill = X)
-    f.pack(side = TOP, fill = BOTH, expand = TRUE)
-    for i in range(10):
-        t = "Text " + str(i)
-        m.updateIO(t)
-    m.updateIO("The quick brown fox jumps over the lazy dog with ease.")
-    m.updateIO("What is your quest?")
-    #inputValue = m.readline()
-    #print "inputValue = ", inputValue
-
-    top.mainloop()

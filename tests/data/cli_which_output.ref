@@ -1,0 +1,39 @@
+--> which pw
+user
+--> which lang
+clpackage
+--> which stdg
+plot
+--> which stdp
+plot
+--> which star
+imcoords
+--> which star man
+imcoords
+user
+--> which vi
+user
+--> which noao
+clpackage
+--> which impl
+plot
+--> which ls
+user
+--> which surf
+"Task `surf' is ambiguous, could be utilities.surfit, noao.surfphot, plot.surface, ..."
+--> which surface
+plot
+--> which img
+"Task `img' is ambiguous, could be images.imgeom, imutil.imgets, photcal.imgroup, ..."
+--> which pro
+"Task `pro' is ambiguous, could be clpackage.proto, system.protect, plot.prow, ..."
+--> which prot
+"Task `prot' is ambiguous, could be clpackage.proto, system.protect"
+--> which prow
+plot
+--> which prows
+plot
+--> which prowss
+prowss: task not found.
+--> which dis
+"Task `dis' is ambiguous, could be system.diskspace, tv.display, onedspec.dispcor, ..."

@@ -1,0 +1,397 @@
+%!PS-Adobe-2.0
+/devppi 300 def
+/userppi 72 def
+/pagewidth 8.5 def
+/devpixtouser { userppi mul devppi div } def
+/pagetolandscape 90 def
+/setcoords { pagewidth userppi mul 0 translate
+    pagetolandscape rotate 1 devpixtouser 1 devpixtouser scale } def
+/setjoins { 1 setlinejoin 1 setlinecap } def
+erasepage initgraphics setcoords setjoins
+/getpoint {
+	currentfile read pop 8#77 and 6 bitshift
+	currentfile read pop 8#77 and or
+	currentfile read pop 8#77 and 6 bitshift
+	currentfile read pop 8#77 and or
+	} def
+/m { getpoint moveto } def
+/d { getpoint lineto } def
+02 setlinewidth
+05 setlinewidth
+m F\Fw d GxFw d GxGS d GxFw d IXFw d IXGS d IXFw d JyFw d JyGS d JyFw
+d LYFw d LYGS d LYFw d MzFw d MzGn d MzFw 
+stroke
+02 setlinewidth
+m MNFA d MNE\ m MOFA d MOE^ m MQFE d MQE\ m MQFE d MLE? d MIE} m MGE\
+d MWE\ m MNE^ d MJE\ m MNE` d MLE\ m MQE` d MRE\ m MQE^ d MTE\ m MCEN
+m MrFE d MnFC d MjE} d MiEs d MiEm d MjEd d MnE^ d MrE\ d MvE\ d MzE^
+d M}Ed d M?Em d M?Es d M}E} d MzFC d MvFE d MrFE m MnFA d MlE} d MjEu
+d MjEk d MlEd d MnE` m MzE` d M|Ed d M}Ek d M}Eu d M|E} d MzFA m MrFE
+d MoFC d MnE? d MlEu d MlEk d MnEb d MoE^ d MrE\ m MvE\ d MyE^ d MzEb
+d M|Ek d M|Eu d MzE? d MyFC d MvFE m MgEN m NWFE d NRFC d NOE} d NNEs
+d NNEm d NOEd d NRE^ d NWE\ d NZE\ d N_E^ d NbEd d NdEm d NdEs d NbE}
+d N_FC d NZFE d NWFE m NRFA d NQE} d NOEu d NOEk d NQEd d NRE` m N_E`
+d NaEd d NbEk d NbEu d NaE} d N_FA m NWFE d NTFC d NRE? d NQEu d NQEk
+d NREb d NTE^ d NWE\ m NZE\ d N]E^ d N_Eb d NaEk d NaEu d N_E? d N]FC
+d NZFE m NLEN 
+stroke
+05 setlinewidth
+m MzFw d OZFw d OZGS d OZFw d P{Fw d P{GS d P{Fw d R[Fw d R[GS d R[Fw
+d S{Fw d S{GS d S{Fw d U\Fw d U\Gn d U\Fw 
+stroke
+02 setlinewidth
+m ThE} d ThE{ d TjE{ d TjE} d ThE} m ThE? d TjE? d TkE} d TkE{ d TjEy
+d ThEy d TfE{ d TfE} d ThFA d TjFC d TnFE d TuFE d TyFC d T{FA d T}E}
+d T}Ey d T{Eu d TvEq d TnEm d TkEk d ThEg d TfEb d TfE\ m TyFA d T{E}
+d T{Ey d TyEu m TuFE d TxFC d TyE} d TyEy d TxEu d TuEq d TnEm m TfE`
+d ThEb d TkEb d TsE` d TyE` d T}Eb m TkEb d TsE^ d TyE^ d T{E` m TkEb
+d TsE\ d TyE\ d T{E^ d T}Eb d T}Ef m TeEN m UUFE d UPFC d UME} d UKEs
+d UKEm d UMEd d UPE^ d UUE\ d UXE\ d U]E^ d U`Ed d UaEm d UaEs d U`E}
+d U]FC d UXFE d UUFE m UPFA d UNE} d UMEu d UMEk d UNEd d UPE` m U]E`
+d U^Ed d U`Ek d U`Eu d U^E} d U]FA m UUFE d UQFC d UPE? d UNEu d UNEk
+d UPEb d UQE^ d UUE\ m UXE\ d U[E^ d U]Eb d U^Ek d U^Eu d U]E? d U[FC
+d UXFE m UIEN m UyFE d UtFC d UqE} d UpEs d UpEm d UqEd d UtE^ d UyE\
+d U|E\ d VAE^ d VDEd d VFEm d VFEs d VDE} d VAFC d U|FE d UyFE m UtFA
+d UsE} d UqEu d UqEk d UsEd d UtE` m VAE` d VCEd d VDEk d VDEu d VCE}
+d VAFA m UyFE d UvFC d UtE? d UsEu d UsEk d UtEb d UvE^ d UyE\ m U|E\
+d V@E^ d VAEb d VCEk d VCEu d VAE? d V@FC d U|FE m UnEN 
+stroke
+05 setlinewidth
+m U\Fw d V|Fw d V|GS d V|Fw d X]Fw d X]GS d X]Fw d Y}Fw d Y}GS d Y}Fw
+d [^Fw d [^GS d [^Fw d \~Fw d \~Gn d \~Fw 
+stroke
+02 setlinewidth
+m \JE} d \JE{ d \LE{ d \LE} d \JE} m \JE? d \LE? d \ME} d \ME{ d \LEy
+d \JEy d \IE{ d \IE} d \JFA d \LFC d \QFE d \WFE d \\FC d \]E? d \]Ey
+d \\Eu d \WEs m \ZFC d \\E? d \\Ey d \ZEu m \UFE d \YFC d \ZE? d \ZEy
+d \YEu d \UEs m \REs d \WEs d \ZEq d \]Em d \_Ei d \_Ed d \]E` d \\E^
+d \WE\ d \QE\ d \LE^ d \JE` d \IEd d \IEf d \JEg d \LEg d \MEf d \MEd
+d \LEb d \JEb m \\Em d \]Ei d \]Ed d \\E` m \UEs d \YEq d \ZEo d \\Ei
+d \\Ed d \ZE^ d \WE\ m \JEf d \JEd d \LEd d \LEf d \JEf m \GEN m \wFE
+d \rFC d \oE} d \mEs d \mEm d \oEd d \rE^ d \wE\ d \zE\ d \?E^ d ]BEd
+d ]DEm d ]DEs d ]BE} d \?FC d \zFE d \wFE m \rFA d \qE} d \oEu d \oEk
+d \qEd d \rE` m \?E` d ]@Ed d ]BEk d ]BEu d ]@E} d \?FA m \wFE d \tFC
+d \rE? d \qEu d \qEk d \rEb d \tE^ d \wE\ m \zE\ d \}E^ d \?Eb d ]@Ek
+d ]@Eu d \?E? d \}FC d \zFE m \lEN m ]\FE d ]WFC d ]TE} d ]REs d ]REm
+d ]TEd d ]WE^ d ]\E\ d ]_E\ d ]dE^ d ]gEd d ]hEm d ]hEs d ]gE} d ]dFC
+d ]_FE d ]\FE m ]WFA d ]UE} d ]TEu d ]TEk d ]UEd d ]WE` m ]dE` d ]eEd
+d ]gEk d ]gEu d ]eE} d ]dFA m ]\FE d ]XFC d ]WE? d ]UEu d ]UEk d ]WEb
+d ]XE^ d ]\E\ m ]_E\ d ]bE^ d ]dEb d ]eEk d ]eEu d ]dE? d ]bFC d ]_FE
+m ]QEN 
+stroke
+05 setlinewidth
+m \~Fw d ^_Fw d ^_GS d ^_Fw d _?Fw d _?GS d _?Fw d a`Fw d a`GS d a`Fw
+d c@Fw d c@GS d c@Fw d daFw d daGn d daFw 
+stroke
+02 setlinewidth
+m cxE? d cxE\ m cyFA d cyE^ m c{FE d c{E\ m c{FE d ciEg d dCEg m csE\
+d d@E\ m cxE^ d ctE\ m cxE` d cvE\ m c{E` d c|E\ m c{E^ d c~E\ m ciEN
+m dYFE d dTFC d dQE} d dPEs d dPEm d dQEd d dTE^ d dYE\ d d\E\ d daE^
+d ddEd d dfEm d dfEs d ddE} d daFC d d\FE d dYFE m dTFA d dSE} d dQEu
+d dQEk d dSEd d dTE` m daE` d dcEd d ddEk d ddEu d dcE} d daFA m dYFE
+d dVFC d dTE? d dSEu d dSEk d dTEb d dVE^ d dYE\ m d\E\ d d_E^ d daEb
+d dcEk d dcEu d daE? d d_FC d d\FE m dNEN m d~FE d dyFC d dvE} d dtEs
+d dtEm d dvEd d dyE^ d d~E\ d eAE\ d eFE^ d eIEd d eKEm d eKEs d eIE}
+d eFFC d eAFE d d~FE m dyFA d dxE} d dvEu d dvEk d dxEd d dyE` m eFE`
+d eGEd d eIEk d eIEu d eGE} d eFFA m d~FE d d{FC d dyE? d dxEu d dxEk
+d dyEb d d{E^ d d~E\ m eAE\ d eDE^ d eFEb d eGEk d eGEu d eFE? d eDFC
+d eAFE m dsEN 
+stroke
+05 setlinewidth
+m daFw d fAFw d fAGS d fAFw d gaFw d gaGS d gaFw d iBFw d iBGS d iBFw
+d jbFw d jbGS d jbFw d lCFw d lCGn d lCFw 
+stroke
+02 setlinewidth
+m kPFE d kMEq d kPEu d kUEw d kZEw d k_Eu d kbEq d kcEk d kcEg d kbEb
+d k_E^ d kZE\ d kUE\ d kPE^ d kOE` d kMEd d kMEf d kOEg d kPEg d kREf
+d kREd d kPEb d kOEb m k`Eq d kbEm d kbEf d k`Eb m kZEw d k]Eu d k_Es
+d k`Em d k`Ef d k_E` d k]E^ d kZE\ m kOEf d kOEd d kPEd d kPEf d kOEf
+m kPFE d k`FE m kPFC d k]FC m kPFA d kWFA d k]FC d k`FE m kLEN m k{FE
+d kwFC d ktE} d krEs d krEm d ktEd d kwE^ d k{E\ d k?E\ d lCE^ d lGEd
+d lHEm d lHEs d lGE} d lCFC d k?FE d k{FE m kwFA d kuE} d ktEu d ktEk
+d kuEd d kwE` m lCE` d lEEd d lGEk d lGEu d lEE} d lCFA m k{FE d kxFC
+d kwE? d kuEu d kuEk d kwEb d kxE^ d k{E\ m k?E\ d lBE^ d lCEb d lEEk
+d lEEu d lCE? d lBFC d k?FE m kpEN m l`FE d l[FC d lXE} d lWEs d lWEm
+d lXEd d l[E^ d l`E\ d lcE\ d lhE^ d lkEd d lmEm d lmEs d lkE} d lhFC
+d lcFE d l`FE m l[FA d lZE} d lXEu d lXEk d lZEd d l[E` m lhE` d ljEd
+d lkEk d lkEu d ljE} d lhFA m l`FE d l]FC d l[E? d lZEu d lZEk d l[Eb
+d l]E^ d l`E\ m lcE\ d lfE^ d lhEb d ljEk d ljEu d lhE? d lfFC d lcFE
+m lUEN 
+stroke
+05 setlinewidth
+m lCFw d l}Fw m l}Fw d l}GY d laGY d l}GY d l}Hv d laHv d l}Hv d l}JR
+d laJR d l}JR d l}Ko d laKo d l}Ko d l}ML d lEML d l}ML d l}Ni d laNi
+d l}Ni d l}PF d laPF d l}PF d l}Qc d laQc d l}Qc d l}R? d laR? d l}R?
+d l}T\ d lET\ d l}T\ d l}Uy d laUy d l}Uy d l}WV d laWV d l}WV d l}Xs
+d laXs d l}Xs d l}ZP d laZP d l}ZP d l}[l d lE[l d l}[l d l}]I d la]I
+d l}]I d l}^f d la^f d l}^f d l}`C d la`C d l}`C d l}a` d laa` d l}a`
+d l}b} d lEb} d l}b} d l}dZ d ladZ d l}dZ d l}dZ m F\Fw d F\GY d FxGY
+d F\GY d F\Hv d FxHv d F\Hv d F\JR d FxJR d F\JR d F\Ko d FxKo d F\Ko
+d F\ML d GTML d F\ML 
+stroke
+02 setlinewidth
+m D]MX d D]MV d D_MV d D_MX d D]MX m D]MZ d D_MZ d D`MX d D`MV d D_MT
+d D]MT d D\MV d D\MX d D]M\ d D_M^ d DdM_ d DjM_ d DoM^ d DpM\ d DrMX
+d DrMT d DpMP d DlML d DdMH d D`MF d D]MB d D\L| d D\Lw m DoM\ d DpMX
+d DpMT d DoMP m DjM_ d DmM^ d DoMX d DoMT d DmMP d DjML d DdMH m D\L{
+d D]L| d D`L| d DhL{ d DoL{ d DrL| m D`L| d DhLy d DoLy d DpL{ m D`L|
+d DhLw d DoLw d DpLy d DrL| d DrM@ m DZLi m EDM_ d E@ML d EDMP d EHMR
+d EMMR d ERMP d EUML d EWMF d EWMB d EUL| d ERLy d EMLw d EHLw d EDLy
+d EBL{ d E@L~ d E@M@ d EBMB d EDMB d EEM@ d EEL~ d EDL| d EBL| m ESML
+d EUMH d EUM@ d ESL| m EMMR d EPMP d ERMN d ESMH d ESM@ d ERL{ d EPLy
+d EMLw m EBM@ d EBL~ d EDL~ d EDM@ d EBM@ m EDM_ d ESM_ m EDM^ d EPM^
+m EDM\ d EJM\ d EPM^ d ESM_ m D?Li m EoM_ d EjM^ d EgMX d EeMN d EeMH
+d EgL~ d EjLy d EoLw d ErLw d EwLy d EzL~ d E{MH d E{MN d EzMX d EwM^
+d ErM_ d EoM_ m EjM\ d EhMX d EgMP d EgMF d EhL~ d EjL{ m EwL{ d ExL~
+d EzMF d EzMP d ExMX d EwM\ m EoM_ d EkM^ d EjMZ d EhMP d EhMF d EjL|
+d EkLy d EoLw m ErLw d EuLy d EwL| d ExMF d ExMP d EwMZ d EuM^ d ErM_
+m EdLi 
+stroke
+05 setlinewidth
+m F\ML d F\Ni d FxNi d F\Ni d F\PF d FxPF d F\PF d F\Qc d FxQc d F\Qc
+d F\R? d FxR? d F\R? d F\T\ d GTT\ d F\T\ 
+stroke
+02 setlinewidth
+m D_Tp d D\T\ d D_T` d DdTb d DhTb d DmT` d DpT\ d DrTV d DrTR d DpTM
+d DmTI d DhTG d DdTG d D_TI d D]TK d D\TO d D\TQ d D]TR d D_TR d D`TQ
+d D`TO d D_TM d D]TM m DoT\ d DpTX d DpTQ d DoTM m DhTb d DlT` d DmT^
+d DoTX d DoTQ d DmTK d DlTI d DhTG m D]TQ d D]TO d D_TO d D_TQ d D]TQ
+m D_Tp d DoTp m D_Tn d DlTn m D_Tl d DeTl d DlTn d DoTp m DZSy m EJTp
+d EETn d EBTh d E@T^ d E@TX d EBTO d EETI d EJTG d EMTG d ERTI d EUTO
+d EWTX d EWT^ d EUTh d ERTn d EMTp d EJTp m EETl d EDTh d EBT` d EBTV
+d EDTO d EETK m ERTK d ESTO d EUTV d EUT` d ESTh d ERTl m EJTp d EGTn
+d EETj d EDT` d EDTV d EETM d EGTI d EJTG m EMTG d EPTI d ERTM d ESTV
+d EST` d ERTj d EPTn d EMTp m D?Sy m EoTp d EjTn d EgTh d EeT^ d EeTX
+d EgTO d EjTI d EoTG d ErTG d EwTI d EzTO d E{TX d E{T^ d EzTh d EwTn
+d ErTp d EoTp m EjTl d EhTh d EgT` d EgTV d EhTO d EjTK m EwTK d ExTO
+d EzTV d EzT` d ExTh d EwTl m EoTp d EkTn d EjTj d EhT` d EhTV d EjTM
+d EkTI d EoTG m ErTG d EuTI d EwTM d ExTV d ExT` d EwTj d EuTn d ErTp
+m EdSy 
+stroke
+05 setlinewidth
+m F\T\ d F\Uy d FxUy d F\Uy d F\WV d FxWV d F\WV d F\Xs d FxXs d F\Xs
+d F\ZP d FxZP d F\ZP d F\[l d GT[l d F\[l 
+stroke
+02 setlinewidth
+m D\\@ d D\[t m Dr\@ d Dr[z d Dp[t d Dj[j d Dh[g d Dg[_ d Dg[W m Dh[i
+d Dg[e d De[_ d De[W m Dp[t d Dh[j d De[e d Dd[_ d Dd[W d Dg[W m D\[x
+d D][| d D`\@ d Dd\@ d Dl[z d Do[z d Dp[| d Dr\@ m D_[| d D`[~ d Dd[~
+d Dg[| m D\[x d D][z d D`[| d Dd[| d Dl[z m DZ[I m ED\@ d E@[l d ED[p
+d EH[r d EM[r d ER[p d EU[l d EW[g d EW[c d EU[] d ER[Y d EM[W d EH[W
+d ED[Y d EB[[ d E@[_ d E@[a d EB[c d ED[c d EE[a d EE[_ d ED[] d EB[]
+m ES[l d EU[i d EU[a d ES[] m EM[r d EP[p d ER[n d ES[i d ES[a d ER[[
+d EP[Y d EM[W m EB[a d EB[_ d ED[_ d ED[a d EB[a m ED\@ d ES\@ m ED[~
+d EP[~ m ED[| d EJ[| d EP[~ d ES\@ m D?[I m Eo\@ d Ej[~ d Eg[x d Ee[n
+d Ee[i d Eg[_ d Ej[Y d Eo[W d Er[W d Ew[Y d Ez[_ d E{[i d E{[n d Ez[x
+d Ew[~ d Er\@ d Eo\@ m Ej[| d Eh[x d Eg[p d Eg[g d Eh[_ d Ej[[ m Ew[[
+d Ex[_ d Ez[g d Ez[p d Ex[x d Ew[| m Eo\@ d Ek[~ d Ej[z d Eh[p d Eh[g
+d Ej[] d Ek[Y d Eo[W m Er[W d Eu[Y d Ew[] d Ex[g d Ex[p d Ew[z d Eu[~
+d Er\@ m Ed[I 
+stroke
+05 setlinewidth
+m F\[l d F\]I d Fx]I d F\]I d F\^f d Fx^f d F\^f d F\`C d Fx`C d F\`C
+d F\a` d Fxa` d F\a` d F\b} d GTb} d F\b} 
+stroke
+02 setlinewidth
+m DAcL d DAbg m DBcL d DBbi m DDcP d DDbg m DDcP d C?cJ d C|cH m Czbg
+d DJbg m DAbi d C}bg m DAbk d C?bg m DDbk d DEbg m DDbi d DGbg m CubZ
+m DecP d D`cN d D]cH d D\b? d D\by d D]bo d D`bi d Debg d Dhbg d Dmbi
+d Dpbo d Drby d Drb? d DpcH d DmcN d DhcP d DecP m D`cL d D_cH d D]cA
+d D]bw d D_bo d D`bk m Dmbk d Dobo d Dpbw d DpcA d DocH d DmcL m DecP
+d DbcN d D`cJ d D_cA d D_bw d D`bm d Dbbi d Debg m Dhbg d Dlbi d Dmbm
+d Dobw d DocA d DmcJ d DlcN d DhcP m DZbZ m EJcP d EEcN d EBcH d E@b?
+d E@by d EBbo d EEbi d EJbg d EMbg d ERbi d EUbo d EWby d EWb? d EUcH
+d ERcN d EMcP d EJcP m EEcL d EDcH d EBcA d EBbw d EDbo d EEbk m ERbk
+d ESbo d EUbw d EUcA d EScH d ERcL m EJcP d EGcN d EEcJ d EDcA d EDbw
+d EEbm d EGbi d EJbg m EMbg d EPbi d ERbm d ESbw d EScA d ERcJ d EPcN
+d EMcP m D?bZ m EocP d EjcN d EgcH d Eeb? d Eeby d Egbo d Ejbi d Eobg
+d Erbg d Ewbi d Ezbo d E{by d E{b? d EzcH d EwcN d ErcP d EocP m EjcL
+d EhcH d EgcA d Egbw d Ehbo d Ejbk m Ewbk d Exbo d Ezbw d EzcA d ExcH
+d EwcL m EocP d EkcN d EjcJ d EhcA d Ehbw d Ejbm d Ekbi d Eobg m Erbg
+d Eubi d Ewbm d Exbw d ExcA d EwcJ d EucN d ErcP m EdbZ 
+stroke
+05 setlinewidth
+m F\b} d F\dZ d FxdZ d F\dZ d F\dZ m F\dZ d GxdZ d Gxc~ d GxdZ d IXdZ
+d IXc~ d IXdZ d JydZ d Jyc~ d JydZ d LYdZ d LYc~ d LYdZ d MzdZ d Mzcb
+d MzdZ d OZdZ d OZc~ d OZdZ d P{dZ d P{c~ d P{dZ d R[dZ d R[c~ d R[dZ
+d S{dZ d S{c~ d S{dZ d U\dZ d U\cb d U\dZ d V|dZ d V|c~ d V|dZ d X]dZ
+d X]c~ d X]dZ d Y}dZ d Y}c~ d Y}dZ d [^dZ d [^c~ d [^dZ d \~dZ d \~cb
+d \~dZ d ^_dZ d ^_c~ d ^_dZ d _?dZ d _?c~ d _?dZ d a`dZ d a`c~ d a`dZ
+d c@dZ d c@c~ d c@dZ d dadZ d dacb d dadZ d fAdZ d fAc~ d fAdZ d gadZ
+d gac~ d gadZ d iBdZ d iBc~ d iBdZ d jbdZ d jbc~ d jbdZ d lCdZ d lCcb
+d lCdZ d l}dZ 
+stroke
+02 setlinewidth
+m VEDV d VGD\ d VGDP d VEDV d VBDZ d U?D\ d U{D\ d UvDZ d UsDV d UrDR
+d UpDL d UpDC d UrC} d UsCy d UvCu d U{Cs d U?Cs d VBCu d VECy d VGC}
+m UuDV d UsDR d UrDL d UrDC d UsC} d UuCy m U{D\ d UxDZ d UuDT d UsDL
+d UsDC d UuC{ d UxCu d U{Cs m UoCe m V`DN d V[DL d VXDH d VVDC d VVC?
+d VXCy d V[Cu d V`Cs d VcCs d VhCu d VkCy d VlC? d VlDC d VkDH d VhDL
+d VcDN d V`DN m VYDH d VXDD d VXC} d VYCy m ViCy d VkC} d VkDD d ViDH
+m V`DN d V]DL d V[DJ d VYDD d VYC} d V[Cw d V]Cu d V`Cs m VcCs d VfCu
+d VhCw d ViC} d ViDD d VhDJ d VfDL d VcDN m VUCe m W@D\ d W@Cs m WCDZ
+d WCCu m VyD\ d WED\ d WECs m VyCs d WLCs m V|D\ d W@DZ m V~D\ d W@DX
+m W@Cu d V|Cs m W@Cw d V~Cs m WECw d WGCs m WECu d WJCs m VyCe m WWDN
+d WWC} d WXCw d WYCu d W\Cs d WaCs d WcCu d WeCw d WfC{ m WXDL d WXC{
+d WYCw m WRDN d WYDN d WYC{ d W[Cu d W\Cs m WfDN d WfCs d WmCs m WhDL
+d WhCu m WbDN d WiDN d WiCs m WTDN d WWDL m WUDN d WWDJ m WiCw d WjCs
+m WiCu d WlCs m WRCe m W?DN d W?Cs m X@DL d X@Cu m W{DN d XBDN d XBCs
+m XBDF d XCDJ d XDDL d XGDN d XJDN d XMDL d XNDJ d XODD d XOCs m XMDJ
+d XNDD d XNCu m XJDN d XLDL d XMDF d XMCs m XODF d XQDJ d XRDL d XTDN
+d XXDN d XZDL d X\DJ d X]DD d X]Cs m XZDJ d X\DD d X\Cu m XXDN d XYDL
+d XZDF d XZCs m W{Cs d XECs m XICs d XSCs m XWCs d XaCs m W}DN d W?DL
+m W~DN d W?DJ m W?Cu d W}Cs m W?Cw d W~Cs m XBCw d XCCs m XBCu d XDCs
+m XMCu d XJCs m XMCw d XLCs m XOCw d XQCs m XOCu d XRCs m XZCu d XXCs
+m XZCw d XYCs m X]Cw d X^Cs m X]Cu d X_Cs m W{Ce m XoDN d XoCs m XpDL
+d XpCu m XjDN d XrDN d XrCs m XrDF d XsDJ d XtDL d XwDN d X{DN d X~DL
+d Y@DJ d YADD d YACs m X~DJ d Y@DD d Y@Cu m X{DN d X}DL d X~DF d X~Cs
+m XjCs d XvCs m XzCs d YECs m XlDN d XoDL m XmDN d XoDJ m XoCu d XlCs
+m XoCw d XmCs m XrCw d XsCs m XrCu d XtCs m X~Cu d X{Cs m X~Cw d X}Cs
+m YACw d YCCs m YACu d YDCs m XjCe m YTDi m YTCe m ZCDd d Y?D` d Y{DZ
+d YwDR d YuDH d YuDA d YwCw d Y{Co d Y?Ci d ZCCe m Y{DX d YyDR d YwDJ
+d YwC? d YyCw d Y{Cq m Y?D` d Y}D\ d Y{DV d YyDJ d YyC? d Y{Cs d Y}Cm
+d Y?Ci m YrCe m ZSDN d ZSCe m ZTDL d ZTCg m ZNDN d ZVDN d ZVCe m ZVDH
+d ZWDL d ZZDN d Z^DN d ZbDL d ZeDH d ZgDC d ZgC? d ZeCy d ZbCu d Z^Cs
+d ZZCs d ZWCu d ZVCy m ZdDH d ZeDD d ZeC} d ZdCy m Z^DN d ZaDL d ZbDJ
+d ZdDD d ZdC} d ZbCw d ZaCu d Z^Cs m ZNCe d ZZCe m ZPDN d ZSDL m ZQDN
+d ZSDJ m ZSCg d ZPCe m ZSCi d ZQCe m ZVCi d ZWCe m ZVCg d ZYCe m ZNCe
+m Z{D\ d Z{DX d [@DX d [@D\ d Z{D\ m Z~D\ d Z~DX m Z{DZ d [@DZ m Z{DN
+d Z{Cs m Z~DL d Z~Cu m ZtDN d [@DN d [@Cs m ZtCs d [GCs m ZwDN d Z{DL
+m ZyDN d Z{DJ m Z{Cu d ZwCs m Z{Cw d ZyCs m [@Cw d [BCs m [@Cu d [ECs
+m ZtCe m [QDN d [`Cs m [RDN d [bCs m [TDN d [dCs m [bDL d [RCu m [MDN
+d [XDN m []DN d [gDN m [MCs d [WCs m [\Cs d [gCs m [ODN d [RDL m [WDN
+d [TDL m [_DN d [bDL m [eDN d [bDL m [RCu d [OCs m [RCu d [UCs m [`Cu
+d []Cs m [bCu d [eCs m [MCe m [wDC d \IDC d \IDF d \HDJ d \FDL d \ADN
+d [~DN d [yDL d [uDH d [tDC d [tC? d [uCy d [yCu d [~Cs d \ACs d \FCu
+d \ICy m \HDD d \HDF d \FDJ m [wDH d [uDD d [uC} d [wCy m \FDC d \FDH
+d \DDL d \ADN m [~DN d [zDL d [yDJ d [wDD d [wC} d [yCw d [zCu d [~Cs
+m [rCe m \\D\ d \\Cs m \_DZ d \_Cu m \UD\ d \aD\ d \aCs m \UCs d \hCs
+m \XD\ d \\DZ m \ZD\ d \\DX m \\Cu d \XCs m \\Cw d \ZCs m \aCw d \cCs
+m \aCu d \fCs m \UCe m ]BDJ d ]DDN d ]DDF d ]BDJ d ]@DL d \}DN d \uDN
+d \rDL d \pDJ d \pDF d \rDC d \uDA d \~C? d ]BC} d ]DCw m \rDL d \pDF
+m \rDD d \uDC d \~DA d ]BC? m ]DC} d ]BCu m \pDJ d \rDF d \uDD d \~DC
+d ]BDA d ]DC} d ]DCw d ]BCu d \~Cs d \wCs d \tCu d \rCw d \pC{ d \pCs
+d \rCw m \nCe m ]SDd d ]WD` d ][DZ d ]_DR d ]aDH d ]aDA d ]_Cw d ][Co
+d ]WCi d ]SCe m ][DX d ]]DR d ]_DJ d ]_C? d ]]Cw d ][Cq m ]WD` d ]YD\
+d ][DV d ]]DJ d ]]C? d ][Cs d ]YCm d ]WCi m ]OCe m Ukes d UkeJ d UseJ
+m Umeq d UmeL m Uges d Uoes d UoeJ m Uke_ d Ujec d Ugee d Udee d U_ec
+d U\e_ d U[eZ d U[eV d U\eP d U_eL d UdeJ d UgeJ d UjeL d UkeP m U^e_
+d U\e\ d U\eT d U^eP m Udee d Uaec d U_ea d U^e\ d U^eT d U_eN d UaeL
+d UdeJ m Uhes d Ukeq m Ujes d Ukeo m UoeN d UpeJ m UoeL d UreJ m UYd|
+m VDeZ d VVeZ d VVe] d VUea d VSec d VNee d VKee d VFec d VCe_ d VAeZ
+d VAeV d VCeP d VFeL d VKeJ d VNeJ d VSeL d VVeP m VUe\ d VUe] d VSea
+m VDe_ d VCe\ d VCeT d VDeP m VSeZ d VSe_ d VRec d VNee m VKee d VHec
+d VFea d VDe\ d VDeT d VFeN d VHeL d VKeJ m U?d| m Vdee d VoeJ m Vfee
+d VoeN m Vhee d VpeN m Vyec d VpeN d VoeJ m Vcee d Vmee m Vree d V|ee
+m Vcee d Vhea m Vkee d Vhec m Vvee d Vyec m V{ee d Vyec m Vcd| m WNe{
+d WNeB m WTe{ d WTeB m W[ei d W[ek d WYek d WYeg d W\eg d W\ek d W[eo
+d WYeq d WTes d WNes d WIeq d WFem d WFeg d WGec d WLe_ d WVe\ d WYeZ
+d W[eV d W[eP d WYeL m WGeg d WIec d WLea d WVe] d WYe\ d W[eX m WIeq
+d WGem d WGei d WIee d WLec d WVe_ d W[e\ d W\eX d W\eR d W[eN d WYeL
+d WTeJ d WNeJ d WIeL d WGeN d WFeR d WFeV d WIeV d WIeR d WGeR d WGeT
+m WDd| m Wnee d Wnd| m Woec d Wod~ m Wiee d Wqee d Wqd| m Wqe_ d Wrec
+d Wuee d Wxee d W}ec d X@e_ d XAeZ d XAeV d X@eP d W}eL d WxeJ d WueJ
+d WreL d WqeP m W~e_ d X@e\ d X@eT d W~eP m Wxee d W{ec d W}ea d W~e\
+d W~eT d W}eN d W{eL d WxeJ m Wid| d Wud| m Wkee d Wnec m Wlee d Wnea
+m Wnd~ d Wkd| m Wne@ d Wld| 
+stroke
+m Wld| m Wqe@ d Wrd| m Wqd~ d Wtd| m Wid| m XVes d XVeo d X[eo d X[es
+d XVes m XYes d XYeo m XVeq d X[eq m XVee d XVeJ m XYec d XYeL m XOee
+d X[ee d X[eJ m XOeJ d XbeJ m XRee d XVec m XTee d XVea m XVeL d XReJ
+m XVeN d XTeJ m X[eN d X]eJ m X[eL d X_eJ m XOd| m Xkee d X{eJ m Xmee
+d X}eJ m Xnee d X~eJ m X}ec d XmeL m Xhee d Xsee m Xxee d YAee m XheJ
+d XreJ m XveJ d YAeJ m Xjee d Xmec m Xree d Xnec m Xzee d X}ec m Y@ee
+d X}ec m XmeL d XjeJ m XmeL d XpeJ m X{eL d XxeJ m X}eL d Y@eJ m Xhd|
+m YTee d YRec d YRea d YTe_ d YWe_ d YYea d YYec d YWee d YTee m YTec
+d YTea d YWea d YWec d YTec m YTeP d YReN d YReL d YTeJ d YWeJ d YYeL
+d YYeN d YWeP d YTeP m YTeN d YTeL d YWeL d YWeN d YTeN m YMd| m Ydf@
+m Ydd| m ZHee d ZHeJ m ZJec d ZJeL m ZCee d ZLee d ZLeJ m ZYea d ZYec
+d ZWec d ZWe_ d Z[e_ d Z[ec d ZYee d ZUee d ZRec d ZNe_ d ZLeZ m ZCeJ
+d ZReJ m ZEee d ZHec m ZGee d ZHea m ZHeL d ZEeJ m ZHeN d ZGeJ m ZLeN
+d ZNeJ m ZLeL d ZPeJ m ZCd| m Zoee d Zjec d Zge_ d ZeeZ d ZeeV d ZgeP
+d ZjeL d ZoeJ d ZreJ d ZveL d ZzeP d Z{eV d Z{eZ d Zze_ d Zvec d Zree
+d Zoee m Zhe_ d Zge\ d ZgeT d ZheP m ZxeP d ZzeT d Zze\ d Zxe_ m Zoee
+d Zkec d Zjea d Zhe\ d ZheT d ZjeN d ZkeL d ZoeJ m ZreJ d ZueL d ZveN
+d ZxeT d Zxe\ d Zvea d Zuec d Zree m Zcd| m [Kee d [PeJ m [Lee d [PeP
+m [Nee d [ReP m [Vee d [ReP d [PeJ m [Vee d [[eJ m [Wee d [[eP m [Vee
+d [Yee d []eP m [aec d []eP d [[eJ m [Hee d [Ree m []ee d [eee m [Hee
+d [Lec m [Pee d [Nec m [^ee d [aec m [dee d [aec m [Hd| m [sf@ m [sd|
+m \Uek d \Uei d \Vei d \Vek d \Uek m \Uem d \Vem d \Xek d \Xei d \Veg
+d \Ueg d \Sei d \Sek d \Ueo d \Veq d \[es d \aes d \feq d \heo d \iek
+d \ieg d \hec d \ce_ d \[e\ d \XeZ d \UeV d \SeP d \SeJ m \feo d \hek
+d \heg d \fec m \aes d \eeq d \fek d \feg d \eec d \ae_ d \[e\ m \SeN
+d \UeP d \XeP d \`eN d \feN d \ieP m \XeP d \`eL d \feL d \heN m \XeP
+d \`eJ d \feJ d \heL d \ieP d \ieT m \Rd| m \{es d \xe_ d \{ec d ]@ee
+d ]Eee d ]Iec d ]Me_ d ]NeZ d ]NeV d ]MeP d ]IeL d ]EeJ d ]@eJ d \{eL
+d \yeN d \xeR d \xeT d \yeV d \{eV d \}eT d \}eR d \{eP d \yeP m ]Ke_
+d ]Me\ d ]MeT d ]KeP m ]Eee d ]Hec d ]Iea d ]Ke\ d ]KeT d ]IeN d ]HeL
+d ]EeJ m \yeT d \yeR d \{eR d \{eT d \yeT m \{es d ]Kes m \{eq d ]Heq
+m \{eo d ]Aeo d ]Heq d ]Kes m \vd| m ]fes d ]aeq d ]^ek d ]]ea d ]]e\
+d ]^eR d ]aeL d ]feJ d ]ieJ d ]neL d ]qeR d ]se\ d ]sea d ]qek d ]neq
+d ]ies d ]fes m ]aeo d ]`ek d ]^ec d ]^eZ d ]`eR d ]aeN m ]neN d ]peR
+d ]qeZ d ]qec d ]pek d ]neo m ]fes d ]ceq d ]aem d ]`ec d ]`eZ d ]aeP
+d ]ceL d ]feJ m ]ieJ d ]leL d ]neP d ]peZ d ]pec d ]nem d ]leq d ]ies
+m ][d| m F\GO d FaGN d FfGU d FkGW d FoGO d FtGU d FyGL d F~GQ d GCGW
+d GHGQ d GLGW d GQGQ d GVG[ d G[GU d G`G` d GeGY d GiG[ d GnG` d GsG`
+d GxGf d G}Gf d HAG^ d HFGh d HKGm d HPGi d HUGo d HZGq d H^Gk d HcGo
+d HhGu d HmGq d HrGm d HwGq d H{Gq d I@GU d IEFw d IJHi d IOIU d ISHO
+d IXGo d I]Go d IbGv d IgGq d IlGs d IpGq d IuGq d IzG~ d I?G| d JDG|
+d JIHG d JMHC d JRHG d JWH] d J\Hl d JaHw d JeHn d JjHe d JoHg d JtHj
+d JyHw d J~IH d KBIb d KGIo d KLI^ d KQIH d KVIA d KZI^ d K_JM d KdJg
+d KiJR d KnJ@ d KsIo d KwIs d K|I~ d LAJD d LFJE d LKJ@ d LPJG d LTI|
+d LYIs d L^Ib d LcJE d LhJT d LlJZ d LqIs d LvIJ d L{Ht d M@Hn d MEHa
+d MIHX d MNHT d MSHR d MXH_ d M]Hi d MbHj d MfHr d MkHt d MpHg d MuHj
+d MzHt d M~H{ d NCIC d NHIF d NMIA d NRIC d NWIF d N[IY d N`Ih d NeIY
+d NjIY d NoIU d NtI[ d NxI] d N}IW d OBIU d OGIL d OLIJ d OPIJ d OUID
+d OZID d O_IH d OdIN d OiIY d OmI` d OrIj d OwIs d O|JD d PAJM d PEJO
+d PJJO d POJP d PTJV d PYJe d P^Jr d PbKP d PgKm d PlLG d PqLn d PvMN
+d P{MJ d P?ME d QDL} d QIME d QNMn d QSON d QWPm d Q\PO d QaNe d QfMT
+d QkMG d QpND d QtNn d QyNX d Q~Mf d RCLt d RHLD d RMK] d RQKD d RVJn
+d R[J\ d R`JM d ReIw d RiIj d RnIf d RsI] d RxI` d R}Iw d SBJD d SFIw
+d SKIk d SPIh d SUIh d SZIj d S_J@ d ScJK d ShJP d SmJZ d SrJR d SwJM
+d S{JD d T@JM d TEJa d TJJt d TOJt d TTJc d TXJR d T]JM d TbIu d TgIz
+d TlIo d TpIx d TuIz d TzIq d T?Ix d UDIh d UIIh d UMIj d URI~ d UWJP
+d U\Jp d UaJw d UfKF d UjKF d UoKb d UtLa d UyLt d U~MH d VBMP d VGMa
+d VLMH d VQMC d VVMn d V[NK d V_Nc d VdOj d ViPp d VnO~ d VsOd d VxN?
+d V|Mw d WAMU d WFLr d WKLV d WPL^ d WTLt d WYLp d W^Lz d WcL{ d WhMT
+d WmNa d WqPx d WvS{ d W{Vm d X@W} d XEWe d XJWe d XNWl d XSWc d XXWp
+d X]XD d XbXo d XfXh d XkXm d XpXv d XuZq d Xz]n d X?_@ d YC^{ d YH^E
+d YM]n d YR]^ d YW]Z 
+stroke
+m YW]Z d Y\^U d Y``P d YebK d YjcO d Yocb d YtcY d YxcZ d Y}cd d ZBcs
+d ZGdZ d ZLdZ d ZQbf d ZU_p d ZZ]Z d Z_[c d ZdYK d ZiVx d ZmWI d ZrXS
+d ZwWP d Z|UZ d [AUC d [FUC d [JSc d [ORK d [TQY d [YQf d [^Se d [cUa
+d [gVQ d [lVF d [qTg d [vRH d [{Pi d [?PM d \DNv d \IMN d \NKx d \SKk
+d \XKj d \\Kw d \aLI d \fLz d \kM_ d \pMY d \uL? d \yLO d \~L\ d ]CLa
+d ]HLl d ]MMT d ]QME d ]VLV d ][Kx d ]`Kj d ]eKF d ]jJ{ d ]nJ{ d ]sJj
+d ]xJa d ]}J@ d ^BIw d ^GI| d ^KIz d ^PIj d ^UIx d ^ZJB d ^_Iu d ^cIj
+d ^hIk d ^mIh d ^rI^ d ^wIb d ^|Im d _@Ij d _EIY d _JIY d _OI[ d _TId
+d _XIu d _]JD d _bJO d _gJV d _lJ] d _qJI d _uJB d _zJG d _?Iz d `DIz
+d `IIk d `NId d `RId d `WIk d `\Ij d `aIf d `fIx d `jJM d `oJX d `tJi
+d `yJi d `~Ji d aCJw d aGJy d aLJw d aQJv d aVJy d a[KC d a`KF d adKL
+d aiKN d anKN d asKD d axJr d a|Jj d bAJi d bFJ\ d bKJM d bPJ\ d bUJi
+d bYJw d b^KL d bcKQ d bhK[ d bmK] d brKY d bvKw d b{Ln d c@Mq d cENI
+d cJM{ d cOMb d cSMP d cXMY d c]NX d cbNt d cgNX d ckMs d cpMY d cuLx
+d czLV d c?Kw d dDK^ d dHK] d dMKf d dRKw d dWLI d d\L@ d daKf d deKD
+d djJa d doJg d dtKL d dyKs d d}Ks d eBKL d eGJy d eLJt d eQJZ d eUJG
+d eZI| d e_Iq d edId d eiI^ d enIP d esIF d ewID d e|IC d fAH? d fFIC
+d fKHy d fOHr d fTIJ d fYIP d f^IP d fcIY d fhI^ d flIm d fqI^ d fvIN
+d f{IN d g@IC d gDHr d gIHe d gNHn d gSHv d gXH} d g]H? d gaIL d gfIU
+d gkIh d gpJB d guIz d gzIf d g~Id d hCIU d hHIJ d hMID d hRIC d hVIH
+d h[H? d h`H{ d heHl d hjHT d hoHG d hsHC d hxHV d h}He d iBHn d iGHv
+d iLH{ d iPHr d iUHa d iZHc d i_Ha d idHT d ihHO d imHK d irHE d iwHI
+d i|HG d jAHG d jEHB d jJG~ d jOHE d jTHG d jYHB d j^G~ d jbHB d jgG|
+d jlGz d jqGv d jvGx d jzGz d j?Gq d kDGq d kIGk d kNGq d kSGi d kWGf
+d k\Gf d kaGf d kfGd d kkG` d koGY d ktG\ d kyG\ d k~G\ d lCG[ d lHG`
+d lLG^ d lQG\ d lVG^ d l[G^ d l`GS d leG[ d liGU d lnGQ d lsGY d lxGO
+d l}GQ 
+stroke
+/Times-Roman findfont 24 scalefont setfont
+initmatrix
+-1 72 mul 300 div 1 72 mul 300 div scale
+-2409 88 translate
+1600 3150 moveto
+[1 0 0 -1 0 0] concat
+(NOAO/IRAF  sontag@barabbas.stsci.edu  Tue Nov 15 15:43:21 2011
+) show
+showpage

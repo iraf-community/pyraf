@@ -6,8 +6,8 @@
 __pycache__
 
 # Other generated files
-*/version.py
-*/cython_version.py
+lib/pyraf/version.py
+login.cl*
 htmlcov
 .coverage
 MANIFEST
@@ -43,6 +43,10 @@ distribute-*.tar.gz
 .tox
 .*.sw[op]
 *~
+cmd*.cl
+.pytest_cache/
+clcache.v2
+uparm
 
 # Mac OSX
 .DS_Store
