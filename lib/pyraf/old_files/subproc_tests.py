@@ -17,7 +17,7 @@ def test(fout=sys.stdout):
     try:
         # grab stderr just to make sure the error message still appears
         b = Subprocess('/', 1, expire_noisily=1)
-        assert b.wait(1) is True, 'How is this still alive after 1 sec?'
+        assert b.wait(1), 'How is this still alive after 1 sec?'
     except SubprocessError:
         print("\t...yep, it failed.")
     print('\tWrite, then read, two newline-terminated lines, using readline:')
