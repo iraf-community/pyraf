@@ -10,7 +10,7 @@ from .utils import HAS_IRAF
 
 if HAS_IRAF:
     from pyraf.irafpar import IrafParList
-    from pyraf.subproc import Subprocess, SubprocessError
+    from pyraf.subproc import Subprocess
     from stsci.tools import basicpar
     from stsci.tools.basicpar import parFactory
 
@@ -21,15 +21,9 @@ def _proc():
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-@pytest.mark.xfail(reason="Child does not raise SubproccesError: It only "
-                          "prints the error received from a raised exception.")
-def test_subproc_raise_on_impossible_execution():
-    """Raise on failure to execute process
-    (It doesn't though...)
-    """
-    with pytest.raises(SubprocessError):
-        proc = Subprocess('/', 1, expire_noisily=1)
-        proc.wait(1)
+def test_subproc_wait():
+    proc = Subprocess('/', 1, expire_noisily=1)
+    assert proc.wait(1), 'How is this still alive after 1 sec?'
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
