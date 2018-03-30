@@ -2,6 +2,7 @@ PyRAF
 =====
 
 .. image:: https://ssbjenkins.stsci.edu/buildStatus/icon?job=STScI/pyraf/master
+    :target: https://ssbjenkins.stsci.edu/job/STScI/job/pyraf/job/master/
     :alt: Jenkins CI status
 
 PyRAF is a command language for IRAF based on the Python scripting language
