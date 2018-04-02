@@ -2710,7 +2710,7 @@ def clPrint(*args):
     for n, arg in enumerate(args, start=1):
         print(arg, end='')
         # add separator space, except after string arguments and at the end
-        if n < nargs and not isinstance(arg, str): print(end=' ')
+        if n < nargs and not isinstance(arg, (str, unicode)): print(end=' ')
     print()
 
 # printf format conversion utilities
