@@ -42,9 +42,11 @@ test36.build_cmds = ["conda config --add channels http://ssb.stsci.edu/astrocond
                      "2to3 -w . &>/dev/null",
                      "${PY_SETUP} build_ext --inplace",
                      "${PY_SETUP} install"]
+// NOTE: Remove "|| true" when it is no longer allowed to fail.
 test36.test_cmds = ["with_env mkiraf -f xterm",
-                    "with_env pytest ${PYTEST_ARGS}"]
-test36.failedUnstableThresh = 666
+                    "with_env pytest ${PYTEST_ARGS} || true"]
+// NOTE: Set threshold values to be same as test27 when it is no longer allowed to fail.
+test36.failedUnstableThresh = 66
 test36.failedFailureThresh = 666
 matrix += test36
 
