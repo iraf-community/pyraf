@@ -14,7 +14,7 @@ matrix = []
 // Define each build configuration, copying and overriding values as necessary.
 
 // RUN ONCE:
-//    PyRAF is technically 2.7-only. Don't bother testing with >2.7.
+//    PyRAF is technically 2.7-only.
 test27 = new BuildConfig()
 test27.nodetype = "linux-stable"
 test27.build_mode = "test-suite"
@@ -29,6 +29,24 @@ test27.test_cmds = ["with_env mkiraf -f xterm",
 test27.failedUnstableThresh = 1
 test27.failedFailureThresh = 6
 matrix += test27
+
+// RUN ONCE:
+//    Also test in PY3 but allow it to fail.
+test36 = new BuildConfig()
+test36.nodetype = "linux-stable"
+test36.build_mode = "test-suite-py3"
+test36.env_vars = ['PYRAF_NO_DISPLAY=1']
+test36.build_cmds = ["conda config --add channels http://ssb.stsci.edu/astroconda",
+                     "${CONDA_INST} python=3.6 iraf-all six d2to1 stsci.distutils",
+                     "${CONDA_INST} --only-deps pyraf",
+                     "2to3 -w . &>/dev/null",
+                     "${PY_SETUP} build_ext --inplace",
+                     "${PY_SETUP} install"]
+test36.test_cmds = ["with_env mkiraf -f xterm",
+                    "with_env pytest ${PYTEST_ARGS}"]
+test36.failedUnstableThresh = 666
+test36.failedFailureThresh = 666
+matrix += test36
 
 // RUN ONCE:
 //    "sdist" is agnostic enough to work without any dependencies
