@@ -1,15 +1,17 @@
 """These were tests under cli in pandokia."""
 from __future__ import absolute_import, division
 
-import sys
-import traceback
-
 import pytest
 
 from .utils import diff_outputs, HAS_IRAF
 
 if HAS_IRAF:
-    from pyraf import iraf, sscanf
+    from pyraf import iraf
+
+    try:
+        from pyraf import sscanf  # C-extension
+    except ImportError:
+        sscanf = None
 
     # Turn off the test probe output since it comes with
     # path info that is ever changing
