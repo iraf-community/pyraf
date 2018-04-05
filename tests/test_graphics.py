@@ -56,7 +56,7 @@ tkinter use unattempted.
 """
     REF[('2', 'darwin')] = REF[('2', 'linux')].replace('linux2', 'darwin')
 
-    REF[('3', 'linux')] = """python ver = 3<skipped>
+    REF[('3', 'linux')] = """python ver = 3.6
 platform = linux
 PY3K = True
 c.OF_GRAPHICS = False
