@@ -17,7 +17,7 @@ matrix = []
 //    PyRAF is technically 2.7-only.
 test27 = new BuildConfig()
 test27.nodetype = "linux-stable"
-test27.build_mode = "test-suite"
+test27.name = "test-suite"
 test27.env_vars = ['PYRAF_NO_DISPLAY=1']
 test27.build_cmds = ["conda config --add channels http://ssb.stsci.edu/astroconda",
                      "${CONDA_INST} python=2.7 iraf-all six",
@@ -34,7 +34,7 @@ matrix += test27
 //    Also test in PY3 but allow it to fail.
 test36 = new BuildConfig()
 test36.nodetype = "linux-stable"
-test36.build_mode = "test-suite-py3"
+test36.name = "test-suite-py3"
 test36.env_vars = ['PYRAF_NO_DISPLAY=1']
 test36.build_cmds = ["conda config --add channels http://ssb.stsci.edu/astroconda",
                      "${CONDA_INST} python=3.6 iraf-all six d2to1 stsci.distutils",
@@ -54,7 +54,7 @@ matrix += test36
 //    "sdist" is agnostic enough to work without any dependencies
 sdist = new BuildConfig()
 sdist.nodetype = "linux-stable"
-sdist.build_mode = "sdist"
+sdist.name = "sdist"
 sdist.build_cmds = ["${PY_SETUP} sdist"]
 matrix += sdist
 
@@ -72,7 +72,7 @@ for (python_ver in matrix_python) {
 
         install = new BuildConfig()
         install.nodetype = "linux-stable"
-        install.build_mode = "install ${DEPS}"
+        install.name = "install ${DEPS}"
         install.build_cmds = ["${CONDA_INST} ${DEPS}",
                               "${PY_SETUP} egg_info",
                               "${PY_SETUP} install",
@@ -94,7 +94,7 @@ for (python_ver in matrix_python) {
 
     install_pypi = new BuildConfig()
     install_pypi.nodetype = "linux-stable"
-    install_pypi.build_mode = "install ${python_ver}-DEV"
+    install_pypi.name = "install ${python_ver}-DEV"
 
     // 2.7 doesn't work with Astropy-dev, so skip it.
     if (python_ver == "2.7") {
