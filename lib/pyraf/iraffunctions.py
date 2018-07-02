@@ -914,7 +914,7 @@ def listVars(prefix="", equals="\t= "):
 @handleRedirAndSaveKwds
 def gripes():
     """ Hide the system call - direct the user to support """
-    print("Please email your concern directly to support@stsci.edu")
+    print("Please report your concern directly to https://hsthelp.stsci.edu")
 gripe = gripes
 
 @handleRedirAndSaveKwds

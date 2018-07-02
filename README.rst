@@ -17,3 +17,6 @@ If you are in a great hurry and are installing a stand-alone PyRAF download,
 visit:
 
       http://www.stsci.edu/resources/software_hardware/pyraf/pyraf_install_src.html
+
+For questions or help please visit our user support site at
+https://hsthelp.stsci.edu.
