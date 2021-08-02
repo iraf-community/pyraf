@@ -103,8 +103,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
 
         self.__doIdleRedraw = 0
 
-    # show and draw could be defined to catch events before passing through
-#   def show(self):  tkagg.FigureCanvasTkAgg.show(self)
+    # draw could be defined to catch events before passing through
 #   def draw(self):  tkagg.FigureCanvasTkAgg.draw(self)
 
     def wrappedRedrawOrResize(self, w=None, h=None):
