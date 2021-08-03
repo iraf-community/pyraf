@@ -917,7 +917,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
         if not self.wcs:
             self.errorMessage("Error: can't append to a nonexistent plot!")
-            raise IrafError
+            raise IrafError()
         if self.returnData:
             self.returnData = self.returnData + self.wcs.pack()
         else:

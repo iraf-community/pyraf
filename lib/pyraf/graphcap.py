@@ -96,7 +96,7 @@ class GraphCap(filecache.FileCache):
         thedict = self.get()
         if not key in thedict:
             print "Error: device not found in graphcap"
-            raise KeyError
+            raise KeyError()
         return Device(thedict, key)
 
     def has_key(self, key): return self._has(key)

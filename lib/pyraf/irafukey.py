@@ -62,10 +62,10 @@ def ukey():
 
     if not char:
         # on control-C, raise KeyboardInterrupt
-        raise KeyboardInterrupt
+        raise KeyboardInterrupt()
     elif char == '\004':
         # on control-D, raise EOF
-        raise EOFError
+        raise EOFError()
     elif ord(char) <= ord(' '):
         # convert to octal ascii representation
         returnStr = '\\'+"%03o" % ord(char)

@@ -269,7 +269,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         wutil.closeGraphics()
 
         # leave
-        raise SystemExit
+        raise SystemExit()
 
     def do_logfile(self, line='', i=0):
         """Start or stop logging commands"""

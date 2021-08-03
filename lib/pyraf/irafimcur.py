@@ -72,13 +72,13 @@ def imcur(displayname=None):
             sys.__stdout__.write("%s\n" % (result,))
             sys.__stdout__.flush()
         if result == 'EOF':
-            raise EOFError
+            raise EOFError()
         x, y, wcs, key = result.split()
 
         if key in [r'\004', r'\032']:
             # ctrl-D and ctrl-Z are treated as EOF
             # Should ctrl-C raise a KeyboardInterrupt?
-            raise EOFError
+            raise EOFError()
         elif key == ':':
             sys.stdout.write(": ")
             sys.stdout.flush()

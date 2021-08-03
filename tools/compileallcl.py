@@ -170,7 +170,7 @@ if __name__ == '__main__':
             usage()
         else:
             print "Program bug, unknown option", opt
-            raise SystemExit
+            raise SystemExit()
 
     # find pyraf directory
     for p in sys.path:

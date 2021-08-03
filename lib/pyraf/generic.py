@@ -85,7 +85,7 @@ class GenericScanner:
 
     def error(self, s, pos):
         print "Lexical error at position %s" % pos
-        raise SystemExit
+        raise SystemExit()
 
     def tokenize(self, s):
         pos = 0
@@ -270,7 +270,7 @@ class GenericParser:
     def error(self, token, value=None):
         print "Syntax error at or near `%s' token" % token
         if value is not None: print str(value)
-        raise SystemExit
+        raise SystemExit()
 
     def parse(self, tokens):
         tree = {}
@@ -526,7 +526,7 @@ class GenericASTTraversal:
                     self.exitrules[name[2:-5]] = getattr(self, name)
 
     def prune(self):
-        raise GenericASTTraversalPruningException
+        raise GenericASTTraversalPruningException()
 
     def preorder(self, node=None):
         if node is None:

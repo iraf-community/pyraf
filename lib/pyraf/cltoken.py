@@ -80,7 +80,7 @@ class Token(compmixin.ComparableMixin):
                 return rv
 
     def __getitem__(self, i):
-        raise IndexError
+        raise IndexError()
 
     def __len__(self):
         return 0

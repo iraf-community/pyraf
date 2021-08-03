@@ -181,7 +181,7 @@ else:
                 _pyrafglobals._use_ecl = True
             else:
                 print "Program bug, uninterpreted option", opt
-                raise SystemExit
+                raise SystemExit()
 
     if "epyraf" in sys.argv[0]:  # See also -e and --ecl switches
         _pyrafglobals._use_ecl = True

@@ -70,7 +70,7 @@ try:
         # ONLY if an XWindow was successfully initialized.
         #  WJH (10June2004)
         if xutil.getFocalWindowID() == -1:
-            raise EnvironmentError
+            raise EnvironmentError()
 
         # Successful intialization. Reset dummy methods with
         # those from 'xutil' now.

@@ -938,7 +938,7 @@ class IrafProcess:
         msg = self.msg
         try:
             i = msg.find(",",5)
-            if i<0 or msg[-2:] != ")\n": raise ValueError
+            if i<0 or msg[-2:] != ")\n": raise ValueError()
             chan = int(msg[5:i])
             nbytes = int(msg[i+1:-2])
             self.msg = ''

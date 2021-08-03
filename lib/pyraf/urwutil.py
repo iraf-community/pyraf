@@ -240,12 +240,12 @@ class MenuItem(urwid.Text):
         if key == "enter" or \
            key == "ctrl m" or key == " ": # is ctrl-m on OSX; also allow space
             self.state = True
-            raise DialogExit, 0
+            raise DialogExit(0)
         return key
     def mouse_event(self,size,event,button,col,row,focus):
         if event=='mouse release':
             self.state = True
-            raise DialogExit, 0
+            raise DialogExit(0)
         return False
     def get_state(self):
         return self.state

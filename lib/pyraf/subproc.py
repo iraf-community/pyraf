@@ -828,9 +828,9 @@ class RedirProcess(Subprocess):
                             # broken pipe may be OK
                             # just call it an EOF and see what happens
                             if errnum == errno.EPIPE:
-                                raise EOFError
+                                raise EOFError()
                             else:
-                                raise (errnum, msg)
+                                raise
                     else:
                         # EOF if readline returns null
                         os.close(self.toChild)
