@@ -71,7 +71,7 @@ def compileall():
         printcenter("pass %d: %d packages (%d new)" %
                 (npass,len(pkg_list),len(pkg_list)-npkg_total), char="=")
         for pkg in pkg_list:
-            if not pkgs_tried.has_key(pkg):
+            if pkg not in pkgs_tried:
                 pkgs_tried[pkg] = 1
                 npkg_new = npkg_new+1
                 printcenter(pkg)
@@ -103,7 +103,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                 # load tasks after each package
                 task_list = sorted(iraf.getTaskList())
                 for taskname in task_list:
-                    if not tasks_tried.has_key(taskname):
+                    if taskname not in tasks_tried:
                         tasks_tried[taskname] = 1
                         taskobj = iraf.getTask(taskname)
                         if isinstance(taskobj, IrafCLTask) and \

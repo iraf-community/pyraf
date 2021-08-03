@@ -184,7 +184,7 @@ def Init(doprint=1,hush=0,savefile=None):
             try:
                 d = _getIrafEnv()
                 for key, value in d.items():
-                    if not key in _os.environ:
+                    if key not in _os.environ:
                         _os.environ[key] = value
                 iraf = _os.environ['iraf']
                 arch = _os.environ['IRAFARCH']
@@ -594,9 +594,12 @@ def load(pkgname,args=(),kw=None,doprint=1,hush=0,save=1):
     else:
         p = getPkg(pkgname)
     if kw is None: kw = {}
-    if not '_doprint' in kw: kw['_doprint'] = doprint
-    if not '_hush' in kw: kw['_hush'] = hush
-    if not '_save' in kw: kw['_save'] = save
+    if '_doprint' not in kw:
+        kw['_doprint'] = doprint
+    if '_hush' not in kw:
+        kw['_hush'] = hush
+    if '_save' not in kw:
+        kw['_save'] = save
     p.run(*tuple(args), **kw)
 
 # -----------------------------------------------------
@@ -610,8 +613,10 @@ def run(taskname,args=(),kw=None,save=1):
     else:
         t = getTask(taskname)
     if kw is None: kw = {}
-    if not '_save' in kw: kw['_save'] = save
-##     if not '_parent' in kw: kw['parent'] = "'iraf.cl'"
+    if '_save' not in kw:
+        kw['_save'] = save
+    #  if '_parent' not in kw:
+    #      kw['parent'] = "'iraf.cl'"
     t.run(*tuple(args), **kw)
 
 
@@ -2132,7 +2137,7 @@ def stty(terminal=None, **kw):
         set(terminal=expkw['terminal'])
         # They are setting the terminal type.  Let's at least try to
         # get the dimensions if not given. This is more than the CL does.
-        if (not 'nlines' in kw) and (not 'ncols' in kw) and \
+        if ('nlines' not in kw) and ('ncols' not in kw) and \
            _sys.stdout.isatty():
             try:
                 nlines,ncols = _wutil.getTermWindowSize()
@@ -2656,7 +2661,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
             lp.reverse()
             for pkg in lp:
                 pkgname = pkg.getName()
-                if not pkgname in printed:
+                if pkgname not in printed:
                     printed[pkgname] = 1
                     print('    %s' % pkgname)
             rv1 = (PkgName, PkgBinary)
@@ -3471,7 +3476,7 @@ def redirProcess(kw):
             del kw[key]
     # Now handle IRAF semantics for redirection of stderr to mean stdout
     # also redirects to stderr file handle if Stdout not also specified
-    if 'stderr' in redirKW and not 'stdout' in redirKW:
+    if 'stderr' in redirKW and 'stdout' not in redirKW:
         redirKW['stdout'] = redirKW['stderr']
     return redirKW, closeFHList
 

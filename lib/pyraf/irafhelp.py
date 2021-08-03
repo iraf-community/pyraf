@@ -327,8 +327,8 @@ def _getContents(vlist, regexp, an_obj):
         for c in classlist:
             classlist.extend(list(c.__bases__))
             for vname, value in vars(c).items():
-                if not vname in namedict and \
-                  ((regexp is None) or re_check.match(vname)):
+                if vname not in namedict and (
+                        (regexp is None) or re_check.match(vname)):
                     vorder = _sortOrder(type(value))
                     sortlist[vorder].append((vname,value))
                     namedict[vname] = 1
@@ -425,7 +425,8 @@ def _irafHelp(taskname, irafkw):
         # expand IRAF variables in case this is name of a help file
         taskname = pyraf.iraf.Expand(taskname,noerror=1)
     try:
-        if not 'page' in irafkw: irafkw['page'] = 1
+        if 'page' not in irafkw:
+            irafkw['page'] = 1
         pyraf.iraf.system.help(taskname, **irafkw)
         return 1
     except IrafError as e:

@@ -27,9 +27,9 @@ def search(pattern):
     nomatch = 0
     pmatch = []
     for key in keydict.keys():
-        if db1.has_key(key):
+        if key in db1:
             pycode = db1[key]
-        elif db2.has_key(key):
+        elif key in db2:
             pycode = db2[key]
         else:
             raise Exception("Error: not in cache on second pass??")

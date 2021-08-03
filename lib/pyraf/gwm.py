@@ -51,7 +51,7 @@ class GraphicsWindowManager(gki.GkiProxy):
         number = 1
         while 1:
             windowName = root + str(number)
-            if not windowName in self.windows:
+            if windowName not in self.windows:
                 return windowName
             number = number + 1
 
@@ -61,7 +61,7 @@ class GraphicsWindowManager(gki.GkiProxy):
             windowName = str(windowName).strip()
         if not windowName:
             windowName = self.getNewWindowName()
-        if not windowName in self.windows:
+        if windowName not in self.windows:
             self.windows[windowName] = self.GkiKernelClass(windowName, self)
             self.createList.append(windowName)
         if self.windowVar is None:

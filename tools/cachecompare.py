@@ -24,11 +24,11 @@ ok2 = 0
 diff1 = 0
 diff2 = 0
 for key in dbnew.keys():
-    if dbold1.has_key(key):
+    if key in dbold1:
         oldcode = dbold1[key]
         found1 += 1
         select = 1
-    elif dbold2.has_key(key):
+    elif key in dbold2:
         oldcode = dbold2[key]
         found2 += 1
         select = 2

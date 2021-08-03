@@ -30,7 +30,7 @@ class GkiIrafKernel(gki.GkiKernel):
 
         gki.GkiKernel.__init__(self)
         graphcap = gki.getGraphcap()
-        if not device in graphcap:
+        if device not in graphcap:
             raise iraf.IrafError(
                     "No entry found for specified stdgraph device `%s'" %
                     device)
@@ -39,7 +39,7 @@ class GkiIrafKernel(gki.GkiKernel):
         self.executable = executable = gentry['kf']
         self.taskname = taskname = gentry['tn']
         self.wcs = None
-        if not taskname in _kernelDict:
+        if taskname not in _kernelDict:
             # create special IRAF task object for this kernel
             _kernelDict[taskname] = module.IrafGKITask(taskname, executable)
         self.task = _kernelDict[taskname]

@@ -323,7 +323,7 @@ class CLStrictParser(GenericASTBuilder):
         # one child, but retain a few primary structural
         # elements.
         #
-        if len(args) == 1 and not atype in self.primaryTypes:
+        if len(args) == 1 and atype not in self.primaryTypes:
             return args[0]
         return GenericASTBuilder.nonterminal(self, atype, args)
 

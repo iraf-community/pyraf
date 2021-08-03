@@ -1160,13 +1160,13 @@ def _printDiff(pd1, pd2, label):
                 i2 = i2+1
             else:
                 # one or both parameters missing
-                if not key1 in pd2:
+                if key1 not in pd2:
                     print("Extra %s parameter `%s' (type `%s') in list 1" %
                           (label, key1, pd1[key1][0]))
                     # delete the extra parameter
                     del pd1[key1]
                     i1 = i1+1
-                if not key2 in pd1:
+                if key2 not in pd1:
                     print("Extra %s parameter `%s' (type `%s') in list 2" %
                           (label, key2, pd2[key2][0]))
                     del pd2[key2]
@@ -1302,7 +1302,7 @@ def newSpecialParFile(taskName, pkgName, pathName):
 
     tupKey = (taskName, pkgName)
     if tupKey in _specialUseParFileDict:
-        if not pathName in _specialUseParFileDict[tupKey]:
+        if pathName not in _specialUseParFileDict[tupKey]:
             _specialUseParFileDict[tupKey].append(pathName)
     else:
         _specialUseParFileDict[tupKey] = [pathName,]

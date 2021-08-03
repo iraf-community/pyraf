@@ -82,7 +82,7 @@ def runAllCases(suiteName, resDict):
             print(case+': '+"%.5g" %secs+' secs')
             # add case name to results dict
             if 'case names' in resDict:
-               if not case in resDict['case names']:
+               if case not in resDict['case names']:
                   resDict['case names'].append(case)
             else:
                resDict['case names'] = [case]

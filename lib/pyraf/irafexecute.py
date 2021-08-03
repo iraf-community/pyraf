@@ -284,7 +284,7 @@ class _ProcessCache:
         else:
             for rank, proxy in self._data.values():
                 executable = proxy.process.executable
-                if not executable in self._locked:
+                if executable not in self._locked:
                     self.terminate(executable)
 
     def list(self):

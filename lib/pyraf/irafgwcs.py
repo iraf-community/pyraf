@@ -50,8 +50,8 @@ def init_wcs_sizes(forceResetTo=None):
 
     # Given a value for _WCS_RECORD_SIZE ?
     if forceResetTo:
-        if not forceResetTo in \
-        (WCSRCSZ_vOLD_32BIT, WCSRCSZ_v215_32BIT, WCSRCSZ_v215_64BIT):
+        if forceResetTo not in (
+                WCSRCSZ_vOLD_32BIT, WCSRCSZ_v215_32BIT, WCSRCSZ_v215_64BIT):
             raise IrafError("Unexpected value for wcs record size: "+\
                             str(forceResetTo))
         _WCS_RECORD_SIZE = forceResetTo

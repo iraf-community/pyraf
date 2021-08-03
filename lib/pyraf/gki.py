@@ -1015,7 +1015,7 @@ class GkiController(GkiProxy):
         # protect against circular definitions
         devstr = device
         tried = {devstr: None}
-        while not devstr in graphcap:
+        while devstr not in graphcap:
             pdevstr = devstr
             devstr = pyraf.iraf.envget(pdevstr,"")
             if not devstr:
@@ -1224,7 +1224,7 @@ def getGraphcap(filename=None):
     """Get graphcap file from filename (or cached version if possible)"""
     if filename is None:
         filename = pyraf.iraf.osfn(pyraf.iraf.envget('graphcap','dev$graphcap'))
-    if not filename in graphcapDict:
+    if filename not in graphcapDict:
         graphcapDict[filename] = graphcap.GraphCap(filename)
     return graphcapDict[filename]
 
@@ -1245,7 +1245,7 @@ def printPlot(window=None):
         stdplot = pyraf.iraf.envget('stdplot','')
         if not stdplot:
             msg = "No hardcopy device defined in stdplot"
-        elif not stdplot in graphcap:
+        elif stdplot not in graphcap:
             msg = "Unknown hardcopy device stdplot=`%s'" % stdplot
         else:
             printer = gkiiraf.GkiIrafKernel(stdplot)

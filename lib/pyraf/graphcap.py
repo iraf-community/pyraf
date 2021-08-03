@@ -94,7 +94,7 @@ class GraphCap(filecache.FileCache):
     def __getitem__(self, key):
         """Get up-to-date version of dictionary"""
         thedict = self.get()
-        if not key in thedict:
+        if key not in thedict:
             print("Error: device not found in graphcap")
             raise KeyError()
         return Device(thedict, key)

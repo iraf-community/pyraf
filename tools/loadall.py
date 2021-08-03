@@ -27,7 +27,7 @@ while keepGoing and (ntotal<len(plist)):
     printcenter("pass "+`npass` + " trying " +
             `len(plist)`, char="=")
     for pkg in plist:
-        if not ptried.has_key(pkg):
+        if pkg not in ptried:
             ptried[pkg] = 1
             nnew = nnew+1
             l1 = (70-len(pkg))//2
