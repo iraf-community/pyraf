@@ -595,7 +595,7 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
         if len(ilist) == 1 and v.shape is None:
             try:
                 v.init_value = _convFunc(v, ilist[0])
-            except ValueError, e:
+            except ValueError as e:
                 self.error("Bad initial value for variable `%s': %s" %
                     (v.name, e), node)
         else:
@@ -611,7 +611,7 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
                 try:
                     for i in range(len(v.init_value)):
                         v.init_value[i] = _convFunc(v, v.init_value[i])
-                except ValueError, e:
+                except ValueError as e:
                     self.error("Bad initial value for array variable `%s': %s" %
                         (v.name, e), node)
 
@@ -1376,7 +1376,7 @@ def _convFunc(var, value):
         else:
             try:
                 return value.bool()
-            except AttributeError, e:
+            except AttributeError as e:
                 raise AttributeError(var.name + ':' + str(e))
     raise ValueError("unimplemented type `%s'" % (var.type,))
 
@@ -1628,7 +1628,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
                     try:
                         proclist[i] = v.procLine()
                         deflist[i] = v.parDefLine()
-                    except AttributeError, e:
+                    except AttributeError as e:
                         raise AttributeError(self.filename + ':' + str(e))
             # allow long argument lists to be broken across lines
             self.writeIndent("def " + self.vars.proc_name + "(")
@@ -1662,7 +1662,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             v = self.vars.local_vars_dict[p]
             try:
                 deflist.append(v.parDefLine(local=1))
-            except AttributeError, e:
+            except AttributeError as e:
                 raise AttributeError(self.filename + ':' + str(e))
 
         if deflist:

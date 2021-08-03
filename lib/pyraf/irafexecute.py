@@ -318,7 +318,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
     try:
         # Start 'er up
         irafprocess = processCache.get(task, envdict)
-    except (IrafError, subproc.SubprocessError, IrafProcessError), value:
+    except (IrafError, subproc.SubprocessError, IrafProcessError) as value:
         raise
         raise IrafProcessError("Cannot start IRAF executable\n%s" % value)
 
@@ -352,11 +352,11 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
         # On keyboard interrupt (^C), kill the subprocess
         processCache.kill(irafprocess)
         raise
-    except (IrafError, IrafProcessError), exc:
+    except (IrafError, IrafProcessError) as exc:
         # on error, kill the subprocess, then re-raise the original exception
         try:
             processCache.kill(irafprocess)
-        except Exception, exc2:
+        except Exception as exc2:
             # append new exception text to previous one (right thing to do?)
             exc.args = exc.args + exc2.args
         raise exc
@@ -530,12 +530,12 @@ class IrafProcess:
             self.writeString("bye\n")
             if self.process.wait(0.5):
                 return
-        except (IrafProcessError, subproc.SubprocessError), e:
+        except (IrafProcessError, subproc.SubprocessError) as e:
             pass
         # No more Mr. Nice Guy
         try:
             self.process.die()
-        except subproc.SubprocessError, e:
+        except subproc.SubprocessError as e:
             if Verbose>0:
                 # too bad, if we can't kill it assume it is already dead
                 self.stderr.write("Warning: cannot terminate process %s\n" %
@@ -594,7 +594,7 @@ class IrafProcess:
                                    struct.pack('=h', len(dsection)) +
                                    tobytes(dsection))
                 i = i + block
-        except subproc.SubprocessError, e:
+        except subproc.SubprocessError as e:
             raise IrafProcessError("Error in write: %s" % str(e))
 
     def read(self):
@@ -611,7 +611,7 @@ class IrafProcess:
             # read the rest
             data = self.process.read(nbytes) # read returns bytes
             return data
-        except subproc.SubprocessError, e:
+        except subproc.SubprocessError as e:
             raise IrafProcessError("Error in read: %s" % str(e))
 
     def slave(self):
@@ -772,7 +772,7 @@ class IrafProcess:
         self.msg = self.msg[mcmd.end():]
         try:
             self.task.setParam(paramname,newvalue)
-        except ValueError, e:
+        except ValueError as e:
             # on ValueError, just print warning and then force set
             if Verbose>0:
                 self.stderr.write('Warning: %s\n' % (e,))

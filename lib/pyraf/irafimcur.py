@@ -38,7 +38,7 @@ def _getDevice(displayname=None):
             _devices[imtdev] = irafdisplay.ImageDisplayProxy(imtdev)
         device = _devices[displayname] = _devices[imtdev]
         return device
-    except (KeyError, IOError, OSError), error:
+    except (KeyError, IOError, OSError) as error:
         pass
 
     # last gasp is to assume display is an imtdev string
@@ -84,5 +84,5 @@ def imcur(displayname=None):
             sys.stdout.flush()
             result = result + ' ' + irafutils.tkreadline()[:-1]
         return result
-    except IOError, error:
+    except IOError as error:
         raise IrafError(str(error))

@@ -250,7 +250,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             paramdict = self.getParDict()
             if paramdict._has(paramname,exact=exact):
                 return paramdict[paramname]
-        except minmatch.AmbiguousKeyError, e:
+        except minmatch.AmbiguousKeyError as e:
             # re-raise the error with a bit more info
             raise IrafError("Cannot get parameter `%s'\n%s" %
                             (paramname, str(e)))
@@ -515,7 +515,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             except KeyError:
                 raise IrafError("Could not find task "+task+
                                 " to get parameter "+qualifiedName)
-            except IrafError, e:
+            except IrafError as e:
                 raise IrafError(str(e)+"\nFailed to set parameter "+
                                 qualifiedName)
 
@@ -589,7 +589,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         except KeyError:
             raise IrafError("Could not find task "+task+
                             " to get parameter "+qualifiedName)
-        except IrafError, e:
+        except IrafError as e:
             raise IrafError(str(e)+"\nFailed to get parameter "+
                             qualifiedName)
 
@@ -602,7 +602,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             if paramdict._has(paramname,exact=exact):
                 return self._getParFromDict(paramdict, paramname, pindex,
                                             field, native, mode=mode, prompt=prompt)
-        except minmatch.AmbiguousKeyError, e:
+        except minmatch.AmbiguousKeyError as e:
             # re-raise the error with a bit more info
             raise IrafError("Cannot get parameter `%s'\n%s" %
                             (paramname, str(e)))
@@ -742,7 +742,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         self.initTask()
         try:
             return self.getParam(name,native=1)
-        except SyntaxError, e:
+        except SyntaxError as e:
             raise AttributeError(str(e))
 
     def __setattr__(self,name,value):
@@ -806,7 +806,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         """
         try:
             irafexecute.IrafExecute(self, pyraf.iraf.getVarDict(), **redirKW)
-        except irafexecute.IrafProcessError, value:
+        except irafexecute.IrafProcessError as value:
             raise IrafError("Error running IRAF task "+self._name+
                             "\n"+str(value))
 
@@ -930,7 +930,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             exename1 = pyraf.iraf.Expand(self._filename)
             # get name of executable file without path
             basedir, basename = os.path.split(exename1)
-        except IrafError, e:
+        except IrafError as e:
             if Verbose>0:
                 print >> sys.stderr, "Error searching for executable for: "+\
                          self._name
@@ -955,7 +955,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             for pbin in self._pkgbinary: # e.g. ['bin$']
                 try:
                     exelist.append(pyraf.iraf.Expand(pbin + basename))
-                except IrafError, e:
+                except IrafError as e:
                     if Verbose>0:
                         print >> sys.stderr, "Error finding executable for: "+\
                                  self._name
@@ -994,7 +994,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             exename1 = pyraf.iraf.Expand(self._filename)
             basedir, basename = os.path.split(exename1)
             if basedir=="": basedir = "."
-        except IrafError, e:
+        except IrafError as e:
             if Verbose>0:
                 print >> sys.stderr, "Error expanding executable name for "+\
                          "task "+self._name+", tried: "+self._filename
@@ -1218,12 +1218,12 @@ class ParDictListSearch:
         # try exact match
         try:
             return self._taskObj.getParam(paramname,native=1,mode="h",exact=1)
-        except IrafError, e:
+        except IrafError as e:
             pass
         # try minimum match
         try:
             p = self._taskObj.getParObject(paramname,alldict=1)
-        except IrafError, e:
+        except IrafError as e:
             # not found at all
             raise AttributeError(str(e))
         # it was found, but we don't allow min-match in CL scripts
@@ -1236,12 +1236,12 @@ class ParDictListSearch:
         # try exact match
         try:
             return self._taskObj.getParObject(paramname,exact=1,alldict=1)
-        except IrafError, e:
+        except IrafError as e:
             pass
         # try minimum match
         try:
             p = self._taskObj.getParObject(paramname,alldict=1)
-        except IrafError, e:
+        except IrafError as e:
             # not found at all
             raise AttributeError(str(e))
         # it was found, but we don't allow min-match in CL scripts
@@ -1257,12 +1257,12 @@ class ParDictListSearch:
         # try exact match
         try:
             return self._taskObj.setParam(paramname,value,exact=1)
-        except IrafError, e:
+        except IrafError as e:
             pass
         # try minimum match
         try:
             p = self._taskObj.getParObject(paramname,alldict=1)
-        except IrafError, e:
+        except IrafError as e:
             # not found at all
             raise AttributeError(str(e))
         # it was found, but we don't allow min-match in CL scripts
@@ -1555,7 +1555,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
                     try:
                         matches.extend(p.getAllMatches(name,
                                                 triedpkgs=triedpkgs))
-                    except AttributeError, e:
+                    except AttributeError as e:
                         pass
         return matches
 

@@ -99,7 +99,7 @@ def _open(imtdev=None):
         for imtdev in defaults:
             try:
                 return _open(imtdev)
-            except IOError, error:
+            except IOError as error:
                 pass
         raise IOError("Cannot open image display")
     # substitute user id in name (multiple times) if necessary
@@ -225,7 +225,7 @@ class FifoImageDisplay(ImageDisplay):
             fcntl.fcntl(self._fdin, FCNTL.F_SETFL, os.O_RDONLY)
             self._fdout = os.open(outfile, os.O_WRONLY | os.O_NDELAY)
             fcntl.fcntl(self._fdout, FCNTL.F_SETFL, os.O_WRONLY)
-        except OSError, error:
+        except OSError as error:
             raise IOError("Cannot open image display (%s)" % (error,))
         except AttributeError:
             raise RuntimeError("Image fcntl is not supported on this platform")
@@ -245,7 +245,7 @@ class UnixImageDisplay(ImageDisplay):
             self._socket = socket.socket(family, type)
             self._socket.connect(filename)
             self._fdin = self._fdout = self._socket.fileno()
-        except socket.error, error:
+        except socket.error as error:
             raise IOError("Cannot open image display")
 
     def close(self):
@@ -311,7 +311,7 @@ class ImageDisplayProxy(ImageDisplay):
             # Null value indicates display was probably closed
             if value:
                 return value
-        except IOError, error:
+        except IOError as error:
             pass
         # This error can occur if image display was closed.
         # If a new display has been started then closing and

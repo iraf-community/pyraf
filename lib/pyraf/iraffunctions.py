@@ -753,10 +753,10 @@ def getPkg(pkgname,found=0):
         # undo any modifications to the pkgname
         pkgname = _irafutils.untranslateName(pkgname)
         return _pkgs[pkgname]
-    except _minmatch.AmbiguousKeyError, e:
+    except _minmatch.AmbiguousKeyError as e:
         # re-raise the error with a bit more info
         raise e.__class__("Package "+pkgname+": "+str(e))
-    except KeyError, e:
+    except KeyError as e:
         if found: return None
         raise KeyError("Package `%s' not found" % (pkgname,))
 
@@ -859,7 +859,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
                 else:
                     _writeError('Package %s has not been loaded' %
                             pthis.getName())
-            except KeyError, e:
+            except KeyError as e:
                 _writeError(str(e))
     if not len(pkgdict):
         print('No packages to list')
@@ -926,7 +926,7 @@ def which(*args):
         try:
             print(getTask(arg).getPkgname())
             # or: getTask(arg).getPkgname()+"."+getTask(arg).getName()
-        except _minmatch.AmbiguousKeyError, e:
+        except _minmatch.AmbiguousKeyError as e:
             print(str(e))
         except (KeyError, TypeError):
             if deftask(arg):
@@ -1482,7 +1482,7 @@ def defpar(paramname):
     try:
         value = clParGet(paramname,prompt=0)
         return 1
-    except IrafError, e:
+    except IrafError as e:
         # treat all errors (including ambiguous task and parameter names)
         # as a missing parameter
         return 0
@@ -1652,7 +1652,7 @@ def deftask(taskname):
         import pyraf.iraf
         t = getattr(pyraf.iraf, taskname)
         return 1
-    except AttributeError, e:
+    except AttributeError as e:
         # treat all errors (including ambiguous task names) as a missing task
         return 0
 
@@ -1662,7 +1662,7 @@ def defpac(pkgname):
     try:
         t = getPkg(pkgname)
         return t.isLoaded()
-    except KeyError, e:
+    except KeyError as e:
         # treat all errors (including ambiguous package names) as a missing pkg
         return 0
 
@@ -1919,7 +1919,7 @@ def scan(theLocals, *namelist, **kw):
         else:
             args = (theLocals, repr(line),) + namelist
             return fscan(*args, **kw)
-    except Exception, ex:
+    except Exception as ex:
         print('iraf.scan exception: '+str(ex))
     finally:
         # note return value not used here
@@ -1947,7 +1947,7 @@ def scanf(theLocals, format, *namelist, **kw):
         else:
             args = (theLocals, repr(line), format,) + namelist
             return fscanf(*args, **kw)
-    except Exception, ex:
+    except Exception as ex:
         print('iraf.scanf exception: '+str(ex))
     finally:
         # note return value not used here
@@ -2230,7 +2230,7 @@ def update(*args):
     for taskname in args:
         try:
             getTask(taskname).saveParList()
-        except KeyError, e:
+        except KeyError as e:
             _writeError("Warning: Could not find task %s for update" %
                     taskname)
 
@@ -2246,7 +2246,7 @@ def unlearn(*args, **kw):
     for taskname in args:
         try: # maybe it is an IRAF task name
             getTask(taskname).unlearn()
-        except KeyError, e:
+        except KeyError as e:
             try: # maybe it is a task which uses .cfg files
                 ans = _teal.unlearn(taskname, deleteAll=force)
                 if ans != 0:
@@ -2529,7 +2529,7 @@ def hidetask(*args):
     for taskname in args:
         try:
             getTask(taskname).setHidden()
-        except KeyError, e:
+        except KeyError as e:
             _writeError("Warning: Could not find task %s to hide" %
                     taskname)
 
@@ -2847,9 +2847,9 @@ def printf(format, *args):
     try:
         _sys.stdout.write(format % tuple(args))
         _sys.stdout.flush()
-    except ValueError, e:
+    except ValueError as e:
         raise IrafError(str(e))
-    except TypeError, e:
+    except TypeError as e:
         raise IrafError('%s\nFormat/datatype mismatch in printf '
                 '(format is %s)' % (str(e), `format`))
 
@@ -3033,7 +3033,7 @@ def clArray(array_size, datatype, name="<anonymous>", mode="h",
         return _irafpar.makeIrafPar(init_value, name=name, datatype=datatype,
                 mode=mode, min=min, max=max, enum=enum, prompt=prompt,
                 array_size=array_size, strict=strict)
-    except ValueError, e:
+    except ValueError as e:
         raise ValueError("Error creating Cl array `%s'\n%s" %
                 (name, str(e)))
 

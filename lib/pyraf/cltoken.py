@@ -122,7 +122,7 @@ class Token(compmixin.ComparableMixin):
                     return self.attr
                 else:
                     return _str2int(self.attr)
-            except Exception, e:
+            except Exception as e:
                 print 'Exception', str(e)
                 pass
         raise ValueError("Cannot convert " +

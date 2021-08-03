@@ -92,7 +92,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                         sys.stdout.flush()
                         keepGoing = 0
                         break
-                    except Exception, e:
+                    except Exception as e:
                         sys.stdout.flush()
                         traceback.print_exc()
                         if isinstance(e,MemoryError):
@@ -119,7 +119,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                                 sys.stdout.flush()
                                 keepGoing = 0
                                 break
-                            except Exception, e:
+                            except Exception as e:
                                 sys.stdout.flush()
                                 traceback.print_exc(10)
                                 if isinstance(e,MemoryError):
@@ -159,7 +159,7 @@ if __name__ == '__main__':
         if len(args) > 0:
             print "Error: no positional arguments accepted"
             usage()
-    except getopt.error, e:
+    except getopt.error as e:
         print str(e)
         usage()
     clearcache = 1

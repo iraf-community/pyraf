@@ -143,7 +143,7 @@ class Subprocess:
                 os.execvp(cmd[0], cmd)
                 os._exit(1)                                     # Shouldn't get here
 
-            except os.error, e:
+            except os.error as e:
                 if self.control_stderr:
                     os.dup2(parentErr, 2)           # Reconnect to parent's stderr
                 sys.stderr.write("**execvp failed, '%s'**\n" % str(e))
@@ -168,7 +168,8 @@ class Subprocess:
             try:
                 # this is useless since the child may not have erred yet
                 pid, err = os.waitpid(self.pid, os.WNOHANG)
-            except os.error, (errnum, msg):
+            except os.error as xxx_todo_changeme1:
+                (errnum, msg) = xxx_todo_changeme1.args
                 if errnum == 10:
                     raise SubprocessError("Subprocess '%s' failed." % self.cmd)
                 else:
@@ -230,7 +231,7 @@ class Subprocess:
                         raise SubprocessError("Write error to %s" % self)
                     return                                              # ===>
             raise SubprocessError("Write to %s blocked" % self)
-        except select.error, e:
+        except select.error as e:
             raise SubprocessError(
                     "Select error for %s: file descriptors %s\n%s" %
                     (self,self.toChild_fdlist,str(e)))
@@ -774,7 +775,7 @@ class RedirProcess(Subprocess):
             try:
                 readable, writable, errors = select.select(self.fromChild_fdlist,
                                         self.toChild_fdlist, [], timeout)
-            except select.error, e:
+            except select.error as e:
                 # select error occurs if a file descriptor has been closed
                 # this should not happen -- raise an exception
                 raise SubprocessError(
@@ -820,7 +821,10 @@ class RedirProcess(Subprocess):
                     if s:
                         try:
                             self.write(s) # inside, converts PY3K str to bytes
-                        except IOError, (errnum, msg):
+                        except IOError as xxx_todo_changeme:
+                            # broken pipe may be OK
+                            # just call it an EOF and see what happens
+                            (errnum, msg) = xxx_todo_changeme.args
                             # broken pipe may be OK
                             # just call it an EOF and see what happens
                             if errnum == errno.EPIPE:

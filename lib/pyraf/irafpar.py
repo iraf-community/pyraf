@@ -155,7 +155,7 @@ def makeIrafPar(init_value, datatype=None, name="<anonymous>", mode="h",
             fields[i] = str(fields[i])
     try:
         return IrafParFactory(fields, strict=strict)
-    except ValueError, e:
+    except ValueError as e:
         errmsg = "Bad value for parameter `%s'\n%s" % (name, str(e))
         raise ValueError(errmsg)
 
@@ -299,7 +299,7 @@ class IrafParL(_StringMixin, IrafPar):
                     # EOF -- raise exception
                     raise EOFError("EOF from list parameter `%s'" % self.name)
                 if value[-1:] == "\n": value = value[:-1]
-            except IOError, e:
+            except IOError as e:
                 if not self.errMsg:
                     warning("Unable to read values for list parameter `%s' "
                             "from file `%s'\n%s" %
@@ -698,7 +698,7 @@ class IrafParList(taskpars.TaskPars):
             raise AttributeError(name)
         try:
             return self.getValue(name,native=1)
-        except SyntaxError, e:
+        except SyntaxError as e:
             raise AttributeError(str(e))
 
     def __setattr__(self,name,value):
@@ -750,7 +750,7 @@ class IrafParList(taskpars.TaskPars):
         try:
             param = irafutils.untranslateName(param)
             return self.__pardict[param]
-        except KeyError, e:
+        except KeyError as e:
             raise e.__class__("Error in parameter '" +
                     param + "' for task " + self.__name + "\n" + str(e))
 
@@ -797,7 +797,7 @@ class IrafParList(taskpars.TaskPars):
         try:
             pobj = self.__pardict[param]
             retval[''] = pobj
-        except KeyError, e:
+        except KeyError as e:
             raise e.__class__("Error in parameter '" +
                     param + "' for task " + self.__name + "\n" + str(e))
 
@@ -903,7 +903,7 @@ class IrafParList(taskpars.TaskPars):
                         raise RuntimeError('PSET name non-match; par name: '+ \
                               key+'; got: '+results_dict[psetname].name)
                     dupl_pset_pars.append( (psetname, results_dict[psetname].name, key) )
-            except KeyError, e:
+            except KeyError as e:
                 # Perhaps it is pset.param ? This would occur if the caller
                 # used kwargs like gemcube(..., geofunc.axis1 = 1, ...)
                 # (see help call #3454 for Mark Sim.)
@@ -1477,7 +1477,7 @@ def _readpar(filename,strict=0):
                 par = IrafParFactory(flist, strict=strict)
             except KeyboardInterrupt:
                 raise
-            except Exception, exc:
+            except Exception as exc:
                 #XXX Shouldn't catch all exceptions here -- this could
                 #XXX screw things up
                 if Verbose:

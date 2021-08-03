@@ -77,7 +77,7 @@ def open(filename, flag='c'):
     if PY3K:
         try:
             return shelve.DbfilenameShelf(filename, flag)
-        except Exception, ex: # is dbm.error
+        except Exception as ex: # is dbm.error
             raise dirdbm.error(str(ex))
     else:
        return DirectoryShelf(filename, flag)

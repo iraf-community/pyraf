@@ -298,7 +298,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                 oldlogfile = self.logfile
                 self.logfile = open(filename,oflag)
                 if oldlogfile: oldlogfile.close()
-            except IOError, e:
+            except IOError as e:
                 self.write("error opening logfile %s\n%s\n" % (filename,str(e)))
         return ""
 
@@ -309,7 +309,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         if line[i:] != "":
             try:
                 self.clemulate = int(line[i:])
-            except ValueError, e:
+            except ValueError as e:
                 if self.debug: self.write(str(e)+'\n')
                 pass
         return ""
@@ -321,7 +321,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         if line[i:] != "":
             try:
                 self.complete = int(line[i:])
-            except ValueError, e:
+            except ValueError as e:
                 if self.debug: self.write(str(e)+'\n')
                 pass
         if self.complete:
@@ -339,7 +339,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         if line[i:] != "":
             try:
                 self.debug = int(line[i:])
-            except ValueError, e:
+            except ValueError as e:
                 if self.debug: self.write(str(e)+'\n')
                 pass
         return ""

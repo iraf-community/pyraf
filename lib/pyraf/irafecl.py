@@ -202,7 +202,7 @@ class EclBase:
         if erract.ecl:
             try:
                 return _runcore()
-            except Exception, e:
+            except Exception as e:
                 self._ecl_handle_error(e)
         else:
             return _runcore()

@@ -45,7 +45,7 @@ while keepGoing and (ntotal<len(plist)):
                     print 'Interrupt'
                     keepGoing = 0
                     break
-                except Exception, e:
+                except Exception as e:
                     sys.stdout.flush()
                     traceback.print_exc()
                     if e.__class__ == MemoryError:

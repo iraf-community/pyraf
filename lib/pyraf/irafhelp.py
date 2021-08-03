@@ -163,7 +163,7 @@ Other keywords are passed on to the IRAF help task if it is called.
             else:
                 # this is a Python help function keyword
                 exec(fullkey+' = '+repr(kw[key]))
-        except KeyError, e:
+        except KeyError as e:
             raise e.__class__("Error in keyword "+key+"\n"+str(e))
 
     resetList = pyraf.iraf.redirApply(redirKW)
@@ -428,7 +428,7 @@ def _irafHelp(taskname, irafkw):
         if not 'page' in irafkw: irafkw['page'] = 1
         pyraf.iraf.system.help(taskname, **irafkw)
         return 1
-    except IrafError, e:
+    except IrafError as e:
         print str(e)
         return 0
 

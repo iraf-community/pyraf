@@ -157,9 +157,9 @@ class _irafModuleClass:
         # if that fails, try getting a task with this name
         try:
             return self.module.getTask(attr)
-        except minmatch.AmbiguousKeyError, e:
+        except minmatch.AmbiguousKeyError as e:
             raise AttributeError(str(e))
-        except KeyError, e:
+        except KeyError as e:
             pass
         # last try is minimum match dictionary of rest of module contents
         try:

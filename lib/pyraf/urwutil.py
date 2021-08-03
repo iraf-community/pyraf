@@ -127,7 +127,7 @@ class DialogDisplay:
 
                     if k:
                         self.unhandled_key( size, k)
-        except DialogExit, e:
+        except DialogExit as e:
             return self.on_exit( e.args[0] )
 
     def on_exit(self, exitcode):

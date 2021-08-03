@@ -141,7 +141,7 @@ else:
         if len(args) > 1:
             print 'Error: more than one savefile argument'
             usage()
-    except getopt.error, e:
+    except getopt.error as e:
         print str(e)
         usage()
     verbose = 0

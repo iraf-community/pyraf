@@ -41,7 +41,7 @@ class _Database(object):
                 # create directory if it doesn't exist
                 try:
                     _os.mkdir(directory)
-                except OSError, e:
+                except OSError as e:
                     raise IOError(str(e))
             else:
                 raise IOError("Directory "+directory+" does not exist")
@@ -54,7 +54,7 @@ class _Database(object):
                 fh = __builtin__.open(testfile, 'w')
                 fh.close()
                 _os.remove(testfile)
-            except IOError, e:
+            except IOError as e:
                 raise IOError("Directory %s cannot be opened for writing" %
                         (directory,))
         # initialize dictionary
@@ -106,7 +106,7 @@ class _Database(object):
                 fh = __builtin__.open(fname,'wb')
                 fh.write(value)
                 fh.close()
-            except IOError, e:
+            except IOError as e:
                 # clean up on IO error (e.g., if disk fills up)
                 try:
                     if _os.path.exists(fname):

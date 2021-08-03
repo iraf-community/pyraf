@@ -573,7 +573,7 @@ class NumberTparOption(StringTparOption):
                 self.paramInfo.set(v)
             self.paramInfo.set(self._previousValue)
             return True
-        except ValueError, e:
+        except ValueError as e:
             self.set_candidate("")
             self.inform(str(e))
             return False
@@ -984,7 +984,7 @@ class TparDisplay(Binder):
                 return
             try:
                 f(file, emph)
-            except Exception, e:
+            except Exception as e:
                 self.inform("command '%s' failed with exception '%s'" % (cmd, e))
 
     def save_as(self):
