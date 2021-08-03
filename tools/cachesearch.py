@@ -17,8 +17,8 @@ def search(pattern):
     db1 = pyraf.dirshelve.open(cachename1,'r')
     db2 = pyraf.dirshelve.open(cachename2,'r')
 
-    keys1 = db1.keys()
-    keys2 = db2.keys()
+    keys1 = list(db1.keys())
+    keys2 = list(db2.keys())
     keydict = {}
     for key in db1.keys(): keydict[key] = 1
     for key in db2.keys(): keydict[key] = 1

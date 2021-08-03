@@ -176,8 +176,7 @@ class _ProcessCache:
         If all processes are locked, delete oldest locked process.
         """
         # each entry contains rank (to sort and find oldest) and process
-        values = self._data.values()
-        values.sort()
+        values = sorted(self._data.values())
         if len(self._locked) < len(self._data):
             # find and delete oldest unlocked process
             for rank, proxy in values:
@@ -290,8 +289,7 @@ class _ProcessCache:
 
     def list(self):
         """List processes sorted from newest to oldest with locked flag"""
-        values = self._data.values()
-        values.sort()
+        values = sorted(self._data.values())
         values.reverse()
         n = 0
         for rank, proxy in values:

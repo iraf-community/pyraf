@@ -594,8 +594,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
         menu = self.windowMenu.menu
         winVar = self.manager.getWindowVar()
-        winList = self.manager.windowNames()
-        winList.sort()
+        winList = sorted(self.manager.windowNames())
         # Delete everything past the separator
         menu.delete('1','10000')
         menu.add_separator()

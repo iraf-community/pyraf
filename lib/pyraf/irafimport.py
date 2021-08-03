@@ -179,7 +179,7 @@ class _irafModuleClass:
         """
         if self.module is None: self._moduleInit()
         if taskname == "":
-            matches = self.mmdict.keys()
+            matches = list(self.mmdict.keys())
         else:
             matches = self.mmdict.getallkeys(taskname, [])
         matches.extend(self.module.getAllTasks(taskname))

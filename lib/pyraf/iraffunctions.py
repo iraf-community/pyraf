@@ -534,7 +534,7 @@ def handleRedirAndSaveKwds(target):
         redirKW, closeFHList = redirProcess(kw)
         if '_save' in kw: del kw['_save']
         if len(kw):
-            raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+            raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
         resetList = redirApply(redirKW)
         try:
             # call 'target' to do the interesting work of this function
@@ -771,19 +771,19 @@ def getPkg(pkgname,found=0):
 
 def getTaskList():
     """Returns list of names of all defined IRAF tasks"""
-    return _tasks.keys()
+    return list(_tasks.keys())
 
 def getTaskObjects():
     """Returns list of all defined IrafTask objects"""
-    return _tasks.values()
+    return list(_tasks.values())
 
 def getPkgList():
     """Returns list of names of all defined IRAF packages"""
-    return _pkgs.keys()
+    return list(_pkgs.keys())
 
 def getLoadedList():
     """Returns list of names of all loaded IRAF packages"""
-    return _loaded.keys()
+    return list(_loaded.keys())
 
 def getVarDict():
     """Returns dictionary all IRAF variables"""
@@ -791,7 +791,7 @@ def getVarDict():
 
 def getVarList():
     """Returns list of names of all IRAF variables"""
-    return _varDict.keys()
+    return list(_varDict.keys())
 
 # -----------------------------------------------------
 # listAll, listPkg, listLoaded, listTasks, listCurrent, listVars:
@@ -1771,7 +1771,7 @@ def fscan(theLocals, line, *namelist, **kw):
     else:
         strconv = n*[None]
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
     n_actual = 0        # this will be the actual number of values converted
     for i in range(n):
         # even messier: special handling for struct type variables, which
@@ -1846,7 +1846,7 @@ def fscanf(theLocals, line, format, *namelist, **kw):
         f = ['']
         n = 1
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
     n_actual = 0        # this will be the actual number of values converted
     for i in range(n):
         cmd = namelist[i] + ' = ' + `f[i]`
@@ -2058,7 +2058,7 @@ def clOscmd(s, **kw):
     redirKW, closeFHList = redirProcess(kw)
     if '_save' in kw: del kw['_save']
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
     resetList = redirApply(redirKW)
     try:
         # if first character of s is '!' then force to Bourne shell
@@ -2213,7 +2213,7 @@ def dparam(*args, **kw):
         cl = kw['cl']
         del kw['cl']
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
     for taskname in args:
         try:
             taskname.dParam(cl=cl)
@@ -2242,7 +2242,7 @@ def unlearn(*args, **kw):
         force = kw['force'] in (True, '+', 'yes')
         del kw['force']
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
     for taskname in args:
         try: # maybe it is an IRAF task name
             getTask(taskname).unlearn()
@@ -2358,7 +2358,7 @@ def pyexecute(filename, **kw):
                 "`%s' to `%s'" % (pkgname, spkgname))
         pkgname = spkgname
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
     # execute code in a new namespace (including PkgName, PkgBinary)
     efilename = Expand(filename)
     namespace = {'PkgName': pkgname, 'PkgBinary': pkgbinary,
@@ -2485,7 +2485,7 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     redirKW, closeFHList = redirProcess(kw)
     if '_save' in kw: del kw['_save']
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
     # get the input
     if 'stdin' in redirKW:
         stdin = redirKW['stdin']
@@ -2580,7 +2580,7 @@ def task(*args, **kw):
         raise SyntaxError("More than one `=' in task definition")
     elif len(kw) < 1:
         raise SyntaxError("Must be at least one `=' in task definition")
-    s = kw.keys()[0]
+    s = list(kw.keys())[0]
     value = kw[s]
     # To handle when actual CL code is given, not a file name, we will
     # replace the code with the name of the tmp file that we write it to.
@@ -2646,7 +2646,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
     redirKW, closeFHList = redirProcess(kw)
     if '_save' in kw: del kw['_save']
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
     resetList = redirApply(redirKW)
     try:
         if pkgname is None:
@@ -3053,7 +3053,7 @@ def clExecute(s, locals=None, mode="proc",
 
     redirKW, closeFHList = redirProcess(kw)
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `kw.keys()`)
+        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
     resetList = redirApply(redirKW)
     try:
         global _clExecuteCount

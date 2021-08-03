@@ -487,8 +487,7 @@ class Variable:
             arglist.append("array_size=" + `self.shape`)
         if self.list_flag:
             arglist.append("list_flag=" + `self.list_flag`)
-        keylist = self.options.keys()
-        keylist.sort()
+        keylist = sorted(self.options.keys())
         for key in keylist:
             option = self.options[key]
             if option is not None:
@@ -1153,8 +1152,7 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
 
     def labels(self):
         """Get a list of known labels used in GOTOs"""
-        labels = self.goto_blockidlist.keys()
-        labels.sort()
+        labels = sorted(self.goto_blockidlist.keys())
         return labels
 
     def __contains__(self, key): return self._has(key)
@@ -1644,9 +1642,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # write additional required imports
         wnewline = 0
         if not noHdr:
-            keylist = self.importDict.keys()
+            keylist = sorted(self.importDict.keys())
             if keylist:
-                keylist.sort()
                 self.writeIndent("import ")
                 self.write(", ".join(keylist))
                 wnewline = 1

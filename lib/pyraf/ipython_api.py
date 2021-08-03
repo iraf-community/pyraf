@@ -180,7 +180,7 @@ class IPython_PyRAF_Integrator(object):
             # this is pretty far into IPython, i.e. very breakable
             # lsmagic() returns a dict of 2 dicts: 'cell', and 'line'
             if hasattr(self._ipython_api, 'magics_manager'):
-                self._ipython_magic = self._ipython_api.magics_manager.lsmagic()['line'].keys()
+                self._ipython_magic = list(self._ipython_api.magics_manager.lsmagic()['line'].keys())
             else:
                 print('Please upgrade your version of IPython.')
             pfmgr = self._ipython_api.prefilter_manager

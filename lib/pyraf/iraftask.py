@@ -1541,7 +1541,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
         if self._loaded:
             # tasks in this package
             if name == "":
-                matches.extend(self._tasks.keys())
+                matches.extend(list(self._tasks.keys()))
             else:
                 matches.extend(self._tasks.getallkeys(name, []))
             # tasks in subpackages
@@ -1750,7 +1750,7 @@ class IrafForeignTask(IrafTask):
             del kw['_setMode']
         if len(kw)>0:
             raise ValueError('Illegal keyword parameters %s for task %s' %
-                    (kw.keys(), self._name,))
+                    (list(kw.keys()), self._name,))
         #self._args = args
         # Insure that all arguments passed to ForeignTasks are
         # converted to strings, including objects which are not

@@ -101,8 +101,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                         print("...continuing...\n")
                         sys.stdout.flush()
                 # load tasks after each package
-                task_list = iraf.getTaskList()
-                task_list.sort()
+                task_list = sorted(iraf.getTaskList())
                 for taskname in task_list:
                     if not tasks_tried.has_key(taskname):
                         tasks_tried[taskname] = 1

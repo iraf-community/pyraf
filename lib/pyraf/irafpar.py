@@ -831,7 +831,7 @@ class IrafParList(taskpars.TaskPars):
     def getAllMatches(self,param):
         """Return list of all parameter names that may match param"""
         if param == "":
-            return self.__pardict.keys()
+            return list(self.__pardict.keys())
         else:
             return self.__pardict.getallkeys(param, [])
 
@@ -1145,10 +1145,8 @@ def _printDiff(pd1, pd2, label):
     if pd1 == pd2:
         return
     noextra = 1
-    k1 = pd1.keys()
-    k1.sort()
-    k2 = pd2.keys()
-    k2.sort()
+    k1 = sorted(pd1.keys())
+    k2 = sorted(pd2.keys())
     if k1 != k2:
         # parameter name lists differ
         i1 = 0

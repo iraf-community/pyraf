@@ -82,7 +82,7 @@ class GraphicsWindowManager(gki.GkiProxy):
 
     def windowNames(self):
         """Return list of all window names"""
-        return self.windows.keys()
+        return list(self.windows.keys())
 
     def getWindowVar(self):
         """Return Tk variable associated with selected window"""
@@ -114,7 +114,7 @@ class GraphicsWindowManager(gki.GkiProxy):
                 else:
                     # something's messed up
                     # change to randomly selected active window
-                    wname = self.windows.keys()[0]
+                    wname = list(self.windows.keys())[0]
                 self.windowVar.set(wname)
             wutil.focusController.removeFocusEntity(windowName)
 
