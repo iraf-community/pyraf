@@ -444,7 +444,7 @@ class FocusController:
                 focusTarget.gwidget.focus_set()
 
         current = self.focusStack[-1]
-        if type(focusTarget) == type(""):
+        if isinstance(focusTarget, type("")):
             next = self.focusEntities[focusTarget]
         else:
             next = focusTarget

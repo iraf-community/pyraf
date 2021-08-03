@@ -109,7 +109,7 @@ def describe(func, name = None):
     a = describeParams(func)
     args = []
     for arg in a:
-        if type(arg) == type(""):
+        if isinstance(arg, type("")):
             args.append(arg)
         else:
             args.append("%s=%s" % (arg[0], repr(arg[1])))
@@ -126,7 +126,7 @@ def describe(func, name = None):
 
 def __getmethods(c, m):
     for k, v in c.__dict__.items():
-        if type(v) == type(__getmethods): # and k[0] != "_":
+        if isinstance(v, type(__getmethods)): # and k[0] != "_":
             if k not in m:
                 m[k] = describe(v, k), c.__name__
     for c in c.__bases__:

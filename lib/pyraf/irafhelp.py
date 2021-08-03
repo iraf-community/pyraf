@@ -322,7 +322,7 @@ def _getContents(vlist, regexp, an_obj):
                 namedict[vname] = 1
     # add methods from base classes if this is a class
     if (not PY3K and isinstance(an_obj, types.ClassType)) or \
-       (PY3K and type(an_obj)==type(object)): # i.e. "<class 'type'>"
+       (PY3K and isinstance(an_obj, type(object))): # i.e. "<class 'type'>"
         classlist = list(an_obj.__bases__)
         for c in classlist:
             classlist.extend(list(c.__bases__))
