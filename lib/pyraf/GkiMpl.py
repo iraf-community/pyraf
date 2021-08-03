@@ -90,7 +90,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.colorManager = tkColorManager(self.irafGkiConfig)
         self.startNewPage()
         self.__gcursorObject = gkigcur.Gcursor(self)
-        self.__mca.show() # or, could: self.gRedraw() with a .show()
+        self.__mca.draw() # or, could: self.gRedraw() with a .draw()
 
     # not currently using getAdjustedHeight because the background is drawn and
     # it is not black (or the same color as the rest of the empty window)
