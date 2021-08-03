@@ -27,7 +27,7 @@ test_probe = False
 
 #stdgraph = None
 
-IPC_PREFIX = ndarr2bytes(numpy.array([01120],numpy.int16))
+IPC_PREFIX = ndarr2bytes(numpy.array([0o1120],numpy.int16))
 
 # weirdo protocol to get output from task back to subprocess
 # definitions from cl/task.h and lib/clio.h

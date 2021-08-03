@@ -302,7 +302,7 @@ def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
     f = open(newfile, 'w')
     f.writelines(newlines)
     f.close()
-    _os.chmod(newfile,0700)
+    _os.chmod(newfile,0o700)
     # run new script and capture output
     fh = _StringIO.StringIO()
     status = clOscmd(newfile,Stdout=fh)

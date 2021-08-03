@@ -130,9 +130,9 @@ class ImageDisplay:
     """Interface to IRAF-compatible image display"""
 
     # constants for cursor read
-    _IIS_READ = 0100000
-    _IMC_SAMPLE = 0040000
-    _IMCURSOR = 020
+    _IIS_READ = 0o100000
+    _IMC_SAMPLE = 0o040000
+    _IMCURSOR = 0o20
     _SZ_IMCURVAL = 160
 
     def __init__(self):
