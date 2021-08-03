@@ -427,7 +427,7 @@ class Subprocess:
             os.kill(self.pid, signal.SIGSTOP)
         except os.error:
             if verbose:
-                print("Stop failed for '%s' - '%s'" % (self.cmd, sys.exc_value))
+                print("Stop failed for '%s' - '%s'" % (self.cmd, sys.exc_info()[1]))
             return 0
         if verbose:
             print("Stopped '%s'" % self.cmd)
@@ -441,7 +441,7 @@ class Subprocess:
         except os.error:
             if verbose:
                 print("Continue failed for '%s' - '%s'" %
-                      (self.cmd, sys.exc_value))
+                      (self.cmd, sys.exc_info()[1]))
             return 0
         if verbose: print("Continued '%s'" % self.cmd)
         return 'continued'

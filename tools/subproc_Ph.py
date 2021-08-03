@@ -19,7 +19,7 @@ class Ph:
             self.proc = Subprocess("ph", expire_noisily=1)
         except:
             raise SubprocessError("failure starting ph: %s" %
-                                  str(sys.exc_value))
+                                  str(sys.exc_info()[1]))
 
     def query(self, q):
         """Send a query and return a list of dicts for responses.
