@@ -1871,7 +1871,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
         # Add quotes to names (we're literally passing the names, not
         # the values)
-        sargs = map(repr, sargs)
+        sargs = list(map(repr, sargs))
 
         # pass in locals dictionary so we can get names of variables to set
         sargs.insert(0, "locals()")

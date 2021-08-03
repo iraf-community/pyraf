@@ -1160,7 +1160,7 @@ def real(x):
             if m:
                 x = x[0:m.start()]
             f = map(float,x.split(":"))
-            f = map(abs, f)
+            f = list(map(abs, f))
             return sign*clSexagesimal(*f)
         else:
             x = _re.sub("[EdD]", "e", x, count=1)
@@ -1225,7 +1225,7 @@ def radix(value, base=10, length=0):
     while lvalue > 0 or lvalue < -1:
         lvalue, digit = divmod(lvalue, base)
         outdigits.append(int(digit))
-    outdigits = map(lambda index: _radixDigits[index], outdigits)
+    outdigits = [_radixDigits[index] for index in outdigits]
     # zero-pad if needed (automatically do so for negative numbers)
     if ivalue < 0:
         maxlen = 32
@@ -2276,7 +2276,7 @@ def teal(taskArg, **kw):
 def edit(*args):
     """Edit text files"""
     editor = envget('editor')
-    margs = map(Expand, args)
+    margs = list(map(Expand, args))
     _os.system(' '.join([editor,]+margs))
 
 _clearString = None

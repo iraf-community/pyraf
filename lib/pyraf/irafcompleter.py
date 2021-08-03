@@ -334,7 +334,7 @@ class IrafCompleter(Completer):
         tail = fields[-1]
         matches = eval("%s.getAllMatches(%s)" % (head, repr(tail)))
         def addhead(s, head=head+"."): return head+s
-        return map(addhead, matches)
+        return list(map(addhead, matches))
 
 def activate(c="\t"):
     completer.activate(c)

@@ -472,7 +472,7 @@ class Subprocess:
         # Only got here if subprocess is not gone:
         raise SubprocessError(
                         "Failed kill of subproc %d, '%s', with signals %s" %
-                        (self.pid, self.cmd, map(lambda(x): x[0], sigs)))
+                        (self.pid, self.cmd, [x[0] for x in sigs]))
 
     def __del__(self):
         """Terminate the subprocess"""

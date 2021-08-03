@@ -233,7 +233,7 @@ def _help(an_obj, variables, functions, modules,
     if modules and modulelist:
         # modules get listed in simple column format
         print("Modules:")
-        irafutils.printCols(map(lambda x: x[0], modulelist))
+        irafutils.printCols([x[0] for x in modulelist])
         print()
 
     if functions and functionlist:

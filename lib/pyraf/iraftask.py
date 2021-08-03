@@ -1756,7 +1756,7 @@ class IrafForeignTask(IrafTask):
         # converted to strings, including objects which are not
         # naturally converted to strings.
         #self._args = map(re.escape,map(str,args))
-        self._args = map(self._str_escape, args)
+        self._args = list(map(self._str_escape, args))
 
     #=========================================================
     # private methods
@@ -1833,7 +1833,7 @@ def _splitName(qualifiedName):
     is changed to Python zero-based subscript.
     """
     # name components may have had 'PY' appended if they match Python keywords
-    slist = map(irafutils.untranslateName, qualifiedName.split('.'))
+    slist = list(map(irafutils.untranslateName, qualifiedName.split('.')))
 
     # add field=None if not present
 
