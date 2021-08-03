@@ -372,16 +372,16 @@ def _valueString(value,verbose=0):
     vstr = t.__name__
     if issubclass(t, str):
         if len(value)>42:
-            vstr = vstr + ", value = "+ `value[:39]` + '...'
+            vstr = vstr + ", value = "+ repr(value[:39]) + '...'
         else:
-            vstr = vstr + ", value = "+ `value`
+            vstr = vstr + ", value = "+ repr(value)
     elif issubclass(t, _listTypes):
         return "%s [%d entries]" % (vstr, len(value))
     elif (PY3K and issubclass(t, io.IOBase)) or \
          (not PY3K and issubclass(t, file)):
-        vstr = vstr + ", "+ `value`
+        vstr = vstr + ", "+ repr(value)
     elif issubclass(t, _numericTypes):
-        vstr = vstr + ", value = "+ `value`
+        vstr = vstr + ", value = "+ repr(value)
     elif _isinstancetype(value):
         cls = value.__class__
         if cls.__module__ == '__main__':
@@ -404,9 +404,9 @@ def _valueString(value,verbose=0):
         vstr = vstr + " " + str(value.dtype) + "["
         for k in range(len(value.shape)):
             if k:
-                vstr = vstr + "," + `value.shape[k]`
+                vstr = vstr + "," + repr(value.shape[k])
             else:
-                vstr = vstr + `value.shape[k]`
+                vstr = vstr + repr(value.shape[k])
         vstr = vstr + "]"
     else:
         # default -- just return the type

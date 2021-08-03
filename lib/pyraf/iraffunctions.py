@@ -534,7 +534,7 @@ def handleRedirAndSaveKwds(target):
         redirKW, closeFHList = redirProcess(kw)
         if '_save' in kw: del kw['_save']
         if len(kw):
-            raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
+            raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
         resetList = redirApply(redirKW)
         try:
             # call 'target' to do the interesting work of this function
@@ -754,7 +754,7 @@ def getPkg(pkgname,found=0):
         if isinstance(pkgname,_iraftask.IrafPkg):
             return pkgname
         if not pkgname:
-            raise TypeError("Bad package name `%s'" % `pkgname`)
+            raise TypeError("Bad package name `%s'" % repr(pkgname))
         # undo any modifications to the pkgname
         pkgname = _irafutils.untranslateName(pkgname)
         return _pkgs[pkgname]
@@ -1024,7 +1024,7 @@ _tmpfileCounter = 0
 def mktemp(root):
     """Make a temporary filename starting with root"""
     global _tmpfileCounter
-    basename = root + `_os.getpid()`
+    basename = root + repr(_os.getpid())
     while 1:
         _tmpfileCounter = _tmpfileCounter + 1
         if _tmpfileCounter <= 26:
@@ -1032,7 +1032,7 @@ def mktemp(root):
             suffix = chr(ord("a")+_tmpfileCounter-1)
         else:
             # use numbers once we've used up letters
-            suffix = "_" + `_tmpfileCounter-26`
+            suffix = "_" + repr(_tmpfileCounter-26)
         file = basename + suffix
         if not _os.path.exists(Expand(file)):
             return file
@@ -1726,7 +1726,7 @@ def boolean(value):
                 return ival
         except (ValueError, OverflowError):
             pass
-    raise ValueError("Illegal boolean value %s" % `value`)
+    raise ValueError("Illegal boolean value %s" % repr(value))
 
 
 # -----------------------------------------------------
@@ -1776,7 +1776,7 @@ def fscan(theLocals, line, *namelist, **kw):
     else:
         strconv = n*[None]
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
+        raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
     n_actual = 0        # this will be the actual number of values converted
     for i in range(n):
         # even messier: special handling for struct type variables, which
@@ -1802,13 +1802,13 @@ def fscan(theLocals, line, *namelist, **kw):
                             (line, pat))
                 iend = mm.end()
             if line[-1:] == '\n':
-                cmd = namelist[i] + ' = ' + `line[iend:-1]`
+                cmd = namelist[i] + ' = ' + repr(line[iend:-1])
             else:
-                cmd = namelist[i] + ' = ' + `line[iend:]`
+                cmd = namelist[i] + ' = ' + repr(line[iend:])
         elif strconv[i]:
-            cmd = namelist[i] + ' = ' + strconv[i] + '(' + `f[i]` + ')'
+            cmd = namelist[i] + ' = ' + strconv[i] + '(' + repr(f[i]) + ')'
         else:
-            cmd = namelist[i] + ' = ' + `f[i]`
+            cmd = namelist[i] + ' = ' + repr(f[i])
         try:
             exec(cmd, theLocals)
             n_actual += 1
@@ -1851,10 +1851,10 @@ def fscanf(theLocals, line, format, *namelist, **kw):
         f = ['']
         n = 1
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
+        raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
     n_actual = 0        # this will be the actual number of values converted
     for i in range(n):
-        cmd = namelist[i] + ' = ' + `f[i]`
+        cmd = namelist[i] + ' = ' + repr(f[i])
         try:
             exec(cmd, theLocals)
             n_actual += 1
@@ -1885,7 +1885,7 @@ def _isStruct(theLocals, name, checklegal=0):
     c = name.split('.')
     if len(c)>1:
         # must get the parameter object, not the value
-        c[-1] = 'getParObject(%s)' % `c[-1]`
+        c[-1] = 'getParObject(%s)' % repr(c[-1])
     fname = '.'.join(c)
     try:
         par = eval(fname, theLocals)
@@ -2063,7 +2063,7 @@ def clOscmd(s, **kw):
     redirKW, closeFHList = redirProcess(kw)
     if '_save' in kw: del kw['_save']
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
+        raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
     resetList = redirApply(redirKW)
     try:
         # if first character of s is '!' then force to Bourne shell
@@ -2218,7 +2218,7 @@ def dparam(*args, **kw):
         cl = kw['cl']
         del kw['cl']
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
+        raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
     for taskname in args:
         try:
             taskname.dParam(cl=cl)
@@ -2247,7 +2247,7 @@ def unlearn(*args, **kw):
         force = kw['force'] in (True, '+', 'yes')
         del kw['force']
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
+        raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
     for taskname in args:
         try: # maybe it is an IRAF task name
             getTask(taskname).unlearn()
@@ -2363,7 +2363,7 @@ def pyexecute(filename, **kw):
                 "`%s' to `%s'" % (pkgname, spkgname))
         pkgname = spkgname
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
+        raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
     # execute code in a new namespace (including PkgName, PkgBinary)
     efilename = Expand(filename)
     namespace = {'PkgName': pkgname, 'PkgBinary': pkgbinary,
@@ -2490,7 +2490,7 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     redirKW, closeFHList = redirProcess(kw)
     if '_save' in kw: del kw['_save']
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
+        raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
     # get the input
     if 'stdin' in redirKW:
         stdin = redirKW['stdin']
@@ -2651,7 +2651,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
     redirKW, closeFHList = redirProcess(kw)
     if '_save' in kw: del kw['_save']
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
+        raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
     resetList = redirApply(redirKW)
     try:
         if pkgname is None:
@@ -2856,7 +2856,7 @@ def printf(format, *args):
         raise IrafError(str(e))
     except TypeError as e:
         raise IrafError('%s\nFormat/datatype mismatch in printf '
-                '(format is %s)' % (str(e), `format`))
+                '(format is %s)' % (str(e), repr(format)))
 
 # _backDir is previous working directory
 
@@ -3058,7 +3058,7 @@ def clExecute(s, locals=None, mode="proc",
 
     redirKW, closeFHList = redirProcess(kw)
     if len(kw):
-        raise TypeError('unexpected keyword argument: ' + `list(kw.keys())`)
+        raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
     resetList = redirApply(redirKW)
     try:
         global _clExecuteCount

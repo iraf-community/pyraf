@@ -1466,7 +1466,7 @@ def _readpar(filename,strict=0):
                     g = mm.group('single')
                 else:
                     raise SyntaxError(filename + "\n" + line + "\n" + \
-                            "Huh? mm.groups()="+`mm.groups()`+"\n" + \
+                            "Huh? mm.groups()="+repr(mm.groups())+"\n" + \
                             "Bug: doesn't match single, double or comma??")
                 flist.append(g)
                 # move match pointer

@@ -696,7 +696,7 @@ def record_trial(s):
     c.write(s)
     c.seek(0)
     r = c.read()
-    show = " start:\t %s\n end:\t %s\n" % (`s`, `r`)
+    show = " start:\t %s\n end:\t %s\n" % (repr(s), repr(r))
     if r != s:
         raise IOError("String distorted:\n%s" % show)
 

@@ -449,7 +449,7 @@ class PrettyTree(GenericASTTraversal):
         if node.type == '}':
             self.printIndent()
         if isinstance(node, Token) or (not self.terminal):
-            print(`node`+tail, end=' ')
+            print(repr(node)+tail, end=' ')
         self.nodeCount = self.nodeCount + 1
 
 

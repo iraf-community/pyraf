@@ -332,7 +332,7 @@ class IrafCompleter(Completer):
         """Return matches for iraf.package.task.param..."""
         head = ".".join(fields[:-1])
         tail = fields[-1]
-        matches = eval("%s.getAllMatches(%s)" % (head, `tail`))
+        matches = eval("%s.getAllMatches(%s)" % (head, repr(tail)))
         def addhead(s, head=head+"."): return head+s
         return map(addhead, matches)
 

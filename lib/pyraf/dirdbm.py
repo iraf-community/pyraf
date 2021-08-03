@@ -50,7 +50,7 @@ class _Database(object):
         elif self._writable:
             # make sure directory is writable
             try:
-                testfile = _os.path.join(directory, 'junk' + `_os.getpid()`)
+                testfile = _os.path.join(directory, 'junk' + repr(_os.getpid()))
                 fh = __builtin__.open(testfile, 'w')
                 fh.close()
                 _os.remove(testfile)

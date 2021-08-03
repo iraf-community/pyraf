@@ -508,7 +508,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             try:
                 tobj = pyraf.iraf.getTask(task)
                 # reattach the index and/or field
-                if pindex: paramname = paramname + '[' + `pindex+1` + ']'
+                if pindex: paramname = paramname + '[' + repr(pindex+1) + ']'
                 if field: paramname = paramname + '.' + field
                 tobj.setParam(paramname,newvalue,check=check)
                 return
@@ -1698,7 +1698,7 @@ def mutateCLTask2Pkg(o, loaded=1,  klass=IrafPkg):
     if isinstance(o, IrafPkg):
         return
     if not isinstance(o, IrafCLTask):
-        raise TypeError("Cannot turn object `%s' into an IrafPkg" % `o`)
+        raise TypeError("Cannot turn object `%s' into an IrafPkg" % repr(o))
 
     # add the extra attributes used in IrafPkg
     # this is usually called while actually loading the package, so by

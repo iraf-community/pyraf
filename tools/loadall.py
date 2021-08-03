@@ -24,8 +24,8 @@ while keepGoing and (ntotal<len(plist)):
     plist.sort()
     nnew = 0
     npass = npass + 1
-    printcenter("pass "+`npass` + " trying " +
-            `len(plist)`, char="=")
+    printcenter("pass " + repr(npass) + " trying " + repr(len(plist)),
+                char="=")
     for pkg in plist:
         if pkg not in ptried:
             ptried[pkg] = 1
@@ -53,7 +53,7 @@ while keepGoing and (ntotal<len(plist)):
                         break
                     print("...continuing...\n")
     ntotal = ntotal + nnew
-    printcenter("Finished pass "+`npass` +
-            " new pkgs " + `nnew` +
-            " total pkgs " + `ntotal`, char="=")
+    printcenter("Finished pass " + repr(npass) +
+                " new pkgs " + repr(nnew) +
+                " total pkgs " + repr(ntotal), char="=")
     plist = iraf.getPkgList()

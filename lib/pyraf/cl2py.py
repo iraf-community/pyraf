@@ -459,7 +459,7 @@ class Variable:
             if self.init_value is None:
                 return name + "=None"
             else:
-                return name + "=" + `self.init_value`
+                return name + "=" + repr(self.init_value)
         else:
             # array
             arg = name + "=["
@@ -468,7 +468,7 @@ class Variable:
             else:
                 arglist = []
                 for iv in self.init_value:
-                    arglist.append(`iv`)
+                    arglist.append(repr(iv))
             return arg + ", ".join(arglist) + "]"
 
     def parDefLine(self, filename=None, strict=0, local=0):
@@ -476,24 +476,24 @@ class Variable:
 
         name = irafutils.translateName(self.name)
         arglist = [name,
-                "datatype=" + `self.type`,
-                "name=" + `self.getName()` ]
+                "datatype=" + repr(self.type),
+                "name=" + repr(self.getName()) ]
         # if local is set, use the default initial value instead of name
         # also set mode="u" for locals so they never prompt
         if local:
-            arglist[0] = `self.init_value`
+            arglist[0] = repr(self.init_value)
             self.options["mode"] = "u"
         if self.shape is not None:
-            arglist.append("array_size=" + `self.shape`)
+            arglist.append("array_size=" + repr(self.shape))
         if self.list_flag:
-            arglist.append("list_flag=" + `self.list_flag`)
+            arglist.append("list_flag=" + repr(self.list_flag))
         keylist = sorted(self.options.keys())
         for key in keylist:
             option = self.options[key]
             if option is not None:
-                arglist.append(key + "=" + `self.options[key]`)
-        if filename: arglist.append("filename=" + `filename`)
-        if strict: arglist.append("strict=" + `strict`)
+                arglist.append(key + "=" + repr(self.options[key]))
+        if filename: arglist.append("filename=" + repr(filename))
+        if strict: arglist.append("strict=" + repr(strict))
         return arglist
 
     def __repr__(self):
@@ -501,7 +501,7 @@ class Variable:
         if self.list_flag: s = s + "*"
         s = s + self.name
         if self.init_value is not None:
-            s = s + " = " + `self.init_value`
+            s = s + " = " + repr(self.init_value)
         optstring = "{"
         for key, value in self.options.items():
             if (value is not None) and (key != "mode" or value != "h"):
@@ -1666,7 +1666,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             # add local and procedure parameters to Vars list
             if not noHdr:
                 self.writeIndent("Vars = IrafParList(" +
-                        `self.vars.proc_name` + ")")
+                        repr(self.vars.proc_name) + ")")
             for defargs in deflist:
                 if defargs:
                     self.writeIndent("Vars.addParam(makeIrafPar(")
@@ -1780,7 +1780,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             else:
                 attribs.insert(0, 'iraf')
             if ipf:
-                attribs[-2] = 'getParObject(' + `attribs[-2]` +  ')'
+                attribs[-2] = 'getParObject(' + repr(attribs[-2]) +  ')'
             self.write(".".join(attribs),
                             node.requireType, node.exprType)
 
@@ -1893,17 +1893,17 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             if s is not None:
                 self.write(s, requireType, exprType)
             elif node.type in _trailSpaceList:
-                self.write(`node`, requireType, exprType)
+                self.write(repr(node), requireType, exprType)
                 self.write(" ")
             elif node.type in _bothSpaceList:
                 self.write(" ")
                 if hasattr(node, 'trunc_int_div'):
                     self.write('//', requireType, exprType)
                 else:
-                    self.write(`node`, requireType, exprType)
+                    self.write(repr(node), requireType, exprType)
                 self.write(" ")
             else:
-                self.write(`node`, requireType, exprType)
+                self.write(repr(node), requireType, exprType)
         elif requireType != exprType:
             cf = _funcName(requireType, exprType)
             if cf is not None:
@@ -1971,7 +1971,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
     #------------------------------
 
     def n_osescape_stmt(self, node):
-        self.write("iraf.clOscmd(" + `node[0].attr` + ")")
+        self.write("iraf.clOscmd(" + repr(node[0].attr) + ")")
         self.prune()
 
     def n_assignment_stmt(self, node):

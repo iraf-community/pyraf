@@ -982,7 +982,7 @@ def toklist(tlist,filename=None):
             else:
                 print()
         else:
-            print(`tok`, end=' ')
+            print(repr(tok), end=' ')
     if filename:
         sys.stdout.close()
         sys.stdout = sys.__stdout__

@@ -37,7 +37,7 @@ class Shelf(shelve.Shelf):
             # and exception
             del self.dict[key]
             raise KeyError("Corrupted or truncated file for key %s "
-                    "(bad file has been deleted)" % (`key`,))
+                    "(bad file has been deleted)" % (repr(key),))
 
     def __setitem__(self, key, value):
         f = shelve.StringIO()
