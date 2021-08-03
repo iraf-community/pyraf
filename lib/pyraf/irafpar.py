@@ -1010,13 +1010,13 @@ class IrafParList(taskpars.TaskPars):
         """List the task parameters"""
         retval = []
         # Do the non-hidden parameters first
-        for i in xrange(len(self.__pars)):
+        for i in range(len(self.__pars)):
             p = self.__pars[i]
             if p.mode != 'h':
                 if Verbose>0 or p.name != '$nargs':
                     retval.append(p.pretty(verbose=verbose or Verbose>0))
         # Now the hidden parameters
-        for i in xrange(len(self.__pars)):
+        for i in range(len(self.__pars)):
             p = self.__pars[i]
             if p.mode == 'h':
                 if Verbose>0 or p.name != '$nargs':
@@ -1030,7 +1030,7 @@ class IrafParList(taskpars.TaskPars):
         false, writes Python executable code instead.
         """
         if taskname and taskname[-1:] != ".": taskname = taskname + "."
-        for i in xrange(len(self.__pars)):
+        for i in range(len(self.__pars)):
             p = self.__pars[i]
             if p.name != '$nargs':
                 print("%s%s" % (taskname,p.dpar(cl=cl)))

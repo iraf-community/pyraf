@@ -285,7 +285,7 @@ class GenericParser:
             self.makeFIRST()
             self.ruleschanged = 0
 
-        for i in xrange(len(tokens)):
+        for i in range(len(tokens)):
             states[i+1] = []
 
             if states[i] == []:

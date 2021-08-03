@@ -332,7 +332,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
                    - numpy.array([0.,1.]))).astype(numpy.int32)
         # Lack of intrinsic Tk point mode means that they must be explicitly
         # looped over.
-        for i in xrange(npts):
+        for i in range(npts):
             gw.create_rectangle(scaled[i,0], scaled[i,1],
                                 scaled[i,0], scaled[i,1],
                                 fill=color, outline='')

@@ -121,7 +121,7 @@ def softText(win,x,y,textstr):
     for char in textstr:
         # draw character with origin at bottom left corner of character box
         charstrokes = ta.font[ord(char)-ord(' ')]
-        for i in xrange(len(charstrokes[0])):
+        for i in range(len(charstrokes[0])):
             vertex = numpy.zeros((len(charstrokes[0][i]),2),numpy.float64)
             xf = size * charstrokes[0][i]/27. -fsize*hsize/2.
             yf = size * charstrokes[1][i]*fontAspect/27. - fsize*vsize/2.

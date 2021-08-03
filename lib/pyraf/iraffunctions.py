@@ -706,7 +706,7 @@ def getTask(taskname, found=0):
         sp = fullname[0].split('.')
         name = sp[-1]
         pkglist = [ sp[0] ]
-        for i in xrange(len(fullname)-1):
+        for i in range(len(fullname)-1):
             sp = fullname[i+1].split('.')
             if name != sp[-1]:
                 if len(fullname)>3:
@@ -723,7 +723,7 @@ def getTask(taskname, found=0):
     # trylist has a list of several candidate tasks that differ
     # only in package.  Search loaded packages in reverse to find
     # which one was loaded most recently.
-    for i in xrange(len(loadedPath)):
+    for i in range(len(loadedPath)):
         pkg = loadedPath[-1-i].getName()
         if pkg in pkglist:
             # Got it at last
@@ -824,7 +824,7 @@ def listPkgs():
     else:
         keylist.sort()
         # append '/' to identify packages
-        for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
+        for i in range(len(keylist)): keylist[i] = keylist[i] + '/'
         _irafutils.printCols(keylist)
 
 @handleRedirAndSaveKwds
@@ -836,7 +836,7 @@ def listLoaded():
     else:
         keylist.sort()
         # append '/' to identify packages
-        for i in xrange(len(keylist)): keylist[i] = keylist[i] + '/'
+        for i in range(len(keylist)): keylist[i] = keylist[i] + '/'
         _irafutils.printCols(keylist)
 
 @handleRedirAndSaveKwdsPlus
@@ -901,7 +901,7 @@ def listCurrent(n=1, hidden=0):
     if len(loadedPath):
         if n > len(loadedPath): n = len(loadedPath)
         plist = n*[None]
-        for i in xrange(n):
+        for i in range(n):
             plist[i] = loadedPath[-1-i].getName()
         listTasks(plist,hidden=hidden)
     else:

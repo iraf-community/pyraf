@@ -133,7 +133,7 @@ class IrafGWcs:
         SZ = 2
         if _IRAF64BIT: SZ = 4
         self.pending = [None]*WCS_SLOTS
-        for i in xrange(WCS_SLOTS):
+        for i in range(WCS_SLOTS):
             record = wcsStruct[_WCS_RECORD_SIZE*i:_WCS_RECORD_SIZE*(i+1)]
             # read 8 4-byte floats from beginning of record
             fvals = numpy.fromstring(ndarr2bytes(record[:8*SZ]),numpy.float32)
@@ -166,7 +166,7 @@ class IrafGWcs:
         pad = tobytes('\x00\x00\x00\x00')
         if _IRAF64BIT:
             pad = tobytes('\x00\x00\x00\x00\x00\x00\x00\x00')
-        for i in xrange(WCS_SLOTS):
+        for i in range(WCS_SLOTS):
             x = self.wcs[i]
             farr = numpy.array(x[:8],numpy.float32)
             iarr = numpy.array(x[8:11],numpy.int32)
@@ -296,7 +296,7 @@ class IrafGWcs:
 
         indexlist = []
         # select subset of those wcs slots which are defined
-        for i in xrange(len(self.wcs)):
+        for i in range(len(self.wcs)):
             if self._isWcsDefined(i):
                 indexlist.append(i)
         # if 0 or 1 found, we're done!
@@ -353,7 +353,7 @@ def _setWCSDefault():
     wcsarr = tuple(farr)+tuple(iarr)
 
     wcs = []
-    for i in xrange(WCS_SLOTS):
+    for i in range(WCS_SLOTS):
         wcs.append(wcsarr)
 
     return wcs

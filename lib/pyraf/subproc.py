@@ -130,7 +130,7 @@ class Subprocess:
             fdmax = max(256, parentErr)
             if self.parentPipes:
                 fdmax = max(fdmax, max(self.parentPipes))
-            rclose = range(fdmax+1)
+            rclose = list(range(fdmax+1))
             excludes = [self.in_fd, self.out_fd, self.err_fd, parentErr]
             for i in excludes+self.parentPipes:
                 rclose.remove(i)

@@ -265,7 +265,7 @@ class _CodeCache:
                     "Filename parameter must be a string or IrafCLTask")
         index = self.getIndex(filename)
         # system cache is last in list
-        irange = range(len(self.cacheList))
+        irange = list(range(len(self.cacheList)))
         if self.useSystem: irange.reverse()
         nremoved = 0
         for i in irange:
