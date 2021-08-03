@@ -1163,12 +1163,12 @@ class IrafPythonTask(IrafTask):
         if self._pyFunction is None:
             return self.__dict__
         try:
-            module = self._pyFunction.func_globals['__name__']
+            module = self._pyFunction.__globals__['__name__']
             if module[:6] == 'pyraf.':
                 return self.__dict__
         except KeyError:
             pass
-        file = self._pyFunction.func_code.co_filename
+        file = self._pyFunction.__code__.co_filename
         # oh well, replace _pyFunction in shallow copy of dictionary
         sdict = self.__dict__.copy()
         sdict['_pyFunction'] = None

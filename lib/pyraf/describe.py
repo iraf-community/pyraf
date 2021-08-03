@@ -61,7 +61,7 @@ CO_VARKEYWORDS = 0x0008
 def describeParams(func, name = None):
     # get argument list
 
-    code = func.func_code
+    code = func.__code__
 
     n = code.co_argcount
     a = list(code.co_varnames[:n])
@@ -86,10 +86,10 @@ def describeParams(func, name = None):
                     p = p + 1
             if vars:
                 a[i] = "(" + ", ".join(vars) + ")"
-    if func.func_defaults:
+    if func.__defaults__:
         # defaults
-        i = n - len(func.func_defaults)
-        for d in func.func_defaults:
+        i = n - len(func.__defaults__)
+        for d in func.__defaults__:
             a[i] = (a[i], d)
             i = i + 1
     if code.co_flags & CO_VARARGS:
