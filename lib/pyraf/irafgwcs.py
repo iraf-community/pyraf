@@ -98,7 +98,7 @@ class IrafGWcs:
     def clearPending(self):
         self.pending = None
 
-    def __nonzero__(self):
+    def __bool__(self):
         self.commit()
         return self.wcs is not None
 
