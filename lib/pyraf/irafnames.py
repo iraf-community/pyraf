@@ -35,28 +35,28 @@ def _addName(task, module):
 # Basic namespace strategy class (does nothing)
 
 class IrafNameStrategy:
-    def addTask(self,task):
+    def addTask(self, task):
         pass
-    def addPkg(self,pkg):
+    def addPkg(self, pkg):
         pass
 
 # NameClean implementation puts tasks and packages in iraf module name space
 # Note that since packages are also tasks, we only need to do this for tasks
 
 class IrafNameClean(IrafNameStrategy):
-    def addTask(self,task):
+    def addTask(self, task):
         _addName(task, pyraf.iraf)
 
 # IrafNamePkg also adds packages to __main__ name space
 
 class IrafNamePkg(IrafNameClean):
-    def addPkg(self,pkg):
+    def addPkg(self, pkg):
         _addName(pkg, __main__)
 
 # IrafNameTask puts everything (tasks and packages) in __main__ name space
 
 class IrafNameTask(IrafNameClean):
-    def addTask(self,task):
+    def addTask(self, task):
         _addName(task, pyraf.iraf)
         _addName(task, __main__)
 

@@ -109,9 +109,9 @@ def _writeTmpFile(base_fname, text):
     """ Utility function for writing our tmp files. Return the full fname."""
     global _tmp_dir
     if not _tmp_dir:
-        u = os.environ.get('USER','')
-        if not u: u = os.environ.get('LOGNAME','')
-        _tmp_dir = tempfile.mkdtemp(prefix='pyraf_'+u+'_tmp_',suffix='.no-iraf')
+        u = os.environ.get('USER', '')
+        if not u: u = os.environ.get('LOGNAME', '')
+        _tmp_dir = tempfile.mkdtemp(prefix='pyraf_'+u+'_tmp_', suffix='.no-iraf')
     tmpf = _tmp_dir+os.sep+base_fname
     if os.path.exists(tmpf): os.remove(tmpf)
     f = open(tmpf, 'w')

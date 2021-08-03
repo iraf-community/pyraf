@@ -177,16 +177,16 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         # Create the root window as required, but hide it
         irafutils.init_tk_default_root()
         # note size is just an estimate that helps window manager place window
-        self.top = TKNTR.Toplevel(visual='best',width=600,height=485)
+        self.top = TKNTR.Toplevel(visual='best', width=600, height=485)
         # Read the epar options database file
         optfile = "epar.optionDB"
         try:
-            self.top.option_readfile(os.path.join(os.curdir,optfile))
+            self.top.option_readfile(os.path.join(os.curdir, optfile))
         except TKNTR.TclError:
             try:
-                self.top.option_readfile(os.path.join(userWorkingHome,optfile))
+                self.top.option_readfile(os.path.join(userWorkingHome, optfile))
             except TKNTR.TclError:
-                self.top.option_readfile(os.path.join(pyrafDir,optfile))
+                self.top.option_readfile(os.path.join(pyrafDir, optfile))
         self.top.title(windowName)
         self.top.iconname(windowName)
         self.top.protocol("WM_DELETE_WINDOW", self.gwdestroy)
@@ -326,7 +326,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         metacode = numpy.fromstring(fh.read(), numpy.int16) # OK: bytes in PY3K
         fh.close()
         self.clear(name=fname)
-        self.append(metacode,isUndoable=1)
+        self.append(metacode, isUndoable=1)
         self.forceNextDraw()
         self.redraw()
 
@@ -496,7 +496,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         else:
             menu.entryconfigure(button.lastNum, state=TKNTR.DISABLED)
         # Delete everything past the separator
-        menu.delete(str(button.sepNum),'10000')
+        menu.delete(str(button.sepNum), '10000')
         menu.add_separator()
         # Add radio buttons for pages
         # Only show limited window around active page
@@ -513,14 +513,14 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         pmax = min(pmax, lhis)
         pmin = max(0, pmin)
         h = self.history
-        for i in range(pmin,pmax):
+        for i in range(pmin, pmax):
             task = h[i][2]
             if i==pmin and pmin>0:
                 label = "<< %s" % task
             elif i==pmax-1 and pmax<lhis:
                 label = ">> %s" % task
             else:
-                label = "%2d %s" % (i+1,task)
+                label = "%2d %s" % (i+1, task)
             menu.add_radiobutton(label=label, command=self.selectedPage,
                                  value=i, variable=self.bttnVar)
         # Make sure pageVar matches the real index value
@@ -543,13 +543,13 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
     def backPage(self):
         self.prePageSelect()
-        n = max(0,self._currentPage-1)
+        n = max(0, self._currentPage-1)
         self.pageVar.set(n)
         self.bttnVar.set(n)
 
     def nextPage(self):
         self.prePageSelect()
-        n = max(0,min(self._currentPage+1, len(self.history)-1))
+        n = max(0, min(self._currentPage+1, len(self.history)-1))
         self.pageVar.set(n)
         self.bttnVar.set(n)
 
@@ -596,7 +596,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         winVar = self.manager.getWindowVar()
         winList = sorted(self.manager.windowNames())
         # Delete everything past the separator
-        menu.delete('1','10000')
+        menu.delete('1', '10000')
         menu.add_separator()
         # Add radio buttons for windows
         for i in range(len(winList)):
@@ -665,7 +665,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
         self.gwidget.activate()
 
-    def errorMessage(self,text):
+    def errorMessage(self, text):
 
         """Truncate number of error messages produced in a plot."""
 

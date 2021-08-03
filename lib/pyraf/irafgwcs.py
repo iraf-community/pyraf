@@ -136,18 +136,18 @@ class IrafGWcs:
         for i in range(WCS_SLOTS):
             record = wcsStruct[_WCS_RECORD_SIZE*i:_WCS_RECORD_SIZE*(i+1)]
             # read 8 4-byte floats from beginning of record
-            fvals = numpy.fromstring(ndarr2bytes(record[:8*SZ]),numpy.float32)
+            fvals = numpy.fromstring(ndarr2bytes(record[:8*SZ]), numpy.float32)
             if _IRAF64BIT:
                 # seems to send an extra 0-valued int32 after each 4 bytes
-                fvalsView = fvals.reshape(-1,2).transpose()
+                fvalsView = fvals.reshape(-1, 2).transpose()
                 if fvalsView[1].sum() != 0:
                     raise IrafError("Assumed WCS float padding is non-zero")
                 fvals = fvalsView[0]
             # read 3 4-byte ints after that
-            ivals = numpy.fromstring(ndarr2bytes(record[8*SZ:11*SZ]),numpy.int32)
+            ivals = numpy.fromstring(ndarr2bytes(record[8*SZ:11*SZ]), numpy.int32)
             if _IRAF64BIT:
                 # seems to send an extra 0-valued int32 after each 4 bytes
-                ivalsView = ivals.reshape(-1,2).transpose()
+                ivalsView = ivals.reshape(-1, 2).transpose()
                 if ivalsView[1].sum() != 0:
                     raise IrafError("Assumed WCS int padding is non-zero")
                 ivals = ivalsView[0]
@@ -168,20 +168,20 @@ class IrafGWcs:
             pad = tobytes('\x00\x00\x00\x00\x00\x00\x00\x00')
         for i in range(WCS_SLOTS):
             x = self.wcs[i]
-            farr = numpy.array(x[:8],numpy.float32)
-            iarr = numpy.array(x[8:11],numpy.int32)
+            farr = numpy.array(x[:8], numpy.float32)
+            iarr = numpy.array(x[8:11], numpy.int32)
             if _IRAF64BIT:
                 # see notes in set(); adding 0-padding after every data point
                 lenf = len(farr) # should be 8
-                farr_rs = farr.reshape(lenf,1) # turn array into single column
+                farr_rs = farr.reshape(lenf, 1) # turn array into single column
                 farr = numpy.append(farr_rs,
-                                    numpy.zeros((lenf,1), numpy.float32),
+                                    numpy.zeros((lenf, 1), numpy.float32),
                                     axis=1)
                 farr = farr.flatten()
                 leni = len(iarr) # should be 3
-                iarr_rs = iarr.reshape(leni,1) # turn array into single column
+                iarr_rs = iarr.reshape(leni, 1) # turn array into single column
                 iarr = numpy.append(iarr_rs,
-                                    numpy.zeros((leni,1), numpy.int32),
+                                    numpy.zeros((leni, 1), numpy.int32),
                                     axis=1)
                 iarr = iarr.flatten()
             # end-pad?
@@ -212,8 +212,8 @@ class IrafGWcs:
         # ranging from 10 to 10,000 will have wx1,wx2 = (10,10000),
         # not (1,4)
 
-        return (self.transform1d(coord=x,dimension='x',wcsID=wcsID),
-                        self.transform1d(coord=y,dimension='y',wcsID=wcsID),
+        return (self.transform1d(coord=x, dimension='x', wcsID=wcsID),
+                        self.transform1d(coord=y, dimension='y', wcsID=wcsID),
                         wcsID)
 
     def transform1d(self, coord, dimension, wcsID):
@@ -221,9 +221,9 @@ class IrafGWcs:
         wx1, wx2, wy1, wy2, sx1, sx2, sy1, sy2, xt, yt, flag = \
                  self.wcs[wcsID-1]
         if dimension == 'x':
-            w1,w2,s1,s2,type = wx1,wx2,sx1,sx2,xt
+            w1, w2, s1, s2, type = wx1, wx2, sx1, sx2, xt
         elif dimension == 'y':
-            w1,w2,s1,s2,type = wy1,wy2,sy1,sy2,yt
+            w1, w2, s1, s2, type = wy1, wy2, sy1, sy2, yt
         if (s2-s1) == 0.:
             raise IrafError("IRAF graphics WCS is singular!")
         fract = (coord-s1)/(s2-s1)
@@ -274,8 +274,8 @@ class IrafGWcs:
 
         self.commit()
         if wcsID is None:
-            wcsID = self._getWCS(x,y)
-        return self.transform(x,y,wcsID)
+            wcsID = self._getWCS(x, y)
+        return self.transform(x, y, wcsID)
 
     def _getWCS(self, x, y):
 
@@ -307,7 +307,7 @@ class IrafGWcs:
         # look for viewports x,y is contained in
         newindexlist = []
         for i in indexlist:
-            x1,x2,y1,y2 = self.wcs[i][4:8]
+            x1, x2, y1, y2 = self.wcs[i][4:8]
             if (x1 <= x <= x2) and (y1 <= y <= y2):
                 newindexlist.append(i)
         # handle 3 cases
@@ -319,7 +319,7 @@ class IrafGWcs:
         if len(newindexlist) > 1:
             # multiple, find one with closest center
             for i in newindexlist:
-                x1,x2,y1,y2 = self.wcs[i][4:8]
+                x1, x2, y1, y2 = self.wcs[i][4:8]
                 xcen = (x1+x2)/2
                 ycen = (y1+y2)/2
                 dist.append((xcen-x)**2 + (ycen-y)**2)
@@ -327,9 +327,9 @@ class IrafGWcs:
             # none, now look for closest border
             newindexlist = indexlist
             for i in newindexlist:
-                x1,x2,y1,y2 = self.wcs[i][4:8]
-                xdelt = min([abs(x-x1),abs(x-x2)])
-                ydelt = min([abs(y-y1),abs(y-y2)])
+                x1, x2, y1, y2 = self.wcs[i][4:8]
+                xdelt = min([abs(x-x1), abs(x-x2)])
+                ydelt = min([abs(y-y1), abs(y-y2)])
                 if x1 <= x <= x2:
                     dist.append(ydelt**2)
                 elif y1 <= y <= y2:
@@ -347,9 +347,9 @@ class IrafGWcs:
 def _setWCSDefault():
     """Define default WCS for STDGRAPH plotting area."""
     # set 8 4 byte floats
-    farr = numpy.array([0.,1.,0.,1.,0.,1.,0.,1.],numpy.float32)
+    farr = numpy.array([0., 1., 0., 1., 0., 1., 0., 1.], numpy.float32)
     # set 3 4 byte ints
-    iarr = numpy.array([LINEAR,LINEAR,CLIP+NEWFORMAT],numpy.int32)
+    iarr = numpy.array([LINEAR, LINEAR, CLIP+NEWFORMAT], numpy.int32)
     wcsarr = tuple(farr)+tuple(iarr)
 
     wcs = []

@@ -209,7 +209,7 @@ class GenericParser:
         # make the rule/token lists
         self.makeTokenRules(first)
 
-    def makeTokenRules(self,first):
+    def makeTokenRules(self, first):
         # make dictionary indexed by (nextSymbol, nextToken) with
         # list of all rules for nextSymbol that could produce nextToken
         tokenRules = {}
@@ -318,9 +318,9 @@ class GenericParser:
                 # track items completed within this rule
                 if parent == i:
                     if lhs in completed:
-                        completed[lhs].append((item,i))
+                        completed[lhs].append((item, i))
                     else:
-                        completed[lhs] = [(item,i)]
+                        completed[lhs] = [(item, i)]
 
                 lhstuple = (lhs,)
                 for prule, ppos, pparent in states[parent]:
@@ -361,7 +361,7 @@ class GenericParser:
                     # Predictor using FIRST sets
                     # Use cached list for this (nextSym, token) combo
                     #
-                    for prule in tokenRules_get((nextSym, token.type),[]):
+                    for prule in tokenRules_get((nextSym, token.type), []):
                         state_append((prule, 0, i))
 
             #
@@ -449,7 +449,7 @@ class GenericParser:
             sortlist.append((len(rhs), rule))
             name2index[rule] = i
         sortlist.sort()
-        list = list(map(lambda (a,b): b, sortlist))
+        list = list(map(lambda (a, b): b, sortlist))
         return children[name2index[self.resolve(list)]]
 
     def resolve(self, list):

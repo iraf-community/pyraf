@@ -135,7 +135,7 @@ class IPython_PyRAF_Integrator(object):
 
 
     def __init__(self, clemulate=1, cmddict={},
-                 cmdchars=("a-zA-Z_.","0-9")):
+                 cmdchars=("a-zA-Z_.", "0-9")):
         import re, sys, os
         self.reword = re.compile('[a-z]*')
         self._cl_emulation = clemulate
@@ -237,7 +237,7 @@ class IPython_PyRAF_Integrator(object):
             method_name = self.cmddict.get(cmd)
         if method_name is None:
             # no method, but have a look at it anyway
-            return self.default(cmd,line,i)
+            return self.default(cmd, line, i)
         else:
             # if in cmddict, there must be a method by this name
             f = getattr(self, method_name)
@@ -274,7 +274,7 @@ class IPython_PyRAF_Integrator(object):
             return line
         elif cmd in self._ipython_magic and cmd not in ['cd']:
             return line
-        elif not hasattr(iraf,cmd):
+        elif not hasattr(iraf, cmd):
             # not an IRAF command
             #XXX Eventually want to improve error message for
             #XXX case where user intended to use IRAF syntax but
@@ -292,7 +292,7 @@ class IPython_PyRAF_Integrator(object):
                 return line
             # check for some Python operator keywords
             mm = self.reword.match(line[i:])
-            if mm.group() in ["is","in","and","or","not"]:
+            if mm.group() in ["is", "in", "and", "or", "not"]:
                 return line
         elif line[i:i+1] == '(':
             if cmd in ['type', 'dir', 'set']:
@@ -309,7 +309,7 @@ class IPython_PyRAF_Integrator(object):
                 #XXX this find() may be improved with latest Python readline features
                 j = line.find(cmd)
                 return line[:j] + 'iraf.' + line[j:]
-        elif not callable(getattr(iraf,cmd)):
+        elif not callable(getattr(iraf, cmd)):
             # variable from iraf module is not callable task (e.g.,
             # yes, no, INDEF, etc.) -- add 'iraf.' so it can be used
             # as a variable and execute as Python
@@ -373,9 +373,9 @@ class IPython_PyRAF_Integrator(object):
 
     def _evaluate_flag(self, flag, usage):
         try:
-            if flag in [None,"", "on","ON", "On", "True","TRUE","true"]:
+            if flag in [None, "", "on", "ON", "On", "True", "TRUE", "true"]:
                 return True
-            elif flag in ["off","OFF","Off","False","FALSE","false"]:
+            elif flag in ["off", "OFF", "Off", "False", "FALSE", "false"]:
                 return False
             else:
                 return int(flag)
@@ -402,7 +402,7 @@ class IPython_PyRAF_Integrator(object):
         """
         magic, flag = line.split()
         if self._evaluate_flag(flag, "set_pyraf_magic <magic_function>"):
-            self._debug("PyRAF magic for", magic,"on")
+            self._debug("PyRAF magic for", magic, "on")
             while magic in self._ipython_magic:  # should only be one
                 self._ipython_magic.remove(magic)
         else:

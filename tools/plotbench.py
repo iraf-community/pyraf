@@ -22,9 +22,9 @@ CASES=(None, 'point', 'box', 'plus', 'cross', 'circle')
 def manyPoints(task, pkind):
    """ Plot a bunch of points, return the time it took (s). """
 
-   assert task in ('prow','graph','surface','contour'), \
+   assert task in ('prow', 'graph', 'surface', 'contour'), \
           "Unexpected task: "+str(task)
-   assert pkind in (None, 'point','box','plus','cross','circle'), \
+   assert pkind in (None, 'point', 'box', 'plus', 'cross', 'circle'), \
           'Unknown: '+str(pkind)
 
    # plot 10 rows.  in dev$pix this is 5120 pts
@@ -71,7 +71,7 @@ def runAllCases(suiteName, resDict):
    print("\n" + suiteName + ":")
    gki._resetGraphicsKernel()
 
-   for mo in ('graph','prow','surface','contour'):
+   for mo in ('graph', 'prow', 'surface', 'contour'):
       did = 0
       # duplicate the first plot since it will be tossed.
       for test in CASES[:1]+CASES:
@@ -92,7 +92,7 @@ def runAllCases(suiteName, resDict):
             else:
                resDict[case] = [secs]
             # only do one plot for surface or contour (not varied cases)
-            if mo in ('surface','contour'):
+            if mo in ('surface', 'contour'):
                break
          did = 1
 

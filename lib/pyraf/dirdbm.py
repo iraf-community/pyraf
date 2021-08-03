@@ -35,7 +35,7 @@ class _Database(object):
     def __init__(self, directory, flag='c'):
         self._directory = directory
         self._dict = {}
-        self._writable = flag in ['w','c']
+        self._writable = flag in ['w', 'c']
         if not _os.path.exists(directory):
             if flag == 'c':
                 # create directory if it doesn't exist
@@ -88,7 +88,7 @@ class _Database(object):
         # look for file even if dict doesn't have key because
         # another process could create it
         try:
-            fh = __builtin__.open(self._getFilename(key),'rb')
+            fh = __builtin__.open(self._getFilename(key), 'rb')
             value = fh.read()
             fh.close()
             # cache object in memory
@@ -103,7 +103,7 @@ class _Database(object):
         if self._writable:
             try:
                 fname = self._getFilename(key)
-                fh = __builtin__.open(fname,'wb')
+                fh = __builtin__.open(fname, 'wb')
                 fh.write(value)
                 fh.close()
             except IOError as e:

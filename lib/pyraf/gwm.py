@@ -78,7 +78,7 @@ class GraphicsWindowManager(gki.GkiProxy):
             self.stdgraph = self.windows[windowName]
             self.stdgraph.activate()
             # register with focus manager
-            wutil.focusController.addFocusEntity(windowName,self.stdgraph)
+            wutil.focusController.addFocusEntity(windowName, self.stdgraph)
 
     def windowNames(self):
         """Return list of all window names"""

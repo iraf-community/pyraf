@@ -12,10 +12,10 @@ def search(pattern):
     if isinstance(pattern, str):
         pattern = re.compile(pattern)
     cachename1 = os.path.expanduser('~/iraf/pyraf/clcache')
-    cachename2 = os.path.join(pyraf.irafglobals.pyrafDir,'clcache')
+    cachename2 = os.path.join(pyraf.irafglobals.pyrafDir, 'clcache')
 
-    db1 = pyraf.dirshelve.open(cachename1,'r')
-    db2 = pyraf.dirshelve.open(cachename2,'r')
+    db1 = pyraf.dirshelve.open(cachename1, 'r')
+    db2 = pyraf.dirshelve.open(cachename2, 'r')
 
     keys1 = list(db1.keys())
     keys2 = list(db2.keys())
@@ -33,7 +33,7 @@ def search(pattern):
             pycode = db2[key]
         else:
             raise Exception("Error: not in cache on second pass??")
-        if not hasattr(pycode,'code'):
+        if not hasattr(pycode, 'code'):
             continue
         mm = pattern.search(pycode.code)
         if mm:
@@ -60,7 +60,7 @@ def search(pattern):
             print(dir(pycode.vars))
     db1.close()
     db2.close()
-    print("Checked",match+nomatch,"entries from caches")
-    print(nomatch,"did not match pattern")
-    print(match,"did match pattern")
+    print("Checked", match+nomatch, "entries from caches")
+    print(nomatch, "did not match pattern")
+    print(match, "did match pattern")
     return pmatch

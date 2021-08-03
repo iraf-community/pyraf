@@ -248,7 +248,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # most of the time it will be in the active task dictionary
         try:
             paramdict = self.getParDict()
-            if paramdict._has(paramname,exact=exact):
+            if paramdict._has(paramname, exact=exact):
                 return paramdict[paramname]
         except minmatch.AmbiguousKeyError as e:
             # re-raise the error with a bit more info
@@ -261,12 +261,12 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
             if self._parDictList is None: self._setParDictList()
             for dictname, paramdict in self._parDictList:
-                if paramdict._has(paramname,exact=exact):
+                if paramdict._has(paramname, exact=exact):
                     return paramdict[paramname]
 
         raise IrafError("Unknown parameter requested: "+paramname)
 
-    def getAllMatches(self,param):
+    def getAllMatches(self, param):
         """Return list of names of all parameters that may match param"""
         self.initTask(force=1)
         plist = self._runningParList or self._currentParList
@@ -286,7 +286,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
         if not pkgbinary:
             return
-        elif isinstance(pkgbinary,str):
+        elif isinstance(pkgbinary, str):
             if pkgbinary and (pkgbinary not in self._pkgbinary):
                 self._pkgbinary.append(pkgbinary)
         else:
@@ -375,7 +375,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         Searches up the task, package, cl hierarchy for automatic modes
         """
         if parList is not None:
-            mode = parList.getValue('mode',prompt=0)
+            mode = parList.getValue('mode', prompt=0)
         else:
             pdict = self.getParDict()
             if pdict:
@@ -462,7 +462,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             # set mode of automatic parameters
             mode = self.getMode(newParList)
             for p in newParList.getParList():
-                p.mode = p.mode.replace("a",mode)
+                p.mode = p.mode.replace("a", mode)
         if parList:
             #XXX Set all command-line flags for parameters when a
             #XXX parlist is supplied so that it does not prompt for
@@ -497,8 +497,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                 for dictname, paramdict in self._parDictList:
                     if dictname == task:
                         if paramname in paramdict:
-                            paramdict[paramname].set(newvalue,index=pindex,
-                                    field=field,check=check)
+                            paramdict[paramname].set(newvalue, index=pindex,
+                                    field=field, check=check)
                             return
                         else:
                             raise IrafError("Attempt to set unknown parameter "+
@@ -510,7 +510,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                 # reattach the index and/or field
                 if pindex: paramname = paramname + '[' + repr(pindex+1) + ']'
                 if field: paramname = paramname + '.' + field
-                tobj.setParam(paramname,newvalue,check=check)
+                tobj.setParam(paramname, newvalue, check=check)
                 return
             except KeyError:
                 raise IrafError("Could not find task "+task+
@@ -523,9 +523,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # most of the time it will be in the active task dictionary
 
         paramdict = self.getParDict()
-        if paramdict._has(paramname,exact=exact):
-            paramdict[paramname].set(newvalue,index=pindex,
-                    field=field,check=check)
+        if paramdict._has(paramname, exact=exact):
+            paramdict[paramname].set(newvalue, index=pindex,
+                    field=field, check=check)
             return
 
         # OK, the easy case didn't work -- now initialize the
@@ -533,9 +533,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
         if self._parDictList is None: self._setParDictList()
         for dictname, paramdict in self._parDictList:
-            if paramdict._has(paramname,exact=exact):
-                paramdict[paramname].set(newvalue,index=pindex,
-                        field=field,check=check)
+            if paramdict._has(paramname, exact=exact):
+                paramdict[paramname].set(newvalue, index=pindex,
+                        field=field, check=check)
                 return
         else:
             raise IrafError("Attempt to set unknown lone parameter "+
@@ -599,7 +599,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # most of the time it will be in the active task dictionary
         paramdict = self.getParDict()
         try:
-            if paramdict._has(paramname,exact=exact):
+            if paramdict._has(paramname, exact=exact):
                 return self._getParFromDict(paramdict, paramname, pindex,
                                             field, native, mode=mode, prompt=prompt)
         except minmatch.AmbiguousKeyError as e:
@@ -611,7 +611,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         # complete parDictList (if necessary) and search them all
         if self._parDictList is None: self._setParDictList()
         for dictname, paramdict in self._parDictList:
-            if paramdict._has(paramname,exact=exact):
+            if paramdict._has(paramname, exact=exact):
                 return self._getParFromDict(paramdict, paramname, pindex,
                                                 field, native, mode="h", prompt=prompt)
         else:
@@ -707,7 +707,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             if self._scrunchParpath and \
               (self._scrunchParpath == self._currentParpath):
                 try:
-                    os.remove(pyraf.iraf.Expand(self._scrunchParpath,noerror=1))
+                    os.remove(pyraf.iraf.Expand(self._scrunchParpath, noerror=1))
                 except OSError:
                     pass
             self._currentParList = copy.deepcopy(self._defaultParList)
@@ -736,16 +736,16 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
     # parameters are accessible as attributes
 
-    def __getattr__(self,name):
+    def __getattr__(self, name):
         if name[:1] == '_':
             raise AttributeError(name)
         self.initTask()
         try:
-            return self.getParam(name,native=1)
+            return self.getParam(name, native=1)
         except SyntaxError as e:
             raise AttributeError(str(e))
 
-    def __setattr__(self,name,value):
+    def __setattr__(self, name, value):
         # hidden Python parameters go into the standard dictionary
         # (hope there are none of these in IRAF tasks)
         if name[:1] == '_':
@@ -754,7 +754,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             self.__dict__[name] = value
         else:
             self.initTask()
-            self.setParam(name,value)
+            self.setParam(name, value)
 
     def is_pseudo(self, paramname):
         """Hook enabling ECL pseudos... always returns False"""
@@ -875,19 +875,19 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
 
         # Start with the parameters for the current task
         self.initTask()
-        parDictList = [(self._name,self.getParDict())]
+        parDictList = [(self._name, self.getParDict())]
 
         # Next, parameters from the package to which the current task belongs
         # [Ticket 59: mimic behavior of param.c:lookup_param()]
         task = pyraf.iraf.getTask(self.getPkgname())
         pd = task.getParDict()
         if pd: # do not include null dictionaries
-            parDictList.append( (self.getPkgname(),pd) )
+            parDictList.append( (self.getPkgname(), pd) )
 
         # Lastly, cl parameters
         cl = pyraf.iraf.cl
         if cl is not None:
-            parDictList.append( (cl.getName(),cl.getParDict()) )
+            parDictList.append( (cl.getName(), cl.getParDict()) )
 
         # Done
         self._parDictList = parDictList
@@ -901,9 +901,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         pmode = par.mode[:1]
         if pmode == "a":
             pmode = mode or self.getMode()
-        v = par.get(index=pindex,field=field,
-                    native=native,mode=pmode,prompt=prompt)
-        if isinstance(v,str) and v[:1] == ")":
+        v = par.get(index=pindex, field=field,
+                    native=native, mode=pmode, prompt=prompt)
+        if isinstance(v, str) and v[:1] == ")":
 
             # parameter indirection: call getParam recursively
             # I'm making the assumption that indirection in a
@@ -914,7 +914,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             # ')task.param.p_min' refers to the min or
             # choice string, etc.
 
-            return self.getParam(v[1:],native=native,mode="h",prompt=prompt)
+            return self.getParam(v[1:], native=native, mode="h", prompt=prompt)
         else:
             return v
 
@@ -1003,7 +1003,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             basedir = ""
 
         # default parameters are found with task
-        self._defaultParpath = os.path.join(basedir,self._name + ".par")
+        self._defaultParpath = os.path.join(basedir, self._name + ".par")
         if not os.path.exists(pyraf.iraf.Expand(self._defaultParpath,
                               noerror=1)):
             self._noParFile()
@@ -1047,7 +1047,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                 sys.stderr.flush()
                 #XXX just toss it for now -- later can try to merge new,old
                 try:
-                    os.remove(pyraf.iraf.Expand(self._scrunchParpath,noerror=1))
+                    os.remove(pyraf.iraf.Expand(self._scrunchParpath, noerror=1))
                 except OSError:
                     pass
                 self._currentParpath = self._defaultParpath
@@ -1078,7 +1078,7 @@ class IrafGKITask(IrafTask):
 
     def __init__(self, name, filename):
         """Initialize: only name and executable filename are needed"""
-        IrafTask.__init__(self,'',name,'',filename,'clpackage','bin$')
+        IrafTask.__init__(self, '', name, '', filename, 'clpackage', 'bin$')
         self.setHidden()
         # all graphics kernel  tasks have the same parameters
         pars = irafpar.IrafParList(name)
@@ -1103,7 +1103,7 @@ class IrafPset(IrafTask):
     """IRAF pset class (special case of IRAF task)"""
 
     def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
-        IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
+        IrafTask.__init__(self, prefix, name, suffix, filename, pkgname, pkgbinary)
         # check that parameters are consistent with pset:
         # - not a foreign task
         # - has a parameter file
@@ -1134,7 +1134,7 @@ class IrafPythonTask(IrafTask):
     def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary,
                     function):
         # filename is the .par file for this task
-        IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
+        IrafTask.__init__(self, prefix, name, suffix, filename, pkgname, pkgbinary)
         if self.getForeign():
             raise IrafError(
                   "Python task `%s' cannot be foreign (filename=`%s')" %
@@ -1217,12 +1217,12 @@ class ParDictListSearch:
             raise AttributeError(paramname)
         # try exact match
         try:
-            return self._taskObj.getParam(paramname,native=1,mode="h",exact=1)
+            return self._taskObj.getParam(paramname, native=1, mode="h", exact=1)
         except IrafError as e:
             pass
         # try minimum match
         try:
-            p = self._taskObj.getParObject(paramname,alldict=1)
+            p = self._taskObj.getParObject(paramname, alldict=1)
         except IrafError as e:
             # not found at all
             raise AttributeError(str(e))
@@ -1235,12 +1235,12 @@ class ParDictListSearch:
     def getParObject(self, paramname):
         # try exact match
         try:
-            return self._taskObj.getParObject(paramname,exact=1,alldict=1)
+            return self._taskObj.getParObject(paramname, exact=1, alldict=1)
         except IrafError as e:
             pass
         # try minimum match
         try:
-            p = self._taskObj.getParObject(paramname,alldict=1)
+            p = self._taskObj.getParObject(paramname, alldict=1)
         except IrafError as e:
             # not found at all
             raise AttributeError(str(e))
@@ -1256,12 +1256,12 @@ class ParDictListSearch:
         if paramname[:1] == '_': raise AttributeError(paramname)
         # try exact match
         try:
-            return self._taskObj.setParam(paramname,value,exact=1)
+            return self._taskObj.setParam(paramname, value, exact=1)
         except IrafError as e:
             pass
         # try minimum match
         try:
-            p = self._taskObj.getParObject(paramname,alldict=1)
+            p = self._taskObj.getParObject(paramname, alldict=1)
         except IrafError as e:
             # not found at all
             raise AttributeError(str(e))
@@ -1282,18 +1282,18 @@ class IrafCLTask(IrafTask):
 
     def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
         # allow filename to be a filehandle or a filename
-        if isinstance(filename,str):
+        if isinstance(filename, str):
             fh = None
         else:
-            if not hasattr(filename,'read'):
+            if not hasattr(filename, 'read'):
                 raise TypeError(
                         'filename must be either a string or a filehandle')
             fh = filename
-            if hasattr(fh,'name'):
+            if hasattr(fh, 'name'):
                 filename = fh.name
             else:
                 filename = None
-        IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
+        IrafTask.__init__(self, prefix, name, suffix, filename, pkgname, pkgbinary)
         if self.getForeign():
             raise IrafError("CL task `%s' cannot be foreign (filename=`%s')" %
                             (self.getName(), filename))
@@ -1392,7 +1392,7 @@ class IrafCLTask(IrafTask):
                 # null pkgname -- just use task in name
                 scriptname = '<CL script %s>' % self._name
             # force compile to inherit future div. so we don't rely on 2.x div.
-            self._codeObject = compile(self._pycode.code,scriptname,'exec',0,0)
+            self._codeObject = compile(self._pycode.code, scriptname, 'exec', 0, 0)
 
 
         if self._clFunction is None:
@@ -1493,7 +1493,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
     """IRAF package class (special case of IRAF task)"""
 
     def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
-        IrafCLTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
+        IrafCLTask.__init__(self, prefix, name, suffix, filename, pkgname, pkgbinary)
         self._loaded = 0
         self._tasks = minmatch.MinMatchDict()
         self._subtasks = minmatch.MinMatchDict()
@@ -1577,7 +1577,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
         # return package parameter if it exists
         plist = self._runningParList or self._currentParList
         if plist and plist.hasPar(name):
-            return plist.getValue(name,native=1,mode=self.getMode())
+            return plist.getValue(name, native=1, mode=self.getMode())
         # else search for task with the given name
         if not self._loaded:
             raise AttributeError("Package " + self.getName() +
@@ -1622,9 +1622,9 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
         for fullname in self._pkgs.values():
             p = getPkg(fullname)
             if p._loaded and (not getTried(id(p))):
-                task = p._getTaskFullname(name,triedpkgs=triedpkgs)
+                task = p._getTaskFullname(name, triedpkgs=triedpkgs)
                 if task:
-                    self._subtasks.add(name,task)
+                    self._subtasks.add(name, task)
                     return task
         return None
 
@@ -1727,7 +1727,7 @@ class IrafForeignTask(IrafTask):
     """IRAF foreign task class"""
 
     def __init__(self, prefix, name, suffix, filename, pkgname, pkgbinary):
-        IrafTask.__init__(self,prefix,name,suffix,filename,pkgname,pkgbinary)
+        IrafTask.__init__(self, prefix, name, suffix, filename, pkgname, pkgbinary)
         # check that parameters are consistent with foreign task:
         # - foreign flag set
         # - no parameter file
@@ -1776,7 +1776,7 @@ class IrafForeignTask(IrafTask):
         args = self._args
         self._nsub = 0
         # create command line
-        cmdline = _re_foreign_par.sub(self._parSub,self._filename)
+        cmdline = _re_foreign_par.sub(self._parSub, self._filename)
         if self._nsub==0 and args:
             # no argument substitution, just append all args
             cmdline = cmdline + ' ' + ' '.join(args)
@@ -1815,7 +1815,7 @@ class IrafForeignTask(IrafTask):
         n = mo.group('allparen')
         if n is not None:
             # $(*) -- append all arguments with virtual filenames converted
-            return ' '.join(map(pyraf.iraf.Expand,self._args))
+            return ' '.join(map(pyraf.iraf.Expand, self._args))
         raise IrafError("Cannot handle foreign string `%s' "
                         "for task %s" % (self._filename, self._name))
 

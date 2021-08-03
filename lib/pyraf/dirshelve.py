@@ -41,12 +41,12 @@ class Shelf(shelve.Shelf):
 
     def __setitem__(self, key, value):
         f = shelve.StringIO()
-        p = shelve.Pickler(f,1)
+        p = shelve.Pickler(f, 1)
         p.dump(value)
         self.dict[key] = f.getvalue()
 
     def close(self):
-        if hasattr(self,'dict') and hasattr(self.dict,'close'):
+        if hasattr(self, 'dict') and hasattr(self.dict, 'close'):
             try:
                 self.dict.close()
             except:

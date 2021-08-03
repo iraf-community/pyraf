@@ -54,7 +54,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     # e.g. "from iraf import stsdas, noao" or "from .iraf import noao"
     if fromlist and (name in ["iraf", "pyraf.iraf", ".iraf"]):
         for task in fromlist:
-            pkg = the_iraf_module.getPkg(task,found=1)
+            pkg = the_iraf_module.getPkg(task, found=1)
             if pkg is not None and not pkg.isLoaded():
                 pkg.run(_doprint=0, _hush=1)
         # must return a module for 'from' import

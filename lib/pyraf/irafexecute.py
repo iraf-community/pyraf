@@ -27,7 +27,7 @@ test_probe = False
 
 #stdgraph = None
 
-IPC_PREFIX = ndarr2bytes(numpy.array([0o1120],numpy.int16))
+IPC_PREFIX = ndarr2bytes(numpy.array([0o1120], numpy.int16))
 
 # weirdo protocol to get output from task back to subprocess
 # definitions from cl/task.h and lib/clio.h
@@ -332,7 +332,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
             # do graphics task initialization
             gki.kernel.taskStart(taskname)
             focusMark = wutil.focusController.getCurrentMark()
-            gki.kernel.pushStdio(None,None,None)
+            gki.kernel.pushStdio(None, None, None)
         try:
             irafprocess.run(task, pstdin=stdin, pstdout=stdout, pstderr=stderr)
         finally:
@@ -466,9 +466,9 @@ class IrafProcess:
         # stdinIsatty flag is used in xfer to decide whether to
         # read inputs in blocks or not.  As long as input comes
         # from __stdin__, consider it equivalent to a tty.
-        self.stdinIsatty = (hasattr(stdin,'isatty') and stdin.isatty()) or \
+        self.stdinIsatty = (hasattr(stdin, 'isatty') and stdin.isatty()) or \
                 self.stdin == sys.__stdin__
-        self.stdoutIsatty = hasattr(stdout,'isatty') and stdout.isatty()
+        self.stdoutIsatty = hasattr(stdout, 'isatty') and stdout.isatty()
 
         # stdinIsraw flag is used in xfer to decide whether to
         # read inputs as RAW input or not.
@@ -643,7 +643,7 @@ class IrafProcess:
                 xmit()
             elif msg[:4] == 'bye\n':
                 return
-            elif msg5 in ['error','ERROR']:
+            elif msg5 in ['error', 'ERROR']:
                 errno, text = self._scanErrno(msg)
                 raise IrafProcessError("IRAF task terminated abnormally\n"+msg,
                                        errno=errno, errmsg=text, errtask=self.task.getName())
@@ -749,7 +749,7 @@ class IrafProcess:
                     pmsg = pobj.get(lpar=1)
                 else:
                     # replace all newlines in strings with "\n"
-                    pmsg = pmsg.replace('\n','\\n')
+                    pmsg = pmsg.replace('\n', '\\n')
                 pmsg = pmsg + '\n'
             except EOFError:
                 pmsg = 'EOF\n'
@@ -769,13 +769,13 @@ class IrafProcess:
         newvalue = group('svalue')
         self.msg = self.msg[mcmd.end():]
         try:
-            self.task.setParam(paramname,newvalue)
+            self.task.setParam(paramname, newvalue)
         except ValueError as e:
             # on ValueError, just print warning and then force set
             if Verbose>0:
                 self.stderr.write('Warning: %s\n' % (e,))
                 self.stderr.flush()
-            self.task.setParam(paramname,newvalue,check=0)
+            self.task.setParam(paramname, newvalue, check=0)
 
     def xmit(self):
 
@@ -935,7 +935,7 @@ class IrafProcess:
         """
         msg = self.msg
         try:
-            i = msg.find(",",5)
+            i = msg.find(",", 5)
             if i<0 or msg[-2:] != ")\n": raise ValueError()
             chan = int(msg[5:i])
             nbytes = int(msg[i+1:-2])
@@ -1040,7 +1040,7 @@ def Iraf2AscString(iraf_string):
 
 def log_task_comm(pfx, strbuf, expectAsStr, shorten=True):
     import some_pkg_w_a_log_func as L
-    assert isinstance(strbuf, (str,unicode,bytes)), "?!: "+str(type(strbuf))
+    assert isinstance(strbuf, (str, unicode, bytes)), "?!: "+str(type(strbuf))
     if expectAsStr:
         assert isinstance(strbuf, str), "Unexpected type: "+str(type(strbuf))
     if isinstance(strbuf, (str, unicode)):

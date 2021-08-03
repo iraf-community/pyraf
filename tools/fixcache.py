@@ -20,7 +20,7 @@ def fixit(trylist, verbose=0):
         fcount = fcount+1
         if file[-2:] != "==":
             rcount = rcount+1
-            fpath = os.path.join(cachedir,file)
+            fpath = os.path.join(cachedir, file)
             os.rename(fpath, fpath+"==")
     if verbose:
         print("Renamed %d of %d files in %s" % (rcount, fcount, cachedir))

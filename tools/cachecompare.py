@@ -9,12 +9,12 @@ import os
 import pyraf
 
 newname = os.path.expanduser('~/iraf/pyraf/clcache')
-oldname1 = os.path.join(pyraf.irafglobals.pyrafDir,'clcache.old')
+oldname1 = os.path.join(pyraf.irafglobals.pyrafDir, 'clcache.old')
 oldname2 = os.path.expanduser('~/iraf/pyraf/clcache.old')
 
-dbnew = pyraf.dirshelve.open(newname,'r')
-dbold1 = pyraf.dirshelve.open(oldname1,'r')
-dbold2 = pyraf.dirshelve.open(oldname2,'r')
+dbnew = pyraf.dirshelve.open(newname, 'r')
+dbold1 = pyraf.dirshelve.open(oldname1, 'r')
+dbold2 = pyraf.dirshelve.open(oldname2, 'r')
 
 notfound = 0
 found1 = 0
@@ -46,16 +46,16 @@ for key in dbnew.keys():
             diff1 += 1
         else:
             diff2 += 1
-        print(select,"Different", newcode.vars.proc_name)
+        print(select, "Different", newcode.vars.proc_name)
 
 dbnew.close()
 dbold1.close()
 dbold2.close()
-print("Checked",notfound+ok1+ok2+diff1+diff2,"entries from new cache")
-print(notfound,"not found in old cache")
-print(found1,"found in old cache 1",oldname1)
-print(ok1,"same")
-print(diff1,"different")
-print(found2,"found in old cache 2",oldname2)
-print(ok2,"same")
-print(diff2,"different")
+print("Checked", notfound+ok1+ok2+diff1+diff2, "entries from new cache")
+print(notfound, "not found in old cache")
+print(found1, "found in old cache 1", oldname1)
+print(ok1, "same")
+print(diff1, "different")
+print(found2, "found in old cache 2", oldname2)
+print(ok2, "same")
+print(diff2, "different")

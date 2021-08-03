@@ -73,7 +73,7 @@ class Token(compmixin.ComparableMixin):
             if self.type in ["STRING", "QSTRING"]:
                 # add quotes to strings
                 # but replace double escapes with single escapes
-                return repr(self.attr).replace('\\\\','\\')
+                return repr(self.attr).replace('\\\\', '\\')
             else:
                 rv = self.attr
                 if rv is None: rv = self.type
@@ -91,7 +91,7 @@ class Token(compmixin.ComparableMixin):
             return self.__int__()
         elif self.type == "FLOAT":
             return self.__float__()
-        elif self.type in ["STRING","QSTRING"]:
+        elif self.type in ["STRING", "QSTRING"]:
             return self.attr
         elif self.type == "BOOL":
             return self.bool()

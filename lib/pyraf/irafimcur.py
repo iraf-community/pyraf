@@ -8,7 +8,7 @@ $Id$
 """
 from __future__ import division, print_function
 
-import sys,string
+import sys, string
 from stsci.tools import irafutils
 from stsci.tools.irafglobals import Verbose, IrafError
 import irafdisplay, gwm, iraf
@@ -30,7 +30,7 @@ def _getDevice(displayname=None):
         device = gwm.gki.getGraphcap()[displayname]
         dd = device['DD'].split(',')
         if len(dd)>1 and dd[1] != '':
-            imtdev = 'fifo:%si:%so' % (dd[1],dd[1])
+            imtdev = 'fifo:%si:%so' % (dd[1], dd[1])
         else:
             imtdev = None
         # multiple stdimage/graphcap entries can share the same device

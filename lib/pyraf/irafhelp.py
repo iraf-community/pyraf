@@ -91,7 +91,7 @@ _allSingleTypes = _functionTypes + _methodTypes + _listTypes + _numericTypes
 kwnames = ( 'variables', 'functions', 'modules',
                 'tasks', 'packages', 'hidden', 'padchars', 'regexp', 'html' )
 _kwdict = minmatch.MinMatchDict()
-for key in kwnames: _kwdict.add(key,key)
+for key in kwnames: _kwdict.add(key, key)
 del kwnames, key
 
 # additional keywords for IRAF help task
@@ -101,7 +101,7 @@ irafkwnames = ( 'file_template', 'all',
                 'rmargin', 'curpack', 'device', 'helpdb', 'mode' )
 _irafkwdict = {}
 for key in irafkwnames:
-    _kwdict.add(key,key)
+    _kwdict.add(key, key)
     _irafkwdict[key] = 1
 del irafkwnames, key
 
@@ -185,10 +185,10 @@ def _help(an_obj, variables, functions, modules,
     # on it too (XXX this is a bit risky, but I suppose people will not
     # often be asking for help with simple strings as an argument...)
 
-    if isinstance(an_obj,IrafTask):
+    if isinstance(an_obj, IrafTask):
         if _printIrafHelp(an_obj, html, irafkw): return
 
-    if isinstance(an_obj,str):
+    if isinstance(an_obj, str):
         # Python task names
         if an_obj in sys.modules: # e.g. help drizzlepac
             theMod = sys.modules[an_obj]
@@ -205,8 +205,8 @@ def _help(an_obj, variables, functions, modules,
                     theMod.help()
                     return
         # IRAF task names
-        if re.match(r'[A-Za-z_][A-Za-z0-9_.]*$',an_obj) or \
-          (re.match(r'[^\0]*$',an_obj) and \
+        if re.match(r'[A-Za-z_][A-Za-z0-9_.]*$', an_obj) or \
+          (re.match(r'[^\0]*$', an_obj) and \
                     os.path.exists(pyraf.iraf.Expand(an_obj, noerror=1))):
             if _printIrafHelp(an_obj, html, irafkw): return
 
@@ -277,7 +277,7 @@ def _printIrafHelp(an_obj, html, irafkw):
 
 def _valueHelp(an_obj, padchars):
     # just print info on the object itself
-    vstr = _valueString(an_obj,verbose=1)
+    vstr = _valueString(an_obj, verbose=1)
     try:
         name = an_obj.__name__
     except AttributeError:
@@ -312,13 +312,13 @@ def _getContents(vlist, regexp, an_obj):
     for vname in names:
         if (regexp is None) or re_check.match(vname):
             value = vlist[vname]
-            if isinstance(value,IrafPkg):
+            if isinstance(value, IrafPkg):
                 pkglist.append(vname + '/')
-            elif isinstance(value,IrafTask):
+            elif isinstance(value, IrafTask):
                 tasklist.append(vname)
             else:
                 vorder = _sortOrder(type(value))
-                sortlist[vorder].append((vname,value))
+                sortlist[vorder].append((vname, value))
                 namedict[vname] = 1
     # add methods from base classes if this is a class
     if (not PY3K and isinstance(an_obj, types.ClassType)) or \
@@ -330,7 +330,7 @@ def _getContents(vlist, regexp, an_obj):
                 if vname not in namedict and (
                         (regexp is None) or re_check.match(vname)):
                     vorder = _sortOrder(type(value))
-                    sortlist[vorder].append((vname,value))
+                    sortlist[vorder].append((vname, value))
                     namedict[vname] = 1
     # sort into alphabetical order by name
     tasklist.sort()
@@ -419,11 +419,11 @@ def _irafHelp(taskname, irafkw):
     Task can be either a name or an IrafTask object.
     Returns 1 on success or 0 on failure."""
 
-    if isinstance(taskname,IrafTask):
+    if isinstance(taskname, IrafTask):
         taskname = taskname.getName()
     else:
         # expand IRAF variables in case this is name of a help file
-        taskname = pyraf.iraf.Expand(taskname,noerror=1)
+        taskname = pyraf.iraf.Expand(taskname, noerror=1)
     try:
         if 'page' not in irafkw:
             irafkw['page'] = 1
@@ -440,7 +440,7 @@ def _htmlHelp(taskname):
     """Display HTML help for given IRAF task in a browser.
     Task can be either a name or an IrafTask object. """
 
-    if isinstance(taskname,IrafTask):
+    if isinstance(taskname, IrafTask):
         taskname = taskname.getName()
     url = _HelpURL + taskname
 

@@ -79,7 +79,7 @@ class GkiIrafKernel(gki.GkiKernel):
         if metacode:
             # write to a temporary file
             tmpfn = iraf.mktemp("iraf") + ".gki"
-            fout = open(tmpfn,'wb')
+            fout = open(tmpfn, 'wb')
             fout.write(metacode)
             fout.close()
             try:
@@ -102,6 +102,6 @@ class GkiIrafKernel(gki.GkiKernel):
                 # problems with redirection. Sometimes graphics kernel tries
                 # to read from stdin if it is not the default stdin.
 
-                self.task(tmpfn,device=device,generic="yes",Stdin=sys.__stdin__)
+                self.task(tmpfn, device=device, generic="yes", Stdin=sys.__stdin__)
             finally:
                 os.remove(tmpfn)

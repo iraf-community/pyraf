@@ -383,7 +383,7 @@ class PrettyTree(GenericASTTraversal):
         self.nodeCount = 0
         self.preorder()
         print()
-        print(self.nodeCount,'total nodes in tree')
+        print(self.nodeCount, 'total nodes in tree')
 
     def n_NEWLINE(self, node):
         self.nodeCount = self.nodeCount + 1
@@ -396,7 +396,7 @@ class PrettyTree(GenericASTTraversal):
 
     def n_compound_stmt_exit(self, node):
         self.indent = self.indent - 1
-        self.printIndentNode(node,tail='_exit')
+        self.printIndentNode(node, tail='_exit')
         # self.default(node,tail='_exit')
 
     def n_declaration_block(self, node):
@@ -407,7 +407,7 @@ class PrettyTree(GenericASTTraversal):
 
     def n_declaration_block_exit(self, node):
         self.indent = self.indent + 1
-        self.default(node,tail='_exit')
+        self.default(node, tail='_exit')
         print()
 
     def n_BEGIN(self, node):
@@ -443,7 +443,7 @@ class PrettyTree(GenericASTTraversal):
 
     def printIndentNode(self, node, tail=''):
         self.printIndent()
-        self.default(node,tail=tail)
+        self.default(node, tail=tail)
 
     def default(self, node, tail=''):
         if node.type == '}':
@@ -474,7 +474,7 @@ class TreeList(GenericASTTraversal):
             print(node, end=' ')
 
 def treelist(ast,terminal=1):
-    PrettyTree(ast,terminal)
+    PrettyTree(ast, terminal)
 
 def getParser():
     import pyrafglobals

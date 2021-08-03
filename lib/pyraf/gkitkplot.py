@@ -12,7 +12,7 @@ from stsci.tools.for2to3 import ndarr2str
 import wutil, Ptkplot
 import gki, gkitkbase, gkigcur, tkplottext, textattrib, irafgwcs
 
-TK_LINE_STYLE_PATTERNS = ['.','.','_','.','.._']
+TK_LINE_STYLE_PATTERNS = ['.', '.', '_', '.', '.._']
 
 #-----------------------------------------------
 
@@ -146,7 +146,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
 
         """append a 2-tuple (tkplot_function, args) to the glBuffer"""
 
-        self.drawBuffer.append((tkplot_function,args))
+        self.drawBuffer.append((tkplot_function, args))
 
     def gki_clearws(self, arg):
 
@@ -278,8 +278,8 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         # Have Tk remove all previously plotted objects
         self.gwidget.delete(TKNTR.ALL)
         # Clear the screen
-        self.tkplot_faset(0,0)
-        self.tkplot_fillarea(numpy.array([0.,0.,1.,0.,1.,1.,0.,1.]))
+        self.tkplot_faset(0, 0)
+        self.tkplot_fillarea(numpy.array([0., 0., 1., 0., 1., 1., 0., 1.]))
         # Plot the current buffer
         for (function, args) in self.drawBuffer.get():
             function(*args)
@@ -312,9 +312,9 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         gw = self.gwidget
         h = gw.winfo_height()
         w = gw.winfo_width()
-        scaled = (numpy.array([w,-h]) *
+        scaled = (numpy.array([w, -h]) *
                   (numpy.reshape(vertices, (npts, 2))
-                   - numpy.array([0.,1.])))
+                   - numpy.array([0., 1.])))
         gw.create_line(*(tuple(scaled.ravel().astype(numpy.int32))), **options)
 
     def tkplot_polymarker(self, vertices):
@@ -327,18 +327,18 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         gw = self.gwidget
         h = gw.winfo_height()
         w = gw.winfo_width()
-        scaled = (numpy.array([w,-h]) *
+        scaled = (numpy.array([w, -h]) *
                   (numpy.reshape(vertices, (npts, 2))
-                   - numpy.array([0.,1.]))).astype(numpy.int32)
+                   - numpy.array([0., 1.]))).astype(numpy.int32)
         # Lack of intrinsic Tk point mode means that they must be explicitly
         # looped over.
         for i in range(npts):
-            gw.create_rectangle(scaled[i,0], scaled[i,1],
-                                scaled[i,0], scaled[i,1],
+            gw.create_rectangle(scaled[i, 0], scaled[i, 1],
+                                scaled[i, 0], scaled[i, 1],
                                 fill=color, outline='')
     def tkplot_text(self, x, y, text):
 
-        tkplottext.softText(self,x,y,text)
+        tkplottext.softText(self, x, y, text)
 
     def tkplot_fillarea(self, vertices):
 
@@ -355,12 +355,12 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         gw = self.gwidget
         h = gw.winfo_height()
         w = gw.winfo_width()
-        scaled = (numpy.array([w,-h]) *
+        scaled = (numpy.array([w, -h]) *
                   (numpy.reshape(vertices, (npts, 2))
-                   - numpy.array([0.,1.])))
+                   - numpy.array([0., 1.])))
         coords = tuple(scaled.ravel().astype(numpy.int32))
         if fa.fillstyle == 1: # hollow
-            gw.create_line(*(coords+(coords[0],coords[1])), **options)
+            gw.create_line(*(coords+(coords[0], coords[1])), **options)
         else: # solid or clear cases
             gw.create_polygon(*coords, **options)
 
@@ -443,4 +443,4 @@ class tkColorManager:
         red = int(255*color[0])
         green = int(255*color[1])
         blue = int(255*color[2])
-        return "#%02x%02x%02x" % (red,green,blue)
+        return "#%02x%02x%02x" % (red, green, blue)

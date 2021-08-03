@@ -32,11 +32,11 @@ MPL_MAJ_MIN = float(MPL_MAJ_MIN[0]+'.'+MPL_MAJ_MIN[1])
 GKI_TO_MPL_LINEWIDTH = 0.65
 
 # GKI seems to use: 0: clear, 1: solid, 2: dash, 3: dot, 4: dot-dash, 5: ?
-GKI_TO_MPL_LINESTYLE = ['None','-','--',':','-.','steps']
+GKI_TO_MPL_LINESTYLE = ['None', '-', '--', ':', '-.', 'steps']
 
 # Convert GKI alignment int values to MPL (idx 0 = default), 0 is invalid
-GKI_TO_MPL_HALIGN = ['left','center','left','right',0,0,0,0]
-GKI_TO_MPL_VALIGN = ['bottom','center',0,0,0,0,'top','bottom']
+GKI_TO_MPL_HALIGN = ['left', 'center', 'left', 'right', 0, 0, 0, 0]
+GKI_TO_MPL_VALIGN = ['bottom', 'center', 0, 0, 0, 0, 'top', 'bottom']
 # "surface dev$pix" uses idx=5, though that's not allowed
 GKI_TO_MPL_VALIGN[4]='top'
 GKI_TO_MPL_VALIGN[5]='bottom'
@@ -47,11 +47,11 @@ GKI_TEXT_Y_OFFSET = 0.005
 # marktype seems unused at present (most markers are polylines), but for
 # future use, the GIO document lists:
 #    'Acceptable choices are "point", "box", "plus", "cross", "circle" '
-GKI_TO_MPL_MARKTYPE = ['.','s','+','x','o']
+GKI_TO_MPL_MARKTYPE = ['.', 's', '+', 'x', 'o']
 
 # Convert other GKI font attributes to MPL (cannot do bold italic?)
-GKI_TO_MPL_FONTATTR = ['normal',1,2,3,4,5,6,7,'roman','greek','italic','bold',
-                       'low','medium','high']
+GKI_TO_MPL_FONTATTR = ['normal', 1, 2, 3, 4, 5, 6, 7, 'roman', 'greek', 'italic', 'bold',
+                       'low', 'medium', 'high']
 
 
 #-----------------------------------------------
@@ -69,7 +69,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.__ysz = height
 
         ddd = 100
-        self.__fig = Figure(figsize=(self.__xsz/(1.*ddd),self.__ysz/(1.*ddd)),
+        self.__fig = Figure(figsize=(self.__xsz/(1.*ddd), self.__ysz/(1.*ddd)),
                             dpi=ddd)
         self.__fig.set_facecolor('k') # default to black
 
@@ -162,7 +162,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
 
         # scale each patch, then apply it to the figure
         for nrpa in self.__normPatches:
-            rr = Rectangle((0,0),0,0)
+            rr = Rectangle((0, 0), 0, 0)
             rr.update_from(nrpa)
             rr.set_x(nrpa.get_x()*self.__xsz)
             rr.set_y(nrpa.get_y()*self.__ysz)
@@ -337,7 +337,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         """ Append a 2-tuple (plot_function, args) to the draw buffer """
         # Allow for this draw buffer append to be skipped at times
         if not self.__skipPlotAppends:
-            self.drawBuffer.append((plot_function,args))
+            self.drawBuffer.append((plot_function, args))
 
         # Run _noteGkiCmd here as well, as almost all gki_* funcs call us
 #       self._noteGkiCmd(plot_function)
@@ -397,9 +397,9 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # Reshape to get x's and y's
         # arg[0] is the num pairs, so: len(arg)-1 == 2*arg[0]
         verts = gki.ndc(arg[1:])
-        rshpd = verts.reshape(arg[0],2)
-        xs = rshpd[:,0]
-        ys = rshpd[:,1]
+        rshpd = verts.reshape(arg[0], 2)
+        xs = rshpd[:, 0]
+        ys = rshpd[:, 1]
 
         # Put the normalized data into a Line2D object, append to our list.
         # Later we will scale it and append it to the fig.  For the sake of
@@ -437,9 +437,9 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # Reshape to get x's and y's
         # arg[0] is the num pairs, so: len(arg)-1 == 2*arg[0]
         verts = gki.ndc(arg[1:])
-        rshpd = verts.reshape(arg[0],2)
-        xs = rshpd[:,0]
-        ys = rshpd[:,1]
+        rshpd = verts.reshape(arg[0], 2)
+        xs = rshpd[:, 0]
+        ys = rshpd[:, 1]
 
         # put the normalized data into a Line2D object, append to our list
         # later we will scale it and append it to the fig.  See performance
@@ -470,7 +470,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         elif textPath == textattrib.CHARPATH_DOWN:   angle = charUp+180.
 
         # return from 0-360
-        return math.fmod(angle,360.)
+        return math.fmod(angle, 360.)
 
     def gki_text(self, arg):
 
@@ -732,4 +732,4 @@ class tkColorManager:
         red = int(255*color[0])
         green = int(255*color[1])
         blue = int(255*color[2])
-        return "#%02x%02x%02x" % (red,green,blue)
+        return "#%02x%02x%02x" % (red, green, blue)

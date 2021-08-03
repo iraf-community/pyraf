@@ -34,7 +34,7 @@ def setVerbose(value=1, **kw):
     cannot avail itself of the decorator which wraps redirProcess since it
     needs to be defined here up front.
     """
-    if isinstance(value,(str,unicode)):
+    if isinstance(value, (str, unicode)):
         try:
             value = int(value)
         except ValueError:
@@ -172,7 +172,7 @@ def Init(doprint=1,hush=0,savefile=None):
     """Basic initialization of IRAF environment"""
     global _pkgs, cl
     if savefile is not None:
-        restoreFromFile(savefile,doprint=doprint)
+        restoreFromFile(savefile, doprint=doprint)
         return
     if len(_pkgs) == 0:
         try:
@@ -211,16 +211,16 @@ Ureka installation (see http://ssb.stsci.edu/ureka).  Also be sure to run the
                arch == 'suse':
             import resource
             if resource.getrlimit(resource.RLIMIT_STACK)[1]==-1 :
-                resource.setrlimit(resource.RLIMIT_STACK,(-1,-1))
+                resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
             else:
                 pass
         else:
             pass
 
         # ensure trailing slash is present
-        iraf = _os.path.join(iraf,'')
-        host = _os.environ.get('host', _os.path.join(iraf,'unix',''))
-        hlib = _os.environ.get('hlib', _os.path.join(host,'hlib',''))
+        iraf = _os.path.join(iraf, '')
+        host = _os.environ.get('host', _os.path.join(iraf, 'unix', ''))
+        hlib = _os.environ.get('hlib', _os.path.join(host, 'hlib', ''))
         tmp = _os.environ.get('tmp', '/tmp/')
         set(iraf = iraf)
         set(host = host)
@@ -243,7 +243,7 @@ Ureka installation (see http://ssb.stsci.edu/ureka).  Also be sure to run the
         # add the cl as a task, because its parameters are sometimes needed,
         # but make it a hidden task
         # cl is implemented as a Python task
-        cl = IrafTaskFactory('','cl','','cl$cl.par','clpackage','bin$',
+        cl = IrafTaskFactory('', 'cl', '', 'cl$cl.par', 'clpackage', 'bin$',
                 function=_clProcedure)
         cl.setHidden()
 
@@ -275,13 +275,13 @@ Ureka installation (see http://ssb.stsci.edu/ureka).  Also be sure to run the
         loadedPath.append(clpkg)
         if doprint: listTasks('clpackage')
 
-def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
+def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH', 'iraf')):
     """Returns dictionary of environment vars defined in cl startup file"""
     if not _irafinst.EXISTS:
         return {'iraf': '/iraf/is/not/here/', 'IRAFARCH': 'arch_is_unused'}
     if not _os.path.exists(file):
         raise IOError("CL startup file %s does not exist" % file)
-    lines = open(file,'r').readlines()
+    lines = open(file, 'r').readlines()
     # replace commands that exec cl with commands to print environment vars
     pat = _re.compile(r'^\s*exec\s+')
     newlines = []
@@ -302,10 +302,10 @@ def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
     f = open(newfile, 'w')
     f.writelines(newlines)
     f.close()
-    _os.chmod(newfile,0o700)
+    _os.chmod(newfile, 0o700)
     # run new script and capture output
     fh = _StringIO.StringIO()
-    status = clOscmd(newfile,Stdout=fh)
+    status = clOscmd(newfile, Stdout=fh)
     if status:
         raise IOError("Execution error in script %s (derived from %s)" %
             (newfile, file))
@@ -316,7 +316,7 @@ def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH','iraf')):
     d = {}
     for entry in result:
         if entry.find('=') >= 0:
-            key, value = entry.split('=',1)
+            key, value = entry.split('=', 1)
             d[key] = value
     return d
 
@@ -397,10 +397,10 @@ def saveToFile(savefile, **kw):
     else:
         # if clobber is not set, do not overwrite file
         savefile = Expand(savefile)
-        if (not kw.get('clobber')) and envget("clobber","") != yes and _os.path.exists(savefile):
+        if (not kw.get('clobber')) and envget("clobber", "") != yes and _os.path.exists(savefile):
             raise IOError("Output file `%s' already exists" % savefile)
         # open binary pickle file
-        fh = open(savefile,'wb')
+        fh = open(savefile, 'wb')
         doclose = 1
     # make a shallow copy of the dictionary and edit out
     # functions, modules, and objects named in _unsavedVarsDict
@@ -414,7 +414,7 @@ def saveToFile(savefile, **kw):
     # save just the value of Verbose, not the object
     global Verbose
     gdict['Verbose'] = Verbose.get()
-    p = _pickle.Pickler(fh,1)
+    p = _pickle.Pickler(fh, 1)
     p.dump(gdict)
     if doclose:
         fh.close()
@@ -458,7 +458,7 @@ def restoreFromFile(savefile, doprint=1, **kw):
     import pyraf
     import irafpar, cltoken
     for module in (__main__, pyraf, irafpar, irafglobals, cltoken):
-        if hasattr(module,'INDEF'): module.INDEF = INDEF
+        if hasattr(module, 'INDEF'): module.INDEF = INDEF
 
     # replace cl in the iraf module (and possibly other locations)
     global cl
@@ -475,7 +475,7 @@ def _addPkg(pkg):
     """Add an IRAF package to the packages list"""
     global _pkgs
     name = pkg.getName()
-    _pkgs.add(name,pkg)
+    _pkgs.add(name, pkg)
     # add package to global namespaces
     _irafnames.strategy.addPkg(pkg)
     # packages are tasks too, so add to task lists
@@ -493,11 +493,11 @@ def _addTask(task, pkgname=None):
     if not pkgname: pkgname = task.getPkgname()
     fullname = pkgname + '.' + name
     _tasks[fullname] = task
-    _mmtasks.add(name,fullname)
+    _mmtasks.add(name, fullname)
     # add task to global namespaces
     _irafnames.strategy.addTask(task)
     # add task to list for its package
-    getPkg(pkgname).addTask(task,fullname)
+    getPkg(pkgname).addTask(task, fullname)
 
 
 # --------------------------------------------------------------------------
@@ -589,7 +589,7 @@ def addLoaded(pkg):
 
 def load(pkgname,args=(),kw=None,doprint=1,hush=0,save=1):
     """Load an IRAF package by name"""
-    if isinstance(pkgname,_iraftask.IrafPkg):
+    if isinstance(pkgname, _iraftask.IrafPkg):
         p = pkgname
     else:
         p = getPkg(pkgname)
@@ -608,7 +608,7 @@ def load(pkgname,args=(),kw=None,doprint=1,hush=0,save=1):
 
 def run(taskname,args=(),kw=None,save=1):
     """Run an IRAF task by name"""
-    if isinstance(taskname,_iraftask.IrafTask):
+    if isinstance(taskname, _iraftask.IrafTask):
         t = taskname
     else:
         t = getTask(taskname)
@@ -652,9 +652,9 @@ def getTask(taskname, found=0):
     if task is not found.
     """
 
-    if isinstance(taskname,_iraftask.IrafTask):
+    if isinstance(taskname, _iraftask.IrafTask):
         return taskname
-    elif not isinstance(taskname, (str,unicode)):
+    elif not isinstance(taskname, (str, unicode)):
         raise TypeError("Argument to getTask is not a string or IrafTask instance")
 
     # undo any modifications to the taskname
@@ -663,7 +663,7 @@ def getTask(taskname, found=0):
     # Try assuming fully qualified name first
     task = _tasks.get(taskname)
     if task is not None:
-        if Verbose>1: print('found',taskname,'in task list')
+        if Verbose>1: print('found', taskname, 'in task list')
         return task
 
     # Look it up in the minimum-match dictionary
@@ -678,7 +678,7 @@ def getTask(taskname, found=0):
     if len(fullname) == 1:
         # unambiguous match
         task = _tasks[fullname[0]]
-        if Verbose>1: print('found',task.getName(),'in task list')
+        if Verbose>1: print('found', task.getName(), 'in task list')
         return task
 
     # Ambiguous match is OK only if taskname is the full name
@@ -751,7 +751,7 @@ def getPkg(pkgname,found=0):
     is not found.
     """
     try:
-        if isinstance(pkgname,_iraftask.IrafPkg):
+        if isinstance(pkgname, _iraftask.IrafPkg):
             return pkgname
         if not pkgname:
             raise TypeError("Bad package name `%s'" % repr(pkgname))
@@ -854,7 +854,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
         pkgdict = _pkgs
     else:
         pkgdict = {}
-        if isinstance(pkglist, (str,unicode,_iraftask.IrafPkg)):
+        if isinstance(pkglist, (str, unicode, _iraftask.IrafPkg)):
             pkglist = [ pkglist ]
         for p in pkglist:
             try:
@@ -878,9 +878,9 @@ def listTasks(pkglist=None, hidden=0, **kw):
         pkg, task = tname.split('.')
         tobj = _tasks[tname]
         if hidden or not tobj.isHidden():
-            if isinstance(tobj,_iraftask.IrafPkg):
+            if isinstance(tobj, _iraftask.IrafPkg):
                 task = task + '/'
-            elif isinstance(tobj,_iraftask.IrafPset):
+            elif isinstance(tobj, _iraftask.IrafPset):
                 task = task + '@'
             if pkg == lastpkg:
                 tlist.append(task)
@@ -903,7 +903,7 @@ def listCurrent(n=1, hidden=0):
         plist = n*[None]
         for i in range(n):
             plist[i] = loadedPath[-1-i].getName()
-        listTasks(plist,hidden=hidden)
+        listTasks(plist, hidden=hidden)
     else:
         print('No IRAF tasks defined')
 
@@ -998,7 +998,7 @@ def clParGet(paramname,pkg=None,native=1,mode=None,prompt=1):
     # if taskname is '_', use current package as task
     if paramname[:2] == "_.":
         paramname = pkg.getName() + paramname[1:]
-    return pkg.getParam(paramname,native=native,mode=mode,prompt=prompt)
+    return pkg.getParam(paramname, native=native, mode=mode, prompt=prompt)
 
 def envget(var,default=None):
     """Get value of IRAF or OS environment variable"""
@@ -1053,7 +1053,7 @@ def isNullFile(s):
     else:
         return 0
 
-def substr(s,first,last):
+def substr(s, first, last):
     """Return sub-string using IRAF 1-based indexing"""
     if s == INDEF: return INDEF
     # If the first index is zero, always return a zero-length string
@@ -1075,7 +1075,7 @@ def isindef(s):
 def stridx(test, s):
     """Return index of first occurrence of any of the characters in 'test'
     that are in 's' using IRAF 1-based indexing"""
-    if INDEF in (s,test): return INDEF
+    if INDEF in (s, test): return INDEF
     _pos2 = len(s)
     for _char in test:
         _pos = s.find(_char)
@@ -1089,7 +1089,7 @@ def stridx(test, s):
 def strldx(test, s):
     """Return index of last occurrence of any of the characters in 'test'
     that are in 's' using IRAF 1-based indexing"""
-    if INDEF in (s,test): return INDEF
+    if INDEF in (s, test): return INDEF
     _pos2 = -1
     for _char in test:
         _pos = s.rfind(_char)
@@ -1107,13 +1107,13 @@ def strupr(s):
     if s == INDEF: return INDEF
     return s.upper()
 
-def strstr(str1,str2):
+def strstr(str1, str2):
     """Search for first occurrence of 'str1' in 'str2', returns index
     of the start of 'str1' or zero if not found.  IRAF 1-based indexing"""
-    if INDEF in (str1,str2): return INDEF
+    if INDEF in (str1, str2): return INDEF
     return str2.find(str1)+1
 
-def strlstr(str1,str2):
+def strlstr(str1, str2):
     """Search for last occurrence of 'str1' in 'str2', returns index
     of the start of 'str1' or zero if not found.  IRAF 1-based indexing"""
     if INDEF in (str1, str2): return INDEF
@@ -1147,7 +1147,7 @@ def real(x):
     """Return real/float representation of x"""
     if x == INDEF:
         return INDEF
-    elif isinstance(x, (str,unicode)):
+    elif isinstance(x, (str, unicode)):
         x = x.strip()
         if x.find(':') >= 0:
             #...handle the special a:b:c case here...
@@ -1159,7 +1159,7 @@ def real(x):
             m = _re.search(r"[^0-9:.]", x)
             if m:
                 x = x[0:m.start()]
-            f = map(float,x.split(":"))
+            f = map(float, x.split(":"))
             f = list(map(abs, f))
             return sign*clSexagesimal(*f)
         else:
@@ -1175,7 +1175,7 @@ def integer(x):
     """Return integer representation of x"""
     if x==INDEF:
         return INDEF
-    elif isinstance(x, (str,unicode)):
+    elif isinstance(x, (str, unicode)):
         x = x.strip()
         i = 0
         j = len(x)
@@ -1191,7 +1191,7 @@ def integer(x):
 
 def mod(a, b):
     """Return a modulo b"""
-    if INDEF in (a,b): return INDEF
+    if INDEF in (a, b): return INDEF
     return (a % b)
 
 def nint(x):
@@ -1209,7 +1209,7 @@ def radix(value, base=10, length=0):
     bit-pattern of the twos-complement integer (even for base 10) rather
     than a signed value.  This is consistent with IRAF's behavior.
     """
-    if INDEF in (value,base,length): return INDEF
+    if INDEF in (value, base, length): return INDEF
     if not (2 <= base <= 36):
         raise ValueError("base must be between 2 and 36 (inclusive)")
     ivalue = int(value)
@@ -1285,12 +1285,12 @@ def tan(value):
     else:
         return _math.tan(value)
 
-def atan2(x,y):
+def atan2(x, y):
     """Trigonometric 2-argument arctangent function.  Result in radians."""
-    if INDEF in (x,y):
+    if INDEF in (x, y):
         return INDEF
     else:
-        return _math.atan2(x,y)
+        return _math.atan2(x, y)
 
 def dsin(value):
     """Trigonometric sine function.  Input in degrees."""
@@ -1327,12 +1327,12 @@ def dtan(value):
     else:
         return _math.tan(_math.radians(value))
 
-def datan2(x,y):
+def datan2(x, y):
     """Trigonometric 2-argument arctangent function.  Result in degrees."""
-    if INDEF in (x,y):
+    if INDEF in (x, y):
         return INDEF
     else:
-        return _math.degrees(_math.atan2(x,y))
+        return _math.degrees(_math.atan2(x, y))
 
 def exp(value):
     """Exponential function"""
@@ -1383,12 +1383,12 @@ def maximum(*args):
     else:
         return max(*args)
 
-def hypot(x,y):
+def hypot(x, y):
     """Return the Euclidean distance, sqrt(x*x + y*y)."""
-    if INDEF in (x,y):
+    if INDEF in (x, y):
         return INDEF
     else:
-        return _math.hypot(x,y)
+        return _math.hypot(x, y)
 
 def sign(value):
     """Sign of argument (-1 or 1)"""
@@ -1403,19 +1403,19 @@ def clNot(value):
     if value==INDEF: return INDEF
     return ~(int(value))
 
-def clAnd(x,y):
+def clAnd(x, y):
     """Bitwise boolean AND of two integers"""
-    if INDEF in (x,y): return INDEF
+    if INDEF in (x, y): return INDEF
     return x&y
 
-def clOr(x,y):
+def clOr(x, y):
     """Bitwise boolean OR of two integers"""
-    if INDEF in (x,y): return INDEF
+    if INDEF in (x, y): return INDEF
     return x|y
 
-def clXor(x,y):
+def clXor(x, y):
     """Bitwise eXclusive OR of two integers"""
-    if INDEF in (x,y): return INDEF
+    if INDEF in (x, y): return INDEF
     return x^y
 
 def osfn(filename):
@@ -1431,7 +1431,7 @@ def osfn(filename):
     if filename == INDEF: return INDEF
     ename = Expand(filename)
     dlist = [s.strip() for s in ename.split(_os.sep)]
-    if len(dlist)==1 and dlist[0] not in [_os.curdir,_os.pardir]:
+    if len(dlist)==1 and dlist[0] not in [_os.curdir, _os.pardir]:
         return dlist[0]
 
     # I use string.join instead of os.path.join here because
@@ -1440,7 +1440,7 @@ def osfn(filename):
     epath = _os.sep.join(dlist)
     fname = _os.path.abspath(epath)
     # append '/' if relative directory was at end or filename ends with '/'
-    if fname[-1] != _os.sep and dlist[-1] in ['', _os.curdir,_os.pardir]:
+    if fname[-1] != _os.sep and dlist[-1] in ['', _os.curdir, _os.pardir]:
         fname = fname + _os.sep
     return fname
 
@@ -1485,7 +1485,7 @@ def defpar(paramname):
     """Returns true if parameter is defined"""
     if paramname == INDEF: return INDEF
     try:
-        value = clParGet(paramname,prompt=0)
+        value = clParGet(paramname, prompt=0)
         return 1
     except IrafError as e:
         # treat all errors (including ambiguous task and parameter names)
@@ -1504,7 +1504,7 @@ def fp_equal(x, y):
     """Floating point compare  to within machine precision. This logic is
        taken directly from IRAF's fp_equald function."""
     # Check the easy answers first
-    if INDEF in (x,y): return INDEF
+    if INDEF in (x, y): return INDEF
     if x==y: return True
 
     # We can't normalize zero, so handle the zero operand cases first.
@@ -1703,13 +1703,13 @@ def boolean(value):
     Accepts integer/float values 0,1 or string 'no','yes'
     Also allows INDEF as value, or existing IRAF boolean type.
     """
-    if value in [0,1]:
+    if value in [0, 1]:
         return value
     elif value in (no, yes):
         return int(value)
     elif value in [INDEF, "", None]:
         return INDEF
-    if isinstance(value, (str,unicode)):
+    if isinstance(value, (str, unicode)):
         v2 = _irafutils.stripQuotes(value.strip())
         if v2 == "INDEF":
             return INDEF
@@ -1718,7 +1718,7 @@ def boolean(value):
             return 0
         elif ff == "yes":
             return 1
-    elif isinstance(value,float):
+    elif isinstance(value, float):
         # try converting to integer
         try:
             ival = int(value)
@@ -1764,7 +1764,7 @@ def fscan(theLocals, line, *namelist, **kw):
         _nscan = 0
         return EOF
     f = line.split()
-    n = min(len(f),len(namelist))
+    n = min(len(f), len(namelist))
     # a tricky thing -- null input is OK if the first variable is
     # a struct
     if n==0 and namelist and _isStruct(theLocals, namelist[0]):
@@ -1844,7 +1844,7 @@ def fscanf(theLocals, line, format, *namelist, **kw):
     if sscanf == None:
         raise RuntimeError("fscanf is not supported on this platform")
     f = sscanf.sscanf(line, format)
-    n = min(len(f),len(namelist))
+    n = min(len(f), len(namelist))
     # if list is null, add a null string
     # ugly but should be right most of the time
     if n==0 and namelist:
@@ -2005,7 +2005,7 @@ def set(*args, **kw):
         #
         # Flag any other syntax as an error.
         if len(args) != 1 or len(kw) != 0 or \
-           (not isinstance(args[0],(str,unicode))) or args[0][:1] != '@':
+           (not isinstance(args[0], (str, unicode))) or args[0][:1] != '@':
             raise SyntaxError("set requires name=value pairs")
 
 # currently do not distinguish set from reset
@@ -2121,17 +2121,17 @@ def stty(terminal=None, **kw):
         dftNlin = '24'
         try:
            if _sys.stdout.isatty():
-               nlines,ncols = _wutil.getTermWindowSize()
+               nlines, ncols = _wutil.getTermWindowSize()
                dftNcol = str(ncols)
                dftNlin = str(nlines)
         except: pass # No error message here - may not always be available
         # no args: print terminal type and size
-        print('%s ncols=%s nlines=%s' % (envget('terminal','undefined'),
-                envget('ttyncols',dftNcol), envget('ttynlines',dftNlin)))
+        print('%s ncols=%s nlines=%s' % (envget('terminal', 'undefined'),
+                envget('ttyncols', dftNcol), envget('ttynlines', dftNlin)))
     elif expkw['resize'] or expkw['terminal'] == "resize":
         # resize: sets CL env parameters giving screen size; show errors
         if _sys.stdout.isatty():
-            nlines,ncols = _wutil.getTermWindowSize()
+            nlines, ncols = _wutil.getTermWindowSize()
             set(ttyncols=str(ncols), ttynlines=str(nlines))
     elif expkw['terminal']:
         set(terminal=expkw['terminal'])
@@ -2140,7 +2140,7 @@ def stty(terminal=None, **kw):
         if ('nlines' not in kw) and ('ncols' not in kw) and \
            _sys.stdout.isatty():
             try:
-                nlines,ncols = _wutil.getTermWindowSize()
+                nlines, ncols = _wutil.getTermWindowSize()
                 set(ttyncols=str(ncols), ttynlines=str(nlines))
             except: pass # No error msg here - may not always be available
     elif expkw['playback'] is not None:
@@ -2384,7 +2384,7 @@ def history(n=20):
     try:
         n = abs(int(n))
         __main__._pycmdline.printHistory(n)
-    except (NameError,AttributeError):
+    except (NameError, AttributeError):
         pass
 
 @handleRedirAndSaveKwds
@@ -2495,19 +2495,19 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     if 'stdin' in redirKW:
         stdin = redirKW['stdin']
         del redirKW['stdin']
-        if hasattr(stdin,'name'):
+        if hasattr(stdin, 'name'):
             filename = stdin.name.split('.')[0]
         else:
             filename = 'tmp'
     elif input is not None:
-        if isinstance(input,(str,unicode)):
+        if isinstance(input, (str, unicode)):
             # input is a string -- stick it in a StringIO buffer
             stdin = _StringIO.StringIO(input)
             filename = input
-        elif hasattr(input,'read'):
+        elif hasattr(input, 'read'):
             # input is a filehandle
             stdin = input
-            if hasattr(stdin,'name'):
+            if hasattr(stdin, 'name'):
                 filename = stdin.name.split('.')[0]
             else:
                 filename = 'tmp'
@@ -2599,8 +2599,8 @@ def task(*args, **kw):
         # of view but it can't much be helped.  verify later is it unique
         orig_tmpCl = tmpCl
         tmpClPath, tmpClFname = _os.path.split(tmpCl)
-        tmpClFname = tmpClFname.replace('-','_')
-        tmpClFname = tmpClFname.replace('+','_')
+        tmpClFname = tmpClFname.replace('-', '_')
+        tmpClFname = tmpClFname.replace('+', '_')
         tmpCl = _os.path.join(tmpClPath, tmpClFname)
         assert tmpCl == orig_tmpCl or not _os.path.exists(tmpCl), \
                'Abused mkstemp usage in some way; fname: '+tmpCl
@@ -2627,8 +2627,8 @@ def task(*args, **kw):
         name = mtl.group('taskname')
         prefix = mtl.group('taskprefix')
         suffix = mtl.group('tasksuffix')
-        newtask = IrafTaskFactory(prefix,name,suffix,value,
-                        pkgname,pkgbinary,redefine=redefine)
+        newtask = IrafTaskFactory(prefix, name, suffix, value,
+                        pkgname, pkgbinary, redefine=redefine)
 
 def redefine(*args, **kw):
     """Redefine an existing task"""
@@ -2679,7 +2679,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
             pkg = getPkg(pkgname, found=1)
             if pkg is None:
                 pkg = getTask(pkgname, found=1)
-                if pkg is None or not isinstance(pkg,_iraftask.IrafCLTask) or \
+                if pkg is None or not isinstance(pkg, _iraftask.IrafCLTask) or \
                                 pkg.getName() != pkgname:
                     raise KeyError("Package `%s' not defined" % pkgname)
                 # Hack city -- there is a CL task with the package name, but it was
@@ -2879,7 +2879,7 @@ def chdir(directory=None):
     if directory is None:
         # use startup directory as home if argument is omitted
         directory = userWorkingHome
-    if not isinstance(directory, (str,unicode)):
+    if not isinstance(directory, (str, unicode)):
         raise IrafError("Illegal non-string value for directory:"+ \
               +repr(directory))
     if Verbose > 2:
@@ -2965,7 +2965,7 @@ def clCompatibilityMode(verbose=0, _save=0):
     print('Entering CL-compatibility%s mode...' % vmode)
 
     # logging may be active if Monty is in use
-    if hasattr(__main__,'_pycmdline'):
+    if hasattr(__main__, '_pycmdline'):
         logfile = __main__._pycmdline.logfile
     else:
         logfile = None
@@ -3073,10 +3073,10 @@ def clExecute(s, locals=None, mode="proc",
 #       DBG('pycode for task,script='+str((taskname,scriptname,))+':\n'+code)
 #       DBG('*'*80)
         # force compile to inherit future division so we don't rely on 2.x div.
-        codeObject = compile(code,scriptname,'exec',0,0)
+        codeObject = compile(code, scriptname, 'exec', 0, 0)
         # add this script to linecache
         codeLines = code.split('\n')
-        _linecache.cache[scriptname] = (0,0,codeLines,taskname)
+        _linecache.cache[scriptname] = (0, 0, codeLines, taskname)
         if locals is None: locals = {}
         exec(codeObject, locals)
         if pycode.vars.proc_name:
@@ -3143,7 +3143,7 @@ def _expand1(instring, noerror):
     mm = __re_var_paren.search(instring)
     while mm is not None:
         # remove embedded dollar signs from name
-        varname = mm.group('varname').replace('$','')
+        varname = mm.group('varname').replace('$', '')
         if defvar(varname):
             varname = envget(varname)
         elif noerror:
@@ -3206,12 +3206,12 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
         taskname = staskname
 
     if suffix == '.pkg':
-        return IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
+        return IrafPkgFactory(prefix, taskname, suffix, value, pkgname, pkgbinary,
                 redefine=redefine)
 
     root, ext = _os.path.splitext(value)
     if ext == '.par' and function is None:
-        return IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,
+        return IrafPsetFactory(prefix, taskname, suffix, value, pkgname, pkgbinary,
                 redefine=redefine)
 
     # normal task definition
@@ -3223,17 +3223,17 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
         _writeError("Warning: `%s' is not a defined task" % taskname)
 
     if function is not None:
-        newtask = module.IrafPythonTask(prefix,taskname,suffix,value,
-                                pkgname,pkgbinary,function=function)
+        newtask = module.IrafPythonTask(prefix, taskname, suffix, value,
+                                pkgname, pkgbinary, function=function)
     elif ext == '.cl':
-        newtask = module.IrafCLTask(prefix,taskname,suffix,value,
-                                        pkgname,pkgbinary)
+        newtask = module.IrafCLTask(prefix, taskname, suffix, value,
+                                        pkgname, pkgbinary)
     elif value[:1] == '$':
-        newtask = module.IrafForeignTask(prefix,taskname,suffix,value,
-                                        pkgname,pkgbinary)
+        newtask = module.IrafForeignTask(prefix, taskname, suffix, value,
+                                        pkgname, pkgbinary)
     else:
-        newtask = module.IrafTask(prefix,taskname,suffix,value,
-                                        pkgname,pkgbinary)
+        newtask = module.IrafTask(prefix, taskname, suffix, value,
+                                        pkgname, pkgbinary)
     if task is not None:
         # check for consistency of definition by comparing to the
         # new object
@@ -3246,7 +3246,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
             # new task is consistent with old task, so return old task
             if task.getPkgbinary() != newtask.getPkgbinary():
                 # package binary differs -- add it to search path
-                if Verbose>1: print('Adding',pkgbinary,'to',task,'path')
+                if Verbose>1: print('Adding', pkgbinary, 'to', task, 'path')
                 task.addPkgbinary(pkgbinary)
             return task
     # add it to the task list
@@ -3274,7 +3274,7 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
     if task is None and redefine:
         _writeError("Warning: `%s' is not a defined task" % taskname)
 
-    newtask = module.IrafPset(prefix,taskname,suffix,value,pkgname,pkgbinary)
+    newtask = module.IrafPset(prefix, taskname, suffix, value, pkgname, pkgbinary)
     if task is not None:
         # check for consistency of definition by comparing to the new
         # object (which will be discarded)
@@ -3316,7 +3316,7 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
     pkg = _pkgs.get_exact_key(taskname)
     if pkg is None and redefine:
         _writeError("Warning: `%s' is not a defined task" % taskname)
-    newpkg = module.IrafPkg(prefix,taskname,suffix,value,pkgname,pkgbinary)
+    newpkg = module.IrafPkg(prefix, taskname, suffix, value, pkgname, pkgbinary)
     if pkg is not None:
         if pkg.getFilename() != newpkg.getFilename() or \
            pkg.hasParfile()  != newpkg.hasParfile():
@@ -3332,11 +3332,11 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
                 return newpkg
         if pkg.getPkgbinary() != newpkg.getPkgbinary():
             # only package binary differs -- add it to search path
-            if Verbose>1: print('Adding',pkgbinary,'to',pkg,'path')
+            if Verbose>1: print('Adding', pkgbinary, 'to', pkg, 'path')
             pkg.addPkgbinary(pkgbinary)
         if pkgname != pkg.getPkgname():
             # add existing task as an item in the new package
-            _addTask(pkg,pkgname=pkgname)
+            _addTask(pkg, pkgname=pkgname)
         return pkg
     _addPkg(newpkg)
     return newpkg
@@ -3408,7 +3408,7 @@ def redirProcess(kw):
                             else:
                                 value = '/dev/null'
                         elif "w" in openArgs and \
-                          envget("clobber","") != yes and \
+                          envget("clobber", "") != yes and \
                           _os.path.exists(value):
                             # don't overwrite unless clobber is set
                             raise IOError("Output file `%s' already exists" %
@@ -3437,7 +3437,7 @@ def redirProcess(kw):
                         # wrap it in a tuple to make it easy to recognize
                         closeFHList.append((PipeOut,))
                     fh = PipeOut
-            elif isinstance(value, (list,tuple)):
+            elif isinstance(value, (list, tuple)):
                 # list/tuple of strings is OK for input
                 if outputFlag:
                     raise IrafError("%s redirection must "
@@ -3492,8 +3492,8 @@ def redirApply(redirKW):
     resetList = []
     for key, value in redirKW.items():
         if key in sysDict:
-            resetList.append((key, getattr(_sys,key)))
-            setattr(_sys,key,value)
+            resetList.append((key, getattr(_sys, key)))
+            setattr(_sys, key, value)
         elif key == 'stdgraph':
             resetList.append((key, gki.kernel))
             gki.kernel = gki.GkiRedirection(value)
@@ -3519,7 +3519,7 @@ def redirReset(resetList, closeFHList):
         if key == 'stdgraph':
             gki.kernel = value
         else:
-            setattr(_sys,key,value)
+            setattr(_sys, key, value)
     if PipeOut is not None:
         # unfortunately cStringIO.StringIO has no readlines method:
         # PipeOut.seek(0)

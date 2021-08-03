@@ -158,10 +158,10 @@ class Subprocess:
                 self.toChild_fdlist.append(pWc)
                 self.toChild = pWc
             if self.control_stderr:
-                self.errbuf = ReadBuf(pRe,self.maxChunkSize)
+                self.errbuf = ReadBuf(pRe, self.maxChunkSize)
                 self.fromChild_fdlist.append(pRe)
             if self.control_stdout:
-                self.readbuf = ReadBuf(pRc,self.maxChunkSize)
+                self.readbuf = ReadBuf(pRc, self.maxChunkSize)
                 self.fromChild_fdlist.append(pRc)
             # close child ends of pipes
             for i in childPipes: os.close(i)
@@ -226,7 +226,7 @@ class Subprocess:
             while totalwait <= timeout:
                 ## if totalwait: print "waiting for subprocess..."
                 totalwait = totalwait + printtime
-                if select.select([],self.toChild_fdlist,[],printtime)[1]:
+                if select.select([], self.toChild_fdlist, [], printtime)[1]:
                     if bytes_write(self.toChild, strval) != len(strval):
                         raise SubprocessError("Write error to %s" % self)
                     return                                              # ===>
@@ -234,7 +234,7 @@ class Subprocess:
         except select.error as e:
             raise SubprocessError(
                     "Select error for %s: file descriptors %s\n%s" %
-                    (self,self.toChild_fdlist,str(e)))
+                    (self, self.toChild_fdlist, str(e)))
 
     def writeline(self, line=''):
         """Write STRING, with added newline termination, to subprocess."""
@@ -400,7 +400,7 @@ class Subprocess:
         self.control_stdout = 0
         self.control_stderr = 0
 
-    def _noisy_print(self,err):
+    def _noisy_print(self, err):
         sig = err & 0xff
         rc = (err & 0xff00) >> 8
         if sig == 0:
@@ -781,7 +781,7 @@ class RedirProcess(Subprocess):
                 # this should not happen -- raise an exception
                 raise SubprocessError(
                         "Select error for %s: file descriptors %s\n%s" %
-                        (self,self.toChild_fdlist+self.fromChild_fdlist,str(e)))
+                        (self, self.toChild_fdlist+self.fromChild_fdlist, str(e)))
             if readable:
                 # stderr is first in fromChild_fdlist (if present)
                 if doErr and (self.fromChild_fdlist[0] in readable):

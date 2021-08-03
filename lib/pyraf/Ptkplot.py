@@ -58,8 +58,8 @@ cursorColor = 1
 cursorTrueColor = (1.0, 0.0, 0.0)
 # visuals that use true colors
 truevis = {
-          'truecolor' : 1,
-          'directcolor' : 1,
+          'truecolor': 1,
+          'directcolor': 1,
           }
 
 
@@ -142,7 +142,7 @@ class PyrafCanvas(Canvas):
             cursorActivate = 0
         self.redraw(self)
         if cursorActivate:
-            self.activateSWCursor(x,y)
+            self.activateSWCursor(x, y)
 
     def tkRedraw(self, *dummy):
         self.doIdleRedraw = 1
@@ -166,7 +166,7 @@ class PyrafCanvas(Canvas):
             if not self._SWCursor:
                 self._SWCursor = FullWindowCursor(0.5, 0.5, self)
             self._isSWCursorActive = 1
-            self.bind("<Motion>",self.moveCursor)
+            self.bind("<Motion>", self.moveCursor)
         if not self._SWCursor.isVisible():
             self._SWCursor.draw()
 
@@ -213,7 +213,7 @@ class PyrafCanvas(Canvas):
         else:
             x = (event.x+0.5)/self.winfo_width()
             y = 1.-(event.y+0.5)/self.winfo_height()
-        self._SWCursor.moveTo(x,y,SWmove=0)
+        self._SWCursor.moveTo(x, y, SWmove=0)
 
     def moveCursorTo(self, x, y, SWmove=0):
         self._SWCursor.moveTo(float(x)/self.width,
@@ -282,8 +282,8 @@ class FullWindowCursor:
         y  = (1.0-self.lasty)*wh
 
         # Draw the crosshairs.  __window is a Tk Canvas object
-        self.__tkHorLine = self.__window.create_line(0,y,ww,y,fill='red')
-        self.__tkVerLine = self.__window.create_line(x,0,x,wh,fill='red')
+        self.__tkHorLine = self.__window.create_line(0, y, ww, y, fill='red')
+        self.__tkVerLine = self.__window.create_line(x, 0, x, wh, fill='red')
 
     def _tkEraseCursor(self):
 

@@ -283,7 +283,7 @@ class PyrafEdit(urwid.Edit):
         self.reset_del_buffers()
         urwid.Edit.__init__(self, *args, **keys)
         EDIT_BINDINGS  = {  # single field bindings
-                           "delete" : self.DEL_CHAR,
+                           "delete": self.DEL_CHAR,
                            "del_line": self.DEL_LINE,
                            "del_word": self.DEL_WORD,
 
@@ -457,10 +457,10 @@ class StringTparOption(urwid.Columns):
         self._edit.verify = self.verify
         self._value = urwid.Text( "%10s" % value, align="right" )
         self._help = urwid.Text( "%-30s" % help )
-        urwid.Columns.__init__( self, [('weight',0.20, self._name),
-                                       ('weight',0.20, self._edit),
-                                       ('weight',0.20, self._value),
-                                       ('weight',0.40, self._help)],
+        urwid.Columns.__init__( self, [('weight', 0.20, self._name),
+                                       ('weight', 0.20, self._edit),
+                                       ('weight', 0.20, self._value),
+                                       ('weight', 0.40, self._help)],
                                 0, 1, 1)
 
     def keypress(self, pos, key):
@@ -562,7 +562,7 @@ class StringTparOption(urwid.Columns):
 
 class NumberTparOption(StringTparOption):
     def normalize(self, v):
-        if v in ["INDEF","Indef","indef"]:
+        if v in ["INDEF", "Indef", "indef"]:
             return "INDEF"
         else:
             return v
@@ -584,7 +584,7 @@ class NumberTparOption(StringTparOption):
 class BooleanTparOption(StringTparOption):
     def __init__(self, *args, **keys):
         StringTparOption.__init__(self, *args, **keys)
-        self._binder.bind(" ","space")
+        self._binder.bind(" ", "space")
         self._binder.bind("space", self.TOGGLE)
         self._binder.bind("right", self.TOGGLE)
         self._binder.bind("left", self.TOGGLE)
@@ -596,16 +596,16 @@ class BooleanTparOption(StringTparOption):
             self.set_result("yes")
 
     def normalize(self, v):
-        if v in ["n","N"]:
+        if v in ["n", "N"]:
             return "no"
-        elif v in ["y","Y"]:
+        elif v in ["y", "Y"]:
             return "yes"
         else:
             return v
 
     def verify(self, v):
         v = self.normalize(v)
-        if v in ["yes","no"]:
+        if v in ["yes", "no"]:
             self.inform("")
             return True
         else:
@@ -618,7 +618,7 @@ class BooleanTparOption(StringTparOption):
 class EnumTparOption(StringTparOption):
     def __init__(self, *args, **keys):
         StringTparOption.__init__(self, *args, **keys)
-        self._binder.bind(" ","space")
+        self._binder.bind(" ", "space")
         self._binder.bind("space", self.SPACE)
         self._binder.bind("right", self.SPACE)
         self._binder.bind("left", self.LEFT)
@@ -667,17 +667,17 @@ class TparHeader(urwid.Pile):
 
 class TparDisplay(Binder):
     palette = [
-                ('body','default','default', 'standout'),
+                ('body', 'default', 'default', 'standout'),
                 ('header', 'default', 'default', ('standout', 'underline')),
-                ('help','black','light gray'),
-                ('reverse','light gray','black'),
-                ('important','dark blue','light gray',('standout','underline')),
-                ('editfc','white', 'dark blue', 'bold'),
-                ('editbx','light gray', 'dark blue'),
-                ('editcp','black','light gray', 'standout'),
-                ('bright','dark gray','light gray', ('bold','standout')),
-                ('buttn','black','dark cyan'),
-                ('buttnf','white','dark blue','bold'),
+                ('help', 'black', 'light gray'),
+                ('reverse', 'light gray', 'black'),
+                ('important', 'dark blue', 'light gray', ('standout', 'underline')),
+                ('editfc', 'white', 'dark blue', 'bold'),
+                ('editbx', 'light gray', 'dark blue'),
+                ('editcp', 'black', 'light gray', 'standout'),
+                ('bright', 'dark gray', 'light gray', ('bold', 'standout')),
+                ('buttn', 'black', 'dark cyan'),
+                ('buttnf', 'white', 'dark blue', 'bold'),
                ]
 
     def __init__(self,  taskName):
@@ -689,11 +689,11 @@ class TparDisplay(Binder):
                         "ctrl t", "ctrl T"]
 
         TPAR_BINDINGS = {  # Page level bindings
-                          "quit"   : self.QUIT,
-                          "exit "  : self.EXIT,
-                          "help"   : self.HELP,
-                          "end" : self.MOVE_END,
-                          "home" : self.MOVE_START,
+                          "quit": self.QUIT,
+                          "exit ": self.EXIT,
+                          "help": self.HELP,
+                          "end": self.MOVE_END,
+                          "home": self.MOVE_START,
                          }
 
         # Get the Iraftask object
@@ -761,24 +761,24 @@ class TparDisplay(Binder):
         isPset = isinstance(self.taskObject, iraftask.IrafPset)
 
         self.help_button = urwid.Padding(
-            urwid.Button("Help",self.HELP),
+            urwid.Button("Help", self.HELP),
             align="center",    width=('fixed', 8))
         self.cancel_button = urwid.Padding(
-            urwid.Button("Cancel",self.QUIT),
+            urwid.Button("Cancel", self.QUIT),
             align="center",    width=('fixed', 10))
         if not isPset:
             self.save_as_button = urwid.Padding(
-                urwid.Button("Save As",self.SAVEAS),
+                urwid.Button("Save As", self.SAVEAS),
                 align="center",    width=('fixed', 11))
         self.save_button = urwid.Padding(
-            urwid.Button("Save",self.EXIT),
+            urwid.Button("Save", self.EXIT),
             align="center",    width=('fixed', 8))
         self.exec_button = urwid.Padding(
-            urwid.Button("Exec",self.go),
+            urwid.Button("Exec", self.go),
             align="center",    width=('fixed', 8))
         if self.__areAnyToLoad:
             self.open_button = urwid.Padding(
-                urwid.Button("Open",self.PFOPEN),
+                urwid.Button("Open", self.PFOPEN),
                 align="center",    width=('fixed', 8))
 
         # GUI button layout - weightings
@@ -812,20 +812,20 @@ class TparDisplay(Binder):
         isPset = isinstance(self.taskObject, iraftask.IrafPset)
 
         self.help_button = urwid.Padding(
-            urwid.Button("Help",self.HELP), align="center", width=8, right=4,
+            urwid.Button("Help", self.HELP), align="center", width=8, right=4,
                                                                      left=5)
         self.cancel_button = urwid.Padding(
-            urwid.Button("Cancel",self.QUIT), align="center", width=10)
+            urwid.Button("Cancel", self.QUIT), align="center", width=10)
         if not isPset:
             self.save_as_button = urwid.Padding(
-                urwid.Button("Save As",self.SAVEAS), align="center", width=11)
+                urwid.Button("Save As", self.SAVEAS), align="center", width=11)
         self.save_button = urwid.Padding(
-            urwid.Button("Save",self.EXIT), align="center", width=8)
+            urwid.Button("Save", self.EXIT), align="center", width=8)
         self.exec_button = urwid.Padding(
-            urwid.Button("Exec",self.go), align="center", width=8)
+            urwid.Button("Exec", self.go), align="center", width=8)
         if self.__areAnyToLoad:
             self.open_button = urwid.Padding(
-                urwid.Button("Open",self.PFOPEN), align="center", width=8)
+                urwid.Button("Open", self.PFOPEN), align="center", width=8)
 
         # GUI button layout - weightings
         if isPset: # show no Open nor Save As buttons
@@ -1000,7 +1000,7 @@ class TparDisplay(Binder):
         if fname == None:
             msg = "Parameters NOT saved to a file."
             okdlg = urwutil.DialogDisplay(msg, 8, 0)
-            okdlg.add_buttons([ ("OK",0) ])
+            okdlg.add_buttons([ ("OK", 0) ])
             okdlg.main()
             return
 
@@ -1020,7 +1020,7 @@ class TparDisplay(Binder):
                   '\n\n"'+fname+'"'
             # title='PSET Save-As Not Yet Supported
             okdlg = urwutil.DialogDisplay(msg, 0, 0)
-            okdlg.add_buttons([ ("OK",0) ])
+            okdlg.add_buttons([ ("OK", 0) ])
             okdlg.main()
 
         # Verify all the entries (without save), keeping track of the invalid
@@ -1046,7 +1046,7 @@ class TparDisplay(Binder):
         # Let them know what they just did
         msg = 'Saved to: "'+fname+'"'
         okdlg = urwutil.DialogDisplay(msg, 8, 0)
-        okdlg.add_buttons([ ("OK",0) ])
+        okdlg.add_buttons([ ("OK", 0) ])
         okdlg.main()
 
         # Notify irafpar that there is a new special-purpose file on the scene
@@ -1062,7 +1062,7 @@ class TparDisplay(Binder):
         if len(flist) <= 0:
             msg = "No special-purpose parameter files found for "+self.taskName
             okdlg = urwutil.DialogDisplay(msg, 8, 0)
-            okdlg.add_buttons([ ("OK",0) ])
+            okdlg.add_buttons([ ("OK", 0) ])
             okdlg.main()
             return
 
@@ -1085,7 +1085,7 @@ class TparDisplay(Binder):
             selectdlg = urwutil.ListDialogDisplay("Select from these:",
                                 len(flist)+7, 75,
                                 menuItemConstr, tuple(chcs), False)
-            selectdlg.add_buttons([ ("Cancel",1), ])
+            selectdlg.add_buttons([ ("Cancel", 1), ])
             rv, ans = selectdlg.main()
             if rv == 0: fname = flist[int(ans)]
 

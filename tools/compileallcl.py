@@ -38,7 +38,7 @@ def compileall():
     cl2py.codeCache.close()
     del clcache.codeCache
 
-    userCacheDir = os.path.join(irafglobals.userIrafHome,'pyraf')
+    userCacheDir = os.path.join(irafglobals.userIrafHome, 'pyraf')
     if not os.path.exists(userCacheDir):
         try:
             os.mkdir(userCacheDir)
@@ -46,7 +46,7 @@ def compileall():
         except OSError:
             print('Could not create directory %s' % userCacheDir)
     dbfile = 'clcache'
-    clcache.codeCache = clcache._CodeCache([ os.path.join(userCacheDir,dbfile) ])
+    clcache.codeCache = clcache._CodeCache([ os.path.join(userCacheDir, dbfile) ])
     cl2py.codeCache = clcache.codeCache
 
     iraf.setVerbose()
@@ -69,13 +69,13 @@ def compileall():
         pkg_list.sort()
         npkg_new = 0
         printcenter("pass %d: %d packages (%d new)" %
-                (npass,len(pkg_list),len(pkg_list)-npkg_total), char="=")
+                (npass, len(pkg_list), len(pkg_list)-npkg_total), char="=")
         for pkg in pkg_list:
             if pkg not in pkgs_tried:
                 pkgs_tried[pkg] = 1
                 npkg_new = npkg_new+1
                 printcenter(pkg)
-                if pkg in ["newimred","digiphotx"]:
+                if pkg in ["newimred", "digiphotx"]:
                     print("""
 Working around bugs in newimred, digiphotx.
 They screw up subsequent loading of imred/digiphot tasks.
@@ -86,7 +86,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                         # redirect stdin in case the package tries to
                         # prompt for parameters (this aborts but keeps
                         # going)
-                        iraf.load(pkg,kw={'Stdin': 'dev$null'})
+                        iraf.load(pkg, kw={'Stdin': 'dev$null'})
                     except KeyboardInterrupt:
                         print('Interrupt')
                         sys.stdout.flush()
@@ -95,7 +95,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                     except Exception as e:
                         sys.stdout.flush()
                         traceback.print_exc()
-                        if isinstance(e,MemoryError):
+                        if isinstance(e, MemoryError):
                             keepGoing = 0
                             break
                         print("...continuing...\n")
@@ -107,7 +107,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                         tasks_tried[taskname] = 1
                         taskobj = iraf.getTask(taskname)
                         if isinstance(taskobj, IrafCLTask) and \
-                                        not isinstance(taskobj,IrafPkg):
+                                        not isinstance(taskobj, IrafPkg):
                             ntask_total = ntask_total+1
                             print("%d: %s" % (ntask_total, taskname))
                             sys.stdout.flush()
@@ -121,7 +121,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                             except Exception as e:
                                 sys.stdout.flush()
                                 traceback.print_exc(10)
-                                if isinstance(e,MemoryError):
+                                if isinstance(e, MemoryError):
                                     keepGoing = 0
                                     break
                                 print("...continuing...\n")
@@ -173,8 +173,8 @@ if __name__ == '__main__':
 
     # find pyraf directory
     for p in sys.path:
-        absPyrafDir = os.path.join(p,'pyraf')
-        if os.path.exists(os.path.join(absPyrafDir,'__init__.py')):
+        absPyrafDir = os.path.join(p, 'pyraf')
+        if os.path.exists(os.path.join(absPyrafDir, '__init__.py')):
             break
     else:
         raise Exception('pyraf module not found')

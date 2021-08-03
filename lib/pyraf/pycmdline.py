@@ -40,7 +40,7 @@ class CmdConsole(code.InteractiveConsole):
 
     def __init__(self, locals=None, filename="<console>",
                     cmddict=None, prompt1=">>> ", prompt2="... ",
-                    cmdchars=("a-zA-Z_.","0-9")):
+                    cmdchars=("a-zA-Z_.", "0-9")):
         code.InteractiveConsole.__init__(self, locals=locals, filename=filename)
         self.ps1 = prompt1
         self.ps2 = prompt2
@@ -68,7 +68,7 @@ class CmdConsole(code.InteractiveConsole):
 
     def printHistory(self, n=20):
         """Print last n lines of history"""
-        for i in range(-min(n, self.nhistory),0):
+        for i in range(-min(n, self.nhistory), 0):
             print(self.history[self.nhistory+i])
 
     def interact(self, banner=None):
@@ -141,7 +141,7 @@ class CmdConsole(code.InteractiveConsole):
             method_name = self.cmddict.get(cmd)
         if method_name is None:
             # no method, but have a look at it anyway
-            return self.default(cmd,line,i)
+            return self.default(cmd, line, i)
         else:
             # if in cmddict, there must be a method by this name
             f = getattr(self, method_name)
@@ -179,9 +179,9 @@ class PyCmdLine(CmdConsole):
         self.logfile = None
         self.lasttrace = None
         if logfile is not None:
-            if hasattr(logfile,'write'):
+            if hasattr(logfile, 'write'):
                 self.logfile = logfile
-            elif isinstance(logfile,str):
+            elif isinstance(logfile, str):
                 self.do_logfile(logfile)
             else:
                 self.write('logfile ignored -- not string or filehandle\n')
@@ -248,7 +248,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         if self.debug>1: self.write('do_exit: %s\n' % line[i:])
 
         # write out history - ignore write errors
-        hfile = os.getenv('HOME','.')+os.sep+'.pyraf_history'
+        hfile = os.getenv('HOME', '.')+os.sep+'.pyraf_history'
         hlen = 1000 # High default.  Note this setting itself may cause
                     # confusion between this history and the IRAF history cmd.
         try:
@@ -296,10 +296,10 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                         " ".join(args))
             try:
                 oldlogfile = self.logfile
-                self.logfile = open(filename,oflag)
+                self.logfile = open(filename, oflag)
                 if oldlogfile: oldlogfile.close()
             except IOError as e:
-                self.write("error opening logfile %s\n%s\n" % (filename,str(e)))
+                self.write("error opening logfile %s\n%s\n" % (filename, str(e)))
         return ""
 
     def do_clemulate(self, line='', i=0):
@@ -357,7 +357,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         line = full line (including cmd, preceding blanks, etc.)
         i = index in line of first non-blank character following cmd
         """
-        if self.debug>1: self.write('default: %s - %s\n' % (cmd,line[i:]))
+        if self.debug>1: self.write('default: %s - %s\n' % (cmd, line[i:]))
         if len(cmd)==0:
             if line[i:i+1] == '!':
                 # '!' is shell escape
@@ -379,7 +379,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         elif line[i:i+1] != "" and line[i] in '=,[':
             # don't even try if it doesn't look like a procedure call
             return line
-        elif not hasattr(iraf,cmd):
+        elif not hasattr(iraf, cmd):
             # not an IRAF command
             #XXX Eventually want to improve error message for
             #XXX case where user intended to use IRAF syntax but
@@ -397,7 +397,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                 return line
             # check for some Python operator keywords
             mm = self.reword.match(line[i:])
-            if mm.group() in ["is","in","and","or","not"]:
+            if mm.group() in ["is", "in", "and", "or", "not"]:
                 return line
         elif line[i:i+1] == '(':
             if cmd in ['type', 'dir', 'set']:
@@ -414,7 +414,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                 #XXX this find() may be improved with latest Python readline features
                 j = line.find(cmd)
                 return line[:j] + 'iraf.' + line[j:]
-        elif not callable(getattr(iraf,cmd)):
+        elif not callable(getattr(iraf, cmd)):
             # variable from iraf module is not callable task (e.g.,
             # yes, no, INDEF, etc.) -- add 'iraf.' so it can be used
             # as a variable and execute as Python

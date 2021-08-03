@@ -170,7 +170,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
             if not self.__SWCursor:
                 self.__SWCursor = FullWindowCursor(0.5, 0.5, gw)
             self.__isSWCursorActive = 1
-            gw.bind("<Motion>",self.moveCursor)
+            gw.bind("<Motion>", self.moveCursor)
         if drawToo and not self.__SWCursor.isVisible():
             self.__SWCursor.draw()
 
@@ -229,7 +229,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         else:
             x = (event.x+0.5)/gw.winfo_width()
             y = 1.-(event.y+0.5)/gw.winfo_height()
-        self.__SWCursor.moveTo(x,y,SWmove=0)
+        self.__SWCursor.moveTo(x, y, SWmove=0)
 
     # moveCursorTo() is used as if it belonged to the gwidget's class
     def moveCursorTo(self, x, y, SWmove=0):

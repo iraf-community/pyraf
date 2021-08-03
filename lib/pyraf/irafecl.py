@@ -367,7 +367,7 @@ class EclTraceback(EclBase):
             del e._ecl_suppress_first_trace
         else:
             self._ecl_trace("  ", repr(cl_code))
-        self._ecl_trace("      line %d: %s" % (lineno , cl_file))
+        self._ecl_trace("      line %d: %s" % (lineno, cl_file))
         parent = _ecl_parent_task()
         if parent:
             parent_lineno = self._ecl_get_lineno()

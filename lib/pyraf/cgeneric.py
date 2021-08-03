@@ -45,7 +45,7 @@ class ContextSensitiveScanner:
             groups = m.groups()
             for i in scanner.indexlist:
                 if groups[i] is not None:
-                    scanner.index2func[i](groups[i],m,self)
+                    scanner.index2func[i](groups[i], m, self)
                     # assume there is only a single match
                     break
             else:

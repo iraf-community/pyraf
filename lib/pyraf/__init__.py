@@ -31,7 +31,7 @@ if '-V' in sys.argv or '--version' in sys.argv:
 
 # Do a quick, non-intrusive check to see how verbose we are.  This is
 # just for here.  This does not correctly count -v vs. -vv, -vvv, etc.
-_verbosity_ = len([j for j in sys.argv if j in ('--verbose','-v','-vv','-vvv')])
+_verbosity_ = len([j for j in sys.argv if j in ('--verbose', '-v', '-vv', '-vvv')])
 
 # Show version at earliest possible moment when in debugging/verbose mode.
 if _verbosity_ > 0: print('pyraf version '+__version__)
@@ -90,9 +90,9 @@ if _verbosity_ > 0: print("pyraf: setting exit handler")
 # set up exit handler to close caches
 def _cleanup():
     if iraf: iraf.gflush()
-    if hasattr(irafexecute,'processCache'):
+    if hasattr(irafexecute, 'processCache'):
         del irafexecute.processCache
-    if hasattr(clcache,'codeCache'):
+    if hasattr(clcache, 'codeCache'):
         del clcache.codeCache
 
 # Register the exit handler, but only if 'pyraf' is going to import fully
@@ -137,7 +137,7 @@ else:
     import getopt
     try:
         optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsney",
-            ["commandwrapper=", "command=", "verbose", "help", "silent", "nosplash","ipython", "ecl"])
+            ["commandwrapper=", "command=", "verbose", "help", "silent", "nosplash", "ipython", "ecl"])
         if len(args) > 1:
             print('Error: more than one savefile argument')
             usage()

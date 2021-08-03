@@ -199,13 +199,13 @@ def getTermWindowSize():
     tstruct = ' '*20 # that should be more than enough memory
     try:
         rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
-        ysize, xsize = struct.unpack('hh',rstruct[0:4])
+        ysize, xsize = struct.unpack('hh', rstruct[0:4])
         # handle bug in konsole (and maybe other bad cases)
         if ysize <= 0: ysize = 24
         if xsize <= 0: xsize = 80
         return ysize, xsize
     except (IOError, AttributeError):
-        return (24,80) # assume generic size
+        return (24, 80) # assume generic size
 
 
 class FocusEntity:
@@ -340,7 +340,7 @@ class TerminalFocusEntity(FocusEntity):
         tstruct = ' '*20 # that should be more than enough memory
         # xxx exception handling needed (but what exception to catch?)
         rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
-        xsize, ysize = struct.unpack('hh',rstruct[0:4])
+        xsize, ysize = struct.unpack('hh', rstruct[0:4])
         return xsize, ysize
 
 
@@ -414,7 +414,7 @@ class FocusController:
             return None, None
         currentFocusWinID = getFocalWindowID()
         currentTopID = getTopID(currentFocusWinID)
-        for name,focusEntity in self.focusEntities.items():
+        for name, focusEntity in self.focusEntities.items():
             if getTopID(focusEntity.getWindowID()) == currentTopID:
                 return name, focusEntity
         else:

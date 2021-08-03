@@ -43,7 +43,7 @@ except:
         raise
 
 # FCNTL is deprecated in Python 2.2
-if hasattr(fcntl,'F_SETFL') or fcntl==None:
+if hasattr(fcntl, 'F_SETFL') or fcntl==None:
     FCNTL = fcntl
 else:
     import FCNTL
@@ -110,7 +110,7 @@ def _open(imtdev=None):
     if domain == "unix" and len(fields) == 2:
         return UnixImageDisplay(fields[1])
     elif domain == "fifo" and len(fields) == 3:
-        return FifoImageDisplay(fields[1],fields[2])
+        return FifoImageDisplay(fields[1], fields[2])
     elif domain == "inet" and (2 <= len(fields) <= 3):
         try:
             port = int(fields[1])
@@ -162,11 +162,11 @@ class ImageDisplay:
         # only part up to newline is real data
         return s.split("\n")[0]
 
-    def _writeHeader(self,tid,subunit,thingct,x,y,z,t):
+    def _writeHeader(self, tid, subunit, thingct, x, y, z, t):
 
         """Write request to image display"""
 
-        a = numpy.array([tid,thingct,subunit,0,x,y,z,t], numpy.int16)
+        a = numpy.array([tid, thingct, subunit, 0, x, y, z, t], numpy.int16)
         # Compute the checksum
         sum = numpy.add.reduce(a)
         sum = 0xffff - (sum & 0xffff)
