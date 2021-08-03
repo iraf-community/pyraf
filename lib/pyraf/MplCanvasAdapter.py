@@ -18,8 +18,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
     """ Is a FigureCanvasTkAgg, with extra methods to look like Canvas """
 
     def __init__(self, gkikernel, figure, master=None):
-        tkagg.FigureCanvasTkAgg.__init__(self, figure, master,
-                                         self.resize_event)
+        tkagg.FigureCanvasTkAgg.__init__(self, figure, master)
         # members
         self.__theGwidget = self.get_tk_widget() # THE gwidget
         self.__gkiKernel = gkikernel
@@ -40,6 +39,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         # draw buffer, which is slow and unnecessary for resizes.
 #       self.__theGwidget.bind('<Expose>', self.tkExpose)
 #       self.__theGwidget.bind('<Configure>', self.tkExpose) # init draw issue
+        self.__theGwidget.bind('<Configure>', self.resize_widget, True)
 
     def pack(self, **kw):
 
@@ -73,31 +73,32 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         gw.moveCursorTo       = self.moveCursorTo
         gw.tkRedraw           = self.tkRedraw
 
-    def resize_event(self, evt=None):
-
+    def resize_widget(self, event):
+        width, height = event.width, event.height
         # See also get/set_size_inches, figure.get_window_extent().  The latter
         # is Bbox, use .width/.height()
         #
         #  before rsz: w = self.figure.get_window_extent().width # not func .98
         #  before rsz: h = self.figure.get_window_extent().height() # is in .91
-
-        # Note that the 'evt' arg was always part of the signature for
-        # versions before MPL v 0.98.5.2, when it became optional.
-        # So see if it is there.  Always use it if present, it is accurate.
-        if evt != None:
-            curW = evt.width
-            curH = evt.height
-        else:
-            dpi = self.figure.get_dpi()
-            curW = self.figure.get_figwidth() * dpi
-            curH = self.figure.get_figheight() * dpi
-
         # Need to deactivate cursor before resizing, then re-act. after
-        self.wrappedRedrawOrResize(w=curW, h=curH)
+        self.wrappedRedrawOrResize(w=width, h=height)
 
         # also update the widget's w/h attrs; we will need this for the cursor
-        self.__theGwidget.width  = curW
-        self.__theGwidget.height = curH
+        self.__theGwidget.width  = width
+        self.__theGwidget.height = height
+
+        # compute desired figure size in inches
+        dpival = self.figure.dpi
+        winch = width / dpival
+        hinch = height / dpival
+        self.figure.set_size_inches(winch, hinch, forward=False)
+
+        self._tkcanvas.delete(self._tkphoto)
+        self._tkphoto = tk.PhotoImage(
+            master=self._tkcanvas, width=int(width), height=int(height))
+        self._tkcanvas.create_image(
+            int(width / 2), int(height / 2), image=self._tkphoto)
+        self.resize_event()
 
     def flush(self):
 
