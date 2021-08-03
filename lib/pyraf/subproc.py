@@ -567,7 +567,7 @@ class ReadBuf:
         else:
             # don't wait at all
             waittime = 0
-        while 1:                        # (we'll only loop if block set)
+        while True:                        # (we'll only loop if block set)
             try:
                 sel = select.select(fdlist, [], fdlist, waittime)
             except select.error:
@@ -612,7 +612,7 @@ class ReadBuf:
             got = BNULLSTR
 
         fdlist = [self.fd]
-        while 1:
+        while True:
             try:
                 sel = select.select(fdlist, [], fdlist)
             except select.error:

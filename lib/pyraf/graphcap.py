@@ -117,7 +117,7 @@ class Device(compmixin.ComparableMixin):
     def getAttribute(self, attrName):
         thedict = self.dict[self.devname]
         value = None
-        while 1:
+        while True:
             if attrName in thedict:
                 value = thedict[attrName]
                 break

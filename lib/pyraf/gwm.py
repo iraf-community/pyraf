@@ -49,7 +49,7 @@ class GraphicsWindowManager(gki.GkiProxy):
     def getNewWindowName(self, root="graphics"):
         """Return a new (unused) window name of form root+number"""
         number = 1
-        while 1:
+        while True:
             windowName = root + str(number)
             if windowName not in self.windows:
                 return windowName

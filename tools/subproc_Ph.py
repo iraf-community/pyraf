@@ -30,7 +30,7 @@ class Ph:
 
         self.proc.writeline('query ' + q)
         got = []; it = {}
-        while 1:
+        while True:
             response = self.getreply()      # Should get null on new prompt.
             errs = self.proc.readPendingErrChars()
             if errs:

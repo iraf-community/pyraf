@@ -158,7 +158,7 @@ def getTopID(WindowID):
         return topIDmap[wid]
     try:
         oid = wid
-        while 1:
+        while True:
             pid = getParentID(wid)
             if (not pid) or (pid==wid):
                 topIDmap[oid] = wid
@@ -373,7 +373,7 @@ class FocusController:
             entity = self.focusEntities[focusEntityName]
             del self.focusEntities[focusEntityName]
             try:
-                while 1:
+                while True:
                     self.focusStack.remove(entity)
             except ValueError:
                 pass

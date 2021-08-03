@@ -1025,7 +1025,7 @@ def mktemp(root):
     """Make a temporary filename starting with root"""
     global _tmpfileCounter
     basename = root + repr(_os.getpid())
-    while 1:
+    while True:
         _tmpfileCounter = _tmpfileCounter + 1
         if _tmpfileCounter <= 26:
             # use letters to start

@@ -86,7 +86,7 @@ class CmdConsole(code.InteractiveConsole):
         neofs = 0
         # flag indicating whether terminal ID needs to be set
         needtermid = 1
-        while 1:
+        while True:
             try:
                 if not sys.stdin.isatty():
                     prompt = ""

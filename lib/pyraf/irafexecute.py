@@ -627,7 +627,7 @@ class IrafProcess:
         par_set = self.par_set
         executeClCommand = self.executeClCommand
 
-        while 1:
+        while True:
 
             # each read may return multiple lines; only
             # read new data when old has been used up
