@@ -2363,7 +2363,7 @@ def pyexecute(filename, **kw):
     efilename = Expand(filename)
     namespace = {'PkgName': pkgname, 'PkgBinary': pkgbinary,
         '__file__': efilename}
-    execfile(efilename, namespace)
+    exec(compile(open(efilename, "rb").read(), efilename, 'exec'), namespace)
 
 # history routines
 
