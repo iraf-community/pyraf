@@ -2,7 +2,7 @@
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
 from stsci.tools import irafutils
@@ -225,7 +225,7 @@ class _ProcessCache:
         for taskname in args:
             task = pyraf.iraf.getTask(taskname, found=1)
             if task is None:
-                print "No such task `%s'" % taskname
+                print("No such task `%s'" % taskname)
             elif task.__class__.__name__ == "IrafTask":
                 # cache only executable tasks (not CL tasks, etc.)
                 executable = task.getFullpath()
@@ -298,9 +298,9 @@ class _ProcessCache:
             n = n+1
             executable = proxy.process.executable
             if executable in self._locked:
-                print "%2d: L %s" % (n, executable)
+                print("%2d: L %s" % (n, executable))
             else:
-                print "%2d:   %s" % (n, executable)
+                print("%2d:   %s" % (n, executable))
 
     def __del__(self):
         self._locked = {}

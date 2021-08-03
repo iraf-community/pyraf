@@ -26,7 +26,7 @@ include this file until it comes with urwid.  This is slightly modified.
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import sys
 import urwid

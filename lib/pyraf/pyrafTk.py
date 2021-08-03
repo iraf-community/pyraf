@@ -4,7 +4,7 @@ $Id$
 
 R. L. White, 2000 November 17
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import sys
 import Tkinter as TKNTR # requires 2to3

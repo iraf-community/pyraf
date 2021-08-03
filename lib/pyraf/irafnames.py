@@ -6,7 +6,7 @@ $Id$
 
 R. White, 1999 March 26
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import __main__
 from stsci.tools import irafglobals
@@ -29,8 +29,8 @@ def _addName(task, module):
         setattr(module, name, task)
     else:
         if irafglobals.Verbose>0:
-            print "Warning: " + module.__name__ + "." + \
-                    name + " was not redefined as Iraf Task"
+            print("Warning: " + module.__name__ + "." +
+                  name + " was not redefined as Iraf Task")
 
 # Basic namespace strategy class (does nothing)
 

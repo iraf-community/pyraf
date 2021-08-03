@@ -8,7 +8,7 @@ $Id$
 
 R. White, 2000 February 18
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 from .version import *
 
@@ -25,7 +25,7 @@ if __version__.endswith('dev'):
 
 # Dump version and exit here, if requested
 if '-V' in sys.argv or '--version' in sys.argv:
-    print __version__
+    print(__version__)
     sys.stdout.flush()
     os._exit(0) # see note in usage()
 
@@ -34,10 +34,10 @@ if '-V' in sys.argv or '--version' in sys.argv:
 _verbosity_ = len([j for j in sys.argv if j in ('--verbose','-v','-vv','-vvv')])
 
 # Show version at earliest possible moment when in debugging/verbose mode.
-if _verbosity_ > 0: print 'pyraf version '+__version__
+if _verbosity_ > 0: print('pyraf version '+__version__)
 
 def usage():
-    print __main__.__doc__
+    print(__main__.__doc__)
     sys.stdout.flush()
     irafimport.restoreBuiltins()
     # exit with prejudice, not a raised exc; we don't want/need anything
@@ -52,19 +52,19 @@ import wutil
 
 # Since numpy as absolutely required for any PyRAF use, go ahead and
 # import it now, just to check it
-if _verbosity_ > 0: print "pyraf: importing numpy"
+if _verbosity_ > 0: print("pyraf: importing numpy")
 try:
     import numpy
 except ImportError:
-    print "The numpy package is required by PyRAF and was not found.  Please visit http://numpy.scipy.org"
+    print("The numpy package is required by PyRAF and was not found.  Please visit http://numpy.scipy.org")
     os._exit(1)
-if _verbosity_ > 0: print "pyraf: imported numpy"
+if _verbosity_ > 0: print("pyraf: imported numpy")
 
 # Modify the standard import mechanism to make it more
 # convenient for the iraf module
-if _verbosity_ > 0: print "pyraf: importing irafimport"
+if _verbosity_ > 0: print("pyraf: importing irafimport")
 import irafimport
-if _verbosity_ > 0: print "pyraf: imported irafimport"
+if _verbosity_ > 0: print("pyraf: imported irafimport")
 
 # this gives more useful tracebacks for CL scripts
 import cllinecache
@@ -73,7 +73,7 @@ import irafnames
 
 # initialization is silent unless program name is 'pyraf' or
 # silent flag is set on command line
-if _verbosity_ > 0: print "pyraf: setting _pyrafMain"
+if _verbosity_ > 0: print("pyraf: setting _pyrafMain")
 
 # follow links to get to the real executable filename
 executable = sys.argv[0]
@@ -86,7 +86,7 @@ runCmd = None
 import irafexecute, clcache
 from stsci.tools import capable
 
-if _verbosity_ > 0: print "pyraf: setting exit handler"
+if _verbosity_ > 0: print("pyraf: setting exit handler")
 # set up exit handler to close caches
 def _cleanup():
     if iraf: iraf.gflush()
@@ -102,14 +102,14 @@ if not _pyrafMain or ('-h' not in sys.argv and '--help' not in sys.argv):
     atexit.register(_cleanup)
     del atexit
 
-if _verbosity_ > 0: print "pyraf: finished all work prior to IRAF use"
+if _verbosity_ > 0: print("pyraf: finished all work prior to IRAF use")
 # now get ready to do the serious IRAF initialization
 if not _pyrafMain:
     # if not executing as pyraf main, just initialize iraf module
     # quietly load initial iraf symbols and packages
-    if _verbosity_ > 0: print "pyraf: initializing IRAF"
+    if _verbosity_ > 0: print("pyraf: initializing IRAF")
     import iraf
-    if _verbosity_ > 0: print "pyraf: imported iraf"
+    if _verbosity_ > 0: print("pyraf: imported iraf")
 
     # If iraf.Init() throws an exception, we cannot be confident
     # that it has initialized properly.  This can later lead to
@@ -127,9 +127,9 @@ if not _pyrafMain:
     except :
         iraf = None
         raise
-    if _verbosity_ > 0: print "pyraf: initialized IRAF"
+    if _verbosity_ > 0: print("pyraf: initialized IRAF")
 else:
-    if _verbosity_ > 0: print "pyraf: is main program"
+    if _verbosity_ > 0: print("pyraf: is main program")
     # special initialization when this is the main program
 
     # command-line options
@@ -139,10 +139,10 @@ else:
         optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsney",
             ["commandwrapper=", "command=", "verbose", "help", "silent", "nosplash","ipython", "ecl"])
         if len(args) > 1:
-            print 'Error: more than one savefile argument'
+            print('Error: more than one savefile argument')
             usage()
     except getopt.error as e:
-        print str(e)
+        print(str(e))
         usage()
     verbose = 0
     doCmdline = 1
@@ -180,16 +180,16 @@ else:
             elif opt in ("-e", "--ecl"):
                 _pyrafglobals._use_ecl = True
             else:
-                print "Program bug, uninterpreted option", opt
+                print("Program bug, uninterpreted option", opt)
                 raise SystemExit()
 
     if "epyraf" in sys.argv[0]:  # See also -e and --ecl switches
         _pyrafglobals._use_ecl = True
 
-    if _verbosity_ > 0: print "pyraf: finished arg parsing"
+    if _verbosity_ > 0: print("pyraf: finished arg parsing")
 
     import iraf
-    if _verbosity_ > 0: print "pyraf: imported iraf"
+    if _verbosity_ > 0: print("pyraf: imported iraf")
     iraf.setVerbose(verbose)
     del getopt, verbose, usage, optlist
 
@@ -205,7 +205,7 @@ else:
         else:
             _splash = None
 
-    if _verbosity_ > 0: print "pyraf: splashed"
+    if _verbosity_ > 0: print("pyraf: splashed")
 
     # load initial iraf symbols and packages
 
@@ -229,7 +229,7 @@ else:
         iraf = None
         raise
     del args
-    if _verbosity_ > 0: print "pyraf: finished iraf.Init"
+    if _verbosity_ > 0: print("pyraf: finished iraf.Init")
 
     if _splash:
         _splash.Destroy()

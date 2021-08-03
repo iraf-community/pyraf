@@ -4,7 +4,7 @@ $Id$
 
 R. White, 1999 December 20
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import cStringIO, os, sys
 
@@ -83,7 +83,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
                 index, pycode = codeCache.get(efilename,mode=mode)
                 if pycode is not None:
                     if Verbose>1:
-                        print efilename,"filename found in CL script cache"
+                        print(efilename,"filename found in CL script cache")
                     return pycode
             else:
                 index = None
@@ -96,7 +96,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
                 index, pycode = codeCache.get(filename,mode=mode,source=clInput)
                 if pycode is not None:
                     if Verbose>1:
-                        print filename,"filehandle found in CL script cache"
+                        print(filename,"filehandle found in CL script cache")
                     return pycode
             else:
                 index = None
@@ -115,7 +115,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
             index, pycode = codeCache.get(None,mode=mode,source=clInput)
             if pycode is not None:
                 if Verbose>3:
-                    print "Found in CL script cache: ",clInput.strip()[:20]
+                    print("Found in CL script cache: ",clInput.strip()[:20])
                 return pycode
         else:
             index = None
@@ -157,12 +157,12 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     pycode.index = index
     if Verbose>1:
         if efilename == 'string_proc':
-            print >> sys.stderr, "Code-string compiled by cl2py:"
-            print >> sys.stderr, "-"*80
-            print >> sys.stderr, clInput
-            print >> sys.stderr, "-"*80
+            print("Code-string compiled by cl2py:", file=sys.stderr)
+            print("-"*80, file=sys.stderr)
+            print(clInput, file=sys.stderr)
+            print("-"*80, file=sys.stderr)
         else:
-            print >> sys.stderr, "Code-file compiled by cl2py:"+efilename
+            print("Code-file compiled by cl2py:"+efilename, file=sys.stderr)
     return pycode
 
 def checkCache(filename, pycode):
@@ -787,16 +787,16 @@ class VarList(GenericASTTraversal, ErrorTracker):
 
     def list(self):
         """List variables"""
-        print "Procedure arguments:"
+        print("Procedure arguments:")
         for var in self.proc_args_list:
             v =  self.proc_args_dict[var]
             if var in _SpecialArgs:
-                print 'Special',var,'=',v
+                print('Special',var,'=',v)
             else:
-                print v
-        print "Local variables:"
+                print(v)
+        print("Local variables:")
         for var in self.local_vars_list:
-            print self.local_vars_dict[var]
+            print(self.local_vars_dict[var])
 
     def getParList(self):
         """Return procedure arguments as IrafParList"""

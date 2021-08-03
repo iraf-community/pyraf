@@ -36,7 +36,7 @@ $Id$
 
 R. White, 1999 September 23
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import __main__, re, os, sys, types
 try:
@@ -232,9 +232,9 @@ def _help(an_obj, variables, functions, modules,
 
     if modules and modulelist:
         # modules get listed in simple column format
-        print "Modules:"
+        print("Modules:")
         irafutils.printCols(map(lambda x: x[0], modulelist))
-        print
+        print()
 
     if functions and functionlist:
         _printValueList(functionlist, hidden, padchars)
@@ -247,14 +247,14 @@ def _help(an_obj, variables, functions, modules,
 
     # IRAF packages and tasks get listed in simple column format
     if packages and pkglist:
-        print "IRAF Packages:"
+        print("IRAF Packages:")
         irafutils.printCols(pkglist)
-        print
+        print()
 
     if tasks and tasklist:
-        print "IRAF Tasks:"
+        print("IRAF Tasks:")
         irafutils.printCols(tasklist)
-        print
+        print()
 
     if _isinstancetype(an_obj) and functions:
         # for instances, call recursively to list class methods
@@ -284,10 +284,10 @@ def _valueHelp(an_obj, padchars):
         name = ''
     name = name + (padchars-len(name))*" "
     if name and len(name.strip()) > 0:
-        print name, ":", vstr
+        print(name, ":", vstr)
     else:
         # omit the colon if name is null
-        print vstr
+        print(vstr)
 
 def _getContents(vlist, regexp, an_obj):
     # Make one pass through names getting the type and sort order
@@ -350,7 +350,7 @@ def _printValueList(varlist, hidden, padchars):
             # pad name to padchars chars if shorter
             if len(vname) < padchars:
                 vname = vname + (padchars-len(vname))*" "
-            print vname, ":", vstr
+            print(vname, ":", vstr)
 
 
 
@@ -429,7 +429,7 @@ def _irafHelp(taskname, irafkw):
         pyraf.iraf.system.help(taskname, **irafkw)
         return 1
     except IrafError as e:
-        print str(e)
+        print(str(e))
         return 0
 
 _HelpURL = "http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?task="

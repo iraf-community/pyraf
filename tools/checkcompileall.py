@@ -4,7 +4,7 @@
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 import re, sys
 
 taskpat = re.compile(r'\d')
@@ -19,38 +19,38 @@ expectTask = True
 inError = False
 for line in lines:
     if line.startswith("====="):
-        print line
+        print(line)
         expectTask = True
         if inError:
             inError = False
-            print
+            print()
     elif line.startswith("-----"):
         cpackage = line
         expectTask = False
         if inError:
             inError = False
-            print
+            print()
     elif taskpat.match(line):
         ctask = line
         expectTask = True
         if inError:
             inError = False
-            print
+            print()
     elif line == "...continuing...":
         expectTask = True
-        print
+        print()
         inError = False
     elif not line:
         if inError:
             inError = False
-            print
+            print()
     elif expectTask:
         # Some sort of unexpected output, so print it
         if cpackage:
-            print cpackage
+            print(cpackage)
             cpackage = None
         if ctask:
-            print ctask
+            print(ctask)
             ctask = None
-        print line
+        print(line)
         inError = True

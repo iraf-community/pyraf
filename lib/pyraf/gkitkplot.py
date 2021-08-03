@@ -4,7 +4,7 @@ Tkplot implementation of the gki kernel class
 $Id$
 """
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import numpy, sys, string
 import Tkinter as TKNTR # requires 2to3

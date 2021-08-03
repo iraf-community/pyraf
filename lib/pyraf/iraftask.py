@@ -9,7 +9,7 @@ the creation of IRAF ECL.  irafecl is closely related and derived from
 iraftask,  providing drop-in replacements for the Task classes defined
 here which also support ECL syntax like "iferr" and $errno.
 """
-from __future__ import division
+from __future__ import division, print_function
 
 import fnmatch, os, sys, copy, re
 from stsci.tools import basicpar, minmatch, irafutils, irafglobals, taskpars
@@ -112,12 +112,12 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         objdict.update(_IrafTask_attr_dict)
         sname = name.replace('.', '_')
         if sname != name:
-            print "Warning: '.' illegal in task name, changing", name, \
-                    "to", sname
+            print("Warning: '.' illegal in task name, changing", name,
+                  "to", sname)
         spkgname = pkgname.replace('.', '_')
         if spkgname != pkgname:
-            print "Warning: '.' illegal in pkgname, changing", pkgname, \
-                    "to", spkgname
+            print("Warning: '.' illegal in pkgname, changing", pkgname,
+                  "to", spkgname)
         objdict['_name'] = sname
         objdict['_pkgname'] = spkgname
         objdict['_pkgbinary'] = []
@@ -172,7 +172,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         else:
             self._filename = irafinst.NO_IRAF_PFX+base # to be built on the fly
         if Verbose>1:
-            print 'Task "'+self._name+'" needed "'+orig+'" got: '+self._filename
+            print('Task "'+self._name+'" needed "'+orig+'" got: '+self._filename)
 
 
     #=========================================================
@@ -342,8 +342,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         self.setParList(*args, **kw)
 
         if Verbose>1:
-            print >> sys.stderr, "run %s (%s: %s)" % (self._name,
-                     self.__class__.__name__, self._fullpath)
+            print("run %s (%s: %s)" % (self._name,
+                     self.__class__.__name__, self._fullpath), file=sys.stderr)
             if self._runningParList:
                 self._runningParList.lParam()
 
@@ -359,7 +359,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             self._run(redirKW, specialKW)
             self._updateParList(save)
             if Verbose>1:
-                print >> sys.stderr, 'Successful task termination'
+                print('Successful task termination', file=sys.stderr)
         finally:
             rv = self._resetRedir(resetList, closeFHList)
             self._deleteRunningParList()
@@ -690,7 +690,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                 status = "Unable to save parameters for task %s" % \
                         (self._name,)
                 if Verbose>0:
-                    print >> sys.stderr, status
+                    print(status, file=sys.stderr)
                 return status
         rv = self._currentParList.saveParList(filename, comment)
         return rv
@@ -846,7 +846,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         if changed:
             rv = self.saveParList()
             if Verbose>1:
-                print >> sys.stderr, rv
+                print(rv, file=sys.stderr)
 
     def _deleteRunningParList(self):
         """Delete the _runningParList parameter list for this and psets"""
@@ -932,9 +932,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             basedir, basename = os.path.split(exename1)
         except IrafError as e:
             if Verbose>0:
-                print >> sys.stderr, "Error searching for executable for: "+\
-                         self._name
-                print >> sys.stderr, str(e)
+                print("Error searching for executable for: " + self._name,
+                      file=sys.stderr)
+                print(str(e), file=sys.stderr)
             exename1 = ""
             # make our best guess that the basename is what follows the
             # last '$' in _filename
@@ -957,9 +957,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                     exelist.append(pyraf.iraf.Expand(pbin + basename))
                 except IrafError as e:
                     if Verbose>0:
-                        print >> sys.stderr, "Error finding executable for: "+\
-                                 self._name
-                        print >> sys.stderr, str(e)
+                        print("Error finding executable for: " + self._name,
+                              file=sys.stderr)
+                        print(str(e), file=sys.stderr)
             for exename2 in exelist:
                 if os.path.exists(exename2):
                     self._fullpath = exename2
@@ -996,9 +996,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             if basedir=="": basedir = "."
         except IrafError as e:
             if Verbose>0:
-                print >> sys.stderr, "Error expanding executable name for "+\
-                         "task "+self._name+", tried: "+self._filename
-                print >> sys.stderr, str(e)
+                print("Error expanding executable name for task " + self._name
+                      + ", tried: "+self._filename, file=sys.stderr)
+                print(str(e), file=sys.stderr)
             exename1 = ""
             basedir = ""
 
@@ -1358,7 +1358,7 @@ class IrafCLTask(IrafTask):
         if not irafinst.EXISTS and fcopy.startswith(irafinst.NO_IRAF_PFX):
             # translate code to python
             if Verbose>0:
-                print >> sys.stderr, "Compiling No-IRAF CL task: "+self._name
+                print("Compiling No-IRAF CL task: "+self._name, file=sys.stderr)
             fcopy = os.path.basename(fcopy)
             self._codeObject = None
             self._pycode = cl2py.cl2py(None,
@@ -1371,12 +1371,12 @@ class IrafCLTask(IrafTask):
             # File has changed, force recompilation
             self._pycode = None
             if Verbose>1:
-                print >> sys.stderr, "Cached version out-of-date: "+self._name
+                print("Cached version out-of-date: "+self._name, file=sys.stderr)
 
         if self._pycode is None:
             # translate code to python
             if Verbose>1:
-                print >> sys.stderr, "Compiling CL task ", self._name, id(self)
+                print("Compiling CL task ", self._name, id(self), file=sys.stderr)
             self._codeObject = None
             self._pycode = cl2py.cl2py(filehandle,
                     parlist=self._defaultParList, parfile=self._defaultParpath)
@@ -1659,8 +1659,8 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
             self._loaded = 1
             pyraf.iraf.addLoaded(self)
             if Verbose>1:
-                print >> sys.stderr, "Loading pkg: "+self.getName()+"("+\
-                         self.getFullpath()+")"
+                print("Loading pkg: " + self.getName()
+                      + "(" + self.getFullpath() + ")", file=sys.stderr)
             menus = pyraf.iraf.cl.menus
             try:
                 pyraf.iraf.cl.menus = 0
@@ -1736,8 +1736,8 @@ class IrafForeignTask(IrafTask):
                             (self.getName(), filename))
         if self.hasParfile():
             if Verbose>0:
-                print >> sys.stderr, "Foreign task "+self.getName()+\
-                        " cannot have a parameter file"
+                print("Foreign task " + self.getName()
+                      + " cannot have a parameter file", file=sys.stderr)
             self._hasparfile = 0
 
     def setParList(self, *args, **kw):
@@ -1781,7 +1781,7 @@ class IrafForeignTask(IrafTask):
             # no argument substitution, just append all args
             cmdline = cmdline + ' ' + ' '.join(args)
         if Verbose>1:
-            print >> sys.stderr, "Running foreign task: "+cmdline
+            print("Running foreign task: "+cmdline, file=sys.stderr)
         # create and run the sub-process
         subproc.subshellRedir(cmdline)
 
@@ -1895,11 +1895,11 @@ def printable_task_def(x) :
 def showtasklong(name, level=0) :
     l = gettask(name)
     if len(l) < 1 :
-        print ("    "*level)+'%s : NOT FOUND'%name
+        print(("    "*level)+'%s : NOT FOUND'%name)
     else :
         l.sort()
         for x in l :
-            print ("    "*level)+printable_task_def(x)
+            print(("    "*level)+printable_task_def(x))
             next_name = x._pkgname
             if (next_name == name) or ( level > 15 ) :
                 pass

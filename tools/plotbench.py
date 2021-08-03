@@ -9,7 +9,7 @@
 #
 # $Id$
 #
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 from pyraf import iraf, gki
 import os, time, random
@@ -68,7 +68,7 @@ def runAllCases(suiteName, resDict):
 
    # we reset gki to pick up the current graphics kernel of choice
    # we also close the graphics window and then throw away the first plot
-   print ("\n"+suiteName+":")
+   print("\n" + suiteName + ":")
    gki._resetGraphicsKernel()
 
    for mo in ('graph','prow','surface','contour'):

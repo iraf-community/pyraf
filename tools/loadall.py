@@ -3,7 +3,7 @@
 """loadall.py: Load all the main packages in IRAF with verbose turned on
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import sys, traceback
 from pyraf import iraf
@@ -13,7 +13,7 @@ iraf.setVerbose()
 def printcenter(s, length=70, char="-"):
     l1 = (length-len(s))//2
     l2 = length-l1-len(s)
-    print l1*char, s, l2*char
+    print(l1*char, s, l2*char)
 
 ptried = {}
 npass = 0
@@ -34,15 +34,15 @@ while keepGoing and (ntotal<len(plist)):
             l2 = 70-l1-len(pkg)
             printcenter(pkg)
             if pkg == "digiphotx":
-                print """
+                print("""
                         Working around bug in digiphotx.
                         It screws up subsequent loading of digiphot tasks.
-                        (It happens in IRAF too.)"""
+                        (It happens in IRAF too.)""")
             else:
                 try:
                     iraf.load(pkg)
                 except KeyboardInterrupt:
-                    print 'Interrupt'
+                    print('Interrupt')
                     keepGoing = 0
                     break
                 except Exception as e:
@@ -51,7 +51,7 @@ while keepGoing and (ntotal<len(plist)):
                     if e.__class__ == MemoryError:
                         keepGoing = 0
                         break
-                    print "...continuing...\n"
+                    print("...continuing...\n")
     ntotal = ntotal + nnew
     printcenter("Finished pass "+`npass` +
             " new pkgs " + `nnew` +

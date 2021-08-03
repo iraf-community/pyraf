@@ -17,7 +17,7 @@ Subprocess class features:
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 __version__ = "Revision: 1.7r "
 
@@ -427,9 +427,10 @@ class Subprocess:
             os.kill(self.pid, signal.SIGSTOP)
         except os.error:
             if verbose:
-                print "Stop failed for '%s' - '%s'" % (self.cmd, sys.exc_value)
+                print("Stop failed for '%s' - '%s'" % (self.cmd, sys.exc_value))
             return 0
-        if verbose: print "Stopped '%s'" % self.cmd
+        if verbose:
+            print("Stopped '%s'" % self.cmd)
         return 'stopped'
 
     def cont(self, verbose=False):
@@ -439,10 +440,10 @@ class Subprocess:
             os.kill(self.pid, signal.SIGCONT)
         except os.error:
             if verbose:
-                print ("Continue failed for '%s' - '%s'" %
-                           (self.cmd, sys.exc_value))
+                print("Continue failed for '%s' - '%s'" %
+                      (self.cmd, sys.exc_value))
             return 0
-        if verbose: print "Continued '%s'" % self.cmd
+        if verbose: print("Continued '%s'" % self.cmd)
         return 'continued'
 
     def die(self):
@@ -630,7 +631,7 @@ class ReadBuf:
                     self.eof = 1
                     return got
             else:
-                print 'Select returned without input?'
+                print('Select returned without input?')
 
 
 #############################################################################

@@ -2,7 +2,7 @@
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import string
 from stsci.tools import compmixin
@@ -52,7 +52,7 @@ def getAttributes(entry):
                     try:
                         value = float(attrval[1:])
                     except ValueError:
-                        print "problem reading graphcap"
+                        print("problem reading graphcap")
                         raise
             elif attrval[0] == '@':
                 # implies false
@@ -95,7 +95,7 @@ class GraphCap(filecache.FileCache):
         """Get up-to-date version of dictionary"""
         thedict = self.get()
         if not key in thedict:
-            print "Error: device not found in graphcap"
+            print("Error: device not found in graphcap")
             raise KeyError()
         return Device(thedict, key)
 

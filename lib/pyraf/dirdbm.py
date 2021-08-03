@@ -13,7 +13,7 @@ XXX keys, len are incomplete if directory is not writable?
 R. White, 2000 September 26
 """
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, binascii, string, __builtin__
 _os = os

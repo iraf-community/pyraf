@@ -3,7 +3,7 @@
 """cachesearch.py: Check all entries in CL cache for a particular string
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, re
 import pyraf
@@ -38,7 +38,7 @@ def search(pattern):
         mm = pattern.search(pycode.code)
         if mm:
             match += 1
-            print '%d: %s' % (match, pycode.vars.proc_name)
+            print('%d: %s' % (match, pycode.vars.proc_name))
             pmatch.append(pycode.vars.proc_name)
             # print matching lines
             lines = pycode.code.split('\n')
@@ -50,17 +50,17 @@ def search(pattern):
                     i = i+1
                     sum = sum+len(lines[i])+1
                 if ilast != i:
-                    print lines[i]
+                    print(lines[i])
                     ilast = i
                 mm = pattern.search(pycode.code, mm.end())
         else:
             nomatch += 1
         if match+nomatch == 1:
-            print dir(pycode)
-            print dir(pycode.vars)
+            print(dir(pycode))
+            print(dir(pycode.vars))
     db1.close()
     db2.close()
-    print "Checked",match+nomatch,"entries from caches"
-    print nomatch,"did not match pattern"
-    print match,"did match pattern"
+    print("Checked",match+nomatch,"entries from caches")
+    print(nomatch,"did not match pattern")
+    print(match,"did match pattern")
     return pmatch

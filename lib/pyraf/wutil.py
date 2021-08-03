@@ -6,7 +6,7 @@ If the c versions do not exist, then these routines will do nothing
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import struct, sys, os
 try:
@@ -93,7 +93,7 @@ try:
                 _has_aqutil = 1
             except:
                 _has_aqutil = 0
-                print "Could not import aqutil"
+                print("Could not import aqutil")
 
 except ImportError:
     _has_xutil = 0 # Unsuccessful init of XWindow
@@ -582,7 +582,7 @@ def dumpspecs(outstream = None, skip_volatiles = False):
     if outstream:
         outstream.write(out+'\n')
     else:
-        print out
+        print(out)
 
 
 
@@ -596,11 +596,11 @@ if _skipDisplay:
        '-s' not in sys.argv and '--silent' not in sys.argv:
         # Warn, but be specific about why
         if 'PYRAF_NO_DISPLAY' in os.environ:
-            print "No graphics/display intended for this session."
+            print("No graphics/display intended for this session.")
         else:
-            print "No graphics/display possible for this session."
+            print("No graphics/display possible for this session.")
             if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
-                print "tkinter import failed."
+                print("tkinter import failed.")
 else:
     if _has_xutil or _has_aqutil:
         hasGraphics = focusController.hasGraphics
@@ -611,20 +611,20 @@ else:
         if hasGraphics:
             try: # the try/except handling here will be unneccessary after stsci.tools 3.4.2
                 if capable.which_darwin_linkage() == 'aqua':
-                    print "\nLimited graphics available on OSX (aqutil not loaded)\n"
+                    print("\nLimited graphics available on OSX (aqutil not loaded)\n")
                 else:
-                    print "\nLimited graphics available on OSX (xutil not loaded)\n"
+                    print("\nLimited graphics available on OSX (xutil not loaded)\n")
             except Exception:
-                print "\nLimited graphics available on OSX (library not loaded)\n"
+                print("\nLimited graphics available on OSX (library not loaded)\n")
     elif WUTIL_ON_WIN:
         hasGraphics = 1 # try this, tho VERY limited (epar only I guess)
-        print "\nLimited graphics available on win32 platform\n"
+        print("\nLimited graphics available on win32 platform\n")
 
     if not hasGraphics:
-        print ""
-        print "No graphics display available for this session."
-        print "Graphics tasks that attempt to plot to an interactive " + \
-                          "screen will fail."
-        print 'For help, search "PyRAF FAQ 5.13" or visit the STScI help site, ' \
-              'https://hsthelp.stsci.edu.'
-        print ""
+        print("")
+        print("No graphics display available for this session.")
+        print("Graphics tasks that attempt to plot to an interactive "
+              "screen will fail.")
+        print('For help, search "PyRAF FAQ 5.13" or visit the STScI help site, '
+              'https://hsthelp.stsci.edu.')
+        print("")

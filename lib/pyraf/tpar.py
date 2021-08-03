@@ -11,7 +11,7 @@ $Id$
 
 Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 # XXXX Debugging tip:  uncomment self.inform() in the debug() method below
 
@@ -1162,7 +1162,7 @@ class TparDisplay(Binder):
         """Executes the task."""
         self.save(emph)
         def go_continue():
-            print "\nTask %s is running...\n" % self.taskName
+            print("\nTask %s is running...\n" % self.taskName)
             self.run_task()
         self.done = go_continue
 
@@ -1383,9 +1383,9 @@ class TparDisplay(Binder):
 
 def tpar(taskName):
     if isinstance(urwid, FakeModule):
-        print >>sys.stderr, "The urwid package isn't found on your Python system so tpar can't be used."
-        print >>sys.stderr, '    (the error given: "'+urwid.the_error+'")'
-        print >>sys.stderr, "Please install urwid version >= 0.9.7 or use epar instead."
+        print("The urwid package isn't found on your Python system so tpar can't be used.", file=sys.stderr)
+        print('    (the error given: "'+urwid.the_error+'")', file=sys.stderr)
+        print("Please install urwid version >= 0.9.7 or use epar instead.", file=sys.stderr)
         return
     TparDisplay(taskName).main()
 

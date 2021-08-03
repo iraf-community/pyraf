@@ -4,7 +4,7 @@ $Id$
 
 R. White, 2000 January 19
 """
-from __future__ import division, print_function  # confidence high
+from __future__ import division, print_function
 
 import os
 import sys

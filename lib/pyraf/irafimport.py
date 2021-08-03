@@ -12,7 +12,7 @@ $Id$
 
 R. White, 1999 August 17
 """
-from __future__ import absolute_import, division # confidence high
+from __future__ import absolute_import, division, print_function
 
 import __builtin__
 import sys

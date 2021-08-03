@@ -3,7 +3,7 @@
 """cachecompare.py: Compare contents of new CL to old cache
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os
 import pyraf
@@ -46,16 +46,16 @@ for key in dbnew.keys():
             diff1 += 1
         else:
             diff2 += 1
-        print select,"Different", newcode.vars.proc_name
+        print(select,"Different", newcode.vars.proc_name)
 
 dbnew.close()
 dbold1.close()
 dbold2.close()
-print "Checked",notfound+ok1+ok2+diff1+diff2,"entries from new cache"
-print notfound,"not found in old cache"
-print found1,"found in old cache 1",oldname1
-print ok1,"same"
-print diff1,"different"
-print found2,"found in old cache 2",oldname2
-print ok2,"same"
-print diff2,"different"
+print("Checked",notfound+ok1+ok2+diff1+diff2,"entries from new cache")
+print(notfound,"not found in old cache")
+print(found1,"found in old cache 1",oldname1)
+print(ok1,"same")
+print(diff1,"different")
+print(found2,"found in old cache 2",oldname2)
+print(ok2,"same")
+print(diff2,"different")

@@ -4,7 +4,7 @@ $Id$
 
 R. White, 2000 January 7
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import copy, glob, os, re, sys, types
 from stsci.tools import basicpar, minmatch, irafutils, taskpars
@@ -649,7 +649,7 @@ class IrafParList(taskpars.TaskPars):
         """
         if not isinstance(other, self.__class__):
             if Verbose>0:
-                print 'Comparison list is not a %s' % self.__class__.__name__
+                print('Comparison list is not a %s' % self.__class__.__name__)
             return 0
         # compare minimal set of parameter attributes
         thislist = self._getConsistentList()
@@ -1004,7 +1004,7 @@ class IrafParList(taskpars.TaskPars):
         tpar.tpar(self)
 
     def lParam(self,verbose=0):
-        print self.lParamStr(verbose=verbose)
+        print(self.lParamStr(verbose=verbose))
 
     def lParamStr(self,verbose=0):
         """List the task parameters"""
@@ -1033,8 +1033,8 @@ class IrafParList(taskpars.TaskPars):
         for i in xrange(len(self.__pars)):
             p = self.__pars[i]
             if p.name != '$nargs':
-                print "%s%s" % (taskname,p.dpar(cl=cl))
-        if cl: print "# EOF"
+                print("%s%s" % (taskname,p.dpar(cl=cl)))
+        if cl: print("# EOF")
 
     def saveParList(self, filename=None, comment=None):
         """Write .par file data to filename (string or filehandle)"""
@@ -1046,7 +1046,7 @@ class IrafParList(taskpars.TaskPars):
         writepars = int(pyraf.iraf.envget("writepars", 1))
         if writepars < 1:
             msg = "No parameters written to disk."
-            print msg
+            print(msg)
             return msg
         # ok, go ahead and write 'em - set up file
         if hasattr(filename,'write'):
@@ -1132,12 +1132,12 @@ def _extractDiffInfo(alist):
 def _printHiddenDiff(pd1,hd1,pd2,hd2):
     for key in pd1.keys():
         if key in hd2:
-            print "Parameter `%s' is hidden in list 2 but not list 1" % (key,)
+            print("Parameter `%s' is hidden in list 2 but not list 1" % (key,))
             del pd1[key]
             del hd2[key]
     for key in pd2.keys():
         if key in hd1:
-            print "Parameter `%s' is hidden in list 1 but not list 2" % (key,)
+            print("Parameter `%s' is hidden in list 1 but not list 2" % (key,))
             del pd2[key]
             del hd1[key]
 
@@ -1163,27 +1163,27 @@ def _printDiff(pd1, pd2, label):
             else:
                 # one or both parameters missing
                 if not key1 in pd2:
-                    print "Extra %s parameter `%s' (type `%s') in list 1" % \
-                            (label, key1, pd1[key1][0])
+                    print("Extra %s parameter `%s' (type `%s') in list 1" %
+                          (label, key1, pd1[key1][0]))
                     # delete the extra parameter
                     del pd1[key1]
                     i1 = i1+1
                 if not key2 in pd1:
-                    print "Extra %s parameter `%s' (type `%s') in list 2" % \
-                            (label, key2, pd2[key2][0])
+                    print("Extra %s parameter `%s' (type `%s') in list 2" %
+                          (label, key2, pd2[key2][0]))
                     del pd2[key2]
                     i2 = i2+1
         # other parameters must be missing
         while i1<len(k1):
             key1 = k1[i1]
-            print "Extra %s parameter `%s' (type `%s') in list 1" % \
-                    (label, key1, pd1[key1][0])
+            print("Extra %s parameter `%s' (type `%s') in list 1" %
+                  (label, key1, pd1[key1][0]))
             del pd1[key1]
             i1 = i1+1
         while i2<len(k2):
             key2 = k2[i2]
-            print "Extra %s parameter `%s' (type `%s') in list 2" % \
-                    (label, key2, pd2[key2][0])
+            print("Extra %s parameter `%s' (type `%s') in list 2" %
+                  (label, key2, pd2[key2][0]))
             del pd2[key2]
             i2 = i2+1
     # remaining parameters are in both lists
@@ -1200,7 +1200,7 @@ def _printDiff(pd1, pd2, label):
                 mm.append("order disagreement")
             if type1 != type2:
                 mm.append("type disagreement (`%s' vs. `%s')" % (type1, type2))
-            print "Parameter `%s': %s" % (key, ", ".join(mm))
+            print("Parameter `%s': %s" % (key, ", ".join(mm)))
 
 
 # The dictionary of all special-use par files found on disk.

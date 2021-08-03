@@ -3,7 +3,7 @@ implement IRAF gcur functionality
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import string, os, sys, numpy
 import Tkinter as TKNTR

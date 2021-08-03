@@ -6,7 +6,7 @@ $Id$
 
 R. White, 1999 September 10
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 from cgeneric import ContextSensitiveScanner
 from generic import GenericScanner
@@ -978,11 +978,11 @@ def toklist(tlist,filename=None):
     for tok in tlist:
         if tok.type == 'NEWLINE':
             if cltoken.verbose:
-                print 'NEWLINE'
+                print('NEWLINE')
             else:
-                print
+                print()
         else:
-            print `tok`,
+            print(`tok`, end=' ')
     if filename:
         sys.stdout.close()
         sys.stdout = sys.__stdout__

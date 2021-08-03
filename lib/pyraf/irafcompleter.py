@@ -14,7 +14,7 @@ $Id$
 
 RLW, 2000 February 13
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import __builtin__
 import __main__
@@ -102,7 +102,7 @@ class IrafCompleter(Completer):
                 readline.read_history_file(hfile)
             except IOError as e:
                 # we do NOT want this to prevent startup.  see ticket #132
-                print 'ERROR reading "'+hfile+'" -> '+str(e)
+                print('ERROR reading "'+hfile+'" -> '+str(e))
 
     def deactivate(self):
         """Turn off completion, restoring old behavior for character"""

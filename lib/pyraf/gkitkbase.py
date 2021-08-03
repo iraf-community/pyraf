@@ -3,7 +3,7 @@ Tk gui implementation for the gki plot widget
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import numpy, os, sys, string, time
 import Tkinter as TKNTR # requires 2to3
@@ -671,10 +671,10 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         """Truncate number of error messages produced in a plot."""
 
         if self._errorMessageCount < self.MAX_ERROR_COUNT:
-            print text
+            print(text)
             self._errorMessageCount = self._errorMessageCount + 1
         elif self._errorMessageCount == self.MAX_ERROR_COUNT:
-            print "\nAdditional graphics error messages suppressed"
+            print("\nAdditional graphics error messages suppressed")
             self._errorMessageCount = self._errorMessageCount + 1
 
     def flush(self):

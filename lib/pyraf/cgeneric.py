@@ -19,7 +19,7 @@ $Id$
 
 Created 1999 September 10 by R. White
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 class ContextSensitiveScanner:
 
@@ -49,8 +49,8 @@ class ContextSensitiveScanner:
                     # assume there is only a single match
                     break
             else:
-                print 'cgeneric: No group found in match?'
-                print 'Returning match object for debug'
+                print('cgeneric: No group found in match?')
+                print('Returning match object for debug')
                 self.rv = m
                 return
             iend = m.end()

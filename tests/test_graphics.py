@@ -1,5 +1,5 @@
 """These were tests under core/graphics_checks in pandokia."""
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 import six
 
 import glob

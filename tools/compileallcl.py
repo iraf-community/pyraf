@@ -11,14 +11,14 @@ and move the user cache so that everything gets compiled from scratch.)
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, sys, traceback, time
 
 def printcenter(s, length=70, char="-"):
     l1 = (length-len(s))//2
     l2 = length-l1-len(s)
-    print l1*char, s, l2*char
+    print(l1*char, s, l2*char)
     sys.stdout.flush()
 
 def compileall():
@@ -42,9 +42,9 @@ def compileall():
     if not os.path.exists(userCacheDir):
         try:
             os.mkdir(userCacheDir)
-            print 'Created directory %s for cache' % userCacheDir
+            print('Created directory %s for cache' % userCacheDir)
         except OSError:
-            print 'Could not create directory %s' % userCacheDir
+            print('Could not create directory %s' % userCacheDir)
     dbfile = 'clcache'
     clcache.codeCache = clcache._CodeCache([ os.path.join(userCacheDir,dbfile) ])
     cl2py.codeCache = clcache.codeCache
@@ -76,10 +76,10 @@ def compileall():
                 npkg_new = npkg_new+1
                 printcenter(pkg)
                 if pkg in ["newimred","digiphotx"]:
-                    print """
+                    print("""
 Working around bugs in newimred, digiphotx.
 They screw up subsequent loading of imred/digiphot tasks.
-(It happens in IRAF too.)"""
+(It happens in IRAF too.)""")
                     sys.stdout.flush()
                 else:
                     try:
@@ -88,7 +88,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                         # going)
                         iraf.load(pkg,kw={'Stdin': 'dev$null'})
                     except KeyboardInterrupt:
-                        print 'Interrupt'
+                        print('Interrupt')
                         sys.stdout.flush()
                         keepGoing = 0
                         break
@@ -98,7 +98,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                         if isinstance(e,MemoryError):
                             keepGoing = 0
                             break
-                        print "...continuing...\n"
+                        print("...continuing...\n")
                         sys.stdout.flush()
                 # load tasks after each package
                 task_list = iraf.getTaskList()
@@ -110,12 +110,12 @@ They screw up subsequent loading of imred/digiphot tasks.
                         if isinstance(taskobj, IrafCLTask) and \
                                         not isinstance(taskobj,IrafPkg):
                             ntask_total = ntask_total+1
-                            print "%d: %s" % (ntask_total, taskname)
+                            print("%d: %s" % (ntask_total, taskname))
                             sys.stdout.flush()
                             try:
                                 taskobj.initTask()
                             except KeyboardInterrupt:
-                                print 'Interrupt'
+                                print('Interrupt')
                                 sys.stdout.flush()
                                 keepGoing = 0
                                 break
@@ -125,7 +125,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                                 if isinstance(e,MemoryError):
                                     keepGoing = 0
                                     break
-                                print "...continuing...\n"
+                                print("...continuing...\n")
                                 sys.stdout.flush()
                                 ntask_failed = ntask_failed+1
                 if not keepGoing: break
@@ -136,17 +136,17 @@ They screw up subsequent loading of imred/digiphot tasks.
         pkg_list = iraf.getPkgList()
 
     t1 = time.time()
-    print "Finished package and task loading (%f seconds)" % (t1-t0,)
-    print "Compiled %d CL tasks -- %d failed" % (ntask_total, ntask_failed)
+    print("Finished package and task loading (%f seconds)" % (t1-t0,))
+    print("Compiled %d CL tasks -- %d failed" % (ntask_total, ntask_failed))
     sys.stdout.flush()
 
 
 def usage():
-    print """Usage: %s [-r] [-h]
+    print("""Usage: %s [-r] [-h]
             -r recompiles only out-of-date routines.  Default is to
                     force recompilation of all CL scripts and packages.
             -h prints this message.
-"""
+""")
     sys.stdout.flush()
     sys.exit()
 
@@ -157,10 +157,10 @@ if __name__ == '__main__':
     try:
         optlist, args = getopt.getopt(sys.argv[1:], "rh")
         if len(args) > 0:
-            print "Error: no positional arguments accepted"
+            print("Error: no positional arguments accepted")
             usage()
     except getopt.error as e:
-        print str(e)
+        print(str(e))
         usage()
     clearcache = 1
     for opt, value in optlist:
@@ -169,7 +169,7 @@ if __name__ == '__main__':
         elif opt == "-h":
             usage()
         else:
-            print "Program bug, unknown option", opt
+            print("Program bug, unknown option", opt)
             raise SystemExit()
 
     # find pyraf directory
@@ -186,8 +186,8 @@ if __name__ == '__main__':
         # move the old user cache
         if os.path.exists(usrCache):
             os.rename(usrCache, usrCache + '.old')
-            print "Pyraf user cache %s renamed to %s.old" % (usrCache, usrCache)
+            print("Pyraf user cache %s renamed to %s.old" % (usrCache, usrCache))
         else:
-            print "Warning: pyraf user cache %s was not found" % usrCache
+            print("Warning: pyraf user cache %s was not found" % usrCache)
 
     compileall()

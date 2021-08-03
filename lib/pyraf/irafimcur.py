@@ -6,7 +6,7 @@ imcur parameter.
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import sys,string
 from stsci.tools import irafutils

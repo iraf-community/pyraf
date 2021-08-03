@@ -24,7 +24,7 @@ $Id$
 
 R. White, 2000 February 20
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import string, re, os, sys, code, keyword, traceback, linecache
 from stsci.tools import capable, minmatch
@@ -69,7 +69,7 @@ class CmdConsole(code.InteractiveConsole):
     def printHistory(self, n=20):
         """Print last n lines of history"""
         for i in range(-min(n, self.nhistory),0):
-            print self.history[self.nhistory+i]
+            print(self.history[self.nhistory+i])
 
     def interact(self, banner=None):
         """Emulate the interactive Python console, with extra commands.

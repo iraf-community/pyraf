@@ -2,7 +2,7 @@
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 #  Copyright (c) 1998-1999 John Aycock
 #

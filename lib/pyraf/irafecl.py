@@ -1,7 +1,7 @@
 """This module adds IRAF ECL style error handling to PyRAF."""
 # $Id$
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import inspect, sys
 from stsci.tools.irafglobals import Verbose
@@ -167,8 +167,8 @@ class EclBase:
         self.setParList(*args, **kw)
 
         if Verbose>1:
-            print "run %s (%s: %s)" % (self._name,
-                    self.__class__.__name__, self._fullpath)
+            print("run %s (%s: %s)" % (self._name,
+                    self.__class__.__name__, self._fullpath))
             if self._runningParList:
                 self._runningParList.lParam()
 
@@ -188,7 +188,7 @@ class EclBase:
                 self._run(redirKW, specialKW)
                 self._updateParList(save)
                 if Verbose>1:
-                    print >> sys.stderr, 'Successful task termination'
+                    print('Successful task termination', file=sys.stderr)
             finally:
                 rv = self._resetRedir(resetList, closeFHList)
                 self._deleteRunningParList()

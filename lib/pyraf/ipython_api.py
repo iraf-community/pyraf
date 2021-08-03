@@ -14,7 +14,7 @@ $Id$
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
 #*****************************************************************************
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 VERY_OLD_IPY = True # this means prior to v0.12
 try:
@@ -49,7 +49,7 @@ _locals = globals()
 # del iraf, __version__, makeIrafPar, yes, no, INDEF, EOF, logout, quit, exit
 
 if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
-    print "\nPyRAF", __version__, "Copyright (c) 2002 AURA"
+    print("\nPyRAF", __version__, "Copyright (c) 2002 AURA")
 
 # Start up command line wrapper keeping definitions in main name space
 # Keep the command-line object in namespace too for access to history
@@ -381,7 +381,7 @@ class IPython_PyRAF_Integrator(object):
                 return int(flag)
         except:
             import sys
-            print >>sys.stderr, "usage:", usage,  "[on | off]"
+            print("usage:", usage,  "[on | off]", file=sys.stderr)
             raise
 
     def _get_IP(self, IP):
@@ -393,8 +393,8 @@ class IPython_PyRAF_Integrator(object):
     def _debug(self, *args):
         import sys
         for a in args:
-            print >>sys.stderr, a,
-        print >>sys.stderr
+            print(a, end=' ', file=sys.stderr)
+        print(file=sys.stderr)
 
     def set_pyraf_magic(self, IP, line):
         """Setting flag="1" Enables PyRAF to intepret a magic
@@ -445,7 +445,7 @@ if VERY_OLD_IPY:
     __PyRAF.use_pyraf_traceback(feedback=fb)
 else:
     if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
-        print "PyRAF traceback not enabled"
+        print("PyRAF traceback not enabled")
 del fb
 
 del IPythonIrafCompleter, IPython_PyRAF_Integrator, IrafCompleter

@@ -3,7 +3,7 @@ implement IRAF ukey functionality
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, string, sys
 import wutil

@@ -4,7 +4,7 @@ use by python plotting
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, string
 from stsci.tools import capable
@@ -93,7 +93,7 @@ class GraphicsWindowManager(gki.GkiProxy):
         windowName = str(windowName).strip()
         window = self.windows.get(windowName)
         if window is None:
-            print "error: graphics window `%s' doesn't exist" % (windowName,)
+            print("error: graphics window `%s' doesn't exist" % (windowName,))
         else:
             changeActiveWindow = (self.stdgraph == window)
             window.top.destroy()
@@ -141,25 +141,25 @@ def _setGraphicsWindowManager():
                 import gkitkplot
                 kernel = gkitkplot.GkiTkplotKernel
             elif kernelname == "opengl":
-                print "OpenGL kernel no longer exists, using default instead"
+                print("OpenGL kernel no longer exists, using default instead")
                 kernelname = "default"
             elif kernelname == "matplotlib":
                 try:
                     import GkiMpl
                     kernel = GkiMpl.GkiMplKernel
                 except ImportError:
-                    print "matplotlib is not installed, using default instead"
+                    print("matplotlib is not installed, using default instead")
                     kernelname = "default"
             else:
-                print 'Graphics kernel specified by "PYRAFGRAPHICS='+ \
-                       kernelname+'" not found.'
-                print "Using default kernel instead."
+                print('Graphics kernel specified by "PYRAFGRAPHICS='+ \
+                       kernelname+'" not found.')
+                print("Using default kernel instead.")
                 kernelname = "default"
         else:
             kernelname = "default"
 
         if 'PYRAFGRAPHICS_TEST' in os.environ:
-            print "Using graphics kernel: "+kernelname
+            print("Using graphics kernel: "+kernelname)
         if kernelname == "default":
             import gkitkplot
             kernel = gkitkplot.GkiTkplotKernel

@@ -2,7 +2,7 @@
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 #  Copyright (c) 1998-1999 John Aycock
 #
@@ -123,7 +123,7 @@ class Token(compmixin.ComparableMixin):
                 else:
                     return _str2int(self.attr)
             except Exception as e:
-                print 'Exception', str(e)
+                print('Exception', str(e))
                 pass
         raise ValueError("Cannot convert " +
                 self.verboseRepr() + " to int")

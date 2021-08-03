@@ -35,7 +35,7 @@ $Id$
 # - Add optional value parameter to GenericParser.error.
 # - Add check for assertion error in ambiguity resolution.
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 __version__ = 'SPARK-0.6.1rlw'
 
@@ -84,7 +84,7 @@ class GenericScanner:
         return '|'.join(rv)
 
     def error(self, s, pos):
-        print "Lexical error at position %s" % pos
+        print("Lexical error at position %s" % pos)
         raise SystemExit()
 
     def tokenize(self, s):
@@ -268,8 +268,9 @@ class GenericParser:
         return None
 
     def error(self, token, value=None):
-        print "Syntax error at or near `%s' token" % token
-        if value is not None: print str(value)
+        print("Syntax error at or near `%s' token" % token)
+        if value is not None:
+            print(str(value))
         raise SystemExit()
 
     def parse(self, tokens):
@@ -411,7 +412,7 @@ class GenericParser:
                         child = self.ambiguity(children)
                     except AssertionError:
                         del tokens[-1]
-                        print stack[0]
+                        print(stack[0])
                         # self.error(tokens[tokpos], 'Parsing ambiguity'+str(children[:]))
                         self.error(stack[0], 'Parsing ambiguity'+str(children[:]))
                 else:

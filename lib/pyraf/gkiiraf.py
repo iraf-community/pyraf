@@ -3,7 +3,7 @@ OpenGL implementation of the gki kernel class
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import sys, os, string
 from stsci.tools.for2to3 import ndarr2bytes

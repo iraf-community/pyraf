@@ -7,7 +7,7 @@ only commit the change when it appears to really be applicable.
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import struct, numpy, math
 from stsci.tools.for2to3 import ndarr2bytes, tobytes, BNULLSTR, PY3K

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, os.path, shutil, sys, commands
 import distutils.core
@@ -61,7 +61,7 @@ def find_x(xdir=""):
         tkv = str(Tkinter.TkVersion)[:3]
         # yes, the version number of Tkinter really is a float...
         if Tkinter.TkVersion < 8.3:
-            print "Tcl/Tk v8.3 or later required\n"
+            print("Tcl/Tk v8.3 or later required\n")
             sys.exit(1)
         else:
             suffix = '.so'

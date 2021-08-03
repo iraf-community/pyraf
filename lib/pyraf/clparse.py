@@ -4,7 +4,7 @@ $Id$
 
 R. White, 1999 August 24
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 from generic import GenericASTBuilder, GenericASTTraversal
 from clast import AST
@@ -382,8 +382,8 @@ class PrettyTree(GenericASTTraversal):
         self.indent = 0
         self.nodeCount = 0
         self.preorder()
-        print
-        print self.nodeCount,'total nodes in tree'
+        print()
+        print(self.nodeCount,'total nodes in tree')
 
     def n_NEWLINE(self, node):
         self.nodeCount = self.nodeCount + 1
@@ -408,7 +408,7 @@ class PrettyTree(GenericASTTraversal):
     def n_declaration_block_exit(self, node):
         self.indent = self.indent + 1
         self.default(node,tail='_exit')
-        print
+        print()
 
     def n_BEGIN(self, node):
         self.printIndentNode(node)
@@ -435,9 +435,9 @@ class PrettyTree(GenericASTTraversal):
     # print newline and indent
 
     def printIndent(self):
-        print '\n',
+        print('\n', end=' ')
         for i in range(self.indent):
-            print '   ',
+            print('   ', end=' ')
 
     # print newline, indent, and token
 
@@ -449,7 +449,7 @@ class PrettyTree(GenericASTTraversal):
         if node.type == '}':
             self.printIndent()
         if isinstance(node, Token) or (not self.terminal):
-            print `node`+tail,
+            print(`node`+tail, end=' ')
         self.nodeCount = self.nodeCount + 1
 
 
@@ -469,9 +469,9 @@ class TreeList(GenericASTTraversal):
 
     def default(self, node):
         if node.type == 'NEWLINE':
-            print '\n' + self.indent,
+            print('\n' + self.indent, end=' ')
         elif isinstance(node, Token) or (not self.terminal):
-            print node,
+            print(node, end=' ')
 
 def treelist(ast,terminal=1):
     PrettyTree(ast,terminal)

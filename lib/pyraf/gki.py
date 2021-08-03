@@ -38,7 +38,7 @@ graphics kernels as directed by commands embedded in the metacode stream.
 
 $Id$
 """
-from __future__ import division
+from __future__ import division, print_function
 
 import numpy
 from types import *
@@ -411,7 +411,7 @@ class GkiBuffer:
             if buffer[ip] == NOP:
                 ip = ip+1
             elif buffer[ip] != BOI:
-                print "WARNING: missynched graphics data stream"
+                print("WARNING: missynched graphics data stream")
                 # find next possible beginning of instruction
                 ip = ip + 1
                 while ip < lenMC:
@@ -419,7 +419,7 @@ class GkiBuffer:
                     ip = ip + 1
                 else:
                     # Unable to resync
-                    print "WARNING: unable to resynchronize in graphics data stream"
+                    print("WARNING: unable to resynchronize in graphics data stream")
                     break
             else:
                 if ip+2 >= lenMC: break
@@ -433,7 +433,7 @@ class GkiBuffer:
                 if ((opcode < 0) or
                     (opcode > GKI_MAX_OP_CODE) or
                     (opcode in GKI_ILLEGAL_LIST)):
-                    print "WARNING: Illegal graphics opcode = ",opcode
+                    print("WARNING: Illegal graphics opcode = ",opcode)
                 else:
                     # normal return
                     self.nextTranslate = ip
@@ -574,7 +574,7 @@ class GkiKernel:
     def errorMessage(self, text):
 
         if self.errorMessageCount < MAX_ERROR_COUNT:
-            print text
+            print(text)
             self.errorMessageCount = self.errorMessageCount + 1
 
     def getBuffer(self):
@@ -1047,9 +1047,9 @@ class GkiNull(GkiKernel):
 
     def __init__(self):
 
-        print "No graphics display available for this session."
-        print "Graphics tasks that attempt to plot to an interactive " + \
-              "screen will fail."
+        print("No graphics display available for this session.")
+        print("Graphics tasks that attempt to plot to an interactive "
+              "screen will fail.")
         GkiKernel.__init__(self)
         self.name = 'Null'
 
@@ -1120,39 +1120,101 @@ class GkiNoisy(GkiKernel):
         GkiKernel.__init__(self)
         self.name = 'Noisy'
 
-    def control_openws(self, arg): print 'control_openws'
-    def control_closews(self, arg): print 'control_closews'
-    def control_reactivatews(self, arg): print 'control_reactivatews'
-    def control_deactivatews(self, arg): print 'control_deactivatews'
-    def control_clearws(self, arg): print 'control_clearws'
-    def control_setwcs(self, arg): print 'control_setwcs'
-    def control_getwcs(self, arg): print 'control_getwcs'
+    def control_openws(self, arg):
+        print('control_openws')
 
-    def gki_eof(self, arg): print 'gki_eof'
-    def gki_openws(self, arg): print 'gki_openws'
-    def gki_closews(self, arg): print 'gki_closews'
-    def gki_reactivatews(self, arg): print 'gki_reactivatews'
-    def gki_deactivatews(self, arg): print 'gki_deactivatews'
-    def gki_mftitle(self, arg): print 'gki_mftitle'
-    def gki_clearws(self, arg): print 'gki_clearws'
-    def gki_cancel(self, arg): print 'gki_cancel'
-    def gki_flush(self, arg): print 'gki_flush'
-    def gki_polyline(self, arg): print 'gki_polyline'
-    def gki_polymarker(self, arg): print 'gki_polymarker'
-    def gki_text(self, arg): print 'gki_text'
-    def gki_fillarea(self, arg): print 'gki_fillarea'
-    def gki_putcellarray(self, arg): print 'gki_putcellarray'
-    def gki_setcursor(self, arg): print 'gki_setcursor'
-    def gki_plset(self, arg): print 'gki_plset'
-    def gki_pmset(self, arg): print 'gki_pmset'
-    def gki_txset(self, arg): print 'gki_txset'
-    def gki_faset(self, arg): print 'gki_faset'
-    def gki_getcursor(self, arg): print 'gki_getcursor'
-    def gki_getcellarray(self, arg): print 'gki_getcellarray'
-    def gki_unknown(self, arg): print 'gki_unknown'
-    def gki_escape(self, arg): print 'gki_escape'
-    def gki_setwcs(self, arg): print 'gki_setwcs'
-    def gki_getwcs(self, arg): print 'gki_getwcs'
+    def control_closews(self, arg):
+        print('control_closews')
+
+    def control_reactivatews(self, arg):
+        print('control_reactivatews')
+
+    def control_deactivatews(self, arg):
+        print('control_deactivatews')
+
+    def control_clearws(self, arg):
+        print('control_clearws')
+
+    def control_setwcs(self, arg):
+        print('control_setwcs')
+
+    def control_getwcs(self, arg):
+        print('control_getwcs')
+
+    def gki_eof(self, arg):
+        print('gki_eof')
+
+    def gki_openws(self, arg):
+        print('gki_openws')
+
+    def gki_closews(self, arg):
+        print('gki_closews')
+
+    def gki_reactivatews(self, arg):
+        print('gki_reactivatews')
+
+    def gki_deactivatews(self, arg):
+        print('gki_deactivatews')
+
+    def gki_mftitle(self, arg):
+        print('gki_mftitle')
+
+    def gki_clearws(self, arg):
+        print('gki_clearws')
+
+    def gki_cancel(self, arg):
+        print('gki_cancel')
+
+    def gki_flush(self, arg):
+        print('gki_flush')
+
+    def gki_polyline(self, arg):
+        print('gki_polyline')
+
+    def gki_polymarker(self, arg):
+        print('gki_polymarker')
+
+    def gki_text(self, arg):
+        print('gki_text')
+
+    def gki_fillarea(self, arg):
+        print('gki_fillarea')
+
+    def gki_putcellarray(self, arg):
+        print('gki_putcellarray')
+
+    def gki_setcursor(self, arg):
+        print('gki_setcursor')
+
+    def gki_plset(self, arg):
+        print('gki_plset')
+
+    def gki_pmset(self, arg):
+        print('gki_pmset')
+
+    def gki_txset(self, arg):
+        print('gki_txset')
+
+    def gki_faset(self, arg):
+        print('gki_faset')
+
+    def gki_getcursor(self, arg):
+        print('gki_getcursor')
+
+    def gki_getcellarray(self, arg):
+        print('gki_getcellarray')
+
+    def gki_unknown(self, arg):
+        print('gki_unknown')
+
+    def gki_escape(self, arg):
+        print('gki_escape')
+
+    def gki_setwcs(self, arg):
+        print('gki_setwcs')
+
+    def gki_getwcs(self, arg):
+        print('gki_getwcs')
 
 # Dictionary of all graphcap files known so far
 
