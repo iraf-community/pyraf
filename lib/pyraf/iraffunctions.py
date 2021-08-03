@@ -2988,10 +2988,10 @@ def clCompatibilityMode(verbose=0, _save=0):
                 prompt = loadedPath[-1].getName()[:2] + '> '
             else:
                 prompt = 'cl> '
-            line = raw_input(prompt)
+            line = input(prompt)
             # simple continuation escape handling
             while line[-1:] == '\\':
-                line = line + '\n' + raw_input(prompt2)
+                line = line + '\n' + input(prompt2)
             line = line.strip()
             if line in _exitCommands:
                 break
