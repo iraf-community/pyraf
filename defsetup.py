@@ -228,8 +228,8 @@ setupargs = {
     'version' :			    "2.x", # see lib's __init__.py
     'description' :		    "A Python based CL for IRAF",
     'author' :			    "Rick White, Perry Greenfield, Chris Sontag",
-    'url' :			        "http://www.stsci.edu/resources/software_hardware/pyraf",
-    'license' :			    "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
+    'url' :			        "https://iraf-community.github.io/pyraf.html",
+    'license' :			    "BSD-3-Clause",
     'platforms' :			["unix"],
     'data_files' :			DATA_FILES,
     'scripts' :			    scriptlist,

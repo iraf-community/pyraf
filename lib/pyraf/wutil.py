@@ -93,8 +93,7 @@ try:
                 _has_aqutil = 1
             except:
                 _has_aqutil = 0
-                print "Could not import aqutil, please see the online PyRAF FAQ"
-                print "http://www.stsci.edu/institute/software_hardware/pyraf/pyraf_faq#2.6"
+                print "Could not import aqutil"
 
 except ImportError:
     _has_xutil = 0 # Unsuccessful init of XWindow
