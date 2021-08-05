@@ -18,6 +18,13 @@ except:  # Only this can catch the error!
 else:
     HAS_IRAF = True
 
+try:
+    iraf.stsdas(_doprint=0)
+except:
+    HAS_STSDAS = False
+else:
+    HAS_STSDAS = True
+
 
 def diff_outputs(fin, reffile):
     """Compare output lines with reference file."""
