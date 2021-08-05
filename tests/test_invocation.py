@@ -46,11 +46,14 @@ class PyrafEx(object):
         cmd = ['pyraf', '-x', '-s']
         cmd += args
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
+        if stdin is not None:
+            stdin = stdin.encode('ascii')
+
         self.stdout, self.stderr = proc.communicate(stdin)
 
-        if sys.hexversion >= 0x0300000F0:
-            self.stdout = self.stdout.decode('ascii')
-            self.stderr = self.stderr.decode('ascii')
+        self.stdout = self.stdout.decode('ascii')
+        self.stderr = self.stderr.decode('ascii')
 
         self.code = proc.returncode
         return self

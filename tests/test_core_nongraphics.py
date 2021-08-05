@@ -34,8 +34,8 @@ def test_subproc_write_readline(_proc):
     _proc.write('test string two\n')
     time.sleep(0.01)
 
-    assert _proc.readline() == 'test string one\n'
-    assert _proc.readline() == 'test string two\n'
+    assert _proc.readline() == b'test string one\n'
+    assert _proc.readline() == b'test string two\n'
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
@@ -47,7 +47,7 @@ def test_subproc_write_readPendingChars(_proc):
         _proc.write(test_input + '\n')
         time.sleep(0.01)
 
-    expected = tuple(_proc.readPendingChars().splitlines())
+    expected = tuple(_proc.readPendingChars().decode().splitlines())
     assert test_inputs == expected
 
 
@@ -68,7 +68,7 @@ def test_subproc_stop_resume_write_read(_proc):
     _proc.write('test string\n')
     assert not len(_proc.readPendingChars())
     assert _proc.cont(1)
-    assert _proc.readline() == 'test string\n'
+    assert _proc.readline() == b'test string\n'
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
