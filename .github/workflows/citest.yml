@@ -1,0 +1,46 @@
+
+name: PyRAF CI test
+
+on: [push, pull_request]
+
+jobs:
+  tests:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHON: ${{ matrix.python }}
+
+    strategy:
+      matrix:
+        include:
+          - name: Ubuntu 20.04 (Focal) Python-3.8.2
+            os: ubuntu-20.04
+            python: python3
+
+          - name: Ubuntu 18.04 (Bionic) Python-2.7.17
+            os: ubuntu-18.04
+            python: python
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends iraf iraf-noao build-essential libx11-dev
+          sudo apt-get install --no-install-recommends ${PYTHON}-all-dev ${PYTHON}-astropy ${PYTHON}-numpy-dev ${PYTHON}-setuptools ${PYTHON}-stsci.distutils ${PYTHON}-stsci.tools ${PYTHON}-tk ${PYTHON}-pytest ${PYTHON}-pytest-cov i${PYTHON}
+
+      - name: Build Pyraf
+        run: |
+           ${PYTHON} setup.py build
+
+      - name: Run tests
+        run: |
+          export PATH=$(ls -d $(pwd)/build/scripts-*/):${PATH}
+          export tmp=/tmp/
+          export iraf=/usr/lib/iraf/
+          export IRAFARCH=generic
+          export PYTHONPATH=$(ls -d $(pwd)/build/lib.linux-*/)
+          export TERM=dumb
+          ${PYTHON} -m pytest --cov=${PYTHONPATH}/pyraf
