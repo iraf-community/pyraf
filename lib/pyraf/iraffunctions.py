@@ -256,6 +256,8 @@ Ureka installation (see http://ssb.stsci.edu/ureka).  Also be sure to run the
             fname = 'home$login.cl'
         elif access(_os.path.expanduser('~/.iraf/login.cl')):
             fname = _os.path.expanduser('~/.iraf/login.cl')
+        elif access('/etc/iraf/login.cl'):
+            fname = '/etc/iraf/login.cl'
         elif not _irafinst.EXISTS:
             fname = _irafinst.getNoIrafClFor('login.cl', useTmpFile=True)
         else:
