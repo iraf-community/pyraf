@@ -34,17 +34,9 @@ def setup_module():
     # first turn off display
     os.environ['PYRAF_NO_DISPLAY'] = '1'
 
-    # The psi_land kernel seems not to be supported in
-    # default graphcap on OSX 10.9.5.
-    # And psdump kernel is too temperamental on Linux.
-    if sys.platform.lower().startswith('linux'):
-        PSDEV = 'psi_land'
-        EXP2IGNORE = '.*CreationDate: .*'
-    elif sys.platform.lower().startswith('darwin'):
-        PSDEV = 'psdump'
-        EXP2IGNORE = '(NOAO/IRAF '
-    else:
-        raise OSError('Unsupported test platform: {}'.format(sys.platform))
+    # Graphics kernel to use. This seems to work on Linux now.
+    PSDEV = 'psdump'
+    EXP2IGNORE = '(NOAO/IRAF '
 
     # EXPECTED RESULTS
     REF[('2', 'linux')] = """python ver = 2.7
