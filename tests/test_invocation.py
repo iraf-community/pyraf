@@ -6,7 +6,7 @@ import sys
 import pytest
 
 import pyraf
-from .utils import HAS_IRAF, HAS_PYRAF_EXEC
+from .utils import HAS_IRAF, HAS_PYRAF_EXEC, IS_PY2
 
 cl_cases = (
     (('print(1)'), '1'),
@@ -86,7 +86,8 @@ def test_invoke_command(_with_pyraf, test_input, expected):
     """
     result = _with_pyraf.run(['-c', test_input])
     assert result.stdout.startswith(expected)
-    assert not result.stderr
+    if IS_PY2:
+        assert not result.stderr
     assert not result.code, result.stderr
 
 
@@ -126,5 +127,6 @@ def test_invoke_command_ipython(_with_pyraf, test_input, expected):
     """
     result = _with_pyraf.run('-y', stdin=test_input)
     assert expected in result.stdout
-    assert not result.stderr
+    if IS_PY2:
+        assert not result.stderr
     assert not result.code, result.stderr
