@@ -16,46 +16,21 @@ if HAS_IRAF:
     from pyraf import gki
     from pyraf import wutil
 
-REF = {}
-PSDEV = None
-EXP2IGNORE = None
+# Graphics kernel to use. This seems to work on Linux now.
+PSDEV = 'psdump'
+EXP2IGNORE = '(NOAO/IRAF '
 
 
 def setup_module():
     """ Does not work under Darwin, because c.OF_GRAPHICS is True
     TODO: ^Investigate^
     """
-    global REF, PSDEV, EXP2IGNORE
-
     # TODO: Related to test_gki_prow_to_different_devices
     #os.environ['LPDEST'] = "hp_dev_null"
     #os.environ['PRINTER'] = "hp_dev_null"
 
     # first turn off display
     os.environ['PYRAF_NO_DISPLAY'] = '1'
-
-    # Graphics kernel to use. This seems to work on Linux now.
-    PSDEV = 'psdump'
-    EXP2IGNORE = '(NOAO/IRAF '
-
-    # EXPECTED RESULTS
-    REF[('2', 'linux')] = """python ver = 2.7
-platform = linux2
-PY3K = False
-c.OF_GRAPHICS = False
-/dev/console owner = <skipped>
-tkinter use unattempted.
-"""
-    REF[('2', 'darwin')] = REF[('2', 'linux')].replace('linux2', 'darwin')
-
-    REF[('3', 'linux')] = """python ver = 3.6
-platform = linux
-PY3K = True
-c.OF_GRAPHICS = False
-/dev/console owner = <skipped>
-tkinter use unattempted.
-"""
-    REF[('3', 'darwin')] = REF[('3', 'linux')].replace('linux', 'darwin')
 
 
 def diffit(exp2ig, f_new, f_ref, cleanup=True):
@@ -182,7 +157,17 @@ def test_dumpspecs():
 
     # verify it (is version dependent)
     key = ('2' if IS_PY2 else '3', sys.platform.replace('2', ''))
-    expected = REF[key]
+    expected = """python ver = {major}.{minor}
+platform = {platform}
+PY3K = {py3k}
+c.OF_GRAPHICS = False
+/dev/console owner = <skipped>
+tkinter use unattempted.
+""".format(major=sys.version_info.major,
+           minor=sys.version_info.minor,
+           platform=sys.platform,
+           py3k=(sys.version_info.major>=3))
+
     assert expected.strip() == out_str.strip(), \
         'Unexpected output from wutil.dumpspecs: {}'.format(out_str)
 
