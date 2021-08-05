@@ -13,7 +13,7 @@ cl_cases = (
     (('print(1)'), '1'),
     (('print(1 + 2)'), '3'),
     (('print(6 - 1)'), '5'),
-    (('print(14 / 2)'), '7'),
+    (('print(int(14 / 2))'), '7'),
     (('print(3 * 3)'), '9'),
     (('imhead("dev$pix")'), 'dev$pix[512,512][short]: m51  B  600s'),
     (('unlearn imcoords'), ''),
