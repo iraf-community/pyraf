@@ -20,11 +20,11 @@ plot
 --> which ls
 user
 --> which surf
-"Task `surf' is ambiguous, could be utilities.surfit, noao.surfphot, plot.surface, ..."
+"Task `surf' is ambiguous, could be utilities.surfit, noao.surfphot, plot.surface"
 --> which surface
 plot
 --> which img
-"Task `img' is ambiguous, could be images.imgeom, imutil.imgets, photcal.imgroup, ..."
+"Task `img' is ambiguous, could be images.imgeom, imutil.imgets"
 --> which pro
 "Task `pro' is ambiguous, could be clpackage.proto, system.protect, plot.prow, ..."
 --> which prot
@@ -36,4 +36,4 @@ plot
 --> which prowss
 prowss: task not found.
 --> which dis
-"Task `dis' is ambiguous, could be system.diskspace, tv.display, onedspec.dispcor, ..."
+"Task `dis' is ambiguous, could be system.diskspace, tv.display"
