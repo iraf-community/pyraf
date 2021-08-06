@@ -1102,7 +1102,7 @@ class IrafParList(taskpars.TaskPars):
         return self.getParList()
 
     def getName(self):
-        return self.__filename
+        return self.__name
 
     def getPkgname(self):
         return ''

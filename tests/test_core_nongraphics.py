@@ -6,7 +6,7 @@ import uuid
 
 import pytest
 
-from .utils import HAS_IRAF
+from .utils import HAS_IRAF, IS_PY2
 
 if HAS_IRAF:
     from pyraf.irafpar import IrafParList
@@ -117,7 +117,6 @@ def _pars():
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
-@pytest.mark.xfail(reason="BUG: Returns file path instead of name")
 def test_irafparlist_getName(_ipl, _ipl_defaults):
     assert _ipl.getName() == _ipl_defaults['name']
 
@@ -204,7 +203,8 @@ def test_irafparlist_getParDict(_ipl, _pars):
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
-@pytest.mark.xfail(reason="BUG: raises 'TypeError: number coercion failed'")
+@pytest.mark.xfail(IS_PY2,
+                   reason="BUG: raises 'TypeError: number coercion failed'")
 def test_irafparlist_getParList(_ipl, _pars):
     for par in _pars:
         _ipl.addParam(par)
@@ -212,7 +212,7 @@ def test_irafparlist_getParList(_ipl, _pars):
     par_list = _ipl.getParList()
 
     for par in _pars:
-        assert par.name in par_list
+        assert par in par_list
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
@@ -257,14 +257,13 @@ def test_irafparlist_setParam_integer(_ipl, _pars):
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
-@pytest.mark.xfail(reason="BUG: TypeError: cannot concatenate 'str' and 'float' objects")
 def test_irafparlist_setParam_float(_ipl, _pars):
     """Change existing parameter then verify it
     """
     # Use the first integer parameter we come across
     for par in _pars:
-        if par.type == 'f':
-            assert isinstance(par, basicpar.IrafParF)
+        if par.type == 'r':
+            assert isinstance(par, basicpar.IrafParR)
             break
 
     _ipl.addParam(par)
