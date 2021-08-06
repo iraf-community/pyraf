@@ -22,7 +22,7 @@ def _proc():
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_wait():
-    proc = Subprocess('/', 1, expire_noisily=1)
+    proc = Subprocess('true', 1, expire_noisily=0)
     assert proc.wait(1), 'How is this still alive after 1 sec?'
 
 
@@ -55,8 +55,8 @@ def test_subproc_write_readPendingChars(_proc):
 def test_subproc_stop_resume(_proc):
     """Ensure we can stop and resume a process
     """
-    assert _proc.stop(1)
-    assert _proc.cont(1)
+    assert _proc.stop()
+    assert _proc.cont()
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
@@ -64,10 +64,10 @@ def test_subproc_stop_resume_write_read(_proc):
     """Ensure we can stop the process, write data to the pipe,
     resume, then read the buffered data back from the pipe.
     """
-    assert _proc.stop(1)
+    assert _proc.stop()
     _proc.write('test string\n')
     assert not len(_proc.readPendingChars())
-    assert _proc.cont(1)
+    assert _proc.cont()
     assert _proc.readline() == b'test string\n'
 
 
@@ -293,7 +293,6 @@ def test_irafparlist_incompatible_assignment_raises(_ipl, _pars):
 
     for par in _pars:
         with pytest.raises(ValueError):
-            print(par.name, par.type, break_with[par.type], type(break_with[par.type]))
             setattr(_ipl, par.name, break_with[par.type])
 
 
