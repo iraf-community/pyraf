@@ -419,7 +419,7 @@ class Subprocess:
                         hex(id(self))[2:]))
         sys.stderr.flush()
 
-    def stop(self, verbose=1):
+    def stop(self, verbose=False):
         """Signal subprocess with STOP (17), returning 'stopped' if ok, or 0
         otherwise."""
         try:
@@ -431,7 +431,7 @@ class Subprocess:
         if verbose: print "Stopped '%s'" % self.cmd
         return 'stopped'
 
-    def cont(self, verbose=0):
+    def cont(self, verbose=False):
         """Signal subprocess with CONT (19), returning 'continued' if ok, or 0
         otherwise."""
         try:

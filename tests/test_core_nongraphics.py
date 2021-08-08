@@ -6,7 +6,7 @@ import uuid
 
 import pytest
 
-from .utils import HAS_IRAF
+from .utils import HAS_IRAF, IS_PY2
 
 if HAS_IRAF:
     from pyraf.irafpar import IrafParList
@@ -22,7 +22,7 @@ def _proc():
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_wait():
-    proc = Subprocess('/', 1, expire_noisily=1)
+    proc = Subprocess('true', 1, expire_noisily=0)
     assert proc.wait(1), 'How is this still alive after 1 sec?'
 
 
@@ -34,8 +34,8 @@ def test_subproc_write_readline(_proc):
     _proc.write('test string two\n')
     time.sleep(0.01)
 
-    assert _proc.readline() == 'test string one\n'
-    assert _proc.readline() == 'test string two\n'
+    assert _proc.readline() == b'test string one\n'
+    assert _proc.readline() == b'test string two\n'
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
@@ -47,7 +47,7 @@ def test_subproc_write_readPendingChars(_proc):
         _proc.write(test_input + '\n')
         time.sleep(0.01)
 
-    expected = tuple(_proc.readPendingChars().splitlines())
+    expected = tuple(_proc.readPendingChars().decode().splitlines())
     assert test_inputs == expected
 
 
@@ -55,8 +55,8 @@ def test_subproc_write_readPendingChars(_proc):
 def test_subproc_stop_resume(_proc):
     """Ensure we can stop and resume a process
     """
-    assert _proc.stop(1)
-    assert _proc.cont(1)
+    assert _proc.stop()
+    assert _proc.cont()
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
@@ -64,11 +64,11 @@ def test_subproc_stop_resume_write_read(_proc):
     """Ensure we can stop the process, write data to the pipe,
     resume, then read the buffered data back from the pipe.
     """
-    assert _proc.stop(1)
+    assert _proc.stop()
     _proc.write('test string\n')
     assert not len(_proc.readPendingChars())
-    assert _proc.cont(1)
-    assert _proc.readline() == 'test string\n'
+    assert _proc.cont()
+    assert _proc.readline() == b'test string\n'
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
@@ -117,7 +117,6 @@ def _pars():
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
-@pytest.mark.xfail(reason="BUG: Returns file path instead of name")
 def test_irafparlist_getName(_ipl, _ipl_defaults):
     assert _ipl.getName() == _ipl_defaults['name']
 
@@ -204,7 +203,8 @@ def test_irafparlist_getParDict(_ipl, _pars):
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
-@pytest.mark.xfail(reason="BUG: raises 'TypeError: number coercion failed'")
+@pytest.mark.xfail(IS_PY2,
+                   reason="BUG: raises 'TypeError: number coercion failed'")
 def test_irafparlist_getParList(_ipl, _pars):
     for par in _pars:
         _ipl.addParam(par)
@@ -212,7 +212,7 @@ def test_irafparlist_getParList(_ipl, _pars):
     par_list = _ipl.getParList()
 
     for par in _pars:
-        assert par.name in par_list
+        assert par in par_list
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
@@ -257,14 +257,13 @@ def test_irafparlist_setParam_integer(_ipl, _pars):
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
-@pytest.mark.xfail(reason="BUG: TypeError: cannot concatenate 'str' and 'float' objects")
 def test_irafparlist_setParam_float(_ipl, _pars):
     """Change existing parameter then verify it
     """
     # Use the first integer parameter we come across
     for par in _pars:
-        if par.type == 'f':
-            assert isinstance(par, basicpar.IrafParF)
+        if par.type == 'r':
+            assert isinstance(par, basicpar.IrafParR)
             break
 
     _ipl.addParam(par)
@@ -294,7 +293,6 @@ def test_irafparlist_incompatible_assignment_raises(_ipl, _pars):
 
     for par in _pars:
         with pytest.raises(ValueError):
-            print(par.name, par.type, break_with[par.type], type(break_with[par.type]))
             setattr(_ipl, par.name, break_with[par.type])
 
 

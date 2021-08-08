@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from .utils import HAS_IRAF, DATA_DIR
+from .utils import HAS_STSDAS, HAS_IRAF, DATA_DIR
 
 if HAS_IRAF:
     os.environ['PYRAF_NO_DISPLAY'] = '1'
@@ -105,7 +105,7 @@ def _iraf_dqbits_init(_data):
     iraf.imcopy('dev$pix', _data['dqbits']['input2'])
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+@pytest.mark.skipif(not HAS_STSDAS, reason='Need STSDAS to run')
 def test_task_min_match(_iraf_pset_init, _data):
     # Determine whether pyraf can use min-matching to resolve the task
     # (msstatistics -> msstat)
@@ -138,7 +138,7 @@ def test_task_min_match(_iraf_pset_init, _data):
     assert not stderr.getvalue()
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+@pytest.mark.skipif(not HAS_STSDAS, reason='Need STSDAS to run')
 def test_task_ambiguous_name_raises_exception(_iraf_pset_init, _data):
     stdout, stderr = StringIO(), StringIO()
 
@@ -155,7 +155,7 @@ def test_task_ambiguous_name_raises_exception(_iraf_pset_init, _data):
                  StdoutAppend=stdout, StderrAppend=stderr)
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+@pytest.mark.skipif(not HAS_STSDAS, reason='Need STSDAS to run')
 def test_pset_msstatistics_science_array(_iraf_pset_init, _data):
     """Expect decent data
     """
@@ -175,7 +175,7 @@ def test_pset_msstatistics_science_array(_iraf_pset_init, _data):
     _assertApproxEqual(iraf.egstp.sum, 321415936.0)
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+@pytest.mark.skipif(not HAS_STSDAS, reason='Need STSDAS to run')
 def test_pset_msstatistics_zeroed_error_array(_iraf_pset_init, _data):
     """Expect zeros
     """
@@ -192,7 +192,7 @@ def test_pset_msstatistics_zeroed_error_array(_iraf_pset_init, _data):
     assert iraf.egstp.sum == 0.0, str(iraf.egstp.sum)
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+@pytest.mark.skipif(not HAS_STSDAS, reason='Need STSDAS to run')
 def test_pset_msstatistics_191(_iraf_pset_init, _data):
     """Expect egstp to be properly cleared and used again
     NOTE: Referenced issue, 191, is no longer available (trac).
@@ -230,7 +230,7 @@ def test_pset_msstatistics_191(_iraf_pset_init, _data):
     _assertApproxEqual(iraf.egstp.sum, 321415936.0)
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+@pytest.mark.skipif(not HAS_STSDAS, reason='Need STSDAS to run')
 def test_pset_msstatistics_save_data(_iraf_pset_init, _data):
     """Expect a task can save data into a PSET
     """
@@ -262,7 +262,7 @@ def test_pset_msstatistics_save_data(_iraf_pset_init, _data):
     assert iraf.egstp.sum == 28394234.0, str(iraf.egstp.sum)
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+@pytest.mark.skipif(not HAS_STSDAS, reason='Need STSDAS to run')
 def test_dqbits_mscombine(_iraf_dqbits_init, _data, tmpdir):
     """Expect dqbits unaltered after combining data
     """
