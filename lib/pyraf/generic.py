@@ -457,8 +457,8 @@ class GenericParser:
             sortlist.append((len(rhs), rule))
             name2index[rule] = i
         sortlist.sort()
-        list = list(map(lambda (a, b): b, sortlist))
-        return children[name2index[self.resolve(list)]]
+        alist = [s[1] for s in sortlist]
+        return children[name2index[self.resolve(alist)]]
 
     def resolve(self, list):
         #
@@ -489,9 +489,9 @@ class GenericASTBuilder(GenericParser):
 
     def preprocess(self, rule, func):
 
-        def rebind(lhs, self=self):            return \
-lambda args, lhs=lhs, self=self: \
-self.buildASTNode(args, lhs)
+        def rebind(lhs, self=self):
+            return (
+                lambda args, lhs=lhs, self=self: self.buildASTNode(args, lhs))
 
         lhs, rhs = rule
         return rule, rebind(lhs)
@@ -609,9 +609,9 @@ class GenericASTMatcher(GenericParser):
 
     def preprocess(self, rule, func):
 
-        def rebind(func, self=self):            return \
-lambda args, func=func, self=self: \
-self.foundMatch(args, func)
+        def rebind(func, self=self):
+            return (
+                lambda args, func=func, self=self: self.foundMatch(args, func))
 
         lhs, rhs = rule
         rhslist = list(rhs)
