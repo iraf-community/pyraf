@@ -217,7 +217,8 @@ class Binder(object):
     def keypress(self, pos, key):
         if key is None:
             return
-        if key is "ready":  # Handle the "ready" binding specially to keep the rest simple.
+        # Handle the "ready" binding specially to keep the rest simple.
+        if key == "ready":
             if "ready" in self.bindings:
                 return self.bindings["ready"]()
             else:
