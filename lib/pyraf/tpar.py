@@ -15,7 +15,11 @@ from __future__ import division, print_function
 
 # XXXX Debugging tip:  uncomment self.inform() in the debug() method below
 
-import os, sys, string, commands, re
+import os
+import sys
+import string
+import commands
+import re
 
 
 # Fake out import of urwid if it fails, to keep tpar from bringing down
@@ -54,7 +58,11 @@ except Exception as e:
 
 import cStringIO
 # PyRAF modules
-import iraf, irafpar, irafhelp, iraftask, iraffunctions
+import iraf
+import irafpar
+import irafhelp
+import iraftask
+import iraffunctions
 
 TPAR_HELP_EMACS = """                                EDIT COMMANDS (emacs)
 

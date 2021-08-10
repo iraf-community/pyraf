@@ -12,7 +12,9 @@ from __future__ import division, print_function
 
 from .version import *
 
-import os, sys, __main__
+import os
+import sys
+import __main__
 
 # dev only: add revision number if possible (if not done yet)
 if __version__.endswith('dev'):
@@ -95,7 +97,8 @@ _pyrafMain = os.path.split(executable)[1] in ('pyraf', 'runpyraf.py')
 del executable
 
 runCmd = None
-import irafexecute, clcache
+import irafexecute
+import clcache
 from stsci.tools import capable
 
 if _verbosity_ > 0:

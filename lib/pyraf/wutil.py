@@ -8,7 +8,10 @@ $Id$
 """
 from __future__ import division, print_function
 
-import struct, sys, os
+import struct
+import sys
+import os
+
 try:
     import fcntl
 except:

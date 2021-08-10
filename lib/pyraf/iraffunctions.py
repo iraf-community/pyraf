@@ -55,12 +55,31 @@ def _writeError(msg):
 # now it is safe to import other iraf modules
 # -----------------------------------------------------
 
-import sys, os, string, re, math, struct, types, time, fnmatch, glob, tempfile
-import linecache
-from stsci.tools import minmatch, irafutils, teal
-import numpy
-import subproc, wutil
-import irafnames, irafinst, irafpar, iraftask, irafexecute, cl2py
+# hide these modules so we can use 'from iraffunctions import *'
+import sys as _sys
+import os as _os
+import string as _string
+import re as _re
+import math as _math
+import struct as _struct
+import types as _types
+import time as _time
+import fnmatch as _fnmatch
+import glob as _glob
+import tempfile as _tempfile
+import linecache as _linecache
+import stsci.tools.minmatch as _minmatch
+import stsci.tools.irafutils as _irafutils
+import stsci.tools.teal as _teal
+import numpy as _numpy
+import subproc as _subproc
+import wutil as _wutil
+import irafnames as _irafnames
+import irafinst as _irafinst
+import irafpar as _irafpar
+import iraftask as _iraftask
+import irafexecute as _irafexecute
+import cl2py as _cl2py
 import gki
 import irafecl
 try:
@@ -71,49 +90,14 @@ except:
     print("Warning: sscanf library not installed on " + sys.platform)
 
 try:
-    import cPickle as pickle
+    import cPickle as _pickle
 except ImportError:
-    import pickle
+    import pickle as _pickle
 
 try:
-    import cStringIO as StringIO
+    import cStringIO as _StringIO
 except ImportError:
-    import StringIO as StringIO  # survives 2to3
-
-# hide these modules so we can use 'from iraffunctions import *'
-_sys = sys
-_os = os
-_string = string
-_re = re
-_math = math
-_struct = struct
-_types = types
-_time = time
-_fnmatch = fnmatch
-_glob = glob
-_tempfile = tempfile
-_linecache = linecache
-_StringIO = StringIO
-_pickle = pickle
-
-_numpy = numpy
-_minmatch = minmatch
-_teal = teal
-_subproc = subproc
-_wutil = wutil
-
-_irafnames = irafnames
-_irafutils = irafutils
-_irafinst = irafinst
-_iraftask = iraftask
-_irafpar = irafpar
-_irafexecute = irafexecute
-_cl2py = cl2py
-
-del sys, os, string, re, math, struct, types, time, fnmatch, glob, linecache
-del StringIO, pickle, tempfile
-del numpy, minmatch, subproc, teal, wutil
-del irafnames, irafutils, irafinst, iraftask, irafpar, irafexecute, cl2py
+    import StringIO as _StringIO  # survives 2to3
 
 # Number of bits per long
 BITS_PER_LONG = _struct.calcsize('l') * 8  # is 64 on a 64-bit machine
@@ -473,7 +457,8 @@ def restoreFromFile(savefile, doprint=1, **kw):
     from stsci.tools import irafglobals
     import __main__
     import pyraf
-    import irafpar, cltoken
+    import irafpar
+    import cltoken
     for module in (__main__, pyraf, irafpar, irafglobals, cltoken):
         if hasattr(module, 'INDEF'):
             module.INDEF = INDEF
@@ -3265,7 +3250,9 @@ _exitCommands = {
 def clCompatibilityMode(verbose=0, _save=0):
     """Start up full CL-compatibility mode"""
 
-    import traceback, __main__
+    import traceback
+    import __main__
+
     if verbose:
         vmode = ' (verbose)'
     else:

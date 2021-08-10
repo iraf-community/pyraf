@@ -5,15 +5,25 @@ $Id$
 """
 from __future__ import division, print_function
 
-import numpy, os, sys, string, time
+import numpy
+import os
+import sys
+import string
+import time
 import Tkinter as TKNTR  # requires 2to3
-import msgiobuffer, msgiowidget, wutil
+import msgiobuffer
+import msgiowidget
+import wutil
 from stsci.tools import capable, filedlg, irafutils
 from stsci.tools.irafglobals import IrafError, userWorkingHome
 from stsci.tools.for2to3 import ndarr2bytes
-import gki, textattrib, irafgwcs
+import gki
+import textattrib
+import irafgwcs
 from pyrafglobals import pyrafDir
-import tkFileDialog, tkMessageBox, tkSimpleDialog
+import tkFileDialog
+import tkMessageBox
+import tkSimpleDialog
 
 nIrafColors = 16
 

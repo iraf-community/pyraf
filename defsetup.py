@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
 
-import os, os.path, shutil, sys, commands
+import os
+import os.path
+import shutil
+import sys
+import commands
+
 import distutils.core
 import distutils.sysconfig
 import string

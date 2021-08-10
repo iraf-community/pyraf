@@ -5,7 +5,10 @@ $Id$
 """
 from __future__ import division, print_function
 
-import string, os, sys, numpy
+import string
+import os
+import sys
+import numpy
 import Tkinter as TKNTR
 from stsci.tools import irafutils
 import wutil

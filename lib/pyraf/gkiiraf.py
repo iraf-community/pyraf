@@ -5,9 +5,14 @@ $Id$
 """
 from __future__ import division, print_function
 
-import sys, os, string
+import sys
+import os
+import string
 from stsci.tools.for2to3 import ndarr2bytes
-import gki, irafgwcs, iraftask, iraf
+import gki
+import irafgwcs
+import iraftask
+import iraf
 
 # kernels to flush frequently
 # imdkern does not erase, so always flush it

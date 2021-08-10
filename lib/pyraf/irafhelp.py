@@ -38,7 +38,11 @@ R. White, 1999 September 23
 """
 from __future__ import division, print_function
 
-import __main__, re, os, sys, types
+import __main__
+import re
+import os
+import sys
+import types
 try:
     import io
 except ImportError:  # only for Python 2.5

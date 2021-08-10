@@ -12,7 +12,9 @@
 from __future__ import division, print_function
 
 from pyraf import iraf, gki
-import os, time, random
+import os
+import time
+import random
 
 # note that box, plus, and cross take about the same amount of time.
 CASES = (None, 'point', 'box', 'plus', 'cross', 'circle')

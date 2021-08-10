@@ -6,18 +6,22 @@ R. White, 1999 December 20
 """
 from __future__ import division, print_function
 
-import cStringIO, os, sys
+import cStringIO
+import os
+import sys
 
 from generic import GenericASTTraversal
 from clast import AST
 from cltoken import Token
-import clscan, clparse
+import clscan
+import clparse
 from clcache import codeCache, DISABLE_CLCACHING
 
 from stsci.tools.irafglobals import Verbose
 from stsci.tools.for2to3 import PY3K
 from stsci.tools import basicpar, minmatch, irafutils
-import irafpar, pyrafglobals
+import irafpar
+import pyrafglobals
 
 # The parser object can be constructed once and used many times.
 # The other classes have instance variables (e.g. lineno in CLScanner),

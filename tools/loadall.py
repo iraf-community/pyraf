@@ -4,7 +4,9 @@ $Id$
 """
 from __future__ import division, print_function
 
-import sys, traceback
+import sys
+import traceback
+
 from pyraf import iraf
 
 iraf.setVerbose()

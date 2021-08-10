@@ -4,7 +4,8 @@
 $Id$
 """
 from __future__ import division, print_function
-import re, sys
+import re
+import sys
 
 taskpat = re.compile(r'\d')
 

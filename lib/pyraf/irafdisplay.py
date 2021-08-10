@@ -30,7 +30,10 @@ $Id$
 """
 from __future__ import division, print_function
 
-import os, numpy, socket, sys
+import os
+import numpy
+import socket
+import sys
 from stsci.tools.for2to3 import PY3K, bytes_write, ndarr2bytes
 from stsci.tools import irafutils
 

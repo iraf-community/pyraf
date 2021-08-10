@@ -11,7 +11,8 @@ from __future__ import division, print_function
 from cgeneric import ContextSensitiveScanner
 from generic import GenericScanner
 from cltoken import Token
-import string, re
+import string
+import re
 from stsci.tools import irafutils
 import pyrafglobals
 

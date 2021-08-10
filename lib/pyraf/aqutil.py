@@ -7,7 +7,9 @@ $Id$
 
 from __future__ import division, print_function
 
-import os, struct, time
+import os
+import struct
+import time
 import objc
 import AppKit
 from stsci.tools.for2to3 import tobytes

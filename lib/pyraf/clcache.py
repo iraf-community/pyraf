@@ -26,7 +26,9 @@ if PY3K or 'PYRAF_NO_CLCACHE' in os.environ:
 
 # set up pickle so it can pickle code objects
 
-import copy_reg, marshal, types
+import copy_reg
+import marshal
+import types
 try:
     import cPickle as pickle
 except ImportError:

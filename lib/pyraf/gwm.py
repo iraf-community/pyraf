@@ -6,11 +6,13 @@ $Id$
 """
 from __future__ import division, print_function
 
-import os, string
+import os
+import string
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
     import Tkinter as TKNTR  # requires 2to3
-import wutil, gki
+import wutil
+import gki
 
 
 class GWMError(Exception):

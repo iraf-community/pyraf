@@ -6,7 +6,10 @@ $Id$
 """
 from __future__ import division, print_function
 
-import linecache, string, os, sys
+import linecache
+import string
+import os
+import sys
 from stat import *
 from stsci.tools.irafglobals import IrafError
 

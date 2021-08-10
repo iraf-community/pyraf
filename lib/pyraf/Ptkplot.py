@@ -9,7 +9,8 @@ import os
 from Tkinter import _default_root  # requires 2to3
 from Tkinter import *
 import wutil
-import sys, time
+import sys
+import time
 
 # XBM file for cursor is in same directory as this module
 _blankcursor = 'blankcursor.xbm'

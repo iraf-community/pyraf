@@ -11,10 +11,8 @@ Broken out from irafglobals.py which was signed "R. White, 2000 January 5"
 """
 from __future__ import division, print_function
 
-import os, sys
-_os = os
-_sys = sys
-del os, sys
+import os as _os
+import sys as _sys
 
 _use_ecl = _os.environ.get("PYRAF_USE_ECL", False)
 

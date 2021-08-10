@@ -3,9 +3,12 @@
 
 from __future__ import division, print_function
 
-import inspect, sys
+import inspect
+import sys
 from stsci.tools.irafglobals import Verbose
-import pyrafglobals, iraftask, irafexecute
+import pyrafglobals
+import iraftask
+import irafexecute
 
 # this is better than what 2to3 does, since the iraf import is circular
 import pyraf.iraf

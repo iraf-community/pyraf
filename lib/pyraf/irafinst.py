@@ -10,7 +10,10 @@ $Id$
 """
 from __future__ import division, print_function
 
-import os, shutil, sys, tempfile
+import os
+import shutil
+import sys
+import tempfile
 
 # File name prefix signal
 NO_IRAF_PFX = '*no~iraf*/'

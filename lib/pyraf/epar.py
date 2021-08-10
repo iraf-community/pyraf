@@ -10,9 +10,14 @@ from stsci.tools import capable
 if capable.OF_GRAPHICS:
     from Tkinter import *  # requires 2to3
     from tkMessageBox import askokcancel, showwarning, showerror
-    import os, sys, cStringIO
+    import os
+    import sys
+    import cStringIO
     from stsci.tools import listdlg, eparoption, editpar, irafutils
-    import iraf, irafpar, irafhelp, wutil
+    import iraf
+    import irafpar
+    import irafhelp
+    import wutil
     from pyrafglobals import pyrafDir
 else:
     wutil = None

@@ -41,10 +41,15 @@ from __future__ import division, print_function
 
 import numpy
 from types import *
-import os, sys, string, re
+import os
+import sys
+import string
+import re
 from stsci.tools.irafglobals import IrafError
 from stsci.tools.for2to3 import ndarr2str, ndarr2bytes
-import wutil, graphcap, irafgwcs
+import wutil
+import graphcap
+import irafgwcs
 import fontdata
 from textattrib import *
 
@@ -1252,7 +1257,8 @@ def printPlot(window=None):
     """Print contents of window (default active window) to stdplot
     window must be a GkiKernel object (with a gkibuffer attribute.)
     """
-    import gwm, gkiiraf
+    import gwm
+    import gkiiraf
     if window is None:
         window = gwm.getActiveGraphicsWindow()
         if window is None:

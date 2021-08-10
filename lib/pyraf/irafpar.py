@@ -6,7 +6,12 @@ R. White, 2000 January 7
 """
 from __future__ import division, print_function
 
-import copy, glob, os, re, sys, types
+import copy
+import glob
+import os
+import re
+import sys
+import types
 from stsci.tools import basicpar, minmatch, irafutils, taskpars
 from stsci.tools.for2to3 import PY3K
 from stsci.tools.irafglobals import INDEF, Verbose, yes, no

@@ -26,9 +26,18 @@ R. White, 2000 February 20
 """
 from __future__ import division, print_function
 
-import string, re, os, sys, code, keyword, traceback, linecache
+import string
+import re
+import os
+import sys
+import code
+import keyword
+import traceback
+import linecache
 from stsci.tools import capable, minmatch
-import iraf, irafinst, wutil
+import iraf
+import irafinst
+import wutil
 from pyrafglobals import pyrafDir
 
 

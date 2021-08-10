@@ -6,7 +6,10 @@ $Id$
 
 from __future__ import division, print_function
 
-import math, sys, numpy, os
+import math
+import sys
+import numpy
+import os
 import Tkinter as TKNTR
 import matplotlib
 # (done in mca file) matplotlib.use('TkAgg') # set backend
@@ -15,7 +18,9 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from stsci.tools.for2to3 import ndarr2str
 
-import gki, gkitkbase, textattrib
+import gki
+import gkitkbase
+import textattrib
 import gkigcur
 import MplCanvasAdapter as mca
 from wutil import moveCursorTo

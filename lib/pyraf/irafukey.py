@@ -5,7 +5,9 @@ $Id$
 """
 from __future__ import division, print_function
 
-import os, string, sys
+import os
+import string
+import sys
 import wutil
 from stsci.tools import capable, for2to3, irafutils
 

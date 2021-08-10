@@ -8,10 +8,13 @@ $Id$
 """
 from __future__ import division, print_function
 
-import sys, string
+import sys
+import string
 from stsci.tools import irafutils
 from stsci.tools.irafglobals import Verbose, IrafError
-import irafdisplay, gwm, iraf
+import irafdisplay
+import gwm
+import iraf
 
 # dictionary of devices to support multiple active displays
 _devices = {}

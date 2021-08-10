@@ -30,7 +30,10 @@ R. White, 2000 October 1
 """
 from __future__ import division, print_function
 
-import os, stat, sys, hashlib
+import os
+import stat
+import sys
+import hashlib
 from stsci.tools.for2to3 import PY3K
 
 

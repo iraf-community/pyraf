@@ -12,7 +12,10 @@ $Id$
 """
 from __future__ import division, print_function
 
-import os, sys, traceback, time
+import os
+import sys
+import traceback
+import time
 
 
 def printcenter(s, length=70, char="-"):

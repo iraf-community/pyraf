@@ -11,10 +11,18 @@ here which also support ECL syntax like "iferr" and $errno.
 """
 from __future__ import division, print_function
 
-import fnmatch, os, sys, copy, re
+import fnmatch
+import os
+import sys
+import copy
+import re
 from stsci.tools import basicpar, minmatch, irafutils, irafglobals, taskpars
 from stsci.tools.irafglobals import IrafError, Verbose
-import subproc, irafinst, irafpar, irafexecute, cl2py
+import subproc
+import irafinst
+import irafpar
+import irafexecute
+import cl2py
 
 # use this form since the iraf import is circular
 import pyraf.iraf

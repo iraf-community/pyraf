@@ -15,11 +15,10 @@ R. White, 2000 September 26
 
 from __future__ import division, print_function
 
-import os, binascii, string, __builtin__
-_os = os
-_binascii = binascii
-_string = string
-del os, binascii, string
+import os as _os
+import binascii as _binascii
+import string as _string
+import __builtin__
 
 # For anydbm
 error = IOError

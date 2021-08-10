@@ -142,7 +142,9 @@ class IPython_PyRAF_Integrator(object):
             from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
 
     def __init__(self, clemulate=1, cmddict={}, cmdchars=("a-zA-Z_.", "0-9")):
-        import re, sys, os
+        import re
+        import sys
+        import os
         self.reword = re.compile('[a-z]*')
         self._cl_emulation = clemulate
         self.cmddict = cmddict
@@ -256,7 +258,8 @@ class IPython_PyRAF_Integrator(object):
         line = full line (including cmd, preceding blanks, etc.)
         i = index in line of first non-blank character following cmd
         """
-        import os, keyword
+        import os
+        import keyword
         if len(cmd) == 0:
             if line[i:i + 1] == '!':
                 # '!' is shell escape
@@ -342,7 +345,10 @@ class IPython_PyRAF_Integrator(object):
         Strip out references to modules within pyraf unless reprint
         or debug is set.
         """
-        import linecache, traceback, sys, os
+        import linecache
+        import traceback
+        import sys
+        import os
         import IPython.ultraTB
 
         # get the color scheme from the user configuration file and pass

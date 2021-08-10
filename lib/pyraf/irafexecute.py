@@ -4,12 +4,25 @@ $Id$
 """
 from __future__ import division, print_function
 
-import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
+import os
+import re
+import signal
+import string
+import struct
+import sys
+import time
+import types
+import numpy
+import cStringIO
 from stsci.tools import irafutils
 from stsci.tools.for2to3 import tobytes, ndarr2bytes, ndarr2str
 from stsci.tools.irafglobals import IrafError, IrafTask, Verbose
-import subproc, filecache, wutil
-import gki, irafukey, irafgwcs
+import subproc
+import filecache
+import wutil
+import gki
+import irafukey
+import irafgwcs
 
 # use this form since the iraf import is circular
 import pyraf.iraf
