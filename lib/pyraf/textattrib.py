@@ -81,7 +81,6 @@ class TextAttributes:
         # Place to keep font size and aspect for current window dimensions
 
     def setFontSize(self, win):
-
         """Set the unit font size for a given window using the iraf
         configuration parameters contained in an attribute class"""
 

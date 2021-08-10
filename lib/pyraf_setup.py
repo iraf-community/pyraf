@@ -51,7 +51,7 @@ def _find_x(xdir=None):
     inc_dirs = []
 
     if sys.platform.startswith('win'):
-       return lib_dirs, inc_dirs
+        return lib_dirs, inc_dirs
 
     if xdir is not None:
         lib_dirs.append(os.path.join(xdir, 'lib64'))
@@ -61,7 +61,7 @@ def _find_x(xdir=None):
         lib_dirs.append('/usr/X11R6/lib64')
         lib_dirs.append('/usr/X11R6/lib')
         inc_dirs.append('/usr/X11R6/include')
-    elif sys.platform == 'sunos5' :
+    elif sys.platform == 'sunos5':
         lib_dirs.append('/usr/openwin/lib')
         inc_dirs.append('/usr/openwin/include')
     else:

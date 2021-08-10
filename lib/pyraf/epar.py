@@ -244,7 +244,6 @@ class PyrafEparDialog(editpar.EditParDialog):
             self._bboxColor = x
             self._entsColor = x
 
-
     def _nonStandardEparOptionFor(self, paramTypeStr):
         """ Override to allow use of PsetEparOption.
             Return None or a class which derives from EparOption. """
@@ -254,15 +253,12 @@ class PyrafEparDialog(editpar.EditParDialog):
         else:
             return None
 
-
     # Two overrides of deafult behavior, related to unpackaged "tasks"
     def _isUnpackagedTask(self):
         return isinstance(self._taskParsObj, irafpar.IrafParList)
 
-
     def _getOpenChoices(self):
         return irafpar.getSpecialVersionFiles(self.taskName, self.pkgName)
-
 
     # OPEN: load parameter settings from a user-specified file
     def pfopen(self, event=None):
@@ -280,7 +276,6 @@ class PyrafEparDialog(editpar.EditParDialog):
         self.freshenFocus()
         self.showStatus("Loaded parameter values from: "+fname, keep=2)
 
-
     def _getSaveAsFilter(self):
         """ Return a string to be used as the filter arg to the save file
             dialog during Save-As. """
@@ -289,7 +284,6 @@ class PyrafEparDialog(editpar.EditParDialog):
         if 'UPARM_AUX' in os.environ: upx = os.environ['UPARM_AUX']
         if len(upx) > 0:  filt = iraf.Expand(upx)+"/*.par"
         return filt
-
 
     def _saveAsPreSave_Hook(self, fnameToBeUsed):
         """ Override to check for (and warn about) PSETs. """
@@ -303,15 +297,13 @@ class PyrafEparDialog(editpar.EditParDialog):
                   "values for:\n\n"
             for p in pars: msg += "\t\t"+p+"\n"
             msg = msg+"\nthose changes will NOT be explicitly saved to:"+ \
-                  '\n\n"'+fnameToBeUsed+'"'
+                '\n\n"'+fnameToBeUsed+'"'
             showwarning(message=msg, title='PSET Save-As Not Yet Supported')
-
 
     def _saveAsPostSave_Hook(self, fnameToBeUsed):
         """ Override this to notify irafpar. """
         # Notify irafpar that there is a new special-purpose file on the scene
         irafpar.newSpecialParFile(self.taskName, self.pkgName, fnameToBeUsed)
-
 
     def htmlHelp(self, helpString=None, title=None, istask=False, tag=None):
         """ Overridden version, use irafhelp to invoke the HTML help """
@@ -323,7 +315,6 @@ class PyrafEparDialog(editpar.EditParDialog):
         else:
             # Invoke the STSDAS HTML help
             irafhelp.help(self.taskName, html=1)
-
 
     # Get the task help in a string (RLW)
     def getHelpString(self, taskname):

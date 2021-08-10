@@ -32,8 +32,8 @@ class GkiIrafKernel(gki.GkiKernel):
         graphcap = gki.getGraphcap()
         if device not in graphcap:
             raise iraf.IrafError(
-                    "No entry found for specified stdgraph device `%s'" %
-                    device)
+                "No entry found for specified stdgraph device `%s'" %
+                device)
         gentry = graphcap[device]
         self.device = device
         self.executable = executable = gentry['kf']

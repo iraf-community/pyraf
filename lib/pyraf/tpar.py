@@ -80,31 +80,31 @@ TPAR_HELP_EMACS = """                                EDIT COMMANDS (emacs)
 """
 
 TPAR_BINDINGS_EMACS = {
-    "ctrl c" : "quit",
-    "ctrl C" : "quit",
-    "ctrl d" : "exit",
-    "ctrl D" : "exit",
-    "ctrl z" : "exit",
-    "ctrl Z" : "exit",
+    "ctrl c": "quit",
+    "ctrl C": "quit",
+    "ctrl d": "exit",
+    "ctrl D": "exit",
+    "ctrl z": "exit",
+    "ctrl Z": "exit",
 
-    "ctrl p"   : "up",
-    "ctrl P"   : "up",
+    "ctrl p": "up",
+    "ctrl P": "up",
     "shift tab": "up",
 
-    "ctrl n"   : "down",
-    "ctrl N"   : "down",
+    "ctrl n": "down",
+    "ctrl N": "down",
 
-    "esc v"  : "page down",
-    "esc V"  : "page down",
+    "esc v": "page down",
+    "esc V": "page down",
 
-    "esc p"  : "page up",
-    "esc P"  : "page up",
+    "esc p": "page up",
+    "esc P": "page up",
 
-#   "ctrl l" : "redraw",        # re-draw... just ignore
-#   "ctrl L" : "redraw",
+    #   "ctrl l" : "redraw",        # re-draw... just ignore
+    #   "ctrl L" : "redraw",
 
-    "ctrl K" : "del_line",
-    "ctrl k" : "del_line",
+    "ctrl K": "del_line",
+    "ctrl k": "del_line",
 
     "esc d": "del_word",
     "esc D": "del_word",
@@ -136,7 +136,7 @@ TPAR_BINDINGS_EMACS = {
     "esc ctrl w": "undel_word",
 
     "esc ?": "help"
-    }
+}
 
 
 TPAR_HELP_VI = """                                EDIT COMMANDS (vi)
@@ -166,28 +166,28 @@ TPAR_HELP_VI = """                                EDIT COMMANDS (vi)
 """
 
 TPAR_BINDINGS_VI = {
-    "ctrl c" : "quit",
-    "ctrl d" : "exit",
-    "ctrl C" : "quit",
-    "ctrl D" : "exit",
+    "ctrl c": "quit",
+    "ctrl d": "exit",
+    "ctrl C": "quit",
+    "ctrl D": "exit",
 
-    "ctrl K"   : "up",
-    "ctrl k"   : "up",
+    "ctrl K": "up",
+    "ctrl k": "up",
 
-    "ctrl j"   : "down",
-    "ctrl J"   : "down",
+    "ctrl j": "down",
+    "ctrl J": "down",
 
-    "ctrl n"  : "page down",
-    "ctrl N"  : "page down",
+    "ctrl n": "page down",
+    "ctrl N": "page down",
 
-    "ctrl p"  : "page up",
-    "ctrl P"  : "page up",
+    "ctrl p": "page up",
+    "ctrl P": "page up",
 
-#   "ctrl r" : "redraw",        # re-draw... just ignore
-#   "ctrl R" : "redraw",
+    #   "ctrl r" : "redraw",        # re-draw... just ignore
+    #   "ctrl R" : "redraw",
 
-    "tab ctrl D" : "del_line",
-    "tab ctrl d" : "del_line",
+    "tab ctrl D": "del_line",
+    "tab ctrl d": "del_line",
 
     "tab ctrl W": "del_word",
     "tab ctrl w": "del_word",
@@ -225,7 +225,7 @@ TPAR_BINDINGS_VI = {
     "ctrl u ctrl w": "undel_word",
 
     "esc ?": "help"
-    }
+}
 
 class Binder(object):
     """The Binder class manages keypresses for urwid and adds the
@@ -265,8 +265,8 @@ class Binder(object):
                 key = f
             else:
                 key = f()
-            self.debug("pos: %s  visited: %s  key: %s mapping: %s" % \
-                   (pos, " --> ".join(visited), key, f))
+            self.debug("pos: %s  visited: %s  key: %s mapping: %s" %
+                       (pos, " --> ".join(visited), key, f))
         return key
 
     def debug(self, s):
@@ -283,23 +283,23 @@ class PyrafEdit(urwid.Edit):
         self.reset_del_buffers()
         urwid.Edit.__init__(self, *args, **keys)
         EDIT_BINDINGS  = {  # single field bindings
-                           "delete": self.DEL_CHAR,
-                           "del_line": self.DEL_LINE,
-                           "del_word": self.DEL_WORD,
+            "delete": self.DEL_CHAR,
+            "del_line": self.DEL_LINE,
+            "del_word": self.DEL_WORD,
 
-                           "undel_char": self.UNDEL_CHAR,
-                           "undel_word": self.UNDEL_WORD,
-                           "undel_line": self.UNDEL_LINE,
+            "undel_char": self.UNDEL_CHAR,
+            "undel_word": self.UNDEL_WORD,
+            "undel_line": self.UNDEL_LINE,
 
-                           "next_word": self.NEXT_WORD,
-                           "prev_word": self.PREV_WORD,
+            "next_word": self.NEXT_WORD,
+            "prev_word": self.PREV_WORD,
 
-                           "move_bol": self.MOVE_BOL,
-                           "move_eol": self.MOVE_EOL,
+            "move_bol": self.MOVE_BOL,
+            "move_eol": self.MOVE_EOL,
 
-                           "right": self.MOVE_RIGHT,
-                           "left": self.MOVE_LEFT,
-                         }
+            "right": self.MOVE_RIGHT,
+            "left": self.MOVE_LEFT,
+        }
         self._binder = Binder(EDIT_BINDINGS, inform)
 
     def reset_del_buffers(self):
@@ -415,16 +415,16 @@ class StringTparOption(urwid.Columns):
         MODE_KEYS = []
 
         BINDINGS = {
-            "enter" : self.ENTER,
-            "up"   : self.MOVE_UP,
-            "down" : self.MOVE_DOWN,
-            "page up"   : self.PAGE_UP,
-            "page down" : self.PAGE_DOWN,
+            "enter": self.ENTER,
+            "up": self.MOVE_UP,
+            "down": self.MOVE_DOWN,
+            "page up": self.PAGE_UP,
+            "page down": self.PAGE_DOWN,
             "undel_line": self.UNDEL_LINE,
-            "ready" : self.READY_LINE,
-            "end" : self.MOVE_END,
+            "ready": self.READY_LINE,
+            "end": self.MOVE_END,
             "home": self.MOVE_START
-            }
+        }
 
         self._binder = Binder(BINDINGS, inform, MODE_KEYS)
 
@@ -436,7 +436,7 @@ class StringTparOption(urwid.Columns):
 
         name  = self.paramInfo.name
         value = self.paramInfo.get(field = "p_filename", native = 0,
-                        prompt = 0)
+                                   prompt = 0)
         self._previousValue = value
 
         # Generate the input label
@@ -452,16 +452,16 @@ class StringTparOption(urwid.Columns):
             help = ") " + help
         else:
             help = "  " + help
-        self._name = urwid.Text( "%-10s=" % name )
+        self._name = urwid.Text("%-10s=" % name)
         self._edit = PyrafEdit("", "", wrap="clip", align="right", inform=inform)
         self._edit.verify = self.verify
-        self._value = urwid.Text( "%10s" % value, align="right" )
-        self._help = urwid.Text( "%-30s" % help )
-        urwid.Columns.__init__( self, [('weight', 0.20, self._name),
-                                       ('weight', 0.20, self._edit),
-                                       ('weight', 0.20, self._value),
-                                       ('weight', 0.40, self._help)],
-                                0, 1, 1)
+        self._value = urwid.Text("%10s" % value, align="right")
+        self._help = urwid.Text("%-30s" % help)
+        urwid.Columns.__init__(self, [('weight', 0.20, self._name),
+                                      ('weight', 0.20, self._edit),
+                                      ('weight', 0.20, self._value),
+                                      ('weight', 0.40, self._help)],
+                               0, 1, 1)
 
     def keypress(self, pos, key):
         key = Binder.keypress(self._binder, pos, key)
@@ -488,7 +488,7 @@ class StringTparOption(urwid.Columns):
         return self._value.get_text()[0].strip()
 
     def set_result(self, r):
-        self._value.set_text( self.normalize(str(r)) )
+        self._value.set_text(self.normalize(str(r)))
 
     def unlearn_value(self):
         self.set_result(self._previousValue)
@@ -500,7 +500,7 @@ class StringTparOption(urwid.Columns):
     def UNDEL_LINE(self): # a little iffy.  handle first copy from value field to edit field here.  defer subsequent calls.
         v = self.get_result()
         if v:
-            self.set_candidate( self.get_candidate() + v)
+            self.set_candidate(self.get_candidate() + v)
             self.set_result("")
         else:
             return "undel_line"
@@ -553,8 +553,8 @@ class StringTparOption(urwid.Columns):
             self.set_candidate("")
         else:
             s  = self.get_result()
-            self.set_candidate( s )
-            self._edit.set_edit_pos( len(s) )
+            self.set_candidate(s)
+            self._edit.set_edit_pos(len(s))
 
     def klass(self):
         return "string"
@@ -626,9 +626,9 @@ class EnumTparOption(StringTparOption):
     def adjust(self, delta, wrap):
         choices = self.paramInfo.choice
         try:
-            v = choices[ choices.index(self.get_result()) + delta ]
+            v = choices[choices.index(self.get_result()) + delta]
         except IndexError:
-            v = choices[ wrap ]
+            v = choices[wrap]
         self.set_result(v)
 
     def SPACE(self):
@@ -636,7 +636,6 @@ class EnumTparOption(StringTparOption):
 
     def LEFT(self):
         return self.adjust(-1, -1)
-
 
     def klass(self):
         return "enumeration"
@@ -658,7 +657,7 @@ class TparHeader(urwid.Pile):
 """
     def __init__(self, package, task=None):
         top = urwid.Text(("header", self.banner))
-        s = "%8s= %-10s\n" %  ("PACKAGE", package)
+        s = "%8s= %-10s\n" % ("PACKAGE", package)
         if task is not None:
             s += "%8s= %-10s" % ("TASK", task)
         info = urwid.Text(("body", s))
@@ -667,34 +666,34 @@ class TparHeader(urwid.Pile):
 
 class TparDisplay(Binder):
     palette = [
-                ('body', 'default', 'default', 'standout'),
-                ('header', 'default', 'default', ('standout', 'underline')),
-                ('help', 'black', 'light gray'),
-                ('reverse', 'light gray', 'black'),
-                ('important', 'dark blue', 'light gray', ('standout', 'underline')),
-                ('editfc', 'white', 'dark blue', 'bold'),
-                ('editbx', 'light gray', 'dark blue'),
-                ('editcp', 'black', 'light gray', 'standout'),
-                ('bright', 'dark gray', 'light gray', ('bold', 'standout')),
-                ('buttn', 'black', 'dark cyan'),
-                ('buttnf', 'white', 'dark blue', 'bold'),
-               ]
+        ('body', 'default', 'default', 'standout'),
+        ('header', 'default', 'default', ('standout', 'underline')),
+        ('help', 'black', 'light gray'),
+        ('reverse', 'light gray', 'black'),
+        ('important', 'dark blue', 'light gray', ('standout', 'underline')),
+        ('editfc', 'white', 'dark blue', 'bold'),
+        ('editbx', 'light gray', 'dark blue'),
+        ('editcp', 'black', 'light gray', 'standout'),
+        ('bright', 'dark gray', 'light gray', ('bold', 'standout')),
+        ('buttn', 'black', 'dark cyan'),
+        ('buttnf', 'white', 'dark blue', 'bold'),
+    ]
 
     def __init__(self,  taskName):
 
-        MODE_KEYS_EMACS = [ "esc"]
+        MODE_KEYS_EMACS = ["esc"]
 
         MODE_KEYS_VI = ["esc", "tab",
                         "ctrl u", "ctrl U",
                         "ctrl t", "ctrl T"]
 
         TPAR_BINDINGS = {  # Page level bindings
-                          "quit": self.QUIT,
-                          "exit ": self.EXIT,
-                          "help": self.HELP,
-                          "end": self.MOVE_END,
-                          "home": self.MOVE_START,
-                         }
+            "quit": self.QUIT,
+            "exit ": self.EXIT,
+            "help": self.HELP,
+            "end": self.MOVE_END,
+            "home": self.MOVE_START,
+        }
 
         # Get the Iraftask object
         if isinstance(taskName, irafpar.IrafParList):
@@ -711,7 +710,7 @@ class TparDisplay(Binder):
 
         # See if there exist any special versions on disk to load
         self.__areAnyToLoad = irafpar.haveSpecialVersions(self.taskName,
-                              self.pkgName) # irafpar caches them
+                                                          self.pkgName) # irafpar caches them
 
         # Ignore the last parameter which is $nargs
         self.numParams = len(self.paramList) - 1
@@ -727,21 +726,20 @@ class TparDisplay(Binder):
         else:
             self._createButtons()
 
-
         self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
         self.listitems = [urwid.Divider(" ")] + self.entryNo + \
                          [urwid.Divider(" "), self.colon_edit,
                           self.buttons]
-        self.listbox = urwid.ListBox( self.listitems )
+        self.listbox = urwid.ListBox(self.listitems)
 
         self.listbox.set_focus(1)
         self.footer = urwid.Text("")
         self.header = TparHeader(self.pkgName, self.taskName)
 
         self.view = urwid.Frame(
-                                self.listbox,
-                                header=self.header,
-                                footer=self.footer)
+            self.listbox,
+            header=self.header,
+            footer=self.footer)
 
         self._editor = iraf.envget("editor")
         BINDINGS = {}
@@ -753,7 +751,6 @@ class TparDisplay(Binder):
             BINDINGS.update(TPAR_BINDINGS_EMACS)
             MODE_KEYS = MODE_KEYS_EMACS
         Binder.__init__(self, BINDINGS, self.inform, MODE_KEYS)
-
 
     def _createButtonsOld(self):
         """ Set up all the bottom row buttons and their spacings """
@@ -805,7 +802,6 @@ class TparDisplay(Binder):
                     ('weight', 0.18, self.cancel_button),
                     ('weight', 0.20, self.help_button)])
 
-
     def _createButtons(self):
         """ Set up all the bottom row buttons and their spacings """
 
@@ -813,7 +809,7 @@ class TparDisplay(Binder):
 
         self.help_button = urwid.Padding(
             urwid.Button("Help", self.HELP), align="center", width=8, right=4,
-                                                                     left=5)
+            left=5)
         self.cancel_button = urwid.Padding(
             urwid.Button("Cancel", self.QUIT), align="center", width=10)
         if not isPset:
@@ -851,14 +847,13 @@ class TparDisplay(Binder):
                     ('weight', 0.12, self.cancel_button),
                     ('weight', 0.10, self.help_button)])
 
-
     def get_default_param_list(self):
         # Obtain the default parameter list
         dlist = self.taskObject.getDefaultParList()
         if len(dlist) != len(self.paramList):
             # whoops, lengths don't match
             raise ValueError("Mismatch between default, current par lists"
-            " for task %s (try unlearn)" % self.taskName)
+                             " for task %s (try unlearn)" % self.taskName)
         pardict = {}
         for par in dlist:
             pardict[par.name] = par
@@ -870,7 +865,7 @@ class TparDisplay(Binder):
                 dsort.append(pardict[par.name])
         except KeyError:
             raise ValueError("Mismatch between default, current par lists"
-                     " for task %s (try unlearn)" % self.taskName)
+                             " for task %s (try unlearn)" % self.taskName)
         self.defaultParamList = dsort
 
     # Method to create the parameter entries
@@ -890,7 +885,7 @@ class TparDisplay(Binder):
             self.ui = urwid.raw_display.Screen()
         else:
             self.ui = urwid.curses_display.Screen()
-        self.ui.register_palette( self.palette )
+        self.ui.register_palette(self.palette)
         self.ui.run_wrapper(self.run) # raw_display has alternate_buffer=True
         self.done()
 
@@ -910,8 +905,8 @@ class TparDisplay(Binder):
         self._newline = True
         while not self.done:
             self.view.keypress(size, "ready")
-            canvas = self.view.render( size, focus=1 )
-            self.ui.draw_screen( size, canvas )
+            canvas = self.view.render(size, focus=1)
+            self.ui.draw_screen(size, canvas)
             for k in self.get_keys():
                 if k == ":":
                     self.colon_escape()
@@ -919,13 +914,13 @@ class TparDisplay(Binder):
                 elif urwid.is_mouse_event(k):
                     event, button, col, row = k
                     self.view.mouse_event(
-                                    size, event,
-                                    button, col, row, focus=True )
+                        size, event,
+                        button, col, row, focus=True)
                 elif k == 'window resize':
                     size = self.ui.get_cols_rows()
                     self.inform("resize %s" % (str(size)))
                 k = self.keypress(size, k)
-                self.view.keypress( size, k )
+                self.view.keypress(size, k)
 
     def colon_escape(self):
         """colon_escape switches the focus to the 'mini-buffer' and
@@ -942,11 +937,11 @@ class TparDisplay(Binder):
         self.view.keypress(size, ":")
         done = False
         while not done:
-            canvas = self.view.render( size, focus=1 )
-            self.ui.draw_screen( size, canvas )
+            canvas = self.view.render(size, focus=1)
+            self.ui.draw_screen(size, canvas)
             for k in self.get_keys():
                 if urwid.is_mouse_event(k) or \
-                       k == "ctrl c" or k == "ctrl g":
+                        k == "ctrl c" or k == "ctrl g":
                     self.colon_edit.set_edit_text("")
                     return
                 elif k == 'window resize':
@@ -955,7 +950,7 @@ class TparDisplay(Binder):
                     done = True
                     break
                 k = self.keypress(size, k)
-                self.view.keypress( size, k )
+                self.view.keypress(size, k)
         cmd = self.colon_edit.get_edit_text()
         self.listbox.set_focus(pos0)
         self.colon_edit.set_edit_text("")
@@ -964,8 +959,8 @@ class TparDisplay(Binder):
     def process_colon(self, cmd):
         # : <cmd_letter> [!] [<filename>]
         groups = re.match("^:(?P<cmd>[a-z])\s*"
-                  "(?P<emph>!?)\s*"
-                  "(?P<file>\w*)",  cmd)
+                          "(?P<emph>!?)\s*"
+                          "(?P<file>\w*)",  cmd)
         if not groups:
             self.inform("bad command: " + cmd)
         else:
@@ -973,12 +968,12 @@ class TparDisplay(Binder):
             emph = groups.group("emph") == "!"
             file   = groups.group("file")
             try:
-                f = { "q" : self.QUIT,
-                      "g" : self.go,
-                      "r" : self.read_pset,
-                      "w" : self.write_pset,
-                      "e" : self.edit_pset
-                    }[letter]
+                f = {"q": self.QUIT,
+                     "g": self.go,
+                     "r": self.read_pset,
+                     "w": self.write_pset,
+                     "e": self.edit_pset
+                     }[letter]
             except KeyError:
                 self.inform("unknown command: " + cmd)
                 return
@@ -994,13 +989,13 @@ class TparDisplay(Binder):
 
         # The user wishes to save to a different name.
         fname = self.select_file(
-                "Save parameter values to which file?", overwriteCheck=True)
+            "Save parameter values to which file?", overwriteCheck=True)
 
         # Now save the parameters
         if fname == None:
             msg = "Parameters NOT saved to a file."
             okdlg = urwutil.DialogDisplay(msg, 8, 0)
-            okdlg.add_buttons([ ("OK", 0) ])
+            okdlg.add_buttons([("OK", 0)])
             okdlg.main()
             return
 
@@ -1017,10 +1012,10 @@ class TparDisplay(Binder):
                   "values for:\n\n"
             for p in pars: msg += "     "+p+"\n"
             msg = msg+"\nthose changes will NOT be explicitly saved to:"+ \
-                  '\n\n"'+fname+'"'
+                '\n\n"'+fname+'"'
             # title='PSET Save-As Not Yet Supported
             okdlg = urwutil.DialogDisplay(msg, 0, 0)
-            okdlg.add_buttons([ ("OK", 0) ])
+            okdlg.add_buttons([("OK", 0)])
             okdlg.main()
 
         # Verify all the entries (without save), keeping track of the invalid
@@ -1039,19 +1034,18 @@ class TparDisplay(Binder):
         # save to their stated file.  Since we have already processed the
         # bad entries, there should be none returned.
         mstr = "TASKMETA: task="+self.taskName+" package="+self.pkgName
-        if self.check_set_save_entries(doSave=True, filename=fname, \
+        if self.check_set_save_entries(doSave=True, filename=fname,
                                        comment=mstr):
             raise Exception("Unexpected bad entries for: "+self.taskName)
 
         # Let them know what they just did
         msg = 'Saved to: "'+fname+'"'
         okdlg = urwutil.DialogDisplay(msg, 8, 0)
-        okdlg.add_buttons([ ("OK", 0) ])
+        okdlg.add_buttons([("OK", 0)])
         okdlg.main()
 
         # Notify irafpar that there is a new special-purpose file on the scene
         irafpar.newSpecialParFile(self.taskName, self.pkgName, fname)
-
 
     def pfopen(self):
         """ Load the parameter settings from a user-specified file.  Any
@@ -1062,7 +1056,7 @@ class TparDisplay(Binder):
         if len(flist) <= 0:
             msg = "No special-purpose parameter files found for "+self.taskName
             okdlg = urwutil.DialogDisplay(msg, 8, 0)
-            okdlg.add_buttons([ ("OK", 0) ])
+            okdlg.add_buttons([("OK", 0)])
             okdlg.main()
             return
 
@@ -1071,7 +1065,7 @@ class TparDisplay(Binder):
             msg = "One special-purpose parameter file found.\n"+ \
                   "Load file?\n\n"+flist[0]
             yesnodlg = urwutil.DialogDisplay(msg, 12, 0)
-            yesnodlg.add_buttons([ ("OK", 0),  ("Cancel", 1) ])
+            yesnodlg.add_buttons([("OK", 0),  ("Cancel", 1)])
             rv, junk = yesnodlg.main()
             if rv == 0: fname = flist[0] # if not, fname is still None
         else: # >1 file, need a select dialog
@@ -1080,12 +1074,13 @@ class TparDisplay(Binder):
             for i in range(len(flist)):
                 chcs.append(str(i)) # need index as tag - it is the return val
                 chcs.append(flist[i])
+
             def menuItemConstr(tag, state):
                 return urwutil.MenuItem(tag)
             selectdlg = urwutil.ListDialogDisplay("Select from these:",
-                                len(flist)+7, 75,
-                                menuItemConstr, tuple(chcs), False)
-            selectdlg.add_buttons([ ("Cancel", 1), ])
+                                                  len(flist)+7, 75,
+                                                  menuItemConstr, tuple(chcs), False)
+            selectdlg.add_buttons([("Cancel", 1), ])
             rv, ans = selectdlg.main()
             if rv == 0: fname = flist[int(ans)]
 
@@ -1103,7 +1098,6 @@ class TparDisplay(Binder):
         except AttributeError:
             self.ui._clear() # older urwid vers use different method name
         self.info(msg, None)
-
 
     def save(self, emph):
         # Save all the entries and verify them, keeping track of the invalid
@@ -1132,35 +1126,32 @@ class TparDisplay(Binder):
     # a Pset filename
     def QUIT(self, event=None, emph=True):  # maybe save
         self.save(emph)
+
         def quit_continue():
             pass
         self.done = quit_continue
 
-
     def PFOPEN(self, event=None):
-
         """ Open button - load parameters from a user specified file"""
         self.pfopen()
         self.done = None # simply continue
 
-
     def SAVEAS(self, event=None):
-
         """ SaveAs button - save parameters to a user specified file"""
         self.save_as()
+
         def save_as_continue(): # get back to editing
             iraffunctions.tparam(self.taskObject)
         self.done = save_as_continue  # self.done = None # will also continue
 
-
     def EXIT(self, event=None):  # always save
         self.QUIT(event, False)
-
 
     # EXECUTE: save the parameter settings and run the task
     def go(self, event=None, emph=False):
         """Executes the task."""
         self.save(emph)
+
         def go_continue():
             print("\nTask %s is running...\n" % self.taskName)
             self.run_task()
@@ -1251,7 +1242,7 @@ class TparDisplay(Binder):
         # an associated file (in which case the changes are just being
         # made in memory.)
 
-        if doSave and ((not isinstance(self.taskObject, irafpar.IrafParList)) \
+        if doSave and ((not isinstance(self.taskObject, irafpar.IrafParList))
                        or self.taskObject.getFilename()):
             self.taskObject.saveParList(filename=filename, comment=comment)
 
@@ -1272,8 +1263,8 @@ class TparDisplay(Binder):
         return results
 
     def draw_screen(self, size):
-        canvas = self.view.render( size, focus=True )
-        self.ui.draw_screen( size, canvas )
+        canvas = self.view.render(size, focus=True)
+        self.ui.draw_screen(size, canvas)
 
     def inform(self, s):
         """output any message to status bar"""
@@ -1283,15 +1274,15 @@ class TparDisplay(Binder):
         self.exit_flag = False
         size = self.ui.get_cols_rows()
         exit_button = urwid.Padding(
-                          urwid.Button("Exit", self.exit_info),
-                          align="center", width=8)
+            urwid.Button("Exit", self.exit_info),
+            align="center", width=8)
         frame = urwid.Frame(urwid.Filler(
-                                  urwid.AttrWrap(urwid.Text(msg), "help"),
-                                  valign="top"),
-                            header=self.header,
-                            footer=exit_button)
-        canvas = frame.render( size )
-        self.ui.draw_screen( size, canvas )
+            urwid.AttrWrap(urwid.Text(msg), "help"),
+            valign="top"),
+            header=self.header,
+            footer=exit_button)
+        canvas = frame.render(size)
+        self.ui.draw_screen(size, canvas)
         self.get_keys() # wait for keypress
 
     def exit_info(self, ehb):
@@ -1315,7 +1306,7 @@ class TparDisplay(Binder):
             except:
                 prompt="(File chooser error, enter choice manually.)\n"+prompt
                 inputdlg = urwutil.InputDialogDisplay(prompt, 9, 0)
-                inputdlg.add_buttons([ ("OK", 0),  ("Cancel", 1) ])
+                inputdlg.add_buttons([("OK", 0),  ("Cancel", 1)])
                 rv, fname = inputdlg.main()
                 if rv > 0: fname = None
 
@@ -1326,14 +1317,13 @@ class TparDisplay(Binder):
             # See if the file exists (if we care)
             if overwriteCheck and os.path.exists(fname):
                 yesnodlg = urwutil.DialogDisplay(
-                           "File exists!  Overwrite?\n\n    "+fname, 9, 0)
-                yesnodlg.add_buttons([ ("Yes", 0),  ("No", 1) ])
+                    "File exists!  Overwrite?\n\n    "+fname, 9, 0)
+                yesnodlg.add_buttons([("Yes", 0),  ("No", 1)])
                 rv, junk = yesnodlg.main()
                 if rv == 0: return fname
                 # if no, then go thru selection again
             else:
                 return fname
-
 
     def askokcancel(self, title, msg):
         self.info(msg, None)
@@ -1346,27 +1336,27 @@ class TparDisplay(Binder):
         badEntriesString = "\nTask " + taskname.upper() + \
                            " -- Invalid values have been entered.\n\n"
         badEntriesString += format % \
-                            ("Parameter", "Bad Value", "Reset Value")
-        for i in range (len(badEntriesList)):
+            ("Parameter", "Bad Value", "Reset Value")
+        for i in range(len(badEntriesList)):
             badEntriesString += format % \
-                        (badEntriesList[i][0].strip(), \
-                         badEntriesList[i][1].strip(), \
-                         badEntriesList[i][2].strip())
+                (badEntriesList[i][0].strip(),
+                 badEntriesList[i][1].strip(),
+                 badEntriesList[i][2].strip())
 
             badEntriesString += "\nOK to continue using"\
-            " the reset\nvalues or cancel to re-enter\nvalues?\n"
+                " the reset\nvalues or cancel to re-enter\nvalues?\n"
 
         # Invoke the modal message dialog
         return (self.askokcancel("Notice", badEntriesString))
 
     # TparOption values for non-string types
-    _tparOptionDict = { "b": BooleanTparOption,
-                        "r": NumberTparOption,
-                        "d": NumberTparOption,
-                        "i": NumberTparOption,
-                        "pset": PsetTparOption,
-                        "ar": NumberTparOption,
-                        "ai": NumberTparOption,
+    _tparOptionDict = {"b": BooleanTparOption,
+                       "r": NumberTparOption,
+                       "d": NumberTparOption,
+                       "i": NumberTparOption,
+                       "pset": PsetTparOption,
+                       "ar": NumberTparOption,
+                       "ai": NumberTparOption,
                        }
 
     def tpar_option_factory(self, param, defaultParam):

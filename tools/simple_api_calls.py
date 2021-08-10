@@ -17,7 +17,7 @@ print("Simple #5 - has IRAF is ...")
 from pyraf import irafinst
 print(str(irafinst.EXISTS))
 if not irafinst.EXISTS:
-   sys.exit(0)
+    sys.exit(0)
 
 print("Simple #6 - files output is ... (the rest require IRAF)")
 iraf.files('file_a.txt,file-b.txt,file.c.txt,,filed.txt')

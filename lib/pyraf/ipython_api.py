@@ -100,6 +100,7 @@ class IPythonIrafCompleter(IrafCompleter):
         """
         if not hasattr(self, "_ipython_init_readline"):
             self._ipython_init_readline = self.InteractiveShell.init_readline
+
         def pyraf_init_readline(IP):     # Create function with built-in bindings to self
             assert self.IP is IP         # IPythonShell shouldn't change...
             self._ipython_init_readline(IP)  # Call IPython's original init_readline... make IP.Completer.
@@ -132,7 +133,6 @@ class IPython_PyRAF_Integrator(object):
         except:
             # location of "terminal" prior to v1.1
             from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
-
 
     def __init__(self, clemulate=1, cmddict={},
                  cmdchars=("a-zA-Z_.", "0-9")):
@@ -208,7 +208,7 @@ class IPython_PyRAF_Integrator(object):
         # convertible to ASCII), simply move on (remove this assumption
         # after we no longer support Python2)
         try:
-            asciiline =  str(line)
+            asciiline = str(line)
         except:
             return line
 
@@ -265,7 +265,7 @@ class IPython_PyRAF_Integrator(object):
             # if CL emulation is turned off then just return
             return line
         elif keyword.iskeyword(cmd) or \
-          (cmd in os.__builtins__ and cmd not in ['type', 'dir', 'help', 'set']):
+                (cmd in os.__builtins__ and cmd not in ['type', 'dir', 'help', 'set']):
             # don't mess with Python keywords or built-in functions
             # except allow 'type', 'dir, 'help' to be used in simple syntax
             return line
@@ -317,7 +317,7 @@ class IPython_PyRAF_Integrator(object):
             return line[:j] + 'iraf.' + line[j:]
         code = iraf.clLineToPython(line)
         statements = code.split("\n")
-        return "; ".join([ x for x in statements if x ])+"\n"
+        return "; ".join([x for x in statements if x])+"\n"
 
     def default(self, cmd, line, i):
         # print "input line:",repr(cmd),"line:",line,"i:",i

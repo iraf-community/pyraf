@@ -145,15 +145,15 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
     # GKI control functions that are ignored on redraw
     _controlOps = [
-            gki.GKI_OPENWS,
-            gki.GKI_CLOSEWS,
-            gki.GKI_REACTIVATEWS,
-            gki.GKI_DEACTIVATEWS,
-            gki.GKI_MFTITLE,
-            gki.GKI_CLEARWS,
-            gki.GKI_CANCEL,
-            gki.GKI_FLUSH,
-            ]
+        gki.GKI_OPENWS,
+        gki.GKI_CLOSEWS,
+        gki.GKI_REACTIVATEWS,
+        gki.GKI_DEACTIVATEWS,
+        gki.GKI_MFTITLE,
+        gki.GKI_CLEARWS,
+        gki.GKI_CANCEL,
+        gki.GKI_FLUSH,
+    ]
 
     # maximum number of error messages for a plot
     MAX_ERROR_COUNT = 3
@@ -231,11 +231,9 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         if self.gwidget:
             self.gwidget.focus_set()
 
-
     # -----------------------------------------------
 
     def makeStatus(self):
-
         """Make status display at bottom of window"""
 
         if 'PYRAF_OLD_STATUS' in os.environ:
@@ -249,7 +247,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     # Menu bar definitions
 
     def makeMenuBar(self):
-
         """Make menu bar at top of window"""
 
         self.menubar = TKNTR.Frame(self.top, bd=1, relief=TKNTR.FLAT)
@@ -283,7 +280,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             sys.stdout = stdout
 
     def save(self):
-
         """Save metacode in a file"""
         curdir = os.getcwd()
         if capable.OF_TKFD_IN_EPAR:
@@ -303,10 +299,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         fh.write(ndarr2bytes(self.gkibuffer.get()))
         fh.close()
 
-
-
     def load(self, fname=None):
-
         """Load metacode from a file"""
 
         if not fname:
@@ -315,7 +308,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
                                                      title="Load Metacode")
             else:
                 fd = filedlg.PersistLoadFileDialog(self.top,
-                             "Load Metacode", "*")
+                                                   "Load Metacode", "*")
                 if fd.Show() != 1:
                     fd.DialogCleanup()
                     return
@@ -339,7 +332,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         button = TKNTR.Menubutton(menubar, text='Edit')
         button.pack(side=TKNTR.LEFT, padx=2)
         button.menu = TKNTR.Menu(button, tearoff=0,
-                postcommand=self.editMenuInit)
+                                 postcommand=self.editMenuInit)
         num = 0
         button.menu.add_command(label="Undo", command=self.undoN)
         button.undoNum = num
@@ -360,12 +353,12 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         num = num+1
 
         button.menu.add_command(label="Delete Plot",
-                command=self.deletePlot)
+                                command=self.deletePlot)
         num = num+1
         button.deleteNum = num
 
         button.menu.add_command(label="Delete All Plots",
-                command=self.deleteAllPlots)
+                                command=self.deleteAllPlots)
         num = num+1
         button.deleteAllNum = num
 
@@ -385,32 +378,32 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         buffer = self.getBuffer()
         if buffer.isUndoable():
             self.editMenu.menu.entryconfigure(button.undoNum,
-                    state=TKNTR.NORMAL)
+                                              state=TKNTR.NORMAL)
             self.editMenu.menu.entryconfigure(button.redrawOriginalNum,
-                    state=TKNTR.NORMAL)
+                                              state=TKNTR.NORMAL)
         else:
             self.editMenu.menu.entryconfigure(button.undoNum,
-                    state=TKNTR.DISABLED)
+                                              state=TKNTR.DISABLED)
             self.editMenu.menu.entryconfigure(button.redrawOriginalNum,
-                    state=TKNTR.DISABLED)
+                                              state=TKNTR.DISABLED)
         # disable Redo item if not redoable
         if buffer.isRedoable():
             self.editMenu.menu.entryconfigure(button.redoNum,
-                    state=TKNTR.NORMAL)
+                                              state=TKNTR.NORMAL)
         else:
             self.editMenu.menu.entryconfigure(button.redoNum,
-                    state=TKNTR.DISABLED)
+                                              state=TKNTR.DISABLED)
         # disable Delete items if no plots
         if len(self.history)==1 and self.isPageBlank():
             self.editMenu.menu.entryconfigure(button.deleteNum,
-                    state=TKNTR.DISABLED)
+                                              state=TKNTR.DISABLED)
             self.editMenu.menu.entryconfigure(button.deleteAllNum,
-                    state=TKNTR.DISABLED)
+                                              state=TKNTR.DISABLED)
         else:
             self.editMenu.menu.entryconfigure(button.deleteNum,
-                    state=TKNTR.NORMAL)
+                                              state=TKNTR.NORMAL)
             self.editMenu.menu.entryconfigure(button.deleteAllNum,
-                    state=TKNTR.NORMAL)
+                                              state=TKNTR.NORMAL)
 
     def deletePlot(self):
 
@@ -448,7 +441,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         button = TKNTR.Menubutton(menubar, text='Page')
         button.pack(side=TKNTR.LEFT, padx=2)
         button.menu = TKNTR.Menu(button, tearoff=1,
-                postcommand=self.pageMenuInit)
+                                 postcommand=self.pageMenuInit)
         num = 1 # tearoff is entry 0 on menu
         button.nextNum = num
         num = num+1
@@ -528,7 +521,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         self.bttnVar.set(self._currentPage)
 
     def _setPageVar(self, *args):
-
         """Called when pageVar is changed (by .set() or by Page menu)"""
 
         n = self.pageVar.get()
@@ -536,7 +528,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         if self._currentPage != n:
             self._currentPage = n
             self.gkibuffer, self.wcs, name, otherHistory = \
-                            self.history[self._currentPage]
+                self.history[self._currentPage]
             self.setHistory(otherHistory)
             self.gRedraw()
             self.pageMenuInit()
@@ -582,7 +574,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         button = TKNTR.Menubutton(menubar, text='Window')
         button.pack(side=TKNTR.LEFT, padx=2)
         button.menu = TKNTR.Menu(button, tearoff=0,
-                postcommand=self.windowMenuInit)
+                                 postcommand=self.windowMenuInit)
         button.menu.add_command(label="New...", command=self.createNewWindow)
         # need to add separator here because menu.delete always
         # deletes at least one item
@@ -601,14 +593,14 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         # Add radio buttons for windows
         for i in range(len(winList)):
             menu.add_radiobutton(label=winList[i], value=winList[i],
-                    variable=winVar)
+                                 variable=winVar)
 
     def createNewWindow(self):
 
         import newWindowHack  # Fixes lockup in askstring() with Tk8.4
         newname = tkSimpleDialog.askstring("New Graphics Window",
-                "Name of new graphics window",
-                initialvalue=self.manager.getNewWindowName())
+                                           "Name of new graphics window",
+                                           initialvalue=self.manager.getNewWindowName())
         if newname is not None:
             self.manager.window(newname)
 
@@ -622,7 +614,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         return button
 
     def getHelp(self):
-
         """Display window with help on graphics"""
 
         hb = TKNTR.Toplevel(self.top, visual='best')
@@ -632,8 +623,8 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         # Set up the Menu Bar with 'Close' button
         hb.menubar = TKNTR.Frame(hb, relief=TKNTR.RIDGE, borderwidth=0)
         hb.menubar.button = TKNTR.Button(hb.menubar, text="Close",
-                                     relief=TKNTR.RAISED,
-                                     command=hb.destroy)
+                                         relief=TKNTR.RAISED,
+                                         command=hb.destroy)
         hb.menubar.button.pack()
         hb.menubar.pack(side=TKNTR.BOTTOM, padx=5, pady=5)
 
@@ -660,13 +651,11 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     #   implementation)
 
     def activate(self):
-
         """Make this the active window"""
 
         self.gwidget.activate()
 
     def errorMessage(self, text):
-
         """Truncate number of error messages produced in a plot."""
 
         if self._errorMessageCount < self.MAX_ERROR_COUNT:
@@ -677,7 +666,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             self._errorMessageCount = self._errorMessageCount + 1
 
     def flush(self):
-
         """Flush any pending graphics requests"""
 
         try:
@@ -687,10 +675,9 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
             pass
 
     def hasFocus(self):
-
         """Returns true if this window currently has focus"""
-        return  wutil.getTopID(wutil.getFocalWindowID()) == \
-                wutil.getTopID(self.getWindowID())
+        return wutil.getTopID(wutil.getFocalWindowID()) == \
+            wutil.getTopID(self.getWindowID())
 
     def setDrawingColor(self, irafColorIndex):
 
@@ -705,7 +692,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         return self.windowName
 
     def gwdestroy(self):
-
         """Delete this object from the manager window list"""
 
         # if gcur is active, terminate it
@@ -725,7 +711,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     # used by wutil.FocusController
 
     def saveCursorPos(self):
-
         """save current position if window has focus and cursor is
         in window, otherwise do nothing"""
 
@@ -784,7 +769,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     # GkiKernel methods
 
     def clear(self, name=None):
-
         """Clear the plot and start a new page"""
 
         # don't create new plot if current plot is empty
@@ -800,7 +784,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
                 else:
                     name = ""
             self.history.append(
-                    (self.gkibuffer, self.wcs, name, self.getHistory()) )
+                (self.gkibuffer, self.wcs, name, self.getHistory()))
             self.pageVar.set(len(self.history)-1)
             self.bttnVar.set(len(self.history)-1)
             self.StatusLine.write(text=" ")

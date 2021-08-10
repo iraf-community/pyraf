@@ -30,7 +30,7 @@ class SplashScreen(TKNTR.Toplevel):
 
     def __init__(self, master=None, borderwidth=4, relief=TKNTR.RAISED, **kw):
         TKNTR.Toplevel.__init__(self, master, relief=relief,
-            borderwidth=borderwidth, **kw)
+                                borderwidth=borderwidth, **kw)
         if self.master.master != None: # Why?
             self.master.master.withdraw()
         self.master.withdraw()
@@ -103,7 +103,7 @@ class PyrafSplash(SplashScreen):
         iheight = self.img.height()
         height = iheight+10+15*self.nlines
         self.canvas = TKNTR.Canvas(self, width=width, height=height,
-            background=self["background"])
+                                   background=self["background"])
         self.image = self.canvas.create_image(width//2, 5+iheight//2, image=self.img)
         self.text = self.nlines*[None]
         minx = 0
@@ -112,7 +112,7 @@ class PyrafSplash(SplashScreen):
             y = height-(self.nlines-i)*15+8
             tval = self.initialText[i] or ""
             self.text[i] = self.canvas.create_text(width//2, y,
-                text=tval, fill=self.textcolor, font=font)
+                                                   text=tval, fill=self.textcolor, font=font)
             minx = min(minx, self.canvas.bbox(self.text[i])[0])
         if minx<3:
             # expand window and recenter all items

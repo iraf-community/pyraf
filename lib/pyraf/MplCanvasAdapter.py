@@ -42,17 +42,14 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         self.__theGwidget.bind('<Configure>', self.resize_widget, True)
 
     def pack(self, **kw):
-
         """ delegate to the gwidget """
         self.__theGwidget.pack(kw)
 
     def winfo_id(self):
-
         """ delegate to the gwidget """
         self.__theGwidget.winfo_id()
 
     def gwidgetize(self, width, height):
-
         """ This is a one-stop shopping spot to add all the extra attributes
         to the gwidget object it needs to be seen as a "gwidget" in the GKI
         sense. See requirements in GkiInteractiveTkBase. """
@@ -108,7 +105,6 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
 #   def draw(self):  tkagg.FigureCanvasTkAgg.draw(self)
 
     def wrappedRedrawOrResize(self, w=None, h=None):
-
         """Wrap the redraw (or resize) with a deactivate and then re-activate
         of the cursor.  If w or h are provided then we are only resizing."""
 
@@ -139,14 +135,12 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
 
     # tkRedraw() is used as if it belonged to the gwidget's class
     def tkRedraw(self, *dummy):
-
         """ delegate to the gwidget """
         gw = self.__theGwidget
         self.__doIdleRedraw = 1
         gw.after_idle(self.idleRedraw)
 
     def idleRedraw(self):
-
         """Do a redraw, then set buffer so no more happen on this idle cycle"""
         if self.__doIdleRedraw:
             self.__doIdleRedraw = 0
@@ -154,7 +148,6 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
 
     # isSWCursorActive() is used as if it belonged to the gwidget's class
     def isSWCursorActive(self):
-
         """ getter """
         return self.__isSWCursorActive
 
@@ -188,18 +181,15 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
 
     # getSWCursor() is used as if it belonged to the gwidget's class
     def getSWCursor(self):
-
         """ getter """
         return self.__SWCursor
 
     def SWCursorWake(self):
-
         """ Wake cursor only after idle """
         self.__doIdleSWCursor = 1
         self.after_idle(self.idleSWCursorWake)
 
     def idleSWCursorWake(self):
-
         """Do cursor redraw, then reset so no more happen on this idle cycle"""
         if self.__doIdleSWCursor:
             self.__doIdleSWCursor = 0
@@ -211,7 +201,6 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
             self.__SWCursor.draw()
 
     def moveCursor(self, event):
-
         """Call back for mouse motion events"""
         # Kludge to handle the fact that MacOS X (X11) doesn't remember
         # software driven moves, the first move will just move nothing
@@ -235,16 +224,14 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
     def moveCursorTo(self, x, y, SWmove=0):
 
         self.__SWCursor.moveTo(float(x)/self.__theGwidget.width,
-                              float(y)/self.__theGwidget.height,
-                              SWmove)
+                               float(y)/self.__theGwidget.height,
+                               SWmove)
 
     def activate(self):
-
         """Not really needed for Tkplot widgets"""
         pass
 
     def tkExpose(self, *dummy):
-
         """Redraw the widget upon the tkExpose event.
         Make it active, update tk events, call redraw procedure."""
         if self.ignoreNextRedraw:

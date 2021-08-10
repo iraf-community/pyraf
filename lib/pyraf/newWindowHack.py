@@ -66,7 +66,6 @@ def __init__(self, parent, title = None):
 tkSimpleDialog.Dialog.__init__ = __init__
 
 
-
 """
 Here are some more notes from my "investigation":
 

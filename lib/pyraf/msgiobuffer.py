@@ -18,7 +18,6 @@ class MsgIOBuffer(Frame):
 
     def __init__(self, parent, width = 100, viewHeight = None,
                  text = ""):
-
         """Constructor for the MsgIOBuffer class"""
 
         Frame.__init__(self)
@@ -134,9 +133,7 @@ class MsgIOBuffer(Frame):
         # View is to show the information just moved into the message area
         self.msgIO.canvas.yview_moveto(1)
 
-
     def updateIO(self, text = ""):
-
         """Method to update the I/O portion of the scrolling canvas"""
 
         # Move the current contents of the I/O frame to the message box
@@ -148,9 +145,7 @@ class MsgIOBuffer(Frame):
         # Now reconfigure the I/O frame
         self.msgIO.canvas.f.iomb.label.configure(text = text)
 
-
     def readline(self):
-
         """Method to set focus to the Entry widget and XXX"""
 
         self.__enableEntry()
@@ -160,9 +155,7 @@ class MsgIOBuffer(Frame):
         # Important to have the "\n" on the returned value
         return (self.entryValue + "\n")
 
-
     def __getEntryValue(self, event = None):
-
         """Private method to obtain any value entered in the Entry"""
 
         self.entryValue = self.entrySetting.get()
@@ -178,9 +171,7 @@ class MsgIOBuffer(Frame):
         if self.lastFocus:
             self.lastFocus.focus_set()
 
-
     def __enableEntry(self):
-
         """Private method to put the Entry into a normal state for input."""
 
         # Input is requested, so enable the entry box
@@ -192,9 +183,7 @@ class MsgIOBuffer(Frame):
         self.msgIO.canvas.f.iomb.entry.configure(state = NORMAL)
         self.msgIO.canvas.f.iomb.entry.focus_set()
 
-
     def __updateMsg(self, text = ""):
-
         """Private method to update the message box of the scrolling canvas."""
 
         # Ensure there is a new line

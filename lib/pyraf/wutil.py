@@ -127,8 +127,8 @@ except ImportError:
             magicConstant = 1074275912
     else:
         raise ImportError(
-                "wutil.py: Needs definition of TIOCGWINSZ constant for platform %s"
-                % sys.platform)
+            "wutil.py: Needs definition of TIOCGWINSZ constant for platform %s"
+            % sys.platform)
 
 
 def getScreenDepth():
@@ -138,7 +138,6 @@ def getScreenDepth():
 topIDmap = {}
 
 def getTopID(WindowID):
-
     """Find top level windows ID, parent of given window.
     If window is already top (or not implemented), it returns its own ID.
     If the input Id represents the root window then it will just
@@ -187,7 +186,6 @@ def isViewable(WindowID):
         return 1
 
 def getTermWindowSize():
-
     """return a tuple containing the y,x (rows,cols) size of the terminal window
     in characters"""
 
@@ -328,7 +326,6 @@ class TerminalFocusEntity(FocusEntity):
         self.windowID = id
 
     def getWindowSize(self):
-
         """return a tuple containing the x,y size of the terminal window
         in characters"""
 
@@ -391,7 +388,6 @@ class FocusController:
             self.focusStack[-1].forceFocus()
 
     def setCurrent(self, force=0):
-
         """This is to be used in cases where focus has been lost to
         a window not part of this scheme (dialog boxes for example)
         and it is desired to return focus to the entity currently considered
@@ -407,7 +403,6 @@ class FocusController:
             self.setCurrent()
 
     def getCurrentFocusEntity(self):
-
         """Return the focus entity that currently has focus.
         Return None if focus is not in the focus family"""
         if not self.hasGraphics:
@@ -428,7 +423,6 @@ class FocusController:
                 focusEntity.saveCursorPos()
 
     def setFocusTo(self,focusTarget,always=0):
-
         """focusTarget can be a string or a FocusEntity. It is possible to
         give a FocusEntity that is not in focusEntities (so it isn't
         considered part of the focus family, but is part of the restore
@@ -456,14 +450,12 @@ class FocusController:
             next.forceFocus()
 
     def getFocusEntity(self, FEName):
-
         """See if named Focus Entity is currently registered. Return it
         if it exists, None otherwise"""
 
         return self.focusEntities.get(FEName)
 
     def focusInFamily(self):
-
         """Determine if current focus is within the pyraf family
         (as defined by self.focusEntities)"""
         if not self.hasGraphics:
@@ -500,9 +492,9 @@ def dumpspecs(outstream = None, skip_volatiles = False):
 
     pyrver = 'unknown'
     try:
-       from pyraf import __version__ as pyrver
+        from pyraf import __version__ as pyrver
     except:
-       pass
+        pass
 
     out = "python exec = "+str(sys.executable)
     if skip_volatiles:
@@ -583,7 +575,6 @@ def dumpspecs(outstream = None, skip_volatiles = False):
         outstream.write(out+'\n')
     else:
         print(out)
-
 
 
 # Finally, do we have access to a graphics display?

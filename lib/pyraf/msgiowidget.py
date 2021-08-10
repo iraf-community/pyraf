@@ -57,13 +57,13 @@ class MsgIOWidget(TKNTR.Frame):
                                           padx=px, pady=py,
                                           text=btxt, indicatoron=0,
                                           state = TKNTR.DISABLED)
-        self._expBttn.pack(side=TKNTR.LEFT, padx=3)#, ipadx=0)
+        self._expBttn.pack(side=TKNTR.LEFT, padx=3)  # , ipadx=0)
 
         # Overlay a label on the frame
         self._msgLabelVar = TKNTR.StringVar()
         self._msgLabelVar.set(text)
         self._msgLabelMaxWidth = 65 # 70 works but causes plot redraws when
-                                    # the history panel is opened/closed
+        # the history panel is opened/closed
         self._msgLabel = TKNTR.Label(self._nowFrame,
                                      textvariable=self._msgLabelVar,
                                      anchor=TKNTR.W,
@@ -128,7 +128,7 @@ class MsgIOWidget(TKNTR.Frame):
             if self._expBttnHasTxt:
                 self._expBttn.configure(text='+')
         else:   # need to expand
-            self._histFrame.pack(side=TKNTR.TOP, fill=TKNTR.BOTH, expand=True) #.X)
+            self._histFrame.pack(side=TKNTR.TOP, fill=TKNTR.BOTH, expand=True)  # .X)
             if self._expBttnHasTxt:
                 self._expBttn.configure(text='-')
             if self._hasHistory:
@@ -142,8 +142,8 @@ class MsgIOWidget(TKNTR.Frame):
         self._msgLabelVar.set(text)
         # this is a little debugging "easter egg"
         if text.find('long debug line') >=0:
-           self.updateIO('and now we are going to talk and talk for a while'+
-                         ' about nothing at all because we want a lot of text')
+            self.updateIO('and now we are going to talk and talk for a while'+
+                          ' about nothing at all because we want a lot of text')
         self._nowFrame.update_idletasks()
 
     def readline(self):

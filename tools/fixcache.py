@@ -12,7 +12,7 @@ def fixit(trylist, verbose=0):
         if os.path.exists(cachedir):
             break
     else:
-        raise OSError("clcache directory not found (tried %s)" %        (trylist,))
+        raise OSError("clcache directory not found (tried %s)" % (trylist,))
     flist = os.listdir(cachedir)
     fcount = 0
     rcount = 0

@@ -20,7 +20,7 @@ class EclState(object):
     2. A mutable counter for tracking iferr blocking.
     """
     def __init__(self, linemap):
-        self._value =  0
+        self._value = 0
         self._linemap = linemap
 
     def __iadd__(self, value):
@@ -132,11 +132,11 @@ class EclBase:
         self.__dict__['DOLLARerrmsg'] = ""
         self.__dict__['DOLLARerrtask'] = ""
         self.__dict__['DOLLARerr_dzvalue'] = 1
-        self.__dict__['_ecl_pseudos'] = [ 'DOLLARerrno',
-                                          'DOLLARerrmsg',
-                                          'DOLLARerrtask',
-                                          'DOLLARerr_dzvalue'
-                                          ]
+        self.__dict__['_ecl_pseudos'] = ['DOLLARerrno',
+                                         'DOLLARerrmsg',
+                                         'DOLLARerrtask',
+                                         'DOLLARerr_dzvalue'
+                                         ]
 
     def is_pseudo(self, name):
         """Returns True iff 'name' is a pseudo variable or begins with _ecl"""
@@ -168,7 +168,7 @@ class EclBase:
 
         if Verbose>1:
             print("run %s (%s: %s)" % (self._name,
-                    self.__class__.__name__, self._fullpath))
+                                       self.__class__.__name__, self._fullpath))
             if self._runningParList:
                 self._runningParList.lParam()
 
@@ -363,7 +363,7 @@ class EclTraceback(EclBase):
         except:
             cl_code = "<source code not available>"
         if hasattr(e, "_ecl_suppress_first_trace") and \
-               e._ecl_suppress_first_trace:
+                e._ecl_suppress_first_trace:
             del e._ecl_suppress_first_trace
         else:
             self._ecl_trace("  ", repr(cl_code))
@@ -377,7 +377,6 @@ class EclTraceback(EclBase):
                 self._ecl_trace("      called as:", repr(parent_code))
             except:
                 pass
-
 
 
 ## The following classes exist as "ECL enabled" drop in replacements for the original
@@ -444,4 +443,3 @@ IrafPkg = EclPkg
 
 def mutateCLTask2Pkg(o, loaded=1,  klass=EclPkg):
     return iraftask.mutateCLTask2Pkg(o, loaded=loaded, klass=klass)
-

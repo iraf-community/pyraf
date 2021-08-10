@@ -50,18 +50,18 @@ lab2char[r"\e"] = "\033"
 
 # commands that take a taskname as argument
 taskArgDict = minmatch.MinMatchDict({
-                                'unlearn': 1,
-                                'eparam': 1,
-                                'lparam': 1,
-                                'dparam': 1,
-                                'update': 1,
-                                'help': 1,
-                                'prcache': 1,
-                                'flprcache': 1,
-                                })
+    'unlearn': 1,
+    'eparam': 1,
+    'lparam': 1,
+    'dparam': 1,
+    'update': 1,
+    'help': 1,
+    'prcache': 1,
+    'flprcache': 1,
+})
 
 # commands that take a package name as argument
-pkgArgDict = { '?': 1, }
+pkgArgDict = {'?': 1, }
 
 completer = None
 
@@ -154,8 +154,8 @@ class IrafCompleter(Completer):
         matches = []
         n = len(text)
         for list in [keyword.kwlist,
-                                 __builtin__.__dict__.keys(),
-                                 __main__.__dict__.keys()]:
+                     __builtin__.__dict__.keys(),
+                     __main__.__dict__.keys()]:
             for word in list:
                 if word[:n] == text:
                     matches.append(word)
@@ -341,4 +341,3 @@ def activate(c="\t"):
 
 def deactivate():
     completer.deactivate()
-

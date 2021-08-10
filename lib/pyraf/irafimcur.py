@@ -50,7 +50,6 @@ def _getDevice(displayname=None):
     raise IrafError("Unable to open image display `%s'\n" % displayname)
 
 def imcur(displayname=None):
-
     """Read image cursor and return string expected for IRAF's imcur parameter
 
     If key pressed is colon, also prompts for additional string input.

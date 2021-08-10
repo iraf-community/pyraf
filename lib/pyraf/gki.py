@@ -137,7 +137,7 @@ opcode2name.update({
     GKI_ESCAPE: 'gki_escape',
     GKI_SETWCS: 'gki_setwcs',
     GKI_GETWCS: 'gki_getwcs',
-    })
+})
 
 # control channel opcodes
 
@@ -149,7 +149,7 @@ control2name.update({
     CONTROL_CLEARWS: 'control_clearws',
     CONTROL_SETWCS: 'control_setwcs',
     CONTROL_GETWCS: 'control_getwcs',
-    })
+})
 
 standardWarning = """
 The graphics kernel for IRAF tasks has just received a metacode
@@ -157,7 +157,7 @@ instruction (%s) it never expected to see.  Please inform the
 STSDAS group of this occurrence."""
 
 standardNotImplemented = \
-"""This IRAF task requires a graphics kernel facility not implemented
+    """This IRAF task requires a graphics kernel facility not implemented
 in the Pyraf graphics kernel (%s)."""
 
 class EditHistory:
@@ -216,12 +216,12 @@ def acopy(a):
 
 # GKI opcodes that clear the buffer
 _clearCodes = [
-        GKI_EOF,
-        GKI_OPENWS,
-        GKI_REACTIVATEWS,
-        GKI_CLEARWS,
-        GKI_CANCEL,
-        ]
+    GKI_EOF,
+    GKI_OPENWS,
+    GKI_REACTIVATEWS,
+    GKI_CLEARWS,
+    GKI_CANCEL,
+]
 
 #**********************************************************************
 
@@ -239,7 +239,6 @@ class GkiBuffer:
         self.redoBuffer = []
 
     def init(self, metacode=None):
-
         """Initialize to empty buffer or to metacode"""
 
         if metacode is not None:
@@ -254,7 +253,6 @@ class GkiBuffer:
         self.prepareToRedraw()
 
     def prepareToRedraw(self):
-
         """Reset pointers in preparation for redraw"""
 
         # nextTranslate is pointer to next element in buffer to be
@@ -268,7 +266,6 @@ class GkiBuffer:
         self.lastOpcode = None
 
     def reset(self, last=0):
-
         """Discard everything up to end pointer
 
         End is lastTranslate if last is true, else nextTranslate
@@ -291,7 +288,6 @@ class GkiBuffer:
             self.init()
 
     def split(self):
-
         """Split this buffer at nextTranslate and return a new buffer
         object with the rest of the metacode.  lastOpcode may be
         removed if it triggered the buffer split (so we can append
@@ -313,7 +309,6 @@ class GkiBuffer:
         return newbuffer
 
     def append(self, metacode, isUndoable=0):
-
         """Append metacode to buffer"""
 
         if self.bufferSize < (self.bufferEnd + len(metacode)):
@@ -330,13 +325,11 @@ class GkiBuffer:
         self.editHistory.add(len(metacode), isUndoable)
 
     def isUndoable(self):
-
         """Returns true if there is anything to undo on this plot"""
 
         return (self.editHistory.NEdits() > 0)
 
     def undoN(self, nUndo=1):
-
         """Undo last nUndo edits and replot.  Returns true if plot changed."""
 
         changed = 0
@@ -347,7 +340,7 @@ class GkiBuffer:
             # add this chunk to end of buffer (use copy, not view)
             self.redoBuffer.append(
                 acopy(self.buffer[self.bufferEnd:self.bufferEnd+size])
-                )
+            )
             nUndo = nUndo-1
             changed = 1
         if changed:
@@ -360,13 +353,11 @@ class GkiBuffer:
         return changed
 
     def isRedoable(self):
-
         """Returns true if there is anything to redo on this plot"""
 
         return len(self.redoBuffer)>0
 
     def redoN(self, nRedo=1):
-
         """Redo last nRedo edits and replot.  Returns true if plot changed."""
 
         changed = 0
@@ -378,13 +369,11 @@ class GkiBuffer:
         return changed
 
     def get(self):
-
         """Return buffer contents (as numpy array, even if empty)"""
 
         return self.buffer[0:self.bufferEnd]
 
     def delget(self, last=0):
-
         """Return buffer up to end pointer, deleting those elements
 
         End is lastTranslate if last is true, else nextTranslate
@@ -399,7 +388,6 @@ class GkiBuffer:
         return b
 
     def getNextCode(self):
-
         """Read next opcode and argument from buffer, returning a tuple
         with (opcode, arg).  Skips no-op codes and illegal codes.
         Returns (None,None) on end of buffer or when opcode is truncated."""
@@ -432,7 +420,7 @@ class GkiBuffer:
                 ip = ip + arglen
                 if ((opcode < 0) or
                     (opcode > GKI_MAX_OP_CODE) or
-                    (opcode in GKI_ILLEGAL_LIST)):
+                        (opcode in GKI_ILLEGAL_LIST)):
                     print("WARNING: Illegal graphics opcode = ", opcode)
                 else:
                     # normal return
@@ -519,11 +507,10 @@ class GkiKernel:
         return self.gkiPreferTtyIpc
 
     def createFunctionTables(self):
-
         """Use Python introspection to create function tables"""
 
-        self.functionTable =  [None]*(GKI_MAX_OP_CODE+1)
-        self.controlFunctionTable =  [None]*(GKI_MAX_OP_CODE+1)
+        self.functionTable = [None]*(GKI_MAX_OP_CODE+1)
+        self.controlFunctionTable = [None]*(GKI_MAX_OP_CODE+1)
 
         # to protect against typos, make list of all gki_ & control_ methods
         gkidict, classlist = {}, [self.__class__]
@@ -550,8 +537,8 @@ class GkiKernel:
                 badlist.append(name)
         if badlist:
             raise SyntaxError("Bug: error in definition of class %s\n"
-                "Special method name is incorrect: %s" %
-                (self.__class__.__name__, " ".join(badlist)))
+                              "Special method name is incorrect: %s" %
+                              (self.__class__.__name__, " ".join(badlist)))
 
     def control(self, gkiMetacode):
         gkiTranslate(gkiMetacode, self.controlFunctionTable)
@@ -626,7 +613,7 @@ class GkiKernel:
     def redrawOriginal(self):
 
         buffer = self.getBuffer()
-        nUndo =  buffer.editHistory.NEdits()
+        nUndo = buffer.editHistory.NEdits()
         if nUndo:
             self.undoN(nUndo)
         else:
@@ -668,7 +655,7 @@ class GkiKernel:
             if self.preferTtyIpc() and self.stdin and self.stdin.isatty():
                 return self.stdin
             elif (not self.stdin) or \
-              (default and not default.isatty()):
+                    (default and not default.isatty()):
                 return default
         except AttributeError:
             pass # OK if isatty is missing
@@ -681,7 +668,7 @@ class GkiKernel:
             if self.preferTtyIpc() and self.stdout and self.stdout.isatty():
                 return self.stdout
             elif (not self.stdout) or \
-              (default and not default.isatty()):
+                    (default and not default.isatty()):
                 return default
         except AttributeError:
             pass # OK if isatty is missing
@@ -694,7 +681,7 @@ class GkiKernel:
             if self.preferTtyIpc() and self.stderr and self.stderr.isatty():
                 return self.stderr
             elif (not self.stderr) or \
-              (default and not default.isatty()):
+                    (default and not default.isatty()):
                 return default
         except AttributeError:
             pass # OK if isatty is missing
@@ -702,7 +689,6 @@ class GkiKernel:
 
 #**********************************************************************
 def gkiTranslate(metacode, functionTable):
-
     """General Function that can be used for decoding and interpreting
     the GKI metacode stream. FunctionTable is a 28 element list containing
     the functions to invoke for each opcode encountered. This table should
@@ -747,7 +733,6 @@ class DrawBuffer:
         return self.bufferEnd
 
     def reset(self):
-
         """Discard everything up to nextTranslate pointer"""
 
         newEnd = self.bufferEnd - self.nextTranslate
@@ -761,7 +746,6 @@ class DrawBuffer:
         self.nextTranslate = 0
 
     def append(self, funcargs):
-
         """Append a single (function,args) tuple to the list"""
 
         if self.bufferSize < self.bufferEnd + 1:
@@ -775,7 +759,6 @@ class DrawBuffer:
         self.bufferEnd = self.bufferEnd + 1
 
     def get(self):
-
         """Get current contents of buffer
 
         Note that this returns a view into the numpy array,
@@ -788,7 +771,6 @@ class DrawBuffer:
             return []
 
     def getNewCalls(self):
-
         """Return tuples (function, args) with all new calls in buffer"""
 
         ip = self.nextTranslate
@@ -975,7 +957,6 @@ class GkiController(GkiProxy):
         self.openKernel(device)
 
     def openKernel(self, device=None):
-
         """Open kernel specified by device or by current value of stdgraph"""
         device = self.getDevice(device)
         graphcap = getGraphcap()
@@ -1058,11 +1039,11 @@ class GkiNull(GkiKernel):
 
     def control_reactivatews(self, arg):
         raise IrafError("Attempt to access graphics when "
-            "it isn't available")
+                        "it isn't available")
 
     def control_getwcs(self, arg):
         raise IrafError("Attempt to access graphics when "
-            "it isn't available")
+                        "it isn't available")
 
     def translate(self, gkiMetacode, redraw=0):
         pass
@@ -1286,7 +1267,7 @@ class IrafGkiConfig:
 
         # maximum unit font size in pixels (set to None if not relevant)
         self.maxUnitHFontSize = \
-                self.minUnitHFontSize * self.fontMax2MinSizeRatio
+            self.minUnitHFontSize * self.fontMax2MinSizeRatio
         self.maxUnitVFontSize = self.maxUnitHFontSize * self.fontAspect
 
         # offset constants to match iraf's notion of where 0,0 is relative
@@ -1299,23 +1280,23 @@ class IrafGkiConfig:
 
         # List of rgb tuples (0.0-1.0 range) for the default IRAF set of colors
         self.defaultColors = [
-                (0., 0., 0.),  # black
-                (1., 1., 1.),  # white
-                (1., 0., 0.),  # red
-                (0., 1., 0.),  # green
-                (0., 0., 1.),  # blue
-                (0., 1., 1.),  # cyan
-                (1., 1., 0.),  # yellow
-                (1., 0., 1.),  # magenta
-                (1., 1., 1.),  # white
-                # (0.32,0.32,0.32),  # gray32
-                (0.18, 0.31, 0.31),  # IRAF blue-green
-                (1., 1., 1.),  # white
-                (1., 1., 1.),  # white
-                (1., 1., 1.),  # white
-                (1., 1., 1.),  # white
-                (1., 1., 1.),  # white
-                (1., 1., 1.),  # white
+            (0., 0., 0.),  # black
+            (1., 1., 1.),  # white
+            (1., 0., 0.),  # red
+            (0., 1., 0.),  # green
+            (0., 0., 1.),  # blue
+            (0., 1., 1.),  # cyan
+            (1., 1., 0.),  # yellow
+            (1., 0., 1.),  # magenta
+            (1., 1., 1.),  # white
+            # (0.32,0.32,0.32),  # gray32
+            (0.18, 0.31, 0.31),  # IRAF blue-green
+            (1., 1., 1.),  # white
+            (1., 1., 1.),  # white
+            (1., 1., 1.),  # white
+            (1., 1., 1.),  # white
+            (1., 1., 1.),  # white
+            (1., 1., 1.),  # white
         ]
         self.cursorColor = 2  # red
         if len(self.defaultColors) != nIrafColors:
@@ -1334,11 +1315,10 @@ class IrafGkiConfig:
     def setCursorColor(self, color):
         if not 0 <= color < len(self.defaultColors):
             raise ValueError("Bad cursor color (%d) should be >=0 and <%d" %
-                (color, len(self.defaultColors)-1))
+                             (color, len(self.defaultColors)-1))
         self.cursorColor = color
 
     def fontSize(self, gwidget):
-
         """Determine the unit font size for the given setup in pixels.
         The unit size refers to the horizonal size of fixed width characters
         (allow for proportionally sized fonts later?).
@@ -1503,7 +1483,6 @@ class TextAttributes:
         # Place to keep font size and aspect for current window dimensions
 
     def setFontSize(self, win):
-
         """Set the unit font size for a given window using the iraf
         configuration parameters contained in an attribute class"""
 
@@ -1595,9 +1574,9 @@ def _resetGraphicsKernel():
     global kernel
     import gwm
     if kernel:
-       kernel.clearReturnData()
-       kernel.flush()
-       gwm.delete()
-       kernel = None
+        kernel.clearReturnData()
+        kernel.flush()
+        gwm.delete()
+        kernel = None
     gwm._resetGraphicsWindowManager()
     kernel = GkiController()

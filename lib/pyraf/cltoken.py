@@ -126,7 +126,7 @@ class Token(compmixin.ComparableMixin):
                 print('Exception', str(e))
                 pass
         raise ValueError("Cannot convert " +
-                self.verboseRepr() + " to int")
+                         self.verboseRepr() + " to int")
 
     def __float__(self):
         if self.type == "FLOAT":
@@ -165,7 +165,7 @@ class Token(compmixin.ComparableMixin):
             except (ValueError, TypeError):
                 pass
         raise ValueError("Cannot convert " +
-                self.verboseRepr() + " to float")
+                         self.verboseRepr() + " to float")
 
     def bool(self):
         #XXX convert INTEGER to bool too?
@@ -185,7 +185,7 @@ class Token(compmixin.ComparableMixin):
             elif keyword == "":
                 return INDEF
         raise ValueError("Cannot convert " +
-                self.verboseRepr() + " to bool")
+                         self.verboseRepr() + " to bool")
 
 def _str2int(value):
     # convert integer string to python int

@@ -63,9 +63,9 @@ def softText(win, x, y, textstr):
         textdir = math.fmod(charUp+270, 360.)
     elif ta.textPath == CHARPATH_LEFT:
         textdir = math.fmod(charUp+90, 360.)
-    elif ta.textPath ==     CHARPATH_UP:
+    elif ta.textPath == CHARPATH_UP:
         textdir = charUp
-    elif ta.textPath ==     CHARPATH_DOWN:
+    elif ta.textPath == CHARPATH_DOWN:
         textdir = math.fmod(charUp+180, 360.)
     # IRAF definition of justification is a bit weird, justification is
     # for the text string relative to the window. So a rotated string will
@@ -79,9 +79,9 @@ def softText(win, x, y, textstr):
     sinv = math.sin((charUp-90.)*deg2rad)
     xpathwin, ypathwin = (cosv*xpath-sinv*ypath, sinv*xpath+cosv*ypath)
     xcharsize = fsize * max(abs(cosv*hsize+sinv*vsize),
-                                            abs(cosv*hsize-sinv*vsize))
+                            abs(cosv*hsize-sinv*vsize))
     ycharsize = fsize * max(abs(-sinv*hsize+cosv*vsize),
-                                            abs(-sinv*hsize-cosv*vsize))
+                            abs(-sinv*hsize-cosv*vsize))
     xoffset, yoffset = (0., 0.)
     xcharoff, ycharoff = (0., 0.)
     if ta.textHorizontalJust == JUSTIFIED_CENTER:
@@ -125,10 +125,10 @@ def softText(win, x, y, textstr):
             vertex = numpy.zeros((len(charstrokes[0][i]), 2), numpy.float64)
             xf = size * charstrokes[0][i]/27. -fsize*hsize/2.
             yf = size * charstrokes[1][i]*fontAspect/27. - fsize*vsize/2.
-            vertex[:, 0]=      cosrot*(xf + nchar*dx) \
-                            - sinrot*(yf + nchar*dy) + xNetOffset + xwin*x
-            vertex[:, 1]=ywin-(sinrot*(xf + nchar*dx) \
-                            + cosrot*(yf + nchar*dy) + yNetOffset + ywin*y)
+            vertex[:, 0]= cosrot*(xf + nchar*dx) \
+                - sinrot*(yf + nchar*dy) + xNetOffset + xwin*x
+            vertex[:, 1]=ywin-(sinrot*(xf + nchar*dx)
+                               + cosrot*(yf + nchar*dy) + yNetOffset + ywin*y)
             gw.create_line(*(tuple(vertex.ravel().astype(numpy.int32))),
                            **options)
         nchar = nchar + 1

@@ -51,7 +51,6 @@ else:
 _default_imtdev = ("unix:/tmp/.IMT%d", "fifo:/dev/imt1i:/dev/imt1o")
 
 def _open(imtdev=None):
-
     """Open connection to the image display server
 
     This is a factory function that returns an instance of the ImageDisplay
@@ -122,7 +121,7 @@ def _open(imtdev=None):
         except ValueError:
             pass
     raise ValueError("Illegal image device specification `%s'"
-                                    % imtdev)
+                     % imtdev)
 
 
 class ImageDisplay:
@@ -143,7 +142,6 @@ class ImageDisplay:
         self._inCursorMode = 0
 
     def readCursor(self,sample=0):
-
         """Read image cursor value for this image display
 
         Return immediately if sample is true, or wait for keystroke
@@ -163,7 +161,6 @@ class ImageDisplay:
         return s.split("\n")[0]
 
     def _writeHeader(self, tid, subunit, thingct, x, y, z, t):
-
         """Write request to image display"""
 
         a = numpy.array([tid, thingct, subunit, 0, x, y, z, t], numpy.int16)
@@ -174,7 +171,6 @@ class ImageDisplay:
         self._write(ndarr2bytes(a))
 
     def close(self, os_close=os.close):
-
         """Close image display connection"""
 
         try:
@@ -249,7 +245,6 @@ class UnixImageDisplay(ImageDisplay):
             raise IOError("Cannot open image display")
 
     def close(self):
-
         """Close image display connection"""
 
         self._socket.close()
@@ -281,14 +276,12 @@ class ImageDisplayProxy(ImageDisplay):
             self.open()
 
     def open(self, imtdev=None):
-
         """Open image display connection, closing any active connection"""
 
         self.close()
         self._display = _open(imtdev or self.imtdev)
 
     def close(self):
-
         """Close active image display connection"""
 
         if self._display:
@@ -296,7 +289,6 @@ class ImageDisplayProxy(ImageDisplay):
             self._display = None
 
     def readCursor(self,sample=0):
-
         """Read image cursor value for the active image display
 
         Return immediately if sample is true, or wait for keystroke

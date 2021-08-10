@@ -39,8 +39,8 @@ class CmdConsole(code.InteractiveConsole):
     """
 
     def __init__(self, locals=None, filename="<console>",
-                    cmddict=None, prompt1=">>> ", prompt2="... ",
-                    cmdchars=("a-zA-Z_.", "0-9")):
+                 cmddict=None, prompt1=">>> ", prompt2="... ",
+                 cmdchars=("a-zA-Z_.", "0-9")):
         code.InteractiveConsole.__init__(self, locals=locals, filename=filename)
         self.ps1 = prompt1
         self.ps2 = prompt2
@@ -50,9 +50,9 @@ class CmdConsole(code.InteractiveConsole):
         # characters in the command name
         # create pattern that puts command in group 'cmd' and matches
         # optional leading and trailing whitespace
-        self.recmd = re.compile( "[ \t]*(?P<cmd>" +
-                "[" + cmdchars[0] + "][" + cmdchars[0] + cmdchars[1] + "]*" +
-                ")[ \t]*")
+        self.recmd = re.compile("[ \t]*(?P<cmd>" +
+                                "[" + cmdchars[0] + "][" + cmdchars[0] + cmdchars[1] + "]*" +
+                                ")[ \t]*")
         # history is a list of lines entered by user (allocated in blocks)
         self.history = 100*[None]
         self.nhistory = 0
@@ -77,8 +77,8 @@ class CmdConsole(code.InteractiveConsole):
         Also is modified so it does not catch EOFErrors."""
         if banner is None:
             self.write("Python %s on %s\n%s\n(%s)\n" %
-                                    (sys.version, sys.platform, sys.copyright,
-                                    self.__class__.__name__))
+                       (sys.version, sys.platform, sys.copyright,
+                        self.__class__.__name__))
         else:
             self.write("%s\n" % str(banner))
         more = 0
@@ -119,7 +119,7 @@ class CmdConsole(code.InteractiveConsole):
                     self.write("\nToo many EOFs, exiting now\n")
                     self.do_exit()
                 self.write("\nUse .exit to exit\n"
-                        ".help describes executive commands\n")
+                           ".help describes executive commands\n")
                 self.resetbuffer()
                 more = 0
             except KeyboardInterrupt:
@@ -154,24 +154,24 @@ class CmdConsole(code.InteractiveConsole):
 # put the executive commands in a minimum match dictionary
 
 _cmdDict = minmatch.QuietMinMatchDict({
-                                '.help': 'do_help',
-                                '.clemulate': 'do_clemulate',
-                                '.logfile': 'do_logfile',
-                                '.exit': 'do_exit',
-#                               'lo': 'do_exit',
-                                '.fulltraceback': 'do_fulltraceback',
-                                '.complete': 'do_complete',
-                                '.debug': 'do_debug',
-                                })
+    '.help': 'do_help',
+    '.clemulate': 'do_clemulate',
+    '.logfile': 'do_logfile',
+    '.exit': 'do_exit',
+    #                               'lo': 'do_exit',
+    '.fulltraceback': 'do_fulltraceback',
+    '.complete': 'do_complete',
+    '.debug': 'do_debug',
+})
 
 class PyCmdLine(CmdConsole):
 
     """Simple Python interpreter with executive commands"""
 
     def __init__(self, locals=None, logfile=None, complete=1, debug=0,
-                    clemulate=1):
+                 clemulate=1):
         CmdConsole.__init__(self, locals=locals,
-                cmddict=_cmdDict, prompt1="--> ", prompt2="... ")
+                            cmddict=_cmdDict, prompt1="--> ", prompt2="... ")
         self.reword = re.compile('[a-z]*')
         self.complete = complete
         self.debug = debug
@@ -250,7 +250,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         # write out history - ignore write errors
         hfile = os.getenv('HOME', '.')+os.sep+'.pyraf_history'
         hlen = 1000 # High default.  Note this setting itself may cause
-                    # confusion between this history and the IRAF history cmd.
+        # confusion between this history and the IRAF history cmd.
         try:
             hlen = int(iraf.envget('histfilesize'))
         except (KeyError, ValueError):
@@ -293,7 +293,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                     del args[0]
             if args:
                 self.write('Ignoring unknown options: %s\n' %
-                        " ".join(args))
+                           " ".join(args))
             try:
                 oldlogfile = self.logfile
                 self.logfile = open(filename, oflag)
@@ -372,7 +372,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             # if CL emulation is turned off then just return
             return line
         elif keyword.iskeyword(cmd) or \
-          (cmd in os.__builtins__ and cmd not in ['type', 'dir', 'help', 'set']):
+                (cmd in os.__builtins__ and cmd not in ['type', 'dir', 'help', 'set']):
             # don't mess with Python keywords or built-in functions
             # except allow 'type', 'dir, 'help' to be used in simple syntax
             return line
@@ -442,7 +442,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         return ff[0] in self.locals
 
     def start(self, banner="Python/CL command line wrapper\n"
-                    "  .help describes executive commands"):
+              "  .help describes executive commands"):
         """Start interpreter"""
         self.interact(banner=banner)
 

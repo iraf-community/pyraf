@@ -58,9 +58,9 @@ cursorColor = 1
 cursorTrueColor = (1.0, 0.0, 0.0)
 # visuals that use true colors
 truevis = {
-          'truecolor': 1,
-          'directcolor': 1,
-          }
+    'truecolor': 1,
+    'directcolor': 1,
+}
 
 
 def hideTkCursor(theCanvas):
@@ -128,9 +128,9 @@ class PyrafCanvas(Canvas):
 
     def immediateRedraw(self):
 
-            # need to indicate cursor is not visible before redraw, since
-            # cursor sleeps are now issued by redraw. The presumption is that
-            # redraw will wipe out cursor visibility, so we set it first
+        # need to indicate cursor is not visible before redraw, since
+        # cursor sleeps are now issued by redraw. The presumption is that
+        # redraw will wipe out cursor visibility, so we set it first
         if self._isSWCursorActive:
             # deactivate cursor for duration of redraw
             # otherwise it slows the redraw to a glacial pace
@@ -249,7 +249,6 @@ class FullWindowCursor:
     # Perhaps this should inherit from an abstract Cursor class eventually
 
     def __init__(self, x, y, window):
-
         """Display the cursor for the first time.  The passed in window
            also needs to act as a Tk Canvas object."""
 
@@ -259,9 +258,9 @@ class FullWindowCursor:
         self.__window = window
         self.__isVisible = 0
         self.isLastSWmove = 1 # indicates if last position driven by
-                              # sofware command or by mouse events.
-                              # Kludgy, and used by modules using the
-                              # cursor position.
+        # sofware command or by mouse events.
+        # Kludgy, and used by modules using the
+        # cursor position.
         self.__tkHorLine = None
         self.__tkVerLine = None
         self.draw()
@@ -288,10 +287,10 @@ class FullWindowCursor:
     def _tkEraseCursor(self):
 
         if self.__tkHorLine != None:
-            self.__window.delete(self.__tkHorLine);
+            self.__window.delete(self.__tkHorLine)
             self.__tkHorLine = None
         if self.__tkVerLine != None:
-            self.__window.delete(self.__tkVerLine);
+            self.__window.delete(self.__tkVerLine)
             self.__tkVerLine = None
 
     def isVisible(self): return self.__isVisible

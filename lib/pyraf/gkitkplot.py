@@ -22,7 +22,6 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
     """Tkplot graphics kernel implementation"""
 
     def makeGWidget(self, width=600, height=420):
-
         """Make the graphics widget"""
 
         self.gwidget = Ptkplot.PyrafCanvas(self.top,
@@ -34,13 +33,11 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.gRedraw()
 
     def gcur(self):
-
         """Return cursor value after key is typed"""
 
         return self._gcursorObject()
 
     def gcurTerminate(self, msg='Window destroyed by user'):
-
         """Terminate active gcur and set EOF flag"""
 
         if self._gcursorObject.active:
@@ -50,14 +47,12 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
             self.top.quit()
 
     def taskDone(self, name):
-
         """Called when a task is finished"""
 
         # Hack to prevent the double redraw after first Tk plot
         self.doubleRedrawHack()
 
     def update(self):
-
         """Update for all Tk events
 
         This should not be called unless necessary since it can
@@ -85,37 +80,31 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
             gwidget.firstPlotDone = 1
 
     def prepareToRedraw(self):
-
         """Clear glBuffer in preparation for complete redraw from metacode"""
 
         self.drawBuffer.reset()
 
     def getHistory(self):
-
         """Additional information for page history"""
 
         return self.drawBuffer
 
     def setHistory(self, info):
-
         """Restore using additional information from page history"""
 
         self.drawBuffer = info
 
     def startNewPage(self):
-
         """Setup for new page"""
 
         self.drawBuffer = gki.DrawBuffer()
 
     def clearPage(self):
-
         """Clear buffer for new page"""
 
         self.drawBuffer.reset()
 
     def isPageBlank(self):
-
         """Returns true if this page is blank"""
 
         return len(self.drawBuffer) == 0
@@ -124,7 +113,6 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
     # GkiKernel implementation
 
     def incrPlot(self):
-
         """Plot any new commands in the buffer"""
 
         gwidget = self.gwidget
@@ -143,7 +131,6 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
     # special methods that go into the function tables
 
     def _tkplotAppend(self, tkplot_function, *args):
-
         """append a 2-tuple (tkplot_function, args) to the glBuffer"""
 
         self.drawBuffer.append((tkplot_function, args))
@@ -234,8 +221,8 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         textQuality = arg[7]
         textColor = arg[8]
         self._tkplotAppend(self.tkplot_txset, charUp, charSize, charSpace, textPath,
-                textHorizontalJust, textVerticalJust, textFont,
-                textQuality, textColor)
+                           textHorizontalJust, textVerticalJust, textFont,
+                           textQuality, textColor)
 
     def gki_faset(self, arg):
 
@@ -261,7 +248,6 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
             self.gwidget.tkRedraw()
 
     def redraw(self, o=None):
-
         """Redraw for expose or resize events
 
         This method generally should not be called directly -- call
@@ -321,7 +307,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
 
         # IRAF only implements points for poly marker, that makes it simple
         ma = self.markerAttributes   # Marker attributes don't appear
-                                     # to be set when this mode is used though.
+        # to be set when this mode is used though.
         npts = len(vertices)//2
         color = self.colorManager.setDrawingColor(ma.color)
         gw = self.gwidget
@@ -364,7 +350,6 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         else: # solid or clear cases
             gw.create_polygon(*coords, **options)
 
-
     def tkplot_setcursor(self, cursornumber, x, y):
 
         gwidget = self.gwidget
@@ -374,7 +359,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         swCurObj = gwidget.getSWCursor()
         if swCurObj: swCurObj.moveTo(x, y, SWmove=1)
         # wutil.MoveCursorTo uses 0,0 <--> upper left, need to convert
-        sx = int(  x   * gwidget.winfo_width())
+        sx = int(x   * gwidget.winfo_width())
         sy = int((1-y) * gwidget.winfo_height())
         rx = gwidget.winfo_rootx()
         ry = gwidget.winfo_rooty()
@@ -390,12 +375,12 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.markerAttributes.set(marktype, marksize, color)
 
     def tkplot_txset(self, charUp, charSize, charSpace, textPath,
-                    textHorizontalJust, textVerticalJust,
-                    textFont, textQuality, textColor):
+                     textHorizontalJust, textVerticalJust,
+                     textFont, textQuality, textColor):
 
         self.textAttributes.set(charUp, charSize, charSpace,
-                textPath, textHorizontalJust, textVerticalJust, textFont,
-                textQuality, textColor)
+                                textPath, textHorizontalJust, textVerticalJust, textFont,
+                                textQuality, textColor)
 
     def tkplot_faset(self, fillstyle, color):
 
@@ -424,12 +409,10 @@ class tkColorManager:
         # call setColors to allocate colors after widget is created
 
     def setColors(self, widget):
-
         """Not needed for Tkplot, a nop"""
         pass
 
     def setCursorColor(self, irafColorIndex=None):
-
         """Set crosshair cursor color to given index
 
         Only has an effect in index color mode."""
@@ -437,7 +420,6 @@ class tkColorManager:
             self.config.setCursorColor(irafColorIndex)
 
     def setDrawingColor(self, irafColorIndex):
-
         """Return the specified iraf color usable by TKNTR"""
         color = self.config.defaultColors[irafColorIndex]
         red = int(255*color[0])

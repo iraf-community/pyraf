@@ -122,9 +122,9 @@ if not _pyrafMain:
     # exception, we ensure that the user sees what really happened.
     #
     # This is the case for "import pyraf"
-    try :
+    try:
         iraf.Init(doprint=0, hush=1)
-    except :
+    except:
         iraf = None
         raise
     if _verbosity_ > 0: print("pyraf: initialized IRAF")
@@ -137,7 +137,7 @@ else:
     import getopt
     try:
         optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsney",
-            ["commandwrapper=", "command=", "verbose", "help", "silent", "nosplash", "ipython", "ecl"])
+                                      ["commandwrapper=", "command=", "verbose", "help", "silent", "nosplash", "ipython", "ecl"])
         if len(args) > 1:
             print('Error: more than one savefile argument')
             usage()
@@ -220,12 +220,12 @@ else:
     # exception, we ensure that the user sees what really happened.
     #
     # This is the case for pyraf invoked from the command line.
-    try :
+    try:
         if args:
             iraf.Init(savefile=args[0], **_initkw)
         else:
             iraf.Init(**_initkw)
-    except :
+    except:
         iraf = None
         raise
     del args
@@ -243,12 +243,12 @@ help = iraf.help
 # are too low to run IRAF tasks.  Instead of waiting for all of
 # them to send us a help ticket and then telling them to raise
 # the limit, we raise it here.
-try :
+try:
     import resource
-except ImportError :
+except ImportError:
     # ok to skip this on Windows
     pass
-else :
+else:
     def raise_limit(which, howmuch):
 
         # We have to know the old limit so we don't ask to go above that.
@@ -257,13 +257,13 @@ else :
         oldlims = resource.getrlimit(which)
 
         # Raise it to the max.
-        if (howmuch is None) or (howmuch == -1) :
+        if (howmuch is None) or (howmuch == -1):
             newlims = (oldlims[1], oldlims[1])
-        else :
+        else:
             newlims = (howmuch, oldlims[1])
 
         # Try to set it.
-        try :
+        try:
             resource.setrlimit(which, newlims)
         # this naughty little bit of code can raise either resource.error,
         # ValueError, or OSError, depending on the Python version.  Catch all.

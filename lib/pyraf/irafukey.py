@@ -12,10 +12,10 @@ from stsci.tools import capable, for2to3, irafutils
 try:
     import termios
 except:
-   if 0==sys.platform.find('win'): # not on win*, but IS on darwin & cygwin
-       termios = None
-   else:
-       raise
+    if 0==sys.platform.find('win'): # not on win*, but IS on darwin & cygwin
+        termios = None
+    else:
+        raise
 
 # TERMIOS is deprecated in Python 2.1
 if hasattr(termios, 'ICANON') or termios==None:
@@ -28,7 +28,6 @@ else:
 # response. The value of this character is then returned to the iraf task
 
 def getSingleTTYChar(): # return type str in all Python versions
-
     """Returns None if Control-C is typed or any other exception occurs"""
 
     # Ripped off from python FAQ
@@ -53,7 +52,6 @@ def getSingleTTYChar(): # return type str in all Python versions
         return c
 
 def ukey():
-
     """Returns the string expected for the IRAF ukey parameter"""
 
     # set focus to terminal if it is not already there

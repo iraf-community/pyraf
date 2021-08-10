@@ -21,8 +21,8 @@ _START_LINE_MODE = 0            # beginning of line
 _COMMAND_MODE = 1               # simple command mode
 _COMPUTE_START_MODE = 2         # initial compute mode (similar to command mode)
 _COMPUTE_EQN_MODE = 3           # compute mode in task arg when equation-mode
-                                # change flag has been seen.  Reverts to
-                                # _COMPUTE_START_MODE on comma, redirection, etc.
+# change flag has been seen.  Reverts to
+# _COMPUTE_START_MODE on comma, redirection, etc.
 _COMPUTE_MODE = 4               # compute (script, equation) mode
 _SWALLOW_NEWLINE_MODE = 5       # mode at points where embedded newlines allowed
 _ACCEPT_REDIR_MODE = 6          # mode at points where redirection allowed
@@ -176,7 +176,7 @@ class _BasicScanner_3:
         s = comment_pat.sub('', s)
 
         s = filterEscapes(irafutils.removeEscapes(
-                     irafutils.stripQuotes(s), quoted=1))
+            irafutils.stripQuotes(s), quoted=1))
         # We use a different type for quoted strings to protect them
         # against conversion to other token types by enterComputeEqnMode
         parent.addToken(type='QSTRING', attr=s)
@@ -194,7 +194,7 @@ class _BasicScanner_3:
         s = comment_pat.sub('', s)
 
         s = filterEscapes(irafutils.removeEscapes(
-                     irafutils.stripQuotes(s), quoted=1))
+            irafutils.stripQuotes(s), quoted=1))
         parent.addToken(type='QSTRING', attr=s)
         parent.lineno = parent.lineno + nline
 
@@ -690,7 +690,7 @@ _SwallowNewlineScanner = _StrictSwallowNewlineScanner
 #---------------------------------------------------------------------
 
 class _StrictAcceptRedirScanner(_BasicScanner_3, _BasicScanner_2,
-                                                                _BasicScanner_1):
+                                _BasicScanner_1):
 
     """Strict scanner class where redirection is allowed"""
 
@@ -731,36 +731,36 @@ class _AcceptRedirScanner(_LaxScanner, _StrictAcceptRedirScanner):
 
 # SEE ALSO ClScanner.__init__ for more ECL keywords.
 _keywordDict = {
-                                'begin': 1,
-                                'break': 1,
-                                'case': 1,
-                                'default': 1,
-                                'else': 1,
-                                'end': 1,
-                                'for': 1,
-                                'goto': 1,
-                                'if': 1,
-                                'next': 1,
-                                'procedure': 1,
-                                'return': 1,
-                                'switch': 1,
-                                'while': 1,
-                                }
+    'begin': 1,
+    'break': 1,
+    'case': 1,
+    'default': 1,
+    'else': 1,
+    'end': 1,
+    'for': 1,
+    'goto': 1,
+    'if': 1,
+    'next': 1,
+    'procedure': 1,
+    'return': 1,
+    'switch': 1,
+    'while': 1,
+}
 
-_typeDict = {   'bool': 1,
-                                'char': 1,
-                                'file': 1,
-                                'gcur': 1,
-                                'imcur': 1,
-                                'int': 1,
-                                'pset': 1,
-                                'real': 1,
-                                'string': 1,
-                                'struct': 1,
-                                'ukey': 1,
-                                }
+_typeDict = {'bool': 1,
+             'char': 1,
+             'file': 1,
+             'gcur': 1,
+             'imcur': 1,
+             'int': 1,
+             'pset': 1,
+             'real': 1,
+             'string': 1,
+             'struct': 1,
+             'ukey': 1,
+             }
 
-_boolDict = { 'yes': 1, 'no': 1, }
+_boolDict = {'yes': 1, 'no': 1, }
 
 # list of scanners for each state
 # only need to create these once, since they are designed to
@@ -773,14 +773,14 @@ def _getScannerDict():
     global _scannerDict
     if _scannerDict is None:
         _scannerDict = {
-                        _START_LINE_MODE:       _StartScanner(),
-                        _COMMAND_MODE:          _CommandScanner(),
-                        _COMPUTE_START_MODE:    _ComputeStartScanner(),
-                        _COMPUTE_EQN_MODE:      _ComputeEqnScanner(),
-                        _COMPUTE_MODE:          _ComputeScanner(),
-                        _SWALLOW_NEWLINE_MODE:  _SwallowNewlineScanner(),
-                        _ACCEPT_REDIR_MODE:     _AcceptRedirScanner(),
-                        }
+            _START_LINE_MODE:       _StartScanner(),
+            _COMMAND_MODE:          _CommandScanner(),
+            _COMPUTE_START_MODE:    _ComputeStartScanner(),
+            _COMPUTE_EQN_MODE:      _ComputeEqnScanner(),
+            _COMPUTE_MODE:          _ComputeScanner(),
+            _SWALLOW_NEWLINE_MODE:  _SwallowNewlineScanner(),
+            _ACCEPT_REDIR_MODE:     _AcceptRedirScanner(),
+        }
     return _scannerDict
 
 def _getStrictScannerDict():
@@ -788,14 +788,14 @@ def _getStrictScannerDict():
     # create strict scanners
     if _strictScannerDict is None:
         _strictScannerDict = {
-                        _START_LINE_MODE:       _StrictStartScanner(),
-                        _COMMAND_MODE:          _StrictCommandScanner(),
-                        _COMPUTE_START_MODE:    _StrictComputeStartScanner(),
-                        _COMPUTE_EQN_MODE:      _StrictComputeEqnScanner(),
-                        _COMPUTE_MODE:          _StrictComputeScanner(),
-                        _SWALLOW_NEWLINE_MODE:  _StrictSwallowNewlineScanner(),
-                        _ACCEPT_REDIR_MODE:     _StrictAcceptRedirScanner(),
-                        }
+            _START_LINE_MODE:       _StrictStartScanner(),
+            _COMMAND_MODE:          _StrictCommandScanner(),
+            _COMPUTE_START_MODE:    _StrictComputeStartScanner(),
+            _COMPUTE_EQN_MODE:      _StrictComputeEqnScanner(),
+            _COMPUTE_MODE:          _StrictComputeScanner(),
+            _SWALLOW_NEWLINE_MODE:  _StrictSwallowNewlineScanner(),
+            _ACCEPT_REDIR_MODE:     _StrictAcceptRedirScanner(),
+        }
     return _strictScannerDict
 
 
@@ -821,7 +821,7 @@ class CLScanner(ContextSensitiveScanner):
         # go to _START_LINE_MODE
         self.parencount = parencount
         self.argsep = argsep
-        self.current = [ _START_LINE_MODE ]
+        self.current = [_START_LINE_MODE]
 
     def tokenize(self, input, default_mode=_COMMAND_MODE):
         self.rv = []
@@ -855,7 +855,7 @@ class CLScanner(ContextSensitiveScanner):
         # suppress newline after '{'
 
         if type != 'NEWLINE' or (self.rv and self.rv[-1].type != 'NEWLINE' and
-                                                        self.rv[-1].type != '{'):
+                                 self.rv[-1].type != '{'):
 
             # Another ugly hack -- the syntax
             #
@@ -895,7 +895,7 @@ class CLScanner(ContextSensitiveScanner):
                 self.current.append(_COMPUTE_MODE)
 
         elif usekey and keyword in _typeDict and \
-                        self.current[-1] == _START_LINE_MODE:
+                self.current[-1] == _START_LINE_MODE:
 
             # types are treated as keywords only if first token on line
             self.addToken(type='TYPE', attr=keyword)

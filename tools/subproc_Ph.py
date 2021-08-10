@@ -29,7 +29,8 @@ class Ph:
         self.clear()
 
         self.proc.writeline('query ' + q)
-        got = []; it = {}
+        got = []
+        it = {}
         while True:
             response = self.getreply()      # Should get null on new prompt.
             errs = self.proc.readPendingErrChars()
@@ -78,10 +79,11 @@ class Ph:
             return got
     def __repr__(self):
         return "<Ph instance, %s at %s>\n" % (self.proc.status(),
-                                                hex(id(self))[2:])
+                                              hex(id(self))[2:])
     def clear(self):
         """Clear-out initial preface or residual subproc input and output."""
-        pause = .5; maxIter = 10                # 5 seconds to clear
+        pause = .5
+        maxIter = 10                # 5 seconds to clear
         iterations = 0
         got = ''
         self.proc.write('')
@@ -92,4 +94,4 @@ class Ph:
             if got == 'ph> ': return        # Ok.                       ===>
             time.sleep(pause)
         raise SubprocessError('ph not responding within %s secs' %
-                                                        pause * maxIter)
+                              pause * maxIter)

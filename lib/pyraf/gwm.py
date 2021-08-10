@@ -24,7 +24,6 @@ class GraphicsWindowManager(gki.GkiProxy):
     """
 
     def __init__(self, GkiKernelClass):
-
         """GkiKernelClass is the class of kernel objects created
 
         Class must implement both GkiKernel and FocusEntity interfaces
@@ -151,8 +150,8 @@ def _setGraphicsWindowManager():
                     print("matplotlib is not installed, using default instead")
                     kernelname = "default"
             else:
-                print('Graphics kernel specified by "PYRAFGRAPHICS='+ \
-                       kernelname+'" not found.')
+                print('Graphics kernel specified by "PYRAFGRAPHICS='+
+                      kernelname+'" not found.')
                 print("Using default kernel instead.")
                 kernelname = "default"
         else:
@@ -188,7 +187,6 @@ def getGraphicsWindowManager():
     return _g
 
 def window(windowName=None):
-
     """Create a new graphics window if the named one doesn't exist or
     make it the active one if it does. If no argument is given a new
     name is constructed."""
@@ -198,7 +196,6 @@ def window(windowName=None):
     _g.window(windowName)
 
 def delete(windowName=None):
-
     """Delete the named window (or active window if none specified)"""
 
     if not _g:
@@ -209,28 +206,24 @@ def delete(windowName=None):
         _g.delete(windowName)
 
 def getActiveWindowName():
-
     """Return name of active window (None if none defined)"""
 
     if _g and _g.windowVar:
         return _g.windowVar.get() or None
 
 def getActiveWindowGwidget():
-
     """Get the active window widget (None if none defined)"""
 
     if _g and _g.stdgraph:
         return _g.stdgraph.gwidget
 
 def getActiveGraphicsWindow():
-
     """Get the active graphics kernel object (None if none defined)"""
 
     if _g and _g.stdgraph:
         return _g.stdgraph
 
 def getActiveWindowTop():
-
     """Get the top window (None if none defined)"""
 
     if _g and _g.stdgraph:
@@ -238,7 +231,6 @@ def getActiveWindowTop():
         return _g.stdgraph.top
 
 def raiseActiveWindow():
-
     """Deiconify if not mapped, and raise to top"""
 
     stdgraph = getActiveGraphicsWindow()
@@ -247,7 +239,6 @@ def raiseActiveWindow():
     stdgraph.raiseWindow()
 
 def resetFocusHistory():
-
     """Reset focus history after an error occurs"""
 
     wutil.focusController.resetFocusHistory()

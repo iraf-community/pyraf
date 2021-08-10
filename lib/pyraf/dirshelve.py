@@ -37,7 +37,7 @@ class Shelf(shelve.Shelf):
             # and exception
             del self.dict[key]
             raise KeyError("Corrupted or truncated file for key %s "
-                    "(bad file has been deleted)" % (repr(key),))
+                           "(bad file has been deleted)" % (repr(key),))
 
     def __setitem__(self, key, value):
         f = shelve.StringIO()
@@ -80,4 +80,4 @@ def open(filename, flag='c'):
         except Exception as ex: # is dbm.error
             raise dirdbm.error(str(ex))
     else:
-       return DirectoryShelf(filename, flag)
+        return DirectoryShelf(filename, flag)

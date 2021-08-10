@@ -56,7 +56,7 @@ class _Database(object):
                 _os.remove(testfile)
             except IOError as e:
                 raise IOError("Directory %s cannot be opened for writing" %
-                        (directory,))
+                              (directory,))
         # initialize dictionary
         # get list of files from directory and translate to keys
         try:
@@ -74,7 +74,6 @@ class _Database(object):
                 pass
 
     def _getFilename(self, key):
-
         """Return filename equivalent to this string key"""
 
         filename = _binascii.b2a_base64(key)

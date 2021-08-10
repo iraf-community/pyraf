@@ -72,8 +72,8 @@ class Gcursor:
         """Turn cross-hair cursor on"""
         if self.gwidget.lastX is not None:
             self.gwidget.activateSWCursor(
-                    (self.gwidget.lastX+0.5)/self.gwidget.width,
-                    (self.gwidget.lastY+0.5)/self.gwidget.height)
+                (self.gwidget.lastX+0.5)/self.gwidget.width,
+                (self.gwidget.lastY+0.5)/self.gwidget.height)
         else:
             self.gwidget.activateSWCursor()
 
@@ -110,7 +110,6 @@ class Gcursor:
         self.gwidget.unbind("<Shift-Left>")
 
     def getNDCCursorPos(self):
-
         """Do an immediate cursor read and return coordinates in
         NDC coordinates"""
 
@@ -226,7 +225,7 @@ class Gcursor:
                 textString = self.readString(prompt="Annotation string: ")
                 metacode = gkicmd.text(textString, x, y)
                 self.window.forceNextDraw() # we can afford a perf hit here,
-                                            # a human just typed in text
+                # a human just typed in text
                 self.appendMetacode(metacode)
             elif key == 'U':
                 self.window.undoN()

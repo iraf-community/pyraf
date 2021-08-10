@@ -52,7 +52,7 @@ def init_wcs_sizes(forceResetTo=None):
     if forceResetTo:
         if forceResetTo not in (
                 WCSRCSZ_vOLD_32BIT, WCSRCSZ_v215_32BIT, WCSRCSZ_v215_64BIT):
-            raise IrafError("Unexpected value for wcs record size: "+\
+            raise IrafError("Unexpected value for wcs record size: "+
                             str(forceResetTo))
         _WCS_RECORD_SIZE = forceResetTo
         _IRAF64BIT = _WCS_RECORD_SIZE == WCSRCSZ_v215_64BIT
@@ -123,10 +123,10 @@ class IrafGWcs:
 
         # Check that eveything is sized as expected
         if arg[0] != len(wcsStruct):
-            raise IrafError("Inconsistency in length of WCS graphics struct: "+\
+            raise IrafError("Inconsistency in length of WCS graphics struct: "+
                             str(arg[0]))
         if len(wcsStruct) != _WCS_RECORD_SIZE*WCS_SLOTS:
-            raise IrafError("Unexpected length of WCS graphics struct: "+\
+            raise IrafError("Unexpected length of WCS graphics struct: "+
                             str(len(wcsStruct)))
 
         # Read through the input to populate self.pending
@@ -153,7 +153,7 @@ class IrafGWcs:
                 ivals = ivalsView[0]
             self.pending[i] = tuple(fvals) + tuple(ivals)
             if len(self.pending[i]) != 11:
-                raise IrafError("Unexpected WCS struct record length: "+\
+                raise IrafError("Unexpected WCS struct record length: "+
                                 str(len(self.pending[i])))
         if self.wcs is None:
             self.commit()
@@ -186,18 +186,16 @@ class IrafGWcs:
                 iarr = iarr.flatten()
             # end-pad?
             if len(farr)+len(iarr) == (_WCS_RECORD_SIZE//2):
-               pad = BNULLSTR #for IRAF2.14 or prior; all new vers need end-pad
+                pad = BNULLSTR  # for IRAF2.14 or prior; all new vers need end-pad
 
             # Pack the wcsStruct - this will throw "ValueError: shape mismatch"
             # if the padding doesn't bring the size out to exactly the
             # correct length (_WCS_RECORD_SIZE)
             wcsStruct[_WCS_RECORD_SIZE*i:_WCS_RECORD_SIZE*(i+1)] = \
-            numpy.fromstring(ndarr2bytes(farr)+ndarr2bytes(iarr)+pad, numpy.int16)
+                numpy.fromstring(ndarr2bytes(farr)+ndarr2bytes(iarr)+pad, numpy.int16)
         return ndarr2bytes(wcsStruct)
 
-
     def transform(self, x, y, wcsID):
-
         """Transform x,y to wcs coordinates for the given
         wcs (integer 0-16) and return as a 2-tuple"""
 
@@ -213,13 +211,13 @@ class IrafGWcs:
         # not (1,4)
 
         return (self.transform1d(coord=x, dimension='x', wcsID=wcsID),
-                        self.transform1d(coord=y, dimension='y', wcsID=wcsID),
-                        wcsID)
+                self.transform1d(coord=y, dimension='y', wcsID=wcsID),
+                wcsID)
 
     def transform1d(self, coord, dimension, wcsID):
 
         wx1, wx2, wy1, wy2, sx1, sx2, sy1, sy2, xt, yt, flag = \
-                 self.wcs[wcsID-1]
+            self.wcs[wcsID-1]
         if dimension == 'x':
             w1, w2, s1, s2, type = wx1, wx2, sx1, sx2, xt
         elif dimension == 'y':
@@ -241,7 +239,7 @@ class IrafGWcs:
             cs = (s2-s1)/(ew2-ew1)
             c0 = s1 - cs*ew1
             # linear part is between ew = 1 and -1, so just map those to s
-            s10p =  cs + c0
+            s10p = cs + c0
             s10m = -cs + c0
             if coord > s10p: # positive log area
                 frac = (coord-s10p)/(s2-s10p)
@@ -267,7 +265,6 @@ class IrafGWcs:
             else: return 1
 
     def get(self, x, y, wcsID=None):
-
         """Returned transformed values of x, y using given wcsID or
         closest WCS if none given.  Return a tuple (wx,wy,wnum) where
         wnum is the selected WCS (0 if none defined)."""
@@ -278,7 +275,6 @@ class IrafGWcs:
         return self.transform(x, y, wcsID)
 
     def _getWCS(self, x, y):
-
         """Return the WCS (16 max possible) that should be used to
         transform x and y. Returns 0 if no WCS is defined."""
 

@@ -12,7 +12,6 @@ from stsci.tools.irafglobals import IrafError
 
 
 def checkcache(filename=None,orig_checkcache=linecache.checkcache):
-
     """Discard cache entries that are out of date.
     (This is not checked upon each call!)"""
 
@@ -32,7 +31,7 @@ def checkcache(filename=None,orig_checkcache=linecache.checkcache):
     import pyraf.iraf # used below
 
     for filename in filenames:
-#    for filename in cache.keys():
+        #    for filename in cache.keys():
         if filename[:10] == "<CL script":
             entry = cache[filename]
             del cache[filename]
@@ -59,7 +58,6 @@ def checkcache(filename=None,orig_checkcache=linecache.checkcache):
 
 
 def updatecache(filename, module_globals=None, orig_updatecache=linecache.updatecache):
-
     """Update a cache entry and return its list of lines.  If something's
     wrong, discard the cache entry and return an empty list."""
 

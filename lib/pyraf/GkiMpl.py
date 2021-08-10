@@ -61,7 +61,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
     """matplotlib graphics kernel implementation"""
 
     def makeGWidget(self, width=600, height=420):
-
         """Make the graphics widget.  Also perform some self init."""
         self.__pf = TKNTR.Frame(self.top)
         self.__pf.pack(side=TKNTR.TOP, fill=TKNTR.BOTH, expand=1)
@@ -95,7 +94,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
     # not currently using getAdjustedHeight because the background is drawn and
     # it is not black (or the same color as the rest of the empty window)
     def getAdjustedHeight(self):
-
         """ Calculate an adjusted height to make the plot look better in the
             widget's viewfield - otherwise the graphics are too close to
             the top of the window.  Use in place of self.__ysz"""
@@ -103,7 +101,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         return adjHt
 
     def getTextPointSize(self, gkiTextScaleFactor, winWidth, winHeight):
-
         """ Make a decision on the best font size (point) based on the
             size of the graphics window and other factors """
         # The default point size for the initial window size
@@ -130,7 +127,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         return float(ptSz)
 
     def clearMplData(self):
-
         """ Clear all lines, patches, text, etc. from the figure as well
             as any of our own copies we may be keeping around to facilitate
             redraws/resizes/etc. of the figure. """
@@ -139,7 +135,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.__fig.clear()      # clear all from fig
 
     def resizeGraphics(self, width, height):
-
         """ It is time to set a magnitude to our currently normalized
             lines, and send them to the figure. Here we assume that
             __normLines & __normPatches are already fully populated. """
@@ -187,7 +182,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         return self.__gcursorObject()
 
     def gcurTerminate(self, msg='Window destroyed by user'):
-
         """Terminate active gcur and set EOF flag"""
         if self.__gcursorObject.active:
             self.__gcursorObject.eof = msg
@@ -218,10 +212,9 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # Note the task command given to be shown in the status widget
         if readline != None:
             self._toWriteAtNextClear = readline.get_history_item(
-                                       readline.get_current_history_length())
+                readline.get_current_history_length())
 
     def taskDone(self, name):
-
         """Called when a task is finished"""
         # This is the usual hack to prevent the double redraw after first
         # Tk plot, but this version does not seem to suffer from the bug.
@@ -236,7 +229,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # else, we have already been drawing, so no need to flush here
 
     def update(self):
-
         """Update for all Tk events.
         This should not be called unless necessary since it can
         cause double redraws.  It is used in the imcur task to
@@ -249,7 +241,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.top.update()
 
     def doubleRedrawHack(self):
-
         """ This is a hack to prevent the double redraw on first plots. """
         # There is a mysterious Expose event that appears on the
         # idle list, but not until the Tk loop actually becomes idle.
@@ -261,46 +252,39 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
             self.__firstPlotDone = 1
 
     def prepareToRedraw(self):
-
         """This is a hook for things that need to be done before the redraw
            from metacode.  We'll simply clear drawBuffer."""
         self.drawBuffer.reset()
 
     def getHistory(self):
-
         """Additional information for page history"""
         return self.drawBuffer
 
     def setHistory(self, info):
-
         """Restore using additional information from page history"""
         self.drawBuffer = info
 
     def startNewPage(self):
-
         """Setup for new page"""
         self.drawBuffer = gki.DrawBuffer()
         self.clearMplData()
 
     def clearPage(self):
-
         """Clear buffer for new page"""
         self.drawBuffer.reset()
         self.clearMplData()
 
     def isPageBlank(self):
-
         """Returns true if this page is blank"""
         # or, could use: return len(self.drawBuffer) == 0
         return len(self.__normLines) == 0 and \
-               len(self.__normPatches) == 0 and \
-               len(self.__fig.texts) == 0
+            len(self.__normPatches) == 0 and \
+            len(self.__fig.texts) == 0
 
     # -----------------------------------------------
     # Overrides of GkiInteractiveTkBase functions
 
     def activate(self):
-
         """Not really needed for Tkplot widgets (used to set OpenGL win)"""
         pass
 
@@ -308,7 +292,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
     # GkiKernel implementation
 
     def incrPlot(self):
-
         """Plot any new commands in the buffer"""
         # This step slows us down but is needed, e.g. 'T' in implot.
         # So, save it for ONLY after we have allowed drawing.  This can
@@ -368,7 +351,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
 #       self._noteGkiCmd(self.gki_cancel)
 
     def gki_flush(self, arg, force=False):
-
         """ Asked to render current plot immediately.  Also used by redraw().
         NOTE: This is called multiple times (~8) for a single prow
         call.  There is a performance improvement gained by skipping the
@@ -384,9 +366,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # Note this explicitly (not for redrawing) since _plotAppend isn't used
 #       self._noteGkiCmd(self.gki_flush)
 
-
     def gki_polyline(self, arg):
-
         """ Instructed to draw a GKI polyline """
         # record this operation as a tuple in the draw buffer
         self._plotAppend(self.gki_polyline, arg)
@@ -425,7 +405,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.__allowDrawing = False
 
     def gki_polymarker(self, arg):
-
         """ Instructed to draw a GKI polymarker.  IRAF only implements
         points for polymarker, so that makes it simple. """
         # record this operation as a tuple in the draw buffer
@@ -451,7 +430,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.__normLines.append(ll)
 
     def calculateMplTextAngle(self, charUp, textPath):
-
         """ From the given GKI charUp and textPath values, calculate the
         rotation angle to be used for text.  Oddly, it seems that textPath
         and charUp both serve similar purposes, so we will have to look at
@@ -465,7 +443,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
 
         # get angle from textPath
         angle = charUp+270. # deflt CHARPATH_RIGHT
-        if   textPath == textattrib.CHARPATH_UP:     angle = charUp
+        if textPath == textattrib.CHARPATH_UP:     angle = charUp
         elif textPath == textattrib.CHARPATH_LEFT:   angle = charUp+90.
         elif textPath == textattrib.CHARPATH_DOWN:   angle = charUp+180.
 
@@ -473,7 +451,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         return math.fmod(angle, 360.)
 
     def gki_text(self, arg):
-
         """ Instructed to draw some GKI text """
         # record this operation as a tuple in the draw buffer
         self._plotAppend(self.gki_text, arg)
@@ -494,8 +471,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # settings if they have set a non-standard (1.0) charSize.
         weight = 'normal'
         if (MPL_MAJ_MIN < 0.91) or (abs(ta.charSize - 1.0) > .0001):
-           # only on these cases do we pay attention to 'bold' in textFont
-           if ta.textFont.find('bold') >= 0: weight = 'bold'
+            # only on these cases do we pay attention to 'bold' in textFont
+            if ta.textFont.find('bold') >= 0: weight = 'bold'
 
         style = 'italic'
         if ta.textFont.find('italic') < 0: style = 'normal'
@@ -507,24 +484,23 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # we know the text is a simple level label (not in a contour, etc)
         yOffset = 0.0
         if abs(rot) < .0001 and ta.textHorizontalJust=='center':
-           yOffset = GKI_TEXT_Y_OFFSET
+            yOffset = GKI_TEXT_Y_OFFSET
         # Note that we add the text here in NDC (0.0-1.0) x,y and that
         # the fig takes care of resizing for us.
-        t = self.__fig.text(x, y-yOffset, text, \
-             color=ta.textColor,
-             rotation=rot,
-             horizontalalignment=ta.textHorizontalJust,
-             verticalalignment=ta.textVerticalJust,
-             fontweight=weight, # [ 'normal' | 'bold' | ... ]
-             fontstyle=style,   # [ 'normal' | 'italic' | 'oblique']
-             fontsize=fsz)
+        t = self.__fig.text(x, y-yOffset, text,
+                            color=ta.textColor,
+                            rotation=rot,
+                            horizontalalignment=ta.textHorizontalJust,
+                            verticalalignment=ta.textVerticalJust,
+                            fontweight=weight, # [ 'normal' | 'bold' | ... ]
+                            fontstyle=style,   # [ 'normal' | 'italic' | 'oblique']
+                            fontsize=fsz)
         # To this Text object just created, we need to attach the GKI charSize
         # scale factor, since we will need it later during a resize.  Mpl
         # knows nothing about this, but we support it for GKI.
         t.gkiTextSzFactor = ta.charSize # add attribute
 
     def gki_fillarea(self, arg):
-
         """ Instructed to draw a GKI fillarea """
         # record this operation as a tuple in the draw buffer
         self._plotAppend(self.gki_fillarea, arg)
@@ -576,7 +552,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         swCurObj = self.__mca.getSWCursor()
         if swCurObj: swCurObj.moveTo(x, y, SWmove=1)
         # wutil.moveCursorTo uses 0,0 <--> upper left, need to convert
-        sx = int(  x   * self.gwidget.winfo_width())
+        sx = int(x   * self.gwidget.winfo_width())
         sy = int((1-y) * self.gwidget.winfo_height())
         rx = self.gwidget.winfo_rootx()
         ry = self.gwidget.winfo_rooty()
@@ -608,8 +584,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self._plotAppend(self.gki_pmset, arg)
 
         # set attrs.  See notes about GKI_TO_MPL_MARKTYPE
-        self.markerAttributes.set(0, #GKI_TO_MPL_MARKTYPE[arg[0]] ! type unused
-                                  0, #gki.ndc(arg[1])             ! size unused
+        self.markerAttributes.set(0,  # GKI_TO_MPL_MARKTYPE[arg[0]] ! type unused
+                                  0,  # gki.ndc(arg[1])             ! size unused
                                   self.colorManager.setDrawingColor(arg[2]))
 
     def gki_txset(self, arg):
@@ -625,15 +601,15 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         charSize = max(0.5, arg[1]/gki.GKI_FLOAT_FACTOR) # default: 1.0
         charSpace = arg[2]/gki.GKI_FLOAT_FACTOR          # unused yet (0.0)
         textPath           = arg[3]                      # leave as GKI code
-           # btw, in unit testsing never saw a case where textPath != 3
+        # btw, in unit testsing never saw a case where textPath != 3
         textHorizontalJust = GKI_TO_MPL_HALIGN[arg[4]]
         textVerticalJust   = GKI_TO_MPL_VALIGN[arg[5]]
         textFont           = GKI_TO_MPL_FONTATTR[arg[6]]
         textQuality        = GKI_TO_MPL_FONTATTR[arg[7]] # unused ? (lo,md,hi)
         textColor = self.colorManager.setDrawingColor(arg[8])
         self.textAttributes.set(charUp, charSize, charSpace,
-                textPath, textHorizontalJust, textVerticalJust, textFont,
-                textQuality, textColor)
+                                textPath, textHorizontalJust, textVerticalJust, textFont,
+                                textQuality, textColor)
 
     def gki_faset(self, arg):
 
@@ -664,7 +640,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         if self.gwidget: self.gwidget.tkRedraw()
 
     def redraw(self, o=None):
-
         """Redraw for expose or resize events, also called when page menu is
         used.  This method generally should not be called directly -- call
         gwidget.tkRedraw() instead since it does some other
@@ -714,19 +689,16 @@ class tkColorManager:
         # call setColors to allocate colors after widget is created
 
     def setColors(self, widget):
-
         """Not needed for Tkplot, a noop"""
         pass
 
     def setCursorColor(self, irafColorIndex=None):
-
         """Set crosshair cursor color to given index.
         Only has an effect in index color mode."""
         if irafColorIndex is not None:
             self.config.setCursorColor(irafColorIndex)
 
     def setDrawingColor(self, irafColorIndex):
-
         """Return the specified iraf color usable by tkinter"""
         color = self.config.defaultColors[irafColorIndex]
         red = int(255*color[0])

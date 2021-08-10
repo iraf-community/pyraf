@@ -46,7 +46,7 @@ def compileall():
         except OSError:
             print('Could not create directory %s' % userCacheDir)
     dbfile = 'clcache'
-    clcache.codeCache = clcache._CodeCache([ os.path.join(userCacheDir, dbfile) ])
+    clcache.codeCache = clcache._CodeCache([os.path.join(userCacheDir, dbfile)])
     cl2py.codeCache = clcache.codeCache
 
     iraf.setVerbose()
@@ -69,7 +69,7 @@ def compileall():
         pkg_list.sort()
         npkg_new = 0
         printcenter("pass %d: %d packages (%d new)" %
-                (npass, len(pkg_list), len(pkg_list)-npkg_total), char="=")
+                    (npass, len(pkg_list), len(pkg_list)-npkg_total), char="=")
         for pkg in pkg_list:
             if pkg not in pkgs_tried:
                 pkgs_tried[pkg] = 1
@@ -107,7 +107,7 @@ They screw up subsequent loading of imred/digiphot tasks.
                         tasks_tried[taskname] = 1
                         taskobj = iraf.getTask(taskname)
                         if isinstance(taskobj, IrafCLTask) and \
-                                        not isinstance(taskobj, IrafPkg):
+                                not isinstance(taskobj, IrafPkg):
                             ntask_total = ntask_total+1
                             print("%d: %s" % (ntask_total, taskname))
                             sys.stdout.flush()
@@ -131,7 +131,7 @@ They screw up subsequent loading of imred/digiphot tasks.
         npkg_total = npkg_total + npkg_new
         if not keepGoing: break
         printcenter("Finished pass %d new pkgs %d total pkgs %d total tasks %d" %
-                (npass, npkg_new, npkg_total, ntask_total), char="=")
+                    (npass, npkg_new, npkg_total, ntask_total), char="=")
         pkg_list = iraf.getPkgList()
 
     t1 = time.time()

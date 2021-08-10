@@ -206,11 +206,11 @@ Ureka installation (see http://ssb.stsci.edu/ureka).  Also be sure to run the
          #stacksize problem on linux
 
         if arch == 'redhat' or \
-               arch == 'linux' or \
-               arch == 'linuxppc' or \
-               arch == 'suse':
+                arch == 'linux' or \
+                arch == 'linuxppc' or \
+                arch == 'suse':
             import resource
-            if resource.getrlimit(resource.RLIMIT_STACK)[1]==-1 :
+            if resource.getrlimit(resource.RLIMIT_STACK)[1]==-1:
                 resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
             else:
                 pass
@@ -238,13 +238,13 @@ Ureka installation (see http://ssb.stsci.edu/ureka).  Also be sure to run the
         # define clpackage
         global clpkg
         clpkg = IrafTaskFactory('', 'clpackage', '.pkg', 'hlib$clpackage.cl',
-                'clpackage', 'bin$')
+                                'clpackage', 'bin$')
 
         # add the cl as a task, because its parameters are sometimes needed,
         # but make it a hidden task
         # cl is implemented as a Python task
         cl = IrafTaskFactory('', 'cl', '', 'cl$cl.par', 'clpackage', 'bin$',
-                function=_clProcedure)
+                             function=_clProcedure)
         cl.setHidden()
 
         # load clpackage
@@ -266,7 +266,7 @@ Ureka installation (see http://ssb.stsci.edu/ureka).  Also be sure to run the
         if fname:
             # define and load user package
             userpkg = IrafTaskFactory('', 'user', '.pkg', fname,
-                                            'clpackage', 'bin$')
+                                      'clpackage', 'bin$')
             userpkg.run(_doprint=0, _hush=hush, _save=1)
         else:
             _writeError("Warning: no login.cl found")
@@ -308,7 +308,7 @@ def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH', 'iraf')):
     status = clOscmd(newfile, Stdout=fh)
     if status:
         raise IOError("Execution error in script %s (derived from %s)" %
-            (newfile, file))
+                      (newfile, file))
     _os.remove(newfile)
     result = fh.getvalue().split('\n')
     fh.close()
@@ -324,44 +324,44 @@ def _getIrafEnv(file='/usr/local/bin/cl',vars=('IRAFARCH', 'iraf')):
 # initialized when this module is imported)
 
 unsavedVars = [
-                        'BITS_PER_LONG',
-                        'EOF',
-                        'FP_EPSILON',
-                        'IrafError',
-                        'SubprocessError',
-                        '_NullFileList',
-                        '_NullPath',
-                        '__builtins__',
-                        '__doc__',
-                        '__package__',
-                        '__file__',
-                        '__name__',
-                        '__re_var_match',
-                        '__re_var_paren',
-                        '_badFormats',
-                        '_backDir',
-                        '_clearString',
-                        '_denode_pat',
-                        '_exitCommands',
-                        '_nscan',
-                        '_fDispatch',
-                        '_radixDigits',
-                        '_re_taskname',
-                        '_reFormat',
-                        '_sttyArgs',
-                        '_tmpfileCounter',
-                        '_clExecuteCount',
-                        '_unsavedVarsDict',
-                        'IrafTask',
-                        'IrafPkg',
-                        'cl',
-                        'division',
-                        'epsilon',
-                        'iraf',
-                        'no',
-                        'yes',
-                        'userWorkingHome',
-                        ]
+    'BITS_PER_LONG',
+    'EOF',
+    'FP_EPSILON',
+    'IrafError',
+    'SubprocessError',
+    '_NullFileList',
+    '_NullPath',
+    '__builtins__',
+    '__doc__',
+    '__package__',
+    '__file__',
+    '__name__',
+    '__re_var_match',
+    '__re_var_paren',
+    '_badFormats',
+    '_backDir',
+    '_clearString',
+    '_denode_pat',
+    '_exitCommands',
+    '_nscan',
+    '_fDispatch',
+    '_radixDigits',
+    '_re_taskname',
+    '_reFormat',
+    '_sttyArgs',
+    '_tmpfileCounter',
+    '_clExecuteCount',
+    '_unsavedVarsDict',
+    'IrafTask',
+    'IrafPkg',
+    'cl',
+    'division',
+    'epsilon',
+    'iraf',
+    'no',
+    'yes',
+    'userWorkingHome',
+]
 _unsavedVarsDict = {}
 for v in unsavedVars: _unsavedVarsDict[v] = 1
 del unsavedVars, v
@@ -408,7 +408,7 @@ def saveToFile(savefile, **kw):
     for key in gdict.keys():
         item = gdict[key]
         if isinstance(item, (_types.FunctionType, _types.ModuleType)) or \
-                        key in _unsavedVarsDict:
+                key in _unsavedVarsDict:
             del gdict[key]
 #   print('\n\n\n',gdict.keys()) # DBG: debug line
     # save just the value of Verbose, not the object
@@ -705,7 +705,7 @@ def getTask(taskname, found=0):
         # no exact matches, see if all tasks have same name
         sp = fullname[0].split('.')
         name = sp[-1]
-        pkglist = [ sp[0] ]
+        pkglist = [sp[0]]
         for i in range(len(fullname)-1):
             sp = fullname[i+1].split('.')
             if name != sp[-1]:
@@ -715,8 +715,8 @@ def getTask(taskname, found=0):
                     return None
                 else:
                     raise _minmatch.AmbiguousKeyError(
-                            "Task `%s' is ambiguous, could be %s" %
-                            (taskname, ', '.join(fullname)))
+                        "Task `%s' is ambiguous, could be %s" %
+                        (taskname, ', '.join(fullname)))
             pkglist.append(sp[0])
         trylist = fullname
 
@@ -855,7 +855,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
     else:
         pkgdict = {}
         if isinstance(pkglist, (str, unicode, _iraftask.IrafPkg)):
-            pkglist = [ pkglist ]
+            pkglist = [pkglist]
         for p in pkglist:
             try:
                 pthis = getPkg(p)
@@ -863,7 +863,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
                     pkgdict[pthis.getName()] = 1
                 else:
                     _writeError('Package %s has not been loaded' %
-                            pthis.getName())
+                                pthis.getName())
             except KeyError as e:
                 _writeError(str(e))
     if not len(pkgdict):
@@ -946,7 +946,7 @@ def whereis(*args):
         matches = _mmtasks.getall(arg)
         if matches:
             matches.reverse() # this reverse isn't necessary - they arrive
-                              # in the right order, but CL seems to do this
+            # in the right order, but CL seems to do this
             print(" ".join(matches))
         else:
             _writeError(arg+": task not found.")
@@ -976,8 +976,8 @@ def taskinfo(*args):
         the output.
     '''
 
-    for x in args :
-        _iraftask.showtasklong( x )
+    for x in args:
+        _iraftask.showtasklong(x)
 
 
 # -----------------------------------------------------
@@ -1394,9 +1394,9 @@ def sign(value):
     """Sign of argument (-1 or 1)"""
     if value==INDEF: return INDEF
     if value>=0.0:
-       return 1
+        return 1
     else:
-       return -1
+        return -1
 
 def clNot(value):
     """Bitwise boolean NOT of an integer"""
@@ -1406,17 +1406,17 @@ def clNot(value):
 def clAnd(x, y):
     """Bitwise boolean AND of two integers"""
     if INDEF in (x, y): return INDEF
-    return x&y
+    return x &y
 
 def clOr(x, y):
     """Bitwise boolean OR of two integers"""
     if INDEF in (x, y): return INDEF
-    return x|y
+    return x |y
 
 def clXor(x, y):
     """Bitwise eXclusive OR of two integers"""
     if INDEF in (x, y): return INDEF
-    return x^y
+    return x ^y
 
 def osfn(filename):
     """Convert IRAF virtual path name to OS pathname"""
@@ -1497,7 +1497,7 @@ def access(filename):
     if filename == INDEF: return INDEF
     filename = _denode(filename)
     # Magic values that trigger special behavior
-    magicValues = { "STDIN": 1, "STDOUT": 1, "STDERR": 1}
+    magicValues = {"STDIN": 1, "STDOUT": 1, "STDERR": 1}
     return filename in magicValues or _os.path.exists(Expand(filename))
 
 def fp_equal(x, y):
@@ -1534,14 +1534,14 @@ def _fp_norm(x):
     expon = 0
 
     if absx > 0:
-       while absx < (1.0-tol):
-           absx *= 10.0
-           expon -= 1
-           if absx == 0.0: # check for underflow to zero
-               return 0, 0
-       while absx >= (10.0+tol):
-           absx /= 10.0
-           expon += 1
+        while absx < (1.0-tol):
+            absx *= 10.0
+            expon -= 1
+            if absx == 0.0: # check for underflow to zero
+                return 0, 0
+        while absx >= (10.0+tol):
+            absx /= 10.0
+            expon += 1
 
     if x < 0:
         normx = -absx
@@ -1633,7 +1633,7 @@ def imaccess(filename):
         # This approach, while adaptable, is brittle in its dependency on
         # IRAF error strings
         if ((errstr.find('must specify which fits extension') >= 0) or
-            (errstr.find('ambiguous')) >= 0):
+                (errstr.find('ambiguous')) >= 0):
             return 1
         else:
             return 0
@@ -1784,7 +1784,7 @@ def fscan(theLocals, line, *namelist, **kw):
         if _isStruct(theLocals, namelist[i]):
             if i < len(namelist)-1:
                 raise TypeError("Struct type param `%s' must be the final"
-                        " argument to scan" % namelist[i])
+                                " argument to scan" % namelist[i])
             # ultramessy -- struct needs rest of line with embedded whitespace
             if i==0:
                 iend = 0
@@ -1799,7 +1799,7 @@ def fscan(theLocals, line, *namelist, **kw):
                 mm = _re.match(pat, line)
                 if mm is None:
                     raise RuntimeError("Bug: line '%s' pattern '%s' failed" %
-                            (line, pat))
+                                       (line, pat))
                 iend = mm.end()
             if line[-1:] == '\n':
                 cmd = namelist[i] + ' = ' + repr(line[iend:-1])
@@ -1871,7 +1871,7 @@ def _weirdEOF(theLocals, namelist):
     if namelist and _isStruct(theLocals, namelist[0], checklegal=1):
         if len(namelist) > 1:
             raise TypeError("Struct type param `%s' must be the final"
-                    " argument to scan" % namelist[0])
+                            " argument to scan" % namelist[0])
         # it is an undefined struct, so set it to null string
         cmd = namelist[0] + ' = ""'
         exec(cmd, theLocals)
@@ -2086,24 +2086,24 @@ def clOscmd(s, **kw):
     return rv
 
 _sttyArgs = _minmatch.MinMatchDict({
-                        'terminal': None,
-                        'baud': 9600,
-                        'ncols': 80,
-                        'nlines': 24,
-                        'show': no,
-                        'all': no,
-                        'reset': no,
-                        'resize': no,
-                        'clear': no,
-                        'ucasein': no,
-                        'ucaseout': no,
-                        'login': None,
-                        'logio': None,
-                        'logout': None,
-                        'playback': None,
-                        'verify': no,
-                        'delay': 500,
-                        })
+    'terminal': None,
+    'baud': 9600,
+    'ncols': 80,
+    'nlines': 24,
+    'show': no,
+    'all': no,
+    'reset': no,
+    'resize': no,
+    'clear': no,
+    'ucasein': no,
+    'ucaseout': no,
+    'login': None,
+    'logio': None,
+    'logout': None,
+    'playback': None,
+    'verify': no,
+    'delay': 500,
+})
 
 @handleRedirAndSaveKwdsPlus
 def stty(terminal=None, **kw):
@@ -2120,14 +2120,14 @@ def stty(terminal=None, **kw):
         dftNcol = '80'
         dftNlin = '24'
         try:
-           if _sys.stdout.isatty():
-               nlines, ncols = _wutil.getTermWindowSize()
-               dftNcol = str(ncols)
-               dftNlin = str(nlines)
+            if _sys.stdout.isatty():
+                nlines, ncols = _wutil.getTermWindowSize()
+                dftNcol = str(ncols)
+                dftNlin = str(nlines)
         except: pass # No error message here - may not always be available
         # no args: print terminal type and size
         print('%s ncols=%s nlines=%s' % (envget('terminal', 'undefined'),
-                envget('ttyncols', dftNcol), envget('ttynlines', dftNlin)))
+                                         envget('ttyncols', dftNcol), envget('ttynlines', dftNlin)))
     elif expkw['resize'] or expkw['terminal'] == "resize":
         # resize: sets CL env parameters giving screen size; show errors
         if _sys.stdout.isatty():
@@ -2207,7 +2207,7 @@ def lparam(*args):
                 getTask(taskname).lParam()
             except (KeyError, TypeError):
                 _writeError("Warning: Could not find task %s for lpar\n" %
-                        taskname)
+                            taskname)
 
 @handleRedirAndSaveKwdsPlus
 def dparam(*args, **kw):
@@ -2227,7 +2227,7 @@ def dparam(*args, **kw):
                 getTask(taskname).dParam(cl=cl)
             except (KeyError, TypeError):
                 _writeError("Warning: Could not find task %s for dpar\n" %
-                        taskname)
+                            taskname)
 
 @handleRedirAndSaveKwds
 def update(*args):
@@ -2237,7 +2237,7 @@ def update(*args):
             getTask(taskname).saveParList()
         except KeyError as e:
             _writeError("Warning: Could not find task %s for update" %
-                    taskname)
+                        taskname)
 
 @handleRedirAndSaveKwdsPlus
 def unlearn(*args, **kw):
@@ -2255,12 +2255,12 @@ def unlearn(*args, **kw):
             try: # maybe it is a task which uses .cfg files
                 ans = _teal.unlearn(taskname, deleteAll=force)
                 if ans != 0:
-                    _writeError('Error: multiple user-owned files found'+ \
-                        ' to unlearn for task "'+taskname+ \
-                        '".\nNone were deleted.  Please review and move/'+ \
-                        'delete these files:\n\n\t'+\
-                        '\n\t'.join(ans)+ \
-                        '\n\nor type "unlearn '+taskname+' force=yes"')
+                    _writeError('Error: multiple user-owned files found'+
+                                ' to unlearn for task "'+taskname+
+                                '".\nNone were deleted.  Please review and move/'+
+                                'delete these files:\n\n\t'+
+                                '\n\t'.join(ans)+
+                                '\n\nor type "unlearn '+taskname+' force=yes"')
             except _teal.cfgpars.NoCfgFileError:
                 _writeError("Warning: Could not find task %s to unlearn" %
                             taskname)
@@ -2360,14 +2360,14 @@ def pyexecute(filename, **kw):
     spkgname = pkgname.replace('.', '_')
     if spkgname != pkgname:
         _writeError("Warning: `.' illegal in task name, changing "
-                "`%s' to `%s'" % (pkgname, spkgname))
+                    "`%s' to `%s'" % (pkgname, spkgname))
         pkgname = spkgname
     if len(kw):
         raise TypeError('unexpected keyword argument: ' + repr(list(kw.keys())))
     # execute code in a new namespace (including PkgName, PkgBinary)
     efilename = Expand(filename)
     namespace = {'PkgName': pkgname, 'PkgBinary': pkgbinary,
-        '__file__': efilename}
+                 '__file__': efilename}
     exec(compile(open(efilename, "rb").read(), efilename, 'exec'), namespace)
 
 # history routines
@@ -2536,7 +2536,7 @@ def hidetask(*args):
             getTask(taskname).setHidden()
         except KeyError as e:
             _writeError("Warning: Could not find task %s to hide" %
-                    taskname)
+                        taskname)
 
 # pattern matching single task name, possibly with $ prefix and/or
 # .pkg or .tb suffix
@@ -2544,9 +2544,9 @@ def hidetask(*args):
 
 optional_whitespace = r'[ \t]*'
 taskname = r'(?:' + r'(?P<taskprefix>\$?)' + \
-        r'(?P<taskname>[a-zA-Z_][a-zA-Z0-9_]*)' + \
-        r'(?P<tasksuffix>\.(?:pkg|tb))?' + \
-        r',?' + optional_whitespace + r')'
+    r'(?P<taskname>[a-zA-Z_][a-zA-Z0-9_]*)' + \
+    r'(?P<tasksuffix>\.(?:pkg|tb))?' + \
+    r',?' + optional_whitespace + r')'
 
 _re_taskname = _re.compile(taskname)
 
@@ -2578,7 +2578,7 @@ def task(*args, **kw):
     spkgname = pkgname.replace('.', '_')
     if spkgname != pkgname:
         _writeError("Warning: `.' illegal in task name, changing "
-                "`%s' to `%s'" % (pkgname, spkgname))
+                    "`%s' to `%s'" % (pkgname, spkgname))
         pkgname = spkgname
     # get the task name
     if len(kw) > 1:
@@ -2603,7 +2603,7 @@ def task(*args, **kw):
         tmpClFname = tmpClFname.replace('+', '_')
         tmpCl = _os.path.join(tmpClPath, tmpClFname)
         assert tmpCl == orig_tmpCl or not _os.path.exists(tmpCl), \
-               'Abused mkstemp usage in some way; fname: '+tmpCl
+            'Abused mkstemp usage in some way; fname: '+tmpCl
         # write inline code to .cl file; len(kw) is checked below
         f = open(tmpCl, 'w')
         f.write(value+'\n')
@@ -2628,7 +2628,7 @@ def task(*args, **kw):
         prefix = mtl.group('taskprefix')
         suffix = mtl.group('tasksuffix')
         newtask = IrafTaskFactory(prefix, name, suffix, value,
-                        pkgname, pkgbinary, redefine=redefine)
+                                  pkgname, pkgbinary, redefine=redefine)
 
 def redefine(*args, **kw):
     """Redefine an existing task"""
@@ -2671,7 +2671,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
             if spkgname[-1:] == ",": spkgname = spkgname[:-1]
             if (spkgname != pkgname) and (Verbose > 0):
                 _writeError("Warning: illegal characters in task name, "
-                        "changing `%s' to `%s'" % (pkgname, spkgname))
+                            "changing `%s' to `%s'" % (pkgname, spkgname))
             pkgname = spkgname
             # is the package defined?
             # if not, is there a CL task by this name?
@@ -2680,7 +2680,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
             if pkg is None:
                 pkg = getTask(pkgname, found=1)
                 if pkg is None or not isinstance(pkg, _iraftask.IrafCLTask) or \
-                                pkg.getName() != pkgname:
+                        pkg.getName() != pkgname:
                     raise KeyError("Package `%s' not defined" % pkgname)
                 # Hack city -- there is a CL task with the package name, but it was
                 # not defined to be a package.  Convert it to an IrafPkg object.
@@ -2697,7 +2697,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
                 loadedPath.append(pkg)
                 addLoaded(pkg)
                 if Verbose>0: _writeError("Warning: CL task `%s' apparently is "
-                        "a package" % pkgname)
+                                          "a package" % pkgname)
 
             # Make sure that this is the current package, even
             # if another package was loaded in the package script
@@ -2734,7 +2734,7 @@ def _boolConv(w, d, c, args, i):
 def _badConv(w, d, c, args, i):
     """Format codes that are converted to %s with warning"""
     _writeError("Warning: printf cannot handle format '%%%s', "
-                    "using '%%%ss' instead\n" % (w+d+c, w))
+                "using '%%%ss' instead\n" % (w+d+c, w))
     return "%%%ss" % w
 
 def _hConv(w, d, c, args, i):
@@ -2856,7 +2856,7 @@ def printf(format, *args):
         raise IrafError(str(e))
     except TypeError as e:
         raise IrafError('%s\nFormat/datatype mismatch in printf '
-                '(format is %s)' % (str(e), repr(format)))
+                        '(format is %s)' % (str(e), repr(format)))
 
 # _backDir is previous working directory
 
@@ -2880,8 +2880,8 @@ def chdir(directory=None):
         # use startup directory as home if argument is omitted
         directory = userWorkingHome
     if not isinstance(directory, (str, unicode)):
-        raise IrafError("Illegal non-string value for directory:"+ \
-              +repr(directory))
+        raise IrafError("Illegal non-string value for directory:"+
+                        +repr(directory))
     if Verbose > 2:
         print('chdir to: '+str(directory))
     # Check for (1) local directory and (2) iraf variable
@@ -2947,14 +2947,13 @@ def errtask(_save=None):
 # -----------------------------------------------------
 
 _exitCommands = {
-                                "logout": 1,
-                                "exit": 1,
-                                "quit": 1,
-                                ".exit": 1,
-                                }
+    "logout": 1,
+    "exit": 1,
+    "quit": 1,
+    ".exit": 1,
+}
 
 def clCompatibilityMode(verbose=0, _save=0):
-
     """Start up full CL-compatibility mode"""
 
     import traceback, __main__
@@ -3000,8 +2999,8 @@ def clCompatibilityMode(verbose=0, _save=0):
                 exec(line[2:].strip(), theLocals)
             elif line and (line[0] != '#'):
                 code = clExecute(line, locals=theLocals, mode='single',
-                        local_vars_dict=local_vars_dict,
-                        local_vars_list=local_vars_list)
+                                 local_vars_dict=local_vars_dict,
+                                 local_vars_list=local_vars_list)
                 if logfile is not None:
                     # log CL code as comment
                     cllines = line.split('\n')
@@ -3032,16 +3031,16 @@ def clCompatibilityMode(verbose=0, _save=0):
 # -----------------------------------------------------
 
 def clArray(array_size, datatype, name="<anonymous>", mode="h",
-                min=None, max=None, enum=None, prompt=None,
-                init_value=None, strict=0):
+            min=None, max=None, enum=None, prompt=None,
+            init_value=None, strict=0):
     """Create an IrafPar object that can be used as a CL array"""
     try:
         return _irafpar.makeIrafPar(init_value, name=name, datatype=datatype,
-                mode=mode, min=min, max=max, enum=enum, prompt=prompt,
-                array_size=array_size, strict=strict)
+                                    mode=mode, min=min, max=max, enum=enum, prompt=prompt,
+                                    array_size=array_size, strict=strict)
     except ValueError as e:
         raise ValueError("Error creating Cl array `%s'\n%s" %
-                (name, str(e)))
+                         (name, str(e)))
 
 # -----------------------------------------------------
 # clExecute: execute a single cl statement
@@ -3052,7 +3051,7 @@ def clArray(array_size, datatype, name="<anonymous>", mode="h",
 _clExecuteCount = 0
 
 def clExecute(s, locals=None, mode="proc",
-                local_vars_dict={}, local_vars_list=[], verbose=0, **kw):
+              local_vars_dict={}, local_vars_list=[], verbose=0, **kw):
     """Execute a single cl statement"""
     # handle redirection keywords
 
@@ -3064,11 +3063,11 @@ def clExecute(s, locals=None, mode="proc",
         global _clExecuteCount
         _clExecuteCount = _clExecuteCount + 1
         pycode = _cl2py.cl2py(string=s, mode=mode, local_vars_dict=local_vars_dict,
-                local_vars_list=local_vars_list)
+                              local_vars_list=local_vars_list)
         # use special scriptname
         taskname = "CL%s" % (_clExecuteCount,)
         scriptname = "<CL script %s>" % (taskname,)
-        code = pycode.code.lstrip() #XXX needed?
+        code = pycode.code.lstrip()  # XXX needed?
 #       DBG('*'*80)
 #       DBG('pycode for task,script='+str((taskname,scriptname,))+':\n'+code)
 #       DBG('*'*80)
@@ -3150,7 +3149,7 @@ def _expand1(instring, noerror):
             varname = ""
         else:
             raise IrafError("Undefined variable `%s' in string `%s'" %
-                    (varname, instring))
+                            (varname, instring))
         instring = instring[:mm.start()] + varname + instring[mm.end():]
         mm = __re_var_paren.search(instring)
     # now expand variable name at start of string
@@ -3165,11 +3164,10 @@ def _expand1(instring, noerror):
         return _expand1(varname + instring[mm.end():], noerror)
     else:
         raise IrafError("Undefined variable `%s' in string `%s'" %
-                (varname, instring))
+                        (varname, instring))
 
 def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
-                pkgname=None, pkgbinary=None, redefine=0, function=None):
-
+                    pkgname=None, pkgbinary=None, redefine=0, function=None):
     """Returns a new or existing IrafTask, IrafPset, or IrafPkg object
 
     Type of returned object depends on value of suffix and value.
@@ -3196,23 +3194,23 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
     spkgname = pkgname.replace('.', '_')
     if spkgname != pkgname:
         _writeError("Warning: `.' illegal in package name, changing "
-                "`%s' to `%s'" % (pkgname, spkgname))
+                    "`%s' to `%s'" % (pkgname, spkgname))
         pkgname = spkgname
 
     staskname = taskname.replace('.', '_')
     if staskname != taskname:
         _writeError("Warning: `.' illegal in task name, changing "
-                "`%s' to `%s'" % (taskname, staskname))
+                    "`%s' to `%s'" % (taskname, staskname))
         taskname = staskname
 
     if suffix == '.pkg':
         return IrafPkgFactory(prefix, taskname, suffix, value, pkgname, pkgbinary,
-                redefine=redefine)
+                              redefine=redefine)
 
     root, ext = _os.path.splitext(value)
     if ext == '.par' and function is None:
         return IrafPsetFactory(prefix, taskname, suffix, value, pkgname, pkgbinary,
-                redefine=redefine)
+                               redefine=redefine)
 
     # normal task definition
 
@@ -3224,16 +3222,16 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
 
     if function is not None:
         newtask = module.IrafPythonTask(prefix, taskname, suffix, value,
-                                pkgname, pkgbinary, function=function)
+                                        pkgname, pkgbinary, function=function)
     elif ext == '.cl':
         newtask = module.IrafCLTask(prefix, taskname, suffix, value,
-                                        pkgname, pkgbinary)
+                                    pkgname, pkgbinary)
     elif value[:1] == '$':
         newtask = module.IrafForeignTask(prefix, taskname, suffix, value,
-                                        pkgname, pkgbinary)
+                                         pkgname, pkgbinary)
     else:
         newtask = module.IrafTask(prefix, taskname, suffix, value,
-                                        pkgname, pkgbinary)
+                                  pkgname, pkgbinary)
     if task is not None:
         # check for consistency of definition by comparing to the
         # new object
@@ -3241,7 +3239,7 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
             # looks different -- print warning and continue
             if not redefine:
                 _writeError("Warning: `%s' is a task redefinition" %
-                        fullname)
+                            fullname)
         else:
             # new task is consistent with old task, so return old task
             if task.getPkgbinary() != newtask.getPkgbinary():
@@ -3254,7 +3252,6 @@ def IrafTaskFactory(prefix='', taskname=None, suffix='', value=None,
     return newtask
 
 def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
-
     """Returns a new or existing IrafPset object
 
     Returns a new object unless this task is already
@@ -3281,7 +3278,7 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
         if task.getFilename() != newtask.getFilename():
             if redefine:
                 _writeError("Warning: `%s' is a task redefinition" %
-                        fullname)
+                            fullname)
         else:
             # old version of task is same as new
             return task
@@ -3290,7 +3287,6 @@ def IrafPsetFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
     return newtask
 
 def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
-
     """Returns a new or existing IrafPkg object
 
     Returns a new object unless this package is already defined, in which case
@@ -3322,12 +3318,12 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
            pkg.hasParfile()  != newpkg.hasParfile():
             if pkg.isLoaded():
                 _writeError("Warning: currently loaded package `%s' was not "
-                        "redefined" % taskname)
+                            "redefined" % taskname)
                 return pkg
             else:
                 if not redefine:
                     _writeError("Warning: `%s' is a task redefinition" %
-                            taskname)
+                                taskname)
                 _addPkg(newpkg)
                 return newpkg
         if pkg.getPkgbinary() != newpkg.getPkgbinary():
@@ -3347,7 +3343,6 @@ def IrafPkgFactory(prefix,taskname,suffix,value,pkgname,pkgbinary,redefine=0):
 # -----------------------------------------------------
 
 def redirProcess(kw):
-
     """Process Stdout, Stdin, Stderr keywords used for redirection
 
     Removes the redirection keywords from kw
@@ -3365,16 +3360,16 @@ def redirProcess(kw):
     # Values are (outputFlag, standardName, openArgs)
     # Still need to add graphics redirection keywords
     redirDict = {
-                            'Stdin': (0, "stdin", "r"),
-                            'Stdout': (1, "stdout", "w"),
-                            'StdoutAppend': (1, "stdout", "a"),
-                            'Stderr': (1, "stderr", "w"),
-                            'StderrAppend': (1, "stderr", "a"),
-                            'StdoutG': (1, "stdgraph", "wb"),
-                            'StdoutAppendG': (1, "stdgraph", "ab")
-                            }
+        'Stdin': (0, "stdin", "r"),
+        'Stdout': (1, "stdout", "w"),
+        'StdoutAppend': (1, "stdout", "a"),
+        'Stderr': (1, "stderr", "w"),
+        'StderrAppend': (1, "stderr", "a"),
+        'StdoutG': (1, "stdgraph", "wb"),
+        'StdoutAppendG': (1, "stdgraph", "ab")
+    }
     # Magic values that trigger special behavior
-    magicValues = { "STDIN": 1, "STDOUT": 1, "STDERR": 1}
+    magicValues = {"STDIN": 1, "STDOUT": 1, "STDERR": 1}
 
     PipeOut = None
     for key in redirDict.keys():
@@ -3395,7 +3390,7 @@ def redirProcess(kw):
                         # IRAF doesn't raise an exception here (e.g., on
                         # input redirection from "STDOUT"), but it should
                         raise IOError("Illegal value `%s' for %s redirection" %
-                                (value, key))
+                                      (value, key))
                 else:
                     # expand IRAF variables
                     value = Expand(value)
@@ -3408,11 +3403,11 @@ def redirProcess(kw):
                             else:
                                 value = '/dev/null'
                         elif "w" in openArgs and \
-                          envget("clobber", "") != yes and \
-                          _os.path.exists(value):
+                                envget("clobber", "") != yes and \
+                                _os.path.exists(value):
                             # don't overwrite unless clobber is set
                             raise IOError("Output file `%s' already exists" %
-                                    value)
+                                          value)
                     fh = open(value, openArgs)
                     # close this when we're done
                     closeFHList.append(fh)
@@ -3422,9 +3417,9 @@ def redirProcess(kw):
                 # function value
                 if not outputFlag:
                     raise IrafError("%s redirection must "
-                            "be from a file handle or string\n"
-                            "Value is `%s'" %
-                            (key, value))
+                                    "be from a file handle or string\n"
+                                    "Value is `%s'" %
+                                    (key, value))
                 if not value:
                     fh = None
                 else:
@@ -3441,14 +3436,14 @@ def redirProcess(kw):
                 # list/tuple of strings is OK for input
                 if outputFlag:
                     raise IrafError("%s redirection must "
-                            "be to a file handle or string\n"
-                            "Value is type %s" %
-                            (key, type(value)))
+                                    "be to a file handle or string\n"
+                                    "Value is type %s" %
+                                    (key, type(value)))
                 try:
                     if value and value[0][-1:] == '\n':
                         s = ''.join(value)
                     elif value:
-                       s = '\n'.join(value) + '\n'
+                        s = '\n'.join(value) + '\n'
                     else:
                         # empty value means null input
                         s = ''
@@ -3457,20 +3452,20 @@ def redirProcess(kw):
                     closeFHList.append(fh)
                 except TypeError:
                     raise IrafError("%s redirection must "
-                            "be from a sequence of strings\n" % key)
+                                    "be from a sequence of strings\n" % key)
             else:
                 # must be a file handle
                 if outputFlag:
                     if not hasattr(value, 'write'):
                         raise IrafError("%s redirection must "
-                                "be to a file handle or string\n"
-                                "Value is `%s'" %
-                                (key, value))
+                                        "be to a file handle or string\n"
+                                        "Value is `%s'" %
+                                        (key, value))
                 elif not hasattr(value, 'read'):
                     raise IrafError("%s redirection must "
-                            "be from a file handle or string\n"
-                            "Value is `%s'" %
-                            (key, value))
+                                    "be from a file handle or string\n"
+                                    "Value is `%s'" %
+                                    (key, value))
                 fh = value
             if fh is not None: redirKW[standardName] = fh
             del kw[key]
@@ -3481,14 +3476,13 @@ def redirProcess(kw):
     return redirKW, closeFHList
 
 def redirApply(redirKW):
-
     """Modify _sys.stdin, stdout, stderr using the redirKW dictionary
 
     Returns a list of the original filehandles so they can be
     restored (by redirReset)
     """
 
-    sysDict = { 'stdin': 1, 'stdout': 1, 'stderr': 1 }
+    sysDict = {'stdin': 1, 'stdout': 1, 'stderr': 1}
     resetList = []
     for key, value in redirKW.items():
         if key in sysDict:
@@ -3501,7 +3495,6 @@ def redirApply(redirKW):
 
 
 def redirReset(resetList, closeFHList):
-
     """Restore _sys.stdin, stdout, stderr to their original values
 
     Also closes the filehandles in closeFHList.  If a tuple with a

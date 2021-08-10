@@ -68,7 +68,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
        ((not PY3K) and (name == "iraf")) or \
        ((not PY3K) and name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
         if IMPORT_DEBUG:
-            print("irafimport: iraf case: n="+name+", fl="+str(fromlist)+ \
+            print("irafimport: iraf case: n="+name+", fl="+str(fromlist)+
                   ", l="+str(level))
         return _irafModuleProxy
 
@@ -104,7 +104,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     # Same for everything in fromlist (which is a tuple in PY3K)
     if fromlist:
         fromlist = tuple([item.replace('pytools', 'stsci.tools')
-                         for item in fromlist])
+                          for item in fromlist])
     # !!! END TEMPORARY KLUDGE !!!
 
     hadIrafInList = fromlist and 'iraf' in fromlist and name=='' and level>0
@@ -203,7 +203,7 @@ if PY3K:
     the_iraf_module = pyrafmod.iraf
 else:
     the_iraf_module = _originalImport('iraf', globals(), locals(), [])
- 
+
 # leaving
 if IMPORT_DEBUG:
     print("irafimport: passed final import")

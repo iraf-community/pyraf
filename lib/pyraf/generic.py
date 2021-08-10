@@ -125,7 +125,7 @@ class GenericParser:
     #
     #  A hook for GenericASTBuilder and GenericASTMatcher.
     #
-    def preprocess(self, rule, func):       return rule, func
+    def preprocess(self, rule, func): return rule, func
 
     def addRule(self, doc, func):
         rules = doc.split()
@@ -146,7 +146,7 @@ class GenericParser:
             if lhs in self.rules:
                 self.rules[lhs].append(rule)
             else:
-                self.rules[lhs] = [ rule ]
+                self.rules[lhs] = [rule]
             self.rule2func[rule] = fn
             self.rule2name[rule] = func.__name__[2:]
         self.ruleschanged = 1
@@ -164,9 +164,9 @@ class GenericParser:
         #  to self.addRule() because the start rule shouldn't
         #  be subject to preprocessing.
         #
-        startRule = (self._START, ( start, self._EOF ))
+        startRule = (self._START, (start, self._EOF))
         self.rule2func[startRule] = lambda args: args[0]
-        self.rules[self._START] = [ startRule ]
+        self.rules[self._START] = [startRule]
         self.rule2name[startRule] = ''
         return startRule
 
@@ -279,7 +279,7 @@ class GenericParser:
         # token.type in buildState work for EOF symbol
         tokens.append(token.Token(self._EOF))
         states = (len(tokens)+1)*[None]
-        states[0] = [ (self.startRule, 0, 0) ]
+        states[0] = [(self.startRule, 0, 0)]
 
         if self.ruleschanged:
             self.makeFIRST()
@@ -292,7 +292,7 @@ class GenericParser:
                 break
             self.buildState(tokens[i], states, i, tree)
 
-        if i < len(tokens)-1 or states[i+1] != [ (self.startRule, 2, 0) ]:
+        if i < len(tokens)-1 or states[i+1] != [(self.startRule, 2, 0)]:
             del tokens[-1]
             self.error(tokens[i-1])
         rv = self.buildTree(tokens, tree, ((self.startRule, 2, 0), i+1))
@@ -477,9 +477,9 @@ class GenericASTBuilder(GenericParser):
         self.AST = AST
 
     def preprocess(self, rule, func):
-        rebind = lambda lhs, self=self: \
-                        lambda args, lhs=lhs, self=self: \
-                                self.buildASTNode(args, lhs)
+        def rebind(lhs, self=self): return \
+            lambda args, lhs=lhs, self=self: \
+            self.buildASTNode(args, lhs)
         lhs, rhs = rule
         return rule, rebind(lhs)
 
@@ -492,7 +492,7 @@ class GenericASTBuilder(GenericParser):
                 children.append(self.terminal(arg))
         return self.nonterminal(lhs, children)
 
-    def terminal(self, token):      return token
+    def terminal(self, token): return token
 
     def nonterminal(self, type, args):
         rv = self.AST(type)
@@ -545,12 +545,12 @@ class GenericASTTraversal:
             return
 
         for kid in node:
-#          if kid.type=='term' and len(kid._kids)==3 and kid._kids[1].type=='/':
-#              # Not the place to check for integer divsion - the type is
-#              # either INTEGER or IDENT (and we dont know yet what the
-#              # underlying type of the IDENT is...)
-#              print(kid._kids[0].type, kid._kids[1].type, kid._kids[2].type)
-           self.preorder(kid)
+            #          if kid.type=='term' and len(kid._kids)==3 and kid._kids[1].type=='/':
+            #              # Not the place to check for integer divsion - the type is
+            #              # either INTEGER or IDENT (and we dont know yet what the
+            #              # underlying type of the IDENT is...)
+            #              print(kid._kids[0].type, kid._kids[1].type, kid._kids[2].type)
+            self.preorder(kid)
 
         func = self.exitrules.get(name)
         if func is not None:
@@ -587,9 +587,9 @@ class GenericASTMatcher(GenericParser):
         self.ast = ast
 
     def preprocess(self, rule, func):
-        rebind = lambda func, self=self: \
-                        lambda args, func=func, self=self: \
-                                self.foundMatch(args, func)
+        def rebind(func, self=self): return \
+            lambda args, func=func, self=self: \
+            self.foundMatch(args, func)
         lhs, rhs = rule
         rhslist = list(rhs)
         rhslist.reverse()

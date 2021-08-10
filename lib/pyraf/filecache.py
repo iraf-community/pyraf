@@ -45,7 +45,6 @@ class FileCache:
     # methods that should be supplied in extended class
 
     def getValue(self):
-
         """Get info associated with file.
 
         Usually this is not called directly by the user (use the
@@ -55,7 +54,6 @@ class FileCache:
         return self.value
 
     def updateValue(self):
-
         """Called when file has changed."""
 
         self.value = self._getFileHandle().read()
@@ -63,7 +61,6 @@ class FileCache:
     # method that may be changed in extended class
 
     def newValue(self):
-
         """Called when file is new.  By default same as updateValue."""
 
         self.updateValue()
@@ -71,7 +68,6 @@ class FileCache:
     # basic method to get cached value or to update if needed
 
     def get(self, update=1):
-
         """Get info associated with file.
 
         Updates cache if needed, then calls getValue.  If the
@@ -87,7 +83,7 @@ class FileCache:
                 if oldattr[1]>newattr[1] or oldattr[2]>newattr[2]:
                     # warning if current file appears older than cached version
                     self._warning("Warning: current version of file %s"
-                            " is older than cached version" % self.filename)
+                                  " is older than cached version" % self.filename)
                 self.updateValue()
                 self.attributes = newattr
         return self.getValue()
@@ -95,7 +91,6 @@ class FileCache:
     # internal utility methods
 
     def _getFileHandle(self, filename=None):
-
         """Get file handle for a filename or filehandle instance"""
 
         if filename==None:
@@ -108,11 +103,10 @@ class FileCache:
                 fh.seek(0)
         else:
             raise TypeError(
-                    "Argument to _getFileHandle must be name or file handle")
+                "Argument to _getFileHandle must be name or file handle")
         return fh
 
     def _getAttributes(self, filename=None):
-
         """Get file attributes for a file or filehandle"""
 
         if filename is None:
@@ -130,7 +124,6 @@ class FileCache:
         return st[stat.ST_SIZE], st[stat.ST_CTIME], st[stat.ST_MTIME]
 
     def _warning(self, msg):
-
         """Print warning message to stderr, using verbose flag"""
 
         sys.stdout.flush()
@@ -143,13 +136,11 @@ class MD5Cache(FileCache):
     """Cached MD5 digest for file contents"""
 
     def getValue(self):
-
         """Return MD5 digest value associated with file."""
 
         return self.value
 
     def updateValue(self):
-
         """Called when file has changed."""
 
         contents = self._getFileHandle().read() # is unicode str in PY3K
@@ -161,7 +152,6 @@ class MD5Cache(FileCache):
         else:
             h.update(contents)
             self.value = h.digest()
-
 
 
 class FileCacheDict:

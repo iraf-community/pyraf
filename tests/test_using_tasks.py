@@ -34,7 +34,7 @@ def _assertApproxEqual(afloat, bfloat, tolerance=1.0e-12):
         ratiodiff = math.fabs(1.0 - math.fabs(afloat/(1.0*bfloat)))
         assert ratiodiff < tolerance, \
             '{} != {}, radiodiff = {}'.format(
-                    afloat, bfloat, math.fabs(ratiodiff))
+                afloat, bfloat, math.fabs(ratiodiff))
     else:
         diff = math.fabs(afloat - bfloat)
         assert diff < tolerance, \

@@ -132,7 +132,7 @@ def getPointerGlobalPosition():
     # need to convert to the top-left origin.
     pos = AppKit.NSEvent.mouseLocation() # current mouse location
     if __screenHeight <= 0: raise Exception("Bug: aqutil module uninitialized")
-    return { 'x' : pos.x, 'y' : __screenHeight - pos.y }
+    return {'x': pos.x, 'y': __screenHeight - pos.y}
 
 
 def getPointerPosition(windowID):
@@ -186,25 +186,24 @@ def __doPyobjcWinInit():
     if struct.calcsize("l") > 4: # is 64-bit python
         WARPSIG = tobytes('v{CGPoint=dd}')
 
-
     FUNCTIONS=[
-         # These are public API
-         ( u'GetCurrentProcess', OSErr+OUTPSN),
-         ( u'GetFrontProcess', OSErr+OUTPSN),
-#        ( u'GetProcessPID', OSStat+INPSN+OUTPID), # see OUTPID note
-         ( u'SetFrontProcess', OSErr+INPSN),
-         ( u'CGWarpMouseCursorPosition', WARPSIG),
-         ( u'CGMainDisplayID', objc._C_PTR+objc._C_VOID),
-         ( u'CGDisplayPixelsHigh', objc._C_ULNG+objc._C_ULNG),
-         ( u'CGDisplayHideCursor', CGErr+objc._C_ULNG),
-         ( u'CGDisplayShowCursor', CGErr+objc._C_ULNG),
-         # This is undocumented API
-         ( u'CPSSetProcessName', OSErr+INPSN+objc._C_CHARPTR),
-         ( u'CPSEnableForegroundOperation', OSErr+INPSN),
+        # These are public API
+        (u'GetCurrentProcess', OSErr+OUTPSN),
+        (u'GetFrontProcess', OSErr+OUTPSN),
+        #        ( u'GetProcessPID', OSStat+INPSN+OUTPID), # see OUTPID note
+        (u'SetFrontProcess', OSErr+INPSN),
+        (u'CGWarpMouseCursorPosition', WARPSIG),
+        (u'CGMainDisplayID', objc._C_PTR+objc._C_VOID),
+        (u'CGDisplayPixelsHigh', objc._C_ULNG+objc._C_ULNG),
+        (u'CGDisplayHideCursor', CGErr+objc._C_ULNG),
+        (u'CGDisplayShowCursor', CGErr+objc._C_ULNG),
+        # This is undocumented API
+        (u'CPSSetProcessName', OSErr+INPSN+objc._C_CHARPTR),
+        (u'CPSEnableForegroundOperation', OSErr+INPSN),
     ]
 
     bndl = AppKit.NSBundle.bundleWithPath_(objc.pathForFramework(
-           u'/System/Library/Frameworks/ApplicationServices.framework'))
+        u'/System/Library/Frameworks/ApplicationServices.framework'))
     if bndl is None: raise Exception("Error in aqutil with bundleWithPath_")
 
     # Load the functions into the global (module) namespace

@@ -29,8 +29,7 @@ def text(textstring, x, y):
     return metacode
 
 def markCross(x, y, size=1., xflag=0, yflag=0,
-        linetype=1, linewidth=100, color=1):
-
+              linetype=1, linewidth=100, color=1):
     """Return metacode to plot a cross at the given position.
 
     Size = 1 => 10 pixels x 10 pixels.
@@ -59,14 +58,14 @@ def markCross(x, y, size=1., xflag=0, yflag=0,
         gkiYmax = gkiCoord(limit)
     metacode = numpy.zeros(22, numpy.int16)
     i = 0
-    metacode[i  ] = gki.BOI
+    metacode[i] = gki.BOI
     metacode[i+1] = gki.GKI_PLSET
     metacode[i+2] = 6
     metacode[i+3] = linetype
     metacode[i+4] = linewidth
     metacode[i+5] = color
     i = i+6
-    metacode[i  ] = gki.BOI
+    metacode[i] = gki.BOI
     metacode[i+1] = gki.GKI_POLYLINE
     metacode[i+2] = 8
     metacode[i+3] = 2
@@ -75,7 +74,7 @@ def markCross(x, y, size=1., xflag=0, yflag=0,
     metacode[i+6] = gkiX[0]
     metacode[i+7] = gkiYmax[0]
     i = i+8
-    metacode[i  ] = gki.BOI
+    metacode[i] = gki.BOI
     metacode[i+1] = gki.GKI_POLYLINE
     metacode[i+2]= 8
     metacode[i+3]= 2

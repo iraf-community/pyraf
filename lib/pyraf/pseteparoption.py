@@ -37,8 +37,8 @@ class PsetEparOption(eparoption.ActionEparButton):
                 return
 
         childPsetHandle = epar.PyrafEparDialog(self.psetName,
-                               parent    = self.master_frame,
-                               isChild   = 1,
-                               childList = parentToplevel.childList,
-                               title     = "PSET Parameter Editor")
+                                               parent    = self.master_frame,
+                                               isChild   = 1,
+                                               childList = parentToplevel.childList,
+                                               title     = "PSET Parameter Editor")
         parentToplevel.childList.append(childPsetHandle)

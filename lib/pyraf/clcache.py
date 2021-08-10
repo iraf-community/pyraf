@@ -12,17 +12,17 @@ from stsci.tools.for2to3 import PY3K
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
 if __name__.find('.') < 0:  # for unit test need absolute import
-   for mmm in ('filecache', 'pyrafglobals', 'dirshelve'):
-       exec('import '+mmm, globals()) # 2to3 messes up simpler form
+    for mmm in ('filecache', 'pyrafglobals', 'dirshelve'):
+        exec('import '+mmm, globals()) # 2to3 messes up simpler form
 else:
-   import filecache
-   import pyrafglobals
-   import dirshelve
+    import filecache
+    import pyrafglobals
+    import dirshelve
 
 # In case you wish to disable all CL script caching (for whatever reason)
 DISABLE_CLCACHING = False # enable caching by default
 if PY3K or 'PYRAF_NO_CLCACHE' in os.environ:
-   DISABLE_CLCACHING = True
+    DISABLE_CLCACHING = True
 
 # set up pickle so it can pickle code objects
 
@@ -153,7 +153,6 @@ class _CodeCache:
         return None
 
     def warning(self, msg, level=0):
-
         """Print warning message to stderr, using verbose flag"""
 
         if Verbose >= level:
@@ -162,7 +161,6 @@ class _CodeCache:
             sys.stderr.flush()
 
     def writeSystem(self, value=1):
-
         """Add scripts to system cache instead of user cache"""
 
         if value==0:
@@ -177,7 +175,6 @@ class _CodeCache:
             self.warning("No CL script cache is active")
 
     def close(self):
-
         """Close all cache files"""
 
         for writeflag, cache in self.cacheList:
@@ -224,7 +221,6 @@ class _CodeCache:
                 return
 
     def get(self, filename, mode="proc", source=None):
-
         """Get pycode from cache for this file.
 
         Returns tuple (index, pycode).  Pycode=None if not found
@@ -247,7 +243,6 @@ class _CodeCache:
         return index, None
 
     def remove(self, filename):
-
         """Remove pycode from cache for this file or IrafTask object.
 
         This deletes the entry from the shelve persistent database, under

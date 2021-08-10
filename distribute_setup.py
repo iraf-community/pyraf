@@ -150,11 +150,11 @@ def use_setuptools(version=DEFAULT_VERSION, download_base=DEFAULT_URL,
             e = sys.exc_info()[1]
             if was_imported:
                 sys.stderr.write(
-                "The required version of distribute (>=%s) is not available,\n"
-                "and can't be installed while this script is running. Please\n"
-                "install a more recent version first, using\n"
-                "'easy_install -U distribute'."
-                "\n\n(Currently using %r)\n" % (version, e.args[0]))
+                    "The required version of distribute (>=%s) is not available,\n"
+                    "and can't be installed while this script is running. Please\n"
+                    "install a more recent version first, using\n"
+                    "'easy_install -U distribute'."
+                    "\n\n(Currently using %r)\n" % (version, e.args[0]))
                 sys.exit(2)
             else:
                 del pkg_resources, sys.modules['pkg_resources']    # reload ok
@@ -300,7 +300,7 @@ def _create_fake_setuptools_pkg_info(placeholder):
         return
     pyver = '%s.%s' % (sys.version_info[0], sys.version_info[1])
     setuptools_file = 'setuptools-%s-py%s.egg-info' % \
-            (SETUPTOOLS_FAKED_VERSION, pyver)
+        (SETUPTOOLS_FAKED_VERSION, pyver)
     pkg_info = os.path.join(placeholder, setuptools_file)
     if os.path.exists(pkg_info):
         log.warn('%s already exists', pkg_info)
@@ -377,7 +377,7 @@ def _fake_setuptools():
     ws = pkg_resources.working_set
     try:
         setuptools_dist = ws.find(pkg_resources.Requirement.parse('setuptools',
-                                  replacement=False))
+                                                                  replacement=False))
     except TypeError:
         # old distribute API
         setuptools_dist = ws.find(pkg_resources.Requirement.parse('setuptools'))
@@ -406,7 +406,7 @@ def _fake_setuptools():
         log.warn('Egg installation')
         pkg_info = os.path.join(setuptools_location, 'EGG-INFO', 'PKG-INFO')
         if (os.path.exists(pkg_info) and
-            _same_content(pkg_info, SETUPTOOLS_PKG_INFO)):
+                _same_content(pkg_info, SETUPTOOLS_PKG_INFO)):
             log.warn('Already patched.')
             return
         log.warn('Patching...')
