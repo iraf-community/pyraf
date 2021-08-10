@@ -9,7 +9,7 @@ import time
 
 import pytest
 
-from .utils import IS_PY2, HAS_IRAF, DATA_DIR
+from .utils import HAS_IRAF, DATA_DIR
 
 if HAS_IRAF:
     from pyraf import iraf

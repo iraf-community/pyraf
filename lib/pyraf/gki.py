@@ -41,9 +41,7 @@ from __future__ import division, print_function
 
 import numpy
 from types import *
-import os
 import sys
-import string
 import re
 from stsci.tools.irafglobals import IrafError
 from stsci.tools.for2to3 import ndarr2str, ndarr2bytes

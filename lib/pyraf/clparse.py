@@ -9,7 +9,6 @@ from __future__ import division, print_function
 from generic import GenericASTBuilder, GenericASTTraversal
 from clast import AST
 from cltoken import Token
-import string
 
 
 class CLStrictParser(GenericASTBuilder):

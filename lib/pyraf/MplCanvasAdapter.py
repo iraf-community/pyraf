@@ -5,7 +5,6 @@ $Id$
 
 from __future__ import division, print_function
 
-import os
 import matplotlib
 matplotlib.use('TkAgg')  # set backend
 import matplotlib.backends.backend_tkagg as tkagg

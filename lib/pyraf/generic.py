@@ -40,10 +40,7 @@ from __future__ import division, print_function
 __version__ = 'SPARK-0.6.1rlw'
 
 import re
-import sys
-import string
 import cltoken
-token = cltoken
 
 
 def _namelist(instance):
@@ -286,7 +283,7 @@ class GenericParser:
         tree = {}
         # add a Token instead of a string so references to
         # token.type in buildState work for EOF symbol
-        tokens.append(token.Token(self._EOF))
+        tokens.append(cltoken.Token(self._EOF))
         states = (len(tokens) + 1) * [None]
         states[0] = [(self.startRule, 0, 0)]
 

@@ -15,7 +15,6 @@ R. White, 2000 Sept 26
 from __future__ import division, print_function
 
 import shelve
-import sys
 from stsci.tools.for2to3 import PY3K
 
 if __name__.find('.') < 0:  # for unit test need absolute import

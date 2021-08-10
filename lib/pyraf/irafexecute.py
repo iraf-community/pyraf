@@ -7,11 +7,8 @@ from __future__ import division, print_function
 import os
 import re
 import signal
-import string
 import struct
 import sys
-import time
-import types
 import numpy
 import cStringIO
 from stsci.tools import irafutils

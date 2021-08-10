@@ -11,7 +11,6 @@ if capable.OF_GRAPHICS:
     from Tkinter import *  # requires 2to3
     from tkMessageBox import askokcancel, showwarning, showerror
     import os
-    import sys
     import cStringIO
     from stsci.tools import listdlg, eparoption, editpar, irafutils
     import iraf

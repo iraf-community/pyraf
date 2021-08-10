@@ -18,12 +18,10 @@ from __future__ import division, print_function
 
 import __builtin__
 import __main__
-import string
 import re
 import keyword
 import glob
 import os
-import sys
 import iraf
 from stsci.tools import minmatch
 try:

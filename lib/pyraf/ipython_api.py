@@ -143,7 +143,6 @@ class IPython_PyRAF_Integrator(object):
 
     def __init__(self, clemulate=1, cmddict={}, cmdchars=("a-zA-Z_.", "0-9")):
         import re
-        import sys
         import os
         self.reword = re.compile('[a-z]*')
         self._cl_emulation = clemulate
@@ -344,7 +343,6 @@ class IPython_PyRAF_Integrator(object):
         """
         import linecache
         import traceback
-        import sys
         import os
         import IPython.ultraTB
 

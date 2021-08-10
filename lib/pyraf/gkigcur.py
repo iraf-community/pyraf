@@ -5,10 +5,7 @@ $Id$
 """
 from __future__ import division, print_function
 
-import string
-import os
 import sys
-import numpy
 import Tkinter as TKNTR
 from stsci.tools import irafutils
 import wutil
@@ -235,7 +232,7 @@ class Gcursor:
             # snap command - print the plot
             import gki
             gki.printPlot(self.window)
-        elif key in string.ascii_uppercase:
+        elif key.isupper():
             if key == 'I':
                 # I is equivalent to keyboard interrupt
                 self.window.gcurTerminate(

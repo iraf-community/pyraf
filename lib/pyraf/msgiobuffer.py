@@ -10,7 +10,6 @@ from __future__ import division, print_function
 
 # System level modules
 from Tkinter import *  # requires 2to3
-import string
 
 
 class MsgIOBuffer(Frame):

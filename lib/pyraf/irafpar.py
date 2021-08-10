@@ -10,7 +10,6 @@ import copy
 import glob
 import os
 import re
-import sys
 import types
 from stsci.tools import basicpar, minmatch, irafutils, taskpars
 from stsci.tools.for2to3 import PY3K

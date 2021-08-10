@@ -8,7 +8,6 @@ from __future__ import division, print_function
 import numpy
 import os
 import sys
-import string
 import time
 import Tkinter as TKNTR  # requires 2to3
 import msgiobuffer
@@ -18,7 +17,6 @@ from stsci.tools import capable, filedlg, irafutils
 from stsci.tools.irafglobals import IrafError, userWorkingHome
 from stsci.tools.for2to3 import ndarr2bytes
 import gki
-import textattrib
 import irafgwcs
 from pyrafglobals import pyrafDir
 import tkFileDialog
@@ -615,7 +613,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
     def createNewWindow(self):
 
-        import newWindowHack  # Fixes lockup in askstring() with Tk8.4
         newname = tkSimpleDialog.askstring(
             "New Graphics Window",
             "Name of new graphics window",

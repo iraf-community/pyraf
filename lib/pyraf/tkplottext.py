@@ -23,7 +23,6 @@ by a system-wide configuration state. See gkiopengl.py
 """
 from __future__ import division, print_function
 
-import fontdata
 import numpy
 import math
 from textattrib import *

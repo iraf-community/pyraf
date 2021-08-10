@@ -29,7 +29,6 @@ from __future__ import division, print_function
 #       Token class for IRAF CL parsing
 #
 
-import string
 from stsci.tools.irafglobals import INDEF
 from stsci.tools import compmixin
 

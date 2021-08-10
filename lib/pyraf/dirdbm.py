@@ -17,7 +17,6 @@ from __future__ import division, print_function
 
 import os as _os
 import binascii as _binascii
-import string as _string
 import __builtin__
 
 # For anydbm

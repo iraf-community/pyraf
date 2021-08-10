@@ -7,7 +7,6 @@ from __future__ import division, print_function
 
 import sys
 import os
-import string
 from stsci.tools.for2to3 import ndarr2bytes
 import gki
 import irafgwcs

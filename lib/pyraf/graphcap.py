@@ -4,7 +4,6 @@ $Id$
 """
 from __future__ import division, print_function
 
-import string
 from stsci.tools import compmixin
 import filecache
 

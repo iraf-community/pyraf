@@ -7,9 +7,7 @@ $Id$
 from __future__ import division, print_function
 
 import math
-import sys
 import numpy
-import os
 import Tkinter as TKNTR
 import matplotlib
 # (done in mca file) matplotlib.use('TkAgg') # set backend

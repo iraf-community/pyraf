@@ -17,8 +17,6 @@ from __future__ import division, print_function
 
 import os
 import sys
-import string
-import commands
 import re
 
 
@@ -56,7 +54,6 @@ except Exception as e:
     urwid.Pile = FakeClass()
     urwid.the_error = str(e)
 
-import cStringIO
 # PyRAF modules
 import iraf
 import irafpar

@@ -9,10 +9,9 @@ $Id$
 """
 from __future__ import division, print_function
 
-import struct
 import numpy
 import math
-from stsci.tools.for2to3 import ndarr2bytes, tobytes, BNULLSTR, PY3K
+from stsci.tools.for2to3 import ndarr2bytes, tobytes, BNULLSTR
 from stsci.tools.irafglobals import IrafError
 import irafinst
 

@@ -9,7 +9,6 @@ $Id$
 from __future__ import division, print_function
 
 import sys
-import string
 from stsci.tools import irafutils
 from stsci.tools.irafglobals import Verbose, IrafError
 import irafdisplay

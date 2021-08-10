@@ -50,12 +50,9 @@ import errno
 import os
 import select
 import signal
-import string
-import subprocess
 import sys
 import time
-import types
-from stsci.tools.for2to3 import tobytes, tostr, BNULLSTR, BNEWLINE, bytes_read, bytes_write
+from stsci.tools.for2to3 import tostr, BNULLSTR, BNEWLINE, bytes_read, bytes_write
 
 OS_HAS_FORK = hasattr(os, 'fork')
 

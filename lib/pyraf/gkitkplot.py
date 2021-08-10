@@ -7,8 +7,6 @@ $Id$
 from __future__ import division, print_function
 
 import numpy
-import sys
-import string
 import Tkinter as TKNTR  # requires 2to3
 from stsci.tools.for2to3 import ndarr2str
 import wutil
@@ -17,8 +15,6 @@ import gki
 import gkitkbase
 import gkigcur
 import tkplottext
-import textattrib
-import irafgwcs
 
 TK_LINE_STYLE_PATTERNS = ['.', '.', '_', '.', '.._']
 
