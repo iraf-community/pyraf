@@ -166,7 +166,7 @@ class _irafModuleClass:
             return self.module.getTask(attr)
         except minmatch.AmbiguousKeyError as e:
             raise AttributeError(str(e))
-        except KeyError as e:
+        except KeyError:
             pass
         # last try is minimum match dictionary of rest of module contents
         try:

@@ -791,7 +791,7 @@ def getPkg(pkgname, found=0):
     except _minmatch.AmbiguousKeyError as e:
         # re-raise the error with a bit more info
         raise e.__class__("Package " + pkgname + ": " + str(e))
-    except KeyError as e:
+    except KeyError:
         if found:
             return None
         raise KeyError("Package `%s' not found" % (pkgname,))
@@ -1620,9 +1620,9 @@ def defpar(paramname):
     if paramname == INDEF:
         return INDEF
     try:
-        value = clParGet(paramname, prompt=0)
+        clParGet(paramname, prompt=0)
         return 1
-    except IrafError as e:
+    except IrafError:
         # treat all errors (including ambiguous task and parameter names)
         # as a missing parameter
         return 0
@@ -1810,9 +1810,9 @@ def deftask(taskname):
         return INDEF
     try:
         import pyraf.iraf
-        t = getattr(pyraf.iraf, taskname)
+        getattr(pyraf.iraf, taskname)
         return 1
-    except AttributeError as e:
+    except AttributeError:
         # treat all errors (including ambiguous task names) as a missing task
         return 0
 
@@ -1824,7 +1824,7 @@ def defpac(pkgname):
     try:
         t = getPkg(pkgname)
         return t.isLoaded()
-    except KeyError as e:
+    except KeyError:
         # treat all errors (including ambiguous package names) as a missing pkg
         return 0
 
@@ -2100,8 +2100,7 @@ def scan(theLocals, *namelist, **kw):
     except Exception as ex:
         print('iraf.scan exception: ' + str(ex))
     finally:
-        # note return value not used here
-        rv = redirReset(resetList, closeFHList)
+        redirReset(resetList, closeFHList)
 
 
 def scanf(theLocals, format, *namelist, **kw):
@@ -2134,8 +2133,7 @@ def scanf(theLocals, format, *namelist, **kw):
     except Exception as ex:
         print('iraf.scanf exception: ' + str(ex))
     finally:
-        # note return value not used here
-        rv = redirReset(resetList, closeFHList)
+        redirReset(resetList, closeFHList)
 
 
 def nscan():
@@ -2442,7 +2440,7 @@ def update(*args):
     for taskname in args:
         try:
             getTask(taskname).saveParList()
-        except KeyError as e:
+        except KeyError:
             _writeError("Warning: Could not find task %s for update" %
                         taskname)
 
@@ -2460,7 +2458,7 @@ def unlearn(*args, **kw):
     for taskname in args:
         try:  # maybe it is an IRAF task name
             getTask(taskname).unlearn()
-        except KeyError as e:
+        except KeyError:
             try:  # maybe it is a task which uses .cfg files
                 ans = _teal.unlearn(taskname, deleteAll=force)
                 if ans != 0:
@@ -2784,7 +2782,7 @@ def hidetask(*args):
     for taskname in args:
         try:
             getTask(taskname).setHidden()
-        except KeyError as e:
+        except KeyError:
             _writeError("Warning: Could not find task %s to hide" % taskname)
 
 
@@ -2880,13 +2878,13 @@ def task(*args, **kw):
         name = mtl.group('taskname')
         prefix = mtl.group('taskprefix')
         suffix = mtl.group('tasksuffix')
-        newtask = IrafTaskFactory(prefix,
-                                  name,
-                                  suffix,
-                                  value,
-                                  pkgname,
-                                  pkgbinary,
-                                  redefine=redefine)
+        IrafTaskFactory(prefix,
+                        name,
+                        suffix,
+                        value,
+                        pkgname,
+                        pkgbinary,
+                        redefine=redefine)
 
 
 def redefine(*args, **kw):

@@ -294,7 +294,6 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         # First, set all relevant attributes
         la = self.lineAttributes
         # XXX not handling linestyle yet, except for clear
-        stipple = 0
         npts = len(vertices) // 2
         if la.linestyle == 0:  # clear
             color = self.colorManager.setDrawingColor(0)
@@ -342,8 +341,6 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
     def tkplot_fillarea(self, vertices):
 
         fa = self.fillAttributes
-        clear = 0
-        polystipple = 0
         npts = len(vertices) // 2
         if fa.fillstyle != 0:
             color = self.colorManager.setDrawingColor(fa.color)

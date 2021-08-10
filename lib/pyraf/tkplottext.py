@@ -121,7 +121,6 @@ def softText(win, x, y, textstr):
     ywin = float(gw.winfo_height())
     color = win.colorManager.setDrawingColor(ta.textColor)
     options = {"fill": color}
-    font = ta.font
     size = fsize * hsize
     cosrot = numpy.cos((charUp - 90) * numpy.pi / 180)
     sinrot = numpy.sin((charUp - 90) * numpy.pi / 180)

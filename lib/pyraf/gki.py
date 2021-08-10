@@ -479,7 +479,7 @@ class GkiReturnBuffer:
     def get(self):
 
         if len(self.fifo):
-            metacode = self.fifo.pop()
+            return self.fifo.pop()
         else:
             raise Exception("Attempted read on empty gki input buffer")
 
@@ -980,7 +980,6 @@ class GkiController(GkiProxy):
 
     def control_openws(self, arg):
 
-        mode = arg[0]
         device = ndarr2str(arg[2:].astype(numpy.int8)).strip()
         self.openKernel(device)
 

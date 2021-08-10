@@ -543,7 +543,7 @@ class IrafProcess:
             self.writeString("bye\n")
             if self.process.wait(0.5):
                 return
-        except (IrafProcessError, subproc.SubprocessError) as e:
+        except (IrafProcessError, subproc.SubprocessError):
             pass
         # No more Mr. Nice Guy
         try:

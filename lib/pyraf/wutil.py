@@ -300,7 +300,7 @@ class TerminalFocusEntity(FocusEntity):
                 scrnPosDict = aqutil.getPointerGlobalPosition()
                 self.lastScreenX = scrnPosDict['x']
                 self.lastScreenY = scrnPosDict['y']
-        except EnvironmentError as e:
+        except EnvironmentError:
             self.windowID = None
         self.lastX = 30
         self.lastY = 30

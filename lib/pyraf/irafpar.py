@@ -1265,8 +1265,6 @@ def _printDiff(pd1, pd2, label):
     # check for differing order or type, but ignore order if there
     # were extra parameters
     for key in pd1.keys():
-        val1 = pd1[key]
-        val2 = pd2[key]
         if pd1[key] != pd2[key]:
             mm = []
             type1, order1 = pd1[key]

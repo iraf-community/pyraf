@@ -553,7 +553,6 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
     def __init__(self, ast, var_list, var_dict, filename):
         GenericASTTraversal.__init__(self, ast)
         self.var_list = var_list
-        n = len(var_list)
         self.var_dict = var_dict
         self.filename = filename
         self.preorder()
@@ -866,8 +865,8 @@ class VarList(GenericASTTraversal, ErrorTracker):
 
     def n_param_declaration_block(self, node):
         # get list of parameter variables
-        p = ExtractDeclInfo(node, self.proc_args_list, self.proc_args_dict,
-                            self.ast.filename)
+        ExtractDeclInfo(node, self.proc_args_list, self.proc_args_dict,
+                        self.ast.filename)
         # check for undefined parameters declared in procedure stmt
         d = self.proc_args_dict
         for arg in d.keys():
@@ -887,8 +886,8 @@ class VarList(GenericASTTraversal, ErrorTracker):
 
     def n_statement_block(self, node):
         # declarations in executable section are local variables
-        p = ExtractDeclInfo(node, self.local_vars_list, self.local_vars_dict,
-                            self.ast.filename)
+        ExtractDeclInfo(node, self.local_vars_list, self.local_vars_dict,
+                        self.ast.filename)
         self.prune()
 
 
@@ -2324,7 +2323,6 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # additionalArguments will get appended at the end of the
         # argument list
         self.additionalArguments = []
-        addsep = ""
         # add plumbing for pipes if necessary
         if self.pipeIn:
             # read from existing input line list

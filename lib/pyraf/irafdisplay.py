@@ -102,7 +102,7 @@ def _open(imtdev=None):
         for imtdev in defaults:
             try:
                 return _open(imtdev)
-            except IOError as error:
+            except IOError:
                 pass
         raise IOError("Cannot open image display")
     # substitute user id in name (multiple times) if necessary
@@ -242,7 +242,7 @@ class UnixImageDisplay(ImageDisplay):
             self._socket = socket.socket(family, type)
             self._socket.connect(filename)
             self._fdin = self._fdout = self._socket.fileno()
-        except socket.error as error:
+        except socket.error:
             raise IOError("Cannot open image display")
 
     def close(self):
@@ -303,7 +303,7 @@ class ImageDisplayProxy(ImageDisplay):
             # Null value indicates display was probably closed
             if value:
                 return value
-        except IOError as error:
+        except IOError:
             pass
         # This error can occur if image display was closed.
         # If a new display has been started then closing and

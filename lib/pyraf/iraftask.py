@@ -1023,7 +1023,6 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             exename1 = ""
             # make our best guess that the basename is what follows the
             # last '$' in _filename
-            basedir = ""
             s = self._filename.split("$")
             basename = s[-1]
         if basename == "":
@@ -1258,7 +1257,6 @@ class IrafPythonTask(IrafTask):
                 return self.__dict__
         except KeyError:
             pass
-        file = self._pyFunction.__code__.co_filename
         # oh well, replace _pyFunction in shallow copy of dictionary
         sdict = self.__dict__.copy()
         sdict['_pyFunction'] = None
@@ -1313,7 +1311,7 @@ class ParDictListSearch:
                                           native=1,
                                           mode="h",
                                           exact=1)
-        except IrafError as e:
+        except IrafError:
             pass
         # try minimum match
         try:
@@ -1331,7 +1329,7 @@ class ParDictListSearch:
         # try exact match
         try:
             return self._taskObj.getParObject(paramname, exact=1, alldict=1)
-        except IrafError as e:
+        except IrafError:
             pass
         # try minimum match
         try:
@@ -1353,7 +1351,7 @@ class ParDictListSearch:
         # try exact match
         try:
             return self._taskObj.setParam(paramname, value, exact=1)
-        except IrafError as e:
+        except IrafError:
             pass
         # try minimum match
         try:
@@ -1666,7 +1664,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
                     try:
                         matches.extend(
                             p.getAllMatches(name, triedpkgs=triedpkgs))
-                    except AttributeError as e:
+                    except AttributeError:
                         pass
         return matches
 

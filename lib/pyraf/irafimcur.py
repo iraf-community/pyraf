@@ -42,7 +42,7 @@ def _getDevice(displayname=None):
             _devices[imtdev] = irafdisplay.ImageDisplayProxy(imtdev)
         device = _devices[displayname] = _devices[imtdev]
         return device
-    except (KeyError, IOError, OSError) as error:
+    except (KeyError, IOError, OSError):
         pass
 
     # last gasp is to assume display is an imtdev string

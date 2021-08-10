@@ -572,7 +572,6 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self._plotAppend(self.gki_setcursor, arg)
 
         # get x and y
-        cursorNumber = arg[0]
         x = gki.ndc(arg[1])
         y = gki.ndc(arg[2])
         # Update the sw cursor object (A clear example of why this update

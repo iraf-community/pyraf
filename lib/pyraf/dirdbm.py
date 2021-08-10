@@ -54,7 +54,7 @@ class _Database(object):
                 fh = __builtin__.open(testfile, 'w')
                 fh.close()
                 _os.remove(testfile)
-            except IOError as e:
+            except IOError:
                 raise IOError("Directory %s cannot be opened for writing" %
                               (directory,))
         # initialize dictionary

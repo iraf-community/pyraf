@@ -157,7 +157,6 @@ def test_dumpspecs():
     out_str = out_str.replace('Tkinter', 'tkinter')
 
     # verify it (is version dependent)
-    key = ('2' if IS_PY2 else '3', sys.platform.replace('2', ''))
     expected = """python ver = {major}.{minor}
 platform = {platform}
 PY3K = {py3k}

@@ -227,8 +227,6 @@ class FileChooser(WidgetWrap):
             elif focused[-2] == self.file_widget:
                 #User has selected a file from the list:
                 self.file = focused[-1].w.get_text()[0]
-                focus = (self.dir_widget.get_focus()[1],
-                         self.file_widget.get_focus()[1])
                 self.update_widgets(False, False, True)
                 return
             elif focused[-1] == self.select_widget:

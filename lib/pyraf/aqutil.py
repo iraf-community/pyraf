@@ -184,7 +184,6 @@ def __doPyobjcWinInit():
     # return values are the first in the list, and 'v' is void
     #
     OSErr = objc._C_SHT
-    OSStat = objc._C_INT
     CGErr = objc._C_INT
     INPSN = tobytes('n^{ProcessSerialNumber=LL}')
     OUTPSN = tobytes('o^{ProcessSerialNumber=LL}')

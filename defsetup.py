@@ -61,8 +61,6 @@ def find_x(xdir=""):
             raise ImportError("Tkinter is not installed")
         tk = Tkinter.Tk()
         tk.withdraw()
-        tcl_lib = os.path.join(str(tk.getvar('tcl_library')), '../')
-        tcl_inc = os.path.join(str(tk.getvar('tcl_library')), '../../include')
         tk_lib = os.path.join(str(tk.getvar('tk_library')), '../')
         tkv = str(Tkinter.TkVersion)[:3]
         # yes, the version number of Tkinter really is a float...
