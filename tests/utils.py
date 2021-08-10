@@ -11,17 +11,17 @@ HAS_PYRAF_EXEC = bool(find_executable('pyraf'))
 try:
     from pyraf import iraf
     iraf.imhead("dev$pix", Stdout=os.devnull, Stderr=os.devnull)
-except:  # Only this can catch the error!
+except (iraf.IrafError, AttributeError):
     HAS_IRAF = False
-else:
-    HAS_IRAF = True
-
-try:
-    iraf.stsdas(_doprint=0)
-except:
     HAS_STSDAS = False
 else:
-    HAS_STSDAS = True
+    HAS_IRAF = True
+    try:
+        iraf.stsdas(_doprint=0)
+    except (iraf.IrafError, AttributeError):
+        HAS_STSDAS = False
+    else:
+        HAS_STSDAS = True
 
 
 def diff_outputs(fin, reffile):

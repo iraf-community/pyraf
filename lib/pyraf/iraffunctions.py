@@ -84,7 +84,7 @@ import gki
 import irafecl
 try:
     from . import sscanf  # sscanf import does not get 'fixed' during 2to3
-except:
+except IOError:
     # basic usage does not actually require sscanf
     sscanf = None
     print("Warning: sscanf library not installed on " + sys.platform)

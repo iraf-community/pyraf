@@ -1332,7 +1332,7 @@ def _updateSpecialParFileDict(dirToCheck=None, strict=False):
             supfile = open(supfname, 'r')
             buf = supfile.readlines()
             supfile.close()
-        except:
+        except IOError:
             pass
         if len(buf) < 1:
             warning("Unable to read special use parameter file: " + supfname,

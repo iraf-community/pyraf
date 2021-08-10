@@ -39,7 +39,7 @@ from stsci.tools import irafutils
 
 try:
     import fcntl
-except:
+except ImportError:
     if 0 == sys.platform.find('win'):  # not on win*, but IS on darwin & cygwin
         fcntl = None
     else:

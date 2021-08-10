@@ -19,7 +19,7 @@ from __future__ import division, print_function
 VERY_OLD_IPY = True  # this means prior to v0.12
 try:
     from IPython.iplib import InteractiveShell
-except:
+except ImportError:
     VERY_OLD_IPY = False
 
 if VERY_OLD_IPY:
@@ -29,7 +29,7 @@ else:
     from IPython.core import release
     try:
         import IPython.core.ipapi as ipapi
-    except:
+    except ImportError:
         ipapi = None  # not available in v1.*
 
 __license__ = release.license
@@ -66,7 +66,7 @@ class IPythonIrafCompleter(IrafCompleter):
         try:
             # location of "terminal" as of v1.1
             from IPython.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
-        except:
+        except ImportError:
             # location of "terminal" prior to v1.1
             from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
 
@@ -137,7 +137,7 @@ class IPython_PyRAF_Integrator(object):
         try:
             # location of "terminal" as of v1.1
             from IPython.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
-        except:
+        except ImportError:
             # location of "terminal" prior to v1.1
             from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
 
@@ -215,10 +215,7 @@ class IPython_PyRAF_Integrator(object):
         # string literals.  For now, convert and check - if not OK (not
         # convertible to ASCII), simply move on (remove this assumption
         # after we no longer support Python2)
-        try:
-            asciiline = str(line)
-        except:
-            return line
+        asciiline = str(line)
 
         # Handle any weird special cases here.  Most all transformations
         # should occur through the normal route (e.g. sent here, then
@@ -392,7 +389,7 @@ class IPython_PyRAF_Integrator(object):
                 return False
             else:
                 return int(flag)
-        except:
+        except ValueError:
             import sys
             print("usage:", usage, "[on | off]", file=sys.stderr)
             raise

@@ -55,10 +55,7 @@ def find_x(xdir=""):
         add_lib_dirs.append('/usr/openwin/lib')
         add_inc_dirs.append('/usr/openwin/include')
     else:
-        try:
-            import Tkinter
-        except:
-            raise ImportError("Tkinter is not installed")
+        import Tkinter
         tk = Tkinter.Tk()
         tk.withdraw()
         tk_lib = os.path.join(str(tk.getvar('tk_library')), '../')

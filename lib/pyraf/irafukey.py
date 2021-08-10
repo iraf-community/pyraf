@@ -13,7 +13,7 @@ from stsci.tools import capable, for2to3, irafutils
 
 try:
     import termios
-except:
+except ImportError:
     if 0 == sys.platform.find('win'):  # not on win*, but IS on darwin & cygwin
         termios = None
     else:

@@ -14,7 +14,7 @@ import os
 
 try:
     import fcntl
-except:
+except ImportError:
     if 0 == sys.platform.find('win') or sys.platform == 'cygwin':
         fcntl = None  # not used on win (yet) but IS on darwin
     else:
@@ -129,7 +129,7 @@ try:
                 from aqutil import getFocalWindowID, setFocusTo, getParentID
                 from aqutil import moveCursorTo, getPointerPosition
                 _has_aqutil = 1
-            except:
+            except ImportError:
                 _has_aqutil = 0
                 print("Could not import aqutil")
 
@@ -538,7 +538,7 @@ def dumpspecs(outstream=None, skip_volatiles=False):
     pyrver = 'unknown'
     try:
         from pyraf import __version__ as pyrver
-    except:
+    except ImportError:
         pass
 
     out = "python exec = " + str(sys.executable)
@@ -602,7 +602,7 @@ def dumpspecs(outstream=None, skip_volatiles=False):
                 try:
                     import matplotlib as mpl
                     mpl_ok = True
-                except:
+                except ImportError:
                     out += "\nCannot import matplotlib"
                 if mpl_ok:
                     if hasattr(mpl, 'tk_window_focus'):
