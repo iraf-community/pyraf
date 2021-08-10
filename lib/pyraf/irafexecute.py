@@ -695,11 +695,11 @@ class IrafProcess:
                         "Program bug: uninterpreted message `%s'" % (msg,))
 
     def _scanErrno(self, msg):
-        sp = "\s*"
+        sp = "\\s*"
         quote = "\""
         m = re.search(
-            "(ERROR|error)" + sp + "\(" + sp + "(\d+)" + sp + "," + sp + quote +
-            "([^\"]*)" + quote + sp + "\)" + sp, msg)
+            "(ERROR|error)" + sp + "\\(" + sp + "(\\d+)" + sp + "," + sp +
+            quote + "([^\\\"]*)" + quote + sp + "\\)" + sp, msg)
         if m:
             try:
                 errno = int(m.group(2))

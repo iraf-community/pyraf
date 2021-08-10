@@ -966,9 +966,9 @@ class TparDisplay(Binder):
     def process_colon(self, cmd):
         # : <cmd_letter> [!] [<filename>]
         groups = re.match(
-            "^:(?P<cmd>[a-z])\s*"
-            "(?P<emph>!?)\s*"
-            "(?P<file>\w*)", cmd)
+            "^:(?P<cmd>[a-z])\\s*"
+            "(?P<emph>!?)\\s*"
+            "(?P<file>\\w*)", cmd)
         if not groups:
             self.inform("bad command: " + cmd)
         else:
