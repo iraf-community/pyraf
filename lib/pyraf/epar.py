@@ -4,7 +4,7 @@ $Id$
 
 M.D. De La Pena, 2000 February 04
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
@@ -198,7 +198,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         # Skip the save if the thing being edited is an IrafParList without
         # an associated file (in which case the changes are just being
         # made in memory.)
-        if isinstance(self._taskParsObj,irafpar.IrafParList) and \
+        if isinstance(self._taskParsObj, irafpar.IrafParList) and \
            not self._taskParsObj.getFilename():
             return '' # skip it
         else:
@@ -285,7 +285,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         """ Return a string to be used as the filter arg to the save file
             dialog during Save-As. """
         filt = '*.par'
-        upx = iraf.envget("uparm_aux","")
+        upx = iraf.envget("uparm_aux", "")
         if 'UPARM_AUX' in os.environ: upx = os.environ['UPARM_AUX']
         if len(upx) > 0:  filt = iraf.Expand(upx)+"/*.par"
         return filt

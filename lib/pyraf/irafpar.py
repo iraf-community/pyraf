@@ -4,7 +4,7 @@ $Id$
 
 R. White, 2000 January 7
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import copy, glob, os, re, sys, types
 from stsci.tools import basicpar, minmatch, irafutils, taskpars
@@ -42,15 +42,15 @@ def IrafParFactory(fields, strict=0):
 
     # Handle special PyRAF/IRAF types, otherwise default to the standard types
     if type in _string_list_types:
-        return IrafParLS(fields,strict)
+        return IrafParLS(fields, strict)
     elif type == "*gcur" or type == "gcur":
-        return IrafParGCur(fields,strict)
+        return IrafParGCur(fields, strict)
     elif type == "*imcur" or type == "imcur":
-        return IrafParImCur(fields,strict)
+        return IrafParImCur(fields, strict)
     elif type == "*ukey" or type == "ukey":
-        return IrafParUKey(fields,strict)
+        return IrafParUKey(fields, strict)
     elif type == "pset":
-        return IrafParPset(fields,strict)
+        return IrafParPset(fields, strict)
     else:
         return basicpar.parFactory(fields, strict)
 
@@ -155,7 +155,7 @@ def makeIrafPar(init_value, datatype=None, name="<anonymous>", mode="h",
             fields[i] = str(fields[i])
     try:
         return IrafParFactory(fields, strict=strict)
-    except ValueError, e:
+    except ValueError as e:
         errmsg = "Bad value for parameter `%s'\n%s" % (name, str(e))
         raise ValueError(errmsg)
 
@@ -169,7 +169,7 @@ class IrafParPset(IrafParS):
     """IRAF pset parameter class"""
 
     def __init__(self,fields,strict=0):
-        IrafParS.__init__(self,fields,strict)
+        IrafParS.__init__(self, fields, strict)
         # omitted pset parameters default to null string
         if self.value is None: self.value = ""
 
@@ -218,7 +218,7 @@ class IrafParL(_StringMixin, IrafPar):
     """IRAF list parameter base class"""
 
     def __init__(self,fields,strict=0):
-        IrafPar.__init__(self,fields,strict)
+        IrafPar.__init__(self, fields, strict)
         # filehandle for input file
         self.__dict__['fh'] = None
         # lines used to store input when not reading from a tty
@@ -244,7 +244,7 @@ class IrafParL(_StringMixin, IrafPar):
             raise SyntaxError("Parameter "+self.name+" is not an array")
 
         if field:
-            self._setField(value,field,check=check)
+            self._setField(value, field, check=check)
         else:
             if check:
                 self.value = self.checkValue(value)
@@ -265,7 +265,7 @@ class IrafParL(_StringMixin, IrafPar):
         """Return value of this parameter as a string (or in native format
         if native is non-zero.)"""
 
-        if field: return self._getField(field,native=native,prompt=prompt)
+        if field: return self._getField(field, native=native, prompt=prompt)
         if lpar:
             if self.value is None and native == 0:
                 return ""
@@ -299,11 +299,11 @@ class IrafParL(_StringMixin, IrafPar):
                     # EOF -- raise exception
                     raise EOFError("EOF from list parameter `%s'" % self.name)
                 if value[-1:] == "\n": value = value[:-1]
-            except IOError, e:
+            except IOError as e:
                 if not self.errMsg:
                     warning("Unable to read values for list parameter `%s' "
                             "from file `%s'\n%s" %
-                            (self.name, self.value,str(e)), level=-1)
+                            (self.name, self.value, str(e)), level=-1)
                     # only print message one time
                     self.errMsg = 1
                 # fall back on default behavior if file is not readable
@@ -330,7 +330,7 @@ class IrafParL(_StringMixin, IrafPar):
         """Return a string with next value"""
         raise RuntimeError("Bug: base class IrafParL cannot be used directly")
 
-    def _getPFilename(self,native,prompt):
+    def _getPFilename(self, native, prompt):
         """Get p_filename field for this parameter (returns filename)"""
         #XXX is this OK? should we check for self.value==None?
         return self.value
@@ -375,10 +375,10 @@ class IrafParCursor(IrafParL):
     """Base class for cursor parameters"""
 
     def _coerceOneValue(self,value,strict=0):
-        if isinstance(value,IrafParCursor):
+        if isinstance(value, IrafParCursor):
             return value.p_filename
         else:
-            return IrafParL._coerceOneValue(self,value,strict)
+            return IrafParL._coerceOneValue(self, value, strict)
 
 # -----------------------------------------------------
 # IRAF gcur (graphics cursor) parameter class
@@ -543,7 +543,7 @@ class IrafParList(taskpars.TaskPars):
         """
         if hasattr(filename, 'name') and hasattr(filename, 'read'):
             filename = filename.name
-        if isinstance(filename,str):
+        if isinstance(filename, str):
             root, ext = os.path.splitext(filename)
             if ext != ".par":
                 # Only .par files are used as basis for parameter cache -- see if there
@@ -649,7 +649,7 @@ class IrafParList(taskpars.TaskPars):
         """
         if not isinstance(other, self.__class__):
             if Verbose>0:
-                print 'Comparison list is not a %s' % self.__class__.__name__
+                print('Comparison list is not a %s' % self.__class__.__name__)
             return 0
         # compare minimal set of parameter attributes
         thislist = self._getConsistentList()
@@ -692,16 +692,16 @@ class IrafParList(taskpars.TaskPars):
 
     # parameters are accessible as attributes
 
-    def __getattr__(self,name):
+    def __getattr__(self, name):
 #       DBG: id(self), len(self.__dict__), "__getattr__ for: "+str(name)
         if name and name[0] == '_':
             raise AttributeError(name)
         try:
-            return self.getValue(name,native=1)
-        except SyntaxError, e:
+            return self.getValue(name, native=1)
+        except SyntaxError as e:
             raise AttributeError(str(e))
 
-    def __setattr__(self,name,value):
+    def __setattr__(self, name, value):
 #       DBG: id(self), len(self.__dict__), "__setattr__ for: "+str(name)+", value: "+str(value)[0:20]
         # hidden Python parameters go into the standard dictionary
         # (hope there are none of these in IRAF tasks)
@@ -711,13 +711,13 @@ class IrafParList(taskpars.TaskPars):
             else:
                 self.__dict__[name] = value # for old-style classes
         else:
-            self.setParam(name,value)
+            self.setParam(name, value)
 
     def __len__(self): return len(self.__pars)
 
     # public accessor functions for attributes
 
-    def hasPar(self,param):
+    def hasPar(self, param):
         """Test existence of parameter named param"""
         if self.__psets2merge: self.__addPsetParams()
         param = irafutils.untranslateName(param)
@@ -740,7 +740,7 @@ class IrafParList(taskpars.TaskPars):
         if self.__psets2merge: self.__addPsetParams()
         return self.__pardict
 
-    def getParObject(self,param):
+    def getParObject(self, param):
         """ Returns an IrafPar object matching the name given (param).
         This looks only at the "top level" (which includes
         any duplicated PSET pars via __addPsetParams), but does not look
@@ -750,7 +750,7 @@ class IrafParList(taskpars.TaskPars):
         try:
             param = irafutils.untranslateName(param)
             return self.__pardict[param]
-        except KeyError, e:
+        except KeyError as e:
             raise e.__class__("Error in parameter '" +
                     param + "' for task " + self.__name + "\n" + str(e))
 
@@ -797,7 +797,7 @@ class IrafParList(taskpars.TaskPars):
         try:
             pobj = self.__pardict[param]
             retval[''] = pobj
-        except KeyError, e:
+        except KeyError as e:
             raise e.__class__("Error in parameter '" +
                     param + "' for task " + self.__name + "\n" + str(e))
 
@@ -828,10 +828,10 @@ class IrafParList(taskpars.TaskPars):
                     retval[pset.name] = matching_pars[0]
         return retval
 
-    def getAllMatches(self,param):
+    def getAllMatches(self, param):
         """Return list of all parameter names that may match param"""
         if param == "":
-            return self.__pardict.keys()
+            return list(self.__pardict.keys())
         else:
             return self.__pardict.getallkeys(param, [])
 
@@ -845,14 +845,14 @@ class IrafParList(taskpars.TaskPars):
         """
         par = self.getParObject(param)
         value = par.get(native=native, mode=mode, prompt=prompt)
-        if isinstance(value,str) and value and value[0] == ")":
+        if isinstance(value, str) and value and value[0] == ")":
             # parameter indirection: ')task.param'
             try:
                 task = pyraf.iraf.getTask(self.__name)
-                value = task.getParam(value[1:],native=native,mode="h")
+                value = task.getParam(value[1:], native=native, mode="h")
             except KeyError:
                 # if task is not known, use generic function to get param
-                value = pyraf.iraf.clParGet(value[1:],native=native,mode="h",
+                value = pyraf.iraf.clParGet(value[1:], native=native, mode="h",
                         prompt=prompt)
         return value
 
@@ -903,7 +903,7 @@ class IrafParList(taskpars.TaskPars):
                         raise RuntimeError('PSET name non-match; par name: '+ \
                               key+'; got: '+results_dict[psetname].name)
                     dupl_pset_pars.append( (psetname, results_dict[psetname].name, key) )
-            except KeyError, e:
+            except KeyError as e:
                 # Perhaps it is pset.param ? This would occur if the caller
                 # used kwargs like gemcube(..., geofunc.axis1 = 1, ...)
                 # (see help call #3454 for Mark Sim.)
@@ -993,7 +993,7 @@ class IrafParList(taskpars.TaskPars):
 
         # Number of arguments on command line, $nargs, is used by some IRAF
         # tasks (e.g. imheader).
-        self.setParam('$nargs',nargs)
+        self.setParam('$nargs', nargs)
 
     def eParam(self):
         import epar
@@ -1004,19 +1004,19 @@ class IrafParList(taskpars.TaskPars):
         tpar.tpar(self)
 
     def lParam(self,verbose=0):
-        print self.lParamStr(verbose=verbose)
+        print(self.lParamStr(verbose=verbose))
 
     def lParamStr(self,verbose=0):
         """List the task parameters"""
         retval = []
         # Do the non-hidden parameters first
-        for i in xrange(len(self.__pars)):
+        for i in range(len(self.__pars)):
             p = self.__pars[i]
             if p.mode != 'h':
                 if Verbose>0 or p.name != '$nargs':
                     retval.append(p.pretty(verbose=verbose or Verbose>0))
         # Now the hidden parameters
-        for i in xrange(len(self.__pars)):
+        for i in range(len(self.__pars)):
             p = self.__pars[i]
             if p.mode == 'h':
                 if Verbose>0 or p.name != '$nargs':
@@ -1030,11 +1030,11 @@ class IrafParList(taskpars.TaskPars):
         false, writes Python executable code instead.
         """
         if taskname and taskname[-1:] != ".": taskname = taskname + "."
-        for i in xrange(len(self.__pars)):
+        for i in range(len(self.__pars)):
             p = self.__pars[i]
             if p.name != '$nargs':
-                print "%s%s" % (taskname,p.dpar(cl=cl))
-        if cl: print "# EOF"
+                print("%s%s" % (taskname, p.dpar(cl=cl)))
+        if cl: print("# EOF")
 
     def saveParList(self, filename=None, comment=None):
         """Write .par file data to filename (string or filehandle)"""
@@ -1046,16 +1046,16 @@ class IrafParList(taskpars.TaskPars):
         writepars = int(pyraf.iraf.envget("writepars", 1))
         if writepars < 1:
             msg = "No parameters written to disk."
-            print msg
+            print(msg)
             return msg
         # ok, go ahead and write 'em - set up file
-        if hasattr(filename,'write'):
+        if hasattr(filename, 'write'):
             fh = filename
         else:
             absFileName = pyraf.iraf.Expand(filename)
             absDir = os.path.dirname(absFileName)
             if len(absDir) and not os.path.isdir(absDir): os.makedirs(absDir)
-            fh = open(absFileName,'w')
+            fh = open(absFileName, 'w')
         nsave = len(self.__pars)
         if comment:
             fh.write('# '+comment+'\n')
@@ -1114,7 +1114,7 @@ def _printVerboseDiff(list1, list2):
     """Print description of differences between parameter lists"""
     pd1, hd1 = _extractDiffInfo(list1)
     pd2, hd2 = _extractDiffInfo(list2)
-    _printHiddenDiff(pd1,hd1,pd2,hd2)       # look for hidden/positional changes
+    _printHiddenDiff(pd1, hd1, pd2, hd2)       # look for hidden/positional changes
     _printDiff(pd1, pd2, 'positional')      # compare positional parameters
     _printDiff(hd1, hd2, 'hidden')          # compare hidden parameters
 
@@ -1127,17 +1127,17 @@ def _extractDiffInfo(alist):
             hd[key] = value
         else:
             pd[key] = value
-    return (pd,hd)
+    return (pd, hd)
 
-def _printHiddenDiff(pd1,hd1,pd2,hd2):
+def _printHiddenDiff(pd1, hd1, pd2, hd2):
     for key in pd1.keys():
         if key in hd2:
-            print "Parameter `%s' is hidden in list 2 but not list 1" % (key,)
+            print("Parameter `%s' is hidden in list 2 but not list 1" % (key,))
             del pd1[key]
             del hd2[key]
     for key in pd2.keys():
         if key in hd1:
-            print "Parameter `%s' is hidden in list 1 but not list 2" % (key,)
+            print("Parameter `%s' is hidden in list 1 but not list 2" % (key,))
             del pd2[key]
             del hd1[key]
 
@@ -1145,10 +1145,8 @@ def _printDiff(pd1, pd2, label):
     if pd1 == pd2:
         return
     noextra = 1
-    k1 = pd1.keys()
-    k1.sort()
-    k2 = pd2.keys()
-    k2.sort()
+    k1 = sorted(pd1.keys())
+    k2 = sorted(pd2.keys())
     if k1 != k2:
         # parameter name lists differ
         i1 = 0
@@ -1162,28 +1160,28 @@ def _printDiff(pd1, pd2, label):
                 i2 = i2+1
             else:
                 # one or both parameters missing
-                if not key1 in pd2:
-                    print "Extra %s parameter `%s' (type `%s') in list 1" % \
-                            (label, key1, pd1[key1][0])
+                if key1 not in pd2:
+                    print("Extra %s parameter `%s' (type `%s') in list 1" %
+                          (label, key1, pd1[key1][0]))
                     # delete the extra parameter
                     del pd1[key1]
                     i1 = i1+1
-                if not key2 in pd1:
-                    print "Extra %s parameter `%s' (type `%s') in list 2" % \
-                            (label, key2, pd2[key2][0])
+                if key2 not in pd1:
+                    print("Extra %s parameter `%s' (type `%s') in list 2" %
+                          (label, key2, pd2[key2][0]))
                     del pd2[key2]
                     i2 = i2+1
         # other parameters must be missing
         while i1<len(k1):
             key1 = k1[i1]
-            print "Extra %s parameter `%s' (type `%s') in list 1" % \
-                    (label, key1, pd1[key1][0])
+            print("Extra %s parameter `%s' (type `%s') in list 1" %
+                  (label, key1, pd1[key1][0]))
             del pd1[key1]
             i1 = i1+1
         while i2<len(k2):
             key2 = k2[i2]
-            print "Extra %s parameter `%s' (type `%s') in list 2" % \
-                    (label, key2, pd2[key2][0])
+            print("Extra %s parameter `%s' (type `%s') in list 2" %
+                  (label, key2, pd2[key2][0]))
             del pd2[key2]
             i2 = i2+1
     # remaining parameters are in both lists
@@ -1200,7 +1198,7 @@ def _printDiff(pd1, pd2, label):
                 mm.append("order disagreement")
             if type1 != type2:
                 mm.append("type disagreement (`%s' vs. `%s')" % (type1, type2))
-            print "Parameter `%s': %s" % (key, ", ".join(mm))
+            print("Parameter `%s': %s" % (key, ", ".join(mm)))
 
 
 # The dictionary of all special-use par files found on disk.
@@ -1231,7 +1229,7 @@ def _updateSpecialParFileDict(dirToCheck=None, strict=False):
     # usual places (which calls us recursively).
     if dirToCheck == None:
         # Check the auxilliary par dir
-        uparmAux = pyraf.iraf.envget("uparm_aux","")
+        uparmAux = pyraf.iraf.envget("uparm_aux", "")
         if 'UPARM_AUX' in os.environ: uparmAux = os.environ['UPARM_AUX']
         if len(uparmAux) > 0:
             _updateSpecialParFileDict(dirToCheck=uparmAux, strict=True)
@@ -1304,7 +1302,7 @@ def newSpecialParFile(taskName, pkgName, pathName):
 
     tupKey = (taskName, pkgName)
     if tupKey in _specialUseParFileDict:
-        if not pathName in _specialUseParFileDict[tupKey]:
+        if pathName not in _specialUseParFileDict[tupKey]:
             _specialUseParFileDict[tupKey].append(pathName)
     else:
         _specialUseParFileDict[tupKey] = [pathName,]
@@ -1388,7 +1386,7 @@ comma = whitespace + r"(?P<comma>$|(?=,)|(?:[^, \t'" + r'"][^,]*))' + optcomma
 # Combined pattern
 
 field = '(?:' + comma + ')|(?:' + double + ')|(?:' + single + ')'
-_re_field = re.compile(field,re.DOTALL)
+_re_field = re.compile(field, re.DOTALL)
 
 # Pattern that matches trailing backslashes at end of line
 _re_bstrail = re.compile(r'\\*$')
@@ -1403,7 +1401,7 @@ def _readpar(filename,strict=0):
 
     param_dict = {}
     param_list = []
-    fh = open(os.path.expanduser(filename),'r')
+    fh = open(os.path.expanduser(filename), 'r')
     lines = fh.readlines()
     fh.close()
     # reverse order of lines so we can use pop method
@@ -1428,7 +1426,7 @@ def _readpar(filename,strict=0):
             flist = []
             i1 = 0
             while len(line) > i1:
-                mm = _re_field.match(line,i1)
+                mm = _re_field.match(line, i1)
                 if mm is None:
                     # Failure occurs only for unmatched leading quote.
                     # Append more lines to get quotes to match.  (Probably
@@ -1443,7 +1441,7 @@ def _readpar(filename,strict=0):
                             raise SyntaxError(filename + ": Unmatched quote\n" +
                                     sline[0])
                         line = line + '\n' + nline.rstrip()
-                        mm = _re_field.match(line,i1)
+                        mm = _re_field.match(line, i1)
                 if mm.group('comma') is not None:
                     g = mm.group('comma')
                     # completely omitted field (,,)
@@ -1468,7 +1466,7 @@ def _readpar(filename,strict=0):
                     g = mm.group('single')
                 else:
                     raise SyntaxError(filename + "\n" + line + "\n" + \
-                            "Huh? mm.groups()="+`mm.groups()`+"\n" + \
+                            "Huh? mm.groups()="+repr(mm.groups())+"\n" + \
                             "Bug: doesn't match single, double or comma??")
                 flist.append(g)
                 # move match pointer
@@ -1477,7 +1475,7 @@ def _readpar(filename,strict=0):
                 par = IrafParFactory(flist, strict=strict)
             except KeyboardInterrupt:
                 raise
-            except Exception, exc:
+            except Exception as exc:
                 #XXX Shouldn't catch all exceptions here -- this could
                 #XXX screw things up
                 if Verbose:

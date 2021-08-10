@@ -4,7 +4,7 @@ $Id$
 
 R. White, 2000 January 19
 """
-from __future__ import division, print_function  # confidence high
+from __future__ import division, print_function
 
 import os
 import sys
@@ -69,7 +69,7 @@ def _currentVersion():
 class _FileContentsCache(filecache.FileCacheDict):
     def __init__(self):
         # create file dictionary with md5 digest as value
-        filecache.FileCacheDict.__init__(self,filecache.MD5Cache)
+        filecache.FileCacheDict.__init__(self, filecache.MD5Cache)
 
 class _CodeCache:
 
@@ -123,7 +123,7 @@ class _CodeCache:
             except dirshelve.error:
                 # initial open failed -- try opening the cache read-only
                 try:
-                    fh = dirshelve.open(fname,"r")
+                    fh = dirshelve.open(fname, "r")
                     writeflag = 0
                 except dirshelve.error:
                     # give up on this file and try the next one
@@ -256,7 +256,7 @@ class _CodeCache:
         the Python code around.)
         """
 
-        if not isinstance(filename,str):
+        if not isinstance(filename, str):
             try:
                 task = filename
                 filename = task.getFullpath()
@@ -265,7 +265,7 @@ class _CodeCache:
                     "Filename parameter must be a string or IrafCLTask")
         index = self.getIndex(filename)
         # system cache is last in list
-        irange = range(len(self.cacheList))
+        irange = list(range(len(self.cacheList)))
         if self.useSystem: irange.reverse()
         nremoved = 0
         for i in irange:
@@ -274,18 +274,18 @@ class _CodeCache:
                 if writeflag:
                     del cache[index]
                     self.warning("Removed %s from CL script cache %s" %
-                                 (filename,self.cacheFileList[i]), 2)
+                                 (filename, self.cacheFileList[i]), 2)
                     nremoved = nremoved+1
                 else:
                     self.warning("Cannot remove %s from read-only "
                                  "CL script cache %s" %
-                                 (filename,self.cacheFileList[i]))
+                                 (filename, self.cacheFileList[i]))
         if nremoved==0:
             self.warning("Did not find %s in CL script cache" % filename, 2)
 
 
 # create code cache
-userCacheDir = os.path.join(userIrafHome,'pyraf')
+userCacheDir = os.path.join(userIrafHome, 'pyraf')
 if not os.path.exists(userCacheDir):
     try:
         os.mkdir(userCacheDir)
@@ -299,9 +299,9 @@ dbfile = 'clcache'
 if DISABLE_CLCACHING:
     # since CL code caching is turned off currently for PY3K,
     # there won't be any installed there, but still play with user area
-    codeCache = _CodeCache([os.path.join(userCacheDir,dbfile),])
+    codeCache = _CodeCache([os.path.join(userCacheDir, dbfile),])
 else:
-    codeCache = _CodeCache([os.path.join(userCacheDir,dbfile),
-                            os.path.join(pyrafglobals.pyrafDir,dbfile)])
+    codeCache = _CodeCache([os.path.join(userCacheDir, dbfile),
+                            os.path.join(pyrafglobals.pyrafDir, dbfile)])
 
 del userCacheDir, dbfile

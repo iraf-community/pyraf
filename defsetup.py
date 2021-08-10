@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, os.path, shutil, sys, commands
 import distutils.core
@@ -15,7 +15,7 @@ ms_windows = sys.platform.startswith('win')
 # conditional for if we should build the C code
 build_c = not ms_windows
 # so my 2.5 fink build works:
-if sys.version_info[:2] < (2,6):
+if sys.version_info[:2] < (2, 6):
     build_c = False
     ms_windows = True
 
@@ -38,9 +38,9 @@ x_libraries = 'X11'
 
 def find_x(xdir=""):
     if xdir != "":
-        add_lib_dirs.append(os.path.join(xdir,'lib64'))
-        add_lib_dirs.append(os.path.join(xdir,'lib'))
-        add_inc_dirs.append(os.path.join(xdir,'include'))
+        add_lib_dirs.append(os.path.join(xdir, 'lib64'))
+        add_lib_dirs.append(os.path.join(xdir, 'lib'))
+        add_inc_dirs.append(os.path.join(xdir, 'include'))
     elif sys.platform == 'darwin' or sys.platform.startswith('linux'):
         add_lib_dirs.append('/usr/X11R6/lib64')
         add_lib_dirs.append('/usr/X11R6/lib')
@@ -61,7 +61,7 @@ def find_x(xdir=""):
         tkv = str(Tkinter.TkVersion)[:3]
         # yes, the version number of Tkinter really is a float...
         if Tkinter.TkVersion < 8.3:
-            print "Tcl/Tk v8.3 or later required\n"
+            print("Tcl/Tk v8.3 or later required\n")
             sys.exit(1)
         else:
             suffix = '.so'
@@ -144,7 +144,7 @@ if ms_windows :
 
     # copy the pyraf main program to the name we want it installed as
     shutil.copy(
-        os.path.join( * ( scriptdir + [ 'pyraf' ] ) ) ,
+        os.path.join( * ( scriptdir + [ 'pyraf' ] ) ),
         os.path.join( * ( scriptdir + [ 'runpyraf.py' ] ) )
         )
 
@@ -225,16 +225,14 @@ if not ms_windows and sys.version_info[0] < 3:
 ## setupargs
 
 setupargs = {
-    'version' :			    "2.x", # see lib's __init__.py
-    'description' :		    "A Python based CL for IRAF",
-    'author' :			    "Rick White, Perry Greenfield, Chris Sontag",
-    'url' :			        "https://iraf-community.github.io/pyraf.html",
-    'license' :			    "BSD-3-Clause",
-    'platforms' :			["unix"],
-    'data_files' :			DATA_FILES,
-    'scripts' :			    scriptlist,
-    'ext_modules' :			PYRAF_EXTENSIONS,
-    'package_dir' :         { 'pyraf' : 'lib/pyraf' },
+    'version': "2.x", # see lib's __init__.py
+    'description': "A Python based CL for IRAF",
+    'author': "Rick White, Perry Greenfield, Chris Sontag",
+    'url': "https://iraf-community.github.io/pyraf.html",
+    'license': "BSD-3-Clause",
+    'platforms': ["unix"],
+    'data_files': DATA_FILES,
+    'scripts': scriptlist,
+    'ext_modules': PYRAF_EXTENSIONS,
+    'package_dir': { 'pyraf' : 'lib/pyraf' },
 }
-
-

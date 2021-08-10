@@ -6,9 +6,9 @@ imcur parameter.
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
-import sys,string
+import sys, string
 from stsci.tools import irafutils
 from stsci.tools.irafglobals import Verbose, IrafError
 import irafdisplay, gwm, iraf
@@ -30,15 +30,15 @@ def _getDevice(displayname=None):
         device = gwm.gki.getGraphcap()[displayname]
         dd = device['DD'].split(',')
         if len(dd)>1 and dd[1] != '':
-            imtdev = 'fifo:%si:%so' % (dd[1],dd[1])
+            imtdev = 'fifo:%si:%so' % (dd[1], dd[1])
         else:
             imtdev = None
         # multiple stdimage/graphcap entries can share the same device
-        if not imtdev in _devices:
+        if imtdev not in _devices:
             _devices[imtdev] = irafdisplay.ImageDisplayProxy(imtdev)
         device = _devices[displayname] = _devices[imtdev]
         return device
-    except (KeyError, IOError, OSError), error:
+    except (KeyError, IOError, OSError) as error:
         pass
 
     # last gasp is to assume display is an imtdev string
@@ -72,17 +72,17 @@ def imcur(displayname=None):
             sys.__stdout__.write("%s\n" % (result,))
             sys.__stdout__.flush()
         if result == 'EOF':
-            raise EOFError
+            raise EOFError()
         x, y, wcs, key = result.split()
 
         if key in [r'\004', r'\032']:
             # ctrl-D and ctrl-Z are treated as EOF
             # Should ctrl-C raise a KeyboardInterrupt?
-            raise EOFError
+            raise EOFError()
         elif key == ':':
             sys.stdout.write(": ")
             sys.stdout.flush()
             result = result + ' ' + irafutils.tkreadline()[:-1]
         return result
-    except IOError, error:
+    except IOError as error:
         raise IrafError(str(error))

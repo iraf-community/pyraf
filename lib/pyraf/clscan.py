@@ -6,7 +6,7 @@ $Id$
 
 R. White, 1999 September 10
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 from cgeneric import ContextSensitiveScanner
 from generic import GenericScanner
@@ -173,10 +173,10 @@ class _BasicScanner_3:
 
         nline = _countNewlines(s)
         # Recognize and remove any embedded comments
-        s = comment_pat.sub('',s)
+        s = comment_pat.sub('', s)
 
         s = filterEscapes(irafutils.removeEscapes(
-                     irafutils.stripQuotes(s),quoted=1))
+                     irafutils.stripQuotes(s), quoted=1))
         # We use a different type for quoted strings to protect them
         # against conversion to other token types by enterComputeEqnMode
         parent.addToken(type='QSTRING', attr=s)
@@ -191,10 +191,10 @@ class _BasicScanner_3:
         nline = _countNewlines(s)
 
         # Recognize and remove any embedded comments
-        s = comment_pat.sub('',s)
+        s = comment_pat.sub('', s)
 
         s = filterEscapes(irafutils.removeEscapes(
-                     irafutils.stripQuotes(s),quoted=1))
+                     irafutils.stripQuotes(s), quoted=1))
         parent.addToken(type='QSTRING', attr=s)
         parent.lineno = parent.lineno + nline
 
@@ -247,16 +247,16 @@ class _StartScanner_1(_BasicScanner_1):
     def t_help(self, s, m, parent):
         r'\?\??'
         if len(s) == 2:
-            parent.addIdent('allPkgHelp',mode=parent.default_mode)
+            parent.addIdent('allPkgHelp', mode=parent.default_mode)
         else:
-            parent.addIdent('pkgHelp',mode=parent.default_mode)
+            parent.addIdent('pkgHelp', mode=parent.default_mode)
 
 
-class _StrictStartScanner(_BasicScanner_3,_BasicScanner_2,_StartScanner_1):
+class _StrictStartScanner(_BasicScanner_3, _BasicScanner_2, _StartScanner_1):
     """Strict scanner class for tokens recognized in start-line mode"""
     pass
 
-class _StartScanner(_LaxScanner,_StrictStartScanner):
+class _StartScanner(_LaxScanner, _StrictStartScanner):
     """Scanner class for tokens recognized in start-line mode"""
     pass
 
@@ -279,7 +279,7 @@ class _CommandScanner_1(_BasicScanner_1):
         # since IRAF doesn't deal with special characters in this mode.
         # Thus PyRAF should leave them as literal backslashes within its
         # strings. Why IRAF does this I have no idea.
-        s = irafutils.removeEscapes(s).replace('\\','\\\\')
+        s = irafutils.removeEscapes(s).replace('\\', '\\\\')
         parent.addToken(type='STRING', attr=s)
         parent.lineno = parent.lineno + nline
 
@@ -301,7 +301,7 @@ class _CommandScanner_1(_BasicScanner_1):
         parent.current.append(_ACCEPT_REDIR_MODE)
 
 
-class _CommandScanner_2(_BasicScanner_2,_CommandScanner_1):
+class _CommandScanner_2(_BasicScanner_2, _CommandScanner_1):
 
     def t_keyval(self, s, m, parent):
         r'(?P<KeyName>[a-zA-Z\$_\d][a-zA-Z\$_\d.]*) [ \t]* =(?!=)'
@@ -338,11 +338,11 @@ class _CommandScanner_2(_BasicScanner_2,_CommandScanner_1):
         if s == '=':
             parent.addToken(type=s)
         else:
-            parent.addToken(type='ASSIGNOP',attr=s)
+            parent.addToken(type='ASSIGNOP', attr=s)
         parent.current.append(_COMPUTE_MODE)
 
 
-class _StrictCommandScanner(_BasicScanner_3,_CommandScanner_2):
+class _StrictCommandScanner(_BasicScanner_3, _CommandScanner_2):
 
     """Strict scanner class for tokens recognized in command mode"""
 
@@ -359,7 +359,7 @@ class _StrictCommandScanner(_BasicScanner_3,_CommandScanner_2):
         parent.current.append(_SWALLOW_NEWLINE_MODE)
 
 
-class _CommandScanner(_LaxScanner,_StrictCommandScanner):
+class _CommandScanner(_LaxScanner, _StrictCommandScanner):
     """Scanner class for tokens recognized in command mode"""
     pass
 
@@ -415,7 +415,7 @@ class _ComputeStartScanner_1(_BasicScanner_1):
         parent.current.append(_SWALLOW_NEWLINE_MODE)
 
 
-class _ComputeStartScanner_2(_BasicScanner_2,_ComputeStartScanner_1):
+class _ComputeStartScanner_2(_BasicScanner_2, _ComputeStartScanner_1):
 
     def t_keyval(self, s, m, parent):
         r'(?P<KeyName>[a-zA-Z\$_][a-zA-Z\$_\d.]*) [ \t]* =(?!=)'
@@ -438,7 +438,7 @@ class _ComputeStartScanner_2(_BasicScanner_2,_ComputeStartScanner_1):
         if s == '=':
             parent.addToken(type=s)
         else:
-            parent.addToken(type='ASSIGNOP',attr=s)
+            parent.addToken(type='ASSIGNOP', attr=s)
         parent.current.append(_COMPUTE_MODE)
 
     def t_redir(self, s, m, parent):
@@ -459,13 +459,13 @@ class _ComputeStartScanner_2(_BasicScanner_2,_ComputeStartScanner_1):
         r'(\d+[eEdD][+\-]?\d+) | (((\d*\.\d+)|(\d+\.\d*))([eEdD][+\-]?\d+)?)'
         parent.addToken(type='FLOAT', attr=s)
 
-class _StrictComputeStartScanner(_BasicScanner_3,_ComputeStartScanner_2):
+class _StrictComputeStartScanner(_BasicScanner_3, _ComputeStartScanner_2):
     """Strict scanner class for tokens recognized in initial compute mode
     (similar to command mode)
     """
     pass
 
-class _ComputeStartScanner(_LaxScanner,_StrictComputeStartScanner):
+class _ComputeStartScanner(_LaxScanner, _StrictComputeStartScanner):
     """Scanner class for tokens recognized in initial compute mode
     (similar to command mode)
     """
@@ -499,7 +499,7 @@ class _ComputeEqnScanner_1(_BasicScanner_1):
         r'\|\||&&|!'
         # split '!' off separately
         if len(s) > 1:
-            parent.addToken(type='LOGOP',attr=s)
+            parent.addToken(type='LOGOP', attr=s)
         else:
             parent.addToken(type=s)
         parent.current.append(_SWALLOW_NEWLINE_MODE)
@@ -523,7 +523,7 @@ class _ComputeEqnScanner_1(_BasicScanner_1):
         parent.current.append(_SWALLOW_NEWLINE_MODE)
 
 
-class _ComputeEqnScanner_2(_BasicScanner_2,_ComputeEqnScanner_1):
+class _ComputeEqnScanner_2(_BasicScanner_2, _ComputeEqnScanner_1):
 
     def t_keyval(self, s, m, parent):
         r'(?P<KeyName>[a-zA-Z\$_][a-zA-Z\$_\d.]*) [ \t]* =(?!=)'
@@ -547,7 +547,7 @@ class _ComputeEqnScanner_2(_BasicScanner_2,_ComputeEqnScanner_1):
 
     def t_assignop(self, s, m, parent):
         r'( [+\-*/] | // ) ='
-        parent.addToken(type='ASSIGNOP',attr=s)
+        parent.addToken(type='ASSIGNOP', attr=s)
         # switch to compute mode
         parent.current[-1] = _COMPUTE_MODE
 
@@ -556,16 +556,16 @@ class _ComputeEqnScanner_2(_BasicScanner_2,_ComputeEqnScanner_1):
         parent.addToken(type='FLOAT', attr=s)
 
 
-class _StrictComputeEqnScanner(_BasicScanner_3,_ComputeEqnScanner_2):
+class _StrictComputeEqnScanner(_BasicScanner_3, _ComputeEqnScanner_2):
 
     """Strict scanner class for tokens recognized in compute equation mode"""
 
     def t_compop(self, s, m, parent):
         r'[<>!=]=|<|>'
-        parent.addToken(type='COMPOP',attr=s)
+        parent.addToken(type='COMPOP', attr=s)
         parent.current.append(_SWALLOW_NEWLINE_MODE)
 
-class _ComputeEqnScanner(_LaxScanner,_StrictComputeEqnScanner):
+class _ComputeEqnScanner(_LaxScanner, _StrictComputeEqnScanner):
     """Scanner class for tokens recognized in compute mode"""
     pass
 
@@ -596,7 +596,7 @@ class _ComputeScanner_1(_BasicScanner_1):
         r'\|\||&&|!'
         # split '!' off separately
         if len(s) > 1:
-            parent.addToken(type='LOGOP',attr=s)
+            parent.addToken(type='LOGOP', attr=s)
         else:
             parent.addToken(type=s)
         parent.current.append(_SWALLOW_NEWLINE_MODE)
@@ -618,7 +618,7 @@ class _ComputeScanner_1(_BasicScanner_1):
         parent.current.append(_SWALLOW_NEWLINE_MODE)
 
 
-class _ComputeScanner_2(_BasicScanner_2,_ComputeScanner_1):
+class _ComputeScanner_2(_BasicScanner_2, _ComputeScanner_1):
 
     def t_keyval(self, s, m, parent):
         r'(?P<KeyName>[a-zA-Z\$_][a-zA-Z\$_\d.]*) [ \t]* =(?!=)'
@@ -642,23 +642,23 @@ class _ComputeScanner_2(_BasicScanner_2,_ComputeScanner_1):
 
     def t_assignop(self, s, m, parent):
         r'( [+\-*/] | // ) ='
-        parent.addToken(type='ASSIGNOP',attr=s)
+        parent.addToken(type='ASSIGNOP', attr=s)
 
     def t_float(self, s, m, parent):
         r'(\d+[eEdD][+\-]?\d+) | (((\d*\.\d+)|(\d+\.\d*))([eEdD][+\-]?\d+)?)'
         parent.addToken(type='FLOAT', attr=s)
 
 
-class _StrictComputeScanner(_BasicScanner_3,_ComputeScanner_2):
+class _StrictComputeScanner(_BasicScanner_3, _ComputeScanner_2):
 
     """Strict scanner class for tokens recognized in compute mode"""
 
     def t_compop(self, s, m, parent):
         r'[<>!=]=|<|>'
-        parent.addToken(type='COMPOP',attr=s)
+        parent.addToken(type='COMPOP', attr=s)
         parent.current.append(_SWALLOW_NEWLINE_MODE)
 
-class _ComputeScanner(_LaxScanner,_StrictComputeScanner):
+class _ComputeScanner(_LaxScanner, _StrictComputeScanner):
     """Scanner class for tokens recognized in compute mode"""
     pass
 
@@ -689,7 +689,7 @@ _SwallowNewlineScanner = _StrictSwallowNewlineScanner
 #                     redirection is allowed
 #---------------------------------------------------------------------
 
-class _StrictAcceptRedirScanner(_BasicScanner_3,_BasicScanner_2,
+class _StrictAcceptRedirScanner(_BasicScanner_3, _BasicScanner_2,
                                                                 _BasicScanner_1):
 
     """Strict scanner class where redirection is allowed"""
@@ -717,7 +717,7 @@ class _StrictAcceptRedirScanner(_BasicScanner_3,_BasicScanner_2,
         del parent.current[-1]
 
 
-class _AcceptRedirScanner(_LaxScanner,_StrictAcceptRedirScanner):
+class _AcceptRedirScanner(_LaxScanner, _StrictAcceptRedirScanner):
     """Scanner class where redirection is allowed"""
     pass
 
@@ -922,7 +922,7 @@ class CLScanner(ContextSensitiveScanner):
 
         else:
 
-            self.addToken(type='IDENT',attr=name)
+            self.addToken(type='IDENT', attr=name)
             if mode is not None: self.current.append(mode)
 
     def enterComputeEqnMode(self):
@@ -974,15 +974,15 @@ def toklist(tlist,filename=None):
     import cltoken
     if filename:
         import sys
-        sys.stdout = open(filename,'w')
+        sys.stdout = open(filename, 'w')
     for tok in tlist:
         if tok.type == 'NEWLINE':
             if cltoken.verbose:
-                print 'NEWLINE'
+                print('NEWLINE')
             else:
-                print
+                print()
         else:
-            print `tok`,
+            print(repr(tok), end=' ')
     if filename:
         sys.stdout.close()
         sys.stdout = sys.__stdout__

@@ -28,7 +28,7 @@ $Id$
 
 R. White, 2000 October 1
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, stat, sys, hashlib
 from stsci.tools.for2to3 import PY3K
@@ -100,7 +100,7 @@ class FileCache:
 
         if filename==None:
             filename = self.filename
-        if isinstance(filename,str):
+        if isinstance(filename, str):
             fh = open(filename, 'r')
         elif hasattr(filename, 'read'):
             fh = filename
@@ -119,7 +119,7 @@ class FileCache:
             filename = self.filename
         if not filename:
             return None
-        elif isinstance(filename,str):
+        elif isinstance(filename, str):
             st = os.stat(filename)
         elif hasattr(filename, 'fileno') and hasattr(filename, 'name'):
             fh = filename
@@ -178,11 +178,11 @@ class FileCacheDict:
     def add(self, filename):
         """Add filename to dictionary.  Does not overwrite existing entry."""
         abspath = self.abspath(filename)
-        if not abspath in self.data:
+        if abspath not in self.data:
             self.data[abspath] = self.__Class(abspath)
 
     def abspath(self, filename):
-        if isinstance(filename,str):
+        if isinstance(filename, str):
             return os.path.abspath(filename)
         elif hasattr(filename, 'name') and hasattr(filename, 'read'):
             return os.path.abspath(filename.name)

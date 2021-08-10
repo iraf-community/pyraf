@@ -2,7 +2,7 @@
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, re, signal, string, struct, sys, time, types, numpy, cStringIO
 from stsci.tools import irafutils
@@ -27,7 +27,7 @@ test_probe = False
 
 #stdgraph = None
 
-IPC_PREFIX = ndarr2bytes(numpy.array([01120],numpy.int16))
+IPC_PREFIX = ndarr2bytes(numpy.array([0o1120], numpy.int16))
 
 # weirdo protocol to get output from task back to subprocess
 # definitions from cl/task.h and lib/clio.h
@@ -176,8 +176,7 @@ class _ProcessCache:
         If all processes are locked, delete oldest locked process.
         """
         # each entry contains rank (to sort and find oldest) and process
-        values = self._data.values()
-        values.sort()
+        values = sorted(self._data.values())
         if len(self._locked) < len(self._data):
             # find and delete oldest unlocked process
             for rank, proxy in values:
@@ -225,7 +224,7 @@ class _ProcessCache:
         for taskname in args:
             task = pyraf.iraf.getTask(taskname, found=1)
             if task is None:
-                print "No such task `%s'" % taskname
+                print("No such task `%s'" % taskname)
             elif task.__class__.__name__ == "IrafTask":
                 # cache only executable tasks (not CL tasks, etc.)
                 executable = task.getFullpath()
@@ -285,22 +284,21 @@ class _ProcessCache:
         else:
             for rank, proxy in self._data.values():
                 executable = proxy.process.executable
-                if not executable in self._locked:
+                if executable not in self._locked:
                     self.terminate(executable)
 
     def list(self):
         """List processes sorted from newest to oldest with locked flag"""
-        values = self._data.values()
-        values.sort()
+        values = sorted(self._data.values())
         values.reverse()
         n = 0
         for rank, proxy in values:
             n = n+1
             executable = proxy.process.executable
             if executable in self._locked:
-                print "%2d: L %s" % (n, executable)
+                print("%2d: L %s" % (n, executable))
             else:
-                print "%2d:   %s" % (n, executable)
+                print("%2d:   %s" % (n, executable))
 
     def __del__(self):
         self._locked = {}
@@ -318,7 +316,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
     try:
         # Start 'er up
         irafprocess = processCache.get(task, envdict)
-    except (IrafError, subproc.SubprocessError, IrafProcessError), value:
+    except (IrafError, subproc.SubprocessError, IrafProcessError) as value:
         raise
         raise IrafProcessError("Cannot start IRAF executable\n%s" % value)
 
@@ -334,7 +332,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
             # do graphics task initialization
             gki.kernel.taskStart(taskname)
             focusMark = wutil.focusController.getCurrentMark()
-            gki.kernel.pushStdio(None,None,None)
+            gki.kernel.pushStdio(None, None, None)
         try:
             irafprocess.run(task, pstdin=stdin, pstdout=stdout, pstderr=stderr)
         finally:
@@ -352,11 +350,11 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
         # On keyboard interrupt (^C), kill the subprocess
         processCache.kill(irafprocess)
         raise
-    except (IrafError, IrafProcessError), exc:
+    except (IrafError, IrafProcessError) as exc:
         # on error, kill the subprocess, then re-raise the original exception
         try:
             processCache.kill(irafprocess)
-        except Exception, exc2:
+        except Exception as exc2:
             # append new exception text to previous one (right thing to do?)
             exc.args = exc.args + exc2.args
         raise exc
@@ -468,9 +466,9 @@ class IrafProcess:
         # stdinIsatty flag is used in xfer to decide whether to
         # read inputs in blocks or not.  As long as input comes
         # from __stdin__, consider it equivalent to a tty.
-        self.stdinIsatty = (hasattr(stdin,'isatty') and stdin.isatty()) or \
+        self.stdinIsatty = (hasattr(stdin, 'isatty') and stdin.isatty()) or \
                 self.stdin == sys.__stdin__
-        self.stdoutIsatty = hasattr(stdout,'isatty') and stdout.isatty()
+        self.stdoutIsatty = hasattr(stdout, 'isatty') and stdout.isatty()
 
         # stdinIsraw flag is used in xfer to decide whether to
         # read inputs as RAW input or not.
@@ -530,12 +528,12 @@ class IrafProcess:
             self.writeString("bye\n")
             if self.process.wait(0.5):
                 return
-        except (IrafProcessError, subproc.SubprocessError), e:
+        except (IrafProcessError, subproc.SubprocessError) as e:
             pass
         # No more Mr. Nice Guy
         try:
             self.process.die()
-        except subproc.SubprocessError, e:
+        except subproc.SubprocessError as e:
             if Verbose>0:
                 # too bad, if we can't kill it assume it is already dead
                 self.stderr.write("Warning: cannot terminate process %s\n" %
@@ -594,7 +592,7 @@ class IrafProcess:
                                    struct.pack('=h', len(dsection)) +
                                    tobytes(dsection))
                 i = i + block
-        except subproc.SubprocessError, e:
+        except subproc.SubprocessError as e:
             raise IrafProcessError("Error in write: %s" % str(e))
 
     def read(self):
@@ -611,7 +609,7 @@ class IrafProcess:
             # read the rest
             data = self.process.read(nbytes) # read returns bytes
             return data
-        except subproc.SubprocessError, e:
+        except subproc.SubprocessError as e:
             raise IrafProcessError("Error in read: %s" % str(e))
 
     def slave(self):
@@ -629,7 +627,7 @@ class IrafProcess:
         par_set = self.par_set
         executeClCommand = self.executeClCommand
 
-        while 1:
+        while True:
 
             # each read may return multiple lines; only
             # read new data when old has been used up
@@ -645,7 +643,7 @@ class IrafProcess:
                 xmit()
             elif msg[:4] == 'bye\n':
                 return
-            elif msg5 in ['error','ERROR']:
+            elif msg5 in ['error', 'ERROR']:
                 errno, text = self._scanErrno(msg)
                 raise IrafProcessError("IRAF task terminated abnormally\n"+msg,
                                        errno=errno, errmsg=text, errtask=self.task.getName())
@@ -751,7 +749,7 @@ class IrafProcess:
                     pmsg = pobj.get(lpar=1)
                 else:
                     # replace all newlines in strings with "\n"
-                    pmsg = pmsg.replace('\n','\\n')
+                    pmsg = pmsg.replace('\n', '\\n')
                 pmsg = pmsg + '\n'
             except EOFError:
                 pmsg = 'EOF\n'
@@ -771,13 +769,13 @@ class IrafProcess:
         newvalue = group('svalue')
         self.msg = self.msg[mcmd.end():]
         try:
-            self.task.setParam(paramname,newvalue)
-        except ValueError, e:
+            self.task.setParam(paramname, newvalue)
+        except ValueError as e:
             # on ValueError, just print warning and then force set
             if Verbose>0:
                 self.stderr.write('Warning: %s\n' % (e,))
                 self.stderr.flush()
-            self.task.setParam(paramname,newvalue,check=0)
+            self.task.setParam(paramname, newvalue, check=0)
 
     def xmit(self):
 
@@ -937,8 +935,8 @@ class IrafProcess:
         """
         msg = self.msg
         try:
-            i = msg.find(",",5)
-            if i<0 or msg[-2:] != ")\n": raise ValueError
+            i = msg.find(",", 5)
+            if i<0 or msg[-2:] != ")\n": raise ValueError()
             chan = int(msg[5:i])
             nbytes = int(msg[i+1:-2])
             self.msg = ''
@@ -1042,7 +1040,7 @@ def Iraf2AscString(iraf_string):
 
 def log_task_comm(pfx, strbuf, expectAsStr, shorten=True):
     import some_pkg_w_a_log_func as L
-    assert isinstance(strbuf, (str,unicode,bytes)), "?!: "+str(type(strbuf))
+    assert isinstance(strbuf, (str, unicode, bytes)), "?!: "+str(type(strbuf))
     if expectAsStr:
         assert isinstance(strbuf, str), "Unexpected type: "+str(type(strbuf))
     if isinstance(strbuf, (str, unicode)):

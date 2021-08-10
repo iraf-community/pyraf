@@ -35,7 +35,7 @@ $Id$
 # - Add optional value parameter to GenericParser.error.
 # - Add check for assertion error in ambiguity resolution.
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 __version__ = 'SPARK-0.6.1rlw'
 
@@ -84,8 +84,8 @@ class GenericScanner:
         return '|'.join(rv)
 
     def error(self, s, pos):
-        print "Lexical error at position %s" % pos
-        raise SystemExit
+        print("Lexical error at position %s" % pos)
+        raise SystemExit()
 
     def tokenize(self, s):
         pos = 0
@@ -209,7 +209,7 @@ class GenericParser:
         # make the rule/token lists
         self.makeTokenRules(first)
 
-    def makeTokenRules(self,first):
+    def makeTokenRules(self, first):
         # make dictionary indexed by (nextSymbol, nextToken) with
         # list of all rules for nextSymbol that could produce nextToken
         tokenRules = {}
@@ -268,9 +268,10 @@ class GenericParser:
         return None
 
     def error(self, token, value=None):
-        print "Syntax error at or near `%s' token" % token
-        if value is not None: print str(value)
-        raise SystemExit
+        print("Syntax error at or near `%s' token" % token)
+        if value is not None:
+            print(str(value))
+        raise SystemExit()
 
     def parse(self, tokens):
         tree = {}
@@ -284,7 +285,7 @@ class GenericParser:
             self.makeFIRST()
             self.ruleschanged = 0
 
-        for i in xrange(len(tokens)):
+        for i in range(len(tokens)):
             states[i+1] = []
 
             if states[i] == []:
@@ -317,9 +318,9 @@ class GenericParser:
                 # track items completed within this rule
                 if parent == i:
                     if lhs in completed:
-                        completed[lhs].append((item,i))
+                        completed[lhs].append((item, i))
                     else:
-                        completed[lhs] = [(item,i)]
+                        completed[lhs] = [(item, i)]
 
                 lhstuple = (lhs,)
                 for prule, ppos, pparent in states[parent]:
@@ -360,7 +361,7 @@ class GenericParser:
                     # Predictor using FIRST sets
                     # Use cached list for this (nextSym, token) combo
                     #
-                    for prule in tokenRules_get((nextSym, token.type),[]):
+                    for prule in tokenRules_get((nextSym, token.type), []):
                         state_append((prule, 0, i))
 
             #
@@ -411,7 +412,7 @@ class GenericParser:
                         child = self.ambiguity(children)
                     except AssertionError:
                         del tokens[-1]
-                        print stack[0]
+                        print(stack[0])
                         # self.error(tokens[tokpos], 'Parsing ambiguity'+str(children[:]))
                         self.error(stack[0], 'Parsing ambiguity'+str(children[:]))
                 else:
@@ -448,7 +449,7 @@ class GenericParser:
             sortlist.append((len(rhs), rule))
             name2index[rule] = i
         sortlist.sort()
-        list = map(lambda (a,b): b, sortlist)
+        list = list(map(lambda (a, b): b, sortlist))
         return children[name2index[self.resolve(list)]]
 
     def resolve(self, list):
@@ -526,7 +527,7 @@ class GenericASTTraversal:
                     self.exitrules[name[2:-5]] = getattr(self, name)
 
     def prune(self):
-        raise GenericASTTraversalPruningException
+        raise GenericASTTraversalPruningException()
 
     def preorder(self, node=None):
         if node is None:

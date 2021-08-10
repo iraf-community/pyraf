@@ -2,7 +2,7 @@
 iraf gki metacode (primarily for interactive graphics)"""
 # $Id$
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import gki, gwm
 import numpy
@@ -15,10 +15,10 @@ def text(textstring, x, y):
     """Return metacode for text string written at x,y"""
     gkiX = gkiCoord(x)
     gkiY = gkiCoord(y)
-    data = numpy.fromstring(textstring,numpy.int8) # OK if str or uni
+    data = numpy.fromstring(textstring, numpy.int8) # OK if str or uni
     data = data.astype(numpy.int16)
     size = 6 + len(textstring)
-    metacode = numpy.zeros(size,numpy.int16)
+    metacode = numpy.zeros(size, numpy.int16)
     metacode[0] = gki.BOI
     metacode[1] = gki.GKI_TEXT
     metacode[2] = size
@@ -57,7 +57,7 @@ def markCross(x, y, size=1., xflag=0, yflag=0,
     else:
         gkiYmin = gkiCoord(0.)
         gkiYmax = gkiCoord(limit)
-    metacode = numpy.zeros(22,numpy.int16)
+    metacode = numpy.zeros(22, numpy.int16)
     i = 0
     metacode[i  ] = gki.BOI
     metacode[i+1] = gki.GKI_PLSET

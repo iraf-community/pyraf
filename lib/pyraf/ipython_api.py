@@ -14,7 +14,7 @@ $Id$
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
 #*****************************************************************************
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 VERY_OLD_IPY = True # this means prior to v0.12
 try:
@@ -49,7 +49,7 @@ _locals = globals()
 # del iraf, __version__, makeIrafPar, yes, no, INDEF, EOF, logout, quit, exit
 
 if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
-    print "\nPyRAF", __version__, "Copyright (c) 2002 AURA"
+    print("\nPyRAF", __version__, "Copyright (c) 2002 AURA")
 
 # Start up command line wrapper keeping definitions in main name space
 # Keep the command-line object in namespace too for access to history
@@ -135,7 +135,7 @@ class IPython_PyRAF_Integrator(object):
 
 
     def __init__(self, clemulate=1, cmddict={},
-                 cmdchars=("a-zA-Z_.","0-9")):
+                 cmdchars=("a-zA-Z_.", "0-9")):
         import re, sys, os
         self.reword = re.compile('[a-z]*')
         self._cl_emulation = clemulate
@@ -180,7 +180,7 @@ class IPython_PyRAF_Integrator(object):
             # this is pretty far into IPython, i.e. very breakable
             # lsmagic() returns a dict of 2 dicts: 'cell', and 'line'
             if hasattr(self._ipython_api, 'magics_manager'):
-                self._ipython_magic = self._ipython_api.magics_manager.lsmagic()['line'].keys()
+                self._ipython_magic = list(self._ipython_api.magics_manager.lsmagic()['line'].keys())
             else:
                 print('Please upgrade your version of IPython.')
             pfmgr = self._ipython_api.prefilter_manager
@@ -237,7 +237,7 @@ class IPython_PyRAF_Integrator(object):
             method_name = self.cmddict.get(cmd)
         if method_name is None:
             # no method, but have a look at it anyway
-            return self.default(cmd,line,i)
+            return self.default(cmd, line, i)
         else:
             # if in cmddict, there must be a method by this name
             f = getattr(self, method_name)
@@ -274,7 +274,7 @@ class IPython_PyRAF_Integrator(object):
             return line
         elif cmd in self._ipython_magic and cmd not in ['cd']:
             return line
-        elif not hasattr(iraf,cmd):
+        elif not hasattr(iraf, cmd):
             # not an IRAF command
             #XXX Eventually want to improve error message for
             #XXX case where user intended to use IRAF syntax but
@@ -292,7 +292,7 @@ class IPython_PyRAF_Integrator(object):
                 return line
             # check for some Python operator keywords
             mm = self.reword.match(line[i:])
-            if mm.group() in ["is","in","and","or","not"]:
+            if mm.group() in ["is", "in", "and", "or", "not"]:
                 return line
         elif line[i:i+1] == '(':
             if cmd in ['type', 'dir', 'set']:
@@ -309,7 +309,7 @@ class IPython_PyRAF_Integrator(object):
                 #XXX this find() may be improved with latest Python readline features
                 j = line.find(cmd)
                 return line[:j] + 'iraf.' + line[j:]
-        elif not callable(getattr(iraf,cmd)):
+        elif not callable(getattr(iraf, cmd)):
             # variable from iraf module is not callable task (e.g.,
             # yes, no, INDEF, etc.) -- add 'iraf.' so it can be used
             # as a variable and execute as Python
@@ -373,15 +373,15 @@ class IPython_PyRAF_Integrator(object):
 
     def _evaluate_flag(self, flag, usage):
         try:
-            if flag in [None,"", "on","ON", "On", "True","TRUE","true"]:
+            if flag in [None, "", "on", "ON", "On", "True", "TRUE", "true"]:
                 return True
-            elif flag in ["off","OFF","Off","False","FALSE","false"]:
+            elif flag in ["off", "OFF", "Off", "False", "FALSE", "false"]:
                 return False
             else:
                 return int(flag)
         except:
             import sys
-            print >>sys.stderr, "usage:", usage,  "[on | off]"
+            print("usage:", usage,  "[on | off]", file=sys.stderr)
             raise
 
     def _get_IP(self, IP):
@@ -393,8 +393,8 @@ class IPython_PyRAF_Integrator(object):
     def _debug(self, *args):
         import sys
         for a in args:
-            print >>sys.stderr, a,
-        print >>sys.stderr
+            print(a, end=' ', file=sys.stderr)
+        print(file=sys.stderr)
 
     def set_pyraf_magic(self, IP, line):
         """Setting flag="1" Enables PyRAF to intepret a magic
@@ -402,7 +402,7 @@ class IPython_PyRAF_Integrator(object):
         """
         magic, flag = line.split()
         if self._evaluate_flag(flag, "set_pyraf_magic <magic_function>"):
-            self._debug("PyRAF magic for", magic,"on")
+            self._debug("PyRAF magic for", magic, "on")
             while magic in self._ipython_magic:  # should only be one
                 self._ipython_magic.remove(magic)
         else:
@@ -445,7 +445,7 @@ if VERY_OLD_IPY:
     __PyRAF.use_pyraf_traceback(feedback=fb)
 else:
     if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
-        print "PyRAF traceback not enabled"
+        print("PyRAF traceback not enabled")
 del fb
 
 del IPythonIrafCompleter, IPython_PyRAF_Integrator, IrafCompleter

@@ -3,7 +3,7 @@ implement IRAF ukey functionality
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, string, sys
 import wutil
@@ -62,10 +62,10 @@ def ukey():
 
     if not char:
         # on control-C, raise KeyboardInterrupt
-        raise KeyboardInterrupt
+        raise KeyboardInterrupt()
     elif char == '\004':
         # on control-D, raise EOF
-        raise EOFError
+        raise EOFError()
     elif ord(char) <= ord(' '):
         # convert to octal ascii representation
         returnStr = '\\'+"%03o" % ord(char)

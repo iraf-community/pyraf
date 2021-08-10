@@ -5,7 +5,7 @@ bridging package so that compiling another C extension is not needed.
 $Id$
 """
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, struct, time
 import objc
@@ -103,7 +103,7 @@ def setFocusTo(windowID):
     """ Move the focus to the given window ID (see getFocalWindowID docs) """
     # We could do something fancy like create unique window id's out of the
     # process serial numbers (PSN's), but for now stick with WIN_ID_*
-    if not windowID in (WIN_ID_TERM, WIN_ID_GUI):
+    if windowID not in (WIN_ID_TERM, WIN_ID_GUI):
         raise RuntimeError("Bug: unexpected OSX windowID: "+str(windowID))
     if windowID == WIN_ID_TERM:
         focusOnTerm()

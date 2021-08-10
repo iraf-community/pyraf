@@ -2,7 +2,7 @@
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 #  Copyright (c) 1998-1999 John Aycock
 #
@@ -73,14 +73,14 @@ class Token(compmixin.ComparableMixin):
             if self.type in ["STRING", "QSTRING"]:
                 # add quotes to strings
                 # but replace double escapes with single escapes
-                return repr(self.attr).replace('\\\\','\\')
+                return repr(self.attr).replace('\\\\', '\\')
             else:
                 rv = self.attr
                 if rv is None: rv = self.type
                 return rv
 
     def __getitem__(self, i):
-        raise IndexError
+        raise IndexError()
 
     def __len__(self):
         return 0
@@ -91,7 +91,7 @@ class Token(compmixin.ComparableMixin):
             return self.__int__()
         elif self.type == "FLOAT":
             return self.__float__()
-        elif self.type in ["STRING","QSTRING"]:
+        elif self.type in ["STRING", "QSTRING"]:
             return self.attr
         elif self.type == "BOOL":
             return self.bool()
@@ -122,8 +122,8 @@ class Token(compmixin.ComparableMixin):
                     return self.attr
                 else:
                     return _str2int(self.attr)
-            except Exception, e:
-                print 'Exception', str(e)
+            except Exception as e:
+                print('Exception', str(e))
                 pass
         raise ValueError("Cannot convert " +
                 self.verboseRepr() + " to int")

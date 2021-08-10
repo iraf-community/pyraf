@@ -6,7 +6,7 @@ If the c versions do not exist, then these routines will do nothing
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import struct, sys, os
 try:
@@ -70,7 +70,7 @@ try:
         # ONLY if an XWindow was successfully initialized.
         #  WJH (10June2004)
         if xutil.getFocalWindowID() == -1:
-            raise EnvironmentError
+            raise EnvironmentError()
 
         # Successful intialization. Reset dummy methods with
         # those from 'xutil' now.
@@ -93,7 +93,7 @@ try:
                 _has_aqutil = 1
             except:
                 _has_aqutil = 0
-                print "Could not import aqutil"
+                print("Could not import aqutil")
 
 except ImportError:
     _has_xutil = 0 # Unsuccessful init of XWindow
@@ -158,7 +158,7 @@ def getTopID(WindowID):
         return topIDmap[wid]
     try:
         oid = wid
-        while 1:
+        while True:
             pid = getParentID(wid)
             if (not pid) or (pid==wid):
                 topIDmap[oid] = wid
@@ -199,13 +199,13 @@ def getTermWindowSize():
     tstruct = ' '*20 # that should be more than enough memory
     try:
         rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
-        ysize, xsize = struct.unpack('hh',rstruct[0:4])
+        ysize, xsize = struct.unpack('hh', rstruct[0:4])
         # handle bug in konsole (and maybe other bad cases)
         if ysize <= 0: ysize = 24
         if xsize <= 0: xsize = 80
         return ysize, xsize
     except (IOError, AttributeError):
-        return (24,80) # assume generic size
+        return (24, 80) # assume generic size
 
 
 class FocusEntity:
@@ -258,7 +258,7 @@ class TerminalFocusEntity(FocusEntity):
                 scrnPosDict = aqutil.getPointerGlobalPosition()
                 self.lastScreenX = scrnPosDict['x']
                 self.lastScreenY = scrnPosDict['y']
-        except EnvironmentError, e:
+        except EnvironmentError as e:
             self.windowID = None
         self.lastX = 30
         self.lastY = 30
@@ -340,7 +340,7 @@ class TerminalFocusEntity(FocusEntity):
         tstruct = ' '*20 # that should be more than enough memory
         # xxx exception handling needed (but what exception to catch?)
         rstruct = fcntl.ioctl(sys.stdout.fileno(), magicConstant, tstruct)
-        xsize, ysize = struct.unpack('hh',rstruct[0:4])
+        xsize, ysize = struct.unpack('hh', rstruct[0:4])
         return xsize, ysize
 
 
@@ -373,7 +373,7 @@ class FocusController:
             entity = self.focusEntities[focusEntityName]
             del self.focusEntities[focusEntityName]
             try:
-                while 1:
+                while True:
                     self.focusStack.remove(entity)
             except ValueError:
                 pass
@@ -414,7 +414,7 @@ class FocusController:
             return None, None
         currentFocusWinID = getFocalWindowID()
         currentTopID = getTopID(currentFocusWinID)
-        for name,focusEntity in self.focusEntities.items():
+        for name, focusEntity in self.focusEntities.items():
             if getTopID(focusEntity.getWindowID()) == currentTopID:
                 return name, focusEntity
         else:
@@ -444,7 +444,7 @@ class FocusController:
                 focusTarget.gwidget.focus_set()
 
         current = self.focusStack[-1]
-        if type(focusTarget) == type(""):
+        if isinstance(focusTarget, type("")):
             next = self.focusEntities[focusTarget]
         else:
             next = focusTarget
@@ -582,7 +582,7 @@ def dumpspecs(outstream = None, skip_volatiles = False):
     if outstream:
         outstream.write(out+'\n')
     else:
-        print out
+        print(out)
 
 
 
@@ -596,11 +596,11 @@ if _skipDisplay:
        '-s' not in sys.argv and '--silent' not in sys.argv:
         # Warn, but be specific about why
         if 'PYRAF_NO_DISPLAY' in os.environ:
-            print "No graphics/display intended for this session."
+            print("No graphics/display intended for this session.")
         else:
-            print "No graphics/display possible for this session."
+            print("No graphics/display possible for this session.")
             if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
-                print "tkinter import failed."
+                print("tkinter import failed.")
 else:
     if _has_xutil or _has_aqutil:
         hasGraphics = focusController.hasGraphics
@@ -611,20 +611,20 @@ else:
         if hasGraphics:
             try: # the try/except handling here will be unneccessary after stsci.tools 3.4.2
                 if capable.which_darwin_linkage() == 'aqua':
-                    print "\nLimited graphics available on OSX (aqutil not loaded)\n"
+                    print("\nLimited graphics available on OSX (aqutil not loaded)\n")
                 else:
-                    print "\nLimited graphics available on OSX (xutil not loaded)\n"
+                    print("\nLimited graphics available on OSX (xutil not loaded)\n")
             except Exception:
-                print "\nLimited graphics available on OSX (library not loaded)\n"
+                print("\nLimited graphics available on OSX (library not loaded)\n")
     elif WUTIL_ON_WIN:
         hasGraphics = 1 # try this, tho VERY limited (epar only I guess)
-        print "\nLimited graphics available on win32 platform\n"
+        print("\nLimited graphics available on win32 platform\n")
 
     if not hasGraphics:
-        print ""
-        print "No graphics display available for this session."
-        print "Graphics tasks that attempt to plot to an interactive " + \
-                          "screen will fail."
-        print 'For help, search "PyRAF FAQ 5.13" or visit the STScI help site, ' \
-              'https://hsthelp.stsci.edu.'
-        print ""
+        print("")
+        print("No graphics display available for this session.")
+        print("Graphics tasks that attempt to plot to an interactive "
+              "screen will fail.")
+        print('For help, search "PyRAF FAQ 5.13" or visit the STScI help site, '
+              'https://hsthelp.stsci.edu.')
+        print("")

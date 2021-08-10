@@ -28,7 +28,7 @@ replacement for CDL.
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, numpy, socket, sys
 from stsci.tools.for2to3 import PY3K, bytes_write, ndarr2bytes
@@ -43,7 +43,7 @@ except:
         raise
 
 # FCNTL is deprecated in Python 2.2
-if hasattr(fcntl,'F_SETFL') or fcntl==None:
+if hasattr(fcntl, 'F_SETFL') or fcntl==None:
     FCNTL = fcntl
 else:
     import FCNTL
@@ -99,7 +99,7 @@ def _open(imtdev=None):
         for imtdev in defaults:
             try:
                 return _open(imtdev)
-            except IOError, error:
+            except IOError as error:
                 pass
         raise IOError("Cannot open image display")
     # substitute user id in name (multiple times) if necessary
@@ -110,7 +110,7 @@ def _open(imtdev=None):
     if domain == "unix" and len(fields) == 2:
         return UnixImageDisplay(fields[1])
     elif domain == "fifo" and len(fields) == 3:
-        return FifoImageDisplay(fields[1],fields[2])
+        return FifoImageDisplay(fields[1], fields[2])
     elif domain == "inet" and (2 <= len(fields) <= 3):
         try:
             port = int(fields[1])
@@ -130,9 +130,9 @@ class ImageDisplay:
     """Interface to IRAF-compatible image display"""
 
     # constants for cursor read
-    _IIS_READ = 0100000
-    _IMC_SAMPLE = 0040000
-    _IMCURSOR = 020
+    _IIS_READ = 0o100000
+    _IMC_SAMPLE = 0o040000
+    _IMCURSOR = 0o20
     _SZ_IMCURVAL = 160
 
     def __init__(self):
@@ -162,11 +162,11 @@ class ImageDisplay:
         # only part up to newline is real data
         return s.split("\n")[0]
 
-    def _writeHeader(self,tid,subunit,thingct,x,y,z,t):
+    def _writeHeader(self, tid, subunit, thingct, x, y, z, t):
 
         """Write request to image display"""
 
-        a = numpy.array([tid,thingct,subunit,0,x,y,z,t], numpy.int16)
+        a = numpy.array([tid, thingct, subunit, 0, x, y, z, t], numpy.int16)
         # Compute the checksum
         sum = numpy.add.reduce(a)
         sum = 0xffff - (sum & 0xffff)
@@ -225,7 +225,7 @@ class FifoImageDisplay(ImageDisplay):
             fcntl.fcntl(self._fdin, FCNTL.F_SETFL, os.O_RDONLY)
             self._fdout = os.open(outfile, os.O_WRONLY | os.O_NDELAY)
             fcntl.fcntl(self._fdout, FCNTL.F_SETFL, os.O_WRONLY)
-        except OSError, error:
+        except OSError as error:
             raise IOError("Cannot open image display (%s)" % (error,))
         except AttributeError:
             raise RuntimeError("Image fcntl is not supported on this platform")
@@ -245,7 +245,7 @@ class UnixImageDisplay(ImageDisplay):
             self._socket = socket.socket(family, type)
             self._socket.connect(filename)
             self._fdin = self._fdout = self._socket.fileno()
-        except socket.error, error:
+        except socket.error as error:
             raise IOError("Cannot open image display")
 
     def close(self):
@@ -311,7 +311,7 @@ class ImageDisplayProxy(ImageDisplay):
             # Null value indicates display was probably closed
             if value:
                 return value
-        except IOError, error:
+        except IOError as error:
             pass
         # This error can occur if image display was closed.
         # If a new display has been started then closing and

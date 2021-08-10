@@ -22,7 +22,7 @@
 # http://www.pythonware.com
 #
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 from dis import opname, HAVE_ARGUMENT
 
@@ -61,7 +61,7 @@ CO_VARKEYWORDS = 0x0008
 def describeParams(func, name = None):
     # get argument list
 
-    code = func.func_code
+    code = func.__code__
 
     n = code.co_argcount
     a = list(code.co_varnames[:n])
@@ -86,10 +86,10 @@ def describeParams(func, name = None):
                     p = p + 1
             if vars:
                 a[i] = "(" + ", ".join(vars) + ")"
-    if func.func_defaults:
+    if func.__defaults__:
         # defaults
-        i = n - len(func.func_defaults)
-        for d in func.func_defaults:
+        i = n - len(func.__defaults__)
+        for d in func.__defaults__:
             a[i] = (a[i], d)
             i = i + 1
     if code.co_flags & CO_VARARGS:
@@ -109,7 +109,7 @@ def describe(func, name = None):
     a = describeParams(func)
     args = []
     for arg in a:
-        if type(arg) == type(""):
+        if isinstance(arg, type("")):
             args.append(arg)
         else:
             args.append("%s=%s" % (arg[0], repr(arg[1])))
@@ -126,7 +126,7 @@ def describe(func, name = None):
 
 def __getmethods(c, m):
     for k, v in c.__dict__.items():
-        if type(v) == type(__getmethods): # and k[0] != "_":
+        if isinstance(v, type(__getmethods)): # and k[0] != "_":
             if k not in m:
                 m[k] = describe(v, k), c.__name__
     for c in c.__bases__:

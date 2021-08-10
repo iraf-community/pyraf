@@ -14,7 +14,7 @@ $Id$
 
 RLW, 2000 February 13
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import __builtin__
 import __main__
@@ -33,7 +33,7 @@ except ImportError:
 # dictionaries mapping between characters and readline names
 char2lab = {}
 lab2char = {}
-for i in range(1,27):
+for i in range(1, 27):
     char = chr(i)
     ichar = chr(ord('a')+i-1)
     lab = "Control-%s" % ichar
@@ -93,16 +93,16 @@ class IrafCompleter(Completer):
         self.completionChar = char
         # remove dash from delimiter set (fix submitted by Joe P. Ninan 4/16/14)
         delims = readline.get_completer_delims()
-        delims = delims.replace('-','')
+        delims = delims.replace('-', '')
         readline.set_completer_delims(delims)
         # load any cmd history
-        hfile = os.getenv('HOME','.')+os.sep+'.pyraf_history'
+        hfile = os.getenv('HOME', '.')+os.sep+'.pyraf_history'
         if os.path.exists(hfile):
             try:
                 readline.read_history_file(hfile)
-            except IOError, e:
+            except IOError as e:
                 # we do NOT want this to prevent startup.  see ticket #132
-                print 'ERROR reading "'+hfile+'" -> '+str(e)
+                print('ERROR reading "'+hfile+'" -> '+str(e))
 
     def deactivate(self):
         """Turn off completion, restoring old behavior for character"""
@@ -183,7 +183,7 @@ class IrafCompleter(Completer):
             else:
                 if not hasattr(self, "namespace"):
                     self.namespace = {}
-                return Completer.global_matches(self,text)
+                return Completer.global_matches(self, text)
         else:
             taskname = m.group(1)
             # check for pipe/redirection using last non-blank character
@@ -298,14 +298,14 @@ class IrafCompleter(Completer):
                 fields.insert(0, 'iraf')
                 matches = self.taskdot_matches(fields)
                 try:
-                    matches.extend(Completer.attr_matches(self,text))
+                    matches.extend(Completer.attr_matches(self, text))
                 except KeyboardInterrupt:
                     raise
                 except:
                     pass
                 return matches
             else:
-                return Completer.attr_matches(self,text)
+                return Completer.attr_matches(self, text)
         else:
             # Check first character following initial alphabetic string
             # If next char is alphabetic (or null) use filename matches
@@ -318,7 +318,7 @@ class IrafCompleter(Completer):
                 if fields[0] == "iraf":
                     return self.taskdot_matches(fields)
                 else:
-                    return Completer.attr_matches(self,text)
+                    return Completer.attr_matches(self, text)
             else:
                 #XXX Could try to match pset.param keywords too?
                 lt = len(line)-len(text)
@@ -332,9 +332,9 @@ class IrafCompleter(Completer):
         """Return matches for iraf.package.task.param..."""
         head = ".".join(fields[:-1])
         tail = fields[-1]
-        matches = eval("%s.getAllMatches(%s)" % (head, `tail`))
+        matches = eval("%s.getAllMatches(%s)" % (head, repr(tail)))
         def addhead(s, head=head+"."): return head+s
-        return map(addhead, matches)
+        return list(map(addhead, matches))
 
 def activate(c="\t"):
     completer.activate(c)

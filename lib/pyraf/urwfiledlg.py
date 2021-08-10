@@ -12,7 +12,7 @@ versions of urwid.  Many thanks to author Rebecca Breu.
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 from urwid import *
 from urwid import WidgetWrap
@@ -340,4 +340,4 @@ def run():
 if __name__ == "__main__":
     import urwid
     import urwid.curses_display
-    print main()
+    print(main())

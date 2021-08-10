@@ -21,14 +21,14 @@ From experiments, these are some properties of IRAF text:
 This implementation will allow some of these properties to be overriden
 by a system-wide configuration state. See gkiopengl.py
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import fontdata
 import numpy
 import math
 from textattrib import *
 
-def softText(win,x,y,textstr):
+def softText(win, x, y, textstr):
 
     # Generate text using software generated stroked fonts
     # except for the input x,y, all coordinates are in units of pixels
@@ -40,7 +40,7 @@ def softText(win,x,y,textstr):
     # get current size in unit font units (!)
     fsize = ta.charSize
     # We draw the line at fontSizes less than 1/2! Get real.
-    fsize = max(fsize,0.5)
+    fsize = max(fsize, 0.5)
     # Character spacing depends on whether text is 'vertical' or 'horizontal'
     #  (relative to character orientation). Figure out what the character
     #  delta offset is in the coordinate system where charUp is the y axis.
@@ -56,17 +56,17 @@ def softText(win,x,y,textstr):
         dy = -vspace
         if ta.textPath == CHARPATH_UP: dy = -dy
     # Figure out 'path' size of the text string for use in justification
-    xpath,ypath = (dx*(len(textstr)-1),dy*(len(textstr)-1))
+    xpath, ypath = (dx*(len(textstr)-1), dy*(len(textstr)-1))
     charUp = math.fmod(ta.charUp, 360.)
     if charUp < 0: charUp = charUp + 360.
     if ta.textPath == CHARPATH_RIGHT:
-        textdir = math.fmod(charUp+270,360.)
+        textdir = math.fmod(charUp+270, 360.)
     elif ta.textPath == CHARPATH_LEFT:
-        textdir = math.fmod(charUp+90,360.)
+        textdir = math.fmod(charUp+90, 360.)
     elif ta.textPath ==     CHARPATH_UP:
         textdir = charUp
     elif ta.textPath ==     CHARPATH_DOWN:
-        textdir = math.fmod(charUp+180,360.)
+        textdir = math.fmod(charUp+180, 360.)
     # IRAF definition of justification is a bit weird, justification is
     # for the text string relative to the window. So a rotated string will
     # be justified relative to the window horizontal and vertical, not the
@@ -77,7 +77,7 @@ def softText(win,x,y,textstr):
     deg2rad = math.pi/180.
     cosv = math.cos((charUp-90.)*deg2rad)
     sinv = math.sin((charUp-90.)*deg2rad)
-    xpathwin, ypathwin = (cosv*xpath-sinv*ypath,sinv*xpath+cosv*ypath)
+    xpathwin, ypathwin = (cosv*xpath-sinv*ypath, sinv*xpath+cosv*ypath)
     xcharsize = fsize * max(abs(cosv*hsize+sinv*vsize),
                                             abs(cosv*hsize-sinv*vsize))
     ycharsize = fsize * max(abs(-sinv*hsize+cosv*vsize),
@@ -89,7 +89,7 @@ def softText(win,x,y,textstr):
     elif ta.textHorizontalJust == JUSTIFIED_RIGHT:
         if not left: xoffset = -xpathwin
         xcharoff = -xcharsize/2.
-    elif ta.textHorizontalJust in (JUSTIFIED_LEFT,JUSTIFIED_NORMAL):
+    elif ta.textHorizontalJust in (JUSTIFIED_LEFT, JUSTIFIED_NORMAL):
         if left: xoffset = xpathwin
         xcharoff = xcharsize/2.
     if ta.textVerticalJust == JUSTIFIED_CENTER:
@@ -121,13 +121,13 @@ def softText(win,x,y,textstr):
     for char in textstr:
         # draw character with origin at bottom left corner of character box
         charstrokes = ta.font[ord(char)-ord(' ')]
-        for i in xrange(len(charstrokes[0])):
-            vertex = numpy.zeros((len(charstrokes[0][i]),2),numpy.float64)
+        for i in range(len(charstrokes[0])):
+            vertex = numpy.zeros((len(charstrokes[0][i]), 2), numpy.float64)
             xf = size * charstrokes[0][i]/27. -fsize*hsize/2.
             yf = size * charstrokes[1][i]*fontAspect/27. - fsize*vsize/2.
-            vertex[:,0]=      cosrot*(xf + nchar*dx) \
+            vertex[:, 0]=      cosrot*(xf + nchar*dx) \
                             - sinrot*(yf + nchar*dy) + xNetOffset + xwin*x
-            vertex[:,1]=ywin-(sinrot*(xf + nchar*dx) \
+            vertex[:, 1]=ywin-(sinrot*(xf + nchar*dx) \
                             + cosrot*(yf + nchar*dy) + yNetOffset + ywin*y)
             gw.create_line(*(tuple(vertex.ravel().astype(numpy.int32))),
                            **options)

@@ -38,7 +38,7 @@ graphics kernels as directed by commands embedded in the metacode stream.
 
 $Id$
 """
-from __future__ import division
+from __future__ import division, print_function
 
 import numpy
 from types import *
@@ -91,7 +91,7 @@ GKI_ESCAPE = 25
 GKI_SETWCS = 26
 GKI_GETWCS = 27
 
-GKI_ILLEGAL_LIST = (21,22,23,24)
+GKI_ILLEGAL_LIST = (21, 22, 23, 24)
 
 CONTROL_OPENWS = 1
 CONTROL_CLOSEWS = 2
@@ -171,11 +171,11 @@ class EditHistory:
         self.editinfo = []
 
     def add(self, size, undomarker=0):
-        self.editinfo.append((undomarker,size))
+        self.editinfo.append((undomarker, size))
 
     def NEdits(self):
         count = 0
-        for undomarker,size in self.editinfo:
+        for undomarker, size in self.editinfo:
             if undomarker:
                 count = count+1
         return count
@@ -188,13 +188,13 @@ class EditHistory:
             if marker: break
         return tsize
 
-    def split(self,n):
+    def split(self, n):
         """Split edit buffer at metacode length n.  Modifies this buffer
         to stop at n and returns a new EditHistory object with any
         edits beyond n."""
         newEditHistory = EditHistory()
         tsize = 0
-        for i in xrange(len(self.editinfo)):
+        for i in range(len(self.editinfo)):
             marker, size = self.editinfo[i]
             tsize = tsize + size
             if tsize >= n:
@@ -411,7 +411,7 @@ class GkiBuffer:
             if buffer[ip] == NOP:
                 ip = ip+1
             elif buffer[ip] != BOI:
-                print "WARNING: missynched graphics data stream"
+                print("WARNING: missynched graphics data stream")
                 # find next possible beginning of instruction
                 ip = ip + 1
                 while ip < lenMC:
@@ -419,7 +419,7 @@ class GkiBuffer:
                     ip = ip + 1
                 else:
                     # Unable to resync
-                    print "WARNING: unable to resynchronize in graphics data stream"
+                    print("WARNING: unable to resynchronize in graphics data stream")
                     break
             else:
                 if ip+2 >= lenMC: break
@@ -433,7 +433,7 @@ class GkiBuffer:
                 if ((opcode < 0) or
                     (opcode > GKI_MAX_OP_CODE) or
                     (opcode in GKI_ILLEGAL_LIST)):
-                    print "WARNING: Illegal graphics opcode = ",opcode
+                    print("WARNING: Illegal graphics opcode = ", opcode)
                 else:
                     # normal return
                     self.nextTranslate = ip
@@ -445,12 +445,12 @@ class GkiBuffer:
     def __len__(self):
         return self.bufferEnd
 
-    def __getitem__(self,i):
+    def __getitem__(self, i):
         if i >= self.bufferEnd:
             raise IndexError("buffer index out of range")
         return self.buffer[i]
 
-    def __getslice__(self,i,j):
+    def __getslice__(self, i, j):
         if j > self.bufferEnd: j = self.bufferEnd
         return self.buffer[i:j]
 
@@ -515,7 +515,7 @@ class GkiKernel:
         # set this without knowing what you are doing - it breaks some commonly
         # used command-line redirection within PyRAF. (thus default = False)
         if self.gkiPreferTtyIpc == None:
-            self.gkiPreferTtyIpc = pyraf.iraf.envget('gkiprefertty','') == 'yes'
+            self.gkiPreferTtyIpc = pyraf.iraf.envget('gkiprefertty', '') == 'yes'
         return self.gkiPreferTtyIpc
 
     def createFunctionTables(self):
@@ -563,7 +563,7 @@ class GkiKernel:
         buffer = self.getBuffer()
         buffer.append(gkiMetacode, isUndoable)
         # translate and display the metacode
-        self.translate(buffer,0)
+        self.translate(buffer, 0)
 
     def translate(self, gkiMetacode, redraw=0):
         # Note, during the perf. testing of #122 it was noticed that this
@@ -574,7 +574,7 @@ class GkiKernel:
     def errorMessage(self, text):
 
         if self.errorMessageCount < MAX_ERROR_COUNT:
-            print text
+            print(text)
             self.errorMessageCount = self.errorMessageCount + 1
 
     def getBuffer(self):
@@ -610,14 +610,14 @@ class GkiKernel:
         buffer = self.getBuffer()
         if buffer.undoN(nUndo):
             self.prepareToRedraw()
-            self.translate(buffer,1)
+            self.translate(buffer, 1)
 
     def redoN(self, nRedo=1):
 
         # Redo the last nRedo edits to the metacode buffer
         buffer = self.getBuffer()
         if buffer.redoN(nRedo):
-            self.translate(buffer,1)
+            self.translate(buffer, 1)
 
     def prepareToRedraw(self):
         """Hook for things that need to be done before redraw from metacode"""
@@ -633,7 +633,7 @@ class GkiKernel:
             # just redraw it
             buffer.prepareToRedraw()
             self.prepareToRedraw()
-            self.translate(buffer,1)
+            self.translate(buffer, 1)
 
     def clearReturnData(self):
 
@@ -846,7 +846,7 @@ class GkiProxy(GkiKernel):
 
     def translate(self, gkiMetacode, redraw=0):
         if not self.stdgraph: self.openKernel()
-        return self.stdgraph.translate(gkiMetacode,redraw)
+        return self.stdgraph.translate(gkiMetacode, redraw)
 
     def clearReturnData(self):
         if not self.stdgraph: self.openKernel()
@@ -861,7 +861,7 @@ class GkiProxy(GkiKernel):
     def pushStdio(self, stdin=None, stdout=None, stderr=None):
         """Push current stdio settings onto stack at set new values"""
         if self.stdgraph:
-            self.stdgraph.pushStdio(stdin,stdout,stderr)
+            self.stdgraph.pushStdio(stdin, stdout, stderr)
         #XXX still need some work here?
         self._stdioStack.append((self.stdin, self.stdout, self.stderr))
         self.stdin = stdin
@@ -898,7 +898,7 @@ class GkiProxy(GkiKernel):
 
     def append(self, arg, isUndoable=0):
         if self.stdgraph:
-            self.stdgraph.append(arg,isUndoable)
+            self.stdgraph.append(arg, isUndoable)
 
     def control(self, gkiMetacode):
         if not self.stdgraph: self.openKernel()
@@ -1010,14 +1010,14 @@ class GkiController(GkiProxy):
         """Starting with stdgraph, drill until a device is found in
         the graphcap or isn't"""
         if not device:
-            device = pyraf.iraf.envget("stdgraph","")
+            device = pyraf.iraf.envget("stdgraph", "")
         graphcap = getGraphcap()
         # protect against circular definitions
         devstr = device
         tried = {devstr: None}
-        while not devstr in graphcap:
+        while devstr not in graphcap:
             pdevstr = devstr
-            devstr = pyraf.iraf.envget(pdevstr,"")
+            devstr = pyraf.iraf.envget(pdevstr, "")
             if not devstr:
                 raise IrafError(
                     "No entry found for specified stdgraph device `%s'" %
@@ -1047,9 +1047,9 @@ class GkiNull(GkiKernel):
 
     def __init__(self):
 
-        print "No graphics display available for this session."
-        print "Graphics tasks that attempt to plot to an interactive " + \
-              "screen will fail."
+        print("No graphics display available for this session.")
+        print("Graphics tasks that attempt to plot to an interactive "
+              "screen will fail.")
         GkiKernel.__init__(self)
         self.name = 'Null'
 
@@ -1120,39 +1120,101 @@ class GkiNoisy(GkiKernel):
         GkiKernel.__init__(self)
         self.name = 'Noisy'
 
-    def control_openws(self, arg): print 'control_openws'
-    def control_closews(self, arg): print 'control_closews'
-    def control_reactivatews(self, arg): print 'control_reactivatews'
-    def control_deactivatews(self, arg): print 'control_deactivatews'
-    def control_clearws(self, arg): print 'control_clearws'
-    def control_setwcs(self, arg): print 'control_setwcs'
-    def control_getwcs(self, arg): print 'control_getwcs'
+    def control_openws(self, arg):
+        print('control_openws')
 
-    def gki_eof(self, arg): print 'gki_eof'
-    def gki_openws(self, arg): print 'gki_openws'
-    def gki_closews(self, arg): print 'gki_closews'
-    def gki_reactivatews(self, arg): print 'gki_reactivatews'
-    def gki_deactivatews(self, arg): print 'gki_deactivatews'
-    def gki_mftitle(self, arg): print 'gki_mftitle'
-    def gki_clearws(self, arg): print 'gki_clearws'
-    def gki_cancel(self, arg): print 'gki_cancel'
-    def gki_flush(self, arg): print 'gki_flush'
-    def gki_polyline(self, arg): print 'gki_polyline'
-    def gki_polymarker(self, arg): print 'gki_polymarker'
-    def gki_text(self, arg): print 'gki_text'
-    def gki_fillarea(self, arg): print 'gki_fillarea'
-    def gki_putcellarray(self, arg): print 'gki_putcellarray'
-    def gki_setcursor(self, arg): print 'gki_setcursor'
-    def gki_plset(self, arg): print 'gki_plset'
-    def gki_pmset(self, arg): print 'gki_pmset'
-    def gki_txset(self, arg): print 'gki_txset'
-    def gki_faset(self, arg): print 'gki_faset'
-    def gki_getcursor(self, arg): print 'gki_getcursor'
-    def gki_getcellarray(self, arg): print 'gki_getcellarray'
-    def gki_unknown(self, arg): print 'gki_unknown'
-    def gki_escape(self, arg): print 'gki_escape'
-    def gki_setwcs(self, arg): print 'gki_setwcs'
-    def gki_getwcs(self, arg): print 'gki_getwcs'
+    def control_closews(self, arg):
+        print('control_closews')
+
+    def control_reactivatews(self, arg):
+        print('control_reactivatews')
+
+    def control_deactivatews(self, arg):
+        print('control_deactivatews')
+
+    def control_clearws(self, arg):
+        print('control_clearws')
+
+    def control_setwcs(self, arg):
+        print('control_setwcs')
+
+    def control_getwcs(self, arg):
+        print('control_getwcs')
+
+    def gki_eof(self, arg):
+        print('gki_eof')
+
+    def gki_openws(self, arg):
+        print('gki_openws')
+
+    def gki_closews(self, arg):
+        print('gki_closews')
+
+    def gki_reactivatews(self, arg):
+        print('gki_reactivatews')
+
+    def gki_deactivatews(self, arg):
+        print('gki_deactivatews')
+
+    def gki_mftitle(self, arg):
+        print('gki_mftitle')
+
+    def gki_clearws(self, arg):
+        print('gki_clearws')
+
+    def gki_cancel(self, arg):
+        print('gki_cancel')
+
+    def gki_flush(self, arg):
+        print('gki_flush')
+
+    def gki_polyline(self, arg):
+        print('gki_polyline')
+
+    def gki_polymarker(self, arg):
+        print('gki_polymarker')
+
+    def gki_text(self, arg):
+        print('gki_text')
+
+    def gki_fillarea(self, arg):
+        print('gki_fillarea')
+
+    def gki_putcellarray(self, arg):
+        print('gki_putcellarray')
+
+    def gki_setcursor(self, arg):
+        print('gki_setcursor')
+
+    def gki_plset(self, arg):
+        print('gki_plset')
+
+    def gki_pmset(self, arg):
+        print('gki_pmset')
+
+    def gki_txset(self, arg):
+        print('gki_txset')
+
+    def gki_faset(self, arg):
+        print('gki_faset')
+
+    def gki_getcursor(self, arg):
+        print('gki_getcursor')
+
+    def gki_getcellarray(self, arg):
+        print('gki_getcellarray')
+
+    def gki_unknown(self, arg):
+        print('gki_unknown')
+
+    def gki_escape(self, arg):
+        print('gki_escape')
+
+    def gki_setwcs(self, arg):
+        print('gki_setwcs')
+
+    def gki_getwcs(self, arg):
+        print('gki_getwcs')
 
 # Dictionary of all graphcap files known so far
 
@@ -1161,8 +1223,8 @@ graphcapDict = {}
 def getGraphcap(filename=None):
     """Get graphcap file from filename (or cached version if possible)"""
     if filename is None:
-        filename = pyraf.iraf.osfn(pyraf.iraf.envget('graphcap','dev$graphcap'))
-    if not filename in graphcapDict:
+        filename = pyraf.iraf.osfn(pyraf.iraf.envget('graphcap', 'dev$graphcap'))
+    if filename not in graphcapDict:
         graphcapDict[filename] = graphcap.GraphCap(filename)
     return graphcapDict[filename]
 
@@ -1180,10 +1242,10 @@ def printPlot(window=None):
     gkibuff = window.gkibuffer.get()
     if len(gkibuff):
         graphcap = getGraphcap()
-        stdplot = pyraf.iraf.envget('stdplot','')
+        stdplot = pyraf.iraf.envget('stdplot', '')
         if not stdplot:
             msg = "No hardcopy device defined in stdplot"
-        elif not stdplot in graphcap:
+        elif stdplot not in graphcap:
             msg = "Unknown hardcopy device stdplot=`%s'" % stdplot
         else:
             printer = gkiiraf.GkiIrafKernel(stdplot)
@@ -1237,23 +1299,23 @@ class IrafGkiConfig:
 
         # List of rgb tuples (0.0-1.0 range) for the default IRAF set of colors
         self.defaultColors = [
-                (0.,0.,0.),  # black
-                (1.,1.,1.),  # white
-                (1.,0.,0.),  # red
-                (0.,1.,0.),  # green
-                (0.,0.,1.),  # blue
-                (0.,1.,1.),  # cyan
-                (1.,1.,0.),  # yellow
-                (1.,0.,1.),  # magenta
-                (1.,1.,1.),  # white
+                (0., 0., 0.),  # black
+                (1., 1., 1.),  # white
+                (1., 0., 0.),  # red
+                (0., 1., 0.),  # green
+                (0., 0., 1.),  # blue
+                (0., 1., 1.),  # cyan
+                (1., 1., 0.),  # yellow
+                (1., 0., 1.),  # magenta
+                (1., 1., 1.),  # white
                 # (0.32,0.32,0.32),  # gray32
-                (0.18,0.31,0.31),  # IRAF blue-green
-                (1.,1.,1.),  # white
-                (1.,1.,1.),  # white
-                (1.,1.,1.),  # white
-                (1.,1.,1.),  # white
-                (1.,1.,1.),  # white
-                (1.,1.,1.),  # white
+                (0.18, 0.31, 0.31),  # IRAF blue-green
+                (1., 1., 1.),  # white
+                (1., 1., 1.),  # white
+                (1., 1., 1.),  # white
+                (1., 1., 1.),  # white
+                (1., 1., 1.),  # white
+                (1., 1., 1.),  # white
         ]
         self.cursorColor = 2  # red
         if len(self.defaultColors) != nIrafColors:
@@ -1294,13 +1356,13 @@ class IrafGkiConfig:
         hsize = hwinsize * self.UnitFontHWindowFraction
         vsize = vwinsize * self.UnitFontVWindowFraction
         if self.minUnitHFontSize is not None:
-            hsize = max(hsize,self.minUnitHFontSize)
+            hsize = max(hsize, self.minUnitHFontSize)
         if self.minUnitVFontSize is not None:
-            vsize = max(vsize,self.minUnitVFontSize)
+            vsize = max(vsize, self.minUnitVFontSize)
         if self.maxUnitHFontSize is not None:
-            hsize = min(hsize,self.maxUnitHFontSize)
+            hsize = min(hsize, self.maxUnitHFontSize)
         if self.maxUnitVFontSize is not None:
-            vsize = min(vsize,self.maxUnitVFontSize)
+            vsize = min(vsize, self.maxUnitVFontSize)
         if not self.isFixedAspectFont:
             fontAspect = vsize/hsize
         else:
@@ -1323,7 +1385,7 @@ class IrafLineStyles:
 
     def __init__(self):
 
-        self.patterns = [0x0000,0xFFFF,0x00FF,0x5555,0x33FF]
+        self.patterns = [0x0000, 0xFFFF, 0x00FF, 0x5555, 0x33FF]
 
 class IrafHatchFills:
 
@@ -1340,28 +1402,28 @@ class IrafHatchFills:
 
         self.patterns = [None]*7
         # pattern 3, vertical stripes
-        p = numpy.zeros(128,numpy.int8)
-        p[0:4] = [0x92,0x49,0x24,0x92]
-        for i in xrange(31):
+        p = numpy.zeros(128, numpy.int8)
+        p[0:4] = [0x92, 0x49, 0x24, 0x92]
+        for i in range(31):
             p[(i+1)*4:(i+2)*4] = p[0:4]
         self.patterns[3] = p
         # pattern 4, horizontal stripes
-        p = numpy.zeros(128,numpy.int8)
-        p[0:4] = [0xFF,0xFF,0xFF,0xFF]
-        for i in xrange(10):
+        p = numpy.zeros(128, numpy.int8)
+        p[0:4] = [0xFF, 0xFF, 0xFF, 0xFF]
+        for i in range(10):
             p[(i+1)*12:(i+1)*12+4] = p[0:4]
         self.patterns[4] = p
         # pattern 5, close diagonal striping
-        p = numpy.zeros(128,numpy.int8)
-        p[0:12] = [0x92,0x49,0x24,0x92,0x24,0x92,0x49,0x24,0x49,0x24,0x92,0x49]
-        for i in xrange(9):
+        p = numpy.zeros(128, numpy.int8)
+        p[0:12] = [0x92, 0x49, 0x24, 0x92, 0x24, 0x92, 0x49, 0x24, 0x49, 0x24, 0x92, 0x49]
+        for i in range(9):
             p[(i+1)*12:(i+2)*12] = p[0:12]
         p[120:128] = p[0:8]
         self.patterns[5] = p
         # pattern 6, diagonal stripes the other way
-        p = numpy.zeros(128,numpy.int8)
-        p[0:12] = [0x92,0x49,0x24,0x92,0x49,0x24,0x92,0x49,0x24,0x92,0x49,0x24]
-        for i in xrange(9):
+        p = numpy.zeros(128, numpy.int8)
+        p[0:12] = [0x92, 0x49, 0x24, 0x92, 0x49, 0x24, 0x92, 0x49, 0x24, 0x92, 0x49, 0x24]
+        for i in range(9):
             p[(i+1)*12:(i+2)*12] = p[0:12]
         p[120:128] = p[0:8]
         self.patterns[6] = p
@@ -1465,7 +1527,7 @@ class FilterStderr:
 
     def write(self, text):
         # remove GUI junk
-        edit = self.pat.sub('',text)
+        edit = self.pat.sub('', text)
         if edit: self.fh.write(edit)
 
     def flush(self):
@@ -1521,7 +1583,7 @@ def ndc(intarr):
 
 def ndcpairs(intarr):
     f = ndc(intarr)
-    return f[0::2],f[1::2]
+    return f[0::2], f[1::2]
 
 
 # This is the proxy for the current graphics kernel

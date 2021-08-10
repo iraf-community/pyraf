@@ -26,7 +26,7 @@ include this file until it comes with urwid.  This is slightly modified.
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import sys
 import urwid
@@ -39,12 +39,12 @@ class DialogExit(Exception):
 
 class DialogDisplay:
     palette = [
-        ('body','black','light gray', 'standout'),
-        ('border','black','dark blue'),
-        ('shadow','white','black'),
-        ('selectable','black', 'dark cyan'),
-        ('focus','white','dark blue','bold'),
-        ('focustext','light gray','dark blue'),
+        ('body', 'black', 'light gray', 'standout'),
+        ('border', 'black', 'dark blue'),
+        ('shadow', 'white', 'black'),
+        ('selectable', 'black', 'dark cyan'),
+        ('focus', 'white', 'dark blue', 'bold'),
+        ('focustext', 'light gray', 'dark blue'),
         ]
 
     def __init__(self, text, height, width, body=None):
@@ -58,7 +58,7 @@ class DialogDisplay:
         self.body = body
         if body is None:
             # fill space with nothing
-            body = urwid.Filler(urwid.Divider(),'top')
+            body = urwid.Filler(urwid.Divider(), 'top')
 
         self.frame = urwid.Frame( body, focus_part='footer')
         if text is not None:
@@ -67,16 +67,16 @@ class DialogDisplay:
         w = self.frame
 
         # pad area around listbox
-        w = urwid.Padding(w, ('fixed left',2), ('fixed right',2))
-        w = urwid.Filler(w, ('fixed top',1), ('fixed bottom',1))
+        w = urwid.Padding(w, ('fixed left', 2), ('fixed right', 2))
+        w = urwid.Filler(w, ('fixed top', 1), ('fixed bottom', 1))
         w = urwid.AttrWrap(w, 'body')
 
         # "shadow" effect
-        w = urwid.Columns( [w,('fixed', 2, urwid.AttrWrap(
-            urwid.Filler(urwid.Text(('border','  ')), "top")
-            ,'shadow'))])
+        w = urwid.Columns( [w, ('fixed', 2, urwid.AttrWrap(
+            urwid.Filler(urwid.Text(('border', '  ')), "top")
+            , 'shadow'))])
         w = urwid.Frame( w, footer =
-            urwid.AttrWrap(urwid.Text(('border','  ')),'shadow'))
+            urwid.AttrWrap(urwid.Text(('border', '  ')), 'shadow'))
 
         # outermost border area
         w = urwid.Padding(w, 'center', width )
@@ -91,7 +91,7 @@ class DialogDisplay:
         for name, exitcode in buttons:
             b = urwid.Button( name, self.button_press )
             b.exitcode = exitcode
-            b = urwid.AttrWrap( b, 'selectable','focus' )
+            b = urwid.AttrWrap( b, 'selectable', 'focus' )
             l.append( b )
         self.buttons = urwid.GridFlow(l, 10, 3, 1, 'center')
         self.frame.footer = urwid.Pile( [ urwid.Divider(),
@@ -127,7 +127,7 @@ class DialogDisplay:
 
                     if k:
                         self.unhandled_key( size, k)
-        except DialogExit, e:
+        except DialogExit as e:
             return self.on_exit( e.args[0] )
 
     def on_exit(self, exitcode):
@@ -141,16 +141,16 @@ class InputDialogDisplay(DialogDisplay):
     def __init__(self, text, height, width):
         self.edit = urwid.Edit()
         body = urwid.ListBox([self.edit])
-        body = urwid.AttrWrap(body, 'selectable','focustext')
+        body = urwid.AttrWrap(body, 'selectable', 'focustext')
 
         DialogDisplay.__init__(self, text, height, width, body)
 
         self.frame.set_focus('body')
 
     def unhandled_key(self, size, k):
-        if k in ('up','page up'):
+        if k in ('up', 'page up'):
             self.frame.set_focus('body')
-        if k in ('down','page down'):
+        if k in ('down', 'page down'):
             self.frame.set_focus('footer')
         if k == 'enter' or k == 'ctrl m': # STScI change ! add ctrl-m for OSX
             # pass enter to the "ok" button
@@ -196,7 +196,7 @@ class ListDialogDisplay(DialogDisplay):
             self.items.append(w)
             w = urwid.Columns( [('fixed', 12, w),
                 urwid.Text(item)], 2 )
-            w = urwid.AttrWrap(w, 'selectable','focus')
+            w = urwid.AttrWrap(w, 'selectable', 'focus')
             l.append(w)
 
         lb = urwid.ListBox(l)
@@ -206,9 +206,9 @@ class ListDialogDisplay(DialogDisplay):
         self.frame.set_focus('body')
 
     def unhandled_key(self, size, k):
-        if k in ('up','page up'):
+        if k in ('up', 'page up'):
             self.frame.set_focus('body')
-        if k in ('down','page down'):
+        if k in ('down', 'page down'):
             self.frame.set_focus('footer')
         if k == 'enter':
             # pass enter to the "ok" button
@@ -236,16 +236,16 @@ class MenuItem(urwid.Text):
     def selectable(self):
         return True
     # The change below (in the if) was made by STScI !
-    def keypress(self,size,key):
+    def keypress(self, size, key):
         if key == "enter" or \
            key == "ctrl m" or key == " ": # is ctrl-m on OSX; also allow space
             self.state = True
-            raise DialogExit, 0
+            raise DialogExit(0)
         return key
-    def mouse_event(self,size,event,button,col,row,focus):
+    def mouse_event(self, size, event, button, col, row, focus):
         if event=='mouse release':
             self.state = True
-            raise DialogExit, 0
+            raise DialogExit(0)
         return False
     def get_state(self):
         return self.state
@@ -276,7 +276,7 @@ if __name__=="__main__":
     # Create a DialogDisplay instance
     d = InputDialogDisplay(sys.argv[1], sys.argv[2], sys.argv[3])
     # for simple yes/no dialog:  d = DialogDisplay(text, height, width)
-    d.add_buttons([ ("OK",0), ("Cancel",1) ])
+    d.add_buttons([ ("OK", 0), ("Cancel", 1) ])
 
     # Run it
     exitcode, exitstring = d.main()

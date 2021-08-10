@@ -3,7 +3,7 @@ implement IRAF gcur functionality
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import string, os, sys, numpy
 import Tkinter as TKNTR
@@ -85,16 +85,16 @@ class Gcursor:
 
     def bind(self):
 
-        self.gwidget.bind("<Button-1>",self.getMousePosition)
-        self.gwidget.bind("<Key>",self.getKey)
-        self.gwidget.bind("<Up>",self.moveUp)
-        self.gwidget.bind("<Down>",self.moveDown)
-        self.gwidget.bind("<Right>",self.moveRight)
-        self.gwidget.bind("<Left>",self.moveLeft)
-        self.gwidget.bind("<Shift-Up>",self.moveUpBig)
-        self.gwidget.bind("<Shift-Down>",self.moveDownBig)
-        self.gwidget.bind("<Shift-Right>",self.moveRightBig)
-        self.gwidget.bind("<Shift-Left>",self.moveLeftBig)
+        self.gwidget.bind("<Button-1>", self.getMousePosition)
+        self.gwidget.bind("<Key>", self.getKey)
+        self.gwidget.bind("<Up>", self.moveUp)
+        self.gwidget.bind("<Down>", self.moveDown)
+        self.gwidget.bind("<Right>", self.moveRight)
+        self.gwidget.bind("<Left>", self.moveLeft)
+        self.gwidget.bind("<Shift-Up>", self.moveUpBig)
+        self.gwidget.bind("<Shift-Down>", self.moveDownBig)
+        self.gwidget.bind("<Shift-Right>", self.moveRightBig)
+        self.gwidget.bind("<Shift-Left>", self.moveLeftBig)
 
     def unbind(self):
 
@@ -194,9 +194,9 @@ class Gcursor:
             # control-C causes interrupt
             self.window.gcurTerminate("interrupted by `^C'")
 
-        x,y = self.getNDCCursorPos()
+        x, y = self.getNDCCursorPos()
         if self.markcur and key not in 'q?:=UR':
-            metacode = gkicmd.markCross(x,y)
+            metacode = gkicmd.markCross(x, y)
             self.appendMetacode(metacode)
         if key == ':':
             colonString = self.readString(prompt=": ")
@@ -211,7 +211,7 @@ class Gcursor:
                     else:
                         self.writeString("Unimplemented CL gcur `:%s'" % colonString)
                 else:
-                    self._setRetString(key,x,y,colonString)
+                    self._setRetString(key, x, y, colonString)
         elif key == '=':
             # snap command - print the plot
             import gki
@@ -224,19 +224,19 @@ class Gcursor:
                 self.window.redrawOriginal()
             elif key == 'T':
                 textString = self.readString(prompt="Annotation string: ")
-                metacode = gkicmd.text(textString,x,y)
+                metacode = gkicmd.text(textString, x, y)
                 self.window.forceNextDraw() # we can afford a perf hit here,
                                             # a human just typed in text
                 self.appendMetacode(metacode)
             elif key == 'U':
                 self.window.undoN()
             elif key == 'C':
-                wx,wy,gwcs = self._convertXY(x,y)
-                self.writeString("%g %g" % (wx,wy))
+                wx, wy, gwcs = self._convertXY(x, y)
+                self.writeString("%g %g" % (wx, wy))
             else:
                 self.writeString("Unimplemented CL gcur command `%s'" % key)
         else:
-            self._setRetString(key,x,y,"")
+            self._setRetString(key, x, y, "")
 
     def appendMetacode(self, metacode):
         # appended code is undoable
@@ -246,13 +246,13 @@ class Gcursor:
         """Returns x,y,gwcs converted to physical units using current WCS"""
         wcs = self.window.wcs
         if wcs:
-            return wcs.get(x,y)
+            return wcs.get(x, y)
         else:
-            return (x,y,0)
+            return (x, y, 0)
 
     def _setRetString(self, key, x, y, colonString):
 
-        wx,wy,gwcs = self._convertXY(x,y)
+        wx, wy, gwcs = self._convertXY(x, y)
         if key <= ' ' or ord(key) >= 127:
             key = '\\%03o' % ord(key)
         self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key

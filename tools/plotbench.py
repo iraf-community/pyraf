@@ -9,7 +9,7 @@
 #
 # $Id$
 #
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 from pyraf import iraf, gki
 import os, time, random
@@ -22,9 +22,9 @@ CASES=(None, 'point', 'box', 'plus', 'cross', 'circle')
 def manyPoints(task, pkind):
    """ Plot a bunch of points, return the time it took (s). """
 
-   assert task in ('prow','graph','surface','contour'), \
+   assert task in ('prow', 'graph', 'surface', 'contour'), \
           "Unexpected task: "+str(task)
-   assert pkind in (None, 'point','box','plus','cross','circle'), \
+   assert pkind in (None, 'point', 'box', 'plus', 'cross', 'circle'), \
           'Unknown: '+str(pkind)
 
    # plot 10 rows.  in dev$pix this is 5120 pts
@@ -68,10 +68,10 @@ def runAllCases(suiteName, resDict):
 
    # we reset gki to pick up the current graphics kernel of choice
    # we also close the graphics window and then throw away the first plot
-   print ("\n"+suiteName+":")
+   print("\n" + suiteName + ":")
    gki._resetGraphicsKernel()
 
-   for mo in ('graph','prow','surface','contour'):
+   for mo in ('graph', 'prow', 'surface', 'contour'):
       did = 0
       # duplicate the first plot since it will be tossed.
       for test in CASES[:1]+CASES:
@@ -82,7 +82,7 @@ def runAllCases(suiteName, resDict):
             print(case+': '+"%.5g" %secs+' secs')
             # add case name to results dict
             if 'case names' in resDict:
-               if not case in resDict['case names']:
+               if case not in resDict['case names']:
                   resDict['case names'].append(case)
             else:
                resDict['case names'] = [case]
@@ -92,7 +92,7 @@ def runAllCases(suiteName, resDict):
             else:
                resDict[case] = [secs]
             # only do one plot for surface or contour (not varied cases)
-            if mo in ('surface','contour'):
+            if mo in ('surface', 'contour'):
                break
          did = 1
 

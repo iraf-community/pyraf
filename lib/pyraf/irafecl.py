@@ -1,7 +1,7 @@
 """This module adds IRAF ECL style error handling to PyRAF."""
 # $Id$
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import inspect, sys
 from stsci.tools.irafglobals import Verbose
@@ -167,8 +167,8 @@ class EclBase:
         self.setParList(*args, **kw)
 
         if Verbose>1:
-            print "run %s (%s: %s)" % (self._name,
-                    self.__class__.__name__, self._fullpath)
+            print("run %s (%s: %s)" % (self._name,
+                    self.__class__.__name__, self._fullpath))
             if self._runningParList:
                 self._runningParList.lParam()
 
@@ -188,7 +188,7 @@ class EclBase:
                 self._run(redirKW, specialKW)
                 self._updateParList(save)
                 if Verbose>1:
-                    print >> sys.stderr, 'Successful task termination'
+                    print('Successful task termination', file=sys.stderr)
             finally:
                 rv = self._resetRedir(resetList, closeFHList)
                 self._deleteRunningParList()
@@ -202,7 +202,7 @@ class EclBase:
         if erract.ecl:
             try:
                 return _runcore()
-            except Exception, e:
+            except Exception as e:
                 self._ecl_handle_error(e)
         else:
             return _runcore()
@@ -367,7 +367,7 @@ class EclTraceback(EclBase):
             del e._ecl_suppress_first_trace
         else:
             self._ecl_trace("  ", repr(cl_code))
-        self._ecl_trace("      line %d: %s" % (lineno , cl_file))
+        self._ecl_trace("      line %d: %s" % (lineno, cl_file))
         parent = _ecl_parent_task()
         if parent:
             parent_lineno = self._ecl_get_lineno()

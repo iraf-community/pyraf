@@ -140,7 +140,7 @@ def use_setuptools(version=DEFAULT_VERSION, download_base=DEFAULT_URL,
             if not hasattr(pkg_resources, '_distribute'):
                 if not no_fake:
                     _fake_setuptools()
-                raise ImportError
+                raise ImportError()
         except ImportError:
             return _do_download(version, download_base, to_dir, download_delay)
         try:

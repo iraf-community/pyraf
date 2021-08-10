@@ -4,7 +4,7 @@ CL scripts have special filename "<CL script taskname>"
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import linecache, string, os, sys
 from stat import *

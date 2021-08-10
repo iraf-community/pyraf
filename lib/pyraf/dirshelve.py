@@ -12,7 +12,7 @@ XXX by another process after open
 R. White, 2000 Sept 26
 """
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import shelve, sys
 from stsci.tools.for2to3 import PY3K
@@ -37,16 +37,16 @@ class Shelf(shelve.Shelf):
             # and exception
             del self.dict[key]
             raise KeyError("Corrupted or truncated file for key %s "
-                    "(bad file has been deleted)" % (`key`,))
+                    "(bad file has been deleted)" % (repr(key),))
 
     def __setitem__(self, key, value):
         f = shelve.StringIO()
-        p = shelve.Pickler(f,1)
+        p = shelve.Pickler(f, 1)
         p.dump(value)
         self.dict[key] = f.getvalue()
 
     def close(self):
-        if hasattr(self,'dict') and hasattr(self.dict,'close'):
+        if hasattr(self, 'dict') and hasattr(self.dict, 'close'):
             try:
                 self.dict.close()
             except:
@@ -77,7 +77,7 @@ def open(filename, flag='c'):
     if PY3K:
         try:
             return shelve.DbfilenameShelf(filename, flag)
-        except Exception, ex: # is dbm.error
+        except Exception as ex: # is dbm.error
             raise dirdbm.error(str(ex))
     else:
        return DirectoryShelf(filename, flag)

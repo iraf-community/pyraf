@@ -5,7 +5,7 @@ $Id$
 R. White, 2001 Dec 15
 """
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os
 import sys
@@ -71,7 +71,7 @@ class PyrafSplash(SplashScreen):
     def __init__(self, filename=logo, text=None, textcolor="blue", **kw):
         # look for file in both local directory and this script's directory
         if not os.path.exists(filename):
-            tfilename = os.path.join(os.path.dirname(__file__),filename)
+            tfilename = os.path.join(os.path.dirname(__file__), filename)
             if not os.path.exists(tfilename):
                 raise ValueError("Splash image `%s' not found" % filename)
             filename = tfilename

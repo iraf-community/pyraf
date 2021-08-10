@@ -17,7 +17,7 @@ Subprocess class features:
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 __version__ = "Revision: 1.7r "
 
@@ -130,7 +130,7 @@ class Subprocess:
             fdmax = max(256, parentErr)
             if self.parentPipes:
                 fdmax = max(fdmax, max(self.parentPipes))
-            rclose = range(fdmax+1)
+            rclose = list(range(fdmax+1))
             excludes = [self.in_fd, self.out_fd, self.err_fd, parentErr]
             for i in excludes+self.parentPipes:
                 rclose.remove(i)
@@ -143,7 +143,7 @@ class Subprocess:
                 os.execvp(cmd[0], cmd)
                 os._exit(1)                                     # Shouldn't get here
 
-            except os.error, e:
+            except os.error as e:
                 if self.control_stderr:
                     os.dup2(parentErr, 2)           # Reconnect to parent's stderr
                 sys.stderr.write("**execvp failed, '%s'**\n" % str(e))
@@ -158,17 +158,18 @@ class Subprocess:
                 self.toChild_fdlist.append(pWc)
                 self.toChild = pWc
             if self.control_stderr:
-                self.errbuf = ReadBuf(pRe,self.maxChunkSize)
+                self.errbuf = ReadBuf(pRe, self.maxChunkSize)
                 self.fromChild_fdlist.append(pRe)
             if self.control_stdout:
-                self.readbuf = ReadBuf(pRc,self.maxChunkSize)
+                self.readbuf = ReadBuf(pRc, self.maxChunkSize)
                 self.fromChild_fdlist.append(pRc)
             # close child ends of pipes
             for i in childPipes: os.close(i)
             try:
                 # this is useless since the child may not have erred yet
                 pid, err = os.waitpid(self.pid, os.WNOHANG)
-            except os.error, (errnum, msg):
+            except os.error as xxx_todo_changeme1:
+                (errnum, msg) = xxx_todo_changeme1.args
                 if errnum == 10:
                     raise SubprocessError("Subprocess '%s' failed." % self.cmd)
                 else:
@@ -225,15 +226,15 @@ class Subprocess:
             while totalwait <= timeout:
                 ## if totalwait: print "waiting for subprocess..."
                 totalwait = totalwait + printtime
-                if select.select([],self.toChild_fdlist,[],printtime)[1]:
+                if select.select([], self.toChild_fdlist, [], printtime)[1]:
                     if bytes_write(self.toChild, strval) != len(strval):
                         raise SubprocessError("Write error to %s" % self)
                     return                                              # ===>
             raise SubprocessError("Write to %s blocked" % self)
-        except select.error, e:
+        except select.error as e:
             raise SubprocessError(
                     "Select error for %s: file descriptors %s\n%s" %
-                    (self,self.toChild_fdlist,str(e)))
+                    (self, self.toChild_fdlist, str(e)))
 
     def writeline(self, line=''):
         """Write STRING, with added newline termination, to subprocess."""
@@ -399,7 +400,7 @@ class Subprocess:
         self.control_stdout = 0
         self.control_stderr = 0
 
-    def _noisy_print(self,err):
+    def _noisy_print(self, err):
         sig = err & 0xff
         rc = (err & 0xff00) >> 8
         if sig == 0:
@@ -426,9 +427,10 @@ class Subprocess:
             os.kill(self.pid, signal.SIGSTOP)
         except os.error:
             if verbose:
-                print "Stop failed for '%s' - '%s'" % (self.cmd, sys.exc_value)
+                print("Stop failed for '%s' - '%s'" % (self.cmd, sys.exc_info()[1]))
             return 0
-        if verbose: print "Stopped '%s'" % self.cmd
+        if verbose:
+            print("Stopped '%s'" % self.cmd)
         return 'stopped'
 
     def cont(self, verbose=False):
@@ -438,10 +440,10 @@ class Subprocess:
             os.kill(self.pid, signal.SIGCONT)
         except os.error:
             if verbose:
-                print ("Continue failed for '%s' - '%s'" %
-                           (self.cmd, sys.exc_value))
+                print("Continue failed for '%s' - '%s'" %
+                      (self.cmd, sys.exc_info()[1]))
             return 0
-        if verbose: print "Continued '%s'" % self.cmd
+        if verbose: print("Continued '%s'" % self.cmd)
         return 'continued'
 
     def die(self):
@@ -470,7 +472,7 @@ class Subprocess:
         # Only got here if subprocess is not gone:
         raise SubprocessError(
                         "Failed kill of subproc %d, '%s', with signals %s" %
-                        (self.pid, self.cmd, map(lambda(x): x[0], sigs)))
+                        (self.pid, self.cmd, [x[0] for x in sigs]))
 
     def __del__(self):
         """Terminate the subprocess"""
@@ -565,7 +567,7 @@ class ReadBuf:
         else:
             # don't wait at all
             waittime = 0
-        while 1:                        # (we'll only loop if block set)
+        while True:                        # (we'll only loop if block set)
             try:
                 sel = select.select(fdlist, [], fdlist, waittime)
             except select.error:
@@ -610,7 +612,7 @@ class ReadBuf:
             got = BNULLSTR
 
         fdlist = [self.fd]
-        while 1:
+        while True:
             try:
                 sel = select.select(fdlist, [], fdlist)
             except select.error:
@@ -629,7 +631,7 @@ class ReadBuf:
                     self.eof = 1
                     return got
             else:
-                print 'Select returned without input?'
+                print('Select returned without input?')
 
 
 #############################################################################
@@ -694,7 +696,7 @@ def record_trial(s):
     c.write(s)
     c.seek(0)
     r = c.read()
-    show = " start:\t %s\n end:\t %s\n" % (`s`, `r`)
+    show = " start:\t %s\n end:\t %s\n" % (repr(s), repr(r))
     if r != s:
         raise IOError("String distorted:\n%s" % show)
 
@@ -774,12 +776,12 @@ class RedirProcess(Subprocess):
             try:
                 readable, writable, errors = select.select(self.fromChild_fdlist,
                                         self.toChild_fdlist, [], timeout)
-            except select.error, e:
+            except select.error as e:
                 # select error occurs if a file descriptor has been closed
                 # this should not happen -- raise an exception
                 raise SubprocessError(
                         "Select error for %s: file descriptors %s\n%s" %
-                        (self,self.toChild_fdlist+self.fromChild_fdlist,str(e)))
+                        (self, self.toChild_fdlist+self.fromChild_fdlist, str(e)))
             if readable:
                 # stderr is first in fromChild_fdlist (if present)
                 if doErr and (self.fromChild_fdlist[0] in readable):
@@ -820,13 +822,16 @@ class RedirProcess(Subprocess):
                     if s:
                         try:
                             self.write(s) # inside, converts PY3K str to bytes
-                        except IOError, (errnum, msg):
+                        except IOError as xxx_todo_changeme:
+                            # broken pipe may be OK
+                            # just call it an EOF and see what happens
+                            (errnum, msg) = xxx_todo_changeme.args
                             # broken pipe may be OK
                             # just call it an EOF and see what happens
                             if errnum == errno.EPIPE:
-                                raise EOFError
+                                raise EOFError()
                             else:
-                                raise (errnum, msg)
+                                raise
                     else:
                         # EOF if readline returns null
                         os.close(self.toChild)

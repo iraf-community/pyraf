@@ -4,7 +4,7 @@
    it turns into a single-line text widget.
    $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 # System level modules
 import Tkinter as TKNTR # requires 2to3

@@ -2,7 +2,7 @@
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import string
 from stsci.tools import compmixin
@@ -52,7 +52,7 @@ def getAttributes(entry):
                     try:
                         value = float(attrval[1:])
                     except ValueError:
-                        print "problem reading graphcap"
+                        print("problem reading graphcap")
                         raise
             elif attrval[0] == '@':
                 # implies false
@@ -84,7 +84,7 @@ class GraphCap(filecache.FileCache):
 
     def updateValue(self):
         """Called on init and if file changes"""
-        lines = open(self.filename,'r').readlines()
+        lines = open(self.filename, 'r').readlines()
         mergedlines = merge(lines)
         self.dict = getDevices(mergedlines)
 
@@ -94,9 +94,9 @@ class GraphCap(filecache.FileCache):
     def __getitem__(self, key):
         """Get up-to-date version of dictionary"""
         thedict = self.get()
-        if not key in thedict:
-            print "Error: device not found in graphcap"
-            raise KeyError
+        if key not in thedict:
+            print("Error: device not found in graphcap")
+            raise KeyError()
         return Device(thedict, key)
 
     def has_key(self, key): return self._has(key)
@@ -117,7 +117,7 @@ class Device(compmixin.ComparableMixin):
     def getAttribute(self, attrName):
         thedict = self.dict[self.devname]
         value = None
-        while 1:
+        while True:
             if attrName in thedict:
                 value = thedict[attrName]
                 break

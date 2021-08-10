@@ -13,7 +13,7 @@ XXX keys, len are incomplete if directory is not writable?
 R. White, 2000 September 26
 """
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, binascii, string, __builtin__
 _os = os
@@ -35,13 +35,13 @@ class _Database(object):
     def __init__(self, directory, flag='c'):
         self._directory = directory
         self._dict = {}
-        self._writable = flag in ['w','c']
+        self._writable = flag in ['w', 'c']
         if not _os.path.exists(directory):
             if flag == 'c':
                 # create directory if it doesn't exist
                 try:
                     _os.mkdir(directory)
-                except OSError, e:
+                except OSError as e:
                     raise IOError(str(e))
             else:
                 raise IOError("Directory "+directory+" does not exist")
@@ -50,11 +50,11 @@ class _Database(object):
         elif self._writable:
             # make sure directory is writable
             try:
-                testfile = _os.path.join(directory, 'junk' + `_os.getpid()`)
+                testfile = _os.path.join(directory, 'junk' + repr(_os.getpid()))
                 fh = __builtin__.open(testfile, 'w')
                 fh.close()
                 _os.remove(testfile)
-            except IOError, e:
+            except IOError as e:
                 raise IOError("Directory %s cannot be opened for writing" %
                         (directory,))
         # initialize dictionary
@@ -88,7 +88,7 @@ class _Database(object):
         # look for file even if dict doesn't have key because
         # another process could create it
         try:
-            fh = __builtin__.open(self._getFilename(key),'rb')
+            fh = __builtin__.open(self._getFilename(key), 'rb')
             value = fh.read()
             fh.close()
             # cache object in memory
@@ -103,10 +103,10 @@ class _Database(object):
         if self._writable:
             try:
                 fname = self._getFilename(key)
-                fh = __builtin__.open(fname,'wb')
+                fh = __builtin__.open(fname, 'wb')
                 fh.write(value)
                 fh.close()
-            except IOError, e:
+            except IOError as e:
                 # clean up on IO error (e.g., if disk fills up)
                 try:
                     if _os.path.exists(fname):

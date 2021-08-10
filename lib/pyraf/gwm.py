@@ -4,7 +4,7 @@ use by python plotting
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import os, string
 from stsci.tools import capable
@@ -49,9 +49,9 @@ class GraphicsWindowManager(gki.GkiProxy):
     def getNewWindowName(self, root="graphics"):
         """Return a new (unused) window name of form root+number"""
         number = 1
-        while 1:
+        while True:
             windowName = root + str(number)
-            if not windowName in self.windows:
+            if windowName not in self.windows:
                 return windowName
             number = number + 1
 
@@ -61,7 +61,7 @@ class GraphicsWindowManager(gki.GkiProxy):
             windowName = str(windowName).strip()
         if not windowName:
             windowName = self.getNewWindowName()
-        if not windowName in self.windows:
+        if windowName not in self.windows:
             self.windows[windowName] = self.GkiKernelClass(windowName, self)
             self.createList.append(windowName)
         if self.windowVar is None:
@@ -78,11 +78,11 @@ class GraphicsWindowManager(gki.GkiProxy):
             self.stdgraph = self.windows[windowName]
             self.stdgraph.activate()
             # register with focus manager
-            wutil.focusController.addFocusEntity(windowName,self.stdgraph)
+            wutil.focusController.addFocusEntity(windowName, self.stdgraph)
 
     def windowNames(self):
         """Return list of all window names"""
-        return self.windows.keys()
+        return list(self.windows.keys())
 
     def getWindowVar(self):
         """Return Tk variable associated with selected window"""
@@ -93,7 +93,7 @@ class GraphicsWindowManager(gki.GkiProxy):
         windowName = str(windowName).strip()
         window = self.windows.get(windowName)
         if window is None:
-            print "error: graphics window `%s' doesn't exist" % (windowName,)
+            print("error: graphics window `%s' doesn't exist" % (windowName,))
         else:
             changeActiveWindow = (self.stdgraph == window)
             window.top.destroy()
@@ -114,7 +114,7 @@ class GraphicsWindowManager(gki.GkiProxy):
                 else:
                     # something's messed up
                     # change to randomly selected active window
-                    wname = self.windows.keys()[0]
+                    wname = list(self.windows.keys())[0]
                 self.windowVar.set(wname)
             wutil.focusController.removeFocusEntity(windowName)
 
@@ -141,25 +141,25 @@ def _setGraphicsWindowManager():
                 import gkitkplot
                 kernel = gkitkplot.GkiTkplotKernel
             elif kernelname == "opengl":
-                print "OpenGL kernel no longer exists, using default instead"
+                print("OpenGL kernel no longer exists, using default instead")
                 kernelname = "default"
             elif kernelname == "matplotlib":
                 try:
                     import GkiMpl
                     kernel = GkiMpl.GkiMplKernel
                 except ImportError:
-                    print "matplotlib is not installed, using default instead"
+                    print("matplotlib is not installed, using default instead")
                     kernelname = "default"
             else:
-                print 'Graphics kernel specified by "PYRAFGRAPHICS='+ \
-                       kernelname+'" not found.'
-                print "Using default kernel instead."
+                print('Graphics kernel specified by "PYRAFGRAPHICS='+ \
+                       kernelname+'" not found.')
+                print("Using default kernel instead.")
                 kernelname = "default"
         else:
             kernelname = "default"
 
         if 'PYRAFGRAPHICS_TEST' in os.environ:
-            print "Using graphics kernel: "+kernelname
+            print("Using graphics kernel: "+kernelname)
         if kernelname == "default":
             import gkitkplot
             kernel = gkitkplot.GkiTkplotKernel

@@ -3,7 +3,7 @@
 # $Id$
 #
 
-from __future__ import division # confidence high
+from __future__ import division, print_function
 import os
 
 def fixit(trylist, verbose=0):
@@ -20,10 +20,10 @@ def fixit(trylist, verbose=0):
         fcount = fcount+1
         if file[-2:] != "==":
             rcount = rcount+1
-            fpath = os.path.join(cachedir,file)
+            fpath = os.path.join(cachedir, file)
             os.rename(fpath, fpath+"==")
     if verbose:
-        print "Renamed %d of %d files in %s" % (rcount, fcount, cachedir)
+        print("Renamed %d of %d files in %s" % (rcount, fcount, cachedir))
 
 if __name__ == "__main__":
     # looks in ~/iraf/pyraf/clcache, ./clcache, and ./pyraf/clcache

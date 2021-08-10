@@ -3,7 +3,7 @@ OpenGL implementation of the gki kernel class
 
 $Id$
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function
 
 import sys, os, string
 from stsci.tools.for2to3 import ndarr2bytes
@@ -30,7 +30,7 @@ class GkiIrafKernel(gki.GkiKernel):
 
         gki.GkiKernel.__init__(self)
         graphcap = gki.getGraphcap()
-        if not device in graphcap:
+        if device not in graphcap:
             raise iraf.IrafError(
                     "No entry found for specified stdgraph device `%s'" %
                     device)
@@ -39,7 +39,7 @@ class GkiIrafKernel(gki.GkiKernel):
         self.executable = executable = gentry['kf']
         self.taskname = taskname = gentry['tn']
         self.wcs = None
-        if not taskname in _kernelDict:
+        if taskname not in _kernelDict:
             # create special IRAF task object for this kernel
             _kernelDict[taskname] = module.IrafGKITask(taskname, executable)
         self.task = _kernelDict[taskname]
@@ -79,7 +79,7 @@ class GkiIrafKernel(gki.GkiKernel):
         if metacode:
             # write to a temporary file
             tmpfn = iraf.mktemp("iraf") + ".gki"
-            fout = open(tmpfn,'wb')
+            fout = open(tmpfn, 'wb')
             fout.write(metacode)
             fout.close()
             try:
@@ -102,6 +102,6 @@ class GkiIrafKernel(gki.GkiKernel):
                 # problems with redirection. Sometimes graphics kernel tries
                 # to read from stdin if it is not the default stdin.
 
-                self.task(tmpfn,device=device,generic="yes",Stdin=sys.__stdin__)
+                self.task(tmpfn, device=device, generic="yes", Stdin=sys.__stdin__)
             finally:
                 os.remove(tmpfn)
