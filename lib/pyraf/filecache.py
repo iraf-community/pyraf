@@ -94,7 +94,7 @@ class FileCache:
     def _getFileHandle(self, filename=None):
         """Get file handle for a filename or filehandle instance"""
 
-        if filename == None:
+        if filename is None:
             filename = self.filename
         if isinstance(filename, str):
             fh = open(filename, 'r')

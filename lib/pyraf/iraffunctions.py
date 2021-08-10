@@ -2021,7 +2021,7 @@ def fscanf(theLocals, line, format, *namelist, **kw):
         _weirdEOF(theLocals, namelist)
         _nscan = 0
         return EOF
-    if sscanf == None:
+    if sscanf is None:
         raise RuntimeError("fscanf is not supported on this platform")
     f = sscanf.sscanf(line, format)
     n = min(len(f), len(namelist))

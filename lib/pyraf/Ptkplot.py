@@ -287,10 +287,10 @@ class FullWindowCursor:
 
     def _tkEraseCursor(self):
 
-        if self.__tkHorLine != None:
+        if self.__tkHorLine is not None:
             self.__window.delete(self.__tkHorLine)
             self.__tkHorLine = None
-        if self.__tkVerLine != None:
+        if self.__tkVerLine is not None:
             self.__window.delete(self.__tkVerLine)
             self.__tkVerLine = None
 

@@ -1293,12 +1293,12 @@ def _updateSpecialParFileDict(dirToCheck=None, strict=False):
     global _specialUseParFileDict
 
     # Default state is that dictionary is created but empty
-    if _specialUseParFileDict == None:
+    if _specialUseParFileDict is None:
         _specialUseParFileDict = {}
 
     # If the caller gave us a dirToCheck, use only it, otherwise check the
     # usual places (which calls us recursively).
-    if dirToCheck == None:
+    if dirToCheck is None:
         # Check the auxilliary par dir
         uparmAux = pyraf.iraf.envget("uparm_aux", "")
         if 'UPARM_AUX' in os.environ:
@@ -1372,7 +1372,7 @@ def newSpecialParFile(taskName, pkgName, pathName):
     global _specialUseParFileDict
 
     # lazy init - only search disk here when abs. necessary
-    if _specialUseParFileDict == None:
+    if _specialUseParFileDict is None:
         _updateSpecialParFileDict()
 
     tupKey = (taskName, pkgName)

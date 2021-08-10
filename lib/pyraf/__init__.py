@@ -187,7 +187,7 @@ else:
                 else:
                     usage()
             elif opt in ("-c", "--command"):
-                if value != None and len(value) > 0:
+                if value is not None and len(value) > 0:
                     runCmd = value
                 else:
                     usage()

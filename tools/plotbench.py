@@ -33,7 +33,7 @@ def manyPoints(task, pkind):
     if task == 'prow':
         apd = False
         for row in range(150, 331, 20):
-            if pkind == None:
+            if pkind is None:
                 iraf.prow('dev$pix', row, wy2=400, append=apd, pointmode=False)
             else:
                 iraf.prow('dev$pix',
@@ -48,7 +48,7 @@ def manyPoints(task, pkind):
         for row in range(150, 331, 20):
             tstr += 'dev$pix[*,' + str(row) + '],'
         tstr = tstr[:-1]  # rm final comma
-        if pkind == None:
+        if pkind is None:
             iraf.graph(tstr, wy2=400, pointmode=False, ltypes='1')
         else:
             iraf.graph(tstr, wy2=400, pointmode=True, marker=pkind)

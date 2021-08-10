@@ -510,7 +510,7 @@ class GkiKernel:
         # for special uses of PyRAF (e.g. embedded in other GUI's).  Do not
         # set this without knowing what you are doing - it breaks some commonly
         # used command-line redirection within PyRAF. (thus default = False)
-        if self.gkiPreferTtyIpc == None:
+        if self.gkiPreferTtyIpc is None:
             self.gkiPreferTtyIpc = pyraf.iraf.envget('gkiprefertty',
                                                      '') == 'yes'
         return self.gkiPreferTtyIpc
@@ -714,7 +714,7 @@ def gkiTranslate(metacode, functionTable):
         gkiBuffer = GkiBuffer(metacode)
 
     opcode, arg = gkiBuffer.getNextCode()
-    while opcode != None:
+    while opcode is not None:
         f = functionTable[opcode]
         if f is not None:
             f(arg)
@@ -988,7 +988,7 @@ class GkiController(GkiProxy):
         # is the most complex, and it needs to be revisited (when the Device
         # class is refactored) but suffice it to say we only want to compare
         # the dict for the device, not the "master dict".
-        if None == self.lastDevice or \
+        if self.lastDevice is None or \
            device != self.lastDevice or \
            graphcap[device].dict[device] != graphcap.get(self.lastDevice)[self.lastDevice]:
             self.flush()

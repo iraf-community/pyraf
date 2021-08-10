@@ -45,7 +45,7 @@ def init_wcs_sizes(forceResetTo=None):
     #
     # See ticket #156 and http://iraf.net/phpBB2/viewtopic.php?p=1466296
 
-    if _WCS_RECORD_SIZE != 0 and forceResetTo == None:
+    if _WCS_RECORD_SIZE != 0 and forceResetTo is None:
         return  # been here already
 
     # Given a value for _WCS_RECORD_SIZE ?

@@ -471,7 +471,7 @@ class FocusController:
         If always is true, target is added to stack even if it is already
         the focus (useful for pairs of setFocusTo/restoreLast calls.)
         """
-        if (focusTarget == None) or (not self.hasGraphics):
+        if (focusTarget is None) or (not self.hasGraphics):
             return
         if not WUTIL_USING_X:
             if hasattr(focusTarget, 'gwidget'):  # gwidget is a Canvas

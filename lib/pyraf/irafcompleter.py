@@ -84,7 +84,7 @@ class IrafCompleter(Completer):
 
     def activate(self, char="\t"):
         """Turn on completion using the specified character"""
-        if readline == None:
+        if readline is None:
             return
         self.deactivate()
         lab = char2lab.get(char, char)
@@ -110,7 +110,7 @@ class IrafCompleter(Completer):
 
     def deactivate(self):
         """Turn off completion, restoring old behavior for character"""
-        if readline != None and self.completionChar:
+        if readline is not None and self.completionChar:
             # restore normal behavior for previous completion character
             lab = char2lab.get(self.completionChar, self.completionChar)
             readline.parse_and_bind("%s: self-insert" % lab)
@@ -147,7 +147,7 @@ class IrafCompleter(Completer):
         """Returns current line through cursor position with leading
         whitespace stripped
         """
-        if readline == None:
+        if readline is None:
             return ''
         else:
             line = readline.get_line_buffer()[:readline.get_endidx()]

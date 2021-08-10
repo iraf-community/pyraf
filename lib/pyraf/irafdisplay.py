@@ -43,7 +43,7 @@ except:
         raise
 
 # FCNTL is deprecated in Python 2.2
-if hasattr(fcntl, 'F_SETFL') or fcntl == None:
+if hasattr(fcntl, 'F_SETFL') or fcntl is None:
     FCNTL = fcntl
 else:
     import FCNTL
@@ -234,7 +234,7 @@ class UnixImageDisplay(ImageDisplay):
     def __init__(self, filename, family=None, type=socket.SOCK_STREAM):
         ImageDisplay.__init__(self)
         try:
-            if family == None:  # set in func, not in decl so it works on win
+            if family is None:  # set in func, not in decl so it works on win
                 family = socket.AF_UNIX
             self._socket = socket.socket(family, type)
             self._socket.connect(filename)

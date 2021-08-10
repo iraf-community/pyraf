@@ -284,7 +284,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         function. """
 
         fname = self._openMenuChoice.get()
-        if fname == None:
+        if fname is None:
             return
 
         newParList = irafpar.IrafParList(self.taskName, fname)

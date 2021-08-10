@@ -114,7 +114,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         # need to indicate cursor is not visible before this, since
         # cursor sleeps are now issued by redraw. The presumption is that
         # redraw/resize will affect cursor visibility, so we set it first
-        resizing = w != None
+        resizing = w is not None
         cursorActivate = 0
 
         if self.__isSWCursorActive:

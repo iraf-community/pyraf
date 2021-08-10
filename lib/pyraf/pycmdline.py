@@ -51,7 +51,7 @@ class CmdConsole(code.InteractiveConsole):
                                          filename=filename)
         self.ps1 = prompt1
         self.ps2 = prompt2
-        if cmddict == None:
+        if cmddict is None:
             cmddict = {}
         self.cmddict = cmddict
         # cmdchars gives character set for first character, following

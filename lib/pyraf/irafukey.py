@@ -18,7 +18,7 @@ except:
         raise
 
 # TERMIOS is deprecated in Python 2.1
-if hasattr(termios, 'ICANON') or termios == None:
+if hasattr(termios, 'ICANON') or termios is None:
     TERMIOS = termios
 else:
     import TERMIOS

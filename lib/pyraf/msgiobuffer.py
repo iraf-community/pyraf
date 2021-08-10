@@ -118,7 +118,7 @@ class MsgIOBuffer(Frame):
 
         # The displayed portion of the window on the canvas is primarily
         # the label/entry region.
-        if (self.viewHeight == None or self.viewHeight < self.minHgt):
+        if (self.viewHeight is None or self.viewHeight < self.minHgt):
             self.msgIO.canvas.configure(height=self.minHgt)
         else:
             self.msgIO.canvas.configure(height=self.viewHeight)

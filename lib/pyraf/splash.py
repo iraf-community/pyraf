@@ -34,7 +34,7 @@ class SplashScreen(TKNTR.Toplevel):
                                 relief=relief,
                                 borderwidth=borderwidth,
                                 **kw)
-        if self.master.master != None:  # Why?
+        if self.master.master is not None:  # Why?
             self.master.master.withdraw()
         self.master.withdraw()
         self.overrideredirect(1)

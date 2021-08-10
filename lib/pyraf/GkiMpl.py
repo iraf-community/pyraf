@@ -214,7 +214,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # We take this opportuninty to simply set our draw-saving flag.
         self.__allowDrawing = False
         # Note the task command given to be shown in the status widget
-        if readline != None:
+        if readline is not None:
             self._toWriteAtNextClear = readline.get_history_item(
                 readline.get_current_history_length())
 

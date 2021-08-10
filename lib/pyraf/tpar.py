@@ -1002,7 +1002,7 @@ class TparDisplay(Binder):
                                  overwriteCheck=True)
 
         # Now save the parameters
-        if fname == None:
+        if fname is None:
             msg = "Parameters NOT saved to a file."
             okdlg = urwutil.DialogDisplay(msg, 8, 0)
             okdlg.add_buttons([("OK", 0)])
@@ -1106,7 +1106,7 @@ class TparDisplay(Binder):
         # check-point: if fname is not None, we load a file
         msg = "\n\nPress any key to continue..."
 
-        if fname != None:
+        if fname is not None:
             newParList = irafpar.IrafParList(self.taskName, fname)  # load it
             self.set_all_entries_from_par_list(newParList)  # set GUI entries
             msg = "\n\nLoaded:\n\n     " + fname + msg
@@ -1336,7 +1336,7 @@ class TparDisplay(Binder):
                 if rv > 0:
                     fname = None
 
-            if fname == None:
+            if fname is None:
                 return None  # they canceled
             fname = fname.strip()
             if len(fname) == 0:
@@ -1393,7 +1393,7 @@ class TparDisplay(Binder):
         """Return TparOption item of appropriate type for the parameter param"""
         # If there is an enumerated list, regardless of datatype, use
         # the EnumTparOption
-        if (param.choice != None):
+        if (param.choice is not None):
             tparOption = EnumTparOption
         else:
             # Use String for types not in the dictionary
