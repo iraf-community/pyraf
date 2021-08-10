@@ -11,7 +11,7 @@ from stat import *
 from stsci.tools.irafglobals import IrafError
 
 
-def checkcache(filename=None,orig_checkcache=linecache.checkcache):
+def checkcache(filename=None, orig_checkcache=linecache.checkcache):
     """Discard cache entries that are out of date.
     (This is not checked upon each call!)"""
 
@@ -28,7 +28,7 @@ def checkcache(filename=None,orig_checkcache=linecache.checkcache):
         else:
             return
 
-    import pyraf.iraf # used below
+    import pyraf.iraf  # used below
 
     for filename in filenames:
         #    for filename in cache.keys():
@@ -57,7 +57,9 @@ def checkcache(filename=None,orig_checkcache=linecache.checkcache):
     cache.update(save)
 
 
-def updatecache(filename, module_globals=None, orig_updatecache=linecache.updatecache):
+def updatecache(filename,
+                module_globals=None,
+                orig_updatecache=linecache.updatecache):
     """Update a cache entry and return its list of lines.  If something's
     wrong, discard the cache entry and return an empty list."""
 
@@ -96,12 +98,15 @@ def updateCLscript(filename):
 _original_checkcache = linecache.checkcache
 _original_updatecache = linecache.updatecache
 
+
 def install():
     linecache.checkcache = checkcache
     linecache.updatecache = updatecache
 
+
 def uninstall():
     linecache.checkcache = _original_checkcache
     linecache.updatecache = _original_updatecache
+
 
 install()

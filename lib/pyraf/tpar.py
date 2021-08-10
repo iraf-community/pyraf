@@ -17,13 +17,17 @@ from __future__ import division, print_function
 
 import os, sys, string, commands, re
 
+
 # Fake out import of urwid if it fails, to keep tpar from bringing down
 # all of PyRAF.
 class FakeModule:
+
     def __init__(*args, **keys):
         pass
 
+
 class FakeClass:
+
     def __init__(*args, **keys):
         pass
 
@@ -36,8 +40,9 @@ try:
     import urwid
     import urwutil
     import urwfiledlg
-    urwid.set_encoding("ascii")   # gives better performance than 'utf8'
-    if 0==urwid.__version__.find('0.9.8') or 0==urwid.__version__.find('0.9.7'):
+    urwid.set_encoding("ascii")  # gives better performance than 'utf8'
+    if 0 == urwid.__version__.find('0.9.8') or 0 == urwid.__version__.find(
+            '0.9.7'):
         URWID_PRE_9P9 = True
 except Exception as e:
     urwid = FakeModule()
@@ -86,58 +91,42 @@ TPAR_BINDINGS_EMACS = {
     "ctrl D": "exit",
     "ctrl z": "exit",
     "ctrl Z": "exit",
-
     "ctrl p": "up",
     "ctrl P": "up",
     "shift tab": "up",
-
     "ctrl n": "down",
     "ctrl N": "down",
-
     "esc v": "page down",
     "esc V": "page down",
-
     "esc p": "page up",
     "esc P": "page up",
 
     #   "ctrl l" : "redraw",        # re-draw... just ignore
     #   "ctrl L" : "redraw",
-
     "ctrl K": "del_line",
     "ctrl k": "del_line",
-
     "esc d": "del_word",
     "esc D": "del_word",
-
     "esc f": "next_word",
     "esc F": "next_word",
-
     "esc b": "prev_word",
     "esc B": "prev_word",
-
     "ctrl a": "move_bol",
     "ctrl A": "move_bol",
-
     "ctrl e": "move_eol",
     "ctrl E": "move_eol",
-
     "esc >": "end",
     "esc <": "home",
-
     "ctrl f": "right",
     "ctrl F": "right",
-
     "ctrl b": "left",
     "ctrl B": "left",
-
     "esc ctrl d": "undel_char",
     "esc ctrl k": "undel_line",
     "ctrl y": "undel_line",
     "esc ctrl w": "undel_word",
-
     "esc ?": "help"
 }
-
 
 TPAR_HELP_VI = """                                EDIT COMMANDS (vi)
 
@@ -170,67 +159,52 @@ TPAR_BINDINGS_VI = {
     "ctrl d": "exit",
     "ctrl C": "quit",
     "ctrl D": "exit",
-
     "ctrl K": "up",
     "ctrl k": "up",
-
     "ctrl j": "down",
     "ctrl J": "down",
-
     "ctrl n": "page down",
     "ctrl N": "page down",
-
     "ctrl p": "page up",
     "ctrl P": "page up",
 
     #   "ctrl r" : "redraw",        # re-draw... just ignore
     #   "ctrl R" : "redraw",
-
     "tab ctrl D": "del_line",
     "tab ctrl d": "del_line",
-
     "tab ctrl W": "del_word",
     "tab ctrl w": "del_word",
-
     "ctrl w": "next_word",
     "ctrl W": "next_word",
-
     "ctrl b": "prev_word",
     "ctrl B": "prev_word",
-
     "ctrl a": "move_bol",
     "ctrl A": "move_bol",
-
     "ctrl e": "move_eol",
     "ctrl E": "move_eol",
-
     "ctrl T ctrl E": "end",
     "ctrl t ctrl e": "end",
     "ctrl T ctrl S": "home",
     "ctrl t ctrl s": "home",
-
     "ctrl L": "right",
     "ctrl l": "right",
-
     "ctrl H": "left",
     "ctrl h": "left",
-
     "ctrl U ctrl C": "undel_char",
     "ctrl u ctrl c": "undel_char",
-
     "ctrl U ctrl L": "undel_line",
     "ctrl u ctrl l": "undel_line",
-
     "ctrl U ctrl W": "undel_word",
     "ctrl u ctrl w": "undel_word",
-
     "esc ?": "help"
 }
+
 
 class Binder(object):
     """The Binder class manages keypresses for urwid and adds the
     ability to bind specific inputs to actions.
     """
+
     def __init__(self, bindings, inform, mode_keys=[]):
         self.bindings = bindings
         self.inform = inform
@@ -261,7 +235,7 @@ class Binder(object):
             f = self.bindings[key]
             if f is None:
                 key = None
-            elif isinstance(f, str): # str & unicode?
+            elif isinstance(f, str):  # str & unicode?
                 key = f
             else:
                 key = f()
@@ -273,10 +247,12 @@ class Binder(object):
         # return self.inform(s)
         return None
 
+
 class PyrafEdit(urwid.Edit):
     """PyrafEdit is a text entry widget which has keybindings similar
     to IRAF's CL epar command.
     """
+
     def __init__(self, *args, **keys):
         inform = keys["inform"]
         del keys["inform"]
@@ -314,7 +290,7 @@ class PyrafEdit(urwid.Edit):
             if n >= len(s):
                 n -= 1
             c = s[n]
-            self.set_edit_text(s[:n] + s[n+1:])
+            self.set_edit_text(s[:n] + s[n + 1:])
             self._del_chars.append(c)
 
     def DEL_WORD(self):
@@ -328,7 +304,7 @@ class PyrafEdit(urwid.Edit):
         while i < len(s) and not s[i].isspace():
             word += s[i]
             i += 1
-        s = s[:i-len(word)] + s[i:]
+        s = s[:i - len(word)] + s[i:]
         self._del_words.append(word)
         self.edit_pos = i
         self.set_edit_text(s)
@@ -343,9 +319,9 @@ class PyrafEdit(urwid.Edit):
     def NEXT_WORD(self):
         s = self.get_edit_text()
         i = self.edit_pos
-        while s and i < len(s)-1 and not s[i].isspace():
+        while s and i < len(s) - 1 and not s[i].isspace():
             i += 1
-        while s and i < len(s)-1 and s[i].isspace():
+        while s and i < len(s) - 1 and s[i].isspace():
             i += 1
         self.edit_pos = i
 
@@ -409,7 +385,9 @@ class PyrafEdit(urwid.Edit):
     def verify(self):
         return True
 
+
 class StringTparOption(urwid.Columns):
+
     def __init__(self, paramInfo, defaultParamInfo, inform):
 
         MODE_KEYS = []
@@ -431,21 +409,20 @@ class StringTparOption(urwid.Columns):
         self._mode = "clear"
         self._newline = True
         self.inform = inform
-        self.paramInfo    = paramInfo
+        self.paramInfo = paramInfo
         self.defaultParamInfo = defaultParamInfo
 
-        name  = self.paramInfo.name
-        value = self.paramInfo.get(field = "p_filename", native = 0,
-                                   prompt = 0)
+        name = self.paramInfo.name
+        value = self.paramInfo.get(field="p_filename", native=0, prompt=0)
         self._previousValue = value
 
         # Generate the input label
-        if (self.paramInfo.get(field = "p_mode") == "h"):
-            required=False
+        if (self.paramInfo.get(field="p_mode") == "h"):
+            required = False
         else:
-            required=True
+            required = True
 
-        help = self.paramInfo.get(field = "p_prompt", native = 0, prompt = 0)
+        help = self.paramInfo.get(field="p_prompt", native=0, prompt=0)
         self._args = (name, value, help, required)
         if not required:
             name = "(" + name
@@ -453,15 +430,18 @@ class StringTparOption(urwid.Columns):
         else:
             help = "  " + help
         self._name = urwid.Text("%-10s=" % name)
-        self._edit = PyrafEdit("", "", wrap="clip", align="right", inform=inform)
+        self._edit = PyrafEdit("",
+                               "",
+                               wrap="clip",
+                               align="right",
+                               inform=inform)
         self._edit.verify = self.verify
         self._value = urwid.Text("%10s" % value, align="right")
         self._help = urwid.Text("%-30s" % help)
         urwid.Columns.__init__(self, [('weight', 0.20, self._name),
                                       ('weight', 0.20, self._edit),
                                       ('weight', 0.20, self._value),
-                                      ('weight', 0.40, self._help)],
-                               0, 1, 1)
+                                      ('weight', 0.40, self._help)], 0, 1, 1)
 
     def keypress(self, pos, key):
         key = Binder.keypress(self._binder, pos, key)
@@ -497,7 +477,9 @@ class StringTparOption(urwid.Columns):
         self.inform("")
         return True
 
-    def UNDEL_LINE(self): # a little iffy.  handle first copy from value field to edit field here.  defer subsequent calls.
+    def UNDEL_LINE(
+        self
+    ):  # a little iffy.  handle first copy from value field to edit field here.  defer subsequent calls.
         v = self.get_result()
         if v:
             self.set_candidate(self.get_candidate() + v)
@@ -552,7 +534,7 @@ class StringTparOption(urwid.Columns):
         if self._mode == "clear":
             self.set_candidate("")
         else:
-            s  = self.get_result()
+            s = self.get_result()
             self.set_candidate(s)
             self._edit.set_edit_pos(len(s))
 
@@ -561,6 +543,7 @@ class StringTparOption(urwid.Columns):
 
 
 class NumberTparOption(StringTparOption):
+
     def normalize(self, v):
         if v in ["INDEF", "Indef", "indef"]:
             return "INDEF"
@@ -581,7 +564,9 @@ class NumberTparOption(StringTparOption):
     def klass(self):
         return "number"
 
+
 class BooleanTparOption(StringTparOption):
+
     def __init__(self, *args, **keys):
         StringTparOption.__init__(self, *args, **keys)
         self._binder.bind(" ", "space")
@@ -612,10 +597,13 @@ class BooleanTparOption(StringTparOption):
             self.set_candidate("")
             self.inform("Not a valid boolean value.")
             return False
+
     def klass(self):
         return "boolean"
 
+
 class EnumTparOption(StringTparOption):
+
     def __init__(self, *args, **keys):
         StringTparOption.__init__(self, *args, **keys)
         self._binder.bind(" ", "space")
@@ -647,14 +635,18 @@ class EnumTparOption(StringTparOption):
             return False
         return True
 
+
 class PsetTparOption(StringTparOption):
+
     def klass(self):
         return "pset"
+
 
 class TparHeader(urwid.Pile):
     banner = """                                   I R A F
                     Image Reduction and Analysis Facility
 """
+
     def __init__(self, package, task=None):
         top = urwid.Text(("header", self.banner))
         s = "%8s= %-10s\n" % ("PACKAGE", package)
@@ -679,13 +671,11 @@ class TparDisplay(Binder):
         ('buttnf', 'white', 'dark blue', 'bold'),
     ]
 
-    def __init__(self,  taskName):
+    def __init__(self, taskName):
 
         MODE_KEYS_EMACS = ["esc"]
 
-        MODE_KEYS_VI = ["esc", "tab",
-                        "ctrl u", "ctrl U",
-                        "ctrl t", "ctrl T"]
+        MODE_KEYS_VI = ["esc", "tab", "ctrl u", "ctrl U", "ctrl t", "ctrl T"]
 
         TPAR_BINDINGS = {  # Page level bindings
             "quit": self.QUIT,
@@ -709,8 +699,8 @@ class TparDisplay(Binder):
         self.paramList = self.taskObject.getParList(docopy=1)
 
         # See if there exist any special versions on disk to load
-        self.__areAnyToLoad = irafpar.haveSpecialVersions(self.taskName,
-                                                          self.pkgName) # irafpar caches them
+        self.__areAnyToLoad = irafpar.haveSpecialVersions(
+            self.taskName, self.pkgName)  # irafpar caches them
 
         # Ignore the last parameter which is $nargs
         self.numParams = len(self.paramList) - 1
@@ -726,7 +716,11 @@ class TparDisplay(Binder):
         else:
             self._createButtons()
 
-        self.colon_edit = PyrafEdit("", "", wrap="clip", align="left", inform=self.inform)
+        self.colon_edit = PyrafEdit("",
+                                    "",
+                                    wrap="clip",
+                                    align="left",
+                                    inform=self.inform)
         self.listitems = [urwid.Divider(" ")] + self.entryNo + \
                          [urwid.Divider(" "), self.colon_edit,
                           self.buttons]
@@ -736,10 +730,9 @@ class TparDisplay(Binder):
         self.footer = urwid.Text("")
         self.header = TparHeader(self.pkgName, self.taskName)
 
-        self.view = urwid.Frame(
-            self.listbox,
-            header=self.header,
-            footer=self.footer)
+        self.view = urwid.Frame(self.listbox,
+                                header=self.header,
+                                footer=self.footer)
 
         self._editor = iraf.envget("editor")
         BINDINGS = {}
@@ -757,95 +750,106 @@ class TparDisplay(Binder):
 
         isPset = isinstance(self.taskObject, iraftask.IrafPset)
 
-        self.help_button = urwid.Padding(
-            urwid.Button("Help", self.HELP),
-            align="center",    width=('fixed', 8))
-        self.cancel_button = urwid.Padding(
-            urwid.Button("Cancel", self.QUIT),
-            align="center",    width=('fixed', 10))
+        self.help_button = urwid.Padding(urwid.Button("Help", self.HELP),
+                                         align="center",
+                                         width=('fixed', 8))
+        self.cancel_button = urwid.Padding(urwid.Button("Cancel", self.QUIT),
+                                           align="center",
+                                           width=('fixed', 10))
         if not isPset:
-            self.save_as_button = urwid.Padding(
-                urwid.Button("Save As", self.SAVEAS),
-                align="center",    width=('fixed', 11))
-        self.save_button = urwid.Padding(
-            urwid.Button("Save", self.EXIT),
-            align="center",    width=('fixed', 8))
-        self.exec_button = urwid.Padding(
-            urwid.Button("Exec", self.go),
-            align="center",    width=('fixed', 8))
+            self.save_as_button = urwid.Padding(urwid.Button(
+                "Save As", self.SAVEAS),
+                                                align="center",
+                                                width=('fixed', 11))
+        self.save_button = urwid.Padding(urwid.Button("Save", self.EXIT),
+                                         align="center",
+                                         width=('fixed', 8))
+        self.exec_button = urwid.Padding(urwid.Button("Exec", self.go),
+                                         align="center",
+                                         width=('fixed', 8))
         if self.__areAnyToLoad:
-            self.open_button = urwid.Padding(
-                urwid.Button("Open", self.PFOPEN),
-                align="center",    width=('fixed', 8))
+            self.open_button = urwid.Padding(urwid.Button("Open", self.PFOPEN),
+                                             align="center",
+                                             width=('fixed', 8))
 
         # GUI button layout - weightings
-        if isPset: # show no Open nor Save As buttons
-            self.buttons = urwid.Columns([
-                ('weight', 0.2, self.exec_button),
-                ('weight', 0.2, self.save_button),
-                ('weight', 0.2, self.cancel_button),
-                ('weight', 0.4, self.help_button)])
+        if isPset:  # show no Open nor Save As buttons
+            self.buttons = urwid.Columns([('weight', 0.2, self.exec_button),
+                                          ('weight', 0.2, self.save_button),
+                                          ('weight', 0.2, self.cancel_button),
+                                          ('weight', 0.4, self.help_button)])
         else:
-            if not self.__areAnyToLoad: # show Save As but not Open
+            if not self.__areAnyToLoad:  # show Save As but not Open
                 self.buttons = urwid.Columns([
                     ('weight', 0.175, self.exec_button),
                     ('weight', 0.175, self.save_button),
                     ('weight', 0.175, self.save_as_button),
                     ('weight', 0.175, self.cancel_button),
-                    ('weight', 0.3, self.help_button)])
-            else: # show all possible buttons (iterated on this spacing)
+                    ('weight', 0.3, self.help_button)
+                ])
+            else:  # show all possible buttons (iterated on this spacing)
                 self.buttons = urwid.Columns([
                     ('weight', 0.20, self.open_button),
                     ('weight', 0.15, self.exec_button),
                     ('weight', 0.15, self.save_button),
                     ('weight', 0.15, self.save_as_button),
                     ('weight', 0.18, self.cancel_button),
-                    ('weight', 0.20, self.help_button)])
+                    ('weight', 0.20, self.help_button)
+                ])
 
     def _createButtons(self):
         """ Set up all the bottom row buttons and their spacings """
 
         isPset = isinstance(self.taskObject, iraftask.IrafPset)
 
-        self.help_button = urwid.Padding(
-            urwid.Button("Help", self.HELP), align="center", width=8, right=4,
-            left=5)
-        self.cancel_button = urwid.Padding(
-            urwid.Button("Cancel", self.QUIT), align="center", width=10)
+        self.help_button = urwid.Padding(urwid.Button("Help", self.HELP),
+                                         align="center",
+                                         width=8,
+                                         right=4,
+                                         left=5)
+        self.cancel_button = urwid.Padding(urwid.Button("Cancel", self.QUIT),
+                                           align="center",
+                                           width=10)
         if not isPset:
-            self.save_as_button = urwid.Padding(
-                urwid.Button("Save As", self.SAVEAS), align="center", width=11)
-        self.save_button = urwid.Padding(
-            urwid.Button("Save", self.EXIT), align="center", width=8)
-        self.exec_button = urwid.Padding(
-            urwid.Button("Exec", self.go), align="center", width=8)
+            self.save_as_button = urwid.Padding(urwid.Button(
+                "Save As", self.SAVEAS),
+                                                align="center",
+                                                width=11)
+        self.save_button = urwid.Padding(urwid.Button("Save", self.EXIT),
+                                         align="center",
+                                         width=8)
+        self.exec_button = urwid.Padding(urwid.Button("Exec", self.go),
+                                         align="center",
+                                         width=8)
         if self.__areAnyToLoad:
-            self.open_button = urwid.Padding(
-                urwid.Button("Open", self.PFOPEN), align="center", width=8)
+            self.open_button = urwid.Padding(urwid.Button("Open", self.PFOPEN),
+                                             align="center",
+                                             width=8)
 
         # GUI button layout - weightings
-        if isPset: # show no Open nor Save As buttons
-            self.buttons = urwid.Columns([
-                ('weight', 0.20, self.exec_button),
-                ('weight', 0.23, self.save_button),
-                ('weight', 0.23, self.cancel_button),
-                ('weight', 0.20, self.help_button)])
+        if isPset:  # show no Open nor Save As buttons
+            self.buttons = urwid.Columns([('weight', 0.20, self.exec_button),
+                                          ('weight', 0.23, self.save_button),
+                                          ('weight', 0.23, self.cancel_button),
+                                          ('weight', 0.20, self.help_button)])
         else:
-            if not self.__areAnyToLoad: # show Save As but not Open
+            if not self.__areAnyToLoad:  # show Save As but not Open
                 self.buttons = urwid.Columns([
                     ('weight', 0.15, self.exec_button),
                     ('weight', 0.15, self.save_button),
                     ('weight', 0.18, self.save_as_button),
                     ('weight', 0.18, self.cancel_button),
-                    ('weight', 0.15, self.help_button)])
-            else: # show all possible buttons (iterated on this spacing)
+                    ('weight', 0.15, self.help_button)
+                ])
+            else:  # show all possible buttons (iterated on this spacing)
                 self.buttons = urwid.Columns([
                     ('weight', 0.10, self.open_button),
                     ('weight', 0.10, self.exec_button),
                     ('weight', 0.10, self.save_button),
                     ('weight', 0.12, self.save_as_button),
                     ('weight', 0.12, self.cancel_button),
-                    ('weight', 0.10, self.help_button)])
+                    ('weight', 0.10, self.help_button)
+                ])
 
     def get_default_param_list(self):
         # Obtain the default parameter list
@@ -886,7 +890,7 @@ class TparDisplay(Binder):
         else:
             self.ui = urwid.curses_display.Screen()
         self.ui.register_palette(self.palette)
-        self.ui.run_wrapper(self.run) # raw_display has alternate_buffer=True
+        self.ui.run_wrapper(self.run)  # raw_display has alternate_buffer=True
         self.done()
 
     def get_keys(self):
@@ -913,9 +917,12 @@ class TparDisplay(Binder):
                     break
                 elif urwid.is_mouse_event(k):
                     event, button, col, row = k
-                    self.view.mouse_event(
-                        size, event,
-                        button, col, row, focus=True)
+                    self.view.mouse_event(size,
+                                          event,
+                                          button,
+                                          col,
+                                          row,
+                                          focus=True)
                 elif k == 'window resize':
                     size = self.ui.get_cols_rows()
                     self.inform("resize %s" % (str(size)))
@@ -930,7 +937,7 @@ class TparDisplay(Binder):
             default_file = w.get_result()
         except:
             default_file = ""
-        self.listbox.set_focus(len(self.listitems)-2)
+        self.listbox.set_focus(len(self.listitems) - 2)
         size = self.ui.get_cols_rows()
         self.colon_edit.set_edit_text("")
         self.colon_edit.set_edit_pos(0)
@@ -958,29 +965,32 @@ class TparDisplay(Binder):
 
     def process_colon(self, cmd):
         # : <cmd_letter> [!] [<filename>]
-        groups = re.match("^:(?P<cmd>[a-z])\s*"
-                          "(?P<emph>!?)\s*"
-                          "(?P<file>\w*)",  cmd)
+        groups = re.match(
+            "^:(?P<cmd>[a-z])\s*"
+            "(?P<emph>!?)\s*"
+            "(?P<file>\w*)", cmd)
         if not groups:
             self.inform("bad command: " + cmd)
         else:
-            letter    = groups.group("cmd")
+            letter = groups.group("cmd")
             emph = groups.group("emph") == "!"
-            file   = groups.group("file")
+            file = groups.group("file")
             try:
-                f = {"q": self.QUIT,
-                     "g": self.go,
-                     "r": self.read_pset,
-                     "w": self.write_pset,
-                     "e": self.edit_pset
-                     }[letter]
+                f = {
+                    "q": self.QUIT,
+                    "g": self.go,
+                    "r": self.read_pset,
+                    "w": self.write_pset,
+                    "e": self.edit_pset
+                }[letter]
             except KeyError:
                 self.inform("unknown command: " + cmd)
                 return
             try:
                 f(file, emph)
             except Exception as e:
-                self.inform("command '%s' failed with exception '%s'" % (cmd, e))
+                self.inform("command '%s' failed with exception '%s'" %
+                            (cmd, e))
 
     def save_as(self):
         """ Save the parameter settings to a user-specified file.  Any
@@ -988,8 +998,8 @@ class TparDisplay(Binder):
         function. """
 
         # The user wishes to save to a different name.
-        fname = self.select_file(
-            "Save parameter values to which file?", overwriteCheck=True)
+        fname = self.select_file("Save parameter values to which file?",
+                                 overwriteCheck=True)
 
         # Now save the parameters
         if fname == None:
@@ -1006,11 +1016,13 @@ class TparDisplay(Binder):
         # their special version
         pars = []
         for par in self.paramList:
-            if par.type == "pset": pars.append(par.name)
+            if par.type == "pset":
+                pars.append(par.name)
         if len(pars):
             msg = "If you have made any changes to the PSET "+ \
                   "values for:\n\n"
-            for p in pars: msg += "     "+p+"\n"
+            for p in pars:
+                msg += "     " + p + "\n"
             msg = msg+"\nthose changes will NOT be explicitly saved to:"+ \
                 '\n\n"'+fname+'"'
             # title='PSET Save-As Not Yet Supported
@@ -1028,18 +1040,19 @@ class TparDisplay(Binder):
             ansOKCANCEL = self.process_bad_entries(self.badEntriesList,
                                                    self.taskName)
         if not ansOKCANCEL:
-            return # should we tell them we are not saving ?
+            return  # should we tell them we are not saving ?
 
         # If there were no invalid entries or the user said OK, finally
         # save to their stated file.  Since we have already processed the
         # bad entries, there should be none returned.
-        mstr = "TASKMETA: task="+self.taskName+" package="+self.pkgName
-        if self.check_set_save_entries(doSave=True, filename=fname,
+        mstr = "TASKMETA: task=" + self.taskName + " package=" + self.pkgName
+        if self.check_set_save_entries(doSave=True,
+                                       filename=fname,
                                        comment=mstr):
-            raise Exception("Unexpected bad entries for: "+self.taskName)
+            raise Exception("Unexpected bad entries for: " + self.taskName)
 
         # Let them know what they just did
-        msg = 'Saved to: "'+fname+'"'
+        msg = 'Saved to: "' + fname + '"'
         okdlg = urwutil.DialogDisplay(msg, 8, 0)
         okdlg.add_buttons([("OK", 0)])
         okdlg.main()
@@ -1054,7 +1067,7 @@ class TparDisplay(Binder):
 
         flist = irafpar.getSpecialVersionFiles(self.taskName, self.pkgName)
         if len(flist) <= 0:
-            msg = "No special-purpose parameter files found for "+self.taskName
+            msg = "No special-purpose parameter files found for " + self.taskName
             okdlg = urwutil.DialogDisplay(msg, 8, 0)
             okdlg.add_buttons([("OK", 0)])
             okdlg.main()
@@ -1065,38 +1078,44 @@ class TparDisplay(Binder):
             msg = "One special-purpose parameter file found.\n"+ \
                   "Load file?\n\n"+flist[0]
             yesnodlg = urwutil.DialogDisplay(msg, 12, 0)
-            yesnodlg.add_buttons([("OK", 0),  ("Cancel", 1)])
+            yesnodlg.add_buttons([("OK", 0), ("Cancel", 1)])
             rv, junk = yesnodlg.main()
-            if rv == 0: fname = flist[0] # if not, fname is still None
-        else: # >1 file, need a select dialog
+            if rv == 0:
+                fname = flist[0]  # if not, fname is still None
+        else:  # >1 file, need a select dialog
             flist.sort()
-            chcs = [] # ListDialogDisplay takes a 2-column tuple
+            chcs = []  # ListDialogDisplay takes a 2-column tuple
             for i in range(len(flist)):
-                chcs.append(str(i)) # need index as tag - it is the return val
+                chcs.append(str(i))  # need index as tag - it is the return val
                 chcs.append(flist[i])
 
             def menuItemConstr(tag, state):
                 return urwutil.MenuItem(tag)
+
             selectdlg = urwutil.ListDialogDisplay("Select from these:",
-                                                  len(flist)+7, 75,
-                                                  menuItemConstr, tuple(chcs), False)
-            selectdlg.add_buttons([("Cancel", 1), ])
+                                                  len(flist) + 7,
+                                                  75, menuItemConstr,
+                                                  tuple(chcs), False)
+            selectdlg.add_buttons([
+                ("Cancel", 1),
+            ])
             rv, ans = selectdlg.main()
-            if rv == 0: fname = flist[int(ans)]
+            if rv == 0:
+                fname = flist[int(ans)]
 
         # check-point: if fname is not None, we load a file
         msg = "\n\nPress any key to continue..."
 
         if fname != None:
-            newParList = irafpar.IrafParList(self.taskName, fname) # load it
-            self.set_all_entries_from_par_list(newParList) # set GUI entries
-            msg = "\n\nLoaded:\n\n     "+fname+msg
+            newParList = irafpar.IrafParList(self.taskName, fname)  # load it
+            self.set_all_entries_from_par_list(newParList)  # set GUI entries
+            msg = "\n\nLoaded:\n\n     " + fname + msg
 
         # Notify them (also forces a screen redraw, which we need)
         try:
-            self.ui.clear() # fixes clear when next line calls draw_screen
+            self.ui.clear()  # fixes clear when next line calls draw_screen
         except AttributeError:
-            self.ui._clear() # older urwid vers use different method name
+            self.ui._clear()  # older urwid vers use different method name
         self.info(msg, None)
 
     def save(self, emph):
@@ -1109,9 +1128,8 @@ class TparDisplay(Binder):
         # If there were invalid entries, prepare the message dialog
         ansOKCANCEL = True
         if (self.badEntriesList):
-            ansOKCANCEL = self.process_bad_entries(
-                self.badEntriesList,
-                self.taskName)
+            ansOKCANCEL = self.process_bad_entries(self.badEntriesList,
+                                                   self.taskName)
         return ansOKCANCEL
 
     def MOVE_START(self):
@@ -1129,19 +1147,21 @@ class TparDisplay(Binder):
 
         def quit_continue():
             pass
+
         self.done = quit_continue
 
     def PFOPEN(self, event=None):
         """ Open button - load parameters from a user specified file"""
         self.pfopen()
-        self.done = None # simply continue
+        self.done = None  # simply continue
 
     def SAVEAS(self, event=None):
         """ SaveAs button - save parameters to a user specified file"""
         self.save_as()
 
-        def save_as_continue(): # get back to editing
+        def save_as_continue():  # get back to editing
             iraffunctions.tparam(self.taskObject)
+
         self.done = save_as_continue  # self.done = None # will also continue
 
     def EXIT(self, event=None):  # always save
@@ -1155,6 +1175,7 @@ class TparDisplay(Binder):
         def go_continue():
             print("\nTask %s is running...\n" % self.taskName)
             self.run_task()
+
         self.done = go_continue
 
     def edit_pset(self, file, emph):
@@ -1168,8 +1189,10 @@ class TparDisplay(Binder):
         if file == "":
             iraffunctions.tparam(default_file)
         else:
+
             def edit_pset_continue():
                 iraffunctions.tparam(file)
+
             self.done = edit_pset_continue
 
     def read_pset(self, file, emph):
@@ -1177,13 +1200,16 @@ class TparDisplay(Binder):
         if file == "":
             self.unlearn_all_entries()
         else:
+
             def new_pset():
                 self.__init__(file)
+
             self.done = new_pset
 
     def write_pset(self, file, overwrite):
         if os.path.exists(file) and not overwrite:
-            self.inform("File '%s' exists and overwrite (!) not used." % (file,))
+            self.inform("File '%s' exists and overwrite (!) not used." %
+                        (file,))
         # XXXX write out parameters to file
         self.inform("write pset: %s" % (file,))
 
@@ -1193,7 +1219,7 @@ class TparDisplay(Binder):
         for i in range(self.numParams):
             par = self.paramList[i]
             if par.type == "pset":
-                continue # skip PSET's for now
+                continue  # skip PSET's for now
             gui_entry = self.entryNo[i]
             par.set(aParList.getValue(par.name, native=1, prompt=0))
             # gui holds a str, but par.value is native; conversion occurs
@@ -1231,9 +1257,8 @@ class TparDisplay(Binder):
                 # the value will be converted to its original valid value.
                 # Maintain a list of the reset values for user notification.
                 if not entry.verify(value):
-                    self.badEntries.append([
-                        entry.paramInfo.name, value,
-                        entry._previousValue])
+                    self.badEntries.append(
+                        [entry.paramInfo.name, value, entry._previousValue])
                 else:
                     self.taskObject.setParam(par.name, value)
 
@@ -1273,17 +1298,17 @@ class TparDisplay(Binder):
     def info(self, msg, b):
         self.exit_flag = False
         size = self.ui.get_cols_rows()
-        exit_button = urwid.Padding(
-            urwid.Button("Exit", self.exit_info),
-            align="center", width=8)
-        frame = urwid.Frame(urwid.Filler(
-            urwid.AttrWrap(urwid.Text(msg), "help"),
-            valign="top"),
-            header=self.header,
-            footer=exit_button)
+        exit_button = urwid.Padding(urwid.Button("Exit", self.exit_info),
+                                    align="center",
+                                    width=8)
+        frame = urwid.Frame(urwid.Filler(urwid.AttrWrap(
+            urwid.Text(msg), "help"),
+                                         valign="top"),
+                            header=self.header,
+                            footer=exit_button)
         canvas = frame.render(size)
         self.ui.draw_screen(size, canvas)
-        self.get_keys() # wait for keypress
+        self.get_keys()  # wait for keypress
 
     def exit_info(self, ehb):
         self.exit_flag = True
@@ -1304,23 +1329,27 @@ class TparDisplay(Binder):
             try:
                 fname = urwfiledlg.main()
             except:
-                prompt="(File chooser error, enter choice manually.)\n"+prompt
+                prompt = "(File chooser error, enter choice manually.)\n" + prompt
                 inputdlg = urwutil.InputDialogDisplay(prompt, 9, 0)
-                inputdlg.add_buttons([("OK", 0),  ("Cancel", 1)])
+                inputdlg.add_buttons([("OK", 0), ("Cancel", 1)])
                 rv, fname = inputdlg.main()
-                if rv > 0: fname = None
+                if rv > 0:
+                    fname = None
 
-            if fname == None: return None # they canceled
+            if fname == None:
+                return None  # they canceled
             fname = fname.strip()
-            if len(fname) == 0: return None
+            if len(fname) == 0:
+                return None
 
             # See if the file exists (if we care)
             if overwriteCheck and os.path.exists(fname):
                 yesnodlg = urwutil.DialogDisplay(
-                    "File exists!  Overwrite?\n\n    "+fname, 9, 0)
-                yesnodlg.add_buttons([("Yes", 0),  ("No", 1)])
+                    "File exists!  Overwrite?\n\n    " + fname, 9, 0)
+                yesnodlg.add_buttons([("Yes", 0), ("No", 1)])
                 rv, junk = yesnodlg.main()
-                if rv == 0: return fname
+                if rv == 0:
+                    return fname
                 # if no, then go thru selection again
             else:
                 return fname
@@ -1350,14 +1379,15 @@ class TparDisplay(Binder):
         return (self.askokcancel("Notice", badEntriesString))
 
     # TparOption values for non-string types
-    _tparOptionDict = {"b": BooleanTparOption,
-                       "r": NumberTparOption,
-                       "d": NumberTparOption,
-                       "i": NumberTparOption,
-                       "pset": PsetTparOption,
-                       "ar": NumberTparOption,
-                       "ai": NumberTparOption,
-                       }
+    _tparOptionDict = {
+        "b": BooleanTparOption,
+        "r": NumberTparOption,
+        "d": NumberTparOption,
+        "i": NumberTparOption,
+        "pset": PsetTparOption,
+        "ar": NumberTparOption,
+        "ai": NumberTparOption,
+    }
 
     def tpar_option_factory(self, param, defaultParam):
         """Return TparOption item of appropriate type for the parameter param"""
@@ -1373,11 +1403,16 @@ class TparDisplay(Binder):
 
 def tpar(taskName):
     if isinstance(urwid, FakeModule):
-        print("The urwid package isn't found on your Python system so tpar can't be used.", file=sys.stderr)
-        print('    (the error given: "'+urwid.the_error+'")', file=sys.stderr)
-        print("Please install urwid version >= 0.9.7 or use epar instead.", file=sys.stderr)
+        print(
+            "The urwid package isn't found on your Python system so tpar can't be used.",
+            file=sys.stderr)
+        print('    (the error given: "' + urwid.the_error + '")',
+              file=sys.stderr)
+        print("Please install urwid version >= 0.9.7 or use epar instead.",
+              file=sys.stderr)
         return
     TparDisplay(taskName).main()
+
 
 if __name__ == "__main__":
     main()

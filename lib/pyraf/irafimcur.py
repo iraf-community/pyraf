@@ -16,6 +16,7 @@ import irafdisplay, gwm, iraf
 # dictionary of devices to support multiple active displays
 _devices = {}
 
+
 def _getDevice(displayname=None):
     """Get device object for this display"""
     if displayname is None:
@@ -29,7 +30,7 @@ def _getDevice(displayname=None):
     try:
         device = gwm.gki.getGraphcap()[displayname]
         dd = device['DD'].split(',')
-        if len(dd)>1 and dd[1] != '':
+        if len(dd) > 1 and dd[1] != '':
             imtdev = 'fifo:%si:%so' % (dd[1], dd[1])
         else:
             imtdev = None
@@ -43,11 +44,13 @@ def _getDevice(displayname=None):
 
     # last gasp is to assume display is an imtdev string
     try:
-        device = _devices[displayname] = irafdisplay.ImageDisplayProxy(displayname)
+        device = _devices[displayname] = irafdisplay.ImageDisplayProxy(
+            displayname)
         return device
     except (ValueError, IOError):
         pass
     raise IrafError("Unable to open image display `%s'\n" % displayname)
+
 
 def imcur(displayname=None):
     """Read image cursor and return string expected for IRAF's imcur parameter
@@ -67,7 +70,7 @@ def imcur(displayname=None):
         device = _getDevice(displayname)
         # Read cursor position at keystroke
         result = device.readCursor()
-        if Verbose>1:
+        if Verbose > 1:
             sys.__stdout__.write("%s\n" % (result,))
             sys.__stdout__.flush()
         if result == 'EOF':

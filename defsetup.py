@@ -6,7 +6,6 @@ import distutils.core
 import distutils.sysconfig
 import string
 
-
 ## conditional flags, defaults
 
 # conditional for if we are running on Windows
@@ -20,15 +19,17 @@ if sys.version_info[:2] < (2, 6):
     ms_windows = True
 
 C_EXT_MODNAME_ENDING = 'module'
-if sys.version_info[0] > 2: # actually changes in Python 3.3, but why wait
-    C_EXT_MODNAME_ENDING = '' # needs not "sscanfmodule.so", but "sscanf.so"
+if sys.version_info[0] > 2:  # actually changes in Python 3.3, but why wait
+    C_EXT_MODNAME_ENDING = ''  # needs not "sscanfmodule.so", but "sscanf.so"
 
 # default to no C extensions; add to this list when necessary
 PYRAF_EXTENSIONS = []
 
 # get the python libraries for use by C extensions
 # (why? doesn't distutils already reference those?)
-add_lib_dirs = [distutils.sysconfig.get_python_lib(plat_specific=1, standard_lib = 1)]
+add_lib_dirs = [
+    distutils.sysconfig.get_python_lib(plat_specific=1, standard_lib=1)
+]
 add_inc_dirs = [distutils.sysconfig.get_python_inc(plat_specific=1)]
 
 ## x windows specific features
@@ -53,7 +54,7 @@ def find_x(xdir=""):
             import Tkinter
         except:
             raise ImportError("Tkinter is not installed")
-        tk=Tkinter.Tk()
+        tk = Tkinter.Tk()
         tk.withdraw()
         tcl_lib = os.path.join(str(tk.getvar('tcl_library')), '../')
         tcl_inc = os.path.join(str(tk.getvar('tcl_library')), '../../include')
@@ -65,7 +66,7 @@ def find_x(xdir=""):
             sys.exit(1)
         else:
             suffix = '.so'
-            tklib='libtk'+tkv+suffix
+            tklib = 'libtk' + tkv + suffix
             command = "ldd %s" % (os.path.join(tk_lib, tklib))
             lib_list = string.split(commands.getoutput(command))
             for lib in lib_list:
@@ -73,7 +74,10 @@ def find_x(xdir=""):
                     ind = lib_list.index(lib)
                     add_lib_dirs.append(os.path.dirname(lib_list[ind + 2]))
                     #break
-                    add_inc_dirs.append(os.path.join(os.path.dirname(lib_list[ind + 2]), '../include'))
+                    add_inc_dirs.append(
+                        os.path.join(os.path.dirname(lib_list[ind + 2]),
+                                     '../include'))
+
 
 if not ms_windows:
     # Should we do something about X if we're using aqua on a mac?
@@ -82,6 +86,7 @@ if not ms_windows:
 
 #
 
+
 def dir_clean(list):
     # We have a list of directories.  Remove any that don't exist.
     r = []
@@ -89,6 +94,7 @@ def dir_clean(list):
         if os.path.isdir(x):
             r.append(x)
     return r
+
 
 add_lib_dirs = dir_clean(add_lib_dirs)
 add_inc_dirs = dir_clean(add_inc_dirs)
@@ -104,29 +110,24 @@ if not ms_windows or build_c:
     # unless you explicitly set build_c true.
     PYRAF_EXTENSIONS.append(
         distutils.core.Extension(
-            'pyraf.sscanf'+C_EXT_MODNAME_ENDING,
+            'pyraf.sscanf' + C_EXT_MODNAME_ENDING,
             ['src/sscanfmodule.c'],
             #           extra_compile_args = ['-arch','i386','-arch','x86_64'],
             #           extra_link_args =    ['-arch','i386','-arch','x86_64'],
-            include_dirs=add_inc_dirs
-        )
-    )
+            include_dirs=add_inc_dirs))
 
 if not ms_windows:
     # windows users do not have X windows, so we never need the X
     # support
     PYRAF_EXTENSIONS.append(
         distutils.core.Extension(
-            'pyraf.xutil'+C_EXT_MODNAME_ENDING,
+            'pyraf.xutil' + C_EXT_MODNAME_ENDING,
             ['src/xutil.c'],
             include_dirs=add_inc_dirs,
             library_dirs=add_lib_dirs,
             #           extra_compile_args = ['-arch','i386','-arch','x86_64'],
             #           extra_link_args =    ['-arch','i386','-arch','x86_64'],
-            libraries = [x_libraries]
-        )
-    )
-
+            libraries=[x_libraries]))
 
 ## what scripts do we install
 
@@ -143,10 +144,8 @@ if ms_windows:
         scriptdir = ['scripts']
 
     # copy the pyraf main program to the name we want it installed as
-    shutil.copy(
-        os.path.join(* (scriptdir + ['pyraf'])),
-        os.path.join(* (scriptdir + ['runpyraf.py']))
-    )
+    shutil.copy(os.path.join(*(scriptdir + ['pyraf'])),
+                os.path.join(*(scriptdir + ['runpyraf.py'])))
 
     # list of scripts for windows
     scriptlist = ['scripts/runpyraf.py', 'scripts/pyraf.bat']
@@ -160,21 +159,21 @@ else:
 if ms_windows:
     # Install optional launcher onto desktop
     if 'USERPROFILE' in os.environ:
-        dtop = os.environ['USERPROFILE']+os.sep+'Desktop'
+        dtop = os.environ['USERPROFILE'] + os.sep + 'Desktop'
         if os.path.exists(dtop):
-            shortcut = dtop+os.sep+"PyRAF.bat"
+            shortcut = dtop + os.sep + "PyRAF.bat"
             if os.path.exists(shortcut):
                 os.remove(shortcut)
-            target = sys.exec_prefix+os.sep+"Scripts"+os.sep+"runpyraf.py"
+            target = sys.exec_prefix + os.sep + "Scripts" + os.sep + "runpyraf.py"
             f = open(shortcut, 'w')
             f.write('@echo off\necho.\ncd %APPDATA%\n')
             f.write('echo Launching PyRAF ...\necho.\n')
             f.write(target)
             f.write('\necho.\npause\n')
             f.close()
-            print('Installing PyRAF.bat to -> '+dtop)
+            print('Installing PyRAF.bat to -> ' + dtop)
         else:
-            print('Error: User desktop not found at: '+dtop)
+            print('Error: User desktop not found at: ' + dtop)
     else:
         print('Error: User desktop location unknown')
 
@@ -202,30 +201,25 @@ pkg = "pyraf"
 
 # data files
 
-DATA_FILES = [(pkg,
-               ['data/blankcursor.xbm',
-                'data/epar.optionDB',
-                'data/pyraflogo_rgb_web.gif',
-                'data/ipythonrc-pyraf',
-                'LICENSE.txt',
-                ]
-               )
-              ]
+DATA_FILES = [(pkg, [
+    'data/blankcursor.xbm',
+    'data/epar.optionDB',
+    'data/pyraflogo_rgb_web.gif',
+    'data/ipythonrc-pyraf',
+    'LICENSE.txt',
+])]
 
 if not ms_windows and sys.version_info[0] < 3:
     # clcache is a pre-loaded set of CL files already converted to
     # python.  There are none on Windows, so we don't need them.
     # We also are not yet using them in PY3K.
     # Leaving them out makes the install go a lot faster.
-    DATA_FILES += [
-        (pkg+'/clcache',  ["data/clcache/*"])
-    ]
-
+    DATA_FILES += [(pkg + '/clcache', ["data/clcache/*"])]
 
 ## setupargs
 
 setupargs = {
-    'version': "2.x", # see lib's __init__.py
+    'version': "2.x",  # see lib's __init__.py
     'description': "A Python based CL for IRAF",
     'author': "Rick White, Perry Greenfield, Chris Sontag",
     'url': "https://iraf-community.github.io/pyraf.html",
@@ -234,5 +228,7 @@ setupargs = {
     'data_files': DATA_FILES,
     'scripts': scriptlist,
     'ext_modules': PYRAF_EXTENSIONS,
-    'package_dir': {'pyraf': 'lib/pyraf'},
+    'package_dir': {
+        'pyraf': 'lib/pyraf'
+    },
 }

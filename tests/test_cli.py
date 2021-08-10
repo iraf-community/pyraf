@@ -36,7 +36,8 @@ def test_division(tmpdir):
 
     # Then show how a .cl script would be run
     iraf.task(xyz='print "e: " (9/5)\nprint "f: " (9/5.)\n'
-              'print "g: " (9//5)\nprint "h: " (9//5.)', IsCmdString=1)
+              'print "g: " (9//5)\nprint "h: " (9//5.)',
+              IsCmdString=1)
     iraf.xyz(StdoutAppend=outfile)
     iraf.printf('\n', StdoutAppend=outfile)
 
@@ -49,8 +50,10 @@ def test_division(tmpdir):
     # Quick step to strip whitespace from lines in output.
     # Much easier this way than messing with ancient comparator code.
     with open(outfile) as f_in:
-        stripped = [l.replace('   ', ' ').replace('  ', ' ').strip()
-                    for l in f_in.readlines()]
+        stripped = [
+            l.replace('   ', ' ').replace('  ', ' ').strip()
+            for l in f_in.readlines()
+        ]
 
     diff_outputs(stripped, 'data/cli_div_output.ref')
 

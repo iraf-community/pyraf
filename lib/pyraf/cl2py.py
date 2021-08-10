@@ -29,8 +29,15 @@ import irafpar, pyrafglobals
 
 _parser = None
 
-def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
-          local_vars_dict=None, local_vars_list=None, usecache=1):
+
+def cl2py(filename=None,
+          string=None,
+          parlist=None,
+          parfile="",
+          mode="proc",
+          local_vars_dict=None,
+          local_vars_list=None,
+          usecache=1):
     """Read CL program from file and return pycode object with Python equivalent
 
     filename: Name of the CL source file or a filehandle from which the
@@ -66,7 +73,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     global _parser, codeCache
 
     if PY3K or DISABLE_CLCACHING:
-        usecache = False # ! turn caching off until it is fully tested/worked
+        usecache = False  # ! turn caching off until it is fully tested/worked
         # when this is turned on, see corresponding PY3K note in clcache.py!
 
     if _parser is None:
@@ -81,7 +88,7 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
             if usecache:
                 index, pycode = codeCache.get(efilename, mode=mode)
                 if pycode is not None:
-                    if Verbose>1:
+                    if Verbose > 1:
                         print(efilename, "filename found in CL script cache")
                     return pycode
             else:
@@ -92,9 +99,11 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
         elif hasattr(filename, 'read'):
             clInput = filename.read()
             if usecache:
-                index, pycode = codeCache.get(filename, mode=mode, source=clInput)
+                index, pycode = codeCache.get(filename,
+                                              mode=mode,
+                                              source=clInput)
                 if pycode is not None:
-                    if Verbose>1:
+                    if Verbose > 1:
                         print(filename, "filehandle found in CL script cache")
                     return pycode
             else:
@@ -109,11 +118,11 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
         #if not isinstance(string,str):
         #raise TypeError('string must be a string')
         clInput = string
-        efilename = 'string_proc' # revisit this setting (tik #24), maybe '' ?
+        efilename = 'string_proc'  # revisit this setting (tik #24), maybe '' ?
         if usecache:
             index, pycode = codeCache.get(None, mode=mode, source=clInput)
             if pycode is not None:
-                if Verbose>3:
+                if Verbose > 3:
                     print("Found in CL script cache: ", clInput.strip()[:20])
                 return pycode
         else:
@@ -152,17 +161,19 @@ def cl2py(filename=None, string=None, parlist=None, parfile="", mode="proc",
     pycode = Pycode(tree2python)
 
     # add to cache
-    if index is not None: codeCache.add(index, pycode)
+    if index is not None:
+        codeCache.add(index, pycode)
     pycode.index = index
-    if Verbose>1:
+    if Verbose > 1:
         if efilename == 'string_proc':
             print("Code-string compiled by cl2py:", file=sys.stderr)
-            print("-"*80, file=sys.stderr)
+            print("-" * 80, file=sys.stderr)
             print(clInput, file=sys.stderr)
-            print("-"*80, file=sys.stderr)
+            print("-" * 80, file=sys.stderr)
         else:
-            print("Code-file compiled by cl2py:"+efilename, file=sys.stderr)
+            print("Code-file compiled by cl2py:" + efilename, file=sys.stderr)
     return pycode
+
 
 def checkCache(filename, pycode):
     """Returns true if pycode is up-to-date"""
@@ -175,14 +186,12 @@ def checkCache(filename, pycode):
 
 
 class Container:
-
     """Simple container class (no methods) for holding picklable objects"""
 
     pass
 
 
 class Pycode:
-
     """Container for Python CL translation"""
 
     def __init__(self, tree2python):
@@ -191,9 +200,9 @@ class Pycode:
         self.vars = Container()
         self.vars.local_vars_dict = tree2python.vars.local_vars_dict
         self.vars.local_vars_list = tree2python.vars.local_vars_list
-        self.vars.parList         = tree2python.vars.parList
-        self.vars.proc_name       = tree2python.vars.proc_name
-        self.vars.has_proc_stmt   = tree2python.vars.has_proc_stmt
+        self.vars.parList = tree2python.vars.parList
+        self.vars.proc_name = tree2python.vars.proc_name
+        self.vars.has_proc_stmt = tree2python.vars.has_proc_stmt
 
     def setFilename(self, filename):
         """Set the filename used for parameter list
@@ -212,7 +221,8 @@ def _checkVars(vars, parlist, parfile):
     # if parlist is None, the parfile was empty
     # in either case, just use the parameter list specified in the CL code
 
-    if (not parfile) or (parlist is None): return
+    if (not parfile) or (parlist is None):
+        return
 
     # parfile and parlist are specified, so create a new
     # list of procedure variables from parlist
@@ -225,10 +235,11 @@ def _checkVars(vars, parlist, parfile):
         #XXX Maybe could improve this by allowing certain types of
         #XXX mismatches (e.g. additional parameters) but not others
         #XXX (name or type disagreements for the same parameters.)
-        if Verbose>0:
+        if Verbose > 0:
             sys.stdout.flush()
             sys.stderr.write("Parameters from CL code inconsistent "
-                             "with .par file for task %s\n" % vars.getProcName())
+                             "with .par file for task %s\n" %
+                             vars.getProcName())
             sys.stderr.flush()
 
     # create copies of the list and dictionary
@@ -246,11 +257,12 @@ def _checkVars(vars, parlist, parfile):
     vars.checkLocalConflict()
     vars.parList = parlist
 
-class FindLineNumber(GenericASTTraversal):
 
+class FindLineNumber(GenericASTTraversal):
     """Helper class to find first line number in an AST"""
 
-    class FoundIt(Exception): pass
+    class FoundIt(Exception):
+        pass
 
     def __init__(self, ast):
         GenericASTTraversal.__init__(self, ast)
@@ -265,31 +277,34 @@ class FindLineNumber(GenericASTTraversal):
             self.lineno = node.lineno
             raise self.FoundIt
 
-class ErrorTracker:
 
+class ErrorTracker:
     """Mixin class that does error tracking during AST traversal"""
 
     def _error_init(self):
         self.errlist = []  # list of 2-tuples
-        self.warnlist = [] # list of 2-tuples
-        self.comments = [] # list of strings
+        self.warnlist = []  # list of 2-tuples
+        self.comments = []  # list of strings
 
     def error(self, msg, node=None):
         """Add error to the list with line number"""
 
-        if not hasattr(self, 'errlist'): self._error_init()
+        if not hasattr(self, 'errlist'):
+            self._error_init()
         self.errlist.append((self.getlineno(node), msg))
 
     def warning(self, msg, node=None):
         """Add warning to the list with line number"""
 
-        if not hasattr(self, 'errlist'): self._error_init()
+        if not hasattr(self, 'errlist'):
+            self._error_init()
         self.warnlist.append((self.getlineno(node), "Warning: %s" % msg))
 
     def comment(self, msg):
         """Add comments to the list - to be helpful to the debugging soul"""
 
-        if not hasattr(self, 'errlist'): self._error_init()
+        if not hasattr(self, 'errlist'):
+            self._error_init()
         self.comments.append(msg)
 
     def getlineno(self, node):
@@ -302,8 +317,10 @@ class ErrorTracker:
     def errorappend(self, other):
         """Add errors from another ErrorTracker"""
 
-        if not hasattr(other, 'errlist'): return
-        if not hasattr(self, 'errlist'): self._error_init()
+        if not hasattr(other, 'errlist'):
+            return
+        if not hasattr(self, 'errlist'):
+            self._error_init()
         self.errlist.extend(other.errlist)
         self.warnlist.extend(other.warnlist)
         self.comments.extend(other.comments)
@@ -344,11 +361,11 @@ class ErrorTracker:
             warnmsg = "\n".join(warnmsg)
             sys.stdout.flush()
             sys.stderr.write(warnmsg)
-            if warnmsg[-1:] != '\n': sys.stderr.write('\n')
+            if warnmsg[-1:] != '\n':
+                sys.stderr.write('\n')
 
 
 class ExtractProcInfo(GenericASTTraversal):
-
     """Extract name and args from procedure statement"""
 
     def __init__(self, ast):
@@ -366,6 +383,7 @@ class ExtractProcInfo(GenericASTTraversal):
     def n_IDENT(self, node):
         self.proc_args_list.append(irafutils.translateName(node.attr))
 
+
 _longTypeName = {
     "s": "string",
     "f": "file",
@@ -380,13 +398,22 @@ _longTypeName = {
     "pset": "pset",
 }
 
-class Variable:
 
+class Variable:
     """Container for properties of a variable"""
 
-    def __init__(self, name=None, type=None, mode="h", array_size=None,
-                 init_value=None, list_flag=0, min=None, max=None,
-                 prompt=None, enum=None, irafParObject=None):
+    def __init__(self,
+                 name=None,
+                 type=None,
+                 mode="h",
+                 array_size=None,
+                 init_value=None,
+                 list_flag=0,
+                 min=None,
+                 max=None,
+                 prompt=None,
+                 enum=None,
+                 irafParObject=None):
         if irafParObject is not None:
             # define the variable info from an IrafPar object
             ipo = irafParObject
@@ -403,12 +430,13 @@ class Variable:
                 self.shape = None
             self.init_value = ipo.value
             self.options = minmatch.MinMatchDict({
-                "mode":   ipo.mode,
-                "min":    ipo.min,
-                "max":    ipo.max,
+                "mode": ipo.mode,
+                "min": ipo.min,
+                "max": ipo.max,
                 "prompt": ipo.prompt,
-                "enum":   ipo.choice,
-                "length": None, })
+                "enum": ipo.choice,
+                "length": None,
+            })
         else:
             # define from the parameters
             self.name = name
@@ -416,12 +444,13 @@ class Variable:
             self.shape = array_size
             self.list_flag = list_flag
             self.options = minmatch.MinMatchDict({
-                "mode":   mode,
-                "min":    min,
-                "max":    max,
+                "mode": mode,
+                "min": min,
+                "max": max,
                 "prompt": prompt,
-                "enum":   enum,
-                "length": None, })
+                "enum": enum,
+                "length": None,
+            })
             self.init_value = init_value
 
     def getName(self):
@@ -456,7 +485,7 @@ class Variable:
             # array
             arg = name + "=["
             if self.init_value is None:
-                arglist = ["INDEF"]*len(self)
+                arglist = ["INDEF"] * len(self)
             else:
                 arglist = []
                 for iv in self.init_value:
@@ -467,9 +496,9 @@ class Variable:
         """Return a list of string arguments for makeIrafPar"""
 
         name = irafutils.translateName(self.name)
-        arglist = [name,
-                   "datatype=" + repr(self.type),
-                   "name=" + repr(self.getName())]
+        arglist = [
+            name, "datatype=" + repr(self.type), "name=" + repr(self.getName())
+        ]
         # if local is set, use the default initial value instead of name
         # also set mode="u" for locals so they never prompt
         if local:
@@ -484,13 +513,16 @@ class Variable:
             option = self.options[key]
             if option is not None:
                 arglist.append(key + "=" + repr(self.options[key]))
-        if filename: arglist.append("filename=" + repr(filename))
-        if strict: arglist.append("strict=" + repr(strict))
+        if filename:
+            arglist.append("filename=" + repr(filename))
+        if strict:
+            arglist.append("strict=" + repr(strict))
         return arglist
 
     def __repr__(self):
         s = self.type + " "
-        if self.list_flag: s = s + "*"
+        if self.list_flag:
+            s = s + "*"
         s = s + self.name
         if self.init_value is not None:
             s = s + " = " + repr(self.init_value)
@@ -507,11 +539,11 @@ class Variable:
         array_size = 1
         if self.shape:
             for d in self.shape:
-                array_size = array_size*d
+                array_size = array_size * d
         return array_size
 
-class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
 
+class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
     """Extract list of variable definitions from parameter block"""
 
     def __init__(self, ast, var_list, var_dict, filename):
@@ -528,7 +560,7 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
 
     def _get_dims(self, node, rv=None):
         # expand array shape declaration
-        if len(node)>1:
+        if len(node) > 1:
             return self._get_dims(node[0]) + (int(node[2]),)
         else:
             return (int(node[0]),)
@@ -550,11 +582,14 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
             else:
                 # existing but undefined entry comes from procedure line
                 # set mode = "a" by default
-                self.var_dict[name] = Variable(name, self.current_type,
-                                               array_size=shape, mode="a")
+                self.var_dict[name] = Variable(name,
+                                               self.current_type,
+                                               array_size=shape,
+                                               mode="a")
         else:
             self.var_list.append(name)
-            self.var_dict[name] = Variable(name, self.current_type,
+            self.var_dict[name] = Variable(name,
+                                           self.current_type,
                                            array_size=shape)
         self.current_var = self.var_dict[name]
         self.preorder(node[0])  # list flag
@@ -587,24 +622,28 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
             try:
                 v.init_value = _convFunc(v, ilist[0])
             except ValueError as e:
-                self.error("Bad initial value for variable `%s': %s" %
-                           (v.name, e), node)
+                self.error(
+                    "Bad initial value for variable `%s': %s" % (v.name, e),
+                    node)
         else:
             # it is an array, set size or pad initial values
             if v.shape is None:
                 v.shape = (len(ilist),)
             elif len(v) > len(ilist):
-                for i in range(len(v)-len(ilist)):
+                for i in range(len(v) - len(ilist)):
                     v.init_value.append(None)
             elif len(v) < len(ilist):
-                self.error("Variable `%s' has too many initial values" % (v.name,), node)
+                self.error(
+                    "Variable `%s' has too many initial values" % (v.name,),
+                    node)
             else:
                 try:
                     for i in range(len(v.init_value)):
                         v.init_value[i] = _convFunc(v, v.init_value[i])
                 except ValueError as e:
-                    self.error("Bad initial value for array variable `%s': %s" %
-                               (v.name, e), node)
+                    self.error(
+                        "Bad initial value for array variable `%s': %s" %
+                        (v.name, e), node)
 
     def n_decl_init_value(self, node):
         # initial value is token with value
@@ -614,7 +653,8 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
         else:
             # have to create a new token for sign, number
             self.current_var.init_value.append(
-                Token(type=vnode[1].type, attr=vnode[0].type+vnode[1].attr,
+                Token(type=vnode[1].type,
+                      attr=vnode[0].type + vnode[1].attr,
                       lineno=vnode[0].lineno))
         self.prune()
 
@@ -626,12 +666,13 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
         else:
             # have to combine sign, number
             if vnode[0] == "-":
-                optvalue = - vnode[1].get()
+                optvalue = -vnode[1].get()
             else:
                 optvalue = vnode[1].get()
         optdict = self.current_var.options
         if optname not in optdict:
-            errmsg = "Unknown option `%s' for variable `%s'" % (optname, self.current_var.name)
+            errmsg = "Unknown option `%s' for variable `%s'" % (
+                optname, self.current_var.name)
             self.error(errmsg, node)
         else:
             optdict[optname] = optvalue
@@ -644,12 +685,16 @@ _SpecialArgs = {
     'taskObj': None,
 }
 
-class VarList(GenericASTTraversal, ErrorTracker):
 
+class VarList(GenericASTTraversal, ErrorTracker):
     """Scan tree and get info on procedure, parameters, and local variables"""
 
-    def __init__(self, ast, mode="proc", local_vars_list=None,
-                 local_vars_dict=None, parlist=None):
+    def __init__(self,
+                 ast,
+                 mode="proc",
+                 local_vars_list=None,
+                 local_vars_dict=None,
+                 parlist=None):
         GenericASTTraversal.__init__(self, ast)
         self.mode = mode
         self.proc_name = ""
@@ -701,11 +746,14 @@ class VarList(GenericASTTraversal, ErrorTracker):
                 arg = self.proc_args_dict[var].toPar()
                 p.append(arg)
         self.parList = irafpar.IrafParList(self.getProcName(),
-                                           filename=self.filename, parlist=p)
+                                           filename=self.filename,
+                                           parlist=p)
 
-    def has_key(self, key): return self._has(key)
+    def has_key(self, key):
+        return self._has(key)
 
-    def __contains__(self, key): return self._has(key)
+    def __contains__(self, key):
+        return self._has(key)
 
     def _has(self, name):
         """Check both local and procedure dictionaries for this name"""
@@ -719,11 +767,14 @@ class VarList(GenericASTTraversal, ErrorTracker):
         """Set procedure name"""
         # names with embedded dots are allow by the CL but should be illegal
         pdot = proc_name.find('.')
-        if pdot==0:
-            self.error("Illegal procedure name `%s' starts with `.'" % proc_name, node)
+        if pdot == 0:
+            self.error(
+                "Illegal procedure name `%s' starts with `.'" % proc_name,
+                node)
         if pdot >= 0:
-            self.warning("Bad procedure name `%s' truncated after dot to `%s'" %
-                         (proc_name, proc_name[:pdot]), node)
+            self.warning(
+                "Bad procedure name `%s' truncated after dot to `%s'" %
+                (proc_name, proc_name[:pdot]), node)
             proc_name = proc_name[:pdot]
         # Procedure name is stored in translated form ('PY' added
         # to Python keywords, etc.)
@@ -749,15 +800,16 @@ class VarList(GenericASTTraversal, ErrorTracker):
 
         if 'mode' not in self.proc_args_dict:
             self.proc_args_list.append('mode')
-            self.proc_args_dict['mode'] = Variable('mode', 'string',
+            self.proc_args_dict['mode'] = Variable('mode',
+                                                   'string',
                                                    init_value='al')
 
         self.addSpecial("$nargs", 'int', 0)
 
-##         self.addSpecial("$errno", 'int', 0)
-##         self.addSpecial("$errmsg", 'string', "")
-##         self.addSpecial("$errtask", 'string',"")
-##         self.addSpecial("$err_dzvalue", 'int', 1)
+        ##         self.addSpecial("$errno", 'int', 0)
+        ##         self.addSpecial("$errmsg", 'string', "")
+        ##         self.addSpecial("$errtask", 'string',"")
+        ##         self.addSpecial("$err_dzvalue", 'int', 1)
 
         for parg, ivalue in _SpecialArgs.items():
             if parg not in self.proc_args_dict:
@@ -826,8 +878,8 @@ class VarList(GenericASTTraversal, ErrorTracker):
     def getFromInputList(self, param):
         # look up missing parameter in input_parlist
         if self.input_parlist and self.input_parlist.hasPar(param):
-            return Variable(irafParObject=
-                            self.input_parlist.getParObject(param))
+            return Variable(
+                irafParObject=self.input_parlist.getParObject(param))
 
     def n_statement_block(self, node):
         # declarations in executable section are local variables
@@ -839,18 +891,18 @@ class VarList(GenericASTTraversal, ErrorTracker):
 # conversion between parameter types and data types
 
 _typeDict = {
-    'int':    'int',
-    'real':   'float',
+    'int': 'int',
+    'real': 'float',
     'double': 'float',
-    'bool':   'bool',
+    'bool': 'bool',
     'string': 'string',
-    'char':   'string',
+    'char': 'string',
     'struct': 'string',
-    'file':   'string',
-    'gcur':   'string',
-    'imcur':  'string',
-    'ukey':   'string',
-    'pset':   'unknown',
+    'file': 'string',
+    'gcur': 'string',
+    'imcur': 'string',
+    'ukey': 'string',
+    'pset': 'unknown',
 }
 
 # nested dictionary mapping required data type (primary key) and
@@ -858,52 +910,67 @@ _typeDict = {
 # convert to the required type
 
 _rfuncDict = {
-    'int':   {'int':    None,
-              'float':  None,
-              'string': 'int',
-              'bool':   None,
-              'unknown': 'int',
-              'indef':  None},
-    'float': {'int':    None,
-              'float':  None,
-              'string': 'float',
-              'bool':   'float',
-              'unknown': 'float',
-              'indef':  None},
-    'string': {'int':    'str',
-               'float':  'str',
-               'string': None,
-               'bool':   'iraf.bool2str',
-               'unknown': 'str',
-               'indef':  None},
-    'bool':  {'int':    'iraf.boolean',
-              'float':  'iraf.boolean',
-              'string': 'iraf.boolean',
-              'bool':   None,
-              'unknown': 'iraf.boolean',
-              'indef':  None},
-    'indef': {'int':    None,
-              'float':  None,
-              'string': None,
-              'bool':   None,
-              'unknown': None,
-              'indef':  None},
-    'unknown': {'int':  None,
-                'float':  None,
-                'string': None,
-                'bool':   None,
-                'unknown': None,
-                'indef':  None},
+    'int': {
+        'int': None,
+        'float': None,
+        'string': 'int',
+        'bool': None,
+        'unknown': 'int',
+        'indef': None
+    },
+    'float': {
+        'int': None,
+        'float': None,
+        'string': 'float',
+        'bool': 'float',
+        'unknown': 'float',
+        'indef': None
+    },
+    'string': {
+        'int': 'str',
+        'float': 'str',
+        'string': None,
+        'bool': 'iraf.bool2str',
+        'unknown': 'str',
+        'indef': None
+    },
+    'bool': {
+        'int': 'iraf.boolean',
+        'float': 'iraf.boolean',
+        'string': 'iraf.boolean',
+        'bool': None,
+        'unknown': 'iraf.boolean',
+        'indef': None
+    },
+    'indef': {
+        'int': None,
+        'float': None,
+        'string': None,
+        'bool': None,
+        'unknown': None,
+        'indef': None
+    },
+    'unknown': {
+        'int': None,
+        'float': None,
+        'string': None,
+        'bool': None,
+        'unknown': None,
+        'indef': None
+    },
 }
+
 
 def _funcName(requireType, exprType):
     return _rfuncDict[requireType][exprType]
+
 
 # given two nodes with defined types in an arithmetic expression,
 # set their required times and return the result type
 # (using standard promotion rules)
 
 _numberTypes = ['float', 'int', 'unknown']
+
 
 def _arithType(node1, node2):
     if node1.exprType in _numberTypes:
@@ -929,7 +996,9 @@ def _arithType(node1, node2):
             node2.requireType = rv
     return rv
 
+
 # force node to be a number type and return the type
+
 
 def _numberType(node):
     if node.exprType in _numberTypes:
@@ -938,7 +1007,9 @@ def _numberType(node):
         node.requireType = 'float'
         return node.requireType
 
+
 _CLVarDict = {}
+
 
 def _getCLVarType(name):
     """Returns CL parameter data type if this is a CL variable, "unknown" if not
@@ -963,8 +1034,8 @@ def _getCLVarType(name):
         pass
     return _CLVarDict.get(name, "unknown")
 
-class TypeCheck(GenericASTTraversal):
 
+class TypeCheck(GenericASTTraversal):
     """Determine types of all expressions"""
 
     def __init__(self, ast, vars, filename):
@@ -978,24 +1049,31 @@ class TypeCheck(GenericASTTraversal):
     def n_FLOAT(self, node):
         node.exprType = 'float'
         node.requireType = node.exprType
+
     def n_INTEGER(self, node):
         node.exprType = 'int'
         node.requireType = node.exprType
+
     def n_SEXAGESIMAL(self, node):
         node.exprType = 'float'
         node.requireType = node.exprType
+
     def n_INDEF(self, node):
         node.exprType = 'indef'
         node.requireType = node.exprType
+
     def n_STRING(self, node):
         node.exprType = 'string'
         node.requireType = node.exprType
+
     def n_QSTRING(self, node):
         node.exprType = 'string'
         node.requireType = node.exprType
+
     def n_EOF(self, node):
         node.exprType = 'string'
         node.requireType = node.exprType
+
     def n_BOOL(self, node):
         node.exprType = 'bool'
         node.requireType = node.exprType
@@ -1019,43 +1097,44 @@ class TypeCheck(GenericASTTraversal):
     def n_function_call(self, node):
         functionname = node[0].attr
         ftype = _functionType.get(functionname)
-        if ftype is None: ftype = 'unknown'
+        if ftype is None:
+            ftype = 'unknown'
         node.exprType = ftype
         node.requireType = node.exprType
 
     def n_atom(self, node):
-        assert len(node)==3
+        assert len(node) == 3
         node.exprType = node[1].exprType
         node.requireType = node.exprType
 
     def n_power(self, node):
-        assert len(node)==3
+        assert len(node) == 3
         node.exprType = _arithType(node[0], node[2])
         node.requireType = node.exprType
 
     def n_factor(self, node):
-        assert len(node)==2
+        assert len(node) == 2
         node.exprType = _numberType(node[1])
         node.requireType = node.exprType
 
     def n_term(self, node):
-        assert len(node)==3
+        assert len(node) == 3
         node.exprType = _arithType(node[0], node[2])
         node.requireType = node.exprType
         if node[0].exprType=='int' and node[2].exprType=='int' and \
            node[1].type=='/':
             # mark this node, we want it to use integer division (truncating)
-            node[1].trunc_int_div = True # only place we add this attr
+            node[1].trunc_int_div = True  # only place we add this attr
 
     def n_concat_expr(self, node):
-        assert len(node)==3
+        assert len(node) == 3
         node.exprType = 'string'
         node.requireType = node.exprType
         node[0].requireType = 'string'
         node[2].requireType = 'string'
 
     def n_arith_expr(self, node):
-        assert len(node)==3
+        assert len(node) == 3
         if node[1].type == '-':
             node.exprType = _arithType(node[0], node[2])
             node.requireType = node.exprType
@@ -1092,8 +1171,8 @@ class TypeCheck(GenericASTTraversal):
         assert len(node) == 3
         node[2].requireType = node[0].exprType
 
-class BlockInfo:
 
+class BlockInfo:
     """Helper class to store block structure info for GOTO analysis"""
 
     def __init__(self, node, blockid, parent):
@@ -1101,8 +1180,8 @@ class BlockInfo:
         self.blockid = blockid
         self.parent = parent
 
-class GoToAnalyze(GenericASTTraversal, ErrorTracker):
 
+class GoToAnalyze(GenericASTTraversal, ErrorTracker):
     """AST traversal for CL GOTO analysis
 
     Analyze GOTO structure looking for branches into blocks (which are forbidden),
@@ -1130,7 +1209,7 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
         # note that we count on the Tree2Python class to print errors
 
         # add label count info to blocks if all is OK
-        label_count = [0]*len(self.blocks)
+        label_count = [0] * len(self.blocks)
         for label, ib in self.label_blockid.items():
             # only count labels that are actually used
             if label in self.goto_blockidlist:
@@ -1147,9 +1226,11 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
         labels = sorted(self.goto_blockidlist.keys())
         return labels
 
-    def __contains__(self, key): return self._has(key)
+    def __contains__(self, key):
+        return self._has(key)
 
-    def has_key(self, key): return self._has(key)
+    def has_key(self, key):
+        return self._has(key)
 
     def _has(self, label):
         """Check if label is used in a GOTO"""
@@ -1185,13 +1266,15 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
             # make sure all gotos for this label are in this or deeper blocks
             for i in self.goto_blockidlist.get(label, []):
                 if self.blocks[i].blockid < cblockid:
-                    self.error("GOTO branches to label `%s' in inner block"
-                               % label, node)
+                    self.error(
+                        "GOTO branches to label `%s' in inner block" % label,
+                        node)
 
     def n_goto_stmt(self, node):
         label = str(node[1])
         if label in self.label_blockid:
-            self.error("Backwards GOTO to label `%s' is not allowed" % label, node)
+            self.error("Backwards GOTO to label `%s' is not allowed" % label,
+                       node)
         elif label in self.goto_blockidlist:
             self.goto_blockidlist[label].append(self.current_blockid)
             self.goto_nodelist[label].append(node)
@@ -1223,50 +1306,50 @@ _taskList = {
 # other functions just have 'iraf.' prepended
 
 _functionList = {
-    "int":  "iraf.integer",
-    "str":  "str",
-    "abs":  "iraf.absvalue",
-    "min":  "iraf.minimum",
-    "max":  "iraf.maximum",
+    "int": "iraf.integer",
+    "str": "str",
+    "abs": "iraf.absvalue",
+    "min": "iraf.minimum",
+    "max": "iraf.maximum",
 }
 
 # return types of IRAF built-in functions
 
 _functionType = {
-    "int":      "int",
-                "real":     "float",
-                "sin":      "float",
-                "cos":      "float",
-                "tan":      "float",
-                "atan2":    "float",
-                "exp":      "float",
-                "log":      "float",
-                "log10":    "float",
-                "sqrt":     "float",
-                "frac":     "float",
-                "abs":      "float",
-                "min":      "unknown",
-                "max":      "unknown",
-                "fscan":    "int",
-                "scan":     "int",
-                "fscanf":   "int",
-                "scanf":    "int",
-                "nscan":    "int",
-                "stridx":   "int",
-                "strlen":   "int",
-                "str":      "string",
-                "substr":   "string",
-                "envget":   "string",
-                "mktemp":   "string",
-                "radix":    "string",
-                "osfn":     "string",
-                "_curpack": "string",
-                "defpar":   "bool",
-                "access":   "bool",
-                "defvar":   "bool",
-                "deftask":  "bool",
-                "defpac":   "bool",
-                "imaccess": "bool",
+    "int": "int",
+    "real": "float",
+    "sin": "float",
+    "cos": "float",
+    "tan": "float",
+    "atan2": "float",
+    "exp": "float",
+    "log": "float",
+    "log10": "float",
+    "sqrt": "float",
+    "frac": "float",
+    "abs": "float",
+    "min": "unknown",
+    "max": "unknown",
+    "fscan": "int",
+    "scan": "int",
+    "fscanf": "int",
+    "scanf": "int",
+    "nscan": "int",
+    "stridx": "int",
+    "strlen": "int",
+    "str": "string",
+    "substr": "string",
+    "envget": "string",
+    "mktemp": "string",
+    "radix": "string",
+    "osfn": "string",
+    "_curpack": "string",
+    "defpar": "bool",
+    "access": "bool",
+    "defvar": "bool",
+    "deftask": "bool",
+    "defpac": "bool",
+    "imaccess": "bool",
 }
 
 # logical operator conversion
@@ -1277,11 +1360,11 @@ _LogOpDict = {
 
 # redirection conversion
 _RedirDict = {
-    ">":    "Stdout",
-    ">>":   "StdoutAppend",
-    ">&":   "Stderr",
-    ">>&":  "StderrAppend",
-    "<":    "Stdin",
+    ">": "Stdout",
+    ">>": "StdoutAppend",
+    ">&": "Stderr",
+    ">>&": "StderrAppend",
+    "<": "Stdin",
 }
 
 # tokens printed with both leading and trailing space
@@ -1309,15 +1392,17 @@ _trailSpaceList = {
 # 'var = ' + _convFunc(var, value)
 # The only permitted conversion is int->float.
 
-_stringTypes = {"string": 1,
-                "char": 1,
-                "file": 1,
-                "struct": 1,
-                "gcur": 1,
-                "imcur": 1,
-                "ukey": 1,
-                "pset": 1,
-                }
+_stringTypes = {
+    "string": 1,
+    "char": 1,
+    "file": 1,
+    "struct": 1,
+    "gcur": 1,
+    "imcur": 1,
+    "ukey": 1,
+    "pset": 1,
+}
+
 
 def _convFunc(var, value):
     if var.list_flag or var.type in _stringTypes:
@@ -1359,9 +1444,8 @@ def _convFunc(var, value):
                 # parameter indirection
                 return value
             else:
-                raise ValueError(
-                    "Illegal value `%s' for boolean variable %s" %
-                    (s, var.name))
+                raise ValueError("Illegal value `%s' for boolean variable %s" %
+                                 (s, var.name))
             return s
         else:
             try:
@@ -1372,7 +1456,6 @@ def _convFunc(var, value):
 
 
 class CheckArgList(GenericASTTraversal, ErrorTracker):
-
     """Check task argument list for errors"""
 
     def __init__(self, ast):
@@ -1408,25 +1491,30 @@ class CheckArgList(GenericASTTraversal, ErrorTracker):
     def n_param_name(self, node):
         keyword = node[0].attr
         if keyword in self.keywords[-1]:
-            self.error("Duplicate keyword `%s' in call to %s" %
-                       (keyword, self.taskname[-1]), node)
+            self.error(
+                "Duplicate keyword `%s' in call to %s" %
+                (keyword, self.taskname[-1]), node)
         else:
             self.keywords[-1][keyword] = 1
 
     def n_non_empty_arg(self, node):
-        if node[0].type not in ['keyword_arg', 'bool_arg',
-                                'redir_arg', 'non_expr_arg'] and self.keywords[-1]:
-            self.error("Non-keyword arg after keyword arg in call to %s" %
-                       self.taskname[-1], node)
+        if node[0].type not in [
+                'keyword_arg', 'bool_arg', 'redir_arg', 'non_expr_arg'
+        ] and self.keywords[-1]:
+            self.error(
+                "Non-keyword arg after keyword arg in call to %s" %
+                self.taskname[-1], node)
 
     def n_empty_arg(self, node):
         if self.keywords[-1]:
             # empty args don't have line number, so use task line
-            self.error("Non-keyword (empty) arg after keyword arg in call to %s" %
-                       self.taskname[-1], self.tasknode[-1])
+            self.error(
+                "Non-keyword (empty) arg after keyword arg in call to %s" %
+                self.taskname[-1], self.tasknode[-1])
 
 
 class Tree2Python(GenericASTTraversal, ErrorTracker):
+
     def __init__(self, ast, vars, filename='', taskObj=None):
         self._ecl_iferr_entered = 0
         GenericASTTraversal.__init__(self, ast)
@@ -1440,7 +1528,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # the block is terminated, a 'pass' statement is generated.
         # Start with a reasonable size for printPass array.
         # (It gets extended if necessary.)
-        self.printPass = [1]*10
+        self.printPass = [1] * 10
         self.code_buffer = cStringIO.StringIO()
         self.importDict = {}
         self.specialDict = {}
@@ -1450,8 +1538,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # These three are used only by n_while_stmt, n_for_stmt, n_next_stmt,
         # and decrIndent; they are for incrementing the loop variable before
         # writing "continue" in a "for" loop (but not in a "while" loop).
-        self.save_incr = []             # info to increment the loop variable
-        self.save_indent = []           # indentation level in a while loop
+        self.save_incr = []  # info to increment the loop variable
+        self.save_indent = []  # indentation level in a while loop
         self.IN_A_WHILE_LOOP = "while"  # this is a constant value
 
         self._ecl_pyline = 1
@@ -1505,9 +1593,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
         if self.filename == 'string_proc':
             self.comment('The code for "string_proc":')
-            self.comment('-'*80)
+            self.comment('-' * 80)
             self.comment(self.code)
-            self.comment('-'*80)
+            self.comment('-' * 80)
 
         self.printerrors()
 
@@ -1521,13 +1609,14 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             newmap[key + lines] = value
 
         # return a python assignment statement that initializes the dictionary
-        return "_ecl_linemap_" + self.vars.proc_name + " = " + repr(newmap) + "\n\n"
+        return "_ecl_linemap_" + self.vars.proc_name + " = " + repr(
+            newmap) + "\n\n"
 
     def incrIndent(self):
         """Increment indentation count"""
         # printPass is used to recognize empty indentation blocks
         # and add 'pass' statement when indentation level is decremented
-        self.indent = self.indent+1
+        self.indent = self.indent + 1
         if len(self.printPass) <= self.indent:
             # extend array to length self.indent+1
             self.printPass = self.printPass + \
@@ -1538,7 +1627,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         """Decrement indentation count and write 'pass' if required"""
         if self.printPass[self.indent]:
             self.writeIndent('pass')
-        self.indent = self.indent-1
+        self.indent = self.indent - 1
         if len(self.save_indent) > 0 and self.save_indent[-1] == self.indent:
             del self.save_incr[-1]
             del self.save_indent[-1]
@@ -1568,7 +1657,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.write("\n")
         for i in range(self.indent):
             self.write("\t")
-        if value: self.write(value)
+        if value:
+            self.write(value)
         self.printPass[self.indent] = 0
 
     def writeProcHeader(self):
@@ -1590,7 +1680,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
         if not noHdr:
             self.write("from pyraf import iraf")
-            self.writeIndent("from pyraf.irafpar import makeIrafPar, IrafParList")
+            self.writeIndent(
+                "from pyraf.irafpar import makeIrafPar, IrafParList")
             self.writeIndent("from stsci.tools.irafglobals import *")
             self.writeIndent("from pyraf.pyrafglobals import *")
             self.write("\n")
@@ -1599,9 +1690,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             # create list of procedure arguments
             # make list of IrafPar definitions at the same time
             n = len(self.vars.proc_args_list)
-            namelist = n*[None]
-            proclist = n*[None]
-            deflist = n*[None]
+            namelist = n * [None]
+            proclist = n * [None]
+            deflist = n * [None]
             for i in range(n):
                 p = self.vars.proc_args_list[i]
                 v = self.vars.proc_args_dict[p]
@@ -1640,7 +1731,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.writeIndent("PkgName = iraf.curpack(); "
                              "PkgBinary = iraf.curPkgbinary()")
             wnewline = 1
-        if wnewline: self.write("\n")
+        if wnewline:
+            self.write("\n")
 
         # add local variables to deflist
         for p in self.vars.local_vars_list[self.vars.local_vars_count:]:
@@ -1664,7 +1756,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
         if pyrafglobals._use_ecl:
             self.writeIndent("from pyraf.irafecl import EclState")
-            self.writeIndent("_ecl = EclState(_ecl_linemap_%s)\n" % self.vars.proc_name)
+            self.writeIndent("_ecl = EclState(_ecl_linemap_%s)\n" %
+                             self.vars.proc_name)
 
         # write goto label definitions if needed
         for label in self.gotos.labels():
@@ -1677,13 +1770,23 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
     # elements that can be ignored
     #------------------------------
 
-    def n_proc_stmt(self, node): self.prune()
-    def n_declaration_block(self, node): self.prune()
-    def n_declaration_stmt(self, node): self.prune()
+    def n_proc_stmt(self, node):
+        self.prune()
 
-    def n_BEGIN(self, node): pass
-    def n_END(self, node): pass
-    def n_NEWLINE(self, node): pass
+    def n_declaration_block(self, node):
+        self.prune()
+
+    def n_declaration_stmt(self, node):
+        self.prune()
+
+    def n_BEGIN(self, node):
+        pass
+
+    def n_END(self, node):
+        pass
+
+    def n_NEWLINE(self, node):
+        pass
 
     #------------------------------
     #XXX unimplemented features
@@ -1701,12 +1804,12 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # convert d exponents to e for Python
         s = node.attr
         i = s.find('d')
-        if i>=0:
-            s = s[:i] + 'e' + s[i+1:]
+        if i >= 0:
+            s = s[:i] + 'e' + s[i + 1:]
         else:
             i = s.find('D')
-            if i>=0:
-                s = s[:i] + 'E' + s[i+1:]
+            if i >= 0:
+                s = s[:i] + 'E' + s[i + 1:]
         self.write(s, node.requireType, node.exprType)
 
     def n_INTEGER(self, node):
@@ -1715,19 +1818,20 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         last = value[-1].lower()
         if last == 'b':
             # octal
-            self.write('0'+value[:-1], node.requireType, node.exprType)
+            self.write('0' + value[:-1], node.requireType, node.exprType)
         elif last == 'x':
             # hexadecimal
-            self.write('0x'+value[:-1], node.requireType, node.exprType)
+            self.write('0x' + value[:-1], node.requireType, node.exprType)
         else:
             # remove leading zeros on decimal values
-            i=0
+            i = 0
             for digit in value:
-                if digit != '0': break
-                i = i+1
+                if digit != '0':
+                    break
+                i = i + 1
             else:
                 # all zeros
-                i = i-1
+                i = i - 1
             self.write(value[i:], node.requireType, node.exprType)
 
     def n_SEXAGESIMAL(self, node):
@@ -1735,7 +1839,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         v = node.attr.split(':')
         # at least 2 values in expression
         s = 'iraf.clSexagesimal(' + v[0] + ',' + v[1]
-        if len(v)>2: s = s + ',' + v[2]
+        if len(v) > 2:
+            s = s + ',' + v[2]
         s = s + ')'
         self.write(s, node.requireType, node.exprType)
 
@@ -1751,7 +1856,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             # conversions and applies constraints.
             #XXX Note we are not doing minimum match on parameter names
 
-            self.write('Vars.'+s, node.requireType, node.exprType)
+            self.write('Vars.' + s, node.requireType, node.exprType)
         elif '.' in s:
 
             # Looks like a task.parameter or field reference
@@ -1763,14 +1868,13 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             ipf = basicpar.isParField(attribs[-1])
             if attribs[0] in self.vars:
                 attribs.insert(0, 'Vars')
-            elif ipf and (len(attribs)==2):
+            elif ipf and (len(attribs) == 2):
                 attribs.insert(0, 'taskObj')
             else:
                 attribs.insert(0, 'iraf')
             if ipf:
                 attribs[-2] = 'getParObject(' + repr(attribs[-2]) + ')'
-            self.write(".".join(attribs),
-                       node.requireType, node.exprType)
+            self.write(".".join(attribs), node.requireType, node.exprType)
 
         else:
 
@@ -1778,36 +1882,38 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             # dictionaries
 
             if self.vars.mode == "single":
-                self.write('iraf.cl.'+s, node.requireType, node.exprType)
+                self.write('iraf.cl.' + s, node.requireType, node.exprType)
             else:
-                self.write('taskObj.'+s, node.requireType, node.exprType)
+                self.write('taskObj.' + s, node.requireType, node.exprType)
 
     def _print_subscript(self, node):
         # subtract one from IRAF subscripts to get Python subscripts
         # returns number of subscripts
-        if len(node)>1:
+        if len(node) > 1:
             n = self._print_subscript(node[0])
             self.write(", ")
         else:
             n = 0
         if node[-1].type == "INTEGER":
-            self.write(str(int(node[-1])-1))
+            self.write(str(int(node[-1]) - 1))
         else:
             self.preorder(node[-1])
             self.write("-1")
-        return n+1
+        return n + 1
 
     def n_array_ref(self, node):
         # in array reference, do not add .p_value to parameter identifier
         # because we can index the parameter directly
         # wrap in a conversion function if necessary
         cf = _funcName(node.requireType, node.exprType)
-        if cf: self.write(cf + "(")
+        if cf:
+            self.write(cf + "(")
         self.n_IDENT(node[0], array_ref=1)
         self.write("[")
         nsub = self._print_subscript(node[2])
         self.write("]")
-        if cf: self.write(")")
+        if cf:
+            self.write(")")
         # check for correct number of subscripts for local arrays
         s = irafutils.translateName(node[0].attr)
         if s in self.vars:
@@ -1830,7 +1936,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # all functions are built-in (since CL does not allow new definitions)
         # wrap in a conversion function if necessary
         cf = _funcName(node.requireType, node.exprType)
-        if cf: self.write(cf + "(")
+        if cf:
+            self.write(cf + "(")
         functionname = node[0].attr
         newname = _functionList.get(functionname)
         if newname is None:
@@ -1845,7 +1952,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             sargs = self.modify_scan_args(functionname, sargs)
         self.writeChunks(sargs)
         self.write(")")
-        if cf: self.write(")")
+        if cf:
+            self.write(")")
         self.prune()
 
     def modify_scan_args(self, functionname, sargs):
@@ -1902,7 +2010,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
     def n_term(self, node):
         if pyrafglobals._use_ecl and node[1] in ['/', '%']:
-            kind = {"/":"divide", "%":"modulo"}[node[1]]
+            kind = {"/": "divide", "%": "modulo"}[node[1]]
             self.write("taskObj._ecl_safe_%s(" % kind)
             self.preorder(node[0])
             self.write(",")
@@ -2002,11 +2110,14 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # except_action ::= compound_stmt
         # else_action   ::= compound_stmt
         if len(node) == 3:
-            ifkind, guarded_stmt, except_action, else_action = node[0], node[1], node[2], None
+            ifkind, guarded_stmt, except_action, else_action = node[0], node[
+                1], node[2], None
         elif len(node) == 5:
-            ifkind, guarded_stmt, except_action, else_action = node[0], node[1], node[4], None
+            ifkind, guarded_stmt, except_action, else_action = node[0], node[
+                1], node[4], None
         else:
-            ifkind, guarded_stmt, except_action, else_action = node[0], node[1], node[4], node[7]
+            ifkind, guarded_stmt, except_action, else_action = node[0], node[
+                1], node[4], node[7]
         if ifkind.type == "IFNOERR":
             except_action, else_action = else_action, except_action
 
@@ -2024,6 +2135,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.writeIndent("else")
             self.preorder(else_action)
         self.prune()
+
 
 ##         self.writeIndent("try:")
 ##         self.incrIndent()
@@ -2057,7 +2169,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         #
         # -------- initialization --------
         init = node[2]
-        if init.type == "opt_assign_stmt" and len(init)==0:
+        if init.type == "opt_assign_stmt" and len(init) == 0:
             # empty initialization
             self.write("while (")
         else:
@@ -2065,7 +2177,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.writeIndent("while (")
         # -------- condition --------
         condition = node[4]
-        if condition.type == "opt_bool" and len(condition)==0:
+        if condition.type == "opt_bool" and len(condition) == 0:
             # empty condition
             self.write("1")
         else:
@@ -2080,10 +2192,11 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         for i in range(node[8].label_count):
             self.writeIndent("try:")
             self.incrIndent()
-        for subnode in node[8]: self.preorder(subnode)
+        for subnode in node[8]:
+            self.preorder(subnode)
         # -------- increment --------
         incr = node[6]
-        if incr.type == "opt_assign_stmt" and len(incr)==0:
+        if incr.type == "opt_assign_stmt" and len(incr) == 0:
             # empty increment
             pass
         else:
@@ -2091,7 +2204,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.preorder(incr)
         self.decrIndent()
         if len(self.save_incr) > 0:
-            del(self.save_incr[-1])
+            del (self.save_incr[-1])
         self.prune()
 
     def n_next_stmt(self, node):
@@ -2099,7 +2212,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
            self.save_incr[-1] != self.IN_A_WHILE_LOOP:
             # increment the loop variable -- copied from n_for_stmt()
             incr = self.save_incr[-1]
-            if incr.type == "opt_assign_stmt" and len(incr)==0:
+            if incr.type == "opt_assign_stmt" and len(incr) == 0:
                 pass
             else:
                 self.preorder(incr)
@@ -2113,7 +2226,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         label = node[0].attr
         if label in self.gotos:
             self.decrIndent()
-            self.writeIndent("except GoTo_%s:" % irafutils.translateName(label))
+            self.writeIndent("except GoTo_%s:" %
+                             irafutils.translateName(label))
             self.incrIndent()
             self.writeIndent("pass")
             self.decrIndent()
@@ -2165,7 +2279,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.prune()
 
     def n_default_stmt_block(self, node):
-        if len(node)>0:
+        if len(node) > 0:
             if self.caseCount[-1] == 0:
                 # only a default in this switch
                 self.writeIndent("if 1")
@@ -2179,7 +2293,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
     #------------------------------
 
     def n_task_pipe_stmt(self, node):
-        self.pipeCount = self.pipeCount+1
+        self.pipeCount = self.pipeCount + 1
         pipename = 'Pipe' + str(self.pipeCount)
         self.pipeOut.append(pipename)
         self.preorder(node[0])
@@ -2188,7 +2302,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.writeIndent()
         self.preorder(node[2])
         self.pipeIn.pop()
-        self.pipeCount = self.pipeCount-1
+        self.pipeCount = self.pipeCount - 1
         self.prune()
 
     #------------------------------
@@ -2200,7 +2314,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         taskname = node[0].attr
         self.currentTaskname = taskname
         # '$' prefix means print time required for task (just ignore it for now)
-        if taskname[:1] == '$': taskname = taskname[1:]
+        if taskname[:1] == '$':
+            taskname = taskname[1:]
         # translate some special task names and add "iraf." to all names
         # additionalArguments will get appended at the end of the
         # argument list
@@ -2228,7 +2343,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.additionalArguments.append("PkgBinary=PkgBinary")
             # package is a function returning new values for PkgName etc.
             # except when pipe is specified
-            if not self.pipeOut: self.write("PkgName, PkgBinary = ")
+            if not self.pipeOut:
+                self.write("PkgName, PkgBinary = ")
         # add extra argument to save parameters if in "single" mode
         if self.vars.mode == "single":
             self.additionalArguments.append("_save=1")
@@ -2241,7 +2357,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
         if taskname == "clbye" or taskname == "bye":
             # must do a return after clbye() or bye() if not in 'single' mode
-            if self.vars.mode != "single": self.writeIndent("return")
+            if self.vars.mode != "single":
+                self.writeIndent("return")
         self.prune()
 
     def n_task_arglist(self, node):
@@ -2280,7 +2397,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # of an expression.
         if len(sargs) == 1:
             s = sargs[0]
-            if s[:1] == "(" and s[-1:] == ")": sargs[0] = s[1:-1]
+            if s[:1] == "(" and s[-1:] == ")":
+                sargs[0] = s[1:-1]
 
         if self.currentTaskname in ["scan", "fscan", "scanf", "fscanf"]:
             # scan is weird -- effectively uses call-by-name
@@ -2332,16 +2450,18 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
         # split arguments into list
         sargs = args.split(',\255')
-        if sargs[0] == '': del sargs[0]
+        if sargs[0] == '':
+            del sargs[0]
         return sargs
 
     def writeChunks(self, arglist, linelength=78):
         # break up arg list into line-sized chunks
-        if not arglist: return
+        if not arglist:
+            return
         maxline = linelength - self.column
         newargs = arglist[0]
         for arg in arglist[1:]:
-            if len(newargs)+len(arg)+2>maxline:
+            if len(newargs) + len(arg) + 2 > maxline:
                 self.write(newargs + ',')
                 #self.writeIndent('\t')
                 newargs = arg
@@ -2385,7 +2505,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
     def n_keyword_arg(self, node):
         # This is needed to handle cursor parameters, which should
         # be passed as objects rather than by value.
-        assert len(node)==3
+        assert len(node) == 3
         self.preorder(node[0])
         self.preorder(node[1])
         # only the value needs special handling
@@ -2394,7 +2514,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             v = self.vars.get(s)
             if v and v.type in ['gcur', 'imcur']:
                 # pass cursors by value
-                self.write('Vars.getParObject("'+s+'")')
+                self.write('Vars.getParObject("' + s + '")')
                 self.prune()
                 return
         self.preorder(node[2])

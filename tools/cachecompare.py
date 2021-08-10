@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-
 """cachecompare.py: Compare contents of new CL to old cache
 $Id$
 """
@@ -37,12 +36,12 @@ for key in dbnew.keys():
         continue
     newcode = dbnew[key]
     if newcode == oldcode or newcode.code == oldcode.code:
-        if select==1:
+        if select == 1:
             ok1 += 1
         else:
             ok2 += 1
     else:
-        if select==1:
+        if select == 1:
             diff1 += 1
         else:
             diff2 += 1
@@ -51,7 +50,8 @@ for key in dbnew.keys():
 dbnew.close()
 dbold1.close()
 dbold2.close()
-print("Checked", notfound+ok1+ok2+diff1+diff2, "entries from new cache")
+print("Checked", notfound + ok1 + ok2 + diff1 + diff2,
+      "entries from new cache")
 print(notfound, "not found in old cache")
 print(found1, "found in old cache 1", oldname1)
 print(ok1, "same")

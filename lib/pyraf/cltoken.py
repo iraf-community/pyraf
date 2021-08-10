@@ -35,7 +35,9 @@ from stsci.tools import compmixin
 
 verbose = 0
 
+
 class Token(compmixin.ComparableMixin):
+
     def __init__(self, type=None, attr=None, lineno=None):
         self.type = type
         self.attr = attr
@@ -76,7 +78,8 @@ class Token(compmixin.ComparableMixin):
                 return repr(self.attr).replace('\\\\', '\\')
             else:
                 rv = self.attr
-                if rv is None: rv = self.type
+                if rv is None:
+                    rv = self.type
                 return rv
 
     def __getitem__(self, i):
@@ -100,7 +103,8 @@ class Token(compmixin.ComparableMixin):
 
     def __str__(self):
         rv = self.attr
-        if rv is None: rv = self.type
+        if rv is None:
+            rv = self.type
         return rv
 
     def __int__(self):
@@ -112,7 +116,8 @@ class Token(compmixin.ComparableMixin):
             # allow floats as values if they are exact integers
             f = self.__float__()
             i = int(f)
-            if float(i) == f: return i
+            if float(i) == f:
+                return i
         elif self.type in ["STRING", "QSTRING"]:
             try:
                 if self.attr == "":
@@ -125,20 +130,19 @@ class Token(compmixin.ComparableMixin):
             except Exception as e:
                 print('Exception', str(e))
                 pass
-        raise ValueError("Cannot convert " +
-                         self.verboseRepr() + " to int")
+        raise ValueError("Cannot convert " + self.verboseRepr() + " to int")
 
     def __float__(self):
         if self.type == "FLOAT":
             # convert d exponents to e for Python
             value = self.attr
             i = value.find('d')
-            if i>=0:
-                value = value[:i] + 'e' + value[i+1:]
+            if i >= 0:
+                value = value[:i] + 'e' + value[i + 1:]
             else:
                 i = value.find('D')
-                if i>=0:
-                    value = value[:i] + 'E' + value[i+1:]
+                if i >= 0:
+                    value = value[:i] + 'E' + value[i + 1:]
             return float(value)
         elif self.type == "INTEGER":
             # convert to int first because of octal, hex formats
@@ -149,7 +153,7 @@ class Token(compmixin.ComparableMixin):
             flist.reverse()
             value = float(flist[0])
             for v in flist[1:]:
-                value = float(v) + value/60.0
+                value = float(v) + value / 60.0
             return value
         elif self.type == "INDEF":
             return float(INDEF)
@@ -164,8 +168,7 @@ class Token(compmixin.ComparableMixin):
                     return float(self.attr)
             except (ValueError, TypeError):
                 pass
-        raise ValueError("Cannot convert " +
-                         self.verboseRepr() + " to float")
+        raise ValueError("Cannot convert " + self.verboseRepr() + " to float")
 
     def bool(self):
         #XXX convert INTEGER to bool too?
@@ -184,8 +187,8 @@ class Token(compmixin.ComparableMixin):
                 return self.attr
             elif keyword == "":
                 return INDEF
-        raise ValueError("Cannot convert " +
-                         self.verboseRepr() + " to bool")
+        raise ValueError("Cannot convert " + self.verboseRepr() + " to bool")
+
 
 def _str2int(value):
     # convert integer string to python int
@@ -193,15 +196,16 @@ def _str2int(value):
     last = value[-1].lower()
     if last == 'b':
         # octal
-        return eval('0'+value[:-1])
+        return eval('0' + value[:-1])
     elif last == 'x':
         # hexadecimal
-        return eval('0x'+value[:-1])
+        return eval('0x' + value[:-1])
     # remove leading zeros on decimal values
-    i=0
+    i = 0
     for digit in value:
-        if digit != '0': break
-        i = i+1
+        if digit != '0':
+            break
+        i = i + 1
     else:
         # all zeros
         return 0

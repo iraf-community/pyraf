@@ -24,7 +24,6 @@ import pyraf.iraf
 #   pyraf.irafexecute.test_probe = True
 test_probe = False
 
-
 #stdgraph = None
 
 IPC_PREFIX = ndarr2bytes(numpy.array([0o1120], numpy.int16))
@@ -41,12 +40,15 @@ isBigEndian = sys.byteorder == "big"
 # Create an instance of the stdimage kernel
 stdimagekernel = gki.GkiController()
 
+
 class IrafProcessError(Exception):
+
     def __init__(self, msg, errno=-1, errmsg="", errtask=""):
         Exception.__init__(self, msg)
         self.errno = errno
         self.errmsg = errmsg
         self.errtask = errtask
+
 
 def _getExecutable(arg):
     """Get executable pathname.
@@ -66,8 +68,8 @@ def _getExecutable(arg):
             return task.getFullpath()
     raise IrafProcessError("Cannot find task or executable %s" % arg)
 
-class _ProcessProxy(filecache.FileCache):
 
+class _ProcessProxy(filecache.FileCache):
     """Proxy for a single process that restarts it if needed
 
     Restart is triggered by change of executable on disk.
@@ -102,20 +104,19 @@ class _ProcessProxy(filecache.FileCache):
 
 
 class _ProcessCache:
-
     """Cache of active processes indexed by executable path"""
 
     DFT_LIMIT = 8
 
     def __init__(self, limit=DFT_LIMIT):
-        self._data = {}          # dictionary with active process proxies
-        self._pcount = 0         # total number of processes started
-        self._plimit = limit     # number of active processes allowed
-        self._locked = {}        # processes locked into cache
+        self._data = {}  # dictionary with active process proxies
+        self._pcount = 0  # total number of processes started
+        self._plimit = limit  # number of active processes allowed
+        self._locked = {}  # processes locked into cache
 
     def error(self, msg, level=0):
         """Write an error message if Verbose is set"""
-        if Verbose>level:
+        if Verbose > level:
             sys.stderr.write(msg)
             sys.stderr.flush()
 
@@ -134,7 +135,8 @@ class _ProcessCache:
                 #XXX Eventually can make this a level 0 message
                 #XXX Leave as level -1 for now so we see if bug is gone
                 self.error("Warning: process %s is bad, restarting it\n" %
-                           (executable,), level=-1)
+                           (executable,),
+                           level=-1)
                 self.kill(executable, verbose=0)
             # Whoops, process is already active...
             # This could happen if one task in an executable tries to
@@ -149,7 +151,7 @@ class _ProcessCache:
 
     def add(self, process):
         """Add process to cache or update its rank if already there"""
-        self._pcount = self._pcount+1
+        self._pcount = self._pcount + 1
         executable = process.executable
         if executable in self._data:
             # don't replace current cached process
@@ -280,7 +282,8 @@ class _ProcessCache:
         if args:
             for taskname in args:
                 task = pyraf.iraf.getTask(taskname, found=1)
-                if task is not None: self.terminate(task)
+                if task is not None:
+                    self.terminate(task)
         else:
             for rank, proxy in self._data.values():
                 executable = proxy.process.executable
@@ -293,7 +296,7 @@ class _ProcessCache:
         values.reverse()
         n = 0
         for rank, proxy in values:
-            n = n+1
+            n = n + 1
             executable = proxy.process.executable
             if executable in self._locked:
                 print("%2d: L %s" % (n, executable))
@@ -304,9 +307,15 @@ class _ProcessCache:
         self._locked = {}
         self.flush()
 
+
 processCache = _ProcessCache()
 
-def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
+
+def IrafExecute(task,
+                envdict,
+                stdin=None,
+                stdout=None,
+                stderr=None,
                 stdgraph=None):
     """Execute IRAF task (defined by the IrafTask object task)
     using the provided envionmental variables."""
@@ -362,6 +371,7 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
         processCache.add(irafprocess)
     return
 
+
 # patterns for matching messages from process
 
 # '=param' and '_curpack' have to be treated specially because
@@ -370,39 +380,34 @@ def IrafExecute(task, envdict, stdin=None, stdout=None, stderr=None,
 
 _p_par_get = r'\s*=\s*(?P<gname>[a-zA-Z_$][\w.]*(?:\[\d+\])?)\s*\n'
 _p_par_set = r'(?P<sname>[a-zA-Z_][\w.]*(?:\[\d+\])?)\s*=\s*(?P<svalue>.*)\n'
-_re_msg = re.compile(
-    r'(?P<par_get>' + _p_par_get + ')|' +
-    r'(?P<par_set>' + _p_par_set + ')'
-)
+_re_msg = re.compile(r'(?P<par_get>' + _p_par_get + ')|' + r'(?P<par_set>' +
+                     _p_par_set + ')')
 
-_p_curpack   = r'_curpack(?:\s.*|)\n'
-_p_stty      = r'stty.*\n'
+_p_curpack = r'_curpack(?:\s.*|)\n'
+_p_stty = r'stty.*\n'
 _p_sysescape = r'!(?P<sys_cmd>.*)\n'
 
-_re_clcmd = re.compile(
-    r'(?P<curpack>'   + _p_curpack   + ')|' +
-    r'(?P<stty>'      + _p_stty      + ')|' +
-    r'(?P<sysescape>' + _p_sysescape + ')'
-)
+_re_clcmd = re.compile(r'(?P<curpack>' + _p_curpack + ')|' + r'(?P<stty>' +
+                       _p_stty + ')|' + r'(?P<sysescape>' + _p_sysescape + ')')
+
 
 class IrafProcess:
-
     """IRAF process class"""
 
     def __init__(self, executable):
         """Start IRAF task executable."""
 
         if test_probe:
-            sys.stdout.write("Starting IRAF process for %s\n" %executable)
+            sys.stdout.write("Starting IRAF process for %s\n" % executable)
 
         self.executable = executable
-        self.process = subproc.Subprocess(executable+' -c')
-        self.running = 0   # flag indicating whether process is active
+        self.process = subproc.Subprocess(executable + ' -c')
+        self.running = 0  # flag indicating whether process is active
         self.task = None
         self.stdin = None
         self.stdout = None
         self.stderr = None
-        self.default_stdin  = None
+        self.default_stdin = None
         self.default_stdout = None
         self.default_stderr = None
         self.stdinIsatty = 0
@@ -417,7 +422,8 @@ class IrafProcess:
         for key, value in envdict.items():
             outenvstr.append("set %s=%s\n" % (key, str(value)))
         outenvstr.append("chdir %s\n" % os.getcwd())
-        if outenvstr: self.writeString("".join(outenvstr))
+        if outenvstr:
+            self.writeString("".join(outenvstr))
         self.envVarList = []
 
         # end set up mode
@@ -445,7 +451,8 @@ class IrafProcess:
         """
 
         if test_probe:
-            sys.stdout.write("Running IRAF task %s from %s\n"% (task, self.executable))
+            sys.stdout.write("Running IRAF task %s from %s\n" %
+                             (task, self.executable))
         self.task = task
         # set IO streams
         stdin = pstdin or sys.stdin
@@ -454,7 +461,7 @@ class IrafProcess:
         self.stdin = stdin
         self.stdout = stdout
         self.stderr = stderr
-        self.default_stdin  = stdin
+        self.default_stdin = stdin
         self.default_stdout = stdout
         self.default_stderr = stderr
 
@@ -476,7 +483,7 @@ class IrafProcess:
             redir_info = '<'
         if (pstdout and pstdout != sys.__stdout__) or \
            (pstderr and pstderr != sys.__stderr__):
-            redir_info = redir_info+'>'
+            redir_info = redir_info + '>'
 
         # update IRAF environment variables if necessary
         if self.envVarList:
@@ -493,8 +500,9 @@ class IrafProcess:
 
         taskname = self.task.getName()
         # remove leading underscore, which is just a convention for CL
-        if taskname[:1]=='_': taskname = taskname[1:]
-        self.writeString(taskname+redir_info+'\n')
+        if taskname[:1] == '_':
+            taskname = taskname[1:]
+        self.writeString(taskname + redir_info + '\n')
         self.running = 1
         try:
             # begin slave mode
@@ -516,7 +524,8 @@ class IrafProcess:
         #   Wait briefly for EOF, which signals task is done
         #   Kill it anyway if it is still hanging around
 
-        if not self.process.pid: return         # no need, process gone
+        if not self.process.pid:
+            return  # no need, process gone
         try:
             self.writeString("bye\n")
             if self.process.wait(0.5):
@@ -527,7 +536,7 @@ class IrafProcess:
         try:
             self.process.die()
         except subproc.SubprocessError as e:
-            if Verbose>0:
+            if Verbose > 0:
                 # too bad, if we can't kill it assume it is already dead
                 self.stderr.write("Warning: cannot terminate process %s\n" %
                                   (e,))
@@ -539,7 +548,8 @@ class IrafProcess:
         # Try stopping process in IRAF-approved way first; if that fails
         # blow it away. Copied with minor mods from subproc.py.
 
-        if not self.process.pid: return         # no need, process gone
+        if not self.process.pid:
+            return  # no need, process gone
 
         self.stdout.flush()
         self.stderr.flush()
@@ -571,12 +581,12 @@ class IrafProcess:
         i = 0
         block = 4096
         try:
-            while i<len(data):
+            while i < len(data):
                 # Write:
                 #  IRAF magic number
                 #  number of following bytes
                 #  data
-                dsection = data[i:i+block]
+                dsection = data[i:i + block]
                 # the arg parts to the following are all type bytes in PY3K
                 self.process.write(IPC_PREFIX +
                                    struct.pack('=h', len(dsection)) +
@@ -589,14 +599,14 @@ class IrafProcess:
         """Read binary data from IRAF pipe"""
         try:
             # read pipe header first (self.process is subproc.Subprocess)
-            header = self.process.read(4) # read returns bytes
+            header = self.process.read(4)  # read returns bytes
             if header[0:2] != IPC_PREFIX:
-                raise IrafProcessError("Not a legal IRAF pipe record: "+
+                raise IrafProcessError("Not a legal IRAF pipe record: " +
                                        str(header[0:2]))
             ntemp = struct.unpack('=h', header[2:])
             nbytes = ntemp[0]
             # read the rest
-            data = self.process.read(nbytes) # read returns bytes
+            data = self.process.read(nbytes)  # read returns bytes
             return data
         except subproc.SubprocessError as e:
             raise IrafProcessError("Error in read: %s" % str(e))
@@ -620,7 +630,8 @@ class IrafProcess:
             # each read may return multiple lines; only
             # read new data when old has been used up
 
-            if not self.msg: self.msg = self.readString()
+            if not self.msg:
+                self.msg = self.readString()
 
             msg = self.msg
             msg5 = msg[:5]
@@ -633,14 +644,18 @@ class IrafProcess:
                 return
             elif msg5 in ['error', 'ERROR']:
                 errno, text = self._scanErrno(msg)
-                raise IrafProcessError("IRAF task terminated abnormally\n"+msg,
-                                       errno=errno, errmsg=text, errtask=self.task.getName())
+                raise IrafProcessError("IRAF task terminated abnormally\n" +
+                                       msg,
+                                       errno=errno,
+                                       errmsg=text,
+                                       errtask=self.task.getName())
             else:
                 # pattern match to see what this message is
                 mcmd = re_match(msg)
 
                 # assume each par_set msg ends with either a 'bye' line or with a par_get line
-                if (mcmd and mcmd.group('par_set')) or len(self.par_set_msg_buf) > 0:
+                if (mcmd and mcmd.group('par_set')) or len(
+                        self.par_set_msg_buf) > 0:
                     # enter this section if we got a par_set, OR if we are in the
                     # middle of a par_set coming in multiple msgs...
                     msg_last_line = msg.strip().split('\n')[-1]
@@ -654,7 +669,7 @@ class IrafProcess:
                             self.par_set_msg_buf += msg
                             mcmd = re_match(self.par_set_msg_buf)
                             par_set(mcmd)
-                            self.par_set_msg_buf = '' # flag to not wait for more
+                            self.par_set_msg_buf = ''  # flag to not wait for more
                             self.msg = 'bye\n'
                         else:
                             # is a normal par_set that came all in one shot
@@ -676,16 +691,15 @@ class IrafProcess:
                 else:
                     # should never get here
                     #                   L.log("Program bug: uninterpreted message: " + msg)
-                    raise RuntimeError("Program bug: uninterpreted message `%s'"
-                                       % (msg,))
+                    raise RuntimeError(
+                        "Program bug: uninterpreted message `%s'" % (msg,))
 
     def _scanErrno(self, msg):
         sp = "\s*"
         quote = "\""
         m = re.search(
-            "(ERROR|error)" + sp + "\(" + sp + "(\d+)" +
-            sp + "," + sp + quote + "([^\"]*)" + quote + sp +
-            "\)" + sp, msg)
+            "(ERROR|error)" + sp + "\(" + sp + "(\d+)" + sp + "," + sp + quote +
+            "([^\"]*)" + quote + sp + "\)" + sp, msg)
         if m:
             try:
                 errno = int(m.group(2))
@@ -760,7 +774,7 @@ class IrafProcess:
             self.task.setParam(paramname, newvalue)
         except ValueError as e:
             # on ValueError, just print warning and then force set
-            if Verbose>0:
+            if Verbose > 0:
                 self.stderr.write('Warning: %s\n' % (e,))
                 self.stderr.flush()
             self.task.setParam(paramname, newvalue, check=0)
@@ -770,14 +784,13 @@ class IrafProcess:
 
         chan, nbytes = self.chanbytes()
 
-        checkForEscapeSeq = (chan == 4 and (nbytes==6 or nbytes==5))
+        checkForEscapeSeq = (chan == 4 and (nbytes == 6 or nbytes == 5))
         xdata = self.read()
 
-        if len(xdata) != 2*nbytes:
-            raise IrafProcessError(
-                "Error, wrong number of bytes read\n" +
-                ("(got %d, expected %d, chan %d)" %
-                 (len(xdata), 2*nbytes, chan)))
+        if len(xdata) != 2 * nbytes:
+            raise IrafProcessError("Error, wrong number of bytes read\n" +
+                                   ("(got %d, expected %d, chan %d)" %
+                                    (len(xdata), 2 * nbytes, chan)))
         if chan == 4:
             if self.task.getTbflag():
                 # for tasks with .tb flag, stdout is binary data
@@ -809,14 +822,17 @@ class IrafProcess:
             self.stderr.write(Iraf2AscString(xdata))
             self.stderr.flush()
         elif chan == 6:
-            gki.kernel.append(numpy.fromstring(xdata, dtype=numpy.int16)) # OK if str or uni
+            gki.kernel.append(numpy.fromstring(
+                xdata, dtype=numpy.int16))  # OK if str or uni
         elif chan == 7:
-            stdimagekernel.append(numpy.fromstring(xdata, dtype=numpy.int16)) # OK if str or uni
+            stdimagekernel.append(numpy.fromstring(
+                xdata, dtype=numpy.int16))  # OK if str or uni
         elif chan == 8:
             self.stdout.write("data for STDPLOT\n")
             self.stdout.flush()
         elif chan == 9:
-            sdata = numpy.fromstring(xdata, dtype=numpy.int16) # OK if str or uni
+            sdata = numpy.fromstring(xdata,
+                                     dtype=numpy.int16)  # OK if str or uni
             if isBigEndian:
                 # Actually, the channel destination is sent
                 # by the iraf process as a 4 byte int, the following
@@ -844,7 +860,8 @@ class IrafProcess:
                     self.write(wcs)
                     stdimagekernel.clearReturnData()
             else:
-                self.stdout.write("GRAPHICS control data for channel %d\n" % (forChan,))
+                self.stdout.write("GRAPHICS control data for channel %d\n" %
+                                  (forChan,))
                 self.stdout.flush()
         else:
             self.stdout.write("data for channel %d\n" % (chan,))
@@ -854,7 +871,7 @@ class IrafProcess:
         """Handle xfer data requests"""
 
         chan, nbytes = self.chanbytes()
-        nchars = nbytes//2
+        nchars = nbytes // 2
         if chan == 3:
 
             # Read data from stdin unless xferline already has
@@ -897,7 +914,7 @@ class IrafProcess:
             # newline.
 
             if not self.stdinIsraw:
-                if len(line)<=nchars:
+                if len(line) <= nchars:
                     # short line
                     self.writeString(str(len(line)))
                     self.writeString(line)
@@ -912,7 +929,8 @@ class IrafProcess:
                 self.writeString(line)
                 self.xferline = ''
         else:
-            raise IrafProcessError("xfer request for unknown channel %d" % chan)
+            raise IrafProcessError("xfer request for unknown channel %d" %
+                                   chan)
 
     def chanbytes(self):
         """Parse xmit(chan,nbytes) and return integer tuple
@@ -922,9 +940,10 @@ class IrafProcess:
         msg = self.msg
         try:
             i = msg.find(",", 5)
-            if i<0 or msg[-2:] != ")\n": raise ValueError()
+            if i < 0 or msg[-2:] != ")\n":
+                raise ValueError()
             chan = int(msg[5:i])
-            nbytes = int(msg[i+1:-2])
+            nbytes = int(msg[i + 1:-2])
             self.msg = ''
         except ValueError:
             raise IrafProcessError("Illegal message format `%s'" % self.msg)
@@ -938,17 +957,19 @@ class IrafProcess:
         if mcmd is None:
             # general command
             i = self.msg.find("\n")
-            if i>=0:
-                cmd = self.msg[:i+1]
-                self.msg = self.msg[i+1:]
+            if i >= 0:
+                cmd = self.msg[:i + 1]
+                self.msg = self.msg[i + 1:]
             else:
                 cmd = self.msg
                 self.msg = ""
             if not (cmd.find(IPCOUT) >= 0):
                 # normal case -- execute the CL script code
                 # redirect I/O (but don't use graphics status line)
-                pyraf.iraf.clExecute(cmd, Stdout=self.default_stdout,
-                                     Stdin=self.default_stdin, Stderr=self.default_stderr)
+                pyraf.iraf.clExecute(cmd,
+                                     Stdout=self.default_stdout,
+                                     Stdin=self.default_stdin,
+                                     Stderr=self.default_stderr)
             else:
                 #
                 # Bizzaro protocol -- redirection to file with special
@@ -959,17 +980,19 @@ class IrafProcess:
                 # (in clio/clepset.x) so I'm not trying to handle it robustly.
                 # Just raise an exception if it does not fit my preconceptions.
                 #
-                ll = -(len(IPCOUT)+3)
+                ll = -(len(IPCOUT) + 3)
                 if cmd[ll:] != "> %s\n" % IPCOUT:
                     raise IrafProcessError(
-                        "Error: cannot understand IPCOUT syntax in `%s'"
-                        % (cmd,))
+                        "Error: cannot understand IPCOUT syntax in `%s'" %
+                        (cmd,))
                 sys.stdout.flush()
                 # strip the redirection off and capture output of command
                 buffer = cStringIO.StringIO()
                 # redirect other I/O (but don't use graphics status line)
-                pyraf.iraf.clExecute(cmd[:ll]+"\n", Stdout=buffer,
-                                     Stdin=self.default_stdin, Stderr=self.default_stderr)
+                pyraf.iraf.clExecute(cmd[:ll] + "\n",
+                                     Stdout=buffer,
+                                     Stdin=self.default_stdin,
+                                     Stderr=self.default_stderr)
                 # send it off to the task with special flag line at end
                 buffer.write(IPCDONEMSG)
                 self.writeString(buffer.getvalue())
@@ -993,46 +1016,51 @@ class IrafProcess:
             # OS escape
             tmsg = mcmd.group('sys_cmd')
             # use my version of system command so redirection works
-            sysstatus = pyraf.iraf.clOscmd(tmsg, Stdin=self.stdin,
-                                           Stdout=self.stdout, Stderr=self.stderr)
-            self.writeString(str(sysstatus)+"\n")
+            sysstatus = pyraf.iraf.clOscmd(tmsg,
+                                           Stdin=self.stdin,
+                                           Stdout=self.stdout,
+                                           Stderr=self.stderr)
+            self.writeString(str(sysstatus) + "\n")
             self.msg = self.msg[mcmd.end():]
             # self.stdout.write(self.msg + "\n")
         else:
             # should never get here
-            raise RuntimeError(
-                "Program bug: uninterpreted message `%s'"
-                % (self.msg,))
+            raise RuntimeError("Program bug: uninterpreted message `%s'" %
+                               (self.msg,))
 
 
 # IRAF string conversions using numpy module
 
+
 def Asc2IrafString(ascii_string):
     """translate ascii to IRAF 16-bit string format"""
-    inarr = numpy.fromstring(ascii_string, numpy.int8) # OK if str or uni
+    inarr = numpy.fromstring(ascii_string, numpy.int8)  # OK if str or uni
     retval = ndarr2bytes(inarr.astype(numpy.int16))
-#   log_task_comm('Asc2IrafString (write to task)', retval, False)
+    #   log_task_comm('Asc2IrafString (write to task)', retval, False)
     return retval
 
 
 def Iraf2AscString(iraf_string):
     """translate 16-bit IRAF characters to ascii"""
-    inarr = numpy.fromstring(iraf_string, numpy.int16) # OK if str or uni
+    inarr = numpy.fromstring(iraf_string, numpy.int16)  # OK if str or uni
     retval = ndarr2str(inarr.astype(numpy.int8))
-#   log_task_comm('Iraf2AscString', retval, True)
+    #   log_task_comm('Iraf2AscString', retval, True)
     return retval
 
 
 def log_task_comm(pfx, strbuf, expectAsStr, shorten=True):
     import some_pkg_w_a_log_func as L
-    assert isinstance(strbuf, (str, unicode, bytes)), "?!: "+str(type(strbuf))
+    assert isinstance(strbuf,
+                      (str, unicode, bytes)), "?!: " + str(type(strbuf))
     if expectAsStr:
-        assert isinstance(strbuf, str), "Unexpected type: "+str(type(strbuf))
+        assert isinstance(strbuf, str), "Unexpected type: " + str(type(strbuf))
     if isinstance(strbuf, (str, unicode)):
         out = strbuf.strip()
-        if shorten: out = out[0:30]
-        L.log(pfx+' (str): '+out)
-    else: # strbuf is bytes
+        if shorten:
+            out = out[0:30]
+        L.log(pfx + ' (str): ' + out)
+    else:  # strbuf is bytes
         out = strbuf.decode().strip()
-        if shorten: out = out[0:30]
-        L.log(pfx+' (byt): '+out)
+        if shorten:
+            out = out[0:30]
+        L.log(pfx + ' (byt): ' + out)

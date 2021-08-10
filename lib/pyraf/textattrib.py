@@ -25,7 +25,7 @@ from __future__ import division, print_function
 
 import fontdata
 
-CHARPATH_LEFT  = 2
+CHARPATH_LEFT = 2
 CHARPATH_RIGHT = 3
 CHARPATH_UP = 4
 CHARPATH_DOWN = 5
@@ -43,6 +43,7 @@ FQUALITY_NORMAL = 0
 FQUALITY_LOW = 12
 FQUALITY_MEDIUM = 13
 FQUALITY_HIGH = 14
+
 
 class TextAttributes:
 
@@ -64,10 +65,16 @@ class TextAttributes:
         self.hFontSize = None
         self.fontAspect = None
 
-    def set(self,charUp=90., charSize=1.,charSpace=0.,
-            textPath=CHARPATH_RIGHT, textHorizontalJust=JUSTIFIED_NORMAL,
-            textVerticalJust=JUSTIFIED_NORMAL, textFont=FONT_ROMAN,
-            textQuality=FQUALITY_NORMAL, textColor=1):
+    def set(self,
+            charUp=90.,
+            charSize=1.,
+            charSpace=0.,
+            textPath=CHARPATH_RIGHT,
+            textHorizontalJust=JUSTIFIED_NORMAL,
+            textVerticalJust=JUSTIFIED_NORMAL,
+            textFont=FONT_ROMAN,
+            textQuality=FQUALITY_NORMAL,
+            textColor=1):
 
         self.charUp = charUp
         self.charSize = charSize

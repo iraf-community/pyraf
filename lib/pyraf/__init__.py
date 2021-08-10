@@ -16,25 +16,28 @@ import os, sys, __main__
 
 # dev only: add revision number if possible (if not done yet)
 if __version__.endswith('dev'):
-    try: # did we set this via git?
+    try:  # did we set this via git?
         from .version_vcs import __vcs_revision__
-        __version__ = __version__+'-'+__vcs_revision__
-    except: # must be using svn still
+        __version__ = __version__ + '-' + __vcs_revision__
+    except:  # must be using svn still
         if len(__svn_revision__) > 0 and __svn_revision__[0].isdigit():
-            __version__ = __version__+__svn_revision__
+            __version__ = __version__ + __svn_revision__
 
 # Dump version and exit here, if requested
 if '-V' in sys.argv or '--version' in sys.argv:
     print(__version__)
     sys.stdout.flush()
-    os._exit(0) # see note in usage()
+    os._exit(0)  # see note in usage()
 
 # Do a quick, non-intrusive check to see how verbose we are.  This is
 # just for here.  This does not correctly count -v vs. -vv, -vvv, etc.
-_verbosity_ = len([j for j in sys.argv if j in ('--verbose', '-v', '-vv', '-vvv')])
+_verbosity_ = len(
+    [j for j in sys.argv if j in ('--verbose', '-v', '-vv', '-vvv')])
 
 # Show version at earliest possible moment when in debugging/verbose mode.
-if _verbosity_ > 0: print('pyraf version '+__version__)
+if _verbosity_ > 0:
+    print('pyraf version ' + __version__)
+
 
 def usage():
     print(__main__.__doc__)
@@ -44,27 +47,35 @@ def usage():
     # to be run at this point - else we'd see run-time import warnings
     os._exit(0)
 
+
 # set search path to include current directory
-if "." not in sys.path: sys.path.insert(0, ".")
+if "." not in sys.path:
+    sys.path.insert(0, ".")
 
 # Grab the terminal window's id at the earliest possible moment
 import wutil
 
 # Since numpy as absolutely required for any PyRAF use, go ahead and
 # import it now, just to check it
-if _verbosity_ > 0: print("pyraf: importing numpy")
+if _verbosity_ > 0:
+    print("pyraf: importing numpy")
 try:
     import numpy
 except ImportError:
-    print("The numpy package is required by PyRAF and was not found.  Please visit http://numpy.scipy.org")
+    print(
+        "The numpy package is required by PyRAF and was not found.  Please visit http://numpy.scipy.org"
+    )
     os._exit(1)
-if _verbosity_ > 0: print("pyraf: imported numpy")
+if _verbosity_ > 0:
+    print("pyraf: imported numpy")
 
 # Modify the standard import mechanism to make it more
 # convenient for the iraf module
-if _verbosity_ > 0: print("pyraf: importing irafimport")
+if _verbosity_ > 0:
+    print("pyraf: importing irafimport")
 import irafimport
-if _verbosity_ > 0: print("pyraf: imported irafimport")
+if _verbosity_ > 0:
+    print("pyraf: imported irafimport")
 
 # this gives more useful tracebacks for CL scripts
 import cllinecache
@@ -73,7 +84,8 @@ import irafnames
 
 # initialization is silent unless program name is 'pyraf' or
 # silent flag is set on command line
-if _verbosity_ > 0: print("pyraf: setting _pyrafMain")
+if _verbosity_ > 0:
+    print("pyraf: setting _pyrafMain")
 
 # follow links to get to the real executable filename
 executable = sys.argv[0]
@@ -86,14 +98,19 @@ runCmd = None
 import irafexecute, clcache
 from stsci.tools import capable
 
-if _verbosity_ > 0: print("pyraf: setting exit handler")
+if _verbosity_ > 0:
+    print("pyraf: setting exit handler")
+
+
 # set up exit handler to close caches
 def _cleanup():
-    if iraf: iraf.gflush()
+    if iraf:
+        iraf.gflush()
     if hasattr(irafexecute, 'processCache'):
         del irafexecute.processCache
     if hasattr(clcache, 'codeCache'):
         del clcache.codeCache
+
 
 # Register the exit handler, but only if 'pyraf' is going to import fully
 # But, always register it when in Python-API mode (CNSHD817031)
@@ -102,14 +119,17 @@ if not _pyrafMain or ('-h' not in sys.argv and '--help' not in sys.argv):
     atexit.register(_cleanup)
     del atexit
 
-if _verbosity_ > 0: print("pyraf: finished all work prior to IRAF use")
+if _verbosity_ > 0:
+    print("pyraf: finished all work prior to IRAF use")
 # now get ready to do the serious IRAF initialization
 if not _pyrafMain:
     # if not executing as pyraf main, just initialize iraf module
     # quietly load initial iraf symbols and packages
-    if _verbosity_ > 0: print("pyraf: initializing IRAF")
+    if _verbosity_ > 0:
+        print("pyraf: initializing IRAF")
     import iraf
-    if _verbosity_ > 0: print("pyraf: imported iraf")
+    if _verbosity_ > 0:
+        print("pyraf: imported iraf")
 
     # If iraf.Init() throws an exception, we cannot be confident
     # that it has initialized properly.  This can later lead to
@@ -127,17 +147,21 @@ if not _pyrafMain:
     except:
         iraf = None
         raise
-    if _verbosity_ > 0: print("pyraf: initialized IRAF")
+    if _verbosity_ > 0:
+        print("pyraf: initialized IRAF")
 else:
-    if _verbosity_ > 0: print("pyraf: is main program")
+    if _verbosity_ > 0:
+        print("pyraf: is main program")
     # special initialization when this is the main program
 
     # command-line options
     import pyrafglobals as _pyrafglobals
     import getopt
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsney",
-                                      ["commandwrapper=", "command=", "verbose", "help", "silent", "nosplash", "ipython", "ecl"])
+        optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsney", [
+            "commandwrapper=", "command=", "verbose", "help", "silent",
+            "nosplash", "ipython", "ecl"
+        ])
         if len(args) > 1:
             print('Error: more than one savefile argument')
             usage()
@@ -186,10 +210,12 @@ else:
     if "epyraf" in sys.argv[0]:  # See also -e and --ecl switches
         _pyrafglobals._use_ecl = True
 
-    if _verbosity_ > 0: print("pyraf: finished arg parsing")
+    if _verbosity_ > 0:
+        print("pyraf: finished arg parsing")
 
     import iraf
-    if _verbosity_ > 0: print("pyraf: imported iraf")
+    if _verbosity_ > 0:
+        print("pyraf: imported iraf")
     iraf.setVerbose(verbose)
     del getopt, verbose, usage, optlist
 
@@ -201,11 +227,12 @@ else:
         _initkw = {}
         if _dosplash:
             import splash
-            _splash = splash.splash('PyRAF '+__version__)
+            _splash = splash.splash('PyRAF ' + __version__)
         else:
             _splash = None
 
-    if _verbosity_ > 0: print("pyraf: splashed")
+    if _verbosity_ > 0:
+        print("pyraf: splashed")
 
     # load initial iraf symbols and packages
 
@@ -229,7 +256,8 @@ else:
         iraf = None
         raise
     del args
-    if _verbosity_ > 0: print("pyraf: finished iraf.Init")
+    if _verbosity_ > 0:
+        print("pyraf: finished iraf.Init")
 
     if _splash:
         _splash.Destroy()
@@ -237,7 +265,6 @@ else:
 
 del _verbosity_
 help = iraf.help
-
 
 # We have too many users on systems that have stack limits that
 # are too low to run IRAF tasks.  Instead of waiting for all of
@@ -249,6 +276,7 @@ except ImportError:
     # ok to skip this on Windows
     pass
 else:
+
     def raise_limit(which, howmuch):
 
         # We have to know the old limit so we don't ask to go above that.

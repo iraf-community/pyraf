@@ -15,8 +15,8 @@ import wutil
 
 logo = "pyraflogo_rgb_web.gif"
 
-class SplashScreen(TKNTR.Toplevel):
 
+class SplashScreen(TKNTR.Toplevel):
     """Base class for splash screen
 
     Subclass and override createWidgets().
@@ -29,9 +29,12 @@ class SplashScreen(TKNTR.Toplevel):
     """
 
     def __init__(self, master=None, borderwidth=4, relief=TKNTR.RAISED, **kw):
-        TKNTR.Toplevel.__init__(self, master, relief=relief,
-                                borderwidth=borderwidth, **kw)
-        if self.master.master != None: # Why?
+        TKNTR.Toplevel.__init__(self,
+                                master,
+                                relief=relief,
+                                borderwidth=borderwidth,
+                                **kw)
+        if self.master.master != None:  # Why?
             self.master.master.withdraw()
         self.master.withdraw()
         self.overrideredirect(1)
@@ -58,7 +61,6 @@ class SplashScreen(TKNTR.Toplevel):
 
 
 class PyrafSplash(SplashScreen):
-
     """PyRAF splash screen
 
     Contains an image and one or more text lines underneath.  The number
@@ -88,7 +90,7 @@ class PyrafSplash(SplashScreen):
         # put focus on this app (Mac only)
         self.__termWin = None
         if wutil.hasGraphics and wutil.WUTIL_ON_MAC:
-            self.__termWin = wutil.getFocalWindowID() # the terminal window
+            self.__termWin = wutil.getFocalWindowID()  # the terminal window
             wutil.forceFocusToNewWindow()
         # create it
         SplashScreen.__init__(self, **kw)
@@ -99,29 +101,36 @@ class PyrafSplash(SplashScreen):
     def createWidgets(self):
         """Create pyraf splash image"""
         self.img = TKNTR.PhotoImage(file=self.filename)
-        width = self.img.width()+20
+        width = self.img.width() + 20
         iheight = self.img.height()
-        height = iheight+10+15*self.nlines
-        self.canvas = TKNTR.Canvas(self, width=width, height=height,
+        height = iheight + 10 + 15 * self.nlines
+        self.canvas = TKNTR.Canvas(self,
+                                   width=width,
+                                   height=height,
                                    background=self["background"])
-        self.image = self.canvas.create_image(width//2, 5+iheight//2, image=self.img)
-        self.text = self.nlines*[None]
+        self.image = self.canvas.create_image(width // 2,
+                                              5 + iheight // 2,
+                                              image=self.img)
+        self.text = self.nlines * [None]
         minx = 0
         font = ("helvetica", 12)
         for i in range(self.nlines):
-            y = height-(self.nlines-i)*15+8
+            y = height - (self.nlines - i) * 15 + 8
             tval = self.initialText[i] or ""
-            self.text[i] = self.canvas.create_text(width//2, y,
-                                                   text=tval, fill=self.textcolor, font=font)
+            self.text[i] = self.canvas.create_text(width // 2,
+                                                   y,
+                                                   text=tval,
+                                                   fill=self.textcolor,
+                                                   font=font)
             minx = min(minx, self.canvas.bbox(self.text[i])[0])
-        if minx<3:
+        if minx < 3:
             # expand window and recenter all items
-            width = width+(3-minx)*2
+            width = width + (3 - minx) * 2
             self.canvas.configure(width=width)
-            self.canvas.coords(self.image, width//2, 5+iheight//2)
+            self.canvas.coords(self.image, width // 2, 5 + iheight // 2)
             for i in range(self.nlines):
-                y = height-(self.nlines-i)*15+8
-                self.canvas.coords(self.text[i], width//2, y)
+                y = height - (self.nlines - i) * 15 + 8
+                self.canvas.coords(self.text[i], width // 2, y)
         self.canvas.pack()
 
     def write(self, s):
@@ -156,8 +165,8 @@ class PyrafSplash(SplashScreen):
         if self.__termWin:
             wutil.setFocusTo(self.__termWin)
 
-class IrafMonitorSplash(PyrafSplash):
 
+class IrafMonitorSplash(PyrafSplash):
     """PyRAF splash screen that also acts as IRAF task execution monitor
 
     Usually start this by calling the splash() function in this module.
@@ -200,6 +209,7 @@ class IrafMonitorSplash(PyrafSplash):
         if iraftask.executionMonitor == self.monitor:
             iraftask.executionMonitor = None
         PyrafSplash.Destroy(self, event)
+
 
 def splash(label="PyRAF Execution Monitor", background="LightYellow", **kw):
     """Display the PyRAF splash screen

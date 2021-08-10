@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-
 """checkcompileall.py: Read the output from compileallcl and print just the errors
 
 $Id$

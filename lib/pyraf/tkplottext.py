@@ -28,6 +28,7 @@ import numpy
 import math
 from textattrib import *
 
+
 def softText(win, x, y, textstr):
 
     # Generate text using software generated stroked fonts
@@ -49,24 +50,27 @@ def softText(win, x, y, textstr):
     vspace = fsize * vsize * (1. + ta.charSpace)
     if ta.textPath in (CHARPATH_LEFT, CHARPATH_RIGHT):
         dx = hspace
-        if ta.textPath == CHARPATH_LEFT: dx = -dx
+        if ta.textPath == CHARPATH_LEFT:
+            dx = -dx
         dy = 0.
     else:
         dx = 0.
         dy = -vspace
-        if ta.textPath == CHARPATH_UP: dy = -dy
+        if ta.textPath == CHARPATH_UP:
+            dy = -dy
     # Figure out 'path' size of the text string for use in justification
-    xpath, ypath = (dx*(len(textstr)-1), dy*(len(textstr)-1))
+    xpath, ypath = (dx * (len(textstr) - 1), dy * (len(textstr) - 1))
     charUp = math.fmod(ta.charUp, 360.)
-    if charUp < 0: charUp = charUp + 360.
+    if charUp < 0:
+        charUp = charUp + 360.
     if ta.textPath == CHARPATH_RIGHT:
-        textdir = math.fmod(charUp+270, 360.)
+        textdir = math.fmod(charUp + 270, 360.)
     elif ta.textPath == CHARPATH_LEFT:
-        textdir = math.fmod(charUp+90, 360.)
+        textdir = math.fmod(charUp + 90, 360.)
     elif ta.textPath == CHARPATH_UP:
         textdir = charUp
     elif ta.textPath == CHARPATH_DOWN:
-        textdir = math.fmod(charUp+180, 360.)
+        textdir = math.fmod(charUp + 180, 360.)
     # IRAF definition of justification is a bit weird, justification is
     # for the text string relative to the window. So a rotated string will
     # be justified relative to the window horizontal and vertical, not the
@@ -74,32 +78,37 @@ def softText(win, x, y, textstr):
     # coordinates.
     up = 0. < textdir < 180.
     left = 90. < textdir < 270.
-    deg2rad = math.pi/180.
-    cosv = math.cos((charUp-90.)*deg2rad)
-    sinv = math.sin((charUp-90.)*deg2rad)
-    xpathwin, ypathwin = (cosv*xpath-sinv*ypath, sinv*xpath+cosv*ypath)
-    xcharsize = fsize * max(abs(cosv*hsize+sinv*vsize),
-                            abs(cosv*hsize-sinv*vsize))
-    ycharsize = fsize * max(abs(-sinv*hsize+cosv*vsize),
-                            abs(-sinv*hsize-cosv*vsize))
+    deg2rad = math.pi / 180.
+    cosv = math.cos((charUp - 90.) * deg2rad)
+    sinv = math.sin((charUp - 90.) * deg2rad)
+    xpathwin, ypathwin = (cosv * xpath - sinv * ypath,
+                          sinv * xpath + cosv * ypath)
+    xcharsize = fsize * max(abs(cosv * hsize + sinv * vsize),
+                            abs(cosv * hsize - sinv * vsize))
+    ycharsize = fsize * max(abs(-sinv * hsize + cosv * vsize),
+                            abs(-sinv * hsize - cosv * vsize))
     xoffset, yoffset = (0., 0.)
     xcharoff, ycharoff = (0., 0.)
     if ta.textHorizontalJust == JUSTIFIED_CENTER:
-        xoffset = -xpathwin/2.
+        xoffset = -xpathwin / 2.
     elif ta.textHorizontalJust == JUSTIFIED_RIGHT:
-        if not left: xoffset = -xpathwin
-        xcharoff = -xcharsize/2.
+        if not left:
+            xoffset = -xpathwin
+        xcharoff = -xcharsize / 2.
     elif ta.textHorizontalJust in (JUSTIFIED_LEFT, JUSTIFIED_NORMAL):
-        if left: xoffset = xpathwin
-        xcharoff = xcharsize/2.
+        if left:
+            xoffset = xpathwin
+        xcharoff = xcharsize / 2.
     if ta.textVerticalJust == JUSTIFIED_CENTER:
-        yoffset = -ypathwin/2.
+        yoffset = -ypathwin / 2.
     elif ta.textVerticalJust == JUSTIFIED_TOP:
-        if up: yoffset = -ypathwin
-        ycharoff = -ycharsize/2.
+        if up:
+            yoffset = -ypathwin
+        ycharoff = -ycharsize / 2.
     elif ta.textVerticalJust in (JUSTIFIED_BOTTOM, JUSTIFIED_NORMAL):
-        if not up: yoffset = ypathwin
-        ycharoff = ycharsize/2.
+        if not up:
+            yoffset = ypathwin
+        ycharoff = ycharsize / 2.
     xNetOffset = xoffset + xcharoff
     yNetOffset = yoffset + ycharoff
     # note, these offsets presume that the origin of character coordinates
@@ -111,24 +120,25 @@ def softText(win, x, y, textstr):
     xwin = float(gw.winfo_width())
     ywin = float(gw.winfo_height())
     color = win.colorManager.setDrawingColor(ta.textColor)
-    options = {"fill":color}
+    options = {"fill": color}
     font = ta.font
-    size = fsize*hsize
-    cosrot = numpy.cos((charUp-90)*numpy.pi/180)
-    sinrot = numpy.sin((charUp-90)*numpy.pi/180)
+    size = fsize * hsize
+    cosrot = numpy.cos((charUp - 90) * numpy.pi / 180)
+    sinrot = numpy.sin((charUp - 90) * numpy.pi / 180)
     nchar = 0
     # The main event!
     for char in textstr:
         # draw character with origin at bottom left corner of character box
-        charstrokes = ta.font[ord(char)-ord(' ')]
+        charstrokes = ta.font[ord(char) - ord(' ')]
         for i in range(len(charstrokes[0])):
             vertex = numpy.zeros((len(charstrokes[0][i]), 2), numpy.float64)
-            xf = size * charstrokes[0][i]/27. -fsize*hsize/2.
-            yf = size * charstrokes[1][i]*fontAspect/27. - fsize*vsize/2.
+            xf = size * charstrokes[0][i] / 27. - fsize * hsize / 2.
+            yf = size * charstrokes[1][
+                i] * fontAspect / 27. - fsize * vsize / 2.
             vertex[:, 0]= cosrot*(xf + nchar*dx) \
                 - sinrot*(yf + nchar*dy) + xNetOffset + xwin*x
-            vertex[:, 1]=ywin-(sinrot*(xf + nchar*dx)
-                               + cosrot*(yf + nchar*dy) + yNetOffset + ywin*y)
+            vertex[:, 1] = ywin - (sinrot * (xf + nchar * dx) + cosrot *
+                                   (yf + nchar * dy) + yNetOffset + ywin * y)
             gw.create_line(*(tuple(vertex.ravel().astype(numpy.int32))),
                            **options)
         nchar = nchar + 1

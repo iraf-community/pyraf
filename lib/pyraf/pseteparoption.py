@@ -27,7 +27,7 @@ class PsetEparOption(eparoption.ActionEparButton):
     def clicked(self):  # use to be called childEparDialog()
 
         # Get a reference to the parent TopLevel
-        parentToplevel  = self.master.winfo_toplevel()
+        parentToplevel = self.master.winfo_toplevel()
 
         # Don't create multiple windows for the same task
         for child in parentToplevel.childList:
@@ -36,9 +36,10 @@ class PsetEparOption(eparoption.ActionEparButton):
                 child.top.tkraise()
                 return
 
-        childPsetHandle = epar.PyrafEparDialog(self.psetName,
-                                               parent    = self.master_frame,
-                                               isChild   = 1,
-                                               childList = parentToplevel.childList,
-                                               title     = "PSET Parameter Editor")
+        childPsetHandle = epar.PyrafEparDialog(
+            self.psetName,
+            parent=self.master_frame,
+            isChild=1,
+            childList=parentToplevel.childList,
+            title="PSET Parameter Editor")
         parentToplevel.childList.append(childPsetHandle)

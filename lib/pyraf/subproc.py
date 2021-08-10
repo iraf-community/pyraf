@@ -46,18 +46,19 @@ __version__ = "Revision: 1.7r "
 #
 # ken.manheimer@nist.gov
 
-
 import errno, os, select, signal, string, subprocess, sys, time, types
 from stsci.tools.for2to3 import tobytes, tostr, BNULLSTR, BNEWLINE, bytes_read, bytes_write
 
 OS_HAS_FORK = hasattr(os, 'fork')
 
 try:
+
     class SubprocessError(Exception):
         pass
 except TypeError:
     # string based exceptions
     SubprocessError = 'SubprocessError'
+
 
 class Subprocess:
     """Run and communicate asynchronously with a subprocess.
@@ -74,24 +75,31 @@ class Subprocess:
     There are corresponding readXXX routines, to read from
     the subprocess stderr stream."""
 
-    def __init__(self, cmd,
-                 control_stderr=0, control_stdout=1, control_stdin=1,
-                 expire_noisily=0, in_fd=0, out_fd=1, err_fd=2,
+    def __init__(self,
+                 cmd,
+                 control_stderr=0,
+                 control_stdout=1,
+                 control_stdin=1,
+                 expire_noisily=0,
+                 in_fd=0,
+                 out_fd=1,
+                 err_fd=2,
                  maxChunkSize=1024):
         """Launch a subprocess, given command string COMMAND."""
         self.cmd = cmd
-        self.pid = None # pid of child, as known by parent only
-        self.expire_noisily = expire_noisily    # Announce subproc destruction?
+        self.pid = None  # pid of child, as known by parent only
+        self.expire_noisily = expire_noisily  # Announce subproc destruction?
         self.control_stderr = control_stderr
         self.control_stdout = control_stdout
-        self.control_stdin  = control_stdin
+        self.control_stdin = control_stdin
         self.maxChunkSize = maxChunkSize
         self.in_fd, self.out_fd, self.err_fd = in_fd, out_fd, err_fd
         self.fork()
 
     def fork(self, cmd=None):
         """Fork a subprocess with designated COMMAND (default, self.cmd)."""
-        if cmd: self.cmd = cmd
+        if cmd:
+            self.cmd = cmd
         if isinstance(self.cmd, (str, unicode)):
             cmd = self.cmd.split()
         else:
@@ -101,51 +109,55 @@ class Subprocess:
         self.parentPipes = []
         childPipes = []
         if self.control_stdout:
-            pRc, cWp = os.pipe()            # parent-read-child, child-write-parent
+            pRc, cWp = os.pipe()  # parent-read-child, child-write-parent
             self.parentPipes.append(pRc)
             childPipes.append(cWp)
         if self.control_stdin:
-            cRp, pWc = os.pipe()            # child-read-parent, parent-write-child
+            cRp, pWc = os.pipe()  # child-read-parent, parent-write-child
             self.parentPipes.append(pWc)
             childPipes.append(cRp)
         if self.control_stderr:
-            pRe, cWe = os.pipe()            # parent-read-error, child-write-error
+            pRe, cWe = os.pipe()  # parent-read-error, child-write-error
             self.parentPipes.append(pRe)
             childPipes.append(cWe)
 
         self.pid = os.fork()
 
         if self.pid == 0:  # CHILD ####
-            parentErr = os.dup(self.err_fd) # Preserve handle on *parent* stderr
+            parentErr = os.dup(
+                self.err_fd)  # Preserve handle on *parent* stderr
             # Reopen stdin, out, err, on pipe ends:
             if self.control_stdin:
-                os.dup2(cRp, self.in_fd)                # cRp = sys.stdin
+                os.dup2(cRp, self.in_fd)  # cRp = sys.stdin
             if self.control_stdout:
-                os.dup2(cWp, self.out_fd)               # cWp = sys.stdout
+                os.dup2(cWp, self.out_fd)  # cWp = sys.stdout
             if self.control_stderr:
-                os.dup2(cWe, self.err_fd)               # cWe = sys.stderr
+                os.dup2(cWe, self.err_fd)  # cWe = sys.stderr
             # close parent ends of pipes
-            for i in self.parentPipes: os.close(i)
+            for i in self.parentPipes:
+                os.close(i)
             # Ensure (within reason) stray file descriptors are closed
             fdmax = max(256, parentErr)
             if self.parentPipes:
                 fdmax = max(fdmax, max(self.parentPipes))
-            rclose = list(range(fdmax+1))
+            rclose = list(range(fdmax + 1))
             excludes = [self.in_fd, self.out_fd, self.err_fd, parentErr]
-            for i in excludes+self.parentPipes:
+            for i in excludes + self.parentPipes:
                 rclose.remove(i)
             os_close = os.close
             os_error = os.error
             for i in rclose:
-                try: os_close(i)
-                except os_error: pass
+                try:
+                    os_close(i)
+                except os_error:
+                    pass
             try:
                 os.execvp(cmd[0], cmd)
-                os._exit(1)                                     # Shouldn't get here
+                os._exit(1)  # Shouldn't get here
 
             except os.error as e:
                 if self.control_stderr:
-                    os.dup2(parentErr, 2)           # Reconnect to parent's stderr
+                    os.dup2(parentErr, 2)  # Reconnect to parent's stderr
                 sys.stderr.write("**execvp failed, '%s'**\n" % str(e))
                 os._exit(1)
 
@@ -164,7 +176,8 @@ class Subprocess:
                 self.readbuf = ReadBuf(pRc, self.maxChunkSize)
                 self.fromChild_fdlist.append(pRc)
             # close child ends of pipes
-            for i in childPipes: os.close(i)
+            for i in childPipes:
+                os.close(i)
             try:
                 # this is useless since the child may not have erred yet
                 pid, err = os.waitpid(self.pid, os.WNOHANG)
@@ -219,8 +232,10 @@ class Subprocess:
         # Loop with message if wait takes longer than that, until wait
         # exceeds the total timeout.
 
-        if timeout < 0: timeout = 0
-        if printtime>timeout: printtime = timeout
+        if timeout < 0:
+            timeout = 0
+        if printtime > timeout:
+            printtime = timeout
         totalwait = 0
         try:
             while totalwait <= timeout:
@@ -229,7 +244,7 @@ class Subprocess:
                 if select.select([], self.toChild_fdlist, [], printtime)[1]:
                     if bytes_write(self.toChild, strval) != len(strval):
                         raise SubprocessError("Write error to %s" % self)
-                    return                                              # ===>
+                    return  # ===>
             raise SubprocessError("Write to %s blocked" % self)
         except select.error as e:
             raise SubprocessError(
@@ -253,7 +268,7 @@ class Subprocess:
 
     ### Get output from subprocess ###
 
-    def read(self, n=None): # returns bytes
+    def read(self, n=None):  # returns bytes
         """Read N chars (blocking), or all pending if no N specified."""
         if not self.control_stdout:
             raise SubprocessError(
@@ -263,7 +278,7 @@ class Subprocess:
         else:
             return self.readbuf.read(n)
 
-    def readErr(self, n=None): # returns bytes
+    def readErr(self, n=None):  # returns bytes
         """Read N chars from stderr (blocking), or all pending if no N specified."""
         if not self.control_stderr:
             raise SubprocessError(
@@ -273,14 +288,14 @@ class Subprocess:
         else:
             return self.errbuf.read(n)
 
-    def readPendingChars(self, max=None): # returns bytes
+    def readPendingChars(self, max=None):  # returns bytes
         """Read all currently pending subprocess output as a single string."""
         if not self.control_stdout:
             raise SubprocessError(
                 "Haven't grabbed subprocess output stream for %s." % self)
         return self.readbuf.readPendingChars(max)
 
-    def readPendingErrChars(self, max=None): # returns bytes
+    def readPendingErrChars(self, max=None):  # returns bytes
         """Read all currently pending subprocess error output as a single
         string."""
         if not self.control_stderr:
@@ -288,7 +303,7 @@ class Subprocess:
                 "Haven't grabbed subprocess error stream for %s." % self)
         return self.errbuf.readPendingChars(max)
 
-    def readPendingLine(self): # returns bytes
+    def readPendingLine(self):  # returns bytes
         """Read currently pending subprocess output, up to a complete line
         (newline inclusive)."""
         if not self.control_stdout:
@@ -296,7 +311,7 @@ class Subprocess:
                 "Haven't grabbed subprocess output stream for %s." % self)
         return self.readbuf.readPendingLine()
 
-    def readPendingErrLine(self): # returns bytes
+    def readPendingErrLine(self):  # returns bytes
         """Read currently pending subprocess error output, up to a complete
         line (newline inclusive)."""
         if not self.control_stderr:
@@ -354,7 +369,7 @@ class Subprocess:
         else:
             return status
 
-    def wait(self,timeout=0):
+    def wait(self, timeout=0):
         """Wait timeout seconds for process to die.  Returns true if process
         is dead (and was reaped), false if alive."""
 
@@ -365,8 +380,9 @@ class Subprocess:
 
         # Try a few times to reap the process with waitpid:
         totalwait = timeout
-        deltawait = timeout/1000.0
-        if deltawait < 0.01: deltawait = 0.01
+        deltawait = timeout / 1000.0
+        if deltawait < 0.01:
+            deltawait = 0.01
         while totalwait >= 0:
             pid, err = os.waitpid(self.pid, os.WNOHANG)
             if pid:
@@ -378,7 +394,8 @@ class Subprocess:
 
     def _cleanUp(self, err):
         """Cleanup after process is done"""
-        if not self.pid: return
+        if not self.pid:
+            return
         if self.expire_noisily:
             self._noisy_print(err)
         self._closePipes()
@@ -415,9 +432,9 @@ class Subprocess:
             retval = 'Status %d ' % rc
         else:
             retval = ''
-        sys.stderr.write("\n(%ssubproc %d '%s' %s/ %s)\n" %
-                         (sigval, self.pid, self.cmd, retval,
-                          hex(id(self))[2:]))
+        sys.stderr.write(
+            "\n(%ssubproc %d '%s' %s/ %s)\n" %
+            (sigval, self.pid, self.cmd, retval, hex(id(self))[2:]))
         sys.stderr.flush()
 
     def stop(self, verbose=False):
@@ -427,7 +444,8 @@ class Subprocess:
             os.kill(self.pid, signal.SIGSTOP)
         except os.error:
             if verbose:
-                print("Stop failed for '%s' - '%s'" % (self.cmd, sys.exc_info()[1]))
+                print("Stop failed for '%s' - '%s'" %
+                      (self.cmd, sys.exc_info()[1]))
             return 0
         if verbose:
             print("Stopped '%s'" % self.cmd)
@@ -443,7 +461,8 @@ class Subprocess:
                 print("Continue failed for '%s' - '%s'" %
                       (self.cmd, sys.exc_info()[1]))
             return 0
-        if verbose: print("Continued '%s'" % self.cmd)
+        if verbose:
+            print("Continued '%s'" % self.cmd)
         return 'continued'
 
     def die(self):
@@ -468,7 +487,8 @@ class Subprocess:
                 # keep trying
                 pass
             # done if we can reap the process; else try next signal
-            if self.wait(0.5): return                                   # ===>
+            if self.wait(0.5):
+                return  # ===>
         # Only got here if subprocess is not gone:
         raise SubprocessError(
             "Failed kill of subproc %d, '%s', with signals %s" %
@@ -476,15 +496,18 @@ class Subprocess:
 
     def __del__(self):
         """Terminate the subprocess"""
-        if self.pid and not self.wait(0): self.die()
+        if self.pid and not self.wait(0):
+            self.die()
 
     def __repr__(self):
         status = self.status()
         return '<Subprocess ' + status + ', at ' + hex(id(self))[2:] + '>'
 
+
 #############################################################################
 #####                 Non-blocking read operations                      #####
 #############################################################################
+
 
 class ReadBuf:
     """Output buffer for non-blocking reads on selectable files like pipes and
@@ -497,9 +520,9 @@ class ReadBuf:
         if fd < 0:
             raise ValueError("File descriptor fd is negative")
         self.fd = fd
-        self.eof = 0                    # May be set with stuff still in .buf
+        self.eof = 0  # May be set with stuff still in .buf
         self.buf = ''
-        self.chunkSize = maxChunkSize   # Biggest read chunk, default 1024.
+        self.chunkSize = maxChunkSize  # Biggest read chunk, default 1024.
 
     def fileno(self):
         return self.fd
@@ -508,16 +531,18 @@ class ReadBuf:
         """Consume uncomsumed output from FILE, or empty string if nothing
         pending.  Returns bytes."""
 
-        if (max is not None) and (max <= 0): return BNULLSTR            # ===>
+        if (max is not None) and (max <= 0):
+            return BNULLSTR  # ===>
 
         if self.buf:
             if max and (len(self.buf) > max):
                 got, self.buf = self.buf[0:max], self.buf[max:]
             else:
                 got, self.buf = self.buf, BNULLSTR
-            return got                                                  # ===>
+            return got  # ===>
 
-        if self.eof: return BNULLSTR                                    # ===>
+        if self.eof:
+            return BNULLSTR  # ===>
 
         try:
             sel = select.select([self.fd], [], [self.fd], 0)
@@ -525,19 +550,20 @@ class ReadBuf:
             # select error occurs if self.fd been closed
             # treat like EOF
             self.eof = 1
-            return BNULLSTR                                             # ===>
+            return BNULLSTR  # ===>
         if sel[0]:
             got = bytes_read(self.fd, self.chunkSize)
             if got:
                 if max and (len(got) > max):
                     self.buf = got[max:]
-                    return got[:max]                                    # ===>
+                    return got[:max]  # ===>
                 else:
-                    return got                                          # ===>
+                    return got  # ===>
             else:
                 self.eof = 1
-                return BNULLSTR                                         # ===>
-        else: return BNULLSTR                                           # ===>
+                return BNULLSTR  # ===>
+        else:
+            return BNULLSTR  # ===>
 
     def readPendingLine(self, block=0):
         """Return pending output from FILE, up to first newline (inclusive).
@@ -550,11 +576,11 @@ class ReadBuf:
         if self.buf:
             to = self.buf.find(BNEWLINE)
             if to != -1:
-                got, self.buf = self.buf[:to+1], self.buf[to+1:]
-                return got                                              # ===>
+                got, self.buf = self.buf[:to + 1], self.buf[to + 1:]
+                return got  # ===>
             got, self.buf = self.buf, BNULLSTR
         elif self.eof:
-            return BNULLSTR                                             # ===>
+            return BNULLSTR  # ===>
         else:
             got = BNULLSTR
 
@@ -567,7 +593,7 @@ class ReadBuf:
         else:
             # don't wait at all
             waittime = 0
-        while True:                        # (we'll only loop if block set)
+        while True:  # (we'll only loop if block set)
             try:
                 sel = select.select(fdlist, [], fdlist, waittime)
             except select.error:
@@ -581,33 +607,34 @@ class ReadBuf:
                     got = got + newgot
                     to = got.find(BNEWLINE)
                     if to != -1:
-                        got, self.buf = got[:to+1], got[to+1:]
-                        return got                                      # ===>
+                        got, self.buf = got[:to + 1], got[to + 1:]
+                        return got  # ===>
                 else:
                     # return partial line on EOF
                     self.eof = 1
-                    return got                                          # ===>
+                    return got  # ===>
             if not block:
-                return got                                              # ===>
+                return got  # ===>
             # otherwise - no newline, blocking requested, no eof - loop. # ==^
 
     def readline(self):
         """Return next output line from file, blocking until it is received."""
 
-        return self.readPendingLine(1)                                  # ===>
+        return self.readPendingLine(1)  # ===>
 
     def read(self, nchars):
         """Read nchars from input, blocking until they are available.
         Returns a shorter string on EOF.  Returns bytes."""
 
-        if nchars <= 0: return BNULLSTR
+        if nchars <= 0:
+            return BNULLSTR
         if self.buf:
             if len(self.buf) >= nchars:
                 got, self.buf = self.buf[:nchars], self.buf[nchars:]
-                return got                                              # ===>
+                return got  # ===>
             got, self.buf = self.buf, BNULLSTR
         elif self.eof:
-            return BNULLSTR                                             # ===>
+            return BNULLSTR  # ===>
         else:
             got = BNULLSTR
 
@@ -626,7 +653,7 @@ class ReadBuf:
                     got = got + newgot
                     if len(got) >= nchars:
                         got, self.buf = got[:nchars], got[nchars:]
-                        return got                                      # ===>
+                        return got  # ===>
                 else:
                     self.eof = 1
                     return got
@@ -639,6 +666,7 @@ class ReadBuf:
 #############################################################################
 # Encapsulate messages so the end can be unambiguously identified, even
 # when they contain multiple, possibly empty lines.
+
 
 class RecordFile:
     """Encapsulate stream object for record-oriented IO.
@@ -666,8 +694,8 @@ class RecordFile:
             try:
                 l = int(line)
             except ValueError:
-                raise IOError("corrupt %s file structure"
-                              % self.__class__.__name__)
+                raise IOError("corrupt %s file structure" %
+                              self.__class__.__name__)
             return f.read(l)
         else:
             # EOF.
@@ -683,8 +711,8 @@ class RecordFile:
 
     def __repr__(self):
         return "<%s of %s at %s>" % (self.__class__.__name__,
-                                     self.__dict__['file'],
-                                     hex(id(self))[2:])
+                                     self.__dict__['file'], hex(id(self))[2:])
+
 
 def record_trial(s):
     """Exercise encapsulated write/read with an arbitrary string.
@@ -708,6 +736,7 @@ def record_trial(s):
 # the I/O using the current Python sys.stdin, sys.stdout, sys.stderr
 # filehandles.
 
+
 def systemRedir(cmd):
     """Run the command as a subprocess with Python I/O redirection in effect
 
@@ -724,7 +753,9 @@ def systemRedir(cmd):
         raise
     return process.return_code
 
+
 # run subprocess with Python I/O redirection in a subshell
+
 
 def subshellRedir(cmd, shell=None):
     """Run the command in a subshell with Python I/O redirection in effect
@@ -738,55 +769,64 @@ def subshellRedir(cmd, shell=None):
     else:
         return _wrapSubprocess(cmd)
 
+
 def _wrapSubprocess(cmdline):
     """ This function is set up mostly for use on Windows (w/out Cygwin)
     since that is the only mode it is currently expected to be used in. """
     # subprocess.call should work for most commands
-    return subprocess.call(cmdline, shell=True) # this waits
+    return subprocess.call(cmdline, shell=True)  # this waits
 
 
 class RedirProcess(Subprocess):
-
     """Run a system command with I/O redirected using sys.stdin/out/err"""
 
     def __init__(self, cmd, expire_noisily=0):
         # grab only streams for currently redirected IO
         doIn = doOut = doErr = 1
-        if sys.stdin == sys.__stdin__: doIn = 0
-        if sys.stdout == sys.__stdout__: doOut = 0
-        if sys.stderr == sys.__stderr__: doErr = 0
+        if sys.stdin == sys.__stdin__:
+            doIn = 0
+        if sys.stdout == sys.__stdout__:
+            doOut = 0
+        if sys.stderr == sys.__stderr__:
+            doErr = 0
 
         # even if none are redirected, run it as subprocess
         # so it can be interrupted with ^C
 
         # initialize the process
 
-        Subprocess.__init__(self, cmd, expire_noisily=expire_noisily,
-                            control_stderr=doErr, control_stdout=doOut, control_stdin=doIn)
+        Subprocess.__init__(self,
+                            cmd,
+                            expire_noisily=expire_noisily,
+                            control_stderr=doErr,
+                            control_stdout=doOut,
+                            control_stdin=doIn)
 
     def run(self, timeout=5):
         """Copy the subprocess I/O to the Python stdin/out/err filehandles"""
 
-        if not self.pid: return
+        if not self.pid:
+            return
 
         doIn = self.control_stdin
         doOut = self.control_stdout
         doErr = self.control_stderr
         while (doIn or doOut or doErr):
             try:
-                readable, writable, errors = select.select(self.fromChild_fdlist,
-                                                           self.toChild_fdlist, [], timeout)
+                readable, writable, errors = select.select(
+                    self.fromChild_fdlist, self.toChild_fdlist, [], timeout)
             except select.error as e:
                 # select error occurs if a file descriptor has been closed
                 # this should not happen -- raise an exception
                 raise SubprocessError(
                     "Select error for %s: file descriptors %s\n%s" %
-                    (self, self.toChild_fdlist+self.fromChild_fdlist, str(e)))
+                    (self, self.toChild_fdlist + self.fromChild_fdlist,
+                     str(e)))
             if readable:
                 # stderr is first in fromChild_fdlist (if present)
                 if doErr and (self.fromChild_fdlist[0] in readable):
                     # stderr
-                    s = self.readPendingErrChars() # returns bytes
+                    s = self.readPendingErrChars()  # returns bytes
                     if s:
                         sys.stderr.write(tostr(s))
                         sys.stderr.flush()
@@ -799,7 +839,7 @@ class RedirProcess(Subprocess):
                         self.control_stderr = 0
                 else:
                     # stdout
-                    s = self.readPendingChars() # returns bytes
+                    s = self.readPendingChars()  # returns bytes
                     if s:
                         sys.stdout.write(tostr(s))
                         sys.stdout.flush()
@@ -818,10 +858,10 @@ class RedirProcess(Subprocess):
             elif writable:
                 # stdin
                 try:
-                    s = sys.stdin.read(self.maxChunkSize) # s is 'str' in PY3K
+                    s = sys.stdin.read(self.maxChunkSize)  # s is 'str' in PY3K
                     if s:
                         try:
-                            self.write(s) # inside, converts PY3K str to bytes
+                            self.write(s)  # inside, converts PY3K str to bytes
                         except IOError as xxx_todo_changeme:
                             # broken pipe may be OK
                             # just call it an EOF and see what happens
@@ -855,7 +895,7 @@ class RedirProcess(Subprocess):
         while not self.wait(5):
             # see whether something bad happened
             if not self.active():
-                sys.stderr.write(self.status()+'\n')
+                sys.stderr.write(self.status() + '\n')
                 sys.stderr.flush()
                 self.die()
                 break

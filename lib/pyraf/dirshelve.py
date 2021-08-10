@@ -17,13 +17,14 @@ from __future__ import division, print_function
 import shelve, sys
 from stsci.tools.for2to3 import PY3K
 
-if __name__.find('.') < 0: # for unit test need absolute import
-    exec('import dirdbm', globals()) # 2to3 messes up simpler form
+if __name__.find('.') < 0:  # for unit test need absolute import
+    exec('import dirdbm', globals())  # 2to3 messes up simpler form
 else:
     import dirdbm
 
 # tuple of errors that can be raised
-error = (dirdbm.error, )
+error = (dirdbm.error,)
+
 
 class Shelf(shelve.Shelf):
     """Extension of Shelf using binary pickling"""
@@ -53,6 +54,7 @@ class Shelf(shelve.Shelf):
                 pass
         self.dict = 0
 
+
 class DirectoryShelf(Shelf):
     """Shelf implementation using the directory db interface.
 
@@ -61,6 +63,7 @@ class DirectoryShelf(Shelf):
 
     def __init__(self, filename, flag='c'):
         Shelf.__init__(self, dirdbm.open(filename, flag))
+
 
 def open(filename, flag='c'):
     """Open a persistent dictionary for reading and writing.
@@ -77,7 +80,7 @@ def open(filename, flag='c'):
     if PY3K:
         try:
             return shelve.DbfilenameShelf(filename, flag)
-        except Exception as ex: # is dbm.error
+        except Exception as ex:  # is dbm.error
             raise dirdbm.error(str(ex))
     else:
         return DirectoryShelf(filename, flag)

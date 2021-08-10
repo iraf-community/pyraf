@@ -17,8 +17,8 @@ import wutil
 # I/O primarily because it is simpler and it is necessary to use tkinter
 # anyway.
 
-class Gcursor:
 
+class Gcursor:
     """This handles the classical IRAF gcur mode"""
 
     def __init__(self, window):
@@ -33,7 +33,8 @@ class Gcursor:
         self.active = 0
         self.eof = None
 
-    def __call__(self): return self.startCursorMode()
+    def __call__(self):
+        return self.startCursorMode()
 
     def startCursorMode(self):
 
@@ -72,16 +73,16 @@ class Gcursor:
         """Turn cross-hair cursor on"""
         if self.gwidget.lastX is not None:
             self.gwidget.activateSWCursor(
-                (self.gwidget.lastX+0.5)/self.gwidget.width,
-                (self.gwidget.lastY+0.5)/self.gwidget.height)
+                (self.gwidget.lastX + 0.5) / self.gwidget.width,
+                (self.gwidget.lastY + 0.5) / self.gwidget.height)
         else:
             self.gwidget.activateSWCursor()
 
     def cursorOff(self):
         """Turn cross-hair cursor off"""
         self.gwidget.deactivateSWCursor()
-        self.gwidget.lastX = int(self.x/self.gwidget.width)
-        self.gwidget.lastY = int(self.y/self.gwidget.height)
+        self.gwidget.lastX = int(self.x / self.gwidget.width)
+        self.gwidget.lastY = int(self.y / self.gwidget.height)
 
     def bind(self):
 
@@ -121,8 +122,8 @@ class Gcursor:
         else:
             sx = gwidget.winfo_pointerx() - gwidget.winfo_rootx()
             sy = gwidget.winfo_pointery() - gwidget.winfo_rooty()
-            ndcX = (sx+0.5)/self.gwidget.width
-            ndcY = (self.gwidget.height-0.5-sy)/self.gwidget.height
+            ndcX = (sx + 0.5) / self.gwidget.width
+            ndcY = (self.gwidget.height - 0.5 - sy) / self.gwidget.height
         return ndcX, ndcY
 
     def getMousePosition(self, event):
@@ -140,7 +141,7 @@ class Gcursor:
             return
         # if no previous position, ignore
         cursorobj = gwidget.getSWCursor()
-        newX = cursorobj.lastx * width  + deltaX
+        newX = cursorobj.lastx * width + deltaX
         newY = cursorobj.lasty * height + deltaY
 
         if newX < 0:
@@ -151,18 +152,33 @@ class Gcursor:
             newX = width - 1
         if newY >= height:
             newY = height - 1
-        gwidget.moveCursorTo(newX, newY,  SWmove=1)
+        gwidget.moveCursorTo(newX, newY, SWmove=1)
         self.x = newX
         self.y = newY
 
-    def moveUp(self, event): self.moveCursorRelative(event, 0, 1)
-    def moveDown(self, event): self.moveCursorRelative(event, 0, -1)
-    def moveRight(self, event): self.moveCursorRelative(event, 1, 0)
-    def moveLeft(self, event): self.moveCursorRelative(event, -1, 0)
-    def moveUpBig(self, event): self.moveCursorRelative(event, 0, 5)
-    def moveDownBig(self, event): self.moveCursorRelative(event, 0, -5)
-    def moveRightBig(self, event): self.moveCursorRelative(event, 5, 0)
-    def moveLeftBig(self, event): self.moveCursorRelative(event, -5, 0)
+    def moveUp(self, event):
+        self.moveCursorRelative(event, 0, 1)
+
+    def moveDown(self, event):
+        self.moveCursorRelative(event, 0, -1)
+
+    def moveRight(self, event):
+        self.moveCursorRelative(event, 1, 0)
+
+    def moveLeft(self, event):
+        self.moveCursorRelative(event, -1, 0)
+
+    def moveUpBig(self, event):
+        self.moveCursorRelative(event, 0, 5)
+
+    def moveDownBig(self, event):
+        self.moveCursorRelative(event, 0, -5)
+
+    def moveRightBig(self, event):
+        self.moveCursorRelative(event, 5, 0)
+
+    def moveLeftBig(self, event):
+        self.moveCursorRelative(event, -5, 0)
 
     def writeString(self, s):
         """Write a string to status line"""
@@ -208,7 +224,8 @@ class Gcursor:
                     elif colonString[1:] == 'markcur':
                         self.markcur = not self.markcur
                     else:
-                        self.writeString("Unimplemented CL gcur `:%s'" % colonString)
+                        self.writeString("Unimplemented CL gcur `:%s'" %
+                                         colonString)
                 else:
                     self._setRetString(key, x, y, colonString)
         elif key == '=':
@@ -218,13 +235,14 @@ class Gcursor:
         elif key in string.ascii_uppercase:
             if key == 'I':
                 # I is equivalent to keyboard interrupt
-                self.window.gcurTerminate("interrupted by `I' keyboard command")
+                self.window.gcurTerminate(
+                    "interrupted by `I' keyboard command")
             elif key == 'R':
                 self.window.redrawOriginal()
             elif key == 'T':
                 textString = self.readString(prompt="Annotation string: ")
                 metacode = gkicmd.text(textString, x, y)
-                self.window.forceNextDraw() # we can afford a perf hit here,
+                self.window.forceNextDraw()  # we can afford a perf hit here,
                 # a human just typed in text
                 self.appendMetacode(metacode)
             elif key == 'U':
@@ -254,7 +272,7 @@ class Gcursor:
         wx, wy, gwcs = self._convertXY(x, y)
         if key <= ' ' or ord(key) >= 127:
             key = '\\%03o' % ord(key)
-        self.retString = str(wx)+' '+str(wy)+' '+str(gwcs)+' '+key
+        self.retString = str(wx) + ' ' + str(wy) + ' ' + str(gwcs) + ' ' + key
         if colonString:
-            self.retString = self.retString +' '+colonString
-        self.top.quit() # time to go!
+            self.retString = self.retString + ' ' + colonString
+        self.top.quit()  # time to go!

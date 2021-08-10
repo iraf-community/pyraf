@@ -15,7 +15,7 @@ from pyraf import iraf, gki
 import os, time, random
 
 # note that box, plus, and cross take about the same amount of time.
-CASES=(None, 'point', 'box', 'plus', 'cross', 'circle')
+CASES = (None, 'point', 'box', 'plus', 'cross', 'circle')
 #ASES=(None, 'point', 'box',                  'circle')
 
 
@@ -36,13 +36,18 @@ def manyPoints(task, pkind):
             if pkind == None:
                 iraf.prow('dev$pix', row, wy2=400, append=apd, pointmode=False)
             else:
-                iraf.prow('dev$pix', row, wy2=400, append=apd, pointmode=True, marker=pkind)
+                iraf.prow('dev$pix',
+                          row,
+                          wy2=400,
+                          append=apd,
+                          pointmode=True,
+                          marker=pkind)
             apd = True
     elif task == 'graph':
         tstr = ''
         for row in range(150, 331, 20):
-            tstr += 'dev$pix[*,'+str(row)+'],'
-        tstr = tstr[:-1] # rm final comma
+            tstr += 'dev$pix[*,' + str(row) + '],'
+        tstr = tstr[:-1]  # rm final comma
         if pkind == None:
             iraf.graph(tstr, wy2=400, pointmode=False, ltypes='1')
         else:
@@ -74,12 +79,12 @@ def runAllCases(suiteName, resDict):
     for mo in ('graph', 'prow', 'surface', 'contour'):
         did = 0
         # duplicate the first plot since it will be tossed.
-        for test in CASES[:1]+CASES:
+        for test in CASES[:1] + CASES:
             secs = manyPoints(mo, test)
-#        secs = random.randint(0,100000)/10000.
+            #        secs = random.randint(0,100000)/10000.
             if did > 0:
-                case = str(test)+'-'+mo
-                print(case+': '+"%.5g" %secs+' secs')
+                case = str(test) + '-' + mo
+                print(case + ': ' + "%.5g" % secs + ' secs')
                 # add case name to results dict
                 if 'case names' in resDict:
                     if case not in resDict['case names']:
@@ -98,15 +103,17 @@ def runAllCases(suiteName, resDict):
 
 
 if __name__ == '__main__':
-    iraf.plot() # load plot pkg
+    iraf.plot()  # load plot pkg
 
     # clean slate
     if 'PYRAFGRAPHICS' in os.environ:
         del os.environ['PYRAFGRAPHICS']
-    os.environ['PYRAF_GRAPHICS_ALWAYS_ON_TOP']='1' # rm display bounce dur test
+    os.environ[
+        'PYRAF_GRAPHICS_ALWAYS_ON_TOP'] = '1'  # rm display bounce dur test
     total = time.time()
 
-    res = {} # mostly a dict of test case times, but 1 item is list of case names
+    res = {
+    }  # mostly a dict of test case times, but 1 item is list of case names
 
     # Tk
     os.environ['PYRAFGRAPHICS'] = 'tkplot'
@@ -120,16 +127,16 @@ if __name__ == '__main__':
     runAllCases('MPL-again', res)
 
     # report
-    total = (time.time() - total)/60.
-    print("\nTOTAL TIME (min): %.1f" % total+"\n")
+    total = (time.time() - total) / 60.
+    print("\nTOTAL TIME (min): %.1f" % total + "\n")
 
     print("                TK               MPL              MPL again\n")
     for ccc in res['case names']:
         times = res[ccc]
-        line = "%12s" %ccc+':   '
+        line = "%12s" % ccc + ':   '
         for t in times:
-            line += "%-8.5g" %t
-            line += "("+ ("%.5f" %(t/times[0]))[:4]+")"
+            line += "%-8.5g" % t
+            line += "(" + ("%.5f" % (t / times[0]))[:4] + ")"
             line += "   "
         line += ' secs'
         print(line)

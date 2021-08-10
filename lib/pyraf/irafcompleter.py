@@ -29,13 +29,12 @@ except ImportError:
     Completer = object
     print('readline is not installed, some functionality will be lost')
 
-
 # dictionaries mapping between characters and readline names
 char2lab = {}
 lab2char = {}
 for i in range(1, 27):
     char = chr(i)
-    ichar = chr(ord('a')+i-1)
+    ichar = chr(ord('a') + i - 1)
     lab = "Control-%s" % ichar
     char2lab[char] = lab
     lab2char[lab] = char
@@ -61,9 +60,12 @@ taskArgDict = minmatch.MinMatchDict({
 })
 
 # commands that take a package name as argument
-pkgArgDict = {'?': 1, }
+pkgArgDict = {
+    '?': 1,
+}
 
 completer = None
+
 
 class IrafCompleter(Completer):
 
@@ -75,7 +77,8 @@ class IrafCompleter(Completer):
         if hasattr(Completer, '__init__'):
             Completer.__init__(self)
         self.completionChar = None
-        self.taskpat = re.compile(r"(\?|(?:\w+))[ \t]+(?=$|[\w.<>|/~'" +r'"])')
+        self.taskpat = re.compile(r"(\?|(?:\w+))[ \t]+(?=$|[\w.<>|/~'" +
+                                  r'"])')
         # executive commands dictionary (must be set by user)
         self.executiveDict = minmatch.MinMatchDict()
 
@@ -85,7 +88,8 @@ class IrafCompleter(Completer):
             return
         self.deactivate()
         lab = char2lab.get(char, char)
-        if lab==char: char = lab2char.get(lab, lab)
+        if lab == char:
+            char = lab2char.get(lab, lab)
         readline.set_completer(self.complete)
         readline.parse_and_bind("%s: complete" % lab)
         readline.parse_and_bind("set bell-style none")
@@ -96,13 +100,13 @@ class IrafCompleter(Completer):
         delims = delims.replace('-', '')
         readline.set_completer_delims(delims)
         # load any cmd history
-        hfile = os.getenv('HOME', '.')+os.sep+'.pyraf_history'
+        hfile = os.getenv('HOME', '.') + os.sep + '.pyraf_history'
         if os.path.exists(hfile):
             try:
                 readline.read_history_file(hfile)
             except IOError as e:
                 # we do NOT want this to prevent startup.  see ticket #132
-                print('ERROR reading "'+hfile+'" -> '+str(e))
+                print('ERROR reading "' + hfile + '" -> ' + str(e))
 
     def deactivate(self):
         """Turn off completion, restoring old behavior for character"""
@@ -153,9 +157,11 @@ class IrafCompleter(Completer):
         """Return matches when text is at beginning of the line"""
         matches = []
         n = len(text)
-        for list in [keyword.kwlist,
-                     __builtin__.__dict__.keys(),
-                     __main__.__dict__.keys()]:
+        for list in [
+                keyword.kwlist,
+                __builtin__.__dict__.keys(),
+                __main__.__dict__.keys()
+        ]:
             for word in list:
                 if word[:n] == text:
                     matches.append(word)
@@ -169,7 +175,7 @@ class IrafCompleter(Completer):
         # If next char is alphabetic (or null) use filename matches.
         # Also use filename matches if line starts with '!'.
         # Otherwise use matches from Python dictionaries.
-        lt = len(line)-len(text)
+        lt = len(line) - len(text)
         if line[:1] == "!":
             # Matching filename for OS escapes
             # Ideally would use tcsh-style matching of commands
@@ -177,7 +183,7 @@ class IrafCompleter(Completer):
             return self.filename_matches(text, line[:lt])
         m = self.taskpat.match(line)
         if m is None or keyword.iskeyword(m.group(1)):
-            if line[lt-1:lt] in ['"', "'"]:
+            if line[lt - 1:lt] in ['"', "'"]:
                 # use filename matches for quoted strings
                 return self.filename_matches(text, line[:lt])
             else:
@@ -210,21 +216,23 @@ class IrafCompleter(Completer):
         matches = []
         # only look at keywords if this one was whitespace-delimited
         # this avoids matching keywords after e.g. directory part of filename
-        lt = len(line)-len(text)
-        if line[lt-1:lt] in " \t":
+        lt = len(line) - len(text)
+        if line[lt - 1:lt] in " \t":
             m = re.match(r"\w*$", text)
             if m is not None:
                 # could be a parameter name
                 task = iraf.getTask(taskname, found=1)
                 # get all parameters that could match (null list if none)
-                if task is not None: matches = task.getAllMatches(text)
+                if task is not None:
+                    matches = task.getAllMatches(text)
         # add matching filenames
         matches.extend(self.filename_matches(text, line[:lt]))
         return matches
 
     def filename_matches(self, text, line):
         """return matching filenames unless text contains wildcard characters"""
-        if glob.has_magic(text): return []
+        if glob.has_magic(text):
+            return []
         # look for IRAF virtual filenames
         #XXX This might be simplified if '$' and '/' were added to the set
         #XXX of characters permitted in words.  Can't do that now, as
@@ -275,9 +283,11 @@ class IrafCompleter(Completer):
         # Commented out on 12 Oct 2010.  While some people may enjoy this
         # convenience, it seems to be disturbing to the majority of users, see
         # ticket #113.  Will comment out but leave code here.
+
+
 #       if len(flist)==1 and flist[0][-1] == os.sep:
 #           flist.extend(self._dir_matches(flist[0], dir))
-        #---------------------------------------------------------------------
+#---------------------------------------------------------------------
 
         return flist
 
@@ -321,7 +331,7 @@ class IrafCompleter(Completer):
                     return Completer.attr_matches(self, text)
             else:
                 #XXX Could try to match pset.param keywords too?
-                lt = len(line)-len(text)
+                lt = len(line) - len(text)
                 return self.filename_matches(text, line[:lt])
 
     def executive_matches(self, text):
@@ -333,11 +343,16 @@ class IrafCompleter(Completer):
         head = ".".join(fields[:-1])
         tail = fields[-1]
         matches = eval("%s.getAllMatches(%s)" % (head, repr(tail)))
-        def addhead(s, head=head+"."): return head+s
+
+        def addhead(s, head=head + "."):
+            return head + s
+
         return list(map(addhead, matches))
+
 
 def activate(c="\t"):
     completer.activate(c)
+
 
 def deactivate():
     completer.deactivate()

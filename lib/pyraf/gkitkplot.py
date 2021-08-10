@@ -7,7 +7,7 @@ $Id$
 from __future__ import division, print_function
 
 import numpy, sys, string
-import Tkinter as TKNTR # requires 2to3
+import Tkinter as TKNTR  # requires 2to3
 from stsci.tools.for2to3 import ndarr2str
 import wutil, Ptkplot
 import gki, gkitkbase, gkigcur, tkplottext, textattrib, irafgwcs
@@ -18,14 +18,14 @@ TK_LINE_STYLE_PATTERNS = ['.', '.', '_', '.', '.._']
 
 
 class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
-
     """Tkplot graphics kernel implementation"""
 
     def makeGWidget(self, width=600, height=420):
         """Make the graphics widget"""
 
         self.gwidget = Ptkplot.PyrafCanvas(self.top,
-                                           width=width, height=height)
+                                           width=width,
+                                           height=height)
         self.gwidget.firstPlotDone = 0
         self.colorManager = tkColorManager(self.irafGkiConfig)
         self.startNewPage()
@@ -195,9 +195,9 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         # Handle case where some terms (eg. xgterm) allow higher values,
         # by looping over the possible visible patterns.  (ticket #172)
         if linetype >= len(TK_LINE_STYLE_PATTERNS):
-            num_visible = len(TK_LINE_STYLE_PATTERNS)-1
+            num_visible = len(TK_LINE_STYLE_PATTERNS) - 1
             linetype = 1 + (linetype % num_visible)
-        linewidth = arg[1]/gki.GKI_FLOAT_FACTOR
+        linewidth = arg[1] / gki.GKI_FLOAT_FACTOR
         color = arg[2]
         self._tkplotAppend(self.tkplot_plset, linetype, linewidth, color)
 
@@ -212,17 +212,17 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
     def gki_txset(self, arg):
 
         charUp = float(arg[0])
-        charSize = arg[1]/gki.GKI_FLOAT_FACTOR
-        charSpace = arg[2]/gki.GKI_FLOAT_FACTOR
+        charSize = arg[1] / gki.GKI_FLOAT_FACTOR
+        charSpace = arg[2] / gki.GKI_FLOAT_FACTOR
         textPath = arg[3]
         textHorizontalJust = arg[4]
         textVerticalJust = arg[5]
         textFont = arg[6]
         textQuality = arg[7]
         textColor = arg[8]
-        self._tkplotAppend(self.tkplot_txset, charUp, charSize, charSpace, textPath,
-                           textHorizontalJust, textVerticalJust, textFont,
-                           textQuality, textColor)
+        self._tkplotAppend(self.tkplot_txset, charUp, charSize, charSpace,
+                           textPath, textHorizontalJust, textVerticalJust,
+                           textFont, textQuality, textColor)
 
     def gki_faset(self, arg):
 
@@ -236,7 +236,8 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
 
     def gki_getcellarray(self, arg):
 
-        raise NotImplementedError(gki.standardNotImplemented % "GKI_GETCELLARRAY")
+        raise NotImplementedError(gki.standardNotImplemented %
+                                  "GKI_GETCELLARRAY")
 
     def gki_unknown(self, arg):
 
@@ -286,12 +287,12 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         la = self.lineAttributes
         # XXX not handling linestyle yet, except for clear
         stipple = 0
-        npts = len(vertices)//2
-        if la.linestyle == 0: # clear
+        npts = len(vertices) // 2
+        if la.linestyle == 0:  # clear
             color = self.colorManager.setDrawingColor(0)
         else:
             color = self.colorManager.setDrawingColor(la.color)
-        options = {"fill":color,"width":la.linewidth}
+        options = {"fill": color, "width": la.linewidth}
         if la.linestyle > 1:
             options['dash'] = TK_LINE_STYLE_PATTERNS[la.linestyle]
         # scale coordinates
@@ -299,29 +300,33 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         h = gw.winfo_height()
         w = gw.winfo_width()
         scaled = (numpy.array([w, -h]) *
-                  (numpy.reshape(vertices, (npts, 2))
-                   - numpy.array([0., 1.])))
+                  (numpy.reshape(vertices, (npts, 2)) - numpy.array([0., 1.])))
         gw.create_line(*(tuple(scaled.ravel().astype(numpy.int32))), **options)
 
     def tkplot_polymarker(self, vertices):
 
         # IRAF only implements points for poly marker, that makes it simple
-        ma = self.markerAttributes   # Marker attributes don't appear
+        ma = self.markerAttributes  # Marker attributes don't appear
         # to be set when this mode is used though.
-        npts = len(vertices)//2
+        npts = len(vertices) // 2
         color = self.colorManager.setDrawingColor(ma.color)
         gw = self.gwidget
         h = gw.winfo_height()
         w = gw.winfo_width()
         scaled = (numpy.array([w, -h]) *
-                  (numpy.reshape(vertices, (npts, 2))
-                   - numpy.array([0., 1.]))).astype(numpy.int32)
+                  (numpy.reshape(vertices,
+                                 (npts, 2)) - numpy.array([0., 1.]))).astype(
+                                     numpy.int32)
         # Lack of intrinsic Tk point mode means that they must be explicitly
         # looped over.
         for i in range(npts):
-            gw.create_rectangle(scaled[i, 0], scaled[i, 1],
-                                scaled[i, 0], scaled[i, 1],
-                                fill=color, outline='')
+            gw.create_rectangle(scaled[i, 0],
+                                scaled[i, 1],
+                                scaled[i, 0],
+                                scaled[i, 1],
+                                fill=color,
+                                outline='')
+
     def tkplot_text(self, x, y, text):
 
         tkplottext.softText(self, x, y, text)
@@ -331,23 +336,22 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         fa = self.fillAttributes
         clear = 0
         polystipple = 0
-        npts = len(vertices)//2
+        npts = len(vertices) // 2
         if fa.fillstyle != 0:
             color = self.colorManager.setDrawingColor(fa.color)
-        else: # clear region
+        else:  # clear region
             color = self.colorManager.setDrawingColor(0)
-        options = {"fill":color}
+        options = {"fill": color}
         # scale coordinates
         gw = self.gwidget
         h = gw.winfo_height()
         w = gw.winfo_width()
         scaled = (numpy.array([w, -h]) *
-                  (numpy.reshape(vertices, (npts, 2))
-                   - numpy.array([0., 1.])))
+                  (numpy.reshape(vertices, (npts, 2)) - numpy.array([0., 1.])))
         coords = tuple(scaled.ravel().astype(numpy.int32))
-        if fa.fillstyle == 1: # hollow
-            gw.create_line(*(coords+(coords[0], coords[1])), **options)
-        else: # solid or clear cases
+        if fa.fillstyle == 1:  # hollow
+            gw.create_line(*(coords + (coords[0], coords[1])), **options)
+        else:  # solid or clear cases
             gw.create_polygon(*coords, **options)
 
     def tkplot_setcursor(self, cursornumber, x, y):
@@ -357,10 +361,11 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         # is needed is how 'apall' re-centers the cursor w/out changing y, when
         # the user types 'r'; without this update, the two cursors separate.)
         swCurObj = gwidget.getSWCursor()
-        if swCurObj: swCurObj.moveTo(x, y, SWmove=1)
+        if swCurObj:
+            swCurObj.moveTo(x, y, SWmove=1)
         # wutil.MoveCursorTo uses 0,0 <--> upper left, need to convert
-        sx = int(x   * gwidget.winfo_width())
-        sy = int((1-y) * gwidget.winfo_height())
+        sx = int(x * gwidget.winfo_width())
+        sy = int((1 - y) * gwidget.winfo_height())
         rx = gwidget.winfo_rootx()
         ry = gwidget.winfo_rooty()
         # call the wutil version to move the cursor
@@ -375,21 +380,22 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.markerAttributes.set(marktype, marksize, color)
 
     def tkplot_txset(self, charUp, charSize, charSpace, textPath,
-                     textHorizontalJust, textVerticalJust,
-                     textFont, textQuality, textColor):
+                     textHorizontalJust, textVerticalJust, textFont,
+                     textQuality, textColor):
 
-        self.textAttributes.set(charUp, charSize, charSpace,
-                                textPath, textHorizontalJust, textVerticalJust, textFont,
+        self.textAttributes.set(charUp, charSize, charSpace, textPath,
+                                textHorizontalJust, textVerticalJust, textFont,
                                 textQuality, textColor)
 
     def tkplot_faset(self, fillstyle, color):
 
         self.fillAttributes.set(fillstyle, color)
 
+
 #-----------------------------------------------
 
-class tkColorManager:
 
+class tkColorManager:
     """Encapsulates the details of setting the graphic's windows colors.
 
     Needed since we may be using rgba mode or color index mode and we
@@ -405,7 +411,7 @@ class tkColorManager:
 
         self.config = config
         self.rgbamode = 0
-        self.indexmap = len(self.config.defaultColors)*[None]
+        self.indexmap = len(self.config.defaultColors) * [None]
         # call setColors to allocate colors after widget is created
 
     def setColors(self, widget):
@@ -422,7 +428,7 @@ class tkColorManager:
     def setDrawingColor(self, irafColorIndex):
         """Return the specified iraf color usable by TKNTR"""
         color = self.config.defaultColors[irafColorIndex]
-        red = int(255*color[0])
-        green = int(255*color[1])
-        blue = int(255*color[2])
+        red = int(255 * color[0])
+        green = int(255 * color[1])
+        blue = int(255 * color[2])
         return "#%02x%02x%02x" % (red, green, blue)

@@ -12,7 +12,6 @@ from __future__ import division, print_function
 
 import os, shutil, sys, tempfile
 
-
 # File name prefix signal
 NO_IRAF_PFX = '*no~iraf*/'
 
@@ -24,6 +23,7 @@ else:
 
 # Keep track of any tmp files created
 _tmp_dir = None
+
 
 # cleanup (for exit)
 def cleanup():
@@ -37,7 +37,7 @@ def cleanup():
 # Create files on the fly when needed
 def tmpParFile(fname):
     """ Create a tmp file for the given par file, and return the filename. """
-    assert fname and fname.endswith('.par'), 'Unexpected file: '+fname
+    assert fname and fname.endswith('.par'), 'Unexpected file: ' + fname
 
     if fname == 'cl.par':
         content = """
@@ -100,7 +100,7 @@ mode,s,h,ql
 
     else:
         # For now that's it - this must be a file we don't handle
-        raise RuntimeError('Unexpected .par file: '+fname)
+        raise RuntimeError('Unexpected .par file: ' + fname)
 
     return _writeTmpFile(fname, content)
 
@@ -110,10 +110,13 @@ def _writeTmpFile(base_fname, text):
     global _tmp_dir
     if not _tmp_dir:
         u = os.environ.get('USER', '')
-        if not u: u = os.environ.get('LOGNAME', '')
-        _tmp_dir = tempfile.mkdtemp(prefix='pyraf_'+u+'_tmp_', suffix='.no-iraf')
-    tmpf = _tmp_dir+os.sep+base_fname
-    if os.path.exists(tmpf): os.remove(tmpf)
+        if not u:
+            u = os.environ.get('LOGNAME', '')
+        _tmp_dir = tempfile.mkdtemp(prefix='pyraf_' + u + '_tmp_',
+                                    suffix='.no-iraf')
+    tmpf = _tmp_dir + os.sep + base_fname
+    if os.path.exists(tmpf):
+        os.remove(tmpf)
     f = open(tmpf, 'w')
     f.write(text)
     f.close()
@@ -124,7 +127,7 @@ def getNoIrafClFor(fname, useTmpFile=False):
     """ Generate CL file text on the fly when missing IRAF, return the
     full text sting.  If useTmpFile, then returns the temp file name. """
 
-    assert fname and fname.endswith('.cl'), 'Unexpected file: '+fname
+    assert fname and fname.endswith('.cl'), 'Unexpected file: ' + fname
 
     # First call ourselves to get the text if we need to write it to a tmp file
     if useTmpFile:
@@ -152,14 +155,18 @@ keep
     if fname == 'login.cl':
         usr = None
         try:
-            if hasattr(os, 'getlogin'): usr = os.getlogin()
+            if hasattr(os, 'getlogin'):
+                usr = os.getlogin()
         except OSError:
-            pass # "Inappropriate ioctl for device" - happens in a cron job
-        if not usr and 'USER' in os.environ: usr = os.environ['USER']
-        if not usr and 'USERNAME' in os.environ: usr = os.environ['USERNAME']
-        if not usr and 'LOGNAME' in os.environ: usr = os.environ['LOGNAME']
-        ihome = os.getcwd()+'/'
-        ihome = ihome.replace('\\', '/') # for windoze
+            pass  # "Inappropriate ioctl for device" - happens in a cron job
+        if not usr and 'USER' in os.environ:
+            usr = os.environ['USER']
+        if not usr and 'USERNAME' in os.environ:
+            usr = os.environ['USERNAME']
+        if not usr and 'LOGNAME' in os.environ:
+            usr = os.environ['LOGNAME']
+        ihome = os.getcwd() + '/'
+        ihome = ihome.replace('\\', '/')  # for windoze
         content = '# LOGIN.CL -- User login file.\n'+ \
             'set home = "'+ihome+'"\nset userid = "'+usr+'"\n'+ \
             'set uparm = "home$uparm/"\n'+ \
@@ -251,7 +258,8 @@ keep
 """
 
     # For now that's it - this must be a file we don't handle
-    raise RuntimeError('Unexpected .cl file: '+fname)
+    raise RuntimeError('Unexpected .cl file: ' + fname)
+
 
 def getIrafVer():
     """ Return current IRAF version as a string """
@@ -261,7 +269,8 @@ def getIrafVer():
     plist = cltask.getDefaultParList()
     # get the 'release' par and then get it's value
     release = [p.value for p in plist if p.name == 'release']
-    return release[0] # only 1 item in list
+    return release[0]  # only 1 item in list
+
 
 def getIrafVerTup():
     """ Return current IRAF version as a tuple (ints until last item) """

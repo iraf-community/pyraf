@@ -21,8 +21,8 @@ Created 1999 September 10 by R. White
 """
 from __future__ import division, print_function
 
-class ContextSensitiveScanner:
 
+class ContextSensitiveScanner:
     """Context-sensitive scanner"""
 
     def __init__(self, scanners, start=0):
@@ -33,12 +33,14 @@ class ContextSensitiveScanner:
         self.start = start
 
     def tokenize(self, s, start=None):
-        if start is None: start = self.start
+        if start is None:
+            start = self.start
         self.current = [start]
         iend = 0
         slen = len(s)
         while iend < slen:
-            if not self.current: self.current = [start]
+            if not self.current:
+                self.current = [start]
             scanner = self.scanners[self.current[-1]]
             m = scanner.re.match(s, iend)
             assert m

@@ -90,10 +90,8 @@ def test_subproc_kill_via_die(_proc):
 
 @pytest.fixture
 def _ipl_defaults(tmpdir):
-    defaults = dict(
-        name='bobs_pizza',
-        filename=str(tmpdir.join('bobs_pizza.par'))
-    )
+    defaults = dict(name='bobs_pizza',
+                    filename=str(tmpdir.join('bobs_pizza.par')))
     return defaults
 
 
@@ -107,11 +105,14 @@ def _ipl(_ipl_defaults):
 @pytest.fixture
 def _pars():
     values = (
-        (('caller', 's', 'a', 'Ima Hungry', '', None, 'person calling Bobs'), True),
+        (('caller', 's', 'a', 'Ima Hungry', '', None, 'person calling Bobs'),
+         True),
         (('diameter', 'i', 'a', '12', '', None, 'pizza size'), True),
         (('pi', 'r', 'a', '3.14159', '', None, 'Bob makes circles!'), True),
-        (('delivery', 'b', 'a', 'yes', '', None, 'delivery? (or pickup)'), True),
-        (('topping', 's', 'a', 'peps', '|toms|peps|olives', None, 'the choices'), True),
+        (('delivery', 'b', 'a', 'yes', '', None, 'delivery? (or pickup)'),
+         True),
+        (('topping', 's', 'a', 'peps', '|toms|peps|olives', None,
+          'the choices'), True),
     )
     return [parFactory(*x) for x in values]
 
@@ -145,7 +146,8 @@ def test_irafparlist_addParam_verify(_ipl, _pars):
     """
     for idx, par in enumerate(_pars, start=1):
         # Probably pointless.
-        assert par.dpar().strip() == "{} = {}".format(par.name, par.toString(par.value, quoted=1))
+        assert par.dpar().strip() == "{} = {}".format(
+            par.name, par.toString(par.value, quoted=1))
         # Add the paramater (+2 takes each par's default values into account)
         _ipl.addParam(par)
         assert len(_ipl) == idx + 2
@@ -176,7 +178,8 @@ def test_irafparlist_getAllMatches_known_needle(_ipl, _pars):
 
     needle = 'd'
     # Verify the pars returned by getAllMatches(needle) are correct
-    solution = sorted([str(x.name) for x in _pars if str(x.name).startswith(needle)])
+    solution = sorted(
+        [str(x.name) for x in _pars if str(x.name).startswith(needle)])
     assert sorted(_ipl.getAllMatches(needle)) == solution
 
 

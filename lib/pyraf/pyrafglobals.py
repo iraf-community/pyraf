@@ -32,7 +32,8 @@ pyrafDir = _os.path.dirname(thisfile)
 del thisfile
 
 from stsci.tools.irafglobals import userWorkingHome
-if not pyrafDir: pyrafDir = userWorkingHome
+if not pyrafDir:
+    pyrafDir = userWorkingHome
 # change relative directory paths to absolute and normalize path
 pyrafDir = _os.path.normpath(_os.path.join(userWorkingHome, pyrafDir))
 del userWorkingHome

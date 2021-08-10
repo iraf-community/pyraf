@@ -1,5 +1,4 @@
 #!/usr/bin/env  python
-
 """
 A filechooser for urwid.
 Author: Rebecca Breu (rebecca@rbreu.de)
@@ -66,7 +65,11 @@ class FileChooser(WidgetWrap):
 
     _blank = Text("")
 
-    def __init__(self, height, directory=".", file="", attr=(None, None),
+    def __init__(self,
+                 height,
+                 directory=".",
+                 file="",
+                 attr=(None, None),
                  show_hidden=False):
         """
         height -- height of the directory list and the file list
@@ -79,38 +82,36 @@ class FileChooser(WidgetWrap):
         self.file = ""
         self.attr = attr
         self.height = height
-        self.show_hidden=show_hidden
+        self.show_hidden = show_hidden
 
         #Create dummy widgets for directory and file display:
-        self.dir_widget = AttrWrap(BoxAdapter(ListBox([self._blank]),
-                                              self.height), self.attr[0])
-        self.file_widget = AttrWrap(BoxAdapter(ListBox([self._blank]),
-                                               self.height), self.attr[0])
+        self.dir_widget = AttrWrap(
+            BoxAdapter(ListBox([self._blank]), self.height), self.attr[0])
+        self.file_widget = AttrWrap(
+            BoxAdapter(ListBox([self._blank]), self.height), self.attr[0])
 
         columns = Columns([self.dir_widget, self.file_widget], 1)
 
         #Selection widget:
-        self.select_widget = AttrWrap(Edit("", ""),
-                                      self.attr[0], self.attr[1])
+        self.select_widget = AttrWrap(Edit("", ""), self.attr[0], self.attr[1])
 
         #Buttons and checkbox:
-        button_widgets = [AttrWrap(Button(button, self._action),
-                                   attr[0], attr[1])
-                          for button in ["OK", "Cancel"]]
+        button_widgets = [
+            AttrWrap(Button(button, self._action), attr[0], attr[1])
+            for button in ["OK", "Cancel"]
+        ]
         button_grid = GridFlow(button_widgets, 12, 2, 1, 'center')
 
-        button_cols = Columns([CheckBox(self.SHOW_HIDDEN_TEXT,
-                                        self.show_hidden,
-                                        False, self._toggle_hidden),
-                               button_grid])
+        button_cols = Columns([
+            CheckBox(self.SHOW_HIDDEN_TEXT, self.show_hidden, False,
+                     self._toggle_hidden), button_grid
+        ])
 
-        self.outer_widget = Pile([columns,
-                                  self._blank,
-                                  Text(self.SELECTION_TEXT),
-                                  self.select_widget,
-                                  self._blank,
-                                  button_cols
-                                  ])
+        self.outer_widget = Pile([
+            columns, self._blank,
+            Text(self.SELECTION_TEXT), self.select_widget, self._blank,
+            button_cols
+        ])
 
         self.update_widgets()
 
@@ -137,7 +138,9 @@ class FileChooser(WidgetWrap):
 
         return (dirlist, filelist)
 
-    def update_widgets(self, update_dir=True, update_file=True,
+    def update_widgets(self,
+                       update_dir=True,
+                       update_file=True,
                        update_select=True):
         """
         Update self.dir_widget, self.file_widget or self.select_widget,
@@ -149,15 +152,17 @@ class FileChooser(WidgetWrap):
 
         if update_dir:
             #Directory widget:
-            widget_list = [AttrWrap(SelText(dir), None, self.attr[1])
-                           for dir in dirlist]
+            widget_list = [
+                AttrWrap(SelText(dir), None, self.attr[1]) for dir in dirlist
+            ]
 
             self.dir_widget.box_widget.body = SimpleListWalker(widget_list)
 
         if update_file:
             #File widget:
-            widget_list = [AttrWrap(SelText(dir), None, self.attr[1])
-                           for dir in filelist]
+            widget_list = [
+                AttrWrap(SelText(dir), None, self.attr[1]) for dir in filelist
+            ]
 
             self.file_widget.box_widget.body = SimpleListWalker(widget_list)
 
@@ -271,6 +276,7 @@ class FileChooser(WidgetWrap):
 
 import urwid
 
+
 def main():
 
     global selection
@@ -278,11 +284,11 @@ def main():
 
     ui = urwid.curses_display.Screen()
 
-    ui.register_palette(
-        [('menu', 'black', 'dark cyan', 'standout'),
-         ('menuf', 'black', 'light gray'),
-         ('bg', 'light gray', 'dark blue'),
-         ])
+    ui.register_palette([
+        ('menu', 'black', 'dark cyan', 'standout'),
+        ('menuf', 'black', 'light gray'),
+        ('bg', 'light gray', 'dark blue'),
+    ])
 
     return ui.run_wrapper(run)
 

@@ -16,8 +16,8 @@ _alwaysFlush = {"imdkern": 1}
 # dictionary of IrafTask objects for known kernels
 _kernelDict = {}
 
-class GkiIrafKernel(gki.GkiKernel):
 
+class GkiIrafKernel(gki.GkiKernel):
     """This is designed to route metacode to an IRAF kernel executable.
     It needs very minimal functionality. The basic function is to collect
     metacode in the buffer and ship it off on flushes and when the kernel
@@ -32,8 +32,7 @@ class GkiIrafKernel(gki.GkiKernel):
         graphcap = gki.getGraphcap()
         if device not in graphcap:
             raise iraf.IrafError(
-                "No entry found for specified stdgraph device `%s'" %
-                device)
+                "No entry found for specified stdgraph device `%s'" % device)
         gentry = graphcap[device]
         self.device = device
         self.executable = executable = gentry['kf']
@@ -102,6 +101,9 @@ class GkiIrafKernel(gki.GkiKernel):
                 # problems with redirection. Sometimes graphics kernel tries
                 # to read from stdin if it is not the default stdin.
 
-                self.task(tmpfn, device=device, generic="yes", Stdin=sys.__stdin__)
+                self.task(tmpfn,
+                          device=device,
+                          generic="yes",
+                          Stdin=sys.__stdin__)
             finally:
                 os.remove(tmpfn)

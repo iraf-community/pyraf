@@ -12,6 +12,7 @@ import pyraf.iraf
 
 executionMonitor = None
 
+
 class EclState(object):
     """An object which records the ECL state for one invocation of a CL proc:
 
@@ -19,6 +20,7 @@ class EclState(object):
 
     2. A mutable counter for tracking iferr blocking.
     """
+
     def __init__(self, linemap):
         self._value = 0
         self._linemap = linemap
@@ -30,6 +32,7 @@ class EclState(object):
     def __int__(self):
         return self._value
 
+
 def getTaskModule():
     """Returns the module which supplies Task classes for the current
     language mode,  either ECL or classic CL.
@@ -39,6 +42,7 @@ def getTaskModule():
         return irafecl
     else:
         return iraftask
+
 
 class Erract(object):
     """Erract is a state variable (singleton) which corresponds to the IRAF ECL
@@ -57,7 +61,14 @@ class Erract(object):
 
     ecl | noecl      Use ECL style error handling or classic PyRAF exception handling.
     """
-    def __init__(self, clear=True, flpr=True, abort=True, trace=True, full=True, ecl=True):
+
+    def __init__(self,
+                 clear=True,
+                 flpr=True,
+                 abort=True,
+                 trace=True,
+                 full=True,
+                 ecl=True):
         self.clear = clear
         self.flpr = flpr
         self.abort = abort
@@ -87,10 +98,12 @@ class Erract(object):
         for a in values.split():
             self.set_one(a)
 
+
 erract = Erract()
 
 # IrafExecute --> IrafTask._run --> IrafTask.run
 # user_code --> IrafPyTask._run  --> IrafTask.run
+
 
 def _ecl_runframe(frame):
     """Determines if frame corresponds to an IrafTask._run() method call."""
@@ -98,6 +111,7 @@ def _ecl_runframe(frame):
     if frame.f_code.co_name != "_run":  # XXXX necessary but not sufficient
         return False
     return True
+
 
 def _ecl_parent_task():
     """Returns the local variables of the task which called this one.
@@ -108,6 +122,7 @@ def _ecl_parent_task():
     if not f:
         return pyraf.iraf.cl
     return f.f_locals["self"]
+
 
 def _ecl_interpreted_frame(frame=None):
     """Returns the stack frame corresponding to the executing Python code of
@@ -126,23 +141,24 @@ def _ecl_interpreted_frame(frame=None):
     else:
         return None
 
+
 class EclBase:
+
     def __init__(self, *args, **kw):
         self.__dict__['DOLLARerrno'] = 0
         self.__dict__['DOLLARerrmsg'] = ""
         self.__dict__['DOLLARerrtask'] = ""
         self.__dict__['DOLLARerr_dzvalue'] = 1
-        self.__dict__['_ecl_pseudos'] = ['DOLLARerrno',
-                                         'DOLLARerrmsg',
-                                         'DOLLARerrtask',
-                                         'DOLLARerr_dzvalue'
-                                         ]
+        self.__dict__['_ecl_pseudos'] = [
+            'DOLLARerrno', 'DOLLARerrmsg', 'DOLLARerrtask', 'DOLLARerr_dzvalue'
+        ]
 
     def is_pseudo(self, name):
         """Returns True iff 'name' is a pseudo variable or begins with _ecl"""
-        return (name in self.__dict__["_ecl_pseudos"]) or name.startswith("_ecl")
+        return (name
+                in self.__dict__["_ecl_pseudos"]) or name.startswith("_ecl")
 
-    def run(self,*args,**kw):   # OVERRIDE IrafTask.run
+    def run(self, *args, **kw):  # OVERRIDE IrafTask.run
         """Execute this task with the specified arguments"""
 
         self.initTask(force=1)
@@ -166,9 +182,9 @@ class EclBase:
         kw['_setMode'] = 1
         self.setParList(*args, **kw)
 
-        if Verbose>1:
-            print("run %s (%s: %s)" % (self._name,
-                                       self.__class__.__name__, self._fullpath))
+        if Verbose > 1:
+            print("run %s (%s: %s)" %
+                  (self._name, self.__class__.__name__, self._fullpath))
             if self._runningParList:
                 self._runningParList.lParam()
 
@@ -187,7 +203,7 @@ class EclBase:
                     executionMonitor(self)
                 self._run(redirKW, specialKW)
                 self._updateParList(save)
-                if Verbose>1:
+                if Verbose > 1:
                     print('Successful task termination', file=sys.stderr)
             finally:
                 rv = self._resetRedir(resetList, closeFHList)
@@ -244,16 +260,16 @@ class EclBase:
             s = ""
             for a in args:
                 s += str(a) + " "
-            sys.stderr.write(s+"\n")
+            sys.stderr.write(s + "\n")
             sys.stderr.flush()
 
     def _ecl_exception_properties(self, e):
         """This is a 'safe wrapper' which extracts the ECL pseudo parameter values from an
         exception.  It works for both ECL and non-ECL exceptions.
         """
-        return (getattr(e, "errno", -1),
-                getattr(e, "errmsg", str(e)),
-                getattr(e, "errtask", ""))
+        return (getattr(e, "errno",
+                        -1), getattr(e, "errmsg",
+                                     str(e)), getattr(e, "errtask", ""))
 
     def _ecl_record_error(self, e):
         self._ecl_set_error_params(*self._ecl_exception_properties(e))
@@ -307,34 +323,48 @@ class EclBase:
         """_ecl_safe_divide is used to wrap the division operator for ECL code and trap divide-by-zero errors."""
         if b == 0:
             if not erract.abort or self._ecl_iferr_entered():
-                self._ecl_trace("Warning on line %d of '%s':  divide by zero - using $err_dzvalue =" %
-                                (self._ecl_get_lineno(), self._name), self.DOLLARerr_dzvalue)
+                self._ecl_trace(
+                    "Warning on line %d of '%s':  divide by zero - using $err_dzvalue ="
+                    % (self._ecl_get_lineno(), self._name),
+                    self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
-                pyraf.iraf.error(1, "divide by zero", self._name, suppress=False)
+                pyraf.iraf.error(1,
+                                 "divide by zero",
+                                 self._name,
+                                 suppress=False)
         return a / b
 
     def _ecl_safe_modulo(self, a, b):
         """_ecl_safe_modulus is used to wrap the modulus operator for ECL code and trap mod-by-zero errors."""
         if b == 0:
             if not erract.abort or self._ecl_iferr_entered():
-                self._ecl_trace("Warning on line %d of task '%s':  modulo by zero - using $err_dzvalue =" %
-                                (self._ecl_get_lineno(), self._name), self.DOLLARerr_dzvalue)
+                self._ecl_trace(
+                    "Warning on line %d of task '%s':  modulo by zero - using $err_dzvalue ="
+                    % (self._ecl_get_lineno(), self._name),
+                    self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
-                pyraf.iraf.error(1, "modulo by zero", self._name, suppress=False)
+                pyraf.iraf.error(1,
+                                 "modulo by zero",
+                                 self._name,
+                                 suppress=False)
         return a % b
 
+
 class SimpleTraceback(EclBase):
+
     def _ecl_handle_error(self, e):
         self._ecl_record_error(e)
         raise e
 
+
 class EclTraceback(EclBase):
+
     def _ecl_handle_error(self, e):
         """Python task version of handle_error:  do traceback and possibly abort."""
         self._ecl_record_error(e)
-        parent =_ecl_parent_task()
+        parent = _ecl_parent_task()
         if parent:
             parent._ecl_record_error(e)
         if hasattr(e, "_ecl_traced"):
@@ -347,7 +377,7 @@ class EclTraceback(EclBase):
             except:
                 self._ecl_trace("ERROR:", str(e))
             self._ecl_traceback(e)
-            if erract.abort: # and not self._ecl_iferr_entered():
+            if erract.abort:  # and not self._ecl_iferr_entered():
                 e._ecl_traced = True
                 raise e
 
@@ -359,7 +389,7 @@ class EclTraceback(EclBase):
         lineno = self._ecl_get_lineno(frame=raising_frame)
         cl_file = self.getFilename()
         try:
-            cl_code = open(cl_file).readlines()[lineno-1].strip()
+            cl_code = open(cl_file).readlines()[lineno - 1].strip()
         except:
             cl_code = "<source code not available>"
         if hasattr(e, "_ecl_suppress_first_trace") and \
@@ -373,7 +403,8 @@ class EclTraceback(EclBase):
             parent_lineno = self._ecl_get_lineno()
             parent_file = parent.getFilename()
             try:
-                parent_code = open(parent_file).readlines()[parent_lineno-1].strip()
+                parent_code = open(parent_file).readlines()[parent_lineno -
+                                                            1].strip()
                 self._ecl_trace("      called as:", repr(parent_code))
             except:
                 pass
@@ -383,63 +414,91 @@ class EclTraceback(EclBase):
 ## PyRAF task classes.  I factored things this way in an attempt to minimize the impact
 ## of ECL changes on ordinary PyRAF CL.
 
+
 class EclTask(EclBase, iraftask.IrafTask):
+
     def __init__(self, *args, **kw):
         EclBase.__init__(self, *args, **kw)
         iraftask.IrafTask.__init__(self, *args, **kw)
 
+
 IrafTask = EclTask
 
+
 class EclGKITask(SimpleTraceback, iraftask.IrafGKITask):
+
     def __init__(self, *args, **kw):
         SimpleTraceback.__init__(self, *args, **kw)
         iraftask.IrafGKITask.__init__(self, *args, **kw)
 
+
 IrafGKITask = EclGKITask
 
+
 class EclPset(SimpleTraceback, iraftask.IrafPset):
+
     def __init__(self, *args, **kw):
         SimpleTraceback.__init__(self, *args, **kw)
         iraftask.IrafPset.__init__(self, *args, **kw)
+
     def _run(self, *args, **kw):
         return iraftask.IrafPset._run(self, *args, **kw)
 
+
 IrafPset = EclPset
 
+
 class EclPythonTask(EclTraceback, iraftask.IrafPythonTask):
+
     def __init__(self, *args, **kw):
         EclTraceback.__init__(self, *args, **kw)
         iraftask.IrafPythonTask.__init__(self, *args, **kw)
+
     def _run(self, *args, **kw):
         return iraftask.IrafPythonTask._run(self, *args, **kw)
 
+
 IrafPythonTask = EclPythonTask
 
+
 class EclCLTask(EclTraceback, iraftask.IrafCLTask):
+
     def __init__(self, *args, **kw):
         EclTraceback.__init__(self, *args, **kw)
         iraftask.IrafCLTask.__init__(self, *args, **kw)
+
     def _run(self, *args, **kw):
         return iraftask.IrafCLTask._run(self, *args, **kw)
 
+
 IrafCLTask = EclCLTask
 
+
 class EclForeignTask(SimpleTraceback, iraftask.IrafForeignTask):
+
     def __init__(self, *args, **kw):
         SimpleTraceback.__init__(self, *args, **kw)
         iraftask.IrafForeignTask.__init__(self, *args, **kw)
+
     def _run(self, *args, **kw):
         return iraftask.IrafForeignTask._run(self, *args, **kw)
+
+
 IrafForeignTask = EclForeignTask
 
+
 class EclPkg(EclTraceback, iraftask.IrafPkg):
+
     def __init__(self, *args, **kw):
         EclTraceback.__init__(self, *args, **kw)
         iraftask.IrafPkg.__init__(self, *args, **kw)
+
     def _run(self, *args, **kw):
         return iraftask.IrafPkg._run(self, *args, **kw)
 
+
 IrafPkg = EclPkg
 
-def mutateCLTask2Pkg(o, loaded=1,  klass=EclPkg):
+
+def mutateCLTask2Pkg(o, loaded=1, klass=EclPkg):
     return iraftask.mutateCLTask2Pkg(o, loaded=loaded, klass=klass)

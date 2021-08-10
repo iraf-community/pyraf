@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 $Id$
 """
@@ -7,7 +6,7 @@ $Id$
 from __future__ import division, print_function
 
 import os, matplotlib
-matplotlib.use('TkAgg') # set backend
+matplotlib.use('TkAgg')  # set backend
 import matplotlib.backends.backend_tkagg as tkagg
 from Ptkplot import hideTkCursor
 from Ptkplot import FullWindowCursor
@@ -20,11 +19,11 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
     def __init__(self, gkikernel, figure, master=None):
         tkagg.FigureCanvasTkAgg.__init__(self, figure, master)
         # members
-        self.__theGwidget = self.get_tk_widget() # THE gwidget
+        self.__theGwidget = self.get_tk_widget()  # THE gwidget
         self.__gkiKernel = gkikernel
         self.__doIdleRedraw = 0
         self.__doIdleSWCursor = 0
-        self.ignoreNextRedraw = 0 # used externally to this class ...
+        self.ignoreNextRedraw = 0  # used externally to this class ...
 
         # Add a placeholder software cursor attribute. If it is None,
         # that means no software cursor is in effect. If it is not None,
@@ -37,8 +36,8 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         # check !  Binding Expose to tkExpose forces tkRedraw to be
         # called WAY too many times during a window resize. This uses the
         # draw buffer, which is slow and unnecessary for resizes.
-#       self.__theGwidget.bind('<Expose>', self.tkExpose)
-#       self.__theGwidget.bind('<Configure>', self.tkExpose) # init draw issue
+        #       self.__theGwidget.bind('<Expose>', self.tkExpose)
+        #       self.__theGwidget.bind('<Configure>', self.tkExpose) # init draw issue
         self.__theGwidget.bind('<Configure>', self.resize_widget, True)
 
     def pack(self, **kw):
@@ -57,18 +56,18 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         gw = self.__theGwidget
 
         # Add attributes to the gwidget
-        gw.lastX              = None
-        gw.lastY              = None
-        gw.width              = width
-        gw.height             = height
+        gw.lastX = None
+        gw.lastY = None
+        gw.width = width
+        gw.height = height
 
         # Add our functions to the gwidget
-        gw.activateSWCursor   = self.activateSWCursor
+        gw.activateSWCursor = self.activateSWCursor
         gw.deactivateSWCursor = self.deactivateSWCursor
-        gw.isSWCursorActive   = self.isSWCursorActive
-        gw.getSWCursor        = self.getSWCursor
-        gw.moveCursorTo       = self.moveCursorTo
-        gw.tkRedraw           = self.tkRedraw
+        gw.isSWCursorActive = self.isSWCursorActive
+        gw.getSWCursor = self.getSWCursor
+        gw.moveCursorTo = self.moveCursorTo
+        gw.tkRedraw = self.tkRedraw
 
     def resize_widget(self, event):
         width, height = event.width, event.height
@@ -81,7 +80,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         self.wrappedRedrawOrResize(w=width, h=height)
 
         # also update the widget's w/h attrs; we will need this for the cursor
-        self.__theGwidget.width  = width
+        self.__theGwidget.width = width
         self.__theGwidget.height = height
 
         # compute desired figure size in inches
@@ -91,10 +90,12 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         self.figure.set_size_inches(winch, hinch, forward=False)
 
         self._tkcanvas.delete(self._tkphoto)
-        self._tkphoto = tk.PhotoImage(
-            master=self._tkcanvas, width=int(width), height=int(height))
-        self._tkcanvas.create_image(
-            int(width / 2), int(height / 2), image=self._tkphoto)
+        self._tkphoto = tk.PhotoImage(master=self._tkcanvas,
+                                      width=int(width),
+                                      height=int(height))
+        self._tkcanvas.create_image(int(width / 2),
+                                    int(height / 2),
+                                    image=self._tkphoto)
         self.resize_event()
 
     def flush(self):
@@ -102,6 +103,8 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         self.__doIdleRedraw = 0
 
     # draw could be defined to catch events before passing through
+
+
 #   def draw(self):  tkagg.FigureCanvasTkAgg.draw(self)
 
     def wrappedRedrawOrResize(self, w=None, h=None):
@@ -155,7 +158,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
     def activateSWCursor(self, x=None, y=None, type=None, drawToo=True):
 
         gw = self.__theGwidget
-        hideTkCursor(gw) # from Ptkplot
+        hideTkCursor(gw)  # from Ptkplot
         # ignore type for now since only one type of software cursor
         # is implemented
         gw.update_idletasks()
@@ -177,7 +180,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
             gw.unbind("<Motion>")
             self.__SWCursor.isLastSWmove = 1
             self.__isSWCursorActive = 0
-            gw['cursor'] = 'arrow' # set back to normal
+            gw['cursor'] = 'arrow'  # set back to normal
 
     # getSWCursor() is used as if it belonged to the gwidget's class
     def getSWCursor(self):
@@ -210,22 +213,20 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
             x = self.__SWCursor.lastx
             y = self.__SWCursor.lasty
             # call the wutil version
-            moveCursorTo(gw.winfo_id(),
-                         gw.winfo_rootx(),
-                         gw.winfo_rooty(),
-                         int(x*gw.winfo_width()),
-                         int((1.-y)*gw.winfo_height()))
+            moveCursorTo(gw.winfo_id(), gw.winfo_rootx(), gw.winfo_rooty(),
+                         int(x * gw.winfo_width()),
+                         int((1. - y) * gw.winfo_height()))
         else:
-            x = (event.x+0.5)/gw.winfo_width()
-            y = 1.-(event.y+0.5)/gw.winfo_height()
+            x = (event.x + 0.5) / gw.winfo_width()
+            y = 1. - (event.y + 0.5) / gw.winfo_height()
         self.__SWCursor.moveTo(x, y, SWmove=0)
 
     # moveCursorTo() is used as if it belonged to the gwidget's class
     def moveCursorTo(self, x, y, SWmove=0):
 
-        self.__SWCursor.moveTo(float(x)/self.__theGwidget.width,
-                               float(y)/self.__theGwidget.height,
-                               SWmove)
+        self.__SWCursor.moveTo(
+            float(x) / self.__theGwidget.width,
+            float(y) / self.__theGwidget.height, SWmove)
 
     def activate(self):
         """Not really needed for Tkplot widgets"""

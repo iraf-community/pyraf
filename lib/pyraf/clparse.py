@@ -11,8 +11,8 @@ from clast import AST
 from cltoken import Token
 import string
 
-class CLStrictParser(GenericASTBuilder):
 
+class CLStrictParser(GenericASTBuilder):
     """Strict version of CL parser (flags some program errors that CL accepts)
 
     This can be used as the parser to get a lint-like mode.
@@ -82,14 +82,18 @@ class CLStrictParser(GenericASTBuilder):
     def error(self, token, value=None):
         finfo = ''
         if self._currentFname:
-            finfo = 'file "'+self._currentFname+'"'
+            finfo = 'file "' + self._currentFname + '"'
         if hasattr(token, 'lineno'):
-            if len(finfo): finfo += ', '
-            errmsg = "CL syntax error at `%s' (%sline %d)" % (token, finfo, token.lineno)
+            if len(finfo):
+                finfo += ', '
+            errmsg = "CL syntax error at `%s' (%sline %d)" % (token, finfo,
+                                                              token.lineno)
         else:
-            if len(finfo): finfo = '('+finfo+')'
+            if len(finfo):
+                finfo = '(' + finfo + ')'
             errmsg = "CL syntax error at `%s' %s" % (token, finfo)
-        if value is not None: errmsg = errmsg + "\n" + str(value)
+        if value is not None:
+            errmsg = errmsg + "\n" + str(value)
         raise SyntaxError(errmsg)
 
     def p_program(self, args):
@@ -326,8 +330,8 @@ class CLStrictParser(GenericASTBuilder):
             return args[0]
         return GenericASTBuilder.nonterminal(self, atype, args)
 
-class CLParser(CLStrictParser):
 
+class CLParser(CLStrictParser):
     """Sloppy version of CL parser, with extra rules allowing some errors"""
 
     def __init__(self, AST, start='program'):
@@ -351,7 +355,9 @@ class CLParser(CLStrictParser):
         #   in format taskname(arg, arg, | task2 arg, arg)
         pass
 
+
 class EclParser(CLParser):
+
     def __init__(self, AST, start='program'):
         CLParser.__init__(self, AST, start)
         self.primaryTypes['iferr_stmt'] = 1
@@ -370,11 +376,14 @@ class EclParser(CLParser):
         '''
         pass
 
+
 #
 # list tree
 #
 
+
 class PrettyTree(GenericASTTraversal):
+
     def __init__(self, ast, terminal=1):
         GenericASTTraversal.__init__(self, ast)
         self.terminal = terminal
@@ -448,11 +457,12 @@ class PrettyTree(GenericASTTraversal):
         if node.type == '}':
             self.printIndent()
         if isinstance(node, Token) or (not self.terminal):
-            print(repr(node)+tail, end=' ')
+            print(repr(node) + tail, end=' ')
         self.nodeCount = self.nodeCount + 1
 
 
 class TreeList(GenericASTTraversal):
+
     def __init__(self, ast, terminal=0):
         GenericASTTraversal.__init__(self, ast)
         self.terminal = terminal
@@ -472,8 +482,10 @@ class TreeList(GenericASTTraversal):
         elif isinstance(node, Token) or (not self.terminal):
             print(node, end=' ')
 
-def treelist(ast,terminal=1):
+
+def treelist(ast, terminal=1):
     PrettyTree(ast, terminal)
+
 
 def getParser():
     import pyrafglobals
@@ -482,6 +494,7 @@ def getParser():
     else:
         _parser = CLParser(AST)
     return _parser
+
 
 def parse(tokens, fname=None):
     global _parser

@@ -8,6 +8,7 @@ import string
 from stsci.tools import compmixin
 import filecache
 
+
 def merge(inlines):
     out = []
     outbuff = []
@@ -23,18 +24,20 @@ def merge(inlines):
                 outbuff = []
     return out
 
+
 def getAliases(entry):
     # return list of aliases (and dump the comment)
     aend = entry.find(':')
-    if aend<0:
+    if aend < 0:
         raise ValueError("Graphcap entry does not have any colons\n%s" % entry)
     return entry[:aend].split("|")[:-1]
 
+
 def getAttributes(entry):
     abeg = entry.find(':')
-    if abeg<0:
+    if abeg < 0:
         raise ValueError("Graphcap entry does not have any colons\n%s" % entry)
-    astring = entry[abeg+1:]
+    astring = entry[abeg + 1:]
     attr = {}
     attrlist = astring.split(':')
     for attrstr in attrlist:
@@ -66,6 +69,7 @@ def getAttributes(entry):
             attr[attrname] = value
     return attr
 
+
 def getDevices(devlist):
     devices = {}
     for devdef in devlist:
@@ -75,8 +79,8 @@ def getDevices(devlist):
             devices[alias] = attributes
     return devices
 
-class GraphCap(filecache.FileCache):
 
+class GraphCap(filecache.FileCache):
     """Graphcap class that automatically updates if file changes"""
 
     def __init__(self, graphcapPath):
@@ -99,9 +103,11 @@ class GraphCap(filecache.FileCache):
             raise KeyError()
         return Device(thedict, key)
 
-    def has_key(self, key): return self._has(key)
+    def has_key(self, key):
+        return self._has(key)
 
-    def __contains__(self, key): return self._has(key)
+    def __contains__(self, key):
+        return self._has(key)
 
     def _has(self, key):
         thedict = self.get()

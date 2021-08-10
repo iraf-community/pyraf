@@ -27,7 +27,7 @@ LINEAR = 0
 LOG = 1
 ELOG = 2
 DEFINED = 1
-CLIP = 2 # needed for this?
+CLIP = 2  # needed for this?
 NEWFORMAT = 4
 
 
@@ -46,13 +46,13 @@ def init_wcs_sizes(forceResetTo=None):
     # See ticket #156 and http://iraf.net/phpBB2/viewtopic.php?p=1466296
 
     if _WCS_RECORD_SIZE != 0 and forceResetTo == None:
-        return # been here already
+        return  # been here already
 
     # Given a value for _WCS_RECORD_SIZE ?
     if forceResetTo:
-        if forceResetTo not in (
-                WCSRCSZ_vOLD_32BIT, WCSRCSZ_v215_32BIT, WCSRCSZ_v215_64BIT):
-            raise IrafError("Unexpected value for wcs record size: "+
+        if forceResetTo not in (WCSRCSZ_vOLD_32BIT, WCSRCSZ_v215_32BIT,
+                                WCSRCSZ_v215_64BIT):
+            raise IrafError("Unexpected value for wcs record size: " +
                             str(forceResetTo))
         _WCS_RECORD_SIZE = forceResetTo
         _IRAF64BIT = _WCS_RECORD_SIZE == WCSRCSZ_v215_64BIT
@@ -75,13 +75,12 @@ def elog(x):
     if x > 10:
         return math.log10(float(x))
     elif x > -10.:
-        return x/10.
+        return x / 10.
     else:
         return -math.log10(-float(x))
 
 
 class IrafGWcs:
-
     """Class to handle the IRAF Graphics World Coordinate System
     Structure"""
 
@@ -119,24 +118,27 @@ class IrafGWcs:
         # Every time set() is called, reset the wcs sizes.  We may be plotting
         # with old-compiled 32-bit tasks, then with new-compiled 32-bit tasks,
         # then with 64-bit tasks, all within the same PyRAF session.
-        init_wcs_sizes(forceResetTo=int(arg[0]/(1.*WCS_SLOTS)))
+        init_wcs_sizes(forceResetTo=int(arg[0] / (1. * WCS_SLOTS)))
 
         # Check that eveything is sized as expected
         if arg[0] != len(wcsStruct):
-            raise IrafError("Inconsistency in length of WCS graphics struct: "+
-                            str(arg[0]))
-        if len(wcsStruct) != _WCS_RECORD_SIZE*WCS_SLOTS:
-            raise IrafError("Unexpected length of WCS graphics struct: "+
+            raise IrafError(
+                "Inconsistency in length of WCS graphics struct: " +
+                str(arg[0]))
+        if len(wcsStruct) != _WCS_RECORD_SIZE * WCS_SLOTS:
+            raise IrafError("Unexpected length of WCS graphics struct: " +
                             str(len(wcsStruct)))
 
         # Read through the input to populate self.pending
         SZ = 2
-        if _IRAF64BIT: SZ = 4
-        self.pending = [None]*WCS_SLOTS
+        if _IRAF64BIT:
+            SZ = 4
+        self.pending = [None] * WCS_SLOTS
         for i in range(WCS_SLOTS):
-            record = wcsStruct[_WCS_RECORD_SIZE*i:_WCS_RECORD_SIZE*(i+1)]
+            record = wcsStruct[_WCS_RECORD_SIZE * i:_WCS_RECORD_SIZE * (i + 1)]
             # read 8 4-byte floats from beginning of record
-            fvals = numpy.fromstring(ndarr2bytes(record[:8*SZ]), numpy.float32)
+            fvals = numpy.fromstring(ndarr2bytes(record[:8 * SZ]),
+                                     numpy.float32)
             if _IRAF64BIT:
                 # seems to send an extra 0-valued int32 after each 4 bytes
                 fvalsView = fvals.reshape(-1, 2).transpose()
@@ -144,7 +146,8 @@ class IrafGWcs:
                     raise IrafError("Assumed WCS float padding is non-zero")
                 fvals = fvalsView[0]
             # read 3 4-byte ints after that
-            ivals = numpy.fromstring(ndarr2bytes(record[8*SZ:11*SZ]), numpy.int32)
+            ivals = numpy.fromstring(ndarr2bytes(record[8 * SZ:11 * SZ]),
+                                     numpy.int32)
             if _IRAF64BIT:
                 # seems to send an extra 0-valued int32 after each 4 bytes
                 ivalsView = ivals.reshape(-1, 2).transpose()
@@ -153,7 +156,7 @@ class IrafGWcs:
                 ivals = ivalsView[0]
             self.pending[i] = tuple(fvals) + tuple(ivals)
             if len(self.pending[i]) != 11:
-                raise IrafError("Unexpected WCS struct record length: "+
+                raise IrafError("Unexpected WCS struct record length: " +
                                 str(len(self.pending[i])))
         if self.wcs is None:
             self.commit()
@@ -162,7 +165,7 @@ class IrafGWcs:
         """Return the WCS in the original IRAF format (in bytes-string)"""
         init_wcs_sizes()
         self.commit()
-        wcsStruct = numpy.zeros(_WCS_RECORD_SIZE*WCS_SLOTS, numpy.int16)
+        wcsStruct = numpy.zeros(_WCS_RECORD_SIZE * WCS_SLOTS, numpy.int16)
         pad = tobytes('\x00\x00\x00\x00')
         if _IRAF64BIT:
             pad = tobytes('\x00\x00\x00\x00\x00\x00\x00\x00')
@@ -172,20 +175,22 @@ class IrafGWcs:
             iarr = numpy.array(x[8:11], numpy.int32)
             if _IRAF64BIT:
                 # see notes in set(); adding 0-padding after every data point
-                lenf = len(farr) # should be 8
-                farr_rs = farr.reshape(lenf, 1) # turn array into single column
+                lenf = len(farr)  # should be 8
+                farr_rs = farr.reshape(lenf,
+                                       1)  # turn array into single column
                 farr = numpy.append(farr_rs,
                                     numpy.zeros((lenf, 1), numpy.float32),
                                     axis=1)
                 farr = farr.flatten()
-                leni = len(iarr) # should be 3
-                iarr_rs = iarr.reshape(leni, 1) # turn array into single column
+                leni = len(iarr)  # should be 3
+                iarr_rs = iarr.reshape(leni,
+                                       1)  # turn array into single column
                 iarr = numpy.append(iarr_rs,
                                     numpy.zeros((leni, 1), numpy.int32),
                                     axis=1)
                 iarr = iarr.flatten()
             # end-pad?
-            if len(farr)+len(iarr) == (_WCS_RECORD_SIZE//2):
+            if len(farr) + len(iarr) == (_WCS_RECORD_SIZE // 2):
                 pad = BNULLSTR  # for IRAF2.14 or prior; all new vers need end-pad
 
             # Pack the wcsStruct - this will throw "ValueError: shape mismatch"
@@ -200,7 +205,8 @@ class IrafGWcs:
         wcs (integer 0-16) and return as a 2-tuple"""
 
         self.commit()
-        if wcsID == 0: return (x, y, wcsID)
+        if wcsID == 0:
+            return (x, y, wcsID)
 
         # Since transformation is defined by a direct linear (or log) mapping
         # between two rectangular windows, apply the usual linear
@@ -211,8 +217,7 @@ class IrafGWcs:
         # not (1,4)
 
         return (self.transform1d(coord=x, dimension='x', wcsID=wcsID),
-                self.transform1d(coord=y, dimension='y', wcsID=wcsID),
-                wcsID)
+                self.transform1d(coord=y, dimension='y', wcsID=wcsID), wcsID)
 
     def transform1d(self, coord, dimension, wcsID):
 
@@ -222,34 +227,34 @@ class IrafGWcs:
             w1, w2, s1, s2, type = wx1, wx2, sx1, sx2, xt
         elif dimension == 'y':
             w1, w2, s1, s2, type = wy1, wy2, sy1, sy2, yt
-        if (s2-s1) == 0.:
+        if (s2 - s1) == 0.:
             raise IrafError("IRAF graphics WCS is singular!")
-        fract = (coord-s1)/(s2-s1)
+        fract = (coord - s1) / (s2 - s1)
         if type == LINEAR:
-            val = (w2-w1)*fract + w1
+            val = (w2 - w1) * fract + w1
         elif type == LOG:
             lw2, lw1 = math.log10(w2), math.log10(w1)
-            lval = (lw2-lw1)*fract + lw1
+            lval = (lw2 - lw1) * fract + lw1
             val = 10**lval
         elif type == ELOG:
             # Determine inverse mapping to determine corresponding values of s to w
             # This must be done to figure out which regime of the elog function the
             # specified point is in. (cs*ew + c0 = s)
             ew1, ew2 = elog(w1), elog(w2)
-            cs = (s2-s1)/(ew2-ew1)
-            c0 = s1 - cs*ew1
+            cs = (s2 - s1) / (ew2 - ew1)
+            c0 = s1 - cs * ew1
             # linear part is between ew = 1 and -1, so just map those to s
             s10p = cs + c0
             s10m = -cs + c0
-            if coord > s10p: # positive log area
-                frac = (coord-s10p)/(s2-s10p)
-                val = 10.*(w2/10.)**frac
-            elif coord >= s10m and coord <= s10p: # linear area
-                frac = (coord-s10m)/(s10p-s10m)
-                val = frac*20 - 10.
-            else: # negative log area
-                frac = -(coord-s10m)/(s10m-s1)
-                val = -10.*(-w1/10.)**frac
+            if coord > s10p:  # positive log area
+                frac = (coord - s10p) / (s2 - s10p)
+                val = 10. * (w2 / 10.)**frac
+            elif coord >= s10m and coord <= s10p:  # linear area
+                frac = (coord - s10m) / (s10p - s10m)
+                val = frac * 20 - 10.
+            else:  # negative log area
+                frac = -(coord - s10m) / (s10m - s1)
+                val = -10. * (-w1 / 10.)**frac
         else:
             raise IrafError("Unknown or unsupported axis plotting type")
         return val
@@ -258,11 +263,15 @@ class IrafGWcs:
 
         w = self.wcs[i]
         if w[-1] & NEWFORMAT:
-            if w[-1] & DEFINED: return 1
-            else: return 0
+            if w[-1] & DEFINED:
+                return 1
+            else:
+                return 0
         else:
-            if w[4] or w[5] or w[6] or w[7]: return 0
-            else: return 1
+            if w[4] or w[5] or w[6] or w[7]:
+                return 0
+            else:
+                return 1
 
     def get(self, x, y, wcsID=None):
         """Returned transformed values of x, y using given wcsID or
@@ -297,7 +306,7 @@ class IrafGWcs:
                 indexlist.append(i)
         # if 0 or 1 found, we're done!
         if len(indexlist) == 1:
-            return indexlist[0]+1
+            return indexlist[0] + 1
         elif len(indexlist) == 0:
             return 0
         # look for viewports x,y is contained in
@@ -309,23 +318,23 @@ class IrafGWcs:
         # handle 3 cases
         if len(newindexlist) == 1:
             # unique, so done
-            return newindexlist[0]+1
+            return newindexlist[0] + 1
         # have to find minimum distance either to centers or to edge
         dist = []
         if len(newindexlist) > 1:
             # multiple, find one with closest center
             for i in newindexlist:
                 x1, x2, y1, y2 = self.wcs[i][4:8]
-                xcen = (x1+x2)/2
-                ycen = (y1+y2)/2
-                dist.append((xcen-x)**2 + (ycen-y)**2)
+                xcen = (x1 + x2) / 2
+                ycen = (y1 + y2) / 2
+                dist.append((xcen - x)**2 + (ycen - y)**2)
         else:
             # none, now look for closest border
             newindexlist = indexlist
             for i in newindexlist:
                 x1, x2, y1, y2 = self.wcs[i][4:8]
-                xdelt = min([abs(x-x1), abs(x-x2)])
-                ydelt = min([abs(y-y1), abs(y-y2)])
+                xdelt = min([abs(x - x1), abs(x - x2)])
+                ydelt = min([abs(y - y1), abs(y - y2)])
                 if x1 <= x <= x2:
                     dist.append(ydelt**2)
                 elif y1 <= y <= y2:
@@ -337,7 +346,7 @@ class IrafGWcs:
         newindexlist.reverse()
         dist.reverse()
         minDist = min(dist)
-        return newindexlist[dist.index(minDist)]+1
+        return newindexlist[dist.index(minDist)] + 1
 
 
 def _setWCSDefault():
@@ -345,8 +354,8 @@ def _setWCSDefault():
     # set 8 4 byte floats
     farr = numpy.array([0., 1., 0., 1., 0., 1., 0., 1.], numpy.float32)
     # set 3 4 byte ints
-    iarr = numpy.array([LINEAR, LINEAR, CLIP+NEWFORMAT], numpy.int32)
-    wcsarr = tuple(farr)+tuple(iarr)
+    iarr = numpy.array([LINEAR, LINEAR, CLIP + NEWFORMAT], numpy.int32)
+    wcsarr = tuple(farr) + tuple(iarr)
 
     wcs = []
     for i in range(WCS_SLOTS):
