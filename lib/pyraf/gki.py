@@ -40,7 +40,6 @@ $Id$
 from __future__ import division, print_function
 
 import numpy
-from types import *
 import sys
 import re
 from stsci.tools.irafglobals import IrafError
@@ -49,7 +48,8 @@ import wutil
 import graphcap
 import irafgwcs
 import fontdata
-from textattrib import *
+from textattrib import (CHARPATH_RIGHT, JUSTIFIED_NORMAL,
+                        FONT_ROMAN, FQUALITY_NORMAL)
 
 # use this form since the iraf import is circular
 import pyraf.iraf

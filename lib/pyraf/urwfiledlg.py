@@ -13,8 +13,9 @@ $Id$
 """
 from __future__ import division, print_function
 
-from urwid import *
-from urwid import WidgetWrap
+from urwid import (Text, AttrWrap, WidgetWrap, BoxAdapter, ListBox,
+                   AttrWrap, Columns, Edit, Button, GridFlow, CheckBox, Pile,
+                   SimpleListWalker)
 
 import os
 from os.path import normpath, abspath, join

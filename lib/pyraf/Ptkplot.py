@@ -7,7 +7,7 @@ from __future__ import division, print_function
 
 import os
 from Tkinter import _default_root  # requires 2to3
-from Tkinter import *
+from Tkinter import TclError, Canvas
 import wutil
 
 # XBM file for cursor is in same directory as this module

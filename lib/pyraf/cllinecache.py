@@ -8,7 +8,7 @@ from __future__ import division, print_function
 
 import linecache
 import os
-from stat import *
+from stat import ST_SIZE, ST_MTIME
 from stsci.tools.irafglobals import IrafError
 
 

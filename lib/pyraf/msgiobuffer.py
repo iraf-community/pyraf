@@ -9,7 +9,10 @@ $Id$
 from __future__ import division, print_function
 
 # System level modules
-from Tkinter import *  # requires 2to3
+from Tkinter import (StringVar, BooleanVar, Canvas, Frame, Scrollbar,
+                     Label, Entry, Message, TRUE, FALSE, VERTICAL,
+                     NORMAL, DISABLED, FLAT, SUNKEN, RAISED, TOP,
+                     LEFT, RIGHT, Y, X, NW, SW, END)
 
 
 class MsgIOBuffer(Frame):

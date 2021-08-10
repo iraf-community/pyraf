@@ -18,7 +18,7 @@ $Id$
 from __future__ import division, print_function
 
 import tkSimpleDialog
-from Tkinter import *  # requires 2to3
+from Tkinter import Toplevel, Frame
 
 
 def __init__(self, parent, title=None):

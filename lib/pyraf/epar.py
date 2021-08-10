@@ -8,8 +8,7 @@ from __future__ import division, print_function
 
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
-    from Tkinter import *  # requires 2to3
-    from tkMessageBox import askokcancel, showwarning, showerror
+    from Tkinter.tkMessageBox import askokcancel, showwarning, showerror
     import os
     import cStringIO
     from stsci.tools import listdlg, eparoption, editpar, irafutils
