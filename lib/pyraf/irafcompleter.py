@@ -136,8 +136,8 @@ class IrafCompleter(Completer):
         if line == "" and self.completionChar == "\t":
             # Make tab insert blanks at the beginning of an empty line
             # Insert 4 spaces for tabs (readline adds an additional blank)
-            #XXX is converting to blanks really a good idea?
-            #XXX ought to allow user to change this mapping
+            # XXX is converting to blanks really a good idea?
+            # XXX ought to allow user to change this mapping
             return ["   "]
         elif line == text:
             # first token on line
@@ -237,14 +237,14 @@ class IrafCompleter(Completer):
         if glob.has_magic(text):
             return []
         # look for IRAF virtual filenames
-        #XXX This might be simplified if '$' and '/' were added to the set
-        #XXX of characters permitted in words.  Can't do that now, as
-        #XXX far as I can tell, but Python 1.6 should allow it.
+        # XXX This might be simplified if '$' and '/' were added to the set
+        # XXX of characters permitted in words.  Can't do that now, as
+        # XXX far as I can tell, but Python 1.6 should allow it.
 
-        #XXX Need to improve this for filenames that include characters
-        #XXX not included in the spanned text.  E.g. .csh<TAB> does not
-        #XXX work because the '.' is not part of the name, and filenames
-        #XXX with embedded '-' or '+' do not work.
+        # XXX Need to improve this for filenames that include characters
+        # XXX not included in the spanned text.  E.g. .csh<TAB> does not
+        # XXX work because the '.' is not part of the name, and filenames
+        # XXX with embedded '-' or '+' do not work.
 
         if line[-1] == '$':
             # preceded by IRAF environment variable
@@ -282,15 +282,14 @@ class IrafCompleter(Completer):
         # Include directory itself in the list to avoid autocompleting
         # parts of filenames when the directory has just been filled in.
 
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # Commented out on 12 Oct 2010.  While some people may enjoy this
         # convenience, it seems to be disturbing to the majority of users, see
         # ticket #113.  Will comment out but leave code here.
 
-
-#       if len(flist)==1 and flist[0][-1] == os.sep:
-#           flist.extend(self._dir_matches(flist[0], dir))
-#---------------------------------------------------------------------
+        #       if len(flist)==1 and flist[0][-1] == os.sep:
+        #           flist.extend(self._dir_matches(flist[0], dir))
+        # ---------------------------------------------------------------------
 
         return flist
 
@@ -323,8 +322,8 @@ class IrafCompleter(Completer):
             # Check first character following initial alphabetic string
             # If next char is alphabetic (or null) use filename matches
             # Otherwise use matches from Python dictionaries
-            #XXX need to make this consistent with the other places
-            #XXX where same tests are done
+            # XXX need to make this consistent with the other places
+            # XXX where same tests are done
             m = self.taskpat.match(line)
             if m is None or keyword.iskeyword(m.group(1)):
                 fields = text.split(".")
@@ -333,7 +332,7 @@ class IrafCompleter(Completer):
                 else:
                     return Completer.attr_matches(self, text)
             else:
-                #XXX Could try to match pset.param keywords too?
+                # XXX Could try to match pset.param keywords too?
                 lt = len(line) - len(text)
                 return self.filename_matches(text, line[:lt])
 

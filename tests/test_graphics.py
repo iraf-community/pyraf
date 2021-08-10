@@ -26,8 +26,8 @@ def setup_module():
     TODO: ^Investigate^
     """
     # TODO: Related to test_gki_prow_to_different_devices
-    #os.environ['LPDEST'] = "hp_dev_null"
-    #os.environ['PRINTER'] = "hp_dev_null"
+    # os.environ['LPDEST'] = "hp_dev_null"
+    # os.environ['PRINTER'] = "hp_dev_null"
 
     # first turn off display
     os.environ['PYRAF_NO_DISPLAY'] = '1'
@@ -294,7 +294,7 @@ def test_gki_2_prows_no_append():
     diffit(EXP2IGNORE, psOut, os.path.join(DATA_DIR, PSDEV + "_prow_250.ps"))
 
 
-#@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+# @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.skip(reason="Erroneously sends jobs to network printers")
 def test_gki_prow_to_different_devices():  # rename to disable for now
     """Test 2 prow calls, each to different devices - one .ps written.

@@ -9,10 +9,9 @@ $Id$
 from __future__ import division, print_function
 
 # System level modules
-from Tkinter import (StringVar, BooleanVar, Canvas, Frame, Scrollbar,
-                     Label, Entry, Message, TRUE, FALSE, VERTICAL,
-                     NORMAL, DISABLED, FLAT, SUNKEN, RAISED, TOP,
-                     LEFT, RIGHT, Y, X, NW, SW, END)
+from Tkinter import (StringVar, BooleanVar, Canvas, Frame, Scrollbar, Label,
+                     Entry, Message, TRUE, FALSE, VERTICAL, NORMAL, DISABLED,
+                     FLAT, SUNKEN, RAISED, TOP, LEFT, RIGHT, Y, X, NW, SW, END)
 
 
 class MsgIOBuffer(Frame):
@@ -58,8 +57,8 @@ class MsgIOBuffer(Frame):
         # Pack the canvas
         self.msgIO.canvas.pack(side=LEFT, fill=X, expand=TRUE, padx=4)
 
-        ### Do not pack the frame here.  Do it in the application. ###
-        #self.msgIO.pack(side = TOP, fill = X, expand = TRUE)
+        # Do not pack the frame here.  Do it in the application. ###
+        # self.msgIO.pack(side = TOP, fill = X, expand = TRUE)
 
         # Define a frame that will sit on the canvas
         # This frame will hold a message box and a small I/O frame

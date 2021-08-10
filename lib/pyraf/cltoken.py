@@ -170,7 +170,7 @@ class Token(compmixin.ComparableMixin):
         raise ValueError("Cannot convert " + self.verboseRepr() + " to float")
 
     def bool(self):
-        #XXX convert INTEGER to bool too?
+        # XXX convert INTEGER to bool too?
         if self.type == "BOOL":
             return self.attr
         elif self.type == "INDEF":

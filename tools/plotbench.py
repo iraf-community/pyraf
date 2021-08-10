@@ -17,7 +17,7 @@ import time
 
 # note that box, plus, and cross take about the same amount of time.
 CASES = (None, 'point', 'box', 'plus', 'cross', 'circle')
-#ASES=(None, 'point', 'box',                  'circle')
+# CASES=(None, 'point', 'box',                  'circle')
 
 
 def manyPoints(task, pkind):

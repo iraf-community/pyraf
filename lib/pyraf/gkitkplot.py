@@ -18,7 +18,7 @@ import tkplottext
 
 TK_LINE_STYLE_PATTERNS = ['.', '.', '_', '.', '.._']
 
-#-----------------------------------------------
+# -----------------------------------------------
 
 
 class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
@@ -145,7 +145,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.clear()
         # This is needed to clear all the previously plotted objects
         # within tkinter (it has its own buffer it uses to replot)
-        #self.gwidget.delete(TKNTR.ALL)
+        # self.gwidget.delete(TKNTR.ALL)
 
     def gki_cancel(self, arg):
 
@@ -208,7 +208,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
     def gki_pmset(self, arg):
 
         marktype = arg[0]
-        #XXX Is this scaling for marksize correct?
+        # XXX Is this scaling for marksize correct?
         marksize = gki.ndc(arg[1])
         color = arg[2]
         self._tkplotAppend(self.tkplot_pmset, marktype, marksize, color)
@@ -276,7 +276,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
             function(*args)
         self.gwidget.flush()
 
-    #-----------------------------------------------
+    # -----------------------------------------------
     # These are the routines for the innermost loop in the redraw
     # function.  They are supposed to be stripped down to make
     # redraws as fast as possible.  (Still could be improved.)
@@ -393,7 +393,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.fillAttributes.set(fillstyle, color)
 
 
-#-----------------------------------------------
+# -----------------------------------------------
 
 
 class tkColorManager:

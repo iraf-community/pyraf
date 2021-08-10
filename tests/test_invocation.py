@@ -102,7 +102,7 @@ def test_invoke_command_direct(_with_pyraf, test_input, expected):
     """
     result = _with_pyraf.run(['-s'], stdin=test_input + '\n.exit')
     assert result.stdout.strip().endswith(expected)
-    #assert not result.stderr  # BUG: Why is there a single newline on stderr?
+    # assert not result.stderr  # BUG: Why is there a single newline on stderr?
     assert not result.code, result.stderr
 
 

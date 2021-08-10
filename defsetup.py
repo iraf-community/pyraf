@@ -73,7 +73,7 @@ def find_x(xdir=""):
                 if string.find(lib, 'libX11') == 0:
                     ind = lib_list.index(lib)
                     add_lib_dirs.append(os.path.dirname(lib_list[ind + 2]))
-                    #break
+                    # break
                     add_inc_dirs.append(
                         os.path.join(os.path.dirname(lib_list[ind + 2]),
                                      '../include'))

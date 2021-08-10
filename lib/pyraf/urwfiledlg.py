@@ -13,8 +13,8 @@ $Id$
 """
 from __future__ import division, print_function
 
-from urwid import (Text, AttrWrap, WidgetWrap, BoxAdapter, ListBox,
-                   AttrWrap, Columns, Edit, Button, GridFlow, CheckBox, Pile,
+from urwid import (Text, AttrWrap, WidgetWrap, BoxAdapter, ListBox, AttrWrap,
+                   Columns, Edit, Button, GridFlow, CheckBox, Pile,
                    SimpleListWalker)
 
 import os
@@ -85,7 +85,7 @@ class FileChooser(WidgetWrap):
         self.height = height
         self.show_hidden = show_hidden
 
-        #Create dummy widgets for directory and file display:
+        # Create dummy widgets for directory and file display:
         self.dir_widget = AttrWrap(
             BoxAdapter(ListBox([self._blank]), self.height), self.attr[0])
         self.file_widget = AttrWrap(
@@ -93,10 +93,10 @@ class FileChooser(WidgetWrap):
 
         columns = Columns([self.dir_widget, self.file_widget], 1)
 
-        #Selection widget:
+        # Selection widget:
         self.select_widget = AttrWrap(Edit("", ""), self.attr[0], self.attr[1])
 
-        #Buttons and checkbox:
+        # Buttons and checkbox:
         button_widgets = [
             AttrWrap(Button(button, self._action), attr[0], attr[1])
             for button in ["OK", "Cancel"]
@@ -152,7 +152,7 @@ class FileChooser(WidgetWrap):
             (dirlist, filelist) = self._dirfiles(self.directory)
 
         if update_dir:
-            #Directory widget:
+            # Directory widget:
             widget_list = [
                 AttrWrap(SelText(dir), None, self.attr[1]) for dir in dirlist
             ]
@@ -160,7 +160,7 @@ class FileChooser(WidgetWrap):
             self.dir_widget.box_widget.body = SimpleListWalker(widget_list)
 
         if update_file:
-            #File widget:
+            # File widget:
             widget_list = [
                 AttrWrap(SelText(dir), None, self.attr[1]) for dir in filelist
             ]
@@ -168,7 +168,7 @@ class FileChooser(WidgetWrap):
             self.file_widget.box_widget.body = SimpleListWalker(widget_list)
 
         if update_select:
-            #Selection widget:
+            # Selection widget:
             selected_file = join(self.directory, self.file)
             self.select_widget.set_edit_text(selected_file)
 
@@ -219,19 +219,19 @@ class FileChooser(WidgetWrap):
         if key == "enter":
             focused = self._focused_widgets()
             if focused[-2] == self.dir_widget:
-                #User has selected a directory from the list:
+                # User has selected a directory from the list:
                 new_dir = focused[-1].w.get_text()[0]
                 self.directory = normpath(join(self.directory, new_dir))
                 self.file = ""
                 self.update_widgets()
                 return
             elif focused[-2] == self.file_widget:
-                #User has selected a file from the list:
+                # User has selected a file from the list:
                 self.file = focused[-1].w.get_text()[0]
                 self.update_widgets(False, False, True)
                 return
             elif focused[-1] == self.select_widget:
-                #User has pressed enter in the "Selection Widget":
+                # User has pressed enter in the "Selection Widget":
                 path = self.select_widget.get_edit_text()
                 (self.directory, self.file) = os.path.split(path)
                 self.update_widgets(True, True, False)
@@ -250,14 +250,14 @@ class FileChooser(WidgetWrap):
         if event == "mouse press" and button == 1:
             focused = self._focused_widgets()
             if focused[-2] == self.dir_widget:
-                #User has selected a directory from the list:
+                # User has selected a directory from the list:
                 new_dir = focused[-1].w.get_text()[0]
                 self.directory = normpath(join(self.directory, new_dir))
                 self.file = ""
                 self.update_widgets()
                 return
             elif focused[-2] == self.file_widget:
-                #User has selected a file from the list:
+                # User has selected a file from the list:
                 self.file = focused[-1].w.get_text()[0]
                 focus = (self.dir_widget.get_focus()[1],
                          self.file_widget.get_focus()[1])
@@ -270,7 +270,7 @@ class FileChooser(WidgetWrap):
 
 
 ######################################################################
-#Endof module part
+# End of module part
 ######################################################################
 
 import urwid

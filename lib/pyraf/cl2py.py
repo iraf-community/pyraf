@@ -119,8 +119,8 @@ def cl2py(filename=None,
         else:
             raise TypeError('filename must be a string or a filehandle')
     elif string is not None:
-        #if not isinstance(string,str):
-        #raise TypeError('string must be a string')
+        # if not isinstance(string,str):
+        # raise TypeError('string must be a string')
         clInput = string
         efilename = 'string_proc'  # revisit this setting (tik #24), maybe '' ?
         if usecache:
@@ -236,9 +236,9 @@ def _checkVars(vars, parlist, parfile):
         # note we continue even if parameter lists are inconsistent.
         # That agrees with IRAF's approach, in which the .par file
         # overrides the CL script in determining parameters...
-        #XXX Maybe could improve this by allowing certain types of
-        #XXX mismatches (e.g. additional parameters) but not others
-        #XXX (name or type disagreements for the same parameters.)
+        # XXX Maybe could improve this by allowing certain types of
+        # XXX mismatches (e.g. additional parameters) but not others
+        # XXX (name or type disagreements for the same parameters.)
         if Verbose > 0:
             sys.stdout.flush()
             sys.stderr.write("Parameters from CL code inconsistent "
@@ -1220,9 +1220,9 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
         for ib in range(len(self.blocks)):
             self.blocks[ib].node.label_count = label_count[ib]
 
-    #-------------------------
+    # -------------------------
     # public interface methods
-    #-------------------------
+    # -------------------------
 
     def labels(self):
         """Get a list of known labels used in GOTOs"""
@@ -1239,9 +1239,9 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
         """Check if label is used in a GOTO"""
         return label in self.goto_blockidlist
 
-    #------------------------------------
+    # ------------------------------------
     # methods called during AST traversal
-    #------------------------------------
+    # ------------------------------------
 
     def n_compound_stmt(self, node):
         newid = len(self.blocks)
@@ -1769,9 +1769,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # decrement indentation (which writes the pass if necessary)
         self.decrIndent()
 
-    #------------------------------
+    # ------------------------------
     # elements that can be ignored
-    #------------------------------
+    # ------------------------------
 
     def n_proc_stmt(self, node):
         self.prune()
@@ -1791,17 +1791,17 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
     def n_NEWLINE(self, node):
         pass
 
-    #------------------------------
-    #XXX unimplemented features
-    #------------------------------
+    # ------------------------------
+    # XXX unimplemented features
+    # ------------------------------
 
     def n_BKGD(self, node):
         # background execution ignored for now
         self.warning("Background execution ignored", node)
 
-    #------------------------------
+    # ------------------------------
     # low-level conversions
-    #------------------------------
+    # ------------------------------
 
     def n_FLOAT(self, node):
         # convert d exponents to e for Python
@@ -1857,7 +1857,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             # functions can work correctly, but it simplifies
             # other code generation as well.  Vars does all the type
             # conversions and applies constraints.
-            #XXX Note we are not doing minimum match on parameter names
+            # XXX Note we are not doing minimum match on parameter names
 
             self.write('Vars.' + s, node.requireType, node.exprType)
         elif '.' in s:
@@ -2023,9 +2023,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         else:
             self.default(node)
 
-    #------------------------------
+    # ------------------------------
     # block indentation control
-    #------------------------------
+    # ------------------------------
 
     def n_statement_block(self, node):
         for i in range(node.label_count):
@@ -2064,9 +2064,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self._ecl_clline = FindLineNumber(node).lineno
             self.writeIndent()
 
-    #------------------------------
+    # ------------------------------
     # statements
-    #------------------------------
+    # ------------------------------
 
     def n_osescape_stmt(self, node):
         self.write("iraf.clOscmd(" + repr(node[0].attr) + ")")
@@ -2291,9 +2291,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.preorder(node[3])
             self.prune()
 
-    #------------------------------
+    # ------------------------------
     # pipes implemented using redirection + task return values
-    #------------------------------
+    # ------------------------------
 
     def n_task_pipe_stmt(self, node):
         self.pipeCount = self.pipeCount + 1
@@ -2308,9 +2308,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.pipeCount = self.pipeCount - 1
         self.prune()
 
-    #------------------------------
+    # ------------------------------
     # task execution
-    #------------------------------
+    # ------------------------------
 
     def n_task_call_stmt(self, node):
         self.errorappend(CheckArgList(node))
@@ -2465,7 +2465,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         for arg in arglist[1:]:
             if len(newargs) + len(arg) + 2 > maxline:
                 self.write(newargs + ',')
-                #self.writeIndent('\t')
+                # self.writeIndent('\t')
                 newargs = arg
                 maxline = linelength - self.column
             else:
@@ -2473,8 +2473,8 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.write(newargs)
 
     def n_empty_arg(self, node):
-        #XXX This is an omitted argument
-        #XXX Not really correct yet -- need to work on this
+        # XXX This is an omitted argument
+        # XXX Not really correct yet -- need to work on this
         self.write('None')
         self.prune()
 

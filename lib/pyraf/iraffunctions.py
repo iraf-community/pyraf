@@ -190,7 +190,7 @@ Ureka installation (see http://ssb.stsci.edu/ureka).  Also be sure to run the
 "mkiraf" command to create a logion.cl (http://www.google.com/search?q=mkiraf).
 """)
 
-        #stacksize problem on linux
+        # stacksize problem on linux
 
         if arch == 'redhat' or \
                 arch == 'linux' or \
@@ -1237,7 +1237,7 @@ def real(x):
     elif isinstance(x, (str, unicode)):
         x = x.strip()
         if x.find(':') >= 0:
-            #...handle the special a:b:c case here...
+            # ...handle the special a:b:c case here...
             sign = 1
             if x[0] in ["-", "+"]:
                 if x[0] == "-":

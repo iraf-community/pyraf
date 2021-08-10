@@ -98,7 +98,7 @@ try:
         # set an env var before importing xutil (see PyRAF FAQ on this)
         os.environ['XLIB_SKIP_ARGB_VISUALS'] = '1'
         from . import xutil
-        #initGraphics = initXGraphics
+        # initGraphics = initXGraphics
         xutil.initXGraphics()  # call here for lack of a better place for n
 
         # Check to make sure a valid XWindow ID was initialized

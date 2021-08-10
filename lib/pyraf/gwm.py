@@ -239,7 +239,7 @@ def getActiveWindowTop():
     """Get the top window (None if none defined)"""
 
     if _g and _g.stdgraph:
-        #XXX top is implementation-specific
+        # XXX top is implementation-specific
         return _g.stdgraph.top
 
 

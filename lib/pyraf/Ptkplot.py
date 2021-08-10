@@ -120,7 +120,7 @@ class PyrafCanvas(Canvas):
         # Basic bindings for the virtual trackball
         self.bind('<Expose>', self.tkExpose)
         self.bind('<Configure>', self.tkExpose)
-        #self.after_idle(self.refresh_cursor)
+        # self.after_idle(self.refresh_cursor)
 
     def flush(self):
 

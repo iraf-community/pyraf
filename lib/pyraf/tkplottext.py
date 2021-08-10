@@ -26,9 +26,8 @@ from __future__ import division, print_function
 import numpy
 import math
 from textattrib import (CHARPATH_LEFT, CHARPATH_RIGHT, CHARPATH_UP,
-                        CHARPATH_DOWN, JUSTIFIED_CENTER,
-                        JUSTIFIED_RIGHT, JUSTIFIED_LEFT,
-                        JUSTIFIED_NORMAL, JUSTIFIED_TOP,
+                        CHARPATH_DOWN, JUSTIFIED_CENTER, JUSTIFIED_RIGHT,
+                        JUSTIFIED_LEFT, JUSTIFIED_NORMAL, JUSTIFIED_TOP,
                         JUSTIFIED_BOTTOM)
 
 

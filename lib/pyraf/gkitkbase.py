@@ -25,7 +25,7 @@ import tkSimpleDialog
 
 nIrafColors = 16
 
-#-----------------------------------------------
+# -----------------------------------------------
 
 helpString = """\
 PyRAF graphics windows provide the capability to recall previous plots, print
@@ -102,7 +102,7 @@ Help menu:
              Display this help.
 """
 
-#-----------------------------------------------
+# -----------------------------------------------
 
 
 class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
@@ -376,11 +376,11 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         button["menu"] = button.menu
         return button
 
-        #XXX additional items:
+        # XXX additional items:
         # annotate (add annotation to plot using gcur -- need
         #   to migrate annotation code to this module?)
         # zoom, etc (other IRAF capital letter equivalents)
-        #XXX
+        # XXX
 
     def editMenuInit(self):
 

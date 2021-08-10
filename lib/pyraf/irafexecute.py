@@ -34,7 +34,7 @@ import pyraf.iraf
 #   pyraf.irafexecute.test_probe = True
 test_probe = False
 
-#stdgraph = None
+# stdgraph = None
 
 IPC_PREFIX = ndarr2bytes(numpy.array([0o1120], numpy.int16))
 
@@ -142,8 +142,8 @@ class _ProcessCache:
                     return process
                 # Hmm, looks like there is something wrong with this process
                 # Kill it and start a new one
-                #XXX Eventually can make this a level 0 message
-                #XXX Leave as level -1 for now so we see if bug is gone
+                # XXX Eventually can make this a level 0 message
+                # XXX Leave as level -1 for now so we see if bug is gone
                 self.error("Warning: process %s is bad, restarting it\n" %
                            (executable,),
                            level=-1)
@@ -898,7 +898,7 @@ class IrafProcess:
                         # Raw input requested
                         # Input character needs to be converted
                         # to its ASCII integer code.
-                        #line = raw_input()
+                        # line = raw_input()
                         line = irafukey.getSingleTTYChar()
                 else:
                     # file input, read a big chunk of data

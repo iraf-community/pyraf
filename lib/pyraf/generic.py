@@ -374,7 +374,7 @@ class GenericParser:
             #  A -> a . c (scanner)
             #
             elif token.type == nextSym:
-                #assert new not in states[i+1]
+                # assert new not in states[i+1]
                 states[i + 1].append((rule, pos + 1, parent))
 
     def buildTree(self, tokens, tree, root):

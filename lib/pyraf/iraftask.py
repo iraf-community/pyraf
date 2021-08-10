@@ -181,14 +181,14 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             print('Task "' + self._name + '" needed "' + orig + '" got: ' +
                   self._filename)
 
-    #=========================================================
+    # =========================================================
     # public accessor methods for attributes
-    #=========================================================
+    # =========================================================
 
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
     # first set returns current values (which may be None if
     # initTask has not been executed yet)
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
 
     def getName(self):
         return self._name
@@ -214,10 +214,10 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
     def getFilename(self):
         return self._filename
 
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
     # second set initializes task variables (which were deferred to
     # speed up initial instance creation)
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
 
     def getFullpath(self):
         """Return full path name of executable"""
@@ -297,9 +297,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         else:
             return []
 
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
     # modify and test attributes
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
 
     def addPkgbinary(self, pkgbinary):
         """Add another entry in list of possible package binary locations
@@ -330,9 +330,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             self.getForeign()  == other.getForeign() and \
             self.getTbflag()   == other.getTbflag()
 
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
     # run the task
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
 
     def run(self, *args, **kw):
         """Execute this task with the specified arguments"""
@@ -489,16 +489,16 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             for p in newParList.getParList():
                 p.mode = p.mode.replace("a", mode)
         if parList:
-            #XXX Set all command-line flags for parameters when a
-            #XXX parlist is supplied so that it does not prompt for
-            #XXX missing parameters.  Is this the preferred behavior?
+            # XXX Set all command-line flags for parameters when a
+            # XXX parlist is supplied so that it does not prompt for
+            # XXX missing parameters.  Is this the preferred behavior?
             newParList.setAllFlags()
 
         self._runningParList = newParList
 
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
     # task parameter access
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
 
     def setParam(self,
                  qualifiedName,
@@ -696,9 +696,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                             '" for task: "' + self._name + '" in pkg: "' +
                             self._pkgname + '"')
 
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
     # task parameter utility methods
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
 
     def lParam(self, verbose=0):
         """List the task parameters"""
@@ -713,7 +713,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
     def eParam(self):
         """Edit the task parameters,  PyRAF Tk style"""
         self.initTask(force=1)
-        #XXX always runs on current par list, not running par list?
+        # XXX always runs on current par list, not running par list?
         if self._currentParList:
             import epar
             epar.epar(self)
@@ -724,7 +724,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
     def tParam(self):
         """Edit the task parameters, IRAF curses style"""
         self.initTask(force=1)
-        #XXX always runs on current par list, not running par list?
+        # XXX always runs on current par list, not running par list?
         if self._currentParList:
             import tpar
             tpar.tpar(self)
@@ -757,7 +757,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         Returns a string with the results.
         """
         self.initTask()
-        #XXX always runs on current par list, not running par list?
+        # XXX always runs on current par list, not running par list?
         if not self._currentParList:
             return "No parameters to save for task %s" % (self._name,)
         if filename is None:
@@ -775,7 +775,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
     def unlearn(self):
         """Reset task parameters to their default values"""
         self.initTask(force=1)
-        #XXX always runs on current par list, not running par list?
+        # XXX always runs on current par list, not running par list?
         if not self._currentParList:
             return
         if self._defaultParList is not None:
@@ -808,9 +808,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             s = s + self._name[-1:]
         return s
 
-    #=========================================================
+    # =========================================================
     # special methods to give desired object syntax
-    #=========================================================
+    # =========================================================
 
     # parameters are accessible as attributes
 
@@ -861,10 +861,10 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
     def __str__(self):
         return repr(self)
 
-    #=========================================================
+    # =========================================================
     # private methods -- may be used by subclasses, but should
     # not be needed outside this module
-    #=========================================================
+    # =========================================================
 
     def _specialKW(self, kw):
         """Return dictionary of any special keywords (subclass hook)"""
@@ -1131,7 +1131,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                                      self._name,
                                  ))
                 sys.stderr.flush()
-                #XXX just toss it for now -- later can try to merge new,old
+                # XXX just toss it for now -- later can try to merge new,old
                 try:
                     os.remove(
                         pyraf.iraf.Expand(self._scrunchParpath, noerror=1))
@@ -1236,9 +1236,9 @@ class IrafPythonTask(IrafTask):
         return IrafTask.isConsistent(self, other) and \
             self._pyFunction == other._pyFunction
 
-    #=========================================================
+    # =========================================================
     # special methods
-    #=========================================================
+    # =========================================================
 
     def __getstate__(self):
         """Return state for pickling
@@ -1262,9 +1262,9 @@ class IrafPythonTask(IrafTask):
         sdict['_pyFunction'] = None
         return sdict
 
-    #=========================================================
+    # =========================================================
     # private methods
-    #=========================================================
+    # =========================================================
 
     def _applyRedir(self, redirKW):
         """Apply I/O redirection"""
@@ -1402,9 +1402,9 @@ class IrafCLTask(IrafTask):
             # initialization now
             self.initTask(filehandle=fh)
 
-    #=========================================================
+    # =========================================================
     # new public methods for CL task
-    #=========================================================
+    # =========================================================
 
     def getCode(self):
         """Return a string with the Python code for this task"""
@@ -1418,9 +1418,9 @@ class IrafCLTask(IrafTask):
         cl2py.codeCache.remove(self)
         self.initTask(force=1)
 
-    #=========================================================
+    # =========================================================
     # other public methods
-    #=========================================================
+    # =========================================================
 
     def initTask(self, force=0, filehandle=None):
         """Fill in full pathnames of files, read par file, compile CL code
@@ -1517,7 +1517,7 @@ class IrafCLTask(IrafTask):
                                          self._name,
                                      ))
                     sys.stderr.flush()
-                    #XXX just toss it for now -- later can try to merge new,old
+                    # XXX just toss it for now -- later can try to merge new,old
                     if self._currentParpath == self._scrunchParpath:
                         try:
                             os.remove(
@@ -1531,9 +1531,9 @@ class IrafCLTask(IrafTask):
                 self._currentParList = copy.deepcopy(self._pycode.vars.parList)
                 self._currentParpath = self._defaultParpath
 
-    #=========================================================
+    # =========================================================
     # special methods
-    #=========================================================
+    # =========================================================
 
     def __getstate__(self):
         """Return state for pickling"""
@@ -1547,9 +1547,9 @@ class IrafCLTask(IrafTask):
         sdict['_clFunction'] = None
         return sdict
 
-    #=========================================================
+    # =========================================================
     # private methods
-    #=========================================================
+    # =========================================================
 
     def _applyRedir(self, redirKW):
         """Apply I/O redirection"""
@@ -1565,14 +1565,14 @@ class IrafCLTask(IrafTask):
         kw['taskObj'] = ParDictListSearch(self)
         if parList is None:
             parList = self.getParList()
-        #XXX
+        # XXX
         # It might be better to pass all parameters as
         # keywords instead of as positional arguments?
         # That would be more robust against some errors
         # but would also not allow certain IRAF-like
         # behaviors (where the .par file gives a different
         # name for the parameter.)
-        #XXX
+        # XXX
         self._clFunction(*parList, **kw)
 
     def _noParFile(self):
@@ -1584,7 +1584,7 @@ class IrafCLTask(IrafTask):
         """Check current par list and default par list for consistency"""
         # they do not have to be consistent for CL task (at least not
         # where this is called, in IrafTask.initTask).
-        #XXX This is a bit lax, eh?  Need something a bit stricter.
+        # XXX This is a bit lax, eh?  Need something a bit stricter.
         return 1
 
 
@@ -1606,9 +1606,9 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
         self._subtasks = minmatch.MinMatchDict()
         self._pkgs = minmatch.MinMatchDict()
 
-    #=========================================================
+    # =========================================================
     # new public methods for package
-    #=========================================================
+    # =========================================================
 
     def __str__(self):
         """ Describe this object. """
@@ -1634,9 +1634,9 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
         if isinstance(task, IrafPkg):
             self._pkgs.add(name, name)
 
-    #=========================================================
+    # =========================================================
     # other public methods
-    #=========================================================
+    # =========================================================
 
     def getAllMatches(self, name, triedpkgs=None):
         """Return list of names of all parameters/tasks that may match name"""
@@ -1697,9 +1697,9 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
         else:
             raise AttributeError("Parameter %s not found" % name)
 
-    #=========================================================
+    # =========================================================
     # private methods
-    #=========================================================
+    # =========================================================
 
     def _getTaskFullname(self, name, triedpkgs=None):
         """Return the full name (pkg.task) of task 'name' from this package
@@ -1865,16 +1865,16 @@ class IrafForeignTask(IrafTask):
                 list(kw.keys()),
                 self._name,
             ))
-        #self._args = args
+        # self._args = args
         # Insure that all arguments passed to ForeignTasks are
         # converted to strings, including objects which are not
         # naturally converted to strings.
-        #self._args = map(re.escape,map(str,args))
+        # self._args = map(re.escape,map(str,args))
         self._args = list(map(self._str_escape, args))
 
-    #=========================================================
+    # =========================================================
     # private methods
-    #=========================================================
+    # =========================================================
     def _str_escape(self, arg):
         if not isinstance(arg, str):
             _arg = re.escape(str(arg))

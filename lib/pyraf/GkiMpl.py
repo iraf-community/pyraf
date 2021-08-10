@@ -58,7 +58,7 @@ GKI_TO_MPL_FONTATTR = [
     'medium', 'high'
 ]
 
-#-----------------------------------------------
+# -----------------------------------------------
 
 
 class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
@@ -698,7 +698,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.gki_flush(None, force=frc)  # does: resize-calc's; draw; flush
 
 
-#-----------------------------------------------
+# -----------------------------------------------
 
 
 class tkColorManager:

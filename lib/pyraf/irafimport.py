@@ -133,7 +133,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
 def _irafReload(module):
     if isinstance(module, _irafModuleClass):
-        #XXX Not sure this is correct
+        # XXX Not sure this is correct
         module.module = _originalReload(module.module)
         return module
     else:

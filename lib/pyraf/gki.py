@@ -48,8 +48,8 @@ import wutil
 import graphcap
 import irafgwcs
 import fontdata
-from textattrib import (CHARPATH_RIGHT, JUSTIFIED_NORMAL,
-                        FONT_ROMAN, FQUALITY_NORMAL)
+from textattrib import (CHARPATH_RIGHT, JUSTIFIED_NORMAL, FONT_ROMAN,
+                        FQUALITY_NORMAL)
 
 # use this form since the iraf import is circular
 import pyraf.iraf
@@ -228,7 +228,7 @@ _clearCodes = [
     GKI_CANCEL,
 ]
 
-#**********************************************************************
+# **********************************************************************
 
 
 class GkiBuffer:
@@ -453,7 +453,7 @@ class GkiBuffer:
         return self.buffer[i:j]
 
 
-#**********************************************************************
+# **********************************************************************
 
 
 class GkiReturnBuffer:
@@ -485,7 +485,7 @@ class GkiReturnBuffer:
 # stack of active IRAF tasks, used to identify source of plot
 tasknameStack = []
 
-#**********************************************************************
+# **********************************************************************
 
 
 class GkiKernel:
@@ -700,7 +700,7 @@ class GkiKernel:
         return self.stderr
 
 
-#**********************************************************************
+# **********************************************************************
 def gkiTranslate(metacode, functionTable):
     """General Function that can be used for decoding and interpreting
     the GKI metacode stream. FunctionTable is a 28 element list containing
@@ -725,7 +725,7 @@ def gkiTranslate(metacode, functionTable):
         opcode, arg = gkiBuffer.getNextCode()
 
 
-#**********************************************************************
+# **********************************************************************
 
 
 class DrawBuffer:
@@ -796,7 +796,7 @@ class DrawBuffer:
             return []
 
 
-#-----------------------------------------------
+# -----------------------------------------------
 
 
 class GkiProxy(GkiKernel):
@@ -866,7 +866,7 @@ class GkiProxy(GkiKernel):
         """Push current stdio settings onto stack at set new values"""
         if self.stdgraph:
             self.stdgraph.pushStdio(stdin, stdout, stderr)
-        #XXX still need some work here?
+        # XXX still need some work here?
         self._stdioStack.append((self.stdin, self.stdout, self.stderr))
         self.stdin = stdin
         self.stdout = stdout
@@ -874,7 +874,7 @@ class GkiProxy(GkiKernel):
 
     def popStdio(self):
         """Restore stdio settings from stack"""
-        #XXX still need some work here?
+        # XXX still need some work here?
         if self.stdgraph:
             self.stdgraph.popStdio()
         if self._stdioStack:
@@ -926,7 +926,7 @@ class GkiProxy(GkiKernel):
             self.stdgraph.taskDone(name)
 
 
-#**********************************************************************
+# **********************************************************************
 
 
 class GkiController(GkiProxy):
@@ -1046,7 +1046,7 @@ class GkiController(GkiProxy):
         return devstr
 
 
-#**********************************************************************
+# **********************************************************************
 
 
 class GkiNull(GkiKernel):
@@ -1076,7 +1076,7 @@ class GkiNull(GkiKernel):
         pass
 
 
-#**********************************************************************
+# **********************************************************************
 
 
 class GkiRedirection(GkiKernel):
@@ -1123,7 +1123,7 @@ class GkiRedirection(GkiKernel):
         return default
 
 
-#**********************************************************************
+# **********************************************************************
 
 
 class GkiNoisy(GkiKernel):
@@ -1246,8 +1246,8 @@ def getGraphcap(filename=None):
     return graphcapDict[filename]
 
 
-#XXX printPlot belongs in gwm, not gki?
-#XXX or maybe should be a method of gwm window manager
+# XXX printPlot belongs in gwm, not gki?
+# XXX or maybe should be a method of gwm window manager
 
 
 def printPlot(window=None):
@@ -1277,7 +1277,7 @@ def printPlot(window=None):
     stdout.write("%s\n" % msg)
 
 
-#**********************************************************************
+# **********************************************************************
 
 
 class IrafGkiConfig:
@@ -1402,7 +1402,7 @@ class IrafGkiConfig:
 
 _irafGkiConfig = IrafGkiConfig()
 
-#-----------------------------------------------
+# -----------------------------------------------
 
 
 class IrafLineStyles:
@@ -1554,7 +1554,7 @@ class TextAttributes:
         return self.hFontSize, self.fontAspect
 
 
-#-----------------------------------------------
+# -----------------------------------------------
 
 
 class FilterStderr:
@@ -1578,7 +1578,7 @@ class FilterStderr:
         pass
 
 
-#-----------------------------------------------
+# -----------------------------------------------
 
 
 class StatusLine:
@@ -1618,9 +1618,9 @@ class StatusLine:
         return 1
 
 
-#-----------------------------------------------
+# -----------------------------------------------
 
-#********************************
+# ********************************
 
 
 def ndc(intarr):

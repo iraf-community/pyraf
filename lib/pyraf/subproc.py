@@ -747,7 +747,7 @@ def systemRedir(cmd):
 
     cmd can be a string or a list of strings.
     """
-    #XXX should trap errors and return status?
+    # XXX should trap errors and return status?
     process = RedirProcess(cmd)
     try:
         process.run()

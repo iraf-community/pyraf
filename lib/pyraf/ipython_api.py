@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Modified input for PyRAF CL-script execution and pre-processing.
 
 Modifies the IPython intepreter to process PyRAF "magic" prior to
@@ -8,12 +8,12 @@ Code derived from pyraf.pycmdline.py
 
 $Id$
 """
-#*****************************************************************************
+# *****************************************************************************
 #       Copyright (C) 2001-2004 Fernando Perez <fperez@colorado.edu>
 #
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
-#*****************************************************************************
+# *****************************************************************************
 from __future__ import division, print_function
 
 VERY_OLD_IPY = True  # this means prior to v0.12
@@ -281,9 +281,9 @@ class IPython_PyRAF_Integrator(object):
             return line
         elif not hasattr(iraf, cmd):
             # not an IRAF command
-            #XXX Eventually want to improve error message for
-            #XXX case where user intended to use IRAF syntax but
-            #XXX forgot to load package
+            # XXX Eventually want to improve error message for
+            # XXX case where user intended to use IRAF syntax but
+            # XXX forgot to load package
             return line
         elif self.isLocal(cmd):
             # cmd is both a local variable and an IRAF task or procedure name
@@ -303,7 +303,7 @@ class IPython_PyRAF_Integrator(object):
             if cmd in ['type', 'dir', 'set']:
                 # assume a standalone call of Python type, dir functions
                 # rather than IRAF task
-                #XXX Use IRAF help function in every case (may want to
+                # XXX Use IRAF help function in every case (may want to
                 # change this eventually, when Python built-in help
                 # gets a bit better.)
                 return line
@@ -311,7 +311,7 @@ class IPython_PyRAF_Integrator(object):
                 # Not a local function, so user presumably intends to
                 # call IRAF task.  Force Python mode but add the 'iraf.'
                 # string to the task name for convenience.
-                #XXX this find() may be improved with latest Python readline features
+                # XXX this find() may be improved with latest Python readline features
                 j = line.find(cmd)
                 return line[:j] + 'iraf.' + line[j:]
         elif not callable(getattr(iraf, cmd)):

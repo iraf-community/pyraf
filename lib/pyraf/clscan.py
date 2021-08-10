@@ -27,9 +27,9 @@ _COMPUTE_MODE = 4  # compute (script, equation) mode
 _SWALLOW_NEWLINE_MODE = 5  # mode at points where embedded newlines allowed
 _ACCEPT_REDIR_MODE = 6  # mode at points where redirection allowed
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Regular Expressions for additional string replacement
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 #
 # Match embedded comments in a multi-line string
 # Matches escaped newline followed by line with free-standing comment,
@@ -51,13 +51,13 @@ def filterEscapes(instr):
     return special_escapes.sub(r'\\\1', instr)
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Scanners for various contexts
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # BasicScanner: tokens recognized in all modes
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 
 class _BasicScanner_1(GenericScanner):
@@ -134,10 +134,10 @@ class _BasicScanner_3:
         r'> (>? ( [GIP]+ | & ) | >)'
         # matches >> >& >>& >G >I >P >>G >>GI etc.
         parent.addToken(type='REDIR', attr=s)
-        #XXX may not need following -- I think redirection in
-        #XXX compute-eqn mode should always be trapped by
-        #XXX accept-REDIR mode, and exitComputeEqnMode does
-        #XXX not do anything in other modes
+        # XXX may not need following -- I think redirection in
+        # XXX compute-eqn mode should always be trapped by
+        # XXX accept-REDIR mode, and exitComputeEqnMode does
+        # XXX not do anything in other modes
         parent.exitComputeEqnMode()
         parent.current.append(_SWALLOW_NEWLINE_MODE)
 
@@ -220,9 +220,9 @@ class _LaxScanner:
             parent.addToken(type=s)
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # StartScanner: Tokens recognized in start-line mode
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 
 class _StartScanner_1(_BasicScanner_1):
@@ -263,9 +263,9 @@ class _StartScanner(_LaxScanner, _StrictStartScanner):
     pass
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # CommandScanner: Tokens recognized in command mode
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 
 class _CommandScanner_1(_BasicScanner_1):
@@ -366,10 +366,10 @@ class _CommandScanner(_LaxScanner, _StrictCommandScanner):
     pass
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # ComputeStartScanner: Tokens recognized in initial compute mode
 #                      (similar to command mode)
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 
 class _ComputeStartScanner_1(_BasicScanner_1):
@@ -411,7 +411,7 @@ class _ComputeStartScanner_1(_BasicScanner_1):
 
     def t_op(self, s, m, parent):
         r'\*\*|//|\*|\+|-|/|%'
-        #XXX Could make this type OP if we don't need to distinguish them
+        # XXX Could make this type OP if we don't need to distinguish them
         parent.enterComputeEqnMode()
         parent.addToken(type=s)
         # line breaks are allowed after operators
@@ -477,11 +477,11 @@ class _ComputeStartScanner(_LaxScanner, _StrictComputeStartScanner):
     pass
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # ComputeEqnScanner: Tokens recognized in compute equation mode
 # Mostly like standard Compute mode, but reverts to ComputeStart
 # mode on comma
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 
 class _ComputeEqnScanner_1(_BasicScanner_1):
@@ -492,12 +492,12 @@ class _ComputeEqnScanner_1(_BasicScanner_1):
         parent.current.append(_COMPUTE_MODE)
         parent.parencount = parent.parencount + 1
         # redirection can follow open parens
-        #XXX get rid of this?
+        # XXX get rid of this?
         parent.current.append(_ACCEPT_REDIR_MODE)
 
     def t_op(self, s, m, parent):
         r'\*\*|//|\*|\+|-|/|%'
-        #XXX Could make this type OP if we don't need to distinguish them
+        # XXX Could make this type OP if we don't need to distinguish them
         parent.addToken(type=s)
         # line breaks are allowed after operators
         parent.current.append(_SWALLOW_NEWLINE_MODE)
@@ -577,9 +577,9 @@ class _ComputeEqnScanner(_LaxScanner, _StrictComputeEqnScanner):
     pass
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # ComputeScanner: Tokens recognized in compute mode
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 
 class _ComputeScanner_1(_BasicScanner_1):
@@ -596,7 +596,7 @@ class _ComputeScanner_1(_BasicScanner_1):
 
     def t_op(self, s, m, parent):
         r'\*\*|//|\*|\+|-|/|%'
-        #XXX Could make this type OP if we don't need to distinguish them
+        # XXX Could make this type OP if we don't need to distinguish them
         parent.addToken(type=s)
         # line breaks are allowed after operators
         parent.current.append(_SWALLOW_NEWLINE_MODE)
@@ -672,10 +672,10 @@ class _ComputeScanner(_LaxScanner, _StrictComputeScanner):
     pass
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # SwallowNewlineScanner: Tokens recognized at points where
 #                        embedded newlines are allowed
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 
 class _StrictSwallowNewlineScanner(GenericScanner):
@@ -694,10 +694,10 @@ class _StrictSwallowNewlineScanner(GenericScanner):
 
 _SwallowNewlineScanner = _StrictSwallowNewlineScanner
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # AcceptRedirScanner: Tokens that are recognized at points where
 #                     redirection is allowed
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 
 class _StrictAcceptRedirScanner(_BasicScanner_3, _BasicScanner_2,
@@ -732,9 +732,9 @@ class _AcceptRedirScanner(_LaxScanner, _StrictAcceptRedirScanner):
     pass
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Main context-sensitive scanner
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 # dictionary of reserved keywords
 
@@ -862,8 +862,8 @@ class CLScanner(ContextSensitiveScanner):
             self.rv.append(Token(type='NEWLINE', attr=None,
                                  lineno=self.lineno))
 
-        ## suppress newline after '{' or ';'
-        #if type != 'NEWLINE' or (self.rv and self.rv[-1].type != 'NEWLINE' and
+        # suppress newline after '{' or ';'
+        # if type != 'NEWLINE' or (self.rv and self.rv[-1].type != 'NEWLINE' and
         #                                               self.rv[-1].type != '{' and
         #                                               self.rv[-1].type != ';'):
 

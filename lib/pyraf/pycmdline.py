@@ -130,8 +130,8 @@ class CmdConsole(code.InteractiveConsole):
                 if line or more:
                     more = self.push(line)
             except EOFError:
-                #XXX ugly code here -- refers to methods
-                #XXX defined in extensions of this class
+                # XXX ugly code here -- refers to methods
+                # XXX defined in extensions of this class
                 neofs = neofs + 1
                 if neofs >= 5:
                     self.write("\nToo many EOFs, exiting now\n")
@@ -420,9 +420,9 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             return line
         elif not hasattr(iraf, cmd):
             # not an IRAF command
-            #XXX Eventually want to improve error message for
-            #XXX case where user intended to use IRAF syntax but
-            #XXX forgot to load package
+            # XXX Eventually want to improve error message for
+            # XXX case where user intended to use IRAF syntax but
+            # XXX forgot to load package
             return line
         elif self.isLocal(cmd):
             # cmd is both a local variable and an IRAF task or procedure name
@@ -442,7 +442,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             if cmd in ['type', 'dir', 'set']:
                 # assume a standalone call of Python type, dir functions
                 # rather than IRAF task
-                #XXX Use IRAF help function in every case (may want to
+                # XXX Use IRAF help function in every case (may want to
                 # change this eventually, when Python built-in help
                 # gets a bit better.)
                 return line
@@ -450,7 +450,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                 # Not a local function, so user presumably intends to
                 # call IRAF task.  Force Python mode but add the 'iraf.'
                 # string to the task name for convenience.
-                #XXX this find() may be improved with latest Python readline features
+                # XXX this find() may be improved with latest Python readline features
                 j = line.find(cmd)
                 return line[:j] + 'iraf.' + line[j:]
         elif not callable(getattr(iraf, cmd)):

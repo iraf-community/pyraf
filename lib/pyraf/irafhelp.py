@@ -283,9 +283,9 @@ def _help(an_obj, variables, functions, modules, tasks, packages, hidden,
              regexp=regexp)
 
 
-#------------------------------------
+# ------------------------------------
 # helper functions
-#------------------------------------
+# ------------------------------------
 
 # return 1 if they handle the object, 0 if they don't
 

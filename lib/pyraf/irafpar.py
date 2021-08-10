@@ -103,12 +103,12 @@ def makeIrafPar(init_value,
                 level=-1)
 
     # if init_value is already an IrafPar, just return it
-    #XXX Could check parameters to see if they are ok
+    # XXX Could check parameters to see if they are ok
     if isinstance(init_value, IrafPar):
         return init_value
 
-    #XXX Enhance this to determine datatype from init_value if it is omitted
-    #XXX Could use _typedict.get(datatype,datatype) to allow short types to be used
+    # XXX Enhance this to determine datatype from init_value if it is omitted
+    # XXX Could use _typedict.get(datatype,datatype) to allow short types to be used
 
     if datatype is None:
         raise ValueError("datatype must be specified")
@@ -254,9 +254,9 @@ class IrafParL(_StringMixin, IrafPar):
         if self.value is None:
             self.value = ""
 
-    #--------------------------------------------
+    # --------------------------------------------
     # public methods
-    #--------------------------------------------
+    # --------------------------------------------
 
     def set(self, value, field=None, index=None, check=1):
         """Set value of this parameter from a string or other value.
@@ -354,9 +354,9 @@ class IrafParL(_StringMixin, IrafPar):
         else:
             return value
 
-    #--------------------------------------------
+    # --------------------------------------------
     # private methods
-    #--------------------------------------------
+    # --------------------------------------------
 
     # Use _getNextValue() method to implement a particular type
 
@@ -366,7 +366,7 @@ class IrafParL(_StringMixin, IrafPar):
 
     def _getPFilename(self, native, prompt):
         """Get p_filename field for this parameter (returns filename)"""
-        #XXX is this OK? should we check for self.value==None?
+        # XXX is this OK? should we check for self.value==None?
         return self.value
 
     def _getPType(self):
@@ -1558,8 +1558,8 @@ def _readpar(filename, strict=0):
             except KeyboardInterrupt:
                 raise
             except Exception as exc:
-                #XXX Shouldn't catch all exceptions here -- this could
-                #XXX screw things up
+                # XXX Shouldn't catch all exceptions here -- this could
+                # XXX screw things up
                 if Verbose:
                     import traceback
                     traceback.print_exc()

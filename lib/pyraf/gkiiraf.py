@@ -94,12 +94,12 @@ class GkiIrafKernel(gki.GkiKernel):
                 else:
                     device = self.device
 
-                #XXX In principle we could read from Stdin by
-                #XXX wrapping the string in a StringIO buffer instead of
-                #XXX writing it to a temporary file.  But that will not
-                #XXX work until binary redirection is implemented in
-                #XXX irafexecute
-                #XXX task(Stdin=tmpfn,device=device,generic="yes")
+                # XXX In principle we could read from Stdin by
+                # XXX wrapping the string in a StringIO buffer instead of
+                # XXX writing it to a temporary file.  But that will not
+                # XXX work until binary redirection is implemented in
+                # XXX irafexecute
+                # XXX task(Stdin=tmpfn,device=device,generic="yes")
 
                 # Explicitly set input to sys.__stdin__ to avoid possible
                 # problems with redirection. Sometimes graphics kernel tries
