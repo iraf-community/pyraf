@@ -1,7 +1,5 @@
 """pyrafTk.py: modify tkinter root to print short PyRAF tracebacks
 
-$Id$
-
 R. L. White, 2000 November 17
 """
 from __future__ import division, print_function

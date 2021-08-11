@@ -1,7 +1,5 @@
 """
 OpenGL implementation of the gki kernel class
-
-$Id$
 """
 from __future__ import division, print_function
 

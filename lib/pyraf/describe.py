@@ -1,7 +1,6 @@
 # http://www.dejanews.com/getdoc.xp?AN=382948703
 #
 # Instant Python
-# $Id$
 #
 # utilities to describe functions, methods, and classes
 #

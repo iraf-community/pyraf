@@ -14,8 +14,6 @@ Subprocess class features:
    ought).
 
  - RecordFile class provides record-oriented IO for file-like stream objects.
-
-$Id$
 """
 from __future__ import division, print_function
 

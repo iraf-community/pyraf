@@ -1,5 +1,4 @@
 """This module adds IRAF ECL style error handling to PyRAF."""
-# $Id$
 
 from __future__ import division, print_function
 

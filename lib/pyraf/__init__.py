@@ -4,8 +4,6 @@
 Checks sys.argv[0] == 'pyraf' to determine whether IRAF initialization
 is done verbosely or quietly.
 
-$Id$
-
 R. White, 2000 February 18
 """
 from __future__ import division, print_function

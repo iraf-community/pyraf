@@ -20,8 +20,6 @@ Provides this functionality:
 Uses standard code module plus some ideas from cmd.py module
 (and of course Perry's Monty design.)
 
-$Id$
-
 R. White, 2000 February 20
 """
 from __future__ import division, print_function

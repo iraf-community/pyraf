@@ -7,8 +7,6 @@ that it works in a simple terminal window (rather than requiring full
 X-11 and Tk); this is an improvement for low bandwidth network
 contexts or for people who prefer text interfaces to GUIs.
 
-$Id$
-
 Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
 """
 from __future__ import division, print_function

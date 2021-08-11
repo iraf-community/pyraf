@@ -7,8 +7,6 @@ is moved to ~/iraf/pyraf/clcache.old.
 
 Set the -r flag to recompile (default is to close the system cache
 and move the user cache so that everything gets compiled from scratch.)
-
-$Id$
 """
 from __future__ import division, print_function
 

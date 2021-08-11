@@ -1,6 +1,4 @@
 """clast.py: abstract syntax tree node type for CL parsing
-
-$Id$
 """
 from __future__ import division, print_function
 

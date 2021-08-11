@@ -4,8 +4,6 @@ Allows simultaneous read-write access to the data since
 the OS allows multiple processes to have access to the
 file system.
 
-$Id$
-
 XXX keys, len may be incorrect if directory database is modified
 XXX by another process after open
 

@@ -1,7 +1,5 @@
 """irafpar.py -- parse IRAF .par files and create lists of IrafPar objects
 
-$Id$
-
 R. White, 2000 January 7
 """
 from __future__ import division, print_function

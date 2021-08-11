@@ -1,7 +1,5 @@
 """Implements text rendering using stroked font and OpenGL
 
-$Id$
-
 General description and discussion about the assumptions of how
 text is to be handled. This will be a phased implementation and
 initially, some IRAF text features may not be implmented

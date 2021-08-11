@@ -1,6 +1,4 @@
 """cltoken.py: Token definition for CL parser
-
-$Id$
 """
 from __future__ import division, print_function
 

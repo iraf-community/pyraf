@@ -1,7 +1,5 @@
 """ Main module for the PyRAF-version of the Epar parameter editor
 
-$Id$
-
 M.D. De La Pena, 2000 February 04
 """
 from __future__ import division, print_function

@@ -24,8 +24,6 @@ instance) of the objects to be created for each entry.  New files
 are added with the add() method, and values are retrieved by
 index (cachedict[filename]) or using the .get() method.
 
-$Id$
-
 R. White, 2000 October 1
 """
 from __future__ import division, print_function

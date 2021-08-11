@@ -1,7 +1,5 @@
 """clcache.py: Implement cache for Python translations of CL tasks
 
-$Id$
-
 R. White, 2000 January 19
 """
 from __future__ import division, print_function

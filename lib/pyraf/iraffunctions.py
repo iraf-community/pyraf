@@ -10,8 +10,6 @@ The exception is that iraffunctions can be used directly for modules
 that must be compiled and executed early, before the pyraf module
 initialization is complete.
 
-$Id$
-
 R. White, 2000 January 20
 """
 from __future__ import division, print_function

@@ -1,6 +1,4 @@
 """generic.py: John Aycock's little languages (SPARK) framework
-
-$Id$
 """
 
 #  Copyright (c) 1998-2000 John Aycock

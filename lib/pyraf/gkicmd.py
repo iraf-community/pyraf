@@ -1,6 +1,5 @@
 """gki metacode generating functions for use by Pyraf in generating
 iraf gki metacode (primarily for interactive graphics)"""
-# $Id$
 
 from __future__ import division, print_function
 

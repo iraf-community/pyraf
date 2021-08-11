@@ -22,8 +22,6 @@ July 2008 - taken from the urwid example script "dialog.py", for the use of
 the DialogDisplay and the InputDialogDisplay classes.  Unsure why this
 functionality is not delivered with a standard urwid installation, so we will
 include this file until it comes with urwid.  This is slightly modified.
-
-$Id$
 """
 from __future__ import division, print_function
 

@@ -1,7 +1,5 @@
 """
 Tk gui implementation for the gki plot widget
-
-$Id$
 """
 from __future__ import division, print_function
 

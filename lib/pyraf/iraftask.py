@@ -1,7 +1,5 @@
 """module iraftask.py -- defines IrafTask and IrafPkg classes
 
-$Id$
-
 R. White, 2000 June 26
 
 iraftask defines the original PyRAF task functionality which pre-dates

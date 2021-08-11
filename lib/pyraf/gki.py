@@ -35,7 +35,6 @@ allowing the kernel type to change.)
 GkiController is a GkiProxy that allows switching between different
 graphics kernels as directed by commands embedded in the metacode stream.
 
-$Id$
 """
 from __future__ import division, print_function
 

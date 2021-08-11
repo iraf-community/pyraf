@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 """cachesearch.py: Check all entries in CL cache for a particular string
-$Id$
 """
 from __future__ import division, print_function
 

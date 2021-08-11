@@ -1,8 +1,6 @@
 """cllinecache.py: Modify linecache so it works with translated CL scripts too
 
 CL scripts have special filename "<CL script taskname>"
-
-$Id$
 """
 from __future__ import division, print_function
 

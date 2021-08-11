@@ -5,8 +5,6 @@ Modifies the IPython intepreter to process PyRAF "magic" prior to
 attempting a more conventional IPython interpretation of a command.
 
 Code derived from pyraf.pycmdline.py
-
-$Id$
 """
 # *****************************************************************************
 #       Copyright (C) 2001-2004 Fernando Perez <fperez@colorado.edu>

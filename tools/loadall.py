@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 """loadall.py: Load all the main packages in IRAF with verbose turned on
-$Id$
 """
 from __future__ import division, print_function
 

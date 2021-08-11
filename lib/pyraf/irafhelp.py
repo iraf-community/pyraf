@@ -32,8 +32,6 @@ The padchars keyword determines some details of the format of the output.
 The **kw argument allows minimum matching for the keyword arguments
 (so help(func=1) will work).
 
-$Id$
-
 R. White, 1999 September 23
 """
 from __future__ import division, print_function

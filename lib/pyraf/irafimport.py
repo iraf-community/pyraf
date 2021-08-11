@@ -8,8 +8,6 @@ Modify module import mechanism so that
 Assumes that all IRAF tasks and packages are accessible as iraf
 module attributes.  Only affects imports of iraf module.
 
-$Id$
-
 R. White, 1999 August 17
 """
 from __future__ import absolute_import, division, print_function

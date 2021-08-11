@@ -7,8 +7,6 @@
 # This will take over your screen while it is running, popping the mouse and
 # the focus back and forth, so be prepared.
 #
-# $Id$
-#
 from __future__ import division, print_function
 
 from pyraf import iraf, gki

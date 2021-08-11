@@ -4,8 +4,6 @@ Allows simultaneous read-write access to the data since
 the OS allows multiple processes to have access to the
 file system.
 
-$Id$
-
 XXX need to implement 'n' open flag (force new database creation)
 XXX maybe allow for known key with None as value in dict?
 XXX keys, len are incomplete if directory is not writable?

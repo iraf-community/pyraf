@@ -2,7 +2,6 @@
 Graphics window manager, creates multiple toplevel togl widgets for
 use by python plotting
 
-$Id$
 """
 from __future__ import division, print_function
 

@@ -5,8 +5,6 @@ For now, in general, we assume that IRAF exists until we are told otherwise.
 Obviously, this module should refrain as much as possible from importing any
 IRAF related code (at least globally), since this is heavily relied upon in
 non-IRAF situations.
-
-$Id$
 """
 from __future__ import division, print_function
 

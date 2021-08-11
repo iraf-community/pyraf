@@ -4,7 +4,6 @@
    frame contains the latest I/O from the interactive program.
 
 M.D. De La Pena, 2000 June 28
-$Id$
 """
 from __future__ import division, print_function
 

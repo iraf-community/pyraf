@@ -1,7 +1,5 @@
 """clparse.py: Parse IRAF CL
 
-$Id$
-
 R. White, 1999 August 24
 """
 from __future__ import division, print_function

@@ -25,8 +25,6 @@ This could be used to maintain references to multiple display servers.
 
 Ultimately more functionality may be added to make this a complete
 replacement for CDL.
-
-$Id$
 """
 from __future__ import division, print_function
 

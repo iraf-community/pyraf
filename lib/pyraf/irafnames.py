@@ -2,8 +2,6 @@
 included in the user's namespace.  Uses a plug-in strategy so behavior can
 be changed.
 
-$Id$
-
 R. White, 1999 March 26
 """
 from __future__ import division, print_function

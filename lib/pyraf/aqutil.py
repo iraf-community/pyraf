@@ -1,8 +1,6 @@
 """ Contains Python routines to do special Aqua (OSX) window manipulations
 not possible in tkinter.  In general, an attempt is made to use the Pyobjc
 bridging package so that compiling another C extension is not needed.
-
-$Id$
 """
 
 from __future__ import division, print_function

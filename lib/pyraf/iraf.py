@@ -1,7 +1,5 @@
 """module iraf.py -- home for all the IRAF tasks and basic access functions
 
-$Id$
-
 R. White, 1999 Jan 25
 """
 from __future__ import division, print_function

@@ -8,8 +8,6 @@ In use with PyRAF until a File-Browser/Chooser comes standard with Urwid. This
 copy is based on r49 of urwid/contrib/trunk/rbreu_filechooser.py, updated
 2006.10.17.  Only minor changes were made - mostly to handle use with differing
 versions of urwid.  Many thanks to author Rebecca Breu.
-
-$Id$
 """
 from __future__ import division, print_function
 

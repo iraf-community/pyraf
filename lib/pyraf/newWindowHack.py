@@ -12,8 +12,6 @@ tk = TKNTR.Tk()
 tk.withdraw()
 import tkSimpleDialog
 tkSimpleDialog.askstring("window title", "question?")
-
-$Id$
 """
 from __future__ import division, print_function
 

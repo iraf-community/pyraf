@@ -34,8 +34,6 @@ Long versions of options:
   -y  --ipython
 """
 
-# $Id$
-#
 # R. White, 2000 January 21
 
 from __future__ import division

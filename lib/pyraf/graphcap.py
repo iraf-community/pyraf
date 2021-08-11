@@ -1,6 +1,4 @@
 """Finds device attributes from the graphcap
-
-$Id$
 """
 from __future__ import division, print_function
 

@@ -2,7 +2,6 @@
    This contains the MsgIOWidget class, which is an optionally hidden
    scrolling canvas composed of a text widget and frame.  When "hidden",
    it turns into a single-line text widget.
-   $Id$
 """
 from __future__ import division, print_function
 

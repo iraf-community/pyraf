@@ -1,7 +1,5 @@
 #! /usr/bin/env python
 # rename clcache files
-# $Id$
-#
 
 from __future__ import division, print_function
 import os
