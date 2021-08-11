@@ -779,6 +779,7 @@ def _wrapSubprocess(cmdline):
     """ This function is set up mostly for use on Windows (w/out Cygwin)
     since that is the only mode it is currently expected to be used in. """
     # subprocess.call should work for most commands
+    import subprocess
     return subprocess.call(cmdline, shell=True)  # this waits
 
 

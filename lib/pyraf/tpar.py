@@ -1418,7 +1418,3 @@ def tpar(taskName):
               file=sys.stderr)
         return
     TparDisplay(taskName).main()
-
-
-if __name__ == "__main__":
-    main()

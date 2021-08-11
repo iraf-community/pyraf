@@ -10,6 +10,7 @@ matplotlib.use('TkAgg')  # set backend
 import matplotlib.backends.backend_tkagg as tkagg
 from Ptkplot import hideTkCursor
 from Ptkplot import FullWindowCursor
+import tk
 from wutil import moveCursorTo, WUTIL_USING_X
 
 
