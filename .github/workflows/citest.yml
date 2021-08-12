@@ -29,7 +29,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends iraf iraf-noao build-essential libx11-dev
-          sudo apt-get install --no-install-recommends ${PYTHON}-all-dev ${PYTHON}-astropy ${PYTHON}-numpy-dev ${PYTHON}-setuptools ${PYTHON}-stsci.distutils ${PYTHON}-stsci.tools ${PYTHON}-tk ${PYTHON}-pytest ${PYTHON}-pytest-cov i${PYTHON}
+          sudo apt-get install --no-install-recommends ${PYTHON}-all-dev ${PYTHON}-astropy ${PYTHON}-numpy-dev ${PYTHON}-setuptools ${PYTHON}-setuptools-scm ${PYTHON}-stsci.tools ${PYTHON}-tk ${PYTHON}-pytest ${PYTHON}-pytest-cov i${PYTHON}
 
       - name: Build Pyraf
         run: |
@@ -37,10 +37,10 @@ jobs:
 
       - name: Run tests
         run: |
+          TEST_BASE=$(ls -d $(pwd)/build/lib.*/)
           export PATH=$(ls -d $(pwd)/build/scripts-*/):${PATH}
           export tmp=/tmp/
           export iraf=/usr/lib/iraf/
           export IRAFARCH=generic
-          export PYTHONPATH=$(ls -d $(pwd)/build/lib.linux-*/)
           export TERM=dumb
-          ${PYTHON} -m pytest --cov=${PYTHONPATH}/pyraf
+          cd ${TEST_BASE} && ${PYTHON} -m pytest --cov=pyraf
