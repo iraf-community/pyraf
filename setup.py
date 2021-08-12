@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import os
 
 from setuptools import setup, Extension
 
@@ -14,5 +15,5 @@ setup(install_requires=[
       ext_modules=[Extension('pyraf.sscanf', ['pyraf/sscanfmodule.c']),
                    Extension('pyraf.xutil', ['pyraf/xutil.c'],
                              libraries=['X11'])],
-      
+      use_scm_version={'write_to': os.path.join('pyraf', 'version.py')},
       )
