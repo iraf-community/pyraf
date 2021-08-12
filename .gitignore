@@ -6,7 +6,7 @@
 __pycache__
 
 # Other generated files
-lib/pyraf/version.py
+pyraf/version.py
 login.cl*
 htmlcov
 .coverage

@@ -1,8 +1,5 @@
 include setup.py MANIFEST MANIFEST.in
-recursive-include data blankcursor.xbm epar.optionDB pyraflogo_rgb_web.gif
+recursive-include pyraf *
 recursive-include docs pyraf_tutorial.pdf pyraf_tutorial.ps.gz pyraf_install_src.ps pyraf_install_src.pdf
-recursive-include lib *
-recursive-include src *.h *.c
 recursive-include tests *.py *.fits *.ref *.ps
 recursive-include tools *.py
-recursive-include required_pkgs *
