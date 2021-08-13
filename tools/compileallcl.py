@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-
 """compileallcl.py: Load all the packages in IRAF and compile all
 the CL scripts
 
@@ -8,18 +7,21 @@ is moved to ~/iraf/pyraf/clcache.old.
 
 Set the -r flag to recompile (default is to close the system cache
 and move the user cache so that everything gets compiled from scratch.)
-
-$Id$
 """
 from __future__ import division, print_function
 
-import os, sys, traceback, time
+import os
+import sys
+import traceback
+import time
+
 
 def printcenter(s, length=70, char="-"):
-    l1 = (length-len(s))//2
-    l2 = length-l1-len(s)
-    print(l1*char, s, l2*char)
+    l1 = (length - len(s)) // 2
+    l2 = length - l1 - len(s)
+    print(l1 * char, s, l2 * char)
     sys.stdout.flush()
+
 
 def compileall():
     """Compile all CL procedures & packages"""
@@ -46,7 +48,8 @@ def compileall():
         except OSError:
             print('Could not create directory %s' % userCacheDir)
     dbfile = 'clcache'
-    clcache.codeCache = clcache._CodeCache([ os.path.join(userCacheDir, dbfile) ])
+    clcache.codeCache = clcache._CodeCache(
+        [os.path.join(userCacheDir, dbfile)])
     cl2py.codeCache = clcache.codeCache
 
     iraf.setVerbose()
@@ -64,16 +67,17 @@ def compileall():
     npass = 0
     pkg_list = iraf.getPkgList()
     keepGoing = 1
-    while keepGoing and (npkg_total<len(pkg_list)):
+    while keepGoing and (npkg_total < len(pkg_list)):
         npass = npass + 1
         pkg_list.sort()
         npkg_new = 0
         printcenter("pass %d: %d packages (%d new)" %
-                (npass, len(pkg_list), len(pkg_list)-npkg_total), char="=")
+                    (npass, len(pkg_list), len(pkg_list) - npkg_total),
+                    char="=")
         for pkg in pkg_list:
             if pkg not in pkgs_tried:
                 pkgs_tried[pkg] = 1
-                npkg_new = npkg_new+1
+                npkg_new = npkg_new + 1
                 printcenter(pkg)
                 if pkg in ["newimred", "digiphotx"]:
                     print("""
@@ -107,8 +111,8 @@ They screw up subsequent loading of imred/digiphot tasks.
                         tasks_tried[taskname] = 1
                         taskobj = iraf.getTask(taskname)
                         if isinstance(taskobj, IrafCLTask) and \
-                                        not isinstance(taskobj, IrafPkg):
-                            ntask_total = ntask_total+1
+                                not isinstance(taskobj, IrafPkg):
+                            ntask_total = ntask_total + 1
                             print("%d: %s" % (ntask_total, taskname))
                             sys.stdout.flush()
                             try:
@@ -126,16 +130,20 @@ They screw up subsequent loading of imred/digiphot tasks.
                                     break
                                 print("...continuing...\n")
                                 sys.stdout.flush()
-                                ntask_failed = ntask_failed+1
-                if not keepGoing: break
+                                ntask_failed = ntask_failed + 1
+                if not keepGoing:
+                    break
         npkg_total = npkg_total + npkg_new
-        if not keepGoing: break
-        printcenter("Finished pass %d new pkgs %d total pkgs %d total tasks %d" %
-                (npass, npkg_new, npkg_total, ntask_total), char="=")
+        if not keepGoing:
+            break
+        printcenter(
+            "Finished pass %d new pkgs %d total pkgs %d total tasks %d" %
+            (npass, npkg_new, npkg_total, ntask_total),
+            char="=")
         pkg_list = iraf.getPkgList()
 
     t1 = time.time()
-    print("Finished package and task loading (%f seconds)" % (t1-t0,))
+    print("Finished package and task loading (%f seconds)" % (t1 - t0,))
     print("Compiled %d CL tasks -- %d failed" % (ntask_total, ntask_failed))
     sys.stdout.flush()
 
@@ -185,7 +193,8 @@ if __name__ == '__main__':
         # move the old user cache
         if os.path.exists(usrCache):
             os.rename(usrCache, usrCache + '.old')
-            print("Pyraf user cache %s renamed to %s.old" % (usrCache, usrCache))
+            print("Pyraf user cache %s renamed to %s.old" %
+                  (usrCache, usrCache))
         else:
             print("Warning: pyraf user cache %s was not found" % usrCache)
 

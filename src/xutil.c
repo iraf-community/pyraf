@@ -8,8 +8,6 @@
 #include <setjmp.h>
 #include <string.h>
 
-/* $Id$ */
-
 /* Windows and cursor manipulations not provided by Tkinter or any other
 ** standard python library.  This file handles Python 3 as well.
 ** see also: http://docs.python.org/py3k/extending

@@ -37,6 +37,7 @@ class TestPyraf(object):
     interaction between Pyraf and IRAF.
 
     """
+
     def test_imcopy(self):
         iraf.imcopy('dev$pix', 'image.short', verbose=False)
         with fits.open('image.short.fits') as f:
@@ -66,14 +67,18 @@ class TestPyraf(object):
             os.remove('image.real.fits')
 
         iraf.imarith('dev$pix', '/', '1', 'image.real', pixtype='r')
-        iraf.hedit('image.real', 'title', 'm51 real', verify=False,
+        iraf.hedit('image.real',
+                   'title',
+                   'm51 real',
+                   verify=False,
                    Stdout="/dev/null")
         with fits.open('image.real.fits') as f:
             assert f[0].header['OBJECT'] == 'm51 real'
 
     def teardown_class(self):
-        files_to_del = ['image.real.fits', 'image.dbl.fits',
-                        'image.short.fits']
+        files_to_del = [
+            'image.real.fits', 'image.dbl.fits', 'image.short.fits'
+        ]
         for fname in files_to_del:
             if os.path.exists(fname):
                 os.remove(fname)

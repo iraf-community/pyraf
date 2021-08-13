@@ -1,8 +1,6 @@
 """pseteparoption.py: module for defining the specific parameter display
    options to be used for PSETs in the parameter editor task.  Code was
    broken out from eparoption.py.
-
-$Id$
 """
 from __future__ import division, print_function
 
@@ -27,7 +25,7 @@ class PsetEparOption(eparoption.ActionEparButton):
     def clicked(self):  # use to be called childEparDialog()
 
         # Get a reference to the parent TopLevel
-        parentToplevel  = self.master.winfo_toplevel()
+        parentToplevel = self.master.winfo_toplevel()
 
         # Don't create multiple windows for the same task
         for child in parentToplevel.childList:
@@ -36,9 +34,10 @@ class PsetEparOption(eparoption.ActionEparButton):
                 child.top.tkraise()
                 return
 
-        childPsetHandle = epar.PyrafEparDialog(self.psetName,
-                               parent    = self.master_frame,
-                               isChild   = 1,
-                               childList = parentToplevel.childList,
-                               title     = "PSET Parameter Editor")
+        childPsetHandle = epar.PyrafEparDialog(
+            self.psetName,
+            parent=self.master_frame,
+            isChild=1,
+            childList=parentToplevel.childList,
+            title="PSET Parameter Editor")
         parentToplevel.childList.append(childPsetHandle)

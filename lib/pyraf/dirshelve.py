@@ -4,8 +4,6 @@ Allows simultaneous read-write access to the data since
 the OS allows multiple processes to have access to the
 file system.
 
-$Id$
-
 XXX keys, len may be incorrect if directory database is modified
 XXX by another process after open
 
@@ -14,16 +12,17 @@ R. White, 2000 Sept 26
 
 from __future__ import division, print_function
 
-import shelve, sys
+import shelve
 from stsci.tools.for2to3 import PY3K
 
-if __name__.find('.') < 0: # for unit test need absolute import
-    exec('import dirdbm', globals()) # 2to3 messes up simpler form
+if __name__.find('.') < 0:  # for unit test need absolute import
+    exec('import dirdbm', globals())  # 2to3 messes up simpler form
 else:
     import dirdbm
 
 # tuple of errors that can be raised
-error = (dirdbm.error, )
+error = (dirdbm.error,)
+
 
 class Shelf(shelve.Shelf):
     """Extension of Shelf using binary pickling"""
@@ -37,7 +36,7 @@ class Shelf(shelve.Shelf):
             # and exception
             del self.dict[key]
             raise KeyError("Corrupted or truncated file for key %s "
-                    "(bad file has been deleted)" % (repr(key),))
+                           "(bad file has been deleted)" % (repr(key),))
 
     def __setitem__(self, key, value):
         f = shelve.StringIO()
@@ -53,6 +52,7 @@ class Shelf(shelve.Shelf):
                 pass
         self.dict = 0
 
+
 class DirectoryShelf(Shelf):
     """Shelf implementation using the directory db interface.
 
@@ -61,6 +61,7 @@ class DirectoryShelf(Shelf):
 
     def __init__(self, filename, flag='c'):
         Shelf.__init__(self, dirdbm.open(filename, flag))
+
 
 def open(filename, flag='c'):
     """Open a persistent dictionary for reading and writing.
@@ -77,7 +78,7 @@ def open(filename, flag='c'):
     if PY3K:
         try:
             return shelve.DbfilenameShelf(filename, flag)
-        except Exception as ex: # is dbm.error
+        except Exception as ex:  # is dbm.error
             raise dirdbm.error(str(ex))
     else:
-       return DirectoryShelf(filename, flag)
+        return DirectoryShelf(filename, flag)

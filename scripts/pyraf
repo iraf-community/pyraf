@@ -34,8 +34,6 @@ Long versions of options:
   -y  --ipython
 """
 
-# $Id$
-#
 # R. White, 2000 January 21
 
 from __future__ import division
@@ -58,7 +56,8 @@ except ValueError:
     pass
 del pyrafDir
 
-if "." not in sys.path: sys.path.insert(0, ".")
+if "." not in sys.path:
+    sys.path.insert(0, ".")
 
 # allow the use of PYRAF_ARGS
 extraArgs = os.getenv('PYRAF_ARGS', '').strip()
@@ -76,16 +75,19 @@ if '-s' in sys.argv or '--silent' in sys.argv:
 
 # allow them to specifiy no graphics, done before any imports
 if '-x' in sys.argv or '--nographics' in sys.argv:
-    os.environ['PYRAF_NO_DISPLAY'] = '1' # what the rest of PyRAF triggers on
-    if '-x' in sys.argv: # keep the option parsing simpler when we get to it
+    os.environ['PYRAF_NO_DISPLAY'] = '1'  # what the rest of PyRAF triggers on
+    if '-x' in sys.argv:  # keep the option parsing simpler when we get to it
         sys.argv.remove('-x')
     else:
         sys.argv.remove('--nographics')
 
 # read the user's startup file (if there is one)
 if 'PYTHONSTARTUP' in os.environ and \
-                os.path.isfile(os.environ["PYTHONSTARTUP"]):
-    exec(compile(open(os.environ["PYTHONSTARTUP"]).read(), os.environ["PYTHONSTARTUP"], 'exec'))
+        os.path.isfile(os.environ["PYTHONSTARTUP"]):
+    exec(
+        compile(
+            open(os.environ["PYTHONSTARTUP"]).read(),
+            os.environ["PYTHONSTARTUP"], 'exec'))
 
 #------------------------------------------------------------------------------
 # In next line we get into pyraf's __init__.py - this does ALL KINDS OF THINGS
@@ -109,9 +111,9 @@ if _use_ipython_shell:
         home = os.getenv("HOME") or ""
         ip = os.path.join(home, ".ipython")
 
-    pyrafrc_dest = os.path.join(ip,"ipythonrc-pyraf")
-    pyrafrc_source = os.path.join(os.path.split(pyraf.__file__)[0],
-                                  "ipythonrc-pyraf")
+    pyrafrc_dest = os.path.join(ip, "ipythonrc-pyraf")
+    pyrafrc_source = os.path.join(
+        os.path.split(pyraf.__file__)[0], "ipythonrc-pyraf")
     if os.path.exists(ip):
         if not os.path.exists(pyrafrc_dest):
             shutil.copy(pyrafrc_source, pyrafrc_dest)
@@ -121,9 +123,10 @@ if _use_ipython_shell:
     del pyraf, home, ip, pyrafrc_dest, pyrafrc_source
 else:
     if '-s' not in sys.argv and '--silent' not in sys.argv:
-       print("PyRAF"+' '+__version__+' '+"Copyright (c) 2002 AURA")
-       # just print first line of Python copyright (long in v2.0)
-       print("Python"+' '+sys.version.split()[0]+' '+sys.copyright.split('\n')[0])
+        print("PyRAF" + ' ' + __version__ + ' ' + "Copyright (c) 2002 AURA")
+        # just print first line of Python copyright (long in v2.0)
+        print("Python" + ' ' + sys.version.split()[0] + ' ' +
+              sys.copyright.split('\n')[0])
 
 # Run given command
 if runCmd:
@@ -143,39 +146,46 @@ if doCmdline:
         import IPython
 
         # rewrite sys.argv
-        new_argv = ["ipython",]
-        if hasattr(IPython, 'Shell'): # old versions
-           if '-s' in sys.argv or '--silent' in sys.argv: new_argv.append("-nobanner")
-           new_argv.append("-p")
-           new_argv.append("pyraf")
+        new_argv = [
+            "ipython",
+        ]
+        if hasattr(IPython, 'Shell'):  # old versions
+            if '-s' in sys.argv or '--silent' in sys.argv:
+                new_argv.append("-nobanner")
+            new_argv.append("-p")
+            new_argv.append("pyraf")
         else:
-           if '-s' in sys.argv or '--silent' in sys.argv: new_argv.append("--no-banner")
-        sys.argv = new_argv[:]; del new_argv
+            if '-s' in sys.argv or '--silent' in sys.argv:
+                new_argv.append("--no-banner")
+        sys.argv = new_argv[:]
+        del new_argv
 
-        if hasattr(IPython, 'Shell'): # old IPython versions
-           IPython.Shell.start(user_ns=globals()).mainloop()
+        if hasattr(IPython, 'Shell'):  # old IPython versions
+            IPython.Shell.start(user_ns=globals()).mainloop()
         else:
-           # Start the interactive shell.  Also, see IPython.embed() here:
-           #     http://ipython.org/ipython-doc/stable/interactive/ \
-           #     reference.html#embedding-ipython
-           try:
-              # new location of terminal as of v1.*
-              from IPython.terminal.ipapp import TerminalIPythonApp
-           except:
-              from IPython.frontend.terminal.ipapp import TerminalIPythonApp
+            # Start the interactive shell.  Also, see IPython.embed() here:
+            #     http://ipython.org/ipython-doc/stable/interactive/ \
+            #     reference.html#embedding-ipython
+            try:
+                # new location of terminal as of v1.*
+                from IPython.terminal.ipapp import TerminalIPythonApp
+            except:
+                from IPython.frontend.terminal.ipapp import TerminalIPythonApp
 # was:     from ..... import TerminalInteractiveShell
-           app = TerminalIPythonApp.instance()
-           app.initialize()
-           # import pyraf to write this shell obj to its namespace
-           # we have already fully imported it above
-           import pyraf
-           # create and run the Ipython shell - it takes over from here
-           pyraf._ipyshell = app.shell
-# was:     pyraf._ipyshell = TerminalInteractiveShell(user_ns=globals())
-           # in the end, with this run_code(), all of this is the equivalent
-           # of simply running ipython standalone with these imports
-           pyraf._ipyshell.run_code('from pyraf import iraf, ipython_api; from stsci.tools.irafglobals import INDEF, Verbose, yes, no')
-           app.start()
+            app = TerminalIPythonApp.instance()
+            app.initialize()
+            # import pyraf to write this shell obj to its namespace
+            # we have already fully imported it above
+            import pyraf
+            # create and run the Ipython shell - it takes over from here
+            pyraf._ipyshell = app.shell
+            # was:     pyraf._ipyshell = TerminalInteractiveShell(user_ns=globals())
+            # in the end, with this run_code(), all of this is the equivalent
+            # of simply running ipython standalone with these imports
+            pyraf._ipyshell.run_code(
+                'from pyraf import iraf, ipython_api; from stsci.tools.irafglobals import INDEF, Verbose, yes, no'
+            )
+            app.start()
 # was:     pyraf._ipyshell.mainloop()
         sys.exit()
     else:
@@ -183,9 +193,9 @@ if doCmdline:
         del _use_ipython_shell
         _pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
         if '-s' in sys.argv or '--silent' in sys.argv:
-           _pycmdline.start('') # use no banner
+            _pycmdline.start('')  # use no banner
         else:
-           _pycmdline.start() # use default banner
+            _pycmdline.start()  # use default banner
 else:
     del doCmdline
     # run the standard Python interpreter

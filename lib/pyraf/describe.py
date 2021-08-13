@@ -1,7 +1,6 @@
 # http://www.dejanews.com/getdoc.xp?AN=382948703
 #
 # Instant Python
-# $Id$
 #
 # utilities to describe functions, methods, and classes
 #
@@ -58,7 +57,8 @@ CO_NEWLOCALS = 0x0002
 CO_VARARGS = 0x0004
 CO_VARKEYWORDS = 0x0008
 
-def describeParams(func, name = None):
+
+def describeParams(func, name=None):
     # get argument list
 
     code = func.__code__
@@ -74,7 +74,7 @@ def describeParams(func, name = None):
             while p < len(c):
                 v = ord(c[p])
                 if v >= HAVE_ARGUMENT:
-                    s, v = opname[v], ord(c[p+1]) + ord(c[p+2])*256
+                    s, v = opname[v], ord(c[p + 1]) + ord(c[p + 2]) * 256
                     p = p + 3
                     if s in ("UNPACK_SEQUENCE", "UNPACK_TUPLE"):
                         count = v
@@ -94,15 +94,16 @@ def describeParams(func, name = None):
             i = i + 1
     if code.co_flags & CO_VARARGS:
         # extra arguments
-        a.append("*"+code.co_varnames[n])
+        a.append("*" + code.co_varnames[n])
         n = n + 1
     if code.co_flags & CO_VARKEYWORDS:
         # extra keyword arguments
-        a.append("**"+code.co_varnames[n])
+        a.append("**" + code.co_varnames[n])
         n = n + 1
     return a
 
-def describe(func, name = None):
+
+def describe(func, name=None):
     "Return the function or method declaration as a string"
 
     # argument list
@@ -124,13 +125,15 @@ def describe(func, name = None):
             return "lambda %s" % args
     return "%s(%s)" % (name, args)
 
+
 def __getmethods(c, m):
     for k, v in c.__dict__.items():
-        if isinstance(v, type(__getmethods)): # and k[0] != "_":
+        if isinstance(v, type(__getmethods)):  # and k[0] != "_":
             if k not in m:
                 m[k] = describe(v, k), c.__name__
     for c in c.__bases__:
         __getmethods(c, m)
+
 
 def describe_class(cls):
     "Return a dictionary describing all methods available in a class"
@@ -138,6 +141,7 @@ def describe_class(cls):
     m = {}
     __getmethods(cls, m)
     return m
+
 
 def describe_instance(self):
     "Return a dictionary describing all methods available in an instance"

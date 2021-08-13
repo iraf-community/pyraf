@@ -1,7 +1,5 @@
 """Implements text rendering using stroked font and OpenGL
 
-$Id$
-
 General description and discussion about the assumptions of how
 text is to be handled. This will be a phased implementation and
 initially, some IRAF text features may not be implmented
@@ -25,7 +23,7 @@ from __future__ import division, print_function
 
 import fontdata
 
-CHARPATH_LEFT  = 2
+CHARPATH_LEFT = 2
 CHARPATH_RIGHT = 3
 CHARPATH_UP = 4
 CHARPATH_DOWN = 5
@@ -43,6 +41,7 @@ FQUALITY_NORMAL = 0
 FQUALITY_LOW = 12
 FQUALITY_MEDIUM = 13
 FQUALITY_HIGH = 14
+
 
 class TextAttributes:
 
@@ -64,10 +63,16 @@ class TextAttributes:
         self.hFontSize = None
         self.fontAspect = None
 
-    def set(self,charUp=90., charSize=1.,charSpace=0.,
-            textPath=CHARPATH_RIGHT, textHorizontalJust=JUSTIFIED_NORMAL,
-            textVerticalJust=JUSTIFIED_NORMAL, textFont=FONT_ROMAN,
-            textQuality=FQUALITY_NORMAL, textColor=1):
+    def set(self,
+            charUp=90.,
+            charSize=1.,
+            charSpace=0.,
+            textPath=CHARPATH_RIGHT,
+            textHorizontalJust=JUSTIFIED_NORMAL,
+            textVerticalJust=JUSTIFIED_NORMAL,
+            textFont=FONT_ROMAN,
+            textQuality=FQUALITY_NORMAL,
+            textColor=1):
 
         self.charUp = charUp
         self.charSize = charSize
@@ -81,7 +86,6 @@ class TextAttributes:
         # Place to keep font size and aspect for current window dimensions
 
     def setFontSize(self, win):
-
         """Set the unit font size for a given window using the iraf
         configuration parameters contained in an attribute class"""
 

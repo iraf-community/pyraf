@@ -4,26 +4,24 @@ import sys
 from astropy.utils.data import get_pkg_data_contents
 from distutils.spawn import find_executable
 
-
 IS_PY2 = sys.version_info < (3, 0)
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 HAS_PYRAF_EXEC = bool(find_executable('pyraf'))
 
-
 try:
     from pyraf import iraf
     iraf.imhead("dev$pix", Stdout=os.devnull, Stderr=os.devnull)
-except:  # Only this can catch the error!
+except (iraf.IrafError, AttributeError):
     HAS_IRAF = False
-else:
-    HAS_IRAF = True
-
-try:
-    iraf.stsdas(_doprint=0)
-except:
     HAS_STSDAS = False
 else:
-    HAS_STSDAS = True
+    HAS_IRAF = True
+    try:
+        iraf.stsdas(_doprint=0)
+    except (iraf.IrafError, AttributeError):
+        HAS_STSDAS = False
+    else:
+        HAS_STSDAS = True
 
 
 def diff_outputs(fin, reffile):

@@ -1,25 +1,23 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Modified input for PyRAF CL-script execution and pre-processing.
 
 Modifies the IPython intepreter to process PyRAF "magic" prior to
 attempting a more conventional IPython interpretation of a command.
 
 Code derived from pyraf.pycmdline.py
-
-$Id$
 """
-#*****************************************************************************
+# *****************************************************************************
 #       Copyright (C) 2001-2004 Fernando Perez <fperez@colorado.edu>
 #
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
-#*****************************************************************************
+# *****************************************************************************
 from __future__ import division, print_function
 
-VERY_OLD_IPY = True # this means prior to v0.12
+VERY_OLD_IPY = True  # this means prior to v0.12
 try:
     from IPython.iplib import InteractiveShell
-except:
+except ImportError:
     VERY_OLD_IPY = False
 
 if VERY_OLD_IPY:
@@ -29,8 +27,8 @@ else:
     from IPython.core import release
     try:
         import IPython.core.ipapi as ipapi
-    except:
-        ipapi = None # not available in v1.*
+    except ImportError:
+        ipapi = None  # not available in v1.*
 
 __license__ = release.license
 
@@ -57,6 +55,7 @@ if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
 # --------------------------------------------------------------------------
 from pyraf.irafcompleter import IrafCompleter
 
+
 class IPythonIrafCompleter(IrafCompleter):
     import sys
     if VERY_OLD_IPY:
@@ -65,7 +64,7 @@ class IPythonIrafCompleter(IrafCompleter):
         try:
             # location of "terminal" as of v1.1
             from IPython.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
-        except:
+        except ImportError:
             # location of "terminal" prior to v1.1
             from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
 
@@ -81,6 +80,7 @@ class IPythonIrafCompleter(IrafCompleter):
         # print >>self.sys.stderr, "Activating pyraf readline completer"
         def completer(C, text):  # C will be the IPython Completer;  not used
             return self.global_matches(text)
+
         # set_custom_completer mutates completer
         self.IP.set_custom_completer(completer)
         # ... get the mutant...
@@ -100,10 +100,15 @@ class IPythonIrafCompleter(IrafCompleter):
         """
         if not hasattr(self, "_ipython_init_readline"):
             self._ipython_init_readline = self.InteractiveShell.init_readline
-        def pyraf_init_readline(IP):     # Create function with built-in bindings to self
-            assert self.IP is IP         # IPythonShell shouldn't change...
-            self._ipython_init_readline(IP)  # Call IPython's original init_readline... make IP.Completer.
-            self.activate()              # activate PyRAF completer
+
+        def pyraf_init_readline(
+                IP):  # Create function with built-in bindings to self
+            assert self.IP is IP  # IPythonShell shouldn't change...
+            self._ipython_init_readline(
+                IP
+            )  # Call IPython's original init_readline... make IP.Completer.
+            self.activate()  # activate PyRAF completer
+
         self.InteractiveShell.init_readline = pyraf_init_readline  # Override class method
 
     def uninstall_init_readline_hack(self):
@@ -112,6 +117,7 @@ class IPythonIrafCompleter(IrafCompleter):
 
 
 # ---------------------------------------------------------------------------
+
 
 class IPython_PyRAF_Integrator(object):
     """This class supports the integration of these features with IPython:
@@ -129,21 +135,18 @@ class IPython_PyRAF_Integrator(object):
         try:
             # location of "terminal" as of v1.1
             from IPython.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
-        except:
+        except ImportError:
             # location of "terminal" prior to v1.1
             from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell as InteractiveShell
 
-
-    def __init__(self, clemulate=1, cmddict={},
-                 cmdchars=("a-zA-Z_.", "0-9")):
-        import re, sys, os
+    def __init__(self, clemulate=1, cmddict={}, cmdchars=("a-zA-Z_.", "0-9")):
+        import re
+        import os
         self.reword = re.compile('[a-z]*')
         self._cl_emulation = clemulate
         self.cmddict = cmddict
-        self.recmd = re.compile(
-            "[ \t]*(?P<cmd>" +
-            "[" + cmdchars[0] + "][" + cmdchars[0] + cmdchars[1] + "]*" +
-            ")[ \t]*")
+        self.recmd = re.compile("[ \t]*(?P<cmd>" + "[" + cmdchars[0] + "][" +
+                                cmdchars[0] + cmdchars[1] + "]*" + ")[ \t]*")
         self.locals = _locals
 
         import pyraf
@@ -157,22 +160,23 @@ class IPython_PyRAF_Integrator(object):
         if VERY_OLD_IPY:
             self._ipython_api = ipapi.get()
 
-            self._ipython_magic = self._ipython_api.IP.lsmagic() # skip %
+            self._ipython_magic = self._ipython_api.IP.lsmagic()  # skip %
 
-            self._ipython_api.expose_magic(
-                "set_pyraf_magic", self.set_pyraf_magic)
-            self._ipython_api.expose_magic(
-                "use_pyraf_traceback", self.use_pyraf_traceback)
-            self._ipython_api.expose_magic(
-                "use_pyraf_cl_emulation", self.use_pyraf_cl_emulation)
-            self._ipython_api.expose_magic(
-                "use_pyraf_readline_completer", self.use_pyraf_completer)
+            self._ipython_api.expose_magic("set_pyraf_magic",
+                                           self.set_pyraf_magic)
+            self._ipython_api.expose_magic("use_pyraf_traceback",
+                                           self.use_pyraf_traceback)
+            self._ipython_api.expose_magic("use_pyraf_cl_emulation",
+                                           self.use_pyraf_cl_emulation)
+            self._ipython_api.expose_magic("use_pyraf_readline_completer",
+                                           self.use_pyraf_completer)
 
             self._pyraf_completer = IPythonIrafCompleter(self._ipython_api.IP)
 
             # Replace IPython prefilter with self.prefilter bound method.
             def foo_filter(*args):
                 return self.prefilter(*args)
+
             self.InteractiveShell.prefilter = foo_filter
         else:
             self._ipython_api = pyraf._ipyshell
@@ -180,12 +184,13 @@ class IPython_PyRAF_Integrator(object):
             # this is pretty far into IPython, i.e. very breakable
             # lsmagic() returns a dict of 2 dicts: 'cell', and 'line'
             if hasattr(self._ipython_api, 'magics_manager'):
-                self._ipython_magic = list(self._ipython_api.magics_manager.lsmagic()['line'].keys())
+                self._ipython_magic = list(
+                    self._ipython_api.magics_manager.lsmagic()['line'].keys())
             else:
                 print('Please upgrade your version of IPython.')
             pfmgr = self._ipython_api.prefilter_manager
-            self.priority = 0 # transformer needs this, low val = done first
-            self.enabled = True # a transformer needs this
+            self.priority = 0  # transformer needs this, low val = done first
+            self.enabled = True  # a transformer needs this
             pfmgr.register_transformer(self)
 
     def isLocal(self, value):
@@ -207,10 +212,7 @@ class IPython_PyRAF_Integrator(object):
         # string literals.  For now, convert and check - if not OK (not
         # convertible to ASCII), simply move on (remove this assumption
         # after we no longer support Python2)
-        try:
-            asciiline =  str(line)
-        except:
-            return line
+        asciiline = str(line)
 
         # Handle any weird special cases here.  Most all transformations
         # should occur through the normal route (e.g. sent here, then
@@ -218,7 +220,7 @@ class IPython_PyRAF_Integrator(object):
         # to be prefiltered...
         if asciiline == 'get_ipython().show_usage()':
             # Hey! IPython translated '?' before we got a crack at it...
-            asciiline = '?' # put it back! (only for single '?' by itself)
+            asciiline = '?'  # put it back! (only for single '?' by itself)
 
         # Now run it through our normal prefilter function
         return self.cmd(asciiline)
@@ -250,40 +252,41 @@ class IPython_PyRAF_Integrator(object):
         line = full line (including cmd, preceding blanks, etc.)
         i = index in line of first non-blank character following cmd
         """
-        import os, keyword
-        if len(cmd)==0:
-            if line[i:i+1] == '!':
+        import os
+        import keyword
+        if len(cmd) == 0:
+            if line[i:i + 1] == '!':
                 # '!' is shell escape
                 # handle it here only if cl emulation is turned off
                 if not self._cl_emulation:
-                    iraf.clOscmd(line[i+1:])
+                    iraf.clOscmd(line[i + 1:])
                     return ''
-            elif line[i:i+1] != '?':
+            elif line[i:i + 1] != '?':
                 # leading '?' will be handled by CL code -- else this is Python
                 return line
         elif self._cl_emulation == 0:
             # if CL emulation is turned off then just return
             return line
         elif keyword.iskeyword(cmd) or \
-          (cmd in os.__builtins__ and cmd not in ['type', 'dir', 'help', 'set']):
+                (cmd in os.__builtins__ and cmd not in ['type', 'dir', 'help', 'set']):
             # don't mess with Python keywords or built-in functions
             # except allow 'type', 'dir, 'help' to be used in simple syntax
             return line
-        elif line[i:i+1] != "" and line[i] in '=,[':
+        elif line[i:i + 1] != "" and line[i] in '=,[':
             # don't even try if it doesn't look like a procedure call
             return line
         elif cmd in self._ipython_magic and cmd not in ['cd']:
             return line
         elif not hasattr(iraf, cmd):
             # not an IRAF command
-            #XXX Eventually want to improve error message for
-            #XXX case where user intended to use IRAF syntax but
-            #XXX forgot to load package
+            # XXX Eventually want to improve error message for
+            # XXX case where user intended to use IRAF syntax but
+            # XXX forgot to load package
             return line
         elif self.isLocal(cmd):
             # cmd is both a local variable and an IRAF task or procedure name
             # figure out whether IRAF or CL syntax is intended from syntax
-            if line[i:i+1] == "" or line[i] == "(":
+            if line[i:i + 1] == "" or line[i] == "(":
                 return line
             if line[i] not in self.string.digits and \
                line[i] not in self.string.ascii_letters and \
@@ -294,11 +297,11 @@ class IPython_PyRAF_Integrator(object):
             mm = self.reword.match(line[i:])
             if mm.group() in ["is", "in", "and", "or", "not"]:
                 return line
-        elif line[i:i+1] == '(':
+        elif line[i:i + 1] == '(':
             if cmd in ['type', 'dir', 'set']:
                 # assume a standalone call of Python type, dir functions
                 # rather than IRAF task
-                #XXX Use IRAF help function in every case (may want to
+                # XXX Use IRAF help function in every case (may want to
                 # change this eventually, when Python built-in help
                 # gets a bit better.)
                 return line
@@ -306,7 +309,7 @@ class IPython_PyRAF_Integrator(object):
                 # Not a local function, so user presumably intends to
                 # call IRAF task.  Force Python mode but add the 'iraf.'
                 # string to the task name for convenience.
-                #XXX this find() may be improved with latest Python readline features
+                # XXX this find() may be improved with latest Python readline features
                 j = line.find(cmd)
                 return line[:j] + 'iraf.' + line[j:]
         elif not callable(getattr(iraf, cmd)):
@@ -317,7 +320,7 @@ class IPython_PyRAF_Integrator(object):
             return line[:j] + 'iraf.' + line[j:]
         code = iraf.clLineToPython(line)
         statements = code.split("\n")
-        return "; ".join([ x for x in statements if x ])+"\n"
+        return "; ".join([x for x in statements if x]) + "\n"
 
     def default(self, cmd, line, i):
         # print "input line:",repr(cmd),"line:",line,"i:",i
@@ -336,14 +339,16 @@ class IPython_PyRAF_Integrator(object):
         Strip out references to modules within pyraf unless reprint
         or debug is set.
         """
-        import linecache, traceback, sys, os
+        import linecache
+        import traceback
+        import os
         import IPython.ultraTB
 
         # get the color scheme from the user configuration file and pass
         # it to the trace formatter
-        csm = 'Linux' # default
+        csm = 'Linux'  # default
         if ipapi:
-            ip = ipapi.get() # this works in vers prior to 1.*
+            ip = ipapi.get()  # this works in vers prior to 1.*
             csm = ip.options['colors']
 
         linecache.checkcache()
@@ -356,8 +361,9 @@ class IPython_PyRAF_Integrator(object):
                path[:len(self.ipythonDir)] == self.ipythonDir or \
                filename == "<ipython console>":
                 tbskip += 1
-        color_tb = IPython.ultraTB.AutoFormattedTB(
-            mode=self.traceback_mode, tb_offset=tbskip, color_scheme=csm)
+        color_tb = IPython.ultraTB.AutoFormattedTB(mode=self.traceback_mode,
+                                                   tb_offset=tbskip,
+                                                   color_scheme=csm)
         color_tb(type, value, tb)
 
     def prefilter(self, IP, line, continuation):
@@ -366,7 +372,7 @@ class IPython_PyRAF_Integrator(object):
            NOTE: this is ONLY used for VERY_OLD_IPY, since we use the transform
            hooks for the later versions.
         """
-        line = self.cmd(str(line)) # use type str here, not unicode
+        line = self.cmd(str(line))  # use type str here, not unicode
         return self.InteractiveShell._prefilter(IP, line, continuation)
 
     # The following are IPython "magic" functions when used as bound methods.
@@ -379,9 +385,9 @@ class IPython_PyRAF_Integrator(object):
                 return False
             else:
                 return int(flag)
-        except:
+        except ValueError:
             import sys
-            print("usage:", usage,  "[on | off]", file=sys.stderr)
+            print("usage:", usage, "[on | off]", file=sys.stderr)
             raise
 
     def _get_IP(self, IP):
@@ -413,26 +419,33 @@ class IPython_PyRAF_Integrator(object):
     def use_pyraf_traceback(self, IP=None, flag=None, feedback=True):
         IP = self._get_IP(IP)
         if self._evaluate_flag(flag, "use_pyraf_traceback"):
-            if feedback: self._debug("PyRAF traceback display: on")
+            if feedback:
+                self._debug("PyRAF traceback display: on")
             IP.set_custom_exc((Exception,), self.showtraceback)
         else:
-            if feedback: self._debug("PyRAF traceback display: off")
+            if feedback:
+                self._debug("PyRAF traceback display: off")
             IP.custom_exceptions = ((), None)
 
     def use_pyraf_cl_emulation(self, IP=None, flag=None, feedback=True):
         """Turns PyRAF CL emulation on (1) or off (0)"""
-        self._cl_emulation = self._evaluate_flag(flag, "use_pyraf_cl_emulation")
+        self._cl_emulation = self._evaluate_flag(flag,
+                                                 "use_pyraf_cl_emulation")
         if self._cl_emulation:
-            if feedback: self._debug("PyRAF CL emulation on")
+            if feedback:
+                self._debug("PyRAF CL emulation on")
         else:
-            if feedback: self._debug("PyRAF CL emulation off")
+            if feedback:
+                self._debug("PyRAF CL emulation off")
 
     def use_pyraf_completer(self, IP=None, flag=None, feedback=True):
         if self._evaluate_flag(flag, "use_pyraf_readline_completer"):
-            if feedback: self._debug("PyRAF readline completion on")
+            if feedback:
+                self._debug("PyRAF readline completion on")
             self._pyraf_completer.activate()
         else:
-            if feedback: self._debug("PyRAF readline completion off")
+            if feedback:
+                self._debug("PyRAF readline completion off")
             self._pyraf_completer.deactivate()
 
 

@@ -19,9 +19,9 @@ class DummyCodeObj(object):
     def __str__(self):
         retval = '<DummyCodeObj:'
         if hasattr(self, 'filename'):
-            retval += ' filename="'+self.filename+'"'
+            retval += ' filename="' + self.filename + '"'
         if hasattr(self, 'code'):
-            retval += ' code="'+self.code+'"'
+            retval += ' code="' + self.code + '"'
         retval += '>'
         return retval
 

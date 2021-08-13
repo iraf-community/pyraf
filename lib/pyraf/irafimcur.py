@@ -3,18 +3,19 @@
 Read the cursor position from stdimage image display device (DS9,
 SAOIMAGE or XIMTOOL) and return a string compatible with IRAF's
 imcur parameter.
-
-$Id$
 """
 from __future__ import division, print_function
 
-import sys, string
+import sys
 from stsci.tools import irafutils
 from stsci.tools.irafglobals import Verbose, IrafError
-import irafdisplay, gwm, iraf
+import irafdisplay
+import gwm
+import iraf
 
 # dictionary of devices to support multiple active displays
 _devices = {}
+
 
 def _getDevice(displayname=None):
     """Get device object for this display"""
@@ -29,7 +30,7 @@ def _getDevice(displayname=None):
     try:
         device = gwm.gki.getGraphcap()[displayname]
         dd = device['DD'].split(',')
-        if len(dd)>1 and dd[1] != '':
+        if len(dd) > 1 and dd[1] != '':
             imtdev = 'fifo:%si:%so' % (dd[1], dd[1])
         else:
             imtdev = None
@@ -38,19 +39,20 @@ def _getDevice(displayname=None):
             _devices[imtdev] = irafdisplay.ImageDisplayProxy(imtdev)
         device = _devices[displayname] = _devices[imtdev]
         return device
-    except (KeyError, IOError, OSError) as error:
+    except (KeyError, IOError, OSError):
         pass
 
     # last gasp is to assume display is an imtdev string
     try:
-        device = _devices[displayname] = irafdisplay.ImageDisplayProxy(displayname)
+        device = _devices[displayname] = irafdisplay.ImageDisplayProxy(
+            displayname)
         return device
     except (ValueError, IOError):
         pass
     raise IrafError("Unable to open image display `%s'\n" % displayname)
 
-def imcur(displayname=None):
 
+def imcur(displayname=None):
     """Read image cursor and return string expected for IRAF's imcur parameter
 
     If key pressed is colon, also prompts for additional string input.
@@ -68,7 +70,7 @@ def imcur(displayname=None):
         device = _getDevice(displayname)
         # Read cursor position at keystroke
         result = device.readCursor()
-        if Verbose>1:
+        if Verbose > 1:
             sys.__stdout__.write("%s\n" % (result,))
             sys.__stdout__.flush()
         if result == 'EOF':

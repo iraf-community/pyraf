@@ -1,17 +1,11 @@
 #!/usr/bin/env python
 
-
-"""
-$Id$
-"""
-
 from __future__ import division, print_function
 
 import os
-from Tkinter import _default_root # requires 2to3
-from Tkinter import *
+from Tkinter import _default_root  # requires 2to3
+from Tkinter import TclError, Canvas
 import wutil
-import sys, time
 
 # XBM file for cursor is in same directory as this module
 _blankcursor = 'blankcursor.xbm'
@@ -23,7 +17,7 @@ else:
     _blankcursor = os.path.join(os.getcwd(), dirname, _blankcursor)
 del dirname
 
-_TK_HAS_NONE_CURSOR = True # assume True until we learn otherwise
+_TK_HAS_NONE_CURSOR = True  # assume True until we learn otherwise
 
 if _default_root is None:
     from stsci.tools import irafutils
@@ -33,12 +27,14 @@ if _default_root is None:
 # [DAA, Jan 1998]
 # [Modified by RLW to use new atexit module, Dec 2001]
 
+
 def cleanup():
     try:
-        from Tkinter import _default_root, TclError # requires 2to3
+        from Tkinter import _default_root, TclError  # requires 2to3
         import Tkinter as TKNTR
         try:
-            if _default_root: _default_root.destroy()
+            if _default_root:
+                _default_root.destroy()
         except TclError:
             pass
         TKNTR._default_root = None
@@ -47,6 +43,7 @@ def cleanup():
         # see: "SystemError: Parent module 'pyraf' not loaded".  In that case,
         # since nothing was done yet w/ _default_root, we can safely skip this.
         pass
+
 
 import atexit
 atexit.register(cleanup)
@@ -58,9 +55,9 @@ cursorColor = 1
 cursorTrueColor = (1.0, 0.0, 0.0)
 # visuals that use true colors
 truevis = {
-          'truecolor': 1,
-          'directcolor': 1,
-          }
+    'truecolor': 1,
+    'directcolor': 1,
+}
 
 
 def hideTkCursor(theCanvas):
@@ -92,7 +89,7 @@ def hideTkCursor(theCanvas):
     if wutil.WUTIL_USING_X:
         theCanvas['cursor'] = '@' + _blankcursor + ' black'
     else:
-        theCanvas['cursor'] = 'tcross' # this'll do for now
+        theCanvas['cursor'] = 'tcross'  # this'll do for now
 
 
 class PyrafCanvas(Canvas):
@@ -114,13 +111,13 @@ class PyrafCanvas(Canvas):
         # to save last cursor position if switching to another window
         self.lastX = None
         self.lastY = None
-        self.width  = self.winfo_width() # to avoid repeated calls
+        self.width = self.winfo_width()  # to avoid repeated calls
         self.height = self.winfo_height()
 
         # Basic bindings for the virtual trackball
         self.bind('<Expose>', self.tkExpose)
         self.bind('<Configure>', self.tkExpose)
-        #self.after_idle(self.refresh_cursor)
+        # self.after_idle(self.refresh_cursor)
 
     def flush(self):
 
@@ -128,9 +125,9 @@ class PyrafCanvas(Canvas):
 
     def immediateRedraw(self):
 
-            # need to indicate cursor is not visible before redraw, since
-            # cursor sleeps are now issued by redraw. The presumption is that
-            # redraw will wipe out cursor visibility, so we set it first
+        # need to indicate cursor is not visible before redraw, since
+        # cursor sleeps are now issued by redraw. The presumption is that
+        # redraw will wipe out cursor visibility, so we set it first
         if self._isSWCursorActive:
             # deactivate cursor for duration of redraw
             # otherwise it slows the redraw to a glacial pace
@@ -205,20 +202,18 @@ class PyrafCanvas(Canvas):
         if wutil.WUTIL_USING_X and self._SWCursor.isLastSWmove:
             x = self._SWCursor.lastx
             y = self._SWCursor.lasty
-            wutil.moveCursorTo(self.winfo_id(),
-                               self.winfo_rootx(),
-                               self.winfo_rooty(),
-                               int(x*self.winfo_width()),
-                               int((1.-y)*self.winfo_height()))
+            wutil.moveCursorTo(self.winfo_id(), self.winfo_rootx(),
+                               self.winfo_rooty(), int(x * self.winfo_width()),
+                               int((1. - y) * self.winfo_height()))
         else:
-            x = (event.x+0.5)/self.winfo_width()
-            y = 1.-(event.y+0.5)/self.winfo_height()
+            x = (event.x + 0.5) / self.winfo_width()
+            y = 1. - (event.y + 0.5) / self.winfo_height()
         self._SWCursor.moveTo(x, y, SWmove=0)
 
     def moveCursorTo(self, x, y, SWmove=0):
-        self._SWCursor.moveTo(float(x)/self.width,
-                              float(y)/self.height,
-                              SWmove)
+        self._SWCursor.moveTo(
+            float(x) / self.width,
+            float(y) / self.height, SWmove)
 
     def activate(self):
         """Not really needed for Tkplot widgets (used to set OpenGL win)"""
@@ -243,13 +238,14 @@ class PyrafCanvas(Canvas):
                 self.initialised = 1
             self.tkRedraw()
 
+
 class FullWindowCursor:
     """This implements a full window crosshair cursor.  This class can
        operate in the xutil-wrapping mode or in a tkinter-only mode. """
+
     # Perhaps this should inherit from an abstract Cursor class eventually
 
     def __init__(self, x, y, window):
-
         """Display the cursor for the first time.  The passed in window
            also needs to act as a Tk Canvas object."""
 
@@ -258,10 +254,10 @@ class FullWindowCursor:
         self.__useX11 = wutil.WUTIL_USING_X and (not wutil.WUTIL_ON_MAC)
         self.__window = window
         self.__isVisible = 0
-        self.isLastSWmove = 1 # indicates if last position driven by
-                              # sofware command or by mouse events.
-                              # Kludgy, and used by modules using the
-                              # cursor position.
+        self.isLastSWmove = 1  # indicates if last position driven by
+        # sofware command or by mouse events.
+        # Kludgy, and used by modules using the
+        # cursor position.
         self.__tkHorLine = None
         self.__tkVerLine = None
         self.draw()
@@ -278,8 +274,8 @@ class FullWindowCursor:
         # coords and window sizes
         ww = self.__window.width
         wh = self.__window.height
-        x  = self.lastx*ww
-        y  = (1.0-self.lasty)*wh
+        x = self.lastx * ww
+        y = (1.0 - self.lasty) * wh
 
         # Draw the crosshairs.  __window is a Tk Canvas object
         self.__tkHorLine = self.__window.create_line(0, y, ww, y, fill='red')
@@ -287,14 +283,15 @@ class FullWindowCursor:
 
     def _tkEraseCursor(self):
 
-        if self.__tkHorLine != None:
-            self.__window.delete(self.__tkHorLine);
+        if self.__tkHorLine is not None:
+            self.__window.delete(self.__tkHorLine)
             self.__tkHorLine = None
-        if self.__tkVerLine != None:
-            self.__window.delete(self.__tkVerLine);
+        if self.__tkVerLine is not None:
+            self.__window.delete(self.__tkVerLine)
             self.__tkVerLine = None
 
-    def isVisible(self): return self.__isVisible
+    def isVisible(self):
+        return self.__isVisible
 
     def erase(self):
 
@@ -308,17 +305,19 @@ class FullWindowCursor:
     def draw(self):
 
         if not self.__isVisible:
-            if self.__useX11: self._xutilXorDraw()
-            else:             self._tkDrawCursor()
+            if self.__useX11:
+                self._xutilXorDraw()
+            else:
+                self._tkDrawCursor()
         self.__isVisible = 1
 
-    def moveTo(self,x,y, SWmove=0):
+    def moveTo(self, x, y, SWmove=0):
 
         if (self.lastx != x) or (self.lasty != y):
-            self.erase() # erase previous cursor
+            self.erase()  # erase previous cursor
             self.lastx = x
             self.lasty = y
-            self.draw() # xdraw new position
+            self.draw()  # xdraw new position
         if SWmove:
             self.isLastSWmove = 1
         else:

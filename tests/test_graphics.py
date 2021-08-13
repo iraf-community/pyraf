@@ -9,7 +9,7 @@ import time
 
 import pytest
 
-from .utils import IS_PY2, HAS_IRAF, DATA_DIR
+from .utils import HAS_IRAF, DATA_DIR
 
 if HAS_IRAF:
     from pyraf import iraf
@@ -26,8 +26,8 @@ def setup_module():
     TODO: ^Investigate^
     """
     # TODO: Related to test_gki_prow_to_different_devices
-    #os.environ['LPDEST'] = "hp_dev_null"
-    #os.environ['PRINTER'] = "hp_dev_null"
+    # os.environ['LPDEST'] = "hp_dev_null"
+    # os.environ['PRINTER'] = "hp_dev_null"
 
     # first turn off display
     os.environ['PYRAF_NO_DISPLAY'] = '1'
@@ -39,7 +39,7 @@ def diffit(exp2ig, f_new, f_ref, cleanup=True):
     assert os.path.exists(f_new), "New file unfound: {}".format(f_new)
     assert os.path.exists(f_ref), "Ref file unfound: {}".format(f_ref)
     # expect new file to at least be 80% as big as ref file, before we compare
-    expected_sz = int(0.8*os.path.getsize(f_ref))
+    expected_sz = int(0.8 * os.path.getsize(f_ref))
     sz = os.path.getsize(f_new)
     if sz < expected_sz:
         # sometimes the psdump kernel takes a moment to write+close
@@ -63,20 +63,20 @@ def findAllTmpPskFiles():
     if PSDEV.find('dump') >= 0:
         flistCur = glob.glob('/tmp/irafdmp*.ps')  # always in /tmp
     else:
-        flistCur = glob.glob(os.environ['tmp']+os.sep+'psk*')
+        flistCur = glob.glob(os.environ['tmp'] + os.sep + 'psk*')
     # sometimes the tmp files disappear on Solaris
     if sys.platform == 'sunos5':
         time.sleep(1)
         for f in flistCur:
-            os.system("/bin/ls -ld "+f)
+            os.system("/bin/ls -ld " + f)
             if not os.path.exists(f):
                 print("This existed then did not: ", f)
                 flistCur.remove(f)
     # for some reason, on Solaris (at least), some files are dumped to cwd
     if PSDEV.find('dump') >= 0:
-        flistCur += glob.glob(os.getcwd()+os.sep+'irafdmp*.ps')
+        flistCur += glob.glob(os.getcwd() + os.sep + 'irafdmp*.ps')
     else:
-        flistCur += glob.glob(os.getcwd()+os.sep+'psk*')
+        flistCur += glob.glob(os.getcwd() + os.sep + 'psk*')
     return flistCur
 
 
@@ -124,14 +124,15 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
                 # Are these files related (copies?)
                 print("Debugging multiple postscript files scenario")
                 for f in flistAft:
-                    os.system("/bin/ls -ld "+f)
+                    os.system("/bin/ls -ld " + f)
                 # Or, did the /tmp version suddenly get deleted?
                 if not os.path.exists(flistAft[0]):
-                    print("Am somehow missing the deletes.  Test: {}".format(title))
+                    print("Am somehow missing the deletes.  Test: {}".format(
+                        title))
                     return flistAft[-1]
             # Either way, throw something
             raise Exception('Expected single postcript file during: "' +
-                            title+'": '+str(flistAft))
+                            title + '": ' + str(flistAft))
     else:
         # Here we allow more than one, and return the preferred option.
         for f in flistAft:
@@ -150,13 +151,12 @@ def test_dumpspecs():
     out_f.close()
 
     # modify out_str to remove a path that will always be changing
-    out_str = '\n'.join([l for l in out_str.split('\n')
-                         if 'python exec =' not in l])
+    out_str = '\n'.join(
+        [l for l in out_str.split('\n') if 'python exec =' not in l])
     # modify out_str to handle old versions which printed Tkinter as camel-case
     out_str = out_str.replace('Tkinter', 'tkinter')
 
     # verify it (is version dependent)
-    key = ('2' if IS_PY2 else '3', sys.platform.replace('2', ''))
     expected = """python ver = {major}.{minor}
 platform = {platform}
 PY3K = {py3k}
@@ -166,7 +166,7 @@ tkinter use unattempted.
 """.format(major=sys.version_info.major,
            minor=sys.version_info.minor,
            platform=sys.platform,
-           py3k=(sys.version_info.major>=3))
+           py3k=(sys.version_info.major >= 3))
 
     assert expected.strip() == out_str.strip(), \
         'Unexpected output from wutil.dumpspecs: {}'.format(out_str)
@@ -243,8 +243,8 @@ def test_gki_prow_1_append():
     # get output postscript temp file name
     psOut = getNewTmpPskFile(flistBef, "prow_1_append")
     # diff
-    diffit(EXP2IGNORE, psOut,
-           os.path.join(DATA_DIR, PSDEV + "_prow_256_250.ps"))
+    diffit(EXP2IGNORE, psOut, os.path.join(DATA_DIR,
+                                           PSDEV + "_prow_256_250.ps"))
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
@@ -281,8 +281,7 @@ def test_gki_2_prows_no_append():
     psOut = getNewTmpPskFile(flistBef, "2_prows_no_append - A", preferred=prf)
     # diff
     # NOTE - this seems to get 0-len files when (not stdin.isatty()) for psdump
-    diffit(EXP2IGNORE, psOut,
-           os.path.join(DATA_DIR, PSDEV + "_prow_256.ps"))
+    diffit(EXP2IGNORE, psOut, os.path.join(DATA_DIR, PSDEV + "_prow_256.ps"))
     # NOW flush second
     flistBef = findAllTmpPskFiles()
     iraf.gflush()
@@ -292,11 +291,10 @@ def test_gki_2_prows_no_append():
         prf = '.eps'  # Solaris can leave extras here
     psOut = getNewTmpPskFile(flistBef, "2_prows_no_append - B", preferred=prf)
     # diff
-    diffit(EXP2IGNORE, psOut,
-           os.path.join(DATA_DIR, PSDEV + "_prow_250.ps"))
+    diffit(EXP2IGNORE, psOut, os.path.join(DATA_DIR, PSDEV + "_prow_250.ps"))
 
 
-#@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+# @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.skip(reason="Erroneously sends jobs to network printers")
 def test_gki_prow_to_different_devices():  # rename to disable for now
     """Test 2 prow calls, each to different devices - one .ps written.
@@ -322,10 +320,9 @@ def test_gki_prow_to_different_devices():  # rename to disable for now
     # get output postscript temp file name
     psOut = getNewTmpPskFile(flistBef, "prow_to_different_devices")
     # diff
-    diffit(EXP2IGNORE, psOut,
-           os.path.join(DATA_DIR, PSDEV + "_prow_256.ps"))
+    diffit(EXP2IGNORE, psOut, os.path.join(DATA_DIR, PSDEV + "_prow_256.ps"))
     # NOW flush - should do nothing
     flistBef = findAllTmpPskFiles()
     iraf.gflush()
     flistAft = findAllTmpPskFiles()
-    assert flistBef == flistAft, "Extra tmp .ps file written? "+str(flistAft)
+    assert flistBef == flistAft, "Extra tmp .ps file written? " + str(flistAft)

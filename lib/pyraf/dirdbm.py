@@ -4,8 +4,6 @@ Allows simultaneous read-write access to the data since
 the OS allows multiple processes to have access to the
 file system.
 
-$Id$
-
 XXX need to implement 'n' open flag (force new database creation)
 XXX maybe allow for known key with None as value in dict?
 XXX keys, len are incomplete if directory is not writable?
@@ -15,17 +13,15 @@ R. White, 2000 September 26
 
 from __future__ import division, print_function
 
-import os, binascii, string, __builtin__
-_os = os
-_binascii = binascii
-_string = string
-del os, binascii, string
+import os as _os
+import binascii as _binascii
+import __builtin__
 
 # For anydbm
 error = IOError
 
-class _Database(object):
 
+class _Database(object):
     """Dictionary-like object with entries stored in separate files
 
     Keys and values must be strings.
@@ -44,25 +40,26 @@ class _Database(object):
                 except OSError as e:
                     raise IOError(str(e))
             else:
-                raise IOError("Directory "+directory+" does not exist")
+                raise IOError("Directory " + directory + " does not exist")
         elif not _os.path.isdir(directory):
-            raise IOError("File "+directory+" is not a directory")
+            raise IOError("File " + directory + " is not a directory")
         elif self._writable:
             # make sure directory is writable
             try:
-                testfile = _os.path.join(directory, 'junk' + repr(_os.getpid()))
+                testfile = _os.path.join(directory,
+                                         'junk' + repr(_os.getpid()))
                 fh = __builtin__.open(testfile, 'w')
                 fh.close()
                 _os.remove(testfile)
-            except IOError as e:
+            except IOError:
                 raise IOError("Directory %s cannot be opened for writing" %
-                        (directory,))
+                              (directory,))
         # initialize dictionary
         # get list of files from directory and translate to keys
         try:
             flist = _os.listdir(self._directory)
         except OSError:
-            raise IOError("Directory "+directory+" is not readable")
+            raise IOError("Directory " + directory + " is not readable")
         for fname in flist:
             # replace hyphens and add newline in base64
             key = fname.replace('-', '/') + '\n'
@@ -74,7 +71,6 @@ class _Database(object):
                 pass
 
     def _getFilename(self, key):
-
         """Return filename equivalent to this string key"""
 
         filename = _binascii.b2a_base64(key)
@@ -117,11 +113,14 @@ class _Database(object):
 
     def __delitem__(self, key):
         del self._dict[key]
-        if self._writable: _os.remove(self._getFilename(key))
+        if self._writable:
+            _os.remove(self._getFilename(key))
 
-    def has_key(self, key): return self._has(key)
+    def has_key(self, key):
+        return self._has(key)
 
-    def __contains__(self, key): return self._has(key)
+    def __contains__(self, key):
+        return self._has(key)
 
     def _has(self, key):
         return key in self._dict or _os.path.exists(self._getFilename(key))

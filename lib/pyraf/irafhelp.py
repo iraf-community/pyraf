@@ -32,16 +32,18 @@ The padchars keyword determines some details of the format of the output.
 The **kw argument allows minimum matching for the keyword arguments
 (so help(func=1) will work).
 
-$Id$
-
 R. White, 1999 September 23
 """
 from __future__ import division, print_function
 
-import __main__, re, os, sys, types
+import __main__
+import re
+import os
+import sys
+import types
 try:
     import io
-except ImportError: # only for Python 2.5
+except ImportError:  # only for Python 2.5
     io = None
 
 from stsci.tools import minmatch, irafutils
@@ -51,7 +53,6 @@ import describe
 
 # use this form since the iraf import is circular
 import pyraf.iraf
-
 
 # print info on numpy arrays if numpy is available
 
@@ -67,16 +68,14 @@ _FUNCTION = 1
 _METHOD = 2
 _OTHER = 3
 
-_functionTypes = (types.BuiltinFunctionType,
-                  types.FunctionType,
+_functionTypes = (types.BuiltinFunctionType, types.FunctionType,
                   types.LambdaType)
 
-_methodTypes = (types.BuiltinMethodType,
-                types.MethodType)
+_methodTypes = (types.BuiltinMethodType, types.MethodType)
 
 if not PY3K:
-   # in PY3K, UnboundMethodType is simply FunctionType
-   _methodTypes += (types.UnboundMethodType,)
+    # in PY3K, UnboundMethodType is simply FunctionType
+    _methodTypes += (types.UnboundMethodType,)
 
 _listTypes = (list, tuple, dict)
 
@@ -88,40 +87,50 @@ _allSingleTypes = _functionTypes + _methodTypes + _listTypes + _numericTypes
 
 # set up minimum-match dictionary with function keywords
 
-kwnames = ( 'variables', 'functions', 'modules',
-                'tasks', 'packages', 'hidden', 'padchars', 'regexp', 'html' )
+kwnames = ('variables', 'functions', 'modules', 'tasks', 'packages', 'hidden',
+           'padchars', 'regexp', 'html')
 _kwdict = minmatch.MinMatchDict()
-for key in kwnames: _kwdict.add(key, key)
+for key in kwnames:
+    _kwdict.add(key, key)
 del kwnames, key
 
 # additional keywords for IRAF help task
 
-irafkwnames = ( 'file_template', 'all',
-                'parameter', 'section', 'option', 'page', 'nlpp', 'lmargin',
-                'rmargin', 'curpack', 'device', 'helpdb', 'mode' )
+irafkwnames = ('file_template', 'all', 'parameter', 'section', 'option',
+               'page', 'nlpp', 'lmargin', 'rmargin', 'curpack', 'device',
+               'helpdb', 'mode')
 _irafkwdict = {}
 for key in irafkwnames:
     _kwdict.add(key, key)
     _irafkwdict[key] = 1
 del irafkwnames, key
 
+
 def _isinstancetype(an_obj):
     """ Transitional function to handle all basic cases which we care
     about, in both Python 2 and 3, with both old and new-style classes.
     Return True if the passed object is an instance of a class, else False. """
-    if an_obj is None: return False
+    if an_obj is None:
+        return False
     if not PY3K:
         return isinstance(an_obj, types.InstanceType)
     typstr = str(type(an_obj))
     # the following logic works, as PyRAF users expect, in both v2 and v3
     return typstr=="<type 'instance'>" or \
-           (typstr.startswith("<class '") and ('.' in typstr))
+        (typstr.startswith("<class '") and ('.' in typstr))
 
 
-def help(an_obj=__main__, variables=1, functions=1, modules=1,
-         tasks=0, packages=0, hidden=0, padchars=16, regexp=None, html=0,
+def help(an_obj=__main__,
+         variables=1,
+         functions=1,
+         modules=1,
+         tasks=0,
+         packages=0,
+         hidden=0,
+         padchars=16,
+         regexp=None,
+         html=0,
          **kw):
-
     """List the type and value of all the variables in the specified object.
 
 - help() with no arguments will list all the defined variables.
@@ -150,7 +159,8 @@ Other keywords are passed on to the IRAF help task if it is called.
 
     # handle I/O redirection keywords
     redirKW, closeFHList = pyraf.iraf.redirProcess(kw)
-    if '_save' in kw: del kw['_save']
+    if '_save' in kw:
+        del kw['_save']
 
     # get the keywords using minimum-match
     irafkw = {}
@@ -162,23 +172,24 @@ Other keywords are passed on to the IRAF help task if it is called.
                 irafkw[fullkey] = kw[key]
             else:
                 # this is a Python help function keyword
-                exec(fullkey+' = '+repr(kw[key]))
+                exec(fullkey + ' = ' + repr(kw[key]))
         except KeyError as e:
-            raise e.__class__("Error in keyword "+key+"\n"+str(e))
+            raise e.__class__("Error in keyword " + key + "\n" + str(e))
 
     resetList = pyraf.iraf.redirApply(redirKW)
 
     # try block for I/O redirection
 
     try:
-        _help(an_obj, variables, functions, modules,
-                tasks, packages, hidden, padchars, regexp, html, irafkw)
+        _help(an_obj, variables, functions, modules, tasks, packages, hidden,
+              padchars, regexp, html, irafkw)
     finally:
         rv = pyraf.iraf.redirReset(resetList, closeFHList)
     return rv
 
-def _help(an_obj, variables, functions, modules,
-                tasks, packages, hidden, padchars, regexp, html, irafkw):
+
+def _help(an_obj, variables, functions, modules, tasks, packages, hidden,
+          padchars, regexp, html, irafkw):
 
     # for IrafTask object, display help and also print info on the object
     # for string parameter, if it looks like a task name try getting help
@@ -186,17 +197,18 @@ def _help(an_obj, variables, functions, modules,
     # often be asking for help with simple strings as an argument...)
 
     if isinstance(an_obj, IrafTask):
-        if _printIrafHelp(an_obj, html, irafkw): return
+        if _printIrafHelp(an_obj, html, irafkw):
+            return
 
     if isinstance(an_obj, str):
         # Python task names
-        if an_obj in sys.modules: # e.g. help drizzlepac
+        if an_obj in sys.modules:  # e.g. help drizzlepac
             theMod = sys.modules[an_obj]
             if hasattr(theMod, 'help'):
                 theMod.help()
                 return
         # sub-module Python task names
-        else: # e.g. help astrodrizzle (when really drizzlepac.astrodrizzle)
+        else:  # e.g. help astrodrizzle (when really drizzlepac.astrodrizzle)
             keyMatches = \
                 [m for m in sys.modules.keys() if m.endswith('.'+an_obj)]
             for theKey in keyMatches:
@@ -206,9 +218,10 @@ def _help(an_obj, variables, functions, modules,
                     return
         # IRAF task names
         if re.match(r'[A-Za-z_][A-Za-z0-9_.]*$', an_obj) or \
-          (re.match(r'[^\0]*$', an_obj) and \
-                    os.path.exists(pyraf.iraf.Expand(an_obj, noerror=1))):
-            if _printIrafHelp(an_obj, html, irafkw): return
+            (re.match(r'[^\0]*$', an_obj) and
+             os.path.exists(pyraf.iraf.Expand(an_obj, noerror=1))):
+            if _printIrafHelp(an_obj, html, irafkw):
+                return
 
     vlist = None
     if not isinstance(an_obj, _allSingleTypes):
@@ -224,7 +237,7 @@ def _help(an_obj, variables, functions, modules,
     # look inside the object
 
     tasklist, pkglist, functionlist, methodlist, modulelist, otherlist = \
-            _getContents(vlist, regexp, an_obj)
+        _getContents(vlist, regexp, an_obj)
 
     if _isinstancetype(an_obj):
         # for instances, print a help line for the object itself first
@@ -258,15 +271,22 @@ def _help(an_obj, variables, functions, modules,
 
     if _isinstancetype(an_obj) and functions:
         # for instances, call recursively to list class methods
-        help(an_obj.__class__, functions=functions, tasks=tasks,
-                packages=packages, variables=variables, hidden=hidden,
-                padchars=padchars, regexp=regexp)
+        help(an_obj.__class__,
+             functions=functions,
+             tasks=tasks,
+             packages=packages,
+             variables=variables,
+             hidden=hidden,
+             padchars=padchars,
+             regexp=regexp)
 
-#------------------------------------
+
+# ------------------------------------
 # helper functions
-#------------------------------------
+# ------------------------------------
 
 # return 1 if they handle the object, 0 if they don't
+
 
 def _printIrafHelp(an_obj, html, irafkw):
     if html:
@@ -275,6 +295,7 @@ def _printIrafHelp(an_obj, html, irafkw):
     else:
         return _irafHelp(an_obj, irafkw)
 
+
 def _valueHelp(an_obj, padchars):
     # just print info on the object itself
     vstr = _valueString(an_obj, verbose=1)
@@ -282,19 +303,21 @@ def _valueHelp(an_obj, padchars):
         name = an_obj.__name__
     except AttributeError:
         name = ''
-    name = name + (padchars-len(name))*" "
+    name = name + (padchars - len(name)) * " "
     if name and len(name.strip()) > 0:
         print(name, ":", vstr)
     else:
         # omit the colon if name is null
         print(vstr)
 
+
 def _getContents(vlist, regexp, an_obj):
     # Make one pass through names getting the type and sort order
     # Also split IrafTask and IrafPkg objects into separate lists and
     #  look into base classes if object is a class.
     # Returns lists of various types of included objects
-    if regexp: re_check = re.compile(regexp)
+    if regexp:
+        re_check = re.compile(regexp)
     tasklist = []
     pkglist = []
     # lists for functions, modules, other types
@@ -302,7 +325,7 @@ def _getContents(vlist, regexp, an_obj):
     methodlist = []
     modulelist = []
     otherlist = []
-    sortlist = 4*[None]
+    sortlist = 4 * [None]
     sortlist[_FUNCTION] = functionlist
     sortlist[_METHOD] = methodlist
     sortlist[_MODULE] = modulelist
@@ -327,8 +350,8 @@ def _getContents(vlist, regexp, an_obj):
         for c in classlist:
             classlist.extend(list(c.__bases__))
             for vname, value in vars(c).items():
-                if vname not in namedict and (
-                        (regexp is None) or re_check.match(vname)):
+                if vname not in namedict and ((regexp is None) or
+                                              re_check.match(vname)):
                     vorder = _sortOrder(type(value))
                     sortlist[vorder].append((vname, value))
                     namedict[vname] = 1
@@ -341,6 +364,7 @@ def _getContents(vlist, regexp, an_obj):
     otherlist.sort()
     return tasklist, pkglist, functionlist, methodlist, modulelist, otherlist
 
+
 def _printValueList(varlist, hidden, padchars):
     # special hidden methods to keep (because they are widely useful)
     _specialHidden = ['__init__', '__call__']
@@ -349,9 +373,8 @@ def _printValueList(varlist, hidden, padchars):
             vstr = _valueString(value)
             # pad name to padchars chars if shorter
             if len(vname) < padchars:
-                vname = vname + (padchars-len(vname))*" "
+                vname = vname + (padchars - len(vname)) * " "
             print(vname, ":", vstr)
-
 
 
 def _sortOrder(type):
@@ -365,30 +388,31 @@ def _sortOrder(type):
         v = _OTHER
     return v
 
-def _valueString(value,verbose=0):
+
+def _valueString(value, verbose=0):
     """Returns name and, for some types, value of the variable as a string."""
 
     t = type(value)
     vstr = t.__name__
     if issubclass(t, str):
-        if len(value)>42:
-            vstr = vstr + ", value = "+ repr(value[:39]) + '...'
+        if len(value) > 42:
+            vstr = vstr + ", value = " + repr(value[:39]) + '...'
         else:
-            vstr = vstr + ", value = "+ repr(value)
+            vstr = vstr + ", value = " + repr(value)
     elif issubclass(t, _listTypes):
         return "%s [%d entries]" % (vstr, len(value))
     elif (PY3K and issubclass(t, io.IOBase)) or \
          (not PY3K and issubclass(t, file)):
-        vstr = vstr + ", "+ repr(value)
+        vstr = vstr + ", " + repr(value)
     elif issubclass(t, _numericTypes):
-        vstr = vstr + ", value = "+ repr(value)
+        vstr = vstr + ", value = " + repr(value)
     elif _isinstancetype(value):
         cls = value.__class__
         if cls.__module__ == '__main__':
             vstr = 'instance of class ' + cls.__name__
         else:
             vstr = 'instance of class ' + cls.__module__ + '.' + cls.__name__
-    elif issubclass(t, _functionTypes+_methodTypes):
+    elif issubclass(t, _functionTypes + _methodTypes):
         # try using Fredrik Lundh's describe on functions
         try:
             vstr = vstr + ' ' + describe.describe(value)
@@ -433,8 +457,10 @@ def _irafHelp(taskname, irafkw):
         print(str(e))
         return 0
 
+
 _HelpURL = "http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?task="
 _Browser = "netscape"
+
 
 def _htmlHelp(taskname):
     """Display HTML help for given IRAF task in a browser.

@@ -2,6 +2,7 @@
 #####                   An example subprocess interfaces                #####
 #############################################################################
 
+
 class Ph:
     """Convenient interface to CCSO 'ph' nameserver subprocess.
 
@@ -29,9 +30,10 @@ class Ph:
         self.clear()
 
         self.proc.writeline('query ' + q)
-        got = []; it = {}
+        got = []
+        it = {}
         while True:
-            response = self.getreply()      # Should get null on new prompt.
+            response = self.getreply()  # Should get null on new prompt.
             errs = self.proc.readPendingErrChars()
             if errs:
                 bytes_write(sys.stderr.fileno(), errs)
@@ -39,7 +41,7 @@ class Ph:
                 got.append(it)
                 it = {}
             if not response:
-                return got                                              # ===>
+                return got  # ===>
             elif isinstance(response, (str, unicode)):
                 raise ValueError("ph failed match: '%s'" % response)
             for line in response:
@@ -62,13 +64,13 @@ class Ph:
         elif nextChar == '-':
             # dashed line - discard it, and continue reading:
             self.proc.readline()
-            return self.getreply()                                      # ===>
+            return self.getreply()  # ===>
         elif nextChar == 'p':
             # 'ph> ' prompt - don't think we should hit this, but what the hay:
-            return ''                                                   # ===>
+            return ''  # ===>
         elif nextChar in '0123456789':
             # Error notice - we're currently assuming single line errors:
-            return self.proc.readline()[:-1]                            # ===>
+            return self.proc.readline()[:-1]  # ===>
         elif nextChar in ' \t':
             # Get content, up to next dashed line:
             got = []
@@ -76,12 +78,15 @@ class Ph:
                 got.append(self.proc.readline()[:-1])
                 nextChar = self.proc.peekPendingChar()
             return got
+
     def __repr__(self):
-        return "<Ph instance, %s at %s>\n" % (self.proc.status(),
-                                                hex(id(self))[2:])
+        return "<Ph instance, %s at %s>\n" % (self.proc.status(), hex(
+            id(self))[2:])
+
     def clear(self):
         """Clear-out initial preface or residual subproc input and output."""
-        pause = .5; maxIter = 10                # 5 seconds to clear
+        pause = .5
+        maxIter = 10  # 5 seconds to clear
         iterations = 0
         got = ''
         self.proc.write('')
@@ -89,7 +94,8 @@ class Ph:
             got = got + self.proc.readPendingChars()
             # Strip out all but the last incomplete line:
             got = got.split('\n')[-1]
-            if got == 'ph> ': return        # Ok.                       ===>
+            if got == 'ph> ':
+                return  # Ok.                       ===>
             time.sleep(pause)
-        raise SubprocessError('ph not responding within %s secs' %
-                                                        pause * maxIter)
+        raise SubprocessError('ph not responding within %s secs' % pause *
+                              maxIter)

@@ -1,6 +1,4 @@
 """clast.py: abstract syntax tree node type for CL parsing
-
-$Id$
 """
 from __future__ import division, print_function
 
@@ -31,7 +29,9 @@ from __future__ import division, print_function
 
 from stsci.tools import compmixin
 
+
 class AST(compmixin.ComparableMixin):
+
     def __init__(self, type=None):
         self.type = type
         self._kids = []
@@ -46,15 +46,20 @@ class AST(compmixin.ComparableMixin):
     #
     def __getitem__(self, i):
         return self._kids[i]
+
     def __len__(self):
         return len(self._kids)
+
     # __setslice__ is deprec.d, out in PY3K; use __setitem__ instead
     def __setslice__(self, low, high, seq):
         self._kids[low:high] = seq
+
     def __setitem__(self, idx, val):
         self._kids[idx] = val
+
     def __repr__(self):
         return self.type
+
     def _compare(self, other, method):
         if isinstance(other, AST):
             return method(self.type, other.type)

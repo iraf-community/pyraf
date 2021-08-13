@@ -1,17 +1,15 @@
 """pyrafTk.py: modify tkinter root to print short PyRAF tracebacks
 
-$Id$
-
 R. L. White, 2000 November 17
 """
 from __future__ import division, print_function
 
 import sys
-import Tkinter as TKNTR # requires 2to3
+import Tkinter as TKNTR  # requires 2to3
 import wutil
 
-class _PyrafTk(TKNTR.Tk):
 
+class _PyrafTk(TKNTR.Tk):
     """Modified Tk class that prints short pyraf tracebacks"""
 
     def __init__(self, function):

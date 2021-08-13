@@ -1,6 +1,4 @@
 """generic.py: John Aycock's little languages (SPARK) framework
-
-$Id$
 """
 
 #  Copyright (c) 1998-2000 John Aycock
@@ -40,10 +38,8 @@ from __future__ import division, print_function
 __version__ = 'SPARK-0.6.1rlw'
 
 import re
-import sys
-import string
 import cltoken
-token = cltoken
+
 
 def _namelist(instance):
     namelist, namedict, classlist = [], {}, [instance.__class__]
@@ -56,7 +52,9 @@ def _namelist(instance):
                 namedict[name] = 1
     return namelist
 
+
 class GenericScanner:
+
     def __init__(self):
         pattern = self.reflect()
         self.re = re.compile(pattern, re.VERBOSE)
@@ -66,8 +64,8 @@ class GenericScanner:
         for name, number in self.re.groupindex.items():
             # allow other named groups
             if hasattr(self, 't_' + name):
-                self.index2func[number-1] = getattr(self, 't_' + name)
-                self.indexlist.append(number-1)
+                self.index2func[number - 1] = getattr(self, 't_' + name)
+                self.indexlist.append(number - 1)
 
     def makeRE(self, name):
         doc = getattr(self, name).__doc__
@@ -110,7 +108,9 @@ class GenericScanner:
         r'( . | \n )+'
         pass
 
+
 class GenericParser:
+
     def __init__(self, start):
         self.rules = {}
         self.rule2func = {}
@@ -125,7 +125,8 @@ class GenericParser:
     #
     #  A hook for GenericASTBuilder and GenericASTMatcher.
     #
-    def preprocess(self, rule, func):       return rule, func
+    def preprocess(self, rule, func):
+        return rule, func
 
     def addRule(self, doc, func):
         rules = doc.split()
@@ -133,12 +134,12 @@ class GenericParser:
         index = []
         for i in range(len(rules)):
             if rules[i] == '::=':
-                index.append(i-1)
+                index.append(i - 1)
         index.append(len(rules))
 
-        for i in range(len(index)-1):
+        for i in range(len(index) - 1):
             lhs = rules[index[i]]
-            rhs = rules[index[i]+2:index[i+1]]
+            rhs = rules[index[i] + 2:index[i + 1]]
             rule = (lhs, tuple(rhs))
 
             rule, fn = self.preprocess(rule, func)
@@ -146,7 +147,7 @@ class GenericParser:
             if lhs in self.rules:
                 self.rules[lhs].append(rule)
             else:
-                self.rules[lhs] = [ rule ]
+                self.rules[lhs] = [rule]
             self.rule2func[rule] = fn
             self.rule2name[rule] = func.__name__[2:]
         self.ruleschanged = 1
@@ -164,9 +165,9 @@ class GenericParser:
         #  to self.addRule() because the start rule shouldn't
         #  be subject to preprocessing.
         #
-        startRule = (self._START, ( start, self._EOF ))
+        startRule = (self._START, (start, self._EOF))
         self.rule2func[startRule] = lambda args: args[0]
-        self.rules[self._START] = [ startRule ]
+        self.rules[self._START] = [startRule]
         self.rule2name[startRule] = ''
         return startRule
 
@@ -178,7 +179,7 @@ class GenericParser:
         changed = 1
         npass = 0
         while (changed > 0):
-            npass = npass+1
+            npass = npass + 1
             changed = 0
             for key, this in first.items():
                 for lhs, rhs in self.rules[key]:
@@ -191,7 +192,7 @@ class GenericParser:
                             # this is a terminal
                             if token not in this:
                                 this[token] = 1
-                                changed = changed+1
+                                changed = changed + 1
                         else:
                             # this is a nonterminal -- add its FIRST set
                             for ntkey in first[token].keys():
@@ -199,13 +200,14 @@ class GenericParser:
                                     derivesEpsilon = 1
                                 elif ntkey != key and ntkey not in this:
                                     this[ntkey] = 1
-                                    changed = changed+1
-                        if not derivesEpsilon: break
+                                    changed = changed + 1
+                        if not derivesEpsilon:
+                            break
                     else:
                         # if get all the way through, add epsilon too
                         if "" not in this:
                             this[""] = 1
-                            changed = changed+1
+                            changed = changed + 1
         # make the rule/token lists
         self.makeTokenRules(first)
 
@@ -239,8 +241,10 @@ class GenericParser:
                             for nextToken in pflist.keys():
                                 if nextToken and nextToken not in done:
                                     done[nextToken] = 1
-                                    tokenRules[(nextSymbol, nextToken)].append(prule)
-                        if "" not in pflist: break
+                                    tokenRules[(nextSymbol,
+                                                nextToken)].append(prule)
+                        if "" not in pflist:
+                            break
                     else:
                         # terminal token
                         if element not in done:
@@ -277,25 +281,25 @@ class GenericParser:
         tree = {}
         # add a Token instead of a string so references to
         # token.type in buildState work for EOF symbol
-        tokens.append(token.Token(self._EOF))
-        states = (len(tokens)+1)*[None]
-        states[0] = [ (self.startRule, 0, 0) ]
+        tokens.append(cltoken.Token(self._EOF))
+        states = (len(tokens) + 1) * [None]
+        states[0] = [(self.startRule, 0, 0)]
 
         if self.ruleschanged:
             self.makeFIRST()
             self.ruleschanged = 0
 
         for i in range(len(tokens)):
-            states[i+1] = []
+            states[i + 1] = []
 
             if states[i] == []:
                 break
             self.buildState(tokens[i], states, i, tree)
 
-        if i < len(tokens)-1 or states[i+1] != [ (self.startRule, 2, 0) ]:
+        if i < len(tokens) - 1 or states[i + 1] != [(self.startRule, 2, 0)]:
             del tokens[-1]
-            self.error(tokens[i-1])
-        rv = self.buildTree(tokens, tree, ((self.startRule, 2, 0), i+1))
+            self.error(tokens[i - 1])
+        rv = self.buildTree(tokens, tree, ((self.startRule, 2, 0), i + 1))
         del tokens[-1]
         return rv
 
@@ -325,8 +329,8 @@ class GenericParser:
                 lhstuple = (lhs,)
                 for prule, ppos, pparent in states[parent]:
                     plhs, prhs = prule
-                    if prhs[ppos:ppos+1] == lhstuple:
-                        new = (prule, ppos+1, pparent)
+                    if prhs[ppos:ppos + 1] == lhstuple:
+                        new = (prule, ppos + 1, pparent)
                         key = (new, i)
                         if key in tree:
                             tree[key].append((item, i))
@@ -348,7 +352,7 @@ class GenericParser:
                     # need to add completed version here too
                     #
                     if nextSym in completed:
-                        new = (rule, pos+1, parent)
+                        new = (rule, pos + 1, parent)
                         key = (new, i)
                         if key in tree:
                             tree[key].extend(completed[nextSym])
@@ -368,8 +372,8 @@ class GenericParser:
             #  A -> a . c (scanner)
             #
             elif token.type == nextSym:
-                #assert new not in states[i+1]
-                states[i+1].append((rule, pos+1, parent))
+                # assert new not in states[i+1]
+                states[i + 1].append((rule, pos + 1, parent))
 
     def buildTree(self, tokens, tree, root):
         stack = []
@@ -414,13 +418,12 @@ class GenericParser:
                         del tokens[-1]
                         print(stack[0])
                         # self.error(tokens[tokpos], 'Parsing ambiguity'+str(children[:]))
-                        self.error(stack[0], 'Parsing ambiguity'+str(children[:]))
+                        self.error(stack[0],
+                                   'Parsing ambiguity' + str(children[:]))
                 else:
                     child = children[0]
 
-                tokpos = self.buildTree_r(stack,
-                                          tokens, tokpos,
-                                          tree, child)
+                tokpos = self.buildTree_r(stack, tokens, tokpos, tree, child)
                 pos = pos - 1
                 (crule, cpos, cparent), cstate = child
                 state = cparent
@@ -449,8 +452,8 @@ class GenericParser:
             sortlist.append((len(rhs), rule))
             name2index[rule] = i
         sortlist.sort()
-        list = list(map(lambda (a, b): b, sortlist))
-        return children[name2index[self.resolve(list)]]
+        alist = [s[1] for s in sortlist]
+        return children[name2index[self.resolve(alist)]]
 
     def resolve(self, list):
         #
@@ -463,6 +466,7 @@ class GenericParser:
         # RLW Why doesn't that happen now?  Looks like an error?
         return list[0]
 
+
 #
 #  GenericASTBuilder automagically constructs a concrete/abstract syntax tree
 #  for a given input.  The extra argument is a class (not an instance!)
@@ -471,15 +475,19 @@ class GenericParser:
 #  XXX - silently overrides any user code in methods.
 #
 
+
 class GenericASTBuilder(GenericParser):
+
     def __init__(self, AST, start):
         GenericParser.__init__(self, start)
         self.AST = AST
 
     def preprocess(self, rule, func):
-        rebind = lambda lhs, self=self: \
-                        lambda args, lhs=lhs, self=self: \
-                                self.buildASTNode(args, lhs)
+
+        def rebind(lhs, self=self):
+            return (
+                lambda args, lhs=lhs, self=self: self.buildASTNode(args, lhs))
+
         lhs, rhs = rule
         return rule, rebind(lhs)
 
@@ -492,12 +500,14 @@ class GenericASTBuilder(GenericParser):
                 children.append(self.terminal(arg))
         return self.nonterminal(lhs, children)
 
-    def terminal(self, token):      return token
+    def terminal(self, token):
+        return token
 
     def nonterminal(self, type, args):
         rv = self.AST(type)
         rv[:len(args)] = args
         return rv
+
 
 #
 #  GenericASTTraversal is a Visitor pattern according to Design Patterns.  For
@@ -509,10 +519,13 @@ class GenericASTBuilder(GenericParser):
 #  preorder traversal.
 #
 
+
 class GenericASTTraversalPruningException(Exception):
     pass
 
+
 class GenericASTTraversal:
+
     def __init__(self, ast):
         self.ast = ast
         self.collectRules()
@@ -545,12 +558,12 @@ class GenericASTTraversal:
             return
 
         for kid in node:
-#          if kid.type=='term' and len(kid._kids)==3 and kid._kids[1].type=='/':
-#              # Not the place to check for integer divsion - the type is
-#              # either INTEGER or IDENT (and we dont know yet what the
-#              # underlying type of the IDENT is...)
-#              print(kid._kids[0].type, kid._kids[1].type, kid._kids[2].type)
-           self.preorder(kid)
+            #          if kid.type=='term' and len(kid._kids)==3 and kid._kids[1].type=='/':
+            #              # Not the place to check for integer divsion - the type is
+            #              # either INTEGER or IDENT (and we dont know yet what the
+            #              # underlying type of the IDENT is...)
+            #              print(kid._kids[0].type, kid._kids[1].type, kid._kids[2].type)
+            self.preorder(kid)
 
         func = self.exitrules.get(name)
         if func is not None:
@@ -574,6 +587,7 @@ class GenericASTTraversal:
     def default(self, node):
         pass
 
+
 #
 #  GenericASTMatcher.  AST nodes must have "__getitem__" and "__cmp__"
 #  implemented.
@@ -581,15 +595,19 @@ class GenericASTTraversal:
 #  XXX - makes assumptions about how GenericParser walks the parse tree.
 #
 
+
 class GenericASTMatcher(GenericParser):
+
     def __init__(self, start, ast):
         GenericParser.__init__(self, start)
         self.ast = ast
 
     def preprocess(self, rule, func):
-        rebind = lambda func, self=self: \
-                        lambda args, func=func, self=self: \
-                                self.foundMatch(args, func)
+
+        def rebind(func, self=self):
+            return (
+                lambda args, func=func, self=self: self.foundMatch(args, func))
+
         lhs, rhs = rule
         rhslist = list(rhs)
         rhslist.reverse()

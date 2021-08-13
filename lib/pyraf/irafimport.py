@@ -8,8 +8,6 @@ Modify module import mechanism so that
 Assumes that all IRAF tasks and packages are accessible as iraf
 module attributes.  Only affects imports of iraf module.
 
-$Id$
-
 R. White, 1999 August 17
 """
 from __future__ import absolute_import, division, print_function
@@ -19,7 +17,7 @@ import sys
 from stsci.tools import minmatch
 
 PY3K = sys.version_info[0] > 2
-_importHasLvlArg = PY3K or sys.version_info[1] >= 5 # is 2.*, handle no 1.*
+_importHasLvlArg = PY3K or sys.version_info[1] >= 5  # is 2.*, handle no 1.*
 _reloadIsBuiltin = sys.version_info[0] < 3
 
 IMPORT_DEBUG = False
@@ -45,7 +43,8 @@ def restoreBuiltins():
 def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
     if IMPORT_DEBUG:
-        print("irafimport called: "+name+", "+str(fromlist)+", "+str(level))
+        print("irafimport called: " + name + ", " + str(fromlist) + ", " +
+              str(level))
 
     # do first: the default value for level changed to 0 as of Python 3.3
     if PY3K and sys.version_info[1] >= 3 and level < 0:
@@ -59,7 +58,8 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
                 pkg.run(_doprint=0, _hush=1)
         # must return a module for 'from' import
         if IMPORT_DEBUG:
-            print("irafimport: case: from "+name+" import "+str(fromlist))
+            print("irafimport: case: from " + name + " import " +
+                  str(fromlist))
         return _irafModuleProxy.module
 
     # e.g. "import iraf" or "from . import iraf" (fromlist is a list OR tuple)
@@ -68,16 +68,17 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
        ((not PY3K) and (name == "iraf")) or \
        ((not PY3K) and name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
         if IMPORT_DEBUG:
-            print("irafimport: iraf case: n="+name+", fl="+str(fromlist)+ \
-                  ", l="+str(level))
+            print("irafimport: iraf case: n=" + name + ", fl=" +
+                  str(fromlist) + ", l=" + str(level))
         return _irafModuleProxy
 
     # e.g. "import pyraf.iraf" (return module is for pyraf, not iraf)
     if not fromlist and name == 'pyraf.iraf' and level == 0:
         assert 'pyraf' in sys.modules, 'Unexpected import error - contact STScI'
         if IMPORT_DEBUG:
-            print("irafimport: pyraf.iraf case: n="+name+", fl="+str(fromlist)+
-                  ", l="+str(level)+", will modify pyraf module")
+            print("irafimport: pyraf.iraf case: n=" + name + ", fl=" +
+                  str(fromlist) + ", l=" + str(level) +
+                  ", will modify pyraf module")
         # builtin import below will return pyraf module, after having set up an
         # attr of it called 'iraf' which is the iraf module.  Instead we want
         # to set the attr to be our proxy (this case maybe unused in Python 2).
@@ -93,8 +94,10 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
     # !!! TEMPORARY KLUDGE !!! keep this code until cache files are updated
     if name:
-        for module in ['minmatch', 'irafutils', 'dialog', 'listdlg',
-                       'filedlg', 'alert', 'irafglobals']:
+        for module in [
+                'minmatch', 'irafutils', 'dialog', 'listdlg', 'filedlg',
+                'alert', 'irafglobals'
+        ]:
             if name == ('pyraf.%s' % module):
                 name = 'stsci.tools.%s' % module
         # Replace any instances of 'pytools' with 'stsci.tools' -- the
@@ -103,15 +106,15 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
     # Same for everything in fromlist (which is a tuple in PY3K)
     if fromlist:
-        fromlist = tuple([item.replace('pytools', 'stsci.tools')
-                         for item in fromlist])
+        fromlist = tuple(
+            [item.replace('pytools', 'stsci.tools') for item in fromlist])
     # !!! END TEMPORARY KLUDGE !!!
 
-    hadIrafInList = fromlist and 'iraf' in fromlist and name=='' and level>0
+    hadIrafInList = fromlist and 'iraf' in fromlist and name == '' and level > 0
 
     if IMPORT_DEBUG:
-        print("irafimport - PASSTHRU: n="+name+", fl="+str(fromlist)+", l="+
-              str(level))
+        print("irafimport - PASSTHRU: n=" + name + ", fl=" + str(fromlist) +
+              ", l=" + str(level))
     if _importHasLvlArg:
         retval = _originalImport(name, globals, locals, fromlist, level)
     else:
@@ -128,7 +131,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
 def _irafReload(module):
     if isinstance(module, _irafModuleClass):
-        #XXX Not sure this is correct
+        # XXX Not sure this is correct
         module.module = _originalReload(module.module)
         return module
     else:
@@ -137,6 +140,7 @@ def _irafReload(module):
 
 class _irafModuleClass:
     """Proxy for iraf module that makes tasks appear as attributes"""
+
     def __init__(self):
         self.__dict__['module'] = None
 
@@ -148,7 +152,8 @@ class _irafModuleClass:
         self.__dict__['mmdict'] = minmatch.MinMatchDict(vars(self.module))
 
     def __getattr__(self, attr):
-        if self.module is None: self._moduleInit()
+        if self.module is None:
+            self._moduleInit()
         # first try getting this attribute directly from the usual module
         try:
             return getattr(self.module, attr)
@@ -159,7 +164,7 @@ class _irafModuleClass:
             return self.module.getTask(attr)
         except minmatch.AmbiguousKeyError as e:
             raise AttributeError(str(e))
-        except KeyError as e:
+        except KeyError:
             pass
         # last try is minimum match dictionary of rest of module contents
         try:
@@ -177,7 +182,8 @@ class _irafModuleClass:
 
         Useful for command completion.
         """
-        if self.module is None: self._moduleInit()
+        if self.module is None:
+            self._moduleInit()
         if taskname == "":
             matches = list(self.mmdict.keys())
         else:
@@ -203,7 +209,7 @@ if PY3K:
     the_iraf_module = pyrafmod.iraf
 else:
     the_iraf_module = _originalImport('iraf', globals(), locals(), [])
- 
+
 # leaving
 if IMPORT_DEBUG:
     print("irafimport: passed final import")

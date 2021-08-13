@@ -20,16 +20,24 @@ Provides this functionality:
 Uses standard code module plus some ideas from cmd.py module
 (and of course Perry's Monty design.)
 
-$Id$
-
 R. White, 2000 February 20
 """
 from __future__ import division, print_function
 
-import string, re, os, sys, code, keyword, traceback, linecache
+import string
+import re
+import os
+import sys
+import code
+import keyword
+import traceback
+import linecache
 from stsci.tools import capable, minmatch
-import iraf, irafinst, wutil
+import iraf
+import irafinst
+import wutil
 from pyrafglobals import pyrafDir
+
 
 class CmdConsole(code.InteractiveConsole):
     """Base class for command console.
@@ -38,23 +46,29 @@ class CmdConsole(code.InteractiveConsole):
     hook for simple non-Python command processing.
     """
 
-    def __init__(self, locals=None, filename="<console>",
-                    cmddict=None, prompt1=">>> ", prompt2="... ",
-                    cmdchars=("a-zA-Z_.", "0-9")):
-        code.InteractiveConsole.__init__(self, locals=locals, filename=filename)
+    def __init__(self,
+                 locals=None,
+                 filename="<console>",
+                 cmddict=None,
+                 prompt1=">>> ",
+                 prompt2="... ",
+                 cmdchars=("a-zA-Z_.", "0-9")):
+        code.InteractiveConsole.__init__(self,
+                                         locals=locals,
+                                         filename=filename)
         self.ps1 = prompt1
         self.ps2 = prompt2
-        if cmddict==None: cmddict={}
+        if cmddict is None:
+            cmddict = {}
         self.cmddict = cmddict
         # cmdchars gives character set for first character, following
         # characters in the command name
         # create pattern that puts command in group 'cmd' and matches
         # optional leading and trailing whitespace
-        self.recmd = re.compile( "[ \t]*(?P<cmd>" +
-                "[" + cmdchars[0] + "][" + cmdchars[0] + cmdchars[1] + "]*" +
-                ")[ \t]*")
+        self.recmd = re.compile("[ \t]*(?P<cmd>" + "[" + cmdchars[0] + "][" +
+                                cmdchars[0] + cmdchars[1] + "]*" + ")[ \t]*")
         # history is a list of lines entered by user (allocated in blocks)
-        self.history = 100*[None]
+        self.history = 100 * [None]
         self.nhistory = 0
         import irafcompleter
         self.completer = irafcompleter.IrafCompleter()
@@ -62,14 +76,14 @@ class CmdConsole(code.InteractiveConsole):
     def addHistory(self, line):
         """Append a line to history"""
         if self.nhistory >= len(self.history):
-            self.history.extend(100*[None])
+            self.history.extend(100 * [None])
         self.history[self.nhistory] = line
         self.nhistory = self.nhistory + 1
 
     def printHistory(self, n=20):
         """Print last n lines of history"""
         for i in range(-min(n, self.nhistory), 0):
-            print(self.history[self.nhistory+i])
+            print(self.history[self.nhistory + i])
 
     def interact(self, banner=None):
         """Emulate the interactive Python console, with extra commands.
@@ -77,8 +91,8 @@ class CmdConsole(code.InteractiveConsole):
         Also is modified so it does not catch EOFErrors."""
         if banner is None:
             self.write("Python %s on %s\n%s\n(%s)\n" %
-                                    (sys.version, sys.platform, sys.copyright,
-                                    self.__class__.__name__))
+                       (sys.version, sys.platform, sys.copyright,
+                        self.__class__.__name__))
         else:
             self.write("%s\n" % str(banner))
         more = 0
@@ -95,7 +109,7 @@ class CmdConsole(code.InteractiveConsole):
                 else:
                     prompt = self.ps1
 # !!!               prompt = 'curpkg > '
-                # reset the focus to terminal if necessary
+# reset the focus to terminal if necessary
                 wutil.focusController.resetFocusHistory()
                 line = self.raw_input(prompt)
                 if needtermid and prompt:
@@ -105,21 +119,23 @@ class CmdConsole(code.InteractiveConsole):
                     needtermid = 0
                 neofs = 0
                 # add non-null lines to history
-                if line.strip(): self.addHistory(line)
+                if line.strip():
+                    self.addHistory(line)
                 # note that this forbids combination of python & CL
                 # code -- e.g. a for loop that runs CL tasks.
                 if not more:
                     line = self.cmd(line)
-                if line or more: more = self.push(line)
+                if line or more:
+                    more = self.push(line)
             except EOFError:
-                #XXX ugly code here -- refers to methods
-                #XXX defined in extensions of this class
-                neofs = neofs+1
-                if neofs>=5:
+                # XXX ugly code here -- refers to methods
+                # XXX defined in extensions of this class
+                neofs = neofs + 1
+                if neofs >= 5:
                     self.write("\nToo many EOFs, exiting now\n")
                     self.do_exit()
                 self.write("\nUse .exit to exit\n"
-                        ".help describes executive commands\n")
+                           ".help describes executive commands\n")
                 self.resetbuffer()
                 more = 0
             except KeyboardInterrupt:
@@ -151,27 +167,35 @@ class CmdConsole(code.InteractiveConsole):
         """Hook to handle other commands (this version does nothing)"""
         return line
 
+
 # put the executive commands in a minimum match dictionary
 
 _cmdDict = minmatch.QuietMinMatchDict({
-                                '.help': 'do_help',
-                                '.clemulate': 'do_clemulate',
-                                '.logfile': 'do_logfile',
-                                '.exit': 'do_exit',
-#                               'lo': 'do_exit',
-                                '.fulltraceback': 'do_fulltraceback',
-                                '.complete': 'do_complete',
-                                '.debug': 'do_debug',
-                                })
+    '.help': 'do_help',
+    '.clemulate': 'do_clemulate',
+    '.logfile': 'do_logfile',
+    '.exit': 'do_exit',
+    #                               'lo': 'do_exit',
+    '.fulltraceback': 'do_fulltraceback',
+    '.complete': 'do_complete',
+    '.debug': 'do_debug',
+})
+
 
 class PyCmdLine(CmdConsole):
-
     """Simple Python interpreter with executive commands"""
 
-    def __init__(self, locals=None, logfile=None, complete=1, debug=0,
-                    clemulate=1):
-        CmdConsole.__init__(self, locals=locals,
-                cmddict=_cmdDict, prompt1="--> ", prompt2="... ")
+    def __init__(self,
+                 locals=None,
+                 logfile=None,
+                 complete=1,
+                 debug=0,
+                 clemulate=1):
+        CmdConsole.__init__(self,
+                            locals=locals,
+                            cmddict=_cmdDict,
+                            prompt1="--> ",
+                            prompt2="... ")
         self.reword = re.compile('[a-z]*')
         self.complete = complete
         self.debug = debug
@@ -211,13 +235,15 @@ class PyCmdLine(CmdConsole):
         self.runcode(pcode)
         if self.logfile:
             self.logfile.write(source)
-            if source[-1:] != '\n': self.logfile.write('\n')
+            if source[-1:] != '\n':
+                self.logfile.write('\n')
             self.logfile.flush()
         return 0
 
     def do_help(self, line='', i=0):
         """Print help on executive commands"""
-        if self.debug>1: self.write('do_help: %s\n' % line[i:])
+        if self.debug > 1:
+            self.write('do_help: %s\n' % line[i:])
         self.write("""Executive commands (commands can be abbreviated):
 .exit
 Exit from Pyraf.
@@ -245,12 +271,13 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
 
     def do_exit(self, line='', i=0):
         """Exit from PyRAF and then Python"""
-        if self.debug>1: self.write('do_exit: %s\n' % line[i:])
+        if self.debug > 1:
+            self.write('do_exit: %s\n' % line[i:])
 
         # write out history - ignore write errors
-        hfile = os.getenv('HOME', '.')+os.sep+'.pyraf_history'
-        hlen = 1000 # High default.  Note this setting itself may cause
-                    # confusion between this history and the IRAF history cmd.
+        hfile = os.getenv('HOME', '.') + os.sep + '.pyraf_history'
+        hlen = 1000  # High default.  Note this setting itself may cause
+        # confusion between this history and the IRAF history cmd.
         try:
             hlen = int(iraf.envget('histfilesize'))
         except (KeyError, ValueError):
@@ -258,12 +285,12 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         try:
             import readline
             readline.set_history_length(hlen)  # hlen<0 means unlimited
-            readline.write_history_file(hfile) # clobber any old version
+            readline.write_history_file(hfile)  # clobber any old version
         except (ImportError, IOError):
             pass
 
         # any irafinst tmp files?
-        irafinst.cleanup() # any irafinst tmp files?
+        irafinst.cleanup()  # any irafinst tmp files?
 
         # graphics
         wutil.closeGraphics()
@@ -273,9 +300,10 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
 
     def do_logfile(self, line='', i=0):
         """Start or stop logging commands"""
-        if self.debug>1: self.write('do_logfile: %s\n' % line[i:])
+        if self.debug > 1:
+            self.write('do_logfile: %s\n' % line[i:])
         args = line[i:].split()
-        if len(args) == 0:      # turn off logging (if on)
+        if len(args) == 0:  # turn off logging (if on)
             if self.logfile:
                 self.logfile.close()
                 self.logfile = None
@@ -292,37 +320,42 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                 elif args[0] == 'append':
                     del args[0]
             if args:
-                self.write('Ignoring unknown options: %s\n' %
-                        " ".join(args))
+                self.write('Ignoring unknown options: %s\n' % " ".join(args))
             try:
                 oldlogfile = self.logfile
                 self.logfile = open(filename, oflag)
-                if oldlogfile: oldlogfile.close()
+                if oldlogfile:
+                    oldlogfile.close()
             except IOError as e:
-                self.write("error opening logfile %s\n%s\n" % (filename, str(e)))
+                self.write("error opening logfile %s\n%s\n" %
+                           (filename, str(e)))
         return ""
 
     def do_clemulate(self, line='', i=0):
         """Turn CL emulation on or off"""
-        if self.debug>1: self.write('do_clemulate: %s\n' % line[i:])
+        if self.debug > 1:
+            self.write('do_clemulate: %s\n' % line[i:])
         self.clemulate = 1
         if line[i:] != "":
             try:
                 self.clemulate = int(line[i:])
             except ValueError as e:
-                if self.debug: self.write(str(e)+'\n')
+                if self.debug:
+                    self.write(str(e) + '\n')
                 pass
         return ""
 
     def do_complete(self, line='', i=0, default=1):
         """Turn command completion on or off"""
-        if self.debug>1: self.write('do_complete: %s\n' % line[i:])
+        if self.debug > 1:
+            self.write('do_complete: %s\n' % line[i:])
         self.complete = default
         if line[i:] != "":
             try:
                 self.complete = int(line[i:])
             except ValueError as e:
-                if self.debug: self.write(str(e)+'\n')
+                if self.debug:
+                    self.write(str(e) + '\n')
                 pass
         if self.complete:
             # set list of executive commands
@@ -334,19 +367,22 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
 
     def do_debug(self, line='', i=0):
         """Turn debug output on or off"""
-        if self.debug>1: self.write('do_debug: %s\n' % line[i:])
+        if self.debug > 1:
+            self.write('do_debug: %s\n' % line[i:])
         self.debug = 1
         if line[i:] != "":
             try:
                 self.debug = int(line[i:])
             except ValueError as e:
-                if self.debug: self.write(str(e)+'\n')
+                if self.debug:
+                    self.write(str(e) + '\n')
                 pass
         return ""
 
     def do_fulltraceback(self, line='', i=0):
         """Print full version of last traceback"""
-        if self.debug>1: self.write('do_fulltraceback: %s\n' % line[i:])
+        if self.debug > 1:
+            self.write('do_fulltraceback: %s\n' % line[i:])
         self.showtraceback(reprint=1)
         return ""
 
@@ -357,38 +393,39 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         line = full line (including cmd, preceding blanks, etc.)
         i = index in line of first non-blank character following cmd
         """
-        if self.debug>1: self.write('default: %s - %s\n' % (cmd, line[i:]))
-        if len(cmd)==0:
-            if line[i:i+1] == '!':
+        if self.debug > 1:
+            self.write('default: %s - %s\n' % (cmd, line[i:]))
+        if len(cmd) == 0:
+            if line[i:i + 1] == '!':
                 # '!' is shell escape
                 # handle it here only if cl emulation is turned off
                 if not self.clemulate:
-                    iraf.clOscmd(line[i+1:])
+                    iraf.clOscmd(line[i + 1:])
                     return ''
-            elif line[i:i+1] != '?':
+            elif line[i:i + 1] != '?':
                 # leading '?' will be handled by CL code -- else this is Python
                 return line
         elif self.clemulate == 0:
             # if CL emulation is turned off then just return
             return line
         elif keyword.iskeyword(cmd) or \
-          (cmd in os.__builtins__ and cmd not in ['type', 'dir', 'help', 'set']):
+                (cmd in os.__builtins__ and cmd not in ['type', 'dir', 'help', 'set']):
             # don't mess with Python keywords or built-in functions
             # except allow 'type', 'dir, 'help' to be used in simple syntax
             return line
-        elif line[i:i+1] != "" and line[i] in '=,[':
+        elif line[i:i + 1] != "" and line[i] in '=,[':
             # don't even try if it doesn't look like a procedure call
             return line
         elif not hasattr(iraf, cmd):
             # not an IRAF command
-            #XXX Eventually want to improve error message for
-            #XXX case where user intended to use IRAF syntax but
-            #XXX forgot to load package
+            # XXX Eventually want to improve error message for
+            # XXX case where user intended to use IRAF syntax but
+            # XXX forgot to load package
             return line
         elif self.isLocal(cmd):
             # cmd is both a local variable and an IRAF task or procedure name
             # figure out whether IRAF or CL syntax is intended from syntax
-            if line[i:i+1] == "" or line[i] == "(":
+            if line[i:i + 1] == "" or line[i] == "(":
                 return line
             if line[i] not in string.digits and \
                line[i] not in string.ascii_letters and \
@@ -399,11 +436,11 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             mm = self.reword.match(line[i:])
             if mm.group() in ["is", "in", "and", "or", "not"]:
                 return line
-        elif line[i:i+1] == '(':
+        elif line[i:i + 1] == '(':
             if cmd in ['type', 'dir', 'set']:
                 # assume a standalone call of Python type, dir functions
                 # rather than IRAF task
-                #XXX Use IRAF help function in every case (may want to
+                # XXX Use IRAF help function in every case (may want to
                 # change this eventually, when Python built-in help
                 # gets a bit better.)
                 return line
@@ -411,7 +448,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                 # Not a local function, so user presumably intends to
                 # call IRAF task.  Force Python mode but add the 'iraf.'
                 # string to the task name for convenience.
-                #XXX this find() may be improved with latest Python readline features
+                # XXX this find() may be improved with latest Python readline features
                 j = line.find(cmd)
                 return line[:j] + 'iraf.' + line[j:]
         elif not callable(getattr(iraf, cmd)):
@@ -422,7 +459,8 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             return line[:j] + 'iraf.' + line[j:]
 
         # if we get to here then it looks like CL code
-        if self.debug>1: self.write('CL: %s\n' % line)
+        if self.debug > 1:
+            self.write('CL: %s\n' % line)
         try:
             code = iraf.clExecute(line, locals=self.locals, mode='single')
             if self.logfile is not None:
@@ -441,8 +479,9 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         ff = value.split('.')
         return ff[0] in self.locals
 
-    def start(self, banner="Python/CL command line wrapper\n"
-                    "  .help describes executive commands"):
+    def start(self,
+              banner="Python/CL command line wrapper\n"
+              "  .help describes executive commands"):
         """Start interpreter"""
         self.interact(banner=banner)
 
@@ -455,7 +494,8 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         """
         try:
             if reprint:
-                if self.lasttrace is None: return
+                if self.lasttrace is None:
+                    return
                 type, value, tbmod = self.lasttrace
             else:
                 type, value, tb = sys.exc_info()
@@ -472,7 +512,8 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                     tbmod = []
                     for tb1 in tblist:
                         path, filename = os.path.split(tb1[0])
-                        path = os.path.normpath(os.path.join(os.getcwd(), path))
+                        path = os.path.normpath(os.path.join(
+                            os.getcwd(), path))
                         if path[:len(pyrafDir)] != pyrafDir:
                             tbmod.append(tb1)
             list = traceback.format_list(tbmod)

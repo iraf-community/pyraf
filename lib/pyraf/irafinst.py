@@ -5,13 +5,13 @@ For now, in general, we assume that IRAF exists until we are told otherwise.
 Obviously, this module should refrain as much as possible from importing any
 IRAF related code (at least globally), since this is heavily relied upon in
 non-IRAF situations.
-
-$Id$
 """
 from __future__ import division, print_function
 
-import os, shutil, sys, tempfile
-
+import os
+import shutil
+import sys
+import tempfile
 
 # File name prefix signal
 NO_IRAF_PFX = '*no~iraf*/'
@@ -25,6 +25,7 @@ else:
 # Keep track of any tmp files created
 _tmp_dir = None
 
+
 # cleanup (for exit)
 def cleanup():
     """ Try to cleanup.  Don't complain if the dir isn't there.  """
@@ -37,7 +38,7 @@ def cleanup():
 # Create files on the fly when needed
 def tmpParFile(fname):
     """ Create a tmp file for the given par file, and return the filename. """
-    assert fname and fname.endswith('.par'), 'Unexpected file: '+fname
+    assert fname and fname.endswith('.par'), 'Unexpected file: ' + fname
 
     if fname == 'cl.par':
         content = """
@@ -100,7 +101,7 @@ mode,s,h,ql
 
     else:
         # For now that's it - this must be a file we don't handle
-        raise RuntimeError('Unexpected .par file: '+fname)
+        raise RuntimeError('Unexpected .par file: ' + fname)
 
     return _writeTmpFile(fname, content)
 
@@ -110,10 +111,13 @@ def _writeTmpFile(base_fname, text):
     global _tmp_dir
     if not _tmp_dir:
         u = os.environ.get('USER', '')
-        if not u: u = os.environ.get('LOGNAME', '')
-        _tmp_dir = tempfile.mkdtemp(prefix='pyraf_'+u+'_tmp_', suffix='.no-iraf')
-    tmpf = _tmp_dir+os.sep+base_fname
-    if os.path.exists(tmpf): os.remove(tmpf)
+        if not u:
+            u = os.environ.get('LOGNAME', '')
+        _tmp_dir = tempfile.mkdtemp(prefix='pyraf_' + u + '_tmp_',
+                                    suffix='.no-iraf')
+    tmpf = _tmp_dir + os.sep + base_fname
+    if os.path.exists(tmpf):
+        os.remove(tmpf)
     f = open(tmpf, 'w')
     f.write(text)
     f.close()
@@ -124,7 +128,7 @@ def getNoIrafClFor(fname, useTmpFile=False):
     """ Generate CL file text on the fly when missing IRAF, return the
     full text sting.  If useTmpFile, then returns the temp file name. """
 
-    assert fname and fname.endswith('.cl'), 'Unexpected file: '+fname
+    assert fname and fname.endswith('.cl'), 'Unexpected file: ' + fname
 
     # First call ourselves to get the text if we need to write it to a tmp file
     if useTmpFile:
@@ -152,46 +156,50 @@ keep
     if fname == 'login.cl':
         usr = None
         try:
-            if hasattr(os, 'getlogin'): usr = os.getlogin()
+            if hasattr(os, 'getlogin'):
+                usr = os.getlogin()
         except OSError:
-            pass # "Inappropriate ioctl for device" - happens in a cron job
-        if not usr and 'USER'     in os.environ: usr = os.environ['USER']
-        if not usr and 'USERNAME' in os.environ: usr = os.environ['USERNAME']
-        if not usr and 'LOGNAME'  in os.environ: usr = os.environ['LOGNAME']
-        ihome = os.getcwd()+'/'
-        ihome = ihome.replace('\\', '/') # for windoze
+            pass  # "Inappropriate ioctl for device" - happens in a cron job
+        if not usr and 'USER' in os.environ:
+            usr = os.environ['USER']
+        if not usr and 'USERNAME' in os.environ:
+            usr = os.environ['USERNAME']
+        if not usr and 'LOGNAME' in os.environ:
+            usr = os.environ['LOGNAME']
+        ihome = os.getcwd() + '/'
+        ihome = ihome.replace('\\', '/')  # for windoze
         content = '# LOGIN.CL -- User login file.\n'+ \
-        'set home = "'+ihome+'"\nset userid = "'+usr+'"\n'+ \
-        'set uparm = "home$uparm/"\n'+ \
-        'stty xterm\n'+ \
-        'showtype = yes\n'+ \
-        '# Load default CL pkg - allow overrides via loginuser.cl\n'+\
-        'clpackage\n'+ \
-        '# Default USER package - to be modified by the user\n'+ \
-        'package user\n'+ \
-        '# Basic foreign tasks from UNIX\n'+ \
-        'task  $adb $bc $cal $cat $comm $cp $csh $date $dbx = "$foreign"\n' +\
-        'task  $df $diff $du $find $finger $ftp $grep $lpq  = "$foreign"\n' +\
-        'task  $lprm $mail $make $man $mon $mv $nm $od      = "$foreign"\n' +\
-        'task  $ps $rcp $rlogin $rsh $ruptime $rwho $sh     = "$foreign"\n' +\
-        'task  $spell $sps $strings $su $telnet $tip $top   = "$foreign"\n' +\
-        'task  $vi $emacs $w $wc $less $more $rusers $sync  = "$foreign"\n' +\
-        'task  $pwd $gdb $xc $mkpkg $generic $rtar $wtar    = "$foreign"\n' +\
-        'task  $tar $bash $tcsh $buglog $who $ssh $scp      = "$foreign"\n' +\
-        'task  $mkdir $rm $chmod $sort                      = "$foreign"\n'
+            'set home = "'+ihome+'"\nset userid = "'+usr+'"\n'+ \
+            'set uparm = "home$uparm/"\n'+ \
+            'stty xterm\n'+ \
+            'showtype = yes\n'+ \
+            '# Load default CL pkg - allow overrides via loginuser.cl\n'+\
+            'clpackage\n'+ \
+            '# Default USER package - to be modified by the user\n'+ \
+            'package user\n'+ \
+            '# Basic foreign tasks from UNIX\n'+ \
+            'task  $adb $bc $cal $cat $comm $cp $csh $date $dbx = "$foreign"\n' +\
+            'task  $df $diff $du $find $finger $ftp $grep $lpq  = "$foreign"\n' +\
+            'task  $lprm $mail $make $man $mon $mv $nm $od      = "$foreign"\n' +\
+            'task  $ps $rcp $rlogin $rsh $ruptime $rwho $sh     = "$foreign"\n' +\
+            'task  $spell $sps $strings $su $telnet $tip $top   = "$foreign"\n' +\
+            'task  $vi $emacs $w $wc $less $more $rusers $sync  = "$foreign"\n' +\
+            'task  $pwd $gdb $xc $mkpkg $generic $rtar $wtar    = "$foreign"\n' +\
+            'task  $tar $bash $tcsh $buglog $who $ssh $scp      = "$foreign"\n' +\
+            'task  $mkdir $rm $chmod $sort                      = "$foreign"\n'
         if sys.platform.startswith('win'):
             content += '# Basic foreign tasks for Win\n'+ \
-            'task  $cmd $cls $DIR $erase $start $title $tree = "$foreign"\n'+\
-            'task  $ls  = "$DIR" \n'
+                'task  $cmd $cls $DIR $erase $start $title $tree = "$foreign"\n'+\
+                'task  $ls  = "$DIR" \n'
         else:
             content += '# Conveniences\n'+ \
-            'task  $ls    = "$foreign"\n' +\
-            'task  $cls = "$clear;ls"\n' +\
-            'task  $clw = "$clear;w"\n'
+                'task  $ls    = "$foreign"\n' +\
+                'task  $cls = "$clear;ls"\n' +\
+                'task  $clw = "$clear;w"\n'
         content += 'if (access ("home$loginuser.cl"))\n' +\
-        '   cl < "home$loginuser.cl"\n' +\
-        ';\n' +\
-        '# more ...\nkeep\n'
+            '   cl < "home$loginuser.cl"\n' +\
+            ';\n' +\
+            '# more ...\nkeep\n'
         return content
 
     # bare-bones system.cl
@@ -251,7 +259,8 @@ keep
 """
 
     # For now that's it - this must be a file we don't handle
-    raise RuntimeError('Unexpected .cl file: '+fname)
+    raise RuntimeError('Unexpected .cl file: ' + fname)
+
 
 def getIrafVer():
     """ Return current IRAF version as a string """
@@ -261,7 +270,8 @@ def getIrafVer():
     plist = cltask.getDefaultParList()
     # get the 'release' par and then get it's value
     release = [p.value for p in plist if p.name == 'release']
-    return release[0] # only 1 item in list
+    return release[0]  # only 1 item in list
+
 
 def getIrafVerTup():
     """ Return current IRAF version as a tuple (ints until last item) """

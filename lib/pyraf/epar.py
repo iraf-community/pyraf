@@ -1,26 +1,30 @@
 """ Main module for the PyRAF-version of the Epar parameter editor
 
-$Id$
-
 M.D. De La Pena, 2000 February 04
 """
 from __future__ import division, print_function
 
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
-    from Tkinter import * # requires 2to3
-    from tkMessageBox import askokcancel, showwarning, showerror
-    import os, sys, cStringIO
+    from Tkinter.tkMessageBox import askokcancel, showwarning, showerror
+    import os
+    import cStringIO
     from stsci.tools import listdlg, eparoption, editpar, irafutils
-    import iraf, irafpar, irafhelp, wutil
+    import iraf
+    import irafpar
+    import irafhelp
+    import wutil
     from pyrafglobals import pyrafDir
 else:
     wutil = None
-    class editpar():
-        class EditParDialog():
-            pass # dummy so that code below can import
-from stsci.tools.irafglobals import IrafError
 
+    class editpar():
+
+        class EditParDialog():
+            pass  # dummy so that code below can import
+
+
+from stsci.tools.irafglobals import IrafError
 
 # tool help
 eparHelpString = """\
@@ -176,12 +180,21 @@ def epar(theTask, parent=None, isChild=0):
 
 class PyrafEparDialog(editpar.EditParDialog):
 
-    def __init__(self, theTask, parent=None, isChild=0,
-                 title="PyRAF Parameter Editor", childList=None):
+    def __init__(self,
+                 theTask,
+                 parent=None,
+                 isChild=0,
+                 title="PyRAF Parameter Editor",
+                 childList=None):
 
         # Init base - calls _setTaskParsObj(), sets self.taskName, etc
-        editpar.EditParDialog.__init__(self, theTask, parent, isChild,
-                                       title, childList, resourceDir=pyrafDir)
+        editpar.EditParDialog.__init__(self,
+                                       theTask,
+                                       parent,
+                                       isChild,
+                                       title,
+                                       childList,
+                                       resourceDir=pyrafDir)
 
     def _setTaskParsObj(self, theTask):
         """ Overridden version, so as to use Iraf tasks and IrafParList """
@@ -193,14 +206,18 @@ class PyrafEparDialog(editpar.EditParDialog):
             # theTask must be a string name of, or an IrafTask object
             self._taskParsObj = iraf.getTask(theTask)
 
-    def _doActualSave(self, filename, comment, set_ro=False, overwriteRO=False):
+    def _doActualSave(self,
+                      filename,
+                      comment,
+                      set_ro=False,
+                      overwriteRO=False):
         """ Overridden version, so as to check for a special case. """
         # Skip the save if the thing being edited is an IrafParList without
         # an associated file (in which case the changes are just being
         # made in memory.)
         if isinstance(self._taskParsObj, irafpar.IrafParList) and \
            not self._taskParsObj.getFilename():
-            return '' # skip it
+            return ''  # skip it
         else:
             retval = ''
             try:
@@ -209,7 +226,8 @@ class PyrafEparDialog(editpar.EditParDialog):
                 retval = self._taskParsObj.saveParList(filename=filename,
                                                        comment=comment)
             except IOError:
-                retval="Error saving to "+str(filename)+".  Please check privileges."
+                retval = "Error saving to " + str(
+                    filename) + ".  Please check privileges."
                 showerror(message=retval, title='Error Saving File')
             if set_ro:
                 irafutils.setWritePrivs(filename, False, ignoreErrors=True)
@@ -223,19 +241,19 @@ class PyrafEparDialog(editpar.EditParDialog):
 
     def _overrideMasterSettings(self):
         """ Override this to tailor the GUI specifically for epar. """
-        self._useSimpleAutoClose  = True
+        self._useSimpleAutoClose = True
 
-        self._saveAndCloseOnExec  = True
+        self._saveAndCloseOnExec = True
         self._showSaveCloseOnExec = False
-        self._showFlaggingChoice  = False
+        self._showFlaggingChoice = False
 
         self._showExtraHelpButton = True
 
-        self._appName             = "EPAR"
-        self._appHelpString       = eparHelpString
+        self._appName = "EPAR"
+        self._appHelpString = eparHelpString
         self._unpackagedTaskTitle = "Filename"
         self._defaultsButtonTitle = "Unlearn"
-        self._defSaveAsExt        = '.par'
+        self._defSaveAsExt = '.par'
 
         if not wutil.WUTIL_USING_X:
             x = "#ccccff"
@@ -243,7 +261,6 @@ class PyrafEparDialog(editpar.EditParDialog):
             self._taskColor = x
             self._bboxColor = x
             self._entsColor = x
-
 
     def _nonStandardEparOptionFor(self, paramTypeStr):
         """ Override to allow use of PsetEparOption.
@@ -254,15 +271,12 @@ class PyrafEparDialog(editpar.EditParDialog):
         else:
             return None
 
-
     # Two overrides of deafult behavior, related to unpackaged "tasks"
     def _isUnpackagedTask(self):
         return isinstance(self._taskParsObj, irafpar.IrafParList)
 
-
     def _getOpenChoices(self):
         return irafpar.getSpecialVersionFiles(self.taskName, self.pkgName)
-
 
     # OPEN: load parameter settings from a user-specified file
     def pfopen(self, event=None):
@@ -271,25 +285,26 @@ class PyrafEparDialog(editpar.EditParDialog):
         function. """
 
         fname = self._openMenuChoice.get()
-        if fname == None: return
+        if fname is None:
+            return
 
         newParList = irafpar.IrafParList(self.taskName, fname)
 
         # Set the GUI entries to these values (let the user Save after)
         self.setAllEntriesFromParList(newParList)
         self.freshenFocus()
-        self.showStatus("Loaded parameter values from: "+fname, keep=2)
-
+        self.showStatus("Loaded parameter values from: " + fname, keep=2)
 
     def _getSaveAsFilter(self):
         """ Return a string to be used as the filter arg to the save file
             dialog during Save-As. """
         filt = '*.par'
         upx = iraf.envget("uparm_aux", "")
-        if 'UPARM_AUX' in os.environ: upx = os.environ['UPARM_AUX']
-        if len(upx) > 0:  filt = iraf.Expand(upx)+"/*.par"
+        if 'UPARM_AUX' in os.environ:
+            upx = os.environ['UPARM_AUX']
+        if len(upx) > 0:
+            filt = iraf.Expand(upx) + "/*.par"
         return filt
-
 
     def _saveAsPreSave_Hook(self, fnameToBeUsed):
         """ Override to check for (and warn about) PSETs. """
@@ -297,33 +312,35 @@ class PyrafEparDialog(editpar.EditParDialog):
         # their special version
         pars = []
         for par in self._taskParsObj.getParList():
-            if par.type == "pset": pars.append(par.name)
+            if par.type == "pset":
+                pars.append(par.name)
         if len(pars):
             msg = "If you have made any changes to the PSET "+ \
                   "values for:\n\n"
-            for p in pars: msg += "\t\t"+p+"\n"
+            for p in pars:
+                msg += "\t\t" + p + "\n"
             msg = msg+"\nthose changes will NOT be explicitly saved to:"+ \
-                  '\n\n"'+fnameToBeUsed+'"'
+                '\n\n"'+fnameToBeUsed+'"'
             showwarning(message=msg, title='PSET Save-As Not Yet Supported')
-
 
     def _saveAsPostSave_Hook(self, fnameToBeUsed):
         """ Override this to notify irafpar. """
         # Notify irafpar that there is a new special-purpose file on the scene
         irafpar.newSpecialParFile(self.taskName, self.pkgName, fnameToBeUsed)
 
-
     def htmlHelp(self, helpString=None, title=None, istask=False, tag=None):
         """ Overridden version, use irafhelp to invoke the HTML help """
         # Help on EPAR itself will use helpString and title.  If so, defer
         # to base, otherwise call irafhelp.help() for task specific text.
         if helpString and title:
-            editpar.EditParDialog.htmlHelp(self, helpString, title,
-                                           istask=istask, tag=tag)
+            editpar.EditParDialog.htmlHelp(self,
+                                           helpString,
+                                           title,
+                                           istask=istask,
+                                           tag=tag)
         else:
             # Invoke the STSDAS HTML help
             irafhelp.help(self.taskName, html=1)
-
 
     # Get the task help in a string (RLW)
     def getHelpString(self, taskname):

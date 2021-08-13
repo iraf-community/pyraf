@@ -2,21 +2,22 @@
 Graphics window manager, creates multiple toplevel togl widgets for
 use by python plotting
 
-$Id$
 """
 from __future__ import division, print_function
 
-import os, string
+import os
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
-    import Tkinter as TKNTR # requires 2to3
-import wutil, gki
+    import Tkinter as TKNTR  # requires 2to3
+import wutil
+import gki
+
 
 class GWMError(Exception):
     pass
 
-class GraphicsWindowManager(gki.GkiProxy):
 
+class GraphicsWindowManager(gki.GkiProxy):
     """Proxy for active graphics window and manager of multiple windows
 
     Each window is an instance of a graphics kernel.  stdgraph
@@ -24,7 +25,6 @@ class GraphicsWindowManager(gki.GkiProxy):
     """
 
     def __init__(self, GkiKernelClass):
-
         """GkiKernelClass is the class of kernel objects created
 
         Class must implement both GkiKernel and FocusEntity interfaces
@@ -130,6 +130,7 @@ class GraphicsWindowManager(gki.GkiProxy):
 # Module-level functions
 #
 
+
 def _setGraphicsWindowManager():
     """ Decide which graphics kernel to use and generate a GWM object.
     This is only meant to be called internally! """
@@ -151,15 +152,15 @@ def _setGraphicsWindowManager():
                     print("matplotlib is not installed, using default instead")
                     kernelname = "default"
             else:
-                print('Graphics kernel specified by "PYRAFGRAPHICS='+ \
-                       kernelname+'" not found.')
+                print('Graphics kernel specified by "PYRAFGRAPHICS=' +
+                      kernelname + '" not found.')
                 print("Using default kernel instead.")
                 kernelname = "default"
         else:
             kernelname = "default"
 
         if 'PYRAFGRAPHICS_TEST' in os.environ:
-            print("Using graphics kernel: "+kernelname)
+            print("Using graphics kernel: " + kernelname)
         if kernelname == "default":
             import gkitkplot
             kernel = gkitkplot.GkiTkplotKernel
@@ -169,11 +170,13 @@ def _setGraphicsWindowManager():
         wutil.isGwmStarted = 0
         return None
 
+
 # Create a module instance of the GWM object that can be referred to
 # by anything that imports this module. It is in effect a singleton
 # object intended to be instantiated only once and be accessible from
 # the module.
 _g = _setGraphicsWindowManager()
+
 
 #
 # Public routines to access windows managed by _g
@@ -183,12 +186,13 @@ def _resetGraphicsWindowManager():
     global _g
     _g = _setGraphicsWindowManager()
 
+
 def getGraphicsWindowManager():
     """Return window manager object (None if none defined)"""
     return _g
 
-def window(windowName=None):
 
+def window(windowName=None):
     """Create a new graphics window if the named one doesn't exist or
     make it the active one if it does. If no argument is given a new
     name is constructed."""
@@ -197,8 +201,8 @@ def window(windowName=None):
         raise GWMError("No graphics window manager is available")
     _g.window(windowName)
 
-def delete(windowName=None):
 
+def delete(windowName=None):
     """Delete the named window (or active window if none specified)"""
 
     if not _g:
@@ -208,37 +212,37 @@ def delete(windowName=None):
     if windowName is not None:
         _g.delete(windowName)
 
-def getActiveWindowName():
 
+def getActiveWindowName():
     """Return name of active window (None if none defined)"""
 
     if _g and _g.windowVar:
         return _g.windowVar.get() or None
 
-def getActiveWindowGwidget():
 
+def getActiveWindowGwidget():
     """Get the active window widget (None if none defined)"""
 
     if _g and _g.stdgraph:
         return _g.stdgraph.gwidget
 
-def getActiveGraphicsWindow():
 
+def getActiveGraphicsWindow():
     """Get the active graphics kernel object (None if none defined)"""
 
     if _g and _g.stdgraph:
         return _g.stdgraph
 
-def getActiveWindowTop():
 
+def getActiveWindowTop():
     """Get the top window (None if none defined)"""
 
     if _g and _g.stdgraph:
-        #XXX top is implementation-specific
+        # XXX top is implementation-specific
         return _g.stdgraph.top
 
-def raiseActiveWindow():
 
+def raiseActiveWindow():
     """Deiconify if not mapped, and raise to top"""
 
     stdgraph = getActiveGraphicsWindow()
@@ -246,8 +250,8 @@ def raiseActiveWindow():
         raise GWMError("No plot has been created yet")
     stdgraph.raiseWindow()
 
-def resetFocusHistory():
 
+def resetFocusHistory():
     """Reset focus history after an error occurs"""
 
     wutil.focusController.resetFocusHistory()

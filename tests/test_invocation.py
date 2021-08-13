@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import subprocess
-import sys
 
 import pytest
 
@@ -32,6 +31,7 @@ python_cases = (
 
 
 class PyrafEx(object):
+
     def __init__(self):
         self.code = 0
         self.stdout = None
@@ -45,7 +45,10 @@ class PyrafEx(object):
 
         cmd = ['pyraf', '-x', '-s']
         cmd += args
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        proc = subprocess.Popen(cmd,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                stdin=subprocess.PIPE)
 
         if stdin is not None:
             stdin = stdin.encode('ascii')
@@ -97,9 +100,9 @@ def test_invoke_command(_with_pyraf, test_input, expected):
 def test_invoke_command_direct(_with_pyraf, test_input, expected):
     """Issue basic commands on pyraf's native shell
     """
-    result = _with_pyraf.run(['-s'], stdin=test_input+'\n.exit')
+    result = _with_pyraf.run(['-s'], stdin=test_input + '\n.exit')
     assert result.stdout.strip().endswith(expected)
-    #assert not result.stderr  # BUG: Why is there a single newline on stderr?
+    # assert not result.stderr  # BUG: Why is there a single newline on stderr?
     assert not result.code, result.stderr
 
 
@@ -112,7 +115,8 @@ def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected):
     result = _with_pyraf.run(['-i'], stdin=test_input)
     _output = result.stdout.strip()
     begin = _output.find('>>>')
-    output = ''.join([x.replace('>>>', '').strip() for x in _output[begin:].splitlines()])
+    output = ''.join(
+        [x.replace('>>>', '').strip() for x in _output[begin:].splitlines()])
 
     assert output == expected
     assert not result.code, result.stderr

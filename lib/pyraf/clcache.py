@@ -1,7 +1,5 @@
 """clcache.py: Implement cache for Python translations of CL tasks
 
-$Id$
-
 R. White, 2000 January 19
 """
 from __future__ import division, print_function
@@ -12,31 +10,36 @@ from stsci.tools.for2to3 import PY3K
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
 if __name__.find('.') < 0:  # for unit test need absolute import
-   for mmm in ('filecache', 'pyrafglobals', 'dirshelve'):
-       exec('import '+mmm, globals()) # 2to3 messes up simpler form
+    for mmm in ('filecache', 'pyrafglobals', 'dirshelve'):
+        exec('import ' + mmm, globals())  # 2to3 messes up simpler form
 else:
-   import filecache
-   import pyrafglobals
-   import dirshelve
+    import filecache
+    import pyrafglobals
+    import dirshelve
 
 # In case you wish to disable all CL script caching (for whatever reason)
-DISABLE_CLCACHING = False # enable caching by default
+DISABLE_CLCACHING = False  # enable caching by default
 if PY3K or 'PYRAF_NO_CLCACHE' in os.environ:
-   DISABLE_CLCACHING = True
+    DISABLE_CLCACHING = True
 
 # set up pickle so it can pickle code objects
 
-import copy_reg, marshal, types
+import copy_reg
+import marshal
+import types
 try:
     import cPickle as pickle
 except ImportError:
     import pickle  # noqa
 
+
 def code_unpickler(data):
     return marshal.loads(data)
 
+
 def code_pickler(code):
     return code_unpickler, (marshal.dumps(code),)
+
 
 copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
 
@@ -60,19 +63,22 @@ import hashlib
 
 _versionKey = 'CACHE_VERSION'
 
+
 def _currentVersion():
     if not pyrafglobals._use_ecl:
         return "v2"
     else:
         return "v3"
 
+
 class _FileContentsCache(filecache.FileCacheDict):
+
     def __init__(self):
         # create file dictionary with md5 digest as value
         filecache.FileCacheDict.__init__(self, filecache.MD5Cache)
 
-class _CodeCache:
 
+class _CodeCache:
     """Python code cache class
 
     Note that old out-of-date cached code never gets
@@ -89,7 +95,7 @@ class _CodeCache:
             db = self._cacheOpen(file)
             if db is not None:
                 cacheList.append(db[0:2])
-                nwrite = nwrite+db[0]
+                nwrite = nwrite + db[0]
                 flist.append(db[2])
         self.clFileDict = _FileContentsCache()
         self.cacheList = cacheList
@@ -138,22 +144,24 @@ class _CodeCache:
                 return (writeflag, fh, fname)
             elif fname.endswith(_currentVersion()):
                 # uh-oh, something is seriously wrong
-                msg.append("CL script cache %s has version mismatch, may be corrupt?" %
-                           fname)
+                msg.append(
+                    "CL script cache %s has version mismatch, may be corrupt?"
+                    % fname)
             elif oldVersion > _currentVersion():
-                msg.append(("CL script cache %s was created by " +
-                            "a newer version of pyraf (cache %s, this pyraf %s)") %
-                           (fname, repr(oldVersion), repr(_currentVersion())))
+                msg.append(
+                    ("CL script cache %s was created by " +
+                     "a newer version of pyraf (cache %s, this pyraf %s)") %
+                    (fname, repr(oldVersion), repr(_currentVersion())))
             else:
-                msg.append("CL script cache %s is obsolete version (old %s, current %s)" %
-                           (fname, repr(oldVersion), repr(_currentVersion())))
+                msg.append(
+                    "CL script cache %s is obsolete version (old %s, current %s)"
+                    % (fname, repr(oldVersion), repr(_currentVersion())))
             fh.close()
         # failed to open either cache
         self.warning("\n".join(msg))
         return None
 
     def warning(self, msg, level=0):
-
         """Print warning message to stderr, using verbose flag"""
 
         if Verbose >= level:
@@ -162,10 +170,9 @@ class _CodeCache:
             sys.stderr.flush()
 
     def writeSystem(self, value=1):
-
         """Add scripts to system cache instead of user cache"""
 
-        if value==0:
+        if value == 0:
             self.useSystem = 0
         elif self.cacheList:
             writeflag, cache = self.cacheList[-1]
@@ -177,7 +184,6 @@ class _CodeCache:
             self.warning("No CL script cache is active")
 
     def close(self):
-
         """Close all cache files"""
 
         for writeflag, cache in self.cacheList:
@@ -201,7 +207,7 @@ class _CodeCache:
             # there is no filename, but return md5 digest of source as key
             h = hashlib.md5()
 
-            if PY3K: # unicode must be encoded to be hashed
+            if PY3K:  # unicode must be encoded to be hashed
                 h.update(source.encode('ascii'))
                 return str(h.digest())
             else:
@@ -211,7 +217,8 @@ class _CodeCache:
     def add(self, index, pycode):
         """Add pycode to cache with key = index.  Ignores if index=None."""
 
-        if index is None or self.nwrite==0: return
+        if index is None or self.nwrite == 0:
+            return
         if self.useSystem:
             # system cache is last in list
             cacheList = self.cacheList[:]
@@ -224,7 +231,6 @@ class _CodeCache:
                 return
 
     def get(self, filename, mode="proc", source=None):
-
         """Get pycode from cache for this file.
 
         Returns tuple (index, pycode).  Pycode=None if not found
@@ -232,10 +238,12 @@ class _CodeCache:
         cached.
         """
 
-        if mode != "proc": return None, None
+        if mode != "proc":
+            return None, None
 
         index = self.getIndex(filename, source=source)
-        if index is None: return None, None
+        if index is None:
+            return None, None
 
         for i in range(len(self.cacheList)):
             writeflag, cache = self.cacheList[i]
@@ -247,7 +255,6 @@ class _CodeCache:
         return index, None
 
     def remove(self, filename):
-
         """Remove pycode from cache for this file or IrafTask object.
 
         This deletes the entry from the shelve persistent database, under
@@ -266,21 +273,23 @@ class _CodeCache:
         index = self.getIndex(filename)
         # system cache is last in list
         irange = list(range(len(self.cacheList)))
-        if self.useSystem: irange.reverse()
+        if self.useSystem:
+            irange.reverse()
         nremoved = 0
         for i in irange:
             writeflag, cache = self.cacheList[i]
             if index in cache:
                 if writeflag:
                     del cache[index]
-                    self.warning("Removed %s from CL script cache %s" %
-                                 (filename, self.cacheFileList[i]), 2)
-                    nremoved = nremoved+1
+                    self.warning(
+                        "Removed %s from CL script cache %s" %
+                        (filename, self.cacheFileList[i]), 2)
+                    nremoved = nremoved + 1
                 else:
                     self.warning("Cannot remove %s from read-only "
                                  "CL script cache %s" %
                                  (filename, self.cacheFileList[i]))
-        if nremoved==0:
+        if nremoved == 0:
             self.warning("Did not find %s in CL script cache" % filename, 2)
 
 
@@ -299,9 +308,13 @@ dbfile = 'clcache'
 if DISABLE_CLCACHING:
     # since CL code caching is turned off currently for PY3K,
     # there won't be any installed there, but still play with user area
-    codeCache = _CodeCache([os.path.join(userCacheDir, dbfile),])
+    codeCache = _CodeCache([
+        os.path.join(userCacheDir, dbfile),
+    ])
 else:
-    codeCache = _CodeCache([os.path.join(userCacheDir, dbfile),
-                            os.path.join(pyrafglobals.pyrafDir, dbfile)])
+    codeCache = _CodeCache([
+        os.path.join(userCacheDir, dbfile),
+        os.path.join(pyrafglobals.pyrafDir, dbfile)
+    ])
 
 del userCacheDir, dbfile

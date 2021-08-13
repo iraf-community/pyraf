@@ -25,33 +25,34 @@ This could be used to maintain references to multiple display servers.
 
 Ultimately more functionality may be added to make this a complete
 replacement for CDL.
-
-$Id$
 """
 from __future__ import division, print_function
 
-import os, numpy, socket, sys
-from stsci.tools.for2to3 import PY3K, bytes_write, ndarr2bytes
+import os
+import numpy
+import socket
+import sys
+from stsci.tools.for2to3 import bytes_write, ndarr2bytes
 from stsci.tools import irafutils
 
 try:
     import fcntl
-except:
-    if 0==sys.platform.find('win'): # not on win*, but IS on darwin & cygwin
+except ImportError:
+    if 0 == sys.platform.find('win'):  # not on win*, but IS on darwin & cygwin
         fcntl = None
     else:
         raise
 
 # FCNTL is deprecated in Python 2.2
-if hasattr(fcntl, 'F_SETFL') or fcntl==None:
+if hasattr(fcntl, 'F_SETFL') or fcntl is None:
     FCNTL = fcntl
 else:
     import FCNTL
 
 _default_imtdev = ("unix:/tmp/.IMT%d", "fifo:/dev/imt1i:/dev/imt1o")
 
-def _open(imtdev=None):
 
+def _open(imtdev=None):
     """Open connection to the image display server
 
     This is a factory function that returns an instance of the ImageDisplay
@@ -99,12 +100,12 @@ def _open(imtdev=None):
         for imtdev in defaults:
             try:
                 return _open(imtdev)
-            except IOError as error:
+            except IOError:
                 pass
         raise IOError("Cannot open image display")
     # substitute user id in name (multiple times) if necessary
     nd = len(imtdev.split("%d"))
-    dev = imtdev % ((os.getuid(),)*(nd-1))
+    dev = imtdev % ((os.getuid(),) * (nd - 1))
     fields = dev.split(":")
     domain = fields[0]
     if domain == "unix" and len(fields) == 2:
@@ -121,12 +122,10 @@ def _open(imtdev=None):
             return InetImageDisplay(port, hostname)
         except ValueError:
             pass
-    raise ValueError("Illegal image device specification `%s'"
-                                    % imtdev)
+    raise ValueError("Illegal image device specification `%s'" % imtdev)
 
 
 class ImageDisplay:
-
     """Interface to IRAF-compatible image display"""
 
     # constants for cursor read
@@ -142,8 +141,7 @@ class ImageDisplay:
         # leave image display in a bad state.
         self._inCursorMode = 0
 
-    def readCursor(self,sample=0):
-
+    def readCursor(self, sample=0):
         """Read image cursor value for this image display
 
         Return immediately if sample is true, or wait for keystroke
@@ -163,7 +161,6 @@ class ImageDisplay:
         return s.split("\n")[0]
 
     def _writeHeader(self, tid, subunit, thingct, x, y, z, t):
-
         """Write request to image display"""
 
         a = numpy.array([tid, thingct, subunit, 0, x, y, z, t], numpy.int16)
@@ -174,7 +171,6 @@ class ImageDisplay:
         self._write(ndarr2bytes(a))
 
     def close(self, os_close=os.close):
-
         """Close image display connection"""
 
         try:
@@ -205,7 +201,7 @@ class ImageDisplay:
         """
         try:
             n = len(s)
-            while n>0:
+            while n > 0:
                 nwritten = bytes_write(self._fdout, s[-n:])
                 n -= nwritten
                 if nwritten <= 0:
@@ -215,7 +211,6 @@ class ImageDisplay:
 
 
 class FifoImageDisplay(ImageDisplay):
-
     """FIFO version of image display"""
 
     def __init__(self, infile, outfile):
@@ -233,39 +228,37 @@ class FifoImageDisplay(ImageDisplay):
     def __del__(self):
         self.close()
 
-class UnixImageDisplay(ImageDisplay):
 
+class UnixImageDisplay(ImageDisplay):
     """Unix socket version of image display"""
 
     def __init__(self, filename, family=None, type=socket.SOCK_STREAM):
         ImageDisplay.__init__(self)
         try:
-            if family==None: # set in func, not in decl so it works on win
+            if family is None:  # set in func, not in decl so it works on win
                 family = socket.AF_UNIX
             self._socket = socket.socket(family, type)
             self._socket.connect(filename)
             self._fdin = self._fdout = self._socket.fileno()
-        except socket.error as error:
+        except socket.error:
             raise IOError("Cannot open image display")
 
     def close(self):
-
         """Close image display connection"""
 
         self._socket.close()
 
 
 class InetImageDisplay(UnixImageDisplay):
-
     """INET socket version of image display"""
 
     def __init__(self, port, hostname=None):
         hostname = hostname or "localhost"
-        UnixImageDisplay.__init__(self, (hostname, port), family=socket.AF_INET)
+        UnixImageDisplay.__init__(self, (hostname, port),
+                                  family=socket.AF_INET)
 
 
 class ImageDisplayProxy(ImageDisplay):
-
     """Interface to IRAF-compatible image display
 
     This is a proxy to the actual display that allows retries
@@ -281,22 +274,19 @@ class ImageDisplayProxy(ImageDisplay):
             self.open()
 
     def open(self, imtdev=None):
-
         """Open image display connection, closing any active connection"""
 
         self.close()
         self._display = _open(imtdev or self.imtdev)
 
     def close(self):
-
         """Close active image display connection"""
 
         if self._display:
             self._display.close()
             self._display = None
 
-    def readCursor(self,sample=0):
-
+    def readCursor(self, sample=0):
         """Read image cursor value for the active image display
 
         Return immediately if sample is true, or wait for keystroke
@@ -311,7 +301,7 @@ class ImageDisplayProxy(ImageDisplay):
             # Null value indicates display was probably closed
             if value:
                 return value
-        except IOError as error:
+        except IOError:
             pass
         # This error can occur if image display was closed.
         # If a new display has been started then closing and

@@ -1,24 +1,23 @@
 """
 implement IRAF ukey functionality
-
-$Id$
 """
 from __future__ import division, print_function
 
-import os, string, sys
+import os
+import sys
 import wutil
 from stsci.tools import capable, for2to3, irafutils
 
 try:
     import termios
-except:
-   if 0==sys.platform.find('win'): # not on win*, but IS on darwin & cygwin
-       termios = None
-   else:
-       raise
+except ImportError:
+    if 0 == sys.platform.find('win'):  # not on win*, but IS on darwin & cygwin
+        termios = None
+    else:
+        raise
 
 # TERMIOS is deprecated in Python 2.1
-if hasattr(termios, 'ICANON') or termios==None:
+if hasattr(termios, 'ICANON') or termios is None:
     TERMIOS = termios
 else:
     import TERMIOS
@@ -27,8 +26,8 @@ else:
 # a ukey parameter and expects that the user will type a character in
 # response. The value of this character is then returned to the iraf task
 
-def getSingleTTYChar(): # return type str in all Python versions
 
+def getSingleTTYChar():  # return type str in all Python versions
     """Returns None if Control-C is typed or any other exception occurs"""
 
     # Ripped off from python FAQ
@@ -47,13 +46,14 @@ def getSingleTTYChar(): # return type str in all Python versions
             c = irafutils.tkread(fd, 1)
         else:
             c = os.read(fd, 1)
-            if for2to3.PY3K: c = c.decode('ascii', 'replace')
+            if for2to3.PY3K:
+                c = c.decode('ascii', 'replace')
     finally:
         termios.tcsetattr(fd, TERMIOS.TCSAFLUSH, old)
         return c
 
-def ukey():
 
+def ukey():
     """Returns the string expected for the IRAF ukey parameter"""
 
     # set focus to terminal if it is not already there
@@ -68,7 +68,7 @@ def ukey():
         raise EOFError()
     elif ord(char) <= ord(' '):
         # convert to octal ascii representation
-        returnStr = '\\'+"%03o" % ord(char)
+        returnStr = '\\' + "%03o" % ord(char)
     elif char == ':':
         # suck in colon string until newline is encountered
         done = 0
@@ -85,13 +85,13 @@ def ukey():
                 sys.stdout.write('\b \b')
                 sys.stdout.flush()
             elif ord(char) >= ord(' '):
-                colonString = colonString+char
+                colonString = colonString + char
                 sys.stdout.write(char)
                 sys.stdout.flush()
             else:
                 # ignore all other characters
                 pass
-        returnStr = ': '+colonString
+        returnStr = ': ' + colonString
     else:
         returnStr = char
     return returnStr

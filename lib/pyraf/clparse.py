@@ -1,7 +1,5 @@
 """clparse.py: Parse IRAF CL
 
-$Id$
-
 R. White, 1999 August 24
 """
 from __future__ import division, print_function
@@ -9,10 +7,9 @@ from __future__ import division, print_function
 from generic import GenericASTBuilder, GenericASTTraversal
 from clast import AST
 from cltoken import Token
-import string
+
 
 class CLStrictParser(GenericASTBuilder):
-
     """Strict version of CL parser (flags some program errors that CL accepts)
 
     This can be used as the parser to get a lint-like mode.
@@ -24,49 +21,48 @@ class CLStrictParser(GenericASTBuilder):
         GenericASTBuilder.__init__(self, AST, start)
         # list of tokens that should not be flattened by nonterminal()
         self.primaryTypes = {
-                'proc_stmt': 1,
-                'param_declaration_block': 1,
-                'declaration_stmt': 1,
-                'declaration_block': 1,
-                'var_name': 1,
-                'decl_init_list': 1,
-                'decl_init_value': 1,
-                'decl_array_dims': 1,
-                'array_subscript': 1,
-                'list_flag': 1,
-                'body_block': 1,
-                'statement_block': 1,
-                'nonnull_stmt': 1,
-                'osescape_stmt': 1,
-                'assignment_stmt': 1,
-                'task_call_stmt': 1,
-                'if_stmt': 1,
-                'for_stmt': 1,
-                'while_stmt': 1,
-                'break_stmt': 1,
-                'next_stmt': 1,
-                'return_stmt': 1,
-                'goto_stmt': 1,
-                'label_stmt': 1,
-                'switch_stmt': 1,
-                'case_block': 1,
-                'case_stmt_block': 1,
-                'case_value': 1,
-                'compound_stmt': 1,
-                'empty_compound_stmt': 1,
-                'task_arglist': 1,
-                'comma_arglist': 1,
-                'fn_arglist': 1,
-                'arg': 1,
-                'empty_arg': 1,
-                'non_empty_arg': 1,
-                'no_arg': 1,
-                'param_name': 1,
-                'opt_comma': 1,
-                'bool_expr': 1,
-                }
+            'proc_stmt': 1,
+            'param_declaration_block': 1,
+            'declaration_stmt': 1,
+            'declaration_block': 1,
+            'var_name': 1,
+            'decl_init_list': 1,
+            'decl_init_value': 1,
+            'decl_array_dims': 1,
+            'array_subscript': 1,
+            'list_flag': 1,
+            'body_block': 1,
+            'statement_block': 1,
+            'nonnull_stmt': 1,
+            'osescape_stmt': 1,
+            'assignment_stmt': 1,
+            'task_call_stmt': 1,
+            'if_stmt': 1,
+            'for_stmt': 1,
+            'while_stmt': 1,
+            'break_stmt': 1,
+            'next_stmt': 1,
+            'return_stmt': 1,
+            'goto_stmt': 1,
+            'label_stmt': 1,
+            'switch_stmt': 1,
+            'case_block': 1,
+            'case_stmt_block': 1,
+            'case_value': 1,
+            'compound_stmt': 1,
+            'empty_compound_stmt': 1,
+            'task_arglist': 1,
+            'comma_arglist': 1,
+            'fn_arglist': 1,
+            'arg': 1,
+            'empty_arg': 1,
+            'non_empty_arg': 1,
+            'no_arg': 1,
+            'param_name': 1,
+            'opt_comma': 1,
+            'bool_expr': 1,
+        }
         self._currentFname = None
-
 
     def parse(self, tokens, fname=None):
         """ Override this, only so we can add the optional fname arg.
@@ -83,14 +79,18 @@ class CLStrictParser(GenericASTBuilder):
     def error(self, token, value=None):
         finfo = ''
         if self._currentFname:
-            finfo = 'file "'+self._currentFname+'"'
+            finfo = 'file "' + self._currentFname + '"'
         if hasattr(token, 'lineno'):
-            if len(finfo): finfo += ', '
-            errmsg = "CL syntax error at `%s' (%sline %d)" % (token, finfo, token.lineno)
+            if len(finfo):
+                finfo += ', '
+            errmsg = "CL syntax error at `%s' (%sline %d)" % (token, finfo,
+                                                              token.lineno)
         else:
-            if len(finfo): finfo = '('+finfo+')'
+            if len(finfo):
+                finfo = '(' + finfo + ')'
             errmsg = "CL syntax error at `%s' %s" % (token, finfo)
-        if value is not None: errmsg = errmsg + "\n" + str(value)
+        if value is not None:
+            errmsg = errmsg + "\n" + str(value)
         raise SyntaxError(errmsg)
 
     def p_program(self, args):
@@ -327,8 +327,8 @@ class CLStrictParser(GenericASTBuilder):
             return args[0]
         return GenericASTBuilder.nonterminal(self, atype, args)
 
-class CLParser(CLStrictParser):
 
+class CLParser(CLStrictParser):
     """Sloppy version of CL parser, with extra rules allowing some errors"""
 
     def __init__(self, AST, start='program'):
@@ -352,7 +352,9 @@ class CLParser(CLStrictParser):
         #   in format taskname(arg, arg, | task2 arg, arg)
         pass
 
+
 class EclParser(CLParser):
+
     def __init__(self, AST, start='program'):
         CLParser.__init__(self, AST, start)
         self.primaryTypes['iferr_stmt'] = 1
@@ -371,11 +373,14 @@ class EclParser(CLParser):
         '''
         pass
 
+
 #
 # list tree
 #
 
+
 class PrettyTree(GenericASTTraversal):
+
     def __init__(self, ast, terminal=1):
         GenericASTTraversal.__init__(self, ast)
         self.terminal = terminal
@@ -449,11 +454,12 @@ class PrettyTree(GenericASTTraversal):
         if node.type == '}':
             self.printIndent()
         if isinstance(node, Token) or (not self.terminal):
-            print(repr(node)+tail, end=' ')
+            print(repr(node) + tail, end=' ')
         self.nodeCount = self.nodeCount + 1
 
 
 class TreeList(GenericASTTraversal):
+
     def __init__(self, ast, terminal=0):
         GenericASTTraversal.__init__(self, ast)
         self.terminal = terminal
@@ -473,8 +479,10 @@ class TreeList(GenericASTTraversal):
         elif isinstance(node, Token) or (not self.terminal):
             print(node, end=' ')
 
-def treelist(ast,terminal=1):
+
+def treelist(ast, terminal=1):
     PrettyTree(ast, terminal)
+
 
 def getParser():
     import pyrafglobals
@@ -483,6 +491,7 @@ def getParser():
     else:
         _parser = CLParser(AST)
     return _parser
+
 
 def parse(tokens, fname=None):
     global _parser

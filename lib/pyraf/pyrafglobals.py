@@ -5,16 +5,12 @@ _use_ecl        Flag to turn on ECL mode in PyRAF
 
 This is defined so it is safe to say 'from pyrafglobals import *'
 
-$Id$
-
 Broken out from irafglobals.py which was signed "R. White, 2000 January 5"
 """
 from __future__ import division, print_function
 
-import os, sys
-_os = os
-_sys = sys
-del os, sys
+import os as _os
+import sys as _sys
 
 _use_ecl = _os.environ.get("PYRAF_USE_ECL", False)
 
@@ -32,7 +28,8 @@ pyrafDir = _os.path.dirname(thisfile)
 del thisfile
 
 from stsci.tools.irafglobals import userWorkingHome
-if not pyrafDir: pyrafDir = userWorkingHome
+if not pyrafDir:
+    pyrafDir = userWorkingHome
 # change relative directory paths to absolute and normalize path
 pyrafDir = _os.path.normpath(_os.path.join(userWorkingHome, pyrafDir))
 del userWorkingHome

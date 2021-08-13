@@ -1,26 +1,28 @@
 #! /usr/bin/env python
-
 """loadall.py: Load all the main packages in IRAF with verbose turned on
-$Id$
 """
 from __future__ import division, print_function
 
-import sys, traceback
+import sys
+import traceback
+
 from pyraf import iraf
 
 iraf.setVerbose()
 
+
 def printcenter(s, length=70, char="-"):
-    l1 = (length-len(s))//2
-    l2 = length-l1-len(s)
-    print(l1*char, s, l2*char)
+    l1 = (length - len(s)) // 2
+    l2 = length - l1 - len(s)
+    print(l1 * char, s, l2 * char)
+
 
 ptried = {}
 npass = 0
 ntotal = 0
 plist = iraf.getPkgList()
 keepGoing = 1
-while keepGoing and (ntotal<len(plist)):
+while keepGoing and (ntotal < len(plist)):
     plist.sort()
     nnew = 0
     npass = npass + 1
@@ -29,9 +31,9 @@ while keepGoing and (ntotal<len(plist)):
     for pkg in plist:
         if pkg not in ptried:
             ptried[pkg] = 1
-            nnew = nnew+1
-            l1 = (70-len(pkg))//2
-            l2 = 70-l1-len(pkg)
+            nnew = nnew + 1
+            l1 = (70 - len(pkg)) // 2
+            l2 = 70 - l1 - len(pkg)
             printcenter(pkg)
             if pkg == "digiphotx":
                 print("""
@@ -53,7 +55,7 @@ while keepGoing and (ntotal<len(plist)):
                         break
                     print("...continuing...\n")
     ntotal = ntotal + nnew
-    printcenter("Finished pass " + repr(npass) +
-                " new pkgs " + repr(nnew) +
-                " total pkgs " + repr(ntotal), char="=")
+    printcenter("Finished pass " + repr(npass) + " new pkgs " + repr(nnew) +
+                " total pkgs " + repr(ntotal),
+                char="=")
     plist = iraf.getPkgList()

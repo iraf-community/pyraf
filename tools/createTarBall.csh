@@ -1,7 +1,4 @@
 #!/bin/csh -f
-#
-# $Id$
-#
 
 set use_git = 1
    # trying to do this from git repos as of nightly on 9 Mar 2016

@@ -1,4 +1,3 @@
-import itertools
 import os
 import shutil
 import subprocess
@@ -17,8 +16,10 @@ def setup_hook(config):
     """
 
     if sys.platform.startswith('win'):
-        additional_scripts = [os.path.join('scripts', 'runpyraf.py'),
-                              os.path.join('scripts', 'pyraf.bat')]
+        additional_scripts = [
+            os.path.join('scripts', 'runpyraf.py'),
+            os.path.join('scripts', 'pyraf.bat')
+        ]
 
         # This part has to be unncessary...
         shutil.copy2(os.path.join('scripts', 'pyraf'), additional_scripts[0])
@@ -51,7 +52,7 @@ def _find_x(xdir=None):
     inc_dirs = []
 
     if sys.platform.startswith('win'):
-       return lib_dirs, inc_dirs
+        return lib_dirs, inc_dirs
 
     if xdir is not None:
         lib_dirs.append(os.path.join(xdir, 'lib64'))
@@ -61,19 +62,13 @@ def _find_x(xdir=None):
         lib_dirs.append('/usr/X11R6/lib64')
         lib_dirs.append('/usr/X11R6/lib')
         inc_dirs.append('/usr/X11R6/include')
-    elif sys.platform == 'sunos5' :
+    elif sys.platform == 'sunos5':
         lib_dirs.append('/usr/openwin/lib')
         inc_dirs.append('/usr/openwin/include')
     else:
-        try:
-            import Tkinter
-        except:
-            raise ImportError('Tkinter is not installed')
+        import Tkinter
         tk = Tkinter.Tk()
         tk.withdraw()
-        tcl_lib = os.path.join(str(tk.getvar('tcl_library')), os.pardir)
-        tcl_inc = os.path.join(str(tk.getvar('tcl_library')), os.pardir, os.pardir,
-                               'include')
         tk_lib = os.path.join(str(tk.getvar('tk_library')), os.pardir)
         tkv = str(Tkinter.TkVersion)[:3]
         # yes, the version number of Tkinter really is a float...
@@ -91,8 +86,8 @@ def _find_x(xdir=None):
                 if lib.startswith('libX11'):
                     ind = lib_list.index(lib)
                     lib_dirs.append(os.path.dirname(lib_list[ind + 2]))
-                    inc_dirs.append(os.path.join(
-                        os.path.dirname(lib_list[ind + 2]), os.pardir,
-                        'include'))
+                    inc_dirs.append(
+                        os.path.join(os.path.dirname(lib_list[ind + 2]),
+                                     os.pardir, 'include'))
 
     return lib_dirs, inc_dirs

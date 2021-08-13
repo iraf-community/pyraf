@@ -23,7 +23,7 @@ def _unlearn_egstp(egstp_obj):
     """
     egstp_obj.unlearn()
     egstp_obj.lParam()
-    assert egstp_obj.npix == 0,  str(egstp_obj.npix)
+    assert egstp_obj.npix == 0, str(egstp_obj.npix)
     assert egstp_obj.min == 0.0, str(egstp_obj.min)
     assert egstp_obj.max == 0.0, str(egstp_obj.max)
     assert egstp_obj.sum == 0.0, str(egstp_obj.sum)
@@ -31,10 +31,10 @@ def _unlearn_egstp(egstp_obj):
 
 def _assertApproxEqual(afloat, bfloat, tolerance=1.0e-12):
     if math.fabs(bfloat) > tolerance:
-        ratiodiff = math.fabs(1.0 - math.fabs(afloat/(1.0*bfloat)))
+        ratiodiff = math.fabs(1.0 - math.fabs(afloat / (1.0 * bfloat)))
         assert ratiodiff < tolerance, \
             '{} != {}, radiodiff = {}'.format(
-                    afloat, bfloat, math.fabs(ratiodiff))
+                afloat, bfloat, math.fabs(ratiodiff))
     else:
         diff = math.fabs(afloat - bfloat)
         assert diff < tolerance, \
@@ -48,7 +48,8 @@ def _check_all_dqbits(the_dqbits_obj, valtup):
 
     # check each one
     for i in range(16):
-        expect_is_true = 'the_dqbits_obj.bit{} == {}'.format(i+1, yes_no_map[bool(valtup[i])])
+        expect_is_true = 'the_dqbits_obj.bit{} == {}'.format(
+            i + 1, yes_no_map[bool(valtup[i])])
         result = eval(expect_is_true)
         msg = "Expected this to be True: {}".format(expect_is_true)
         msg = msg.replace('the_dqbits_obj', 'dqbits')
@@ -59,15 +60,10 @@ def _check_all_dqbits(the_dqbits_obj, valtup):
 @pytest.fixture
 def _data(tmpdir):
     inputs = dict(
-        pset=dict(
-            input1=os.path.join(DATA_DIR, 'pset_msstat_input.fits')
-        ),
-        dqbits=dict(
-            input1=str(tmpdir.join('dqbits_im1.fits')),
-            input2=str(tmpdir.join('dqbits_im2.fits')),
-            output=str(tmpdir.join('dqbits_out.fits'))
-        )
-    )
+        pset=dict(input1=os.path.join(DATA_DIR, 'pset_msstat_input.fits')),
+        dqbits=dict(input1=str(tmpdir.join('dqbits_im1.fits')),
+                    input2=str(tmpdir.join('dqbits_im2.fits')),
+                    output=str(tmpdir.join('dqbits_out.fits'))))
     return inputs
 
 
@@ -115,24 +111,51 @@ def test_task_min_match(_iraf_pset_init, _data):
     # the function. We're scanning stdout/err here as a stop gap measure.
 
     stdout, stderr = StringIO(), StringIO()
-    iraf.msst(_data['pset']['input1'], arrays='science', clarray='science',
-              StdoutAppend=stdout, StderrAppend=stderr)
-    iraf.mssta(_data['pset']['input1'], arrays='science', clarray='science',
-               StdoutAppend=stdout, StderrAppend=stderr)
-    iraf.msstat(_data['pset']['input1'], arrays='science', clarray='science',
-                StdoutAppend=stdout, StderrAppend=stderr)
-    iraf.msstati(_data['pset']['input1'], arrays='science', clarray='science',
-                 StdoutAppend=stdout, StderrAppend=stderr)
-    iraf.msstatis(_data['pset']['input1'], arrays='science', clarray='science',
-                  StdoutAppend=stdout, StderrAppend=stderr)
-    iraf.msstatist(_data['pset']['input1'], arrays='science', clarray='science',
-                   StdoutAppend=stdout, StderrAppend=stderr)
-    iraf.msstatisti(_data['pset']['input1'], arrays='science', clarray='science',
-                    StdoutAppend=stdout, StderrAppend=stderr)
-    iraf.msstatistic(_data['pset']['input1'], arrays='science', clarray='science',
-                     StdoutAppend=stdout, StderrAppend=stderr)
-    iraf.msstatistics(_data['pset']['input1'], arrays='science', clarray='science',
-                      StdoutAppend=stdout, StderrAppend=stderr)
+    iraf.msst(_data['pset']['input1'],
+              arrays='science',
+              clarray='science',
+              StdoutAppend=stdout,
+              StderrAppend=stderr)
+    iraf.mssta(_data['pset']['input1'],
+               arrays='science',
+               clarray='science',
+               StdoutAppend=stdout,
+               StderrAppend=stderr)
+    iraf.msstat(_data['pset']['input1'],
+                arrays='science',
+                clarray='science',
+                StdoutAppend=stdout,
+                StderrAppend=stderr)
+    iraf.msstati(_data['pset']['input1'],
+                 arrays='science',
+                 clarray='science',
+                 StdoutAppend=stdout,
+                 StderrAppend=stderr)
+    iraf.msstatis(_data['pset']['input1'],
+                  arrays='science',
+                  clarray='science',
+                  StdoutAppend=stdout,
+                  StderrAppend=stderr)
+    iraf.msstatist(_data['pset']['input1'],
+                   arrays='science',
+                   clarray='science',
+                   StdoutAppend=stdout,
+                   StderrAppend=stderr)
+    iraf.msstatisti(_data['pset']['input1'],
+                    arrays='science',
+                    clarray='science',
+                    StdoutAppend=stdout,
+                    StderrAppend=stderr)
+    iraf.msstatistic(_data['pset']['input1'],
+                     arrays='science',
+                     clarray='science',
+                     StdoutAppend=stdout,
+                     StderrAppend=stderr)
+    iraf.msstatistics(_data['pset']['input1'],
+                      arrays='science',
+                      clarray='science',
+                      StdoutAppend=stdout,
+                      StderrAppend=stderr)
 
     assert "ERROR" not in stdout.getvalue()
     assert not stderr.getvalue()
@@ -143,16 +166,25 @@ def test_task_ambiguous_name_raises_exception(_iraf_pset_init, _data):
     stdout, stderr = StringIO(), StringIO()
 
     with pytest.raises(AttributeError):
-        iraf.m(_data['pset']['input1'], arrays='science', clarray='science',
-               StdoutAppend=stdout, StderrAppend=stderr)
+        iraf.m(_data['pset']['input1'],
+               arrays='science',
+               clarray='science',
+               StdoutAppend=stdout,
+               StderrAppend=stderr)
 
     with pytest.raises(AttributeError):
-        iraf.ms(_data['pset']['input1'], arrays='science', clarray='science',
-                StdoutAppend=stdout, StderrAppend=stderr)
+        iraf.ms(_data['pset']['input1'],
+                arrays='science',
+                clarray='science',
+                StdoutAppend=stdout,
+                StderrAppend=stderr)
 
     with pytest.raises(AttributeError):
-        iraf.mss(_data['pset']['input1'], arrays='science', clarray='science',
-                 StdoutAppend=stdout, StderrAppend=stderr)
+        iraf.mss(_data['pset']['input1'],
+                 arrays='science',
+                 clarray='science',
+                 StdoutAppend=stdout,
+                 StderrAppend=stderr)
 
 
 @pytest.mark.skipif(not HAS_STSDAS, reason='Need STSDAS to run')
@@ -166,7 +198,9 @@ def test_pset_msstatistics_science_array(_iraf_pset_init, _data):
     #    clarray='science' (return data to egstp from final "error" array)
     # So, expect vals from second (final) science array.
 
-    iraf.msstatistics(_data['pset']['input1'], arrays='science', clarray='science')
+    iraf.msstatistics(_data['pset']['input1'],
+                      arrays='science',
+                      clarray='science')
     iraf.egstp.lParam()
 
     assert iraf.egstp.npix == 277704, str(iraf.egstp.npix)
@@ -183,10 +217,12 @@ def test_pset_msstatistics_zeroed_error_array(_iraf_pset_init, _data):
     #     arrays='science' (check "science" arrays only)
     #    clarray='error'   (return data to egstp from final "error" array)
     # so, since the 'error' arrays are empty (and unchecked), expect all zeroes
-    iraf.msstatistics(_data['pset']['input1'], arrays='science', clarray='error')
+    iraf.msstatistics(_data['pset']['input1'],
+                      arrays='science',
+                      clarray='error')
     iraf.egstp.lParam()
 
-    assert iraf.egstp.npix == 0,  str(iraf.egstp.npix)
+    assert iraf.egstp.npix == 0, str(iraf.egstp.npix)
     assert iraf.egstp.min == 0.0, str(iraf.egstp.min)
     assert iraf.egstp.max == 0.0, str(iraf.egstp.max)
     assert iraf.egstp.sum == 0.0, str(iraf.egstp.sum)
@@ -212,10 +248,12 @@ def test_pset_msstatistics_191(_iraf_pset_init, _data):
     _assertApproxEqual(iraf.egstp.sum, 321415936.0)
 
     _unlearn_egstp(iraf.egstp)
-    iraf.msstatistics(_data['pset']['input1'], arrays='science', clarray='error')
+    iraf.msstatistics(_data['pset']['input1'],
+                      arrays='science',
+                      clarray='error')
     iraf.egstp.lParam()
 
-    assert iraf.egstp.npix == 0,  str(iraf.egstp.npix)
+    assert iraf.egstp.npix == 0, str(iraf.egstp.npix)
     assert iraf.egstp.min == 0.0, str(iraf.egstp.min)
     assert iraf.egstp.max == 0.0, str(iraf.egstp.max)
     assert iraf.egstp.sum == 0.0, str(iraf.egstp.sum)
@@ -268,12 +306,14 @@ def test_dqbits_mscombine(_iraf_dqbits_init, _data, tmpdir):
     """
     # reset PSET dqbits' values
     iraf.dqbits.unlearn()
-    _check_all_dqbits(iraf.dqbits, (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+    _check_all_dqbits(iraf.dqbits,
+                      (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
     iraf.dqbits.lParam()
 
     # now set PSET dqbits' values to a non-default set
     iraf.dqbits.bit2 = iraf.dqbits.bit4 = iraf.dqbits.bit6 = iraf.dqbits.bit8 = iraf.yes
-    _check_all_dqbits(iraf.dqbits, (0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0))
+    _check_all_dqbits(iraf.dqbits,
+                      (0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0))
     iraf.dqbits.lParam()
 
     # run mscombine to see what is does with the dqbit pars (shouldn't alter)
@@ -283,4 +323,5 @@ def test_dqbits_mscombine(_iraf_dqbits_init, _data, tmpdir):
 
     # now, check the PSET - should be unaltered (fixed by #207)
     iraf.dqbits.lParam()
-    _check_all_dqbits(iraf.dqbits, (0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0))
+    _check_all_dqbits(iraf.dqbits,
+                      (0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0))
