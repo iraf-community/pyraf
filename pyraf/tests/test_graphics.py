@@ -1,7 +1,6 @@
 """These were tests under core/graphics_checks in pandokia."""
 
-import six
-
+import io
 import glob
 import os
 import sys
@@ -145,7 +144,7 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_dumpspecs():
     # get dumpspecs output
-    out_f = six.StringIO()
+    out_f = io.StringIO()
     wutil.dumpspecs(outstream=out_f, skip_volatiles=True)
     out_str = out_f.getvalue()
     out_f.close()
