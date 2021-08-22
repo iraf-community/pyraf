@@ -136,29 +136,8 @@ try:
 except NameError:
     pass  # may not have imported it
 
-magicConstant = None
-try:
-    import IOCTL
-    magicConstant = IOCTL.TIOCGWINSZ
-except ImportError:
-    if sys.platform == 'sunos5':
-        magicConstant = ord('T') * 256 + 104
-    elif sys.platform.startswith('linux'):
-        magicConstant = 0x5413
-    elif sys.platform[:4] == 'osf1':
-        magicConstant = 0x40087468
-    elif sys.platform.startswith('win'):
-        magicConstant = None  # this is unused on windows (so far)
-    elif sys.platform == 'darwin':
-        try:
-            import termios
-            magicConstant = termios.TIOCGWINSZ
-        except ImportError:
-            magicConstant = 1074275912
-    else:
-        raise ImportError(
-            "wutil.py: Needs definition of TIOCGWINSZ constant for platform %s"
-            % sys.platform)
+import termios
+magicConstant = termios.TIOCGWINSZ
 
 
 def getScreenDepth():
@@ -361,9 +340,6 @@ class TerminalFocusEntity(FocusEntity):
     def getWindowSize(self):
         """return a tuple containing the x,y size of the terminal window
         in characters"""
-
-        if magicConstant is None:
-            raise Exception("platform isn't supported: " + sys.platform)
 
         # define string to serve as memory area to receive copy of structure
         # created by IOCTL call

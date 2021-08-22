@@ -5,22 +5,9 @@ implement IRAF ukey functionality
 
 import os
 import sys
+import termios
 from . import wutil
 from stsci.tools import capable, irafutils
-
-try:
-    import termios
-except ImportError:
-    if 0 == sys.platform.find('win'):  # not on win*, but IS on darwin & cygwin
-        termios = None
-    else:
-        raise
-
-# TERMIOS is deprecated in Python 2.1
-if hasattr(termios, 'ICANON') or termios is None:
-    TERMIOS = termios
-else:
-    import TERMIOS
 
 # This class emulates the IRAF ukey parameter mechanism. IRAF calls for
 # a ukey parameter and expects that the user will type a character in
@@ -34,10 +21,10 @@ def getSingleTTYChar():  # return type str in all Python versions
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
     new = termios.tcgetattr(fd)
-    new[3] = new[3] & ~(TERMIOS.ICANON | TERMIOS.ECHO | TERMIOS.ISIG)
-    new[6][TERMIOS.VMIN] = 1
-    new[6][TERMIOS.VTIME] = 0
-    termios.tcsetattr(fd, TERMIOS.TCSANOW, new)
+    new[3] = new[3] & ~(termios.ICANON | termios.ECHO | termios.ISIG)
+    new[6][termios.VMIN] = 1
+    new[6][termios.VTIME] = 0
+    termios.tcsetattr(fd, termios.TCSANOW, new)
     c = None
     try:
         # allow Tk mainloop to run while waiting...
@@ -47,7 +34,7 @@ def getSingleTTYChar():  # return type str in all Python versions
         else:
             c = os.read(fd, 1).decode(errors='replace')
     finally:
-        termios.tcsetattr(fd, TERMIOS.TCSAFLUSH, old)
+        termios.tcsetattr(fd, termios.TCSAFLUSH, old)
         return c
 
 
