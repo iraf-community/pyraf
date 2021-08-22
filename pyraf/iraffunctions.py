@@ -179,13 +179,13 @@ Your "iraf" and "IRAFARCH" environment variables are not defined and could not
 be determined from /usr/local/bin/cl.  These are needed to find IRAF tasks.
 Before starting pyraf, define them by doing (for example):
 
-    setenv iraf /iraf/iraf/
-    setenv IRAFARCH linux
+    export iraf=/iraf/iraf/
+    export IRAFARCH=linux
 
 at the Unix command line. Actual values will depend on your IRAF installation,
-and they are set during the IRAF user installation (see iraf.net), or via
-Ureka installation (see http://ssb.stsci.edu/ureka).  Also be sure to run the
-"mkiraf" command to create a logion.cl (http://www.google.com/search?q=mkiraf).
+and they are set during the IRAF user installation (see https://iraf-community.github.io).
+Also be sure to run the "mkiraf" command to create a logion.cl
+(http://www.google.com/search?q=mkiraf).
 """)
 
         # stacksize problem on linux
@@ -966,8 +966,8 @@ def listVars(prefix="", equals="\t= "):
 
 @handleRedirAndSaveKwds
 def gripes():
-    """ Hide the system call - direct the user to support """
-    print("Please report your concern directly to https://hsthelp.stsci.edu")
+    """ Hide the system call """
+    print("No gripes")
 
 
 gripe = gripes
