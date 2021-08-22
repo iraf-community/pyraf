@@ -163,8 +163,7 @@ c.OF_GRAPHICS = False
 tkinter use unattempted.
 """.format(major=sys.version_info.major,
            minor=sys.version_info.minor,
-           platform=sys.platform,
-           py3k=(sys.version_info.major >= 3))
+           platform=sys.platform)
 
     assert expected.strip() == out_str.strip(), \
         'Unexpected output from wutil.dumpspecs: {}'.format(out_str)

@@ -6,7 +6,7 @@ import uuid
 
 import pytest
 
-from .utils import HAS_IRAF, IS_PY2
+from .utils import HAS_IRAF
 
 if HAS_IRAF:
     from pyraf.irafpar import IrafParList
@@ -206,8 +206,6 @@ def test_irafparlist_getParDict(_ipl, _pars):
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
-@pytest.mark.xfail(IS_PY2,
-                   reason="BUG: raises 'TypeError: number coercion failed'")
 def test_irafparlist_getParList(_ipl, _pars):
     for par in _pars:
         _ipl.addParam(par)

@@ -886,13 +886,7 @@ class TparDisplay(Binder):
 
     def main(self):
         # Create the Screen using curses_display.
-        # On OSX in py2.6 and greater, this causes issues (see #117),
-        # where raw_display seems to work just as well so use it.
-        if sys.platform == 'darwin' and sys.version_info[0] == 2 and \
-           sys.version_info[1] > 5:
-            self.ui = urwid.raw_display.Screen()
-        else:
-            self.ui = urwid.curses_display.Screen()
+        self.ui = urwid.curses_display.Screen()
         self.ui.register_palette(self.palette)
         self.ui.run_wrapper(self.run)  # raw_display has alternate_buffer=True
         self.done()
