@@ -6,7 +6,7 @@
 from __future__ import division, print_function
 
 # System level modules
-import Tkinter as TKNTR  # requires 2to3
+import tkinter
 
 # Our modules
 from stsci.tools import tkrotext
@@ -21,25 +21,25 @@ def is_USING_X():
     return wutil.WUTIL_USING_X
 
 
-class MsgIOWidget(TKNTR.Frame):
+class MsgIOWidget(tkinter.Frame):
     """MsgIOWidget class"""
 
     def __init__(self, parent, width=100, text=""):
         """Constructor"""
 
         # We are the main frame that holds everything we do
-        TKNTR.Frame.__init__(self, parent)
+        tkinter.Frame.__init__(self, parent)
         self._parent = parent
 
         # Create two sub-frames, one to hold the 1-liner msg I/O, and
         # the other one to hold the whole scrollable history.
-        self._nowFrame = TKNTR.Frame(self,
+        self._nowFrame = tkinter.Frame(self,
                                      bd=2,
-                                     relief=TKNTR.SUNKEN,
+                                     relief=tkinter.SUNKEN,
                                      takefocus=False)
-        self._histFrame = TKNTR.Frame(self,
+        self._histFrame = tkinter.Frame(self,
                                       bd=2,
-                                      relief=TKNTR.SUNKEN,
+                                      relief=tkinter.SUNKEN,
                                       takefocus=False)
 
         # Put in the expand/collapse button (determine it's sizes)
@@ -51,67 +51,67 @@ class MsgIOWidget(TKNTR.Frame):
         else:  # Aqua
             px = 5
             py = 3
-            if TKNTR.TkVersion > 8.4:
+            if tkinter.TkVersion > 8.4:
                 px = py = 0
                 btxt = ''
                 self._expBttnHasTxt = False
-        self._expBttn = TKNTR.Checkbutton(self._nowFrame,
+        self._expBttn = tkinter.Checkbutton(self._nowFrame,
                                           command=self._expand,
                                           padx=px,
                                           pady=py,
                                           text=btxt,
                                           indicatoron=0,
-                                          state=TKNTR.DISABLED)
-        self._expBttn.pack(side=TKNTR.LEFT, padx=3)  # , ipadx=0)
+                                          state=tkinter.DISABLED)
+        self._expBttn.pack(side=tkinter.LEFT, padx=3)  # , ipadx=0)
 
         # Overlay a label on the frame
-        self._msgLabelVar = TKNTR.StringVar()
+        self._msgLabelVar = tkinter.StringVar()
         self._msgLabelVar.set(text)
         self._msgLabelMaxWidth = 65  # 70 works but causes plot redraws when
         # the history panel is opened/closed
-        self._msgLabel = TKNTR.Label(self._nowFrame,
+        self._msgLabel = tkinter.Label(self._nowFrame,
                                      textvariable=self._msgLabelVar,
-                                     anchor=TKNTR.W,
-                                     justify=TKNTR.LEFT,
+                                     anchor=tkinter.W,
+                                     justify=tkinter.LEFT,
                                      width=self._msgLabelMaxWidth,
                                      wraplength=width - 100,
                                      takefocus=False)
-        self._msgLabel.pack(side=TKNTR.LEFT, fill=TKNTR.X, expand=False)
+        self._msgLabel.pack(side=tkinter.LEFT, fill=tkinter.X, expand=False)
         self._msgLabel.bind('<Double-Button-1>', self._lblDblClk)
 
-        self._entry = TKNTR.Entry(self._nowFrame,
-                                  state=TKNTR.DISABLED,
+        self._entry = tkinter.Entry(self._nowFrame,
+                                  state=tkinter.DISABLED,
                                   width=1,
                                   takefocus=False,
-                                  relief=TKNTR.FLAT,
+                                  relief=tkinter.FLAT,
                                   highlightthickness=0)
-        self._entry.pack(side=TKNTR.LEFT, fill=TKNTR.X, expand=True)
+        self._entry.pack(side=tkinter.LEFT, fill=tkinter.X, expand=True)
         self._entry.bind('<Return>', self._enteredText)
-        self._entryTyping = TKNTR.BooleanVar()
+        self._entryTyping = tkinter.BooleanVar()
         self._entryTyping.set(False)
 
         # put in a spacer here for label height stability
-        self._spacer = TKNTR.Label(self._nowFrame, text='', takefocus=False)
-        self._spacer.pack(side=TKNTR.LEFT, expand=False, padx=5)
+        self._spacer = tkinter.Label(self._nowFrame, text='', takefocus=False)
+        self._spacer.pack(side=tkinter.LEFT, expand=False, padx=5)
 
-        self._nowFrame.pack(side=TKNTR.TOP, fill=TKNTR.X, expand=True)
+        self._nowFrame.pack(side=tkinter.TOP, fill=tkinter.X, expand=True)
 
         self._hasHistory = False
-        self._histScrl = TKNTR.Scrollbar(self._histFrame)
-        self._histScrl.pack(side=TKNTR.RIGHT, fill=TKNTR.Y)
+        self._histScrl = tkinter.Scrollbar(self._histFrame)
+        self._histScrl.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
         self._histText = tkrotext.ROText(self._histFrame,
-                                         wrap=TKNTR.WORD,
+                                         wrap=tkinter.WORD,
                                          takefocus=False,
                                          height=10,
                                          yscrollcommand=self._histScrl.set)
-        # (use if just TKNTR.Text) state=TKNTR.DISABLED, takefocus=False,
+        # (use if just tkinter.Text) state=tkinter.DISABLED, takefocus=False,
         #                        exportselection=True is the default
-        self._histText.pack(side=TKNTR.TOP, fill=TKNTR.X, expand=True)
+        self._histText.pack(side=tkinter.TOP, fill=tkinter.X, expand=True)
         self._histScrl.config(command=self._histText.yview)
 
         # don't pack this one now - start out with it hidden
-        #       self._histFrame.pack(side=TKNTR.TOP, fill=TKNTR.X)
+        #       self._histFrame.pack(side=tkinter.TOP, fill=tkinter.X)
 
         ### Do not pack the main frame here.  Let the application do it. ###
 
@@ -132,12 +132,12 @@ class MsgIOWidget(TKNTR.Frame):
             if self._expBttnHasTxt:
                 self._expBttn.configure(text='+')
         else:  # need to expand
-            self._histFrame.pack(side=TKNTR.TOP, fill=TKNTR.BOTH,
+            self._histFrame.pack(side=tkinter.TOP, fill=tkinter.BOTH,
                                  expand=True)  # .X)
             if self._expBttnHasTxt:
                 self._expBttn.configure(text='-')
             if self._hasHistory:
-                self._histText.see(TKNTR.END)
+                self._histText.see(tkinter.END)
 
     def updateIO(self, text=""):
         """ Update the text portion of the scrolling canvas """
@@ -164,8 +164,8 @@ class MsgIOWidget(TKNTR.Frame):
         self._msgLabel.configure(width=min(self._msgLabelMaxWidth, lblTxtLen))
 
         # Enable the entry widget
-        self._entry.configure(state=TKNTR.NORMAL,
-                              relief=TKNTR.SUNKEN,
+        self._entry.configure(state=tkinter.NORMAL,
+                              relief=tkinter.SUNKEN,
                               width=15,
                               takefocus=True,
                               highlightthickness=2)
@@ -179,11 +179,11 @@ class MsgIOWidget(TKNTR.Frame):
         ans = self._entry.get().strip()
 
         # Clear and disable the entry widget
-        self._entry.delete(0, TKNTR.END)
-        self._entry.configure(state=TKNTR.DISABLED,
+        self._entry.delete(0, tkinter.END)
+        self._entry.configure(state=tkinter.DISABLED,
                               takefocus=False,
                               width=1,
-                              relief=TKNTR.FLAT,
+                              relief=tkinter.FLAT,
                               highlightthickness=0)
         self._entryTyping.set(False)
 
@@ -210,25 +210,25 @@ class MsgIOWidget(TKNTR.Frame):
             return
 
         # enable widget temporarily so we can add text
-#       self._histText.config(state=TKNTR.NORMAL)
+#       self._histText.config(state=tkinter.NORMAL)
 #       self._histText.delete(1.0, END)
 
 # add the new text
         if self._hasHistory:
-            self._histText.insert(TKNTR.END, '\n' + txt.strip(), force=True)
+            self._histText.insert(tkinter.END, '\n' + txt.strip(), force=True)
         else:
-            self._histText.insert(TKNTR.END, txt.strip(), force=True)
+            self._histText.insert(tkinter.END, txt.strip(), force=True)
             self._hasHistory = True
 
         # disable it again
-#       self._histText.config(state=TKNTR.DISABLED)
+#       self._histText.config(state=tkinter.DISABLED)
 
 # show it
         if self._histFrame.winfo_ismapped():
-            self._histText.see(TKNTR.END)
+            self._histText.see(tkinter.END)
 
 
 #       self._histFrame.update_idletasks()
 
 # finally, make sure expand/collapse button is enabled now
-        self._expBttn.configure(state=TKNTR.NORMAL)
+        self._expBttn.configure(state=tkinter.NORMAL)

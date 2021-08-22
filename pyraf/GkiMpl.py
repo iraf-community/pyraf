@@ -6,7 +6,7 @@ from __future__ import division, print_function
 
 import math
 import numpy
-import Tkinter as TKNTR
+import tkinter
 import matplotlib
 # (done in mca file) matplotlib.use('TkAgg') # set backend
 from matplotlib.lines import Line2D
@@ -64,8 +64,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
 
     def makeGWidget(self, width=600, height=420):
         """Make the graphics widget.  Also perform some self init."""
-        self.__pf = TKNTR.Frame(self.top)
-        self.__pf.pack(side=TKNTR.TOP, fill=TKNTR.BOTH, expand=1)
+        self.__pf = tkinter.Frame(self.top)
+        self.__pf.pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
         self.__xsz = width
         self.__ysz = height
 
@@ -76,7 +76,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.__fig.set_facecolor('k')  # default to black
 
         self.__mca = mca.MplCanvasAdapter(self, self.__fig, master=self.__pf)
-        self.__mca.pack(side=TKNTR.TOP, fill=TKNTR.BOTH, expand=1)
+        self.__mca.pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
         self.__mca.gwidgetize(width, height)  # Add attrs to the gwidget
         self.gwidget = self.__mca.get_tk_widget()
 

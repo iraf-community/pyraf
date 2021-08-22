@@ -7,14 +7,14 @@ from __future__ import division, print_function
 
 import os
 import sys
-import Tkinter as TKNTR  # requires 2to3
+import tkinter
 from stsci.tools.irafglobals import IrafPkg
 import wutil
 
 logo = "pyraflogo_rgb_web.gif"
 
 
-class SplashScreen(TKNTR.Toplevel):
+class SplashScreen(tkinter.Toplevel):
     """Base class for splash screen
 
     Subclass and override createWidgets().
@@ -26,8 +26,8 @@ class SplashScreen(TKNTR.Toplevel):
     Based closely on news posting by Alexander Schliep, 07 Apr 1999
     """
 
-    def __init__(self, master=None, borderwidth=4, relief=TKNTR.RAISED, **kw):
-        TKNTR.Toplevel.__init__(self,
+    def __init__(self, master=None, borderwidth=4, relief=tkinter.RAISED, **kw):
+        tkinter.Toplevel.__init__(self,
                                 master,
                                 relief=relief,
                                 borderwidth=borderwidth,
@@ -98,11 +98,11 @@ class PyrafSplash(SplashScreen):
 
     def createWidgets(self):
         """Create pyraf splash image"""
-        self.img = TKNTR.PhotoImage(file=self.filename)
+        self.img = tkinter.PhotoImage(file=self.filename)
         width = self.img.width() + 20
         iheight = self.img.height()
         height = iheight + 10 + 15 * self.nlines
-        self.canvas = TKNTR.Canvas(self,
+        self.canvas = tkinter.Canvas(self,
                                    width=width,
                                    height=height,
                                    background=self["background"])
@@ -217,6 +217,6 @@ def splash(label="PyRAF Execution Monitor", background="LightYellow", **kw):
     if wutil.hasGraphics:
         try:
             return IrafMonitorSplash(label, background=background, **kw)
-        except TKNTR.TclError:
+        except tkinter.TclError:
             pass
     return None

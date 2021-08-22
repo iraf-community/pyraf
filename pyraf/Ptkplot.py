@@ -3,8 +3,8 @@
 from __future__ import division, print_function
 
 import os
-from Tkinter import _default_root  # requires 2to3
-from Tkinter import TclError, Canvas
+from tkinter import _default_root
+from tkinter import TclError, Canvas
 import wutil
 
 # XBM file for cursor is in same directory as this module
@@ -30,14 +30,14 @@ if _default_root is None:
 
 def cleanup():
     try:
-        from Tkinter import _default_root, TclError  # requires 2to3
-        import Tkinter as TKNTR
+        from tkinter import _default_root, TclError
+        import tkinter
         try:
             if _default_root:
                 _default_root.destroy()
         except TclError:
             pass
-        TKNTR._default_root = None
+        tkinter._default_root = None
     except SystemError:
         # If cleanup() is called before pyraf fully loads, we will
         # see: "SystemError: Parent module 'pyraf' not loaded".  In that case,

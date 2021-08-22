@@ -8,7 +8,7 @@ M.D. De La Pena, 2000 June 28
 from __future__ import division, print_function
 
 # System level modules
-from Tkinter import (StringVar, BooleanVar, Canvas, Frame, Scrollbar, Label,
+from tkinter import (StringVar, BooleanVar, Canvas, Frame, Scrollbar, Label,
                      Entry, Message, TRUE, FALSE, VERTICAL, NORMAL, DISABLED,
                      FLAT, SUNKEN, RAISED, TOP, LEFT, RIGHT, Y, X, NW, SW, END)
 

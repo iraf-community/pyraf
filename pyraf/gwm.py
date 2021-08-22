@@ -8,7 +8,7 @@ from __future__ import division, print_function
 import os
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
-    import Tkinter as TKNTR  # requires 2to3
+    import tkinter
 import wutil
 import gki
 
@@ -66,7 +66,7 @@ class GraphicsWindowManager(gki.GkiProxy):
             self.createList.append(windowName)
         if self.windowVar is None:
             # create Tk string variable with active window name
-            self.windowVar = TKNTR.StringVar()
+            self.windowVar = tkinter.StringVar()
             self.windowVar.trace('w', self._setWindowVar)
         self.windowVar.set(windowName)
 

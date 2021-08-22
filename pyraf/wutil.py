@@ -9,6 +9,7 @@ from __future__ import division, print_function
 import struct
 import sys
 import os
+import tkinter
 
 try:
     import fcntl
@@ -560,13 +561,10 @@ def dumpspecs(outstream=None, skip_volatiles=False):
             out += "\n/dev/console owner = " + str(dco)
 
     if not capable.OF_GRAPHICS:
-        if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
-            out += "\ntkinter import failed."
-        else:
-            out += "\ntkinter use unattempted."
+        out += "\ntkinter use unattempted."
     else:
-        out += "\nTclVersion = " + str(capable.TKNTR.TclVersion)
-        out += "\nTkVersion = " + str(capable.TKNTR.TkVersion)
+        out += "\nTclVersion = " + str(tkinter.TclVersion)
+        out += "\nTkVersion = " + str(tkinter.TkVersion)
         out += "\nWUTIL_ON_MAC = " + str(WUTIL_ON_MAC)
         out += "\nWUTIL_ON_WIN = " + str(WUTIL_ON_WIN)
         out += "\nWUTIL_USING_X = " + str(WUTIL_USING_X)
@@ -639,8 +637,6 @@ if _skipDisplay:
             print("No graphics/display intended for this session.")
         else:
             print("No graphics/display possible for this session.")
-            if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
-                print("tkinter import failed.")
 else:
     if _has_xutil or _has_aqutil:
         hasGraphics = focusController.hasGraphics

@@ -4,7 +4,7 @@ implement IRAF gcur functionality
 from __future__ import division, print_function
 
 import sys
-import Tkinter as TKNTR
+import tkinter
 from stsci.tools import irafutils
 import wutil
 
@@ -54,7 +54,7 @@ class Gcursor:
                 self.active = 0
                 self.unbind()
                 self.cursorOff()
-            except TKNTR.TclError:
+            except tkinter.TclError:
                 pass
         # EOF flag can get set by window-close event or 'I' keystroke
         # It should be set to string message
