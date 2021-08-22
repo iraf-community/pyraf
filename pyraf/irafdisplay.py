@@ -26,27 +26,12 @@ This could be used to maintain references to multiple display servers.
 Ultimately more functionality may be added to make this a complete
 replacement for CDL.
 """
-
-
 import os
 import numpy
 import socket
 import sys
+import fcntl
 from stsci.tools import irafutils
-
-try:
-    import fcntl
-except ImportError:
-    if 0 == sys.platform.find('win'):  # not on win*, but IS on darwin & cygwin
-        fcntl = None
-    else:
-        raise
-
-# FCNTL is deprecated in Python 2.2
-if hasattr(fcntl, 'F_SETFL') or fcntl is None:
-    FCNTL = fcntl
-else:
-    import FCNTL
 
 _default_imtdev = ("unix:/tmp/.IMT%d", "fifo:/dev/imt1i:/dev/imt1o")
 
@@ -216,13 +201,11 @@ class FifoImageDisplay(ImageDisplay):
         ImageDisplay.__init__(self)
         try:
             self._fdin = os.open(infile, os.O_RDONLY | os.O_NDELAY)
-            fcntl.fcntl(self._fdin, FCNTL.F_SETFL, os.O_RDONLY)
+            fcntl.fcntl(self._fdin, fcntl.F_SETFL, os.O_RDONLY)
             self._fdout = os.open(outfile, os.O_WRONLY | os.O_NDELAY)
-            fcntl.fcntl(self._fdout, FCNTL.F_SETFL, os.O_WRONLY)
+            fcntl.fcntl(self._fdout, fcntl.F_SETFL, os.O_WRONLY)
         except OSError as error:
             raise IOError("Cannot open image display (%s)" % (error,))
-        except AttributeError:
-            raise RuntimeError("Image fcntl is not supported on this platform")
 
     def __del__(self):
         self.close()

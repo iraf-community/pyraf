@@ -10,14 +10,7 @@ import struct
 import sys
 import os
 import tkinter
-
-try:
-    import fcntl
-except ImportError:
-    if 0 == sys.platform.find('win') or sys.platform == 'cygwin':
-        fcntl = None  # not used on win (yet) but IS on darwin
-    else:
-        raise
+import fcntl
 
 
 # empty placeholder versions for X
@@ -246,7 +239,7 @@ def getTermWindowSize():
         if xsize <= 0:
             xsize = 80
         return ysize, xsize
-    except (IOError, AttributeError):
+    except IOError:
         return (24, 80)  # assume generic size
 
 
@@ -277,9 +270,6 @@ class FocusEntity:
         """return a window ID that can be used to find the top window
         of the window heirarchy."""
         raise NotImplementedError("class FocusEntity cannot be used directly")
-
-
-# XXXX find more portable scheme for handling absence of FCNTL
 
 
 class TerminalFocusEntity(FocusEntity):
