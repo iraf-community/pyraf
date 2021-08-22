@@ -8,7 +8,7 @@ from stsci.tools import capable
 if capable.OF_GRAPHICS:
     from Tkinter.tkMessageBox import askokcancel, showwarning, showerror
     import os
-    import cStringIO
+    import io
     from stsci.tools import listdlg, eparoption, editpar, irafutils
     import iraf
     import irafpar
@@ -346,7 +346,7 @@ class PyrafEparDialog(editpar.EditParDialog):
     def getHelpString(self, taskname):
         """ Override this - in PyRAF we'll always use use iraf system help.
             Do not query the task object. """
-        fh = cStringIO.StringIO()
+        fh = io.StringIO()
         iraf.system.help(taskname, page=0, Stdout=fh, Stderr=fh)
         result = fh.getvalue()
         fh.close()

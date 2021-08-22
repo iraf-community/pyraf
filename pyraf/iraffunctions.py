@@ -66,6 +66,8 @@ import fnmatch as _fnmatch
 import glob as _glob
 import tempfile as _tempfile
 import linecache as _linecache
+import pickle as _pickle
+import io as _io
 import stsci.tools.minmatch as _minmatch
 import stsci.tools.irafutils as _irafutils
 import stsci.tools.teal as _teal
@@ -81,21 +83,12 @@ import cl2py as _cl2py
 import gki
 import irafecl
 try:
-    from . import sscanf  # sscanf import does not get 'fixed' during 2to3
+    from . import sscanf
 except IOError:
     # basic usage does not actually require sscanf
     sscanf = None
     print("Warning: sscanf library not installed on " + sys.platform)
 
-try:
-    import cPickle as _pickle
-except ImportError:
-    import pickle as _pickle
-
-try:
-    import cStringIO as _StringIO
-except ImportError:
-    import StringIO as _StringIO  # survives 2to3
 
 # Number of bits per long
 BITS_PER_LONG = _struct.calcsize('l') * 8  # is 64 on a 64-bit machine
@@ -297,7 +290,7 @@ def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
     f.close()
     _os.chmod(newfile, 0o700)
     # run new script and capture output
-    fh = _StringIO.StringIO()
+    fh = _io.StringIO()
     status = clOscmd(newfile, Stdout=fh)
     if status:
         raise IOError("Execution error in script %s (derived from %s)" %
@@ -1768,8 +1761,8 @@ def imaccess(filename):
         return 0
     # If we get this far, use imheader to test existence.
     # Any error output is taken to mean failure.
-    sout = _StringIO.StringIO()
-    serr = _StringIO.StringIO()
+    sout = _io.StringIO()
+    serr = _io.StringIO()
     import pyraf.iraf
     pyraf.iraf.imhead(filename, Stdout=sout, Stderr=serr)
     errstr = serr.getvalue().lower()
@@ -2499,7 +2492,7 @@ def clear(*args):
         _clearString = ''
     if _clearString is None:
         # get the clear command by running system clear
-        fh = _StringIO.StringIO()
+        fh = _io.StringIO()
         try:
             clOscmd('/usr/bin/tput clear', Stdout=fh)
             _clearString = fh.getvalue()
@@ -2747,7 +2740,7 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
     elif input is not None:
         if isinstance(input, (str, unicode)):
             # input is a string -- stick it in a StringIO buffer
-            stdin = _StringIO.StringIO(input)
+            stdin = _io.StringIO(input)
             filename = input
         elif hasattr(input, 'read'):
             # input is a filehandle
@@ -3789,7 +3782,7 @@ def redirProcess(kw):
                     if PipeOut is None:
                         # several outputs can be written to same buffer
                         # (e.g. Stdout=1, Stderr=1 is legal)
-                        PipeOut = _StringIO.StringIO()
+                        PipeOut = _io.StringIO()
                         # stick this in the close list too so we know that
                         # output should be returned
                         # wrap it in a tuple to make it easy to recognize
@@ -3809,7 +3802,7 @@ def redirProcess(kw):
                     else:
                         # empty value means null input
                         s = ''
-                    fh = _StringIO.StringIO(s)
+                    fh = _io.StringIO(s)
                     # close this when we're done
                     closeFHList.append(fh)
                 except TypeError:
@@ -3876,7 +3869,7 @@ def redirReset(resetList, closeFHList):
         else:
             setattr(_sys, key, value)
     if PipeOut is not None:
-        # unfortunately cStringIO.StringIO has no readlines method:
+        # unfortunately io.StringIO has no readlines method:
         # PipeOut.seek(0)
         # rv = PipeOut.readlines()
         rv = PipeOut.getvalue().split('\n')

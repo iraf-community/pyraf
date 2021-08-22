@@ -4,7 +4,7 @@ R. White, 1999 December 20
 """
 from __future__ import division, print_function
 
-import cStringIO
+import io
 import os
 import sys
 
@@ -1530,7 +1530,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # Start with a reasonable size for printPass array.
         # (It gets extended if necessary.)
         self.printPass = [1] * 10
-        self.code_buffer = cStringIO.StringIO()
+        self.code_buffer = io.StringIO()
         self.importDict = {}
         self.specialDict = {}
         self.pipeOut = []
@@ -1578,7 +1578,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # code.  Now that we have performed the entire translation,
         # we know which of the initialization steps we need.  Stick
         # them on the front of the translated python.
-        self.code_buffer = cStringIO.StringIO()
+        self.code_buffer = io.StringIO()
         self.writeProcHeader()
         header = self.code_buffer.getvalue()
         if pyrafglobals._use_ecl:
@@ -2423,7 +2423,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # Also add special character after arguments to make it
         # easier to break up long lines
 
-        arg_buffer = cStringIO.StringIO()
+        arg_buffer = io.StringIO()
         saveColumn = self.column
         saveBuffer = self.code_buffer
         self.code_buffer = arg_buffer

@@ -721,7 +721,7 @@ def record_trial(s):
     """Exercise encapsulated write/read with an arbitrary string.
 
     Raise IOError if the string gets distorted through transmission!"""
-    from StringIO import StringIO
+    from io import StringIO
     sf = StringIO()
     c = RecordFile(sf)
     c.write(s)

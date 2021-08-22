@@ -24,13 +24,10 @@ if PY3K or 'PYRAF_NO_CLCACHE' in os.environ:
 
 # set up pickle so it can pickle code objects
 
-import copy_reg
+import copyreg
 import marshal
 import types
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle  # noqa
+import pickle
 
 
 def code_unpickler(data):
@@ -41,7 +38,7 @@ def code_pickler(code):
     return code_unpickler, (marshal.dumps(code),)
 
 
-copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
+copyreg.pickle(types.CodeType, code_pickler, code_unpickler)
 
 # Code cache is implemented using a dictionary clFileDict and
 # a list of persistent dictionaries (shelves) in cacheList.

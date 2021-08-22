@@ -8,7 +8,7 @@ import signal
 import struct
 import sys
 import numpy
-import cStringIO
+import io
 from stsci.tools import irafutils
 from stsci.tools.for2to3 import tobytes, ndarr2bytes, ndarr2str
 from stsci.tools.irafglobals import IrafError, IrafTask, Verbose
@@ -995,7 +995,7 @@ class IrafProcess:
                         (cmd,))
                 sys.stdout.flush()
                 # strip the redirection off and capture output of command
-                buffer = cStringIO.StringIO()
+                buffer = io.StringIO()
                 # redirect other I/O (but don't use graphics status line)
                 pyraf.iraf.clExecute(cmd[:ll] + "\n",
                                      Stdout=buffer,

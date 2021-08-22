@@ -14,7 +14,7 @@ RLW, 2000 February 13
 """
 from __future__ import division, print_function
 
-import __builtin__
+import builtins
 import __main__
 import re
 import keyword
@@ -160,7 +160,7 @@ class IrafCompleter(Completer):
         n = len(text)
         for list in [
                 keyword.kwlist,
-                __builtin__.__dict__.keys(),
+                builtins.__dict__.keys(),
                 __main__.__dict__.keys()
         ]:
             for word in list:

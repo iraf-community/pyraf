@@ -12,7 +12,7 @@ R. White, 1999 August 17
 """
 from __future__ import absolute_import, division, print_function
 
-import __builtin__
+import builtins
 import sys
 from stsci.tools import minmatch
 
@@ -23,9 +23,9 @@ _reloadIsBuiltin = sys.version_info[0] < 3
 IMPORT_DEBUG = False
 
 # Save the original hooks;  replaced at bottom of module...
-_originalImport = __builtin__.__import__
+_originalImport = builtins.__import__
 if _reloadIsBuiltin:
-    _originalReload = __builtin__.reload
+    _originalReload = builtins.reload
 else:
     import imp
     _originalReload = imp.reload
@@ -33,9 +33,9 @@ else:
 
 def restoreBuiltins():
     """ Called before exiting pyraf - this puts import and reload back. """
-    __builtin__.__import__ = _originalImport
+    builtins.__import__ = _originalImport
     if _reloadIsBuiltin:
-        __builtin__.reload = _originalReload
+        builtins.reload = _originalReload
     else:
         imp.reload = _originalReload
 
@@ -193,9 +193,9 @@ class _irafModuleClass:
 
 
 # Install our hooks
-__builtin__.__import__ = _irafImport
+builtins.__import__ = _irafImport
 if _reloadIsBuiltin:
-    __builtin__.reload = _irafReload
+    builtins.reload = _irafReload
 else:
     imp.reload = _irafReload
 

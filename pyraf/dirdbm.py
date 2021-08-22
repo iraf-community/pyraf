@@ -15,7 +15,7 @@ from __future__ import division, print_function
 
 import os as _os
 import binascii as _binascii
-import __builtin__
+import builtins
 
 # For anydbm
 error = IOError
@@ -48,7 +48,7 @@ class _Database(object):
             try:
                 testfile = _os.path.join(directory,
                                          'junk' + repr(_os.getpid()))
-                fh = __builtin__.open(testfile, 'w')
+                fh = builtins.open(testfile, 'w')
                 fh.close()
                 _os.remove(testfile)
             except IOError:
@@ -84,7 +84,7 @@ class _Database(object):
         # look for file even if dict doesn't have key because
         # another process could create it
         try:
-            fh = __builtin__.open(self._getFilename(key), 'rb')
+            fh = builtins.open(self._getFilename(key), 'rb')
             value = fh.read()
             fh.close()
             # cache object in memory
@@ -99,7 +99,7 @@ class _Database(object):
         if self._writable:
             try:
                 fname = self._getFilename(key)
-                fh = __builtin__.open(fname, 'wb')
+                fh = builtins.open(fname, 'wb')
                 fh.write(value)
                 fh.close()
             except IOError as e:
