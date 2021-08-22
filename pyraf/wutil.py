@@ -518,12 +518,11 @@ def dumpspecs(outstream=None, skip_volatiles=False):
         out += "\nPyRAF ver = " + pyrver
     out += "\nc.OF_GRAPHICS = " + str(capable.OF_GRAPHICS)
     dco = 'not yet known'
-    if hasattr(capable, 'get_dc_owner'):  # rm hasattr at/after v2.2
-        if skip_volatiles:
-            out += "\n/dev/console owner = <skipped>"
-        else:
-            dco = capable.get_dc_owner(False, True)
-            out += "\n/dev/console owner = " + str(dco)
+    if skip_volatiles:
+        out += "\n/dev/console owner = <skipped>"
+    else:
+        dco = capable.get_dc_owner(False, True)
+        out += "\n/dev/console owner = " + str(dco)
 
     if not capable.OF_GRAPHICS:
         out += "\ntkinter use unattempted."
