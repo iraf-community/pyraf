@@ -42,7 +42,6 @@ import numpy
 import sys
 import re
 from stsci.tools.irafglobals import IrafError
-from stsci.tools.for2to3 import ndarr2str, ndarr2bytes
 from . import wutil
 from . import graphcap
 from . import irafgwcs
@@ -976,8 +975,7 @@ class GkiController(GkiProxy):
         return self.stdgraph.control(gkiMetacode)
 
     def control_openws(self, arg):
-
-        device = ndarr2str(arg[2:].astype(numpy.int8)).strip()
+        device = arg[2:].astype(numpy.int8).tobytes().decode().strip()
         self.openKernel(device)
 
     def openKernel(self, device=None):
@@ -1096,7 +1094,7 @@ class GkiRedirection(GkiKernel):
     def append(self, metacode):
         # Overloads the baseclass implementation.
         # metacode is array of 16-bit ints
-        self.filehandle.write(ndarr2bytes(metacode))
+        self.filehandle.write(metacode.tobytes())
 
     # control needs to get and set WCS data
     def control_setwcs(self, arg):

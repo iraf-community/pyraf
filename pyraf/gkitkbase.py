@@ -13,7 +13,6 @@ from . import msgiowidget
 from . import wutil
 from stsci.tools import capable, filedlg, irafutils
 from stsci.tools.irafglobals import IrafError, userWorkingHome
-from stsci.tools.for2to3 import ndarr2bytes
 from . import gki
 from . import irafgwcs
 from .pyrafglobals import pyrafDir
@@ -303,7 +302,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         if not fname:
             return
         fh = open(fname, 'wb')
-        fh.write(ndarr2bytes(self.gkibuffer.get()))
+        fh.write(self.gkibuffer.get().tobytes())
         fh.close()
 
     def load(self, fname=None):

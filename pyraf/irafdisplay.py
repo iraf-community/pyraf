@@ -32,7 +32,6 @@ import os
 import numpy
 import socket
 import sys
-from stsci.tools.for2to3 import bytes_write, ndarr2bytes
 from stsci.tools import irafutils
 
 try:
@@ -168,7 +167,7 @@ class ImageDisplay:
         sum = numpy.add.reduce(a)
         sum = 0xffff - (sum & 0xffff)
         a[3] = sum
-        self._write(ndarr2bytes(a))
+        self._write(a.tobytes())
 
     def close(self, os_close=os.close):
         """Close image display connection"""
@@ -202,7 +201,7 @@ class ImageDisplay:
         try:
             n = len(s)
             while n > 0:
-                nwritten = bytes_write(self._fdout, s[-n:])
+                nwritten = os.write(self._fdout, s[-n:])
                 n -= nwritten
                 if nwritten <= 0:
                     raise IOError("Error writing to image display")

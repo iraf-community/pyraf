@@ -50,7 +50,6 @@ import select
 import signal
 import sys
 import time
-from stsci.tools.for2to3 import bytes_read, bytes_write
 
 OS_HAS_FORK = hasattr(os, 'fork')
 
@@ -245,7 +244,7 @@ class Subprocess:
                 ## if totalwait: print "waiting for subprocess..."
                 totalwait = totalwait + printtime
                 if select.select([], self.toChild_fdlist, [], printtime)[1]:
-                    if bytes_write(self.toChild, strval) != len(strval):
+                    if os.write(self.toChild, strval) != len(strval):
                         raise SubprocessError("Write error to %s" % self)
                     return  # ===>
             raise SubprocessError("Write to %s blocked" % self)
@@ -555,7 +554,7 @@ class ReadBuf:
             self.eof = 1
             return b''  # ===>
         if sel[0]:
-            got = bytes_read(self.fd, self.chunkSize)
+            got = os.read(self.fd, self.chunkSize)
             if got:
                 if max and (len(got) > max):
                     self.buf = got[max:]
@@ -605,7 +604,7 @@ class ReadBuf:
                 self.eof = 1
                 return got
             if sel[0]:
-                newgot = bytes_read(self.fd, self.chunkSize)
+                newgot = os.read(self.fd, self.chunkSize)
                 if newgot:
                     got = got + newgot
                     to = got.find(b'\n')
@@ -651,7 +650,7 @@ class ReadBuf:
                 self.eof = 1
                 return got
             if sel[0]:
-                newgot = bytes_read(self.fd, self.chunkSize)
+                newgot = os.read(self.fd, self.chunkSize)
                 if newgot:
                     got = got + newgot
                     if len(got) >= nchars:

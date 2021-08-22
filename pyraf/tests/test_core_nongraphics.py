@@ -30,8 +30,8 @@ def test_subproc_wait():
 def test_subproc_write_readline(_proc):
     """Buffer readback test; readline
     """
-    _proc.write('test string one\n')
-    _proc.write('test string two\n')
+    _proc.write(b'test string one\n')
+    _proc.write(b'test string two\n')
     time.sleep(0.01)
 
     assert _proc.readline() == b'test string one\n'
@@ -42,12 +42,12 @@ def test_subproc_write_readline(_proc):
 def test_subproc_write_readPendingChars(_proc):
     """Buffer readback test; readPendingChars
     """
-    test_inputs = ('one', 'two', 'three')
+    test_inputs = (b'one', b'two', b'three')
     for test_input in test_inputs:
-        _proc.write(test_input + '\n')
+        _proc.write(test_input + b'\n')
         time.sleep(0.01)
 
-    expected = tuple(_proc.readPendingChars().decode().splitlines())
+    expected = tuple(_proc.readPendingChars().splitlines())
     assert test_inputs == expected
 
 
@@ -65,7 +65,7 @@ def test_subproc_stop_resume_write_read(_proc):
     resume, then read the buffered data back from the pipe.
     """
     assert _proc.stop()
-    _proc.write('test string\n')
+    _proc.write(b'test string\n')
     assert not len(_proc.readPendingChars())
     assert _proc.cont()
     assert _proc.readline() == b'test string\n'

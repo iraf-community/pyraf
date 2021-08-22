@@ -9,7 +9,6 @@ only commit the change when it appears to really be applicable.
 
 import numpy
 import math
-from stsci.tools.for2to3 import ndarr2bytes
 from stsci.tools.irafglobals import IrafError
 from . import irafinst
 
@@ -136,8 +135,7 @@ class IrafGWcs:
         for i in range(WCS_SLOTS):
             record = wcsStruct[_WCS_RECORD_SIZE * i:_WCS_RECORD_SIZE * (i + 1)]
             # read 8 4-byte floats from beginning of record
-            fvals = numpy.fromstring(ndarr2bytes(record[:8 * SZ]),
-                                     numpy.float32)
+            fvals = numpy.fromstring(record[:8 * SZ].tobytes(), numpy.float32)
             if _IRAF64BIT:
                 # seems to send an extra 0-valued int32 after each 4 bytes
                 fvalsView = fvals.reshape(-1, 2).transpose()
@@ -145,7 +143,7 @@ class IrafGWcs:
                     raise IrafError("Assumed WCS float padding is non-zero")
                 fvals = fvalsView[0]
             # read 3 4-byte ints after that
-            ivals = numpy.fromstring(ndarr2bytes(record[8 * SZ:11 * SZ]),
+            ivals = numpy.fromstring(record[8 * SZ:11 * SZ].tobytes(),
                                      numpy.int32)
             if _IRAF64BIT:
                 # seems to send an extra 0-valued int32 after each 4 bytes
@@ -196,8 +194,8 @@ class IrafGWcs:
             # if the padding doesn't bring the size out to exactly the
             # correct length (_WCS_RECORD_SIZE)
             wcsStruct[_WCS_RECORD_SIZE*i:_WCS_RECORD_SIZE*(i+1)] = \
-                numpy.fromstring(ndarr2bytes(farr)+ndarr2bytes(iarr)+pad, numpy.int16)
-        return ndarr2bytes(wcsStruct)
+                numpy.fromstring(farr.tobytes()+iarr.tobytes()+pad, numpy.int16)
+        return wcsStruct.tobytes()
 
     def transform(self, x, y, wcsID):
         """Transform x,y to wcs coordinates for the given

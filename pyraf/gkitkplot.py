@@ -2,11 +2,8 @@
 Tkplot implementation of the gki kernel class
 """
 
-
-
 import numpy
 import tkinter
-from stsci.tools.for2to3 import ndarr2str
 from . import wutil
 from . import Ptkplot
 from . import gki
@@ -171,7 +168,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.wcs.commit()
         x = gki.ndc(arg[0])
         y = gki.ndc(arg[1])
-        text = ndarr2str(arg[3:].astype(numpy.int8))
+        text = arg[3:].astype(numpy.int8).tobytes().decode('ascii')
         self._tkplotAppend(self.tkplot_text, x, y, text)
 
     def gki_fillarea(self, arg):

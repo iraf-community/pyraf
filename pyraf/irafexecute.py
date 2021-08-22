@@ -10,7 +10,6 @@ import sys
 import numpy
 import io
 from stsci.tools import irafutils
-from stsci.tools.for2to3 import ndarr2bytes, ndarr2str
 from stsci.tools.irafglobals import IrafError, IrafTask, Verbose
 from . import subproc
 from . import filecache
@@ -34,7 +33,7 @@ test_probe = False
 
 # stdgraph = None
 
-IPC_PREFIX = ndarr2bytes(numpy.array([0o1120], numpy.int16))
+IPC_PREFIX = b'P\x02'
 
 # weirdo protocol to get output from task back to subprocess
 # definitions from cl/task.h and lib/clio.h
@@ -1043,7 +1042,7 @@ class IrafProcess:
 def Asc2IrafString(ascii_string):
     """translate ascii to IRAF 16-bit string format"""
     inarr = numpy.fromstring(ascii_string, numpy.int8)  # OK if str or uni
-    retval = ndarr2bytes(inarr.astype(numpy.int16))
+    retval = inarr.astype(numpy.int16).tobytes()
     #   log_task_comm('Asc2IrafString (write to task)', retval, False)
     return retval
 
@@ -1051,7 +1050,7 @@ def Asc2IrafString(ascii_string):
 def Iraf2AscString(iraf_string):
     """translate 16-bit IRAF characters to ascii"""
     inarr = numpy.fromstring(iraf_string, numpy.int16)  # OK if str or uni
-    retval = ndarr2str(inarr.astype(numpy.int8))
+    retval = inarr.astype(numpy.int8).tobytes().decode('ascii')
     #   log_task_comm('Iraf2AscString', retval, True)
     return retval
 
