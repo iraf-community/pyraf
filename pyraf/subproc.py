@@ -50,7 +50,7 @@ import select
 import signal
 import sys
 import time
-from stsci.tools.for2to3 import BNULLSTR, BNEWLINE, bytes_read, bytes_write
+from stsci.tools.for2to3 import bytes_read, bytes_write
 
 OS_HAS_FORK = hasattr(os, 'fork')
 
@@ -535,17 +535,17 @@ class ReadBuf:
         pending.  Returns bytes."""
 
         if (max is not None) and (max <= 0):
-            return BNULLSTR  # ===>
+            return b''  # ===>
 
         if self.buf:
             if max and (len(self.buf) > max):
                 got, self.buf = self.buf[0:max], self.buf[max:]
             else:
-                got, self.buf = self.buf, BNULLSTR
+                got, self.buf = self.buf, b''
             return got  # ===>
 
         if self.eof:
-            return BNULLSTR  # ===>
+            return b''  # ===>
 
         try:
             sel = select.select([self.fd], [], [self.fd], 0)
@@ -553,7 +553,7 @@ class ReadBuf:
             # select error occurs if self.fd been closed
             # treat like EOF
             self.eof = 1
-            return BNULLSTR  # ===>
+            return b''  # ===>
         if sel[0]:
             got = bytes_read(self.fd, self.chunkSize)
             if got:
@@ -564,9 +564,9 @@ class ReadBuf:
                     return got  # ===>
             else:
                 self.eof = 1
-                return BNULLSTR  # ===>
+                return b''  # ===>
         else:
-            return BNULLSTR  # ===>
+            return b''  # ===>
 
     def readPendingLine(self, block=0):
         """Return pending output from FILE, up to first newline (inclusive).
@@ -577,15 +577,15 @@ class ReadBuf:
         1024) characters."""
 
         if self.buf:
-            to = self.buf.find(BNEWLINE)
+            to = self.buf.find(b'\n')
             if to != -1:
                 got, self.buf = self.buf[:to + 1], self.buf[to + 1:]
                 return got  # ===>
-            got, self.buf = self.buf, BNULLSTR
+            got, self.buf = self.buf, b''
         elif self.eof:
-            return BNULLSTR  # ===>
+            return b''  # ===>
         else:
-            got = BNULLSTR
+            got = b''
 
         # 'got' contains the (former) contents of the buffer, but it
         # doesn't include a newline.
@@ -608,7 +608,7 @@ class ReadBuf:
                 newgot = bytes_read(self.fd, self.chunkSize)
                 if newgot:
                     got = got + newgot
-                    to = got.find(BNEWLINE)
+                    to = got.find(b'\n')
                     if to != -1:
                         got, self.buf = got[:to + 1], got[to + 1:]
                         return got  # ===>
@@ -630,16 +630,16 @@ class ReadBuf:
         Returns a shorter string on EOF.  Returns bytes."""
 
         if nchars <= 0:
-            return BNULLSTR
+            return b''
         if self.buf:
             if len(self.buf) >= nchars:
                 got, self.buf = self.buf[:nchars], self.buf[nchars:]
                 return got  # ===>
-            got, self.buf = self.buf, BNULLSTR
+            got, self.buf = self.buf, b''
         elif self.eof:
-            return BNULLSTR  # ===>
+            return b''  # ===>
         else:
-            got = BNULLSTR
+            got = b''
 
         fdlist = [self.fd]
         while True:

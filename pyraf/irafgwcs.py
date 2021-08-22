@@ -9,7 +9,7 @@ only commit the change when it appears to really be applicable.
 
 import numpy
 import math
-from stsci.tools.for2to3 import ndarr2bytes, BNULLSTR
+from stsci.tools.for2to3 import ndarr2bytes
 from stsci.tools.irafglobals import IrafError
 from . import irafinst
 
@@ -190,7 +190,7 @@ class IrafGWcs:
                 iarr = iarr.flatten()
             # end-pad?
             if len(farr) + len(iarr) == (_WCS_RECORD_SIZE // 2):
-                pad = BNULLSTR  # for IRAF2.14 or prior; all new vers need end-pad
+                pad = b''  # for IRAF2.14 or prior; all new vers need end-pad
 
             # Pack the wcsStruct - this will throw "ValueError: shape mismatch"
             # if the padding doesn't bring the size out to exactly the
