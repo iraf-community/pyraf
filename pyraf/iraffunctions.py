@@ -33,7 +33,7 @@ def setVerbose(value=1, **kw):
     cannot avail itself of the decorator which wraps redirProcess since it
     needs to be defined here up front.
     """
-    if isinstance(value, (str, unicode)):
+    if isinstance(value, str):
         try:
             value = int(value)
         except ValueError:
@@ -670,7 +670,7 @@ def getTask(taskname, found=0):
 
     if isinstance(taskname, _iraftask.IrafTask):
         return taskname
-    elif not isinstance(taskname, (str, unicode)):
+    elif not isinstance(taskname, str):
         raise TypeError(
             "Argument to getTask is not a string or IrafTask instance")
 
@@ -889,7 +889,7 @@ def listTasks(pkglist=None, hidden=0, **kw):
         pkgdict = _pkgs
     else:
         pkgdict = {}
-        if isinstance(pkglist, (str, unicode, _iraftask.IrafPkg)):
+        if isinstance(pkglist, (str, _iraftask.IrafPkg)):
             pkglist = [pkglist]
         for p in pkglist:
             try:
@@ -1225,7 +1225,7 @@ def real(x):
     """Return real/float representation of x"""
     if x == INDEF:
         return INDEF
-    elif isinstance(x, (str, unicode)):
+    elif isinstance(x, str):
         x = x.strip()
         if x.find(':') >= 0:
             # ...handle the special a:b:c case here...
@@ -1254,7 +1254,7 @@ def integer(x):
     """Return integer representation of x"""
     if x == INDEF:
         return INDEF
-    elif isinstance(x, (str, unicode)):
+    elif isinstance(x, str):
         x = x.strip()
         i = 0
         j = len(x)
@@ -1861,7 +1861,7 @@ def boolean(value):
         return int(value)
     elif value in [INDEF, "", None]:
         return INDEF
-    if isinstance(value, (str, unicode)):
+    if isinstance(value, str):
         v2 = _irafutils.stripQuotes(value.strip())
         if v2 == "INDEF":
             return INDEF
@@ -2176,7 +2176,7 @@ def set(*args, **kw):
         #
         # Flag any other syntax as an error.
         if len(args) != 1 or len(kw) != 0 or \
-           (not isinstance(args[0], (str, unicode))) or args[0][:1] != '@':
+           (not isinstance(args[0], str)) or args[0][:1] != '@':
             raise SyntaxError("set requires name=value pairs")
 
 
@@ -2738,7 +2738,7 @@ def clProcedure(input=None, mode="", DOLLARnargs=0, **kw):
         else:
             filename = 'tmp'
     elif input is not None:
-        if isinstance(input, (str, unicode)):
+        if isinstance(input, str):
             # input is a string -- stick it in a StringIO buffer
             stdin = _io.StringIO(input)
             filename = input
@@ -2972,7 +2972,7 @@ def clPrint(*args):
     for n, arg in enumerate(args, start=1):
         print(arg, end='')
         # add separator space, except after string arguments and at the end
-        if n < nargs and not isinstance(arg, (str, unicode)):
+        if n < nargs and not isinstance(arg, str):
             print(end=' ')
     print()
 
@@ -3150,7 +3150,7 @@ def chdir(directory=None):
     if directory is None:
         # use startup directory as home if argument is omitted
         directory = userWorkingHome
-    if not isinstance(directory, (str, unicode)):
+    if not isinstance(directory, str):
         raise IrafError("Illegal non-string value for directory:" +
                         +repr(directory))
     if Verbose > 2:

@@ -79,7 +79,7 @@ if not PY3K:
 
 _listTypes = (list, tuple, dict)
 
-_numericTypes = (float, int, long, complex)
+_numericTypes = (float, int, complex)
 if 'bool' in globals():
     _numericTypes = _numericTypes + (bool,)
 

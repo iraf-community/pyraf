@@ -68,7 +68,7 @@ def _getExecutable(arg):
         return arg.executable
     elif isinstance(arg, IrafTask):
         return arg.getFullpath()
-    elif isinstance(arg, (str, unicode)):
+    elif isinstance(arg, str):
         if os.path.exists(arg):
             return arg
         task = pyraf.iraf.getTask(arg, found=1)
@@ -747,7 +747,7 @@ class IrafProcess:
         try:
             try:
                 pmsg = self.task.getParam(paramname, native=0)
-                if not isinstance(pmsg, (str, unicode)):
+                if not isinstance(pmsg, str):
                     # Only psets should return a non-string type (they
                     # return the task object).
                     # Work a little to get the underlying string value.
@@ -1059,10 +1059,10 @@ def Iraf2AscString(iraf_string):
 def log_task_comm(pfx, strbuf, expectAsStr, shorten=True):
     import some_pkg_w_a_log_func as L
     assert isinstance(strbuf,
-                      (str, unicode, bytes)), "?!: " + str(type(strbuf))
+                      (str, str, bytes)), "?!: " + str(type(strbuf))
     if expectAsStr:
         assert isinstance(strbuf, str), "Unexpected type: " + str(type(strbuf))
-    if isinstance(strbuf, (str, unicode)):
+    if isinstance(strbuf, (str, str)):
         out = strbuf.strip()
         if shorten:
             out = out[0:30]

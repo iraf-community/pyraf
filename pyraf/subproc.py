@@ -103,7 +103,7 @@ class Subprocess:
         """Fork a subprocess with designated COMMAND (default, self.cmd)."""
         if cmd:
             self.cmd = cmd
-        if isinstance(self.cmd, (str, unicode)):
+        if isinstance(self.cmd, str):
             cmd = self.cmd.split()
         else:
             cmd = self.cmd

@@ -110,7 +110,7 @@ def describe(func, name=None):
     a = describeParams(func)
     args = []
     for arg in a:
-        if isinstance(arg, type("")):
+        if isinstance(arg, str):
             args.append(arg)
         else:
             args.append("%s=%s" % (arg[0], repr(arg[1])))

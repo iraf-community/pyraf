@@ -192,23 +192,23 @@ def __doPyobjcWinInit():
 
     FUNCTIONS = [
         # These are public API
-        (u'GetCurrentProcess', OSErr + OUTPSN),
-        (u'GetFrontProcess', OSErr + OUTPSN),
+        ('GetCurrentProcess', OSErr + OUTPSN),
+        ('GetFrontProcess', OSErr + OUTPSN),
         #        ( u'GetProcessPID', OSStat+INPSN+OUTPID), # see OUTPID note
-        (u'SetFrontProcess', OSErr + INPSN),
-        (u'CGWarpMouseCursorPosition', WARPSIG),
-        (u'CGMainDisplayID', objc._C_PTR + objc._C_VOID),
-        (u'CGDisplayPixelsHigh', objc._C_ULNG + objc._C_ULNG),
-        (u'CGDisplayHideCursor', CGErr + objc._C_ULNG),
-        (u'CGDisplayShowCursor', CGErr + objc._C_ULNG),
+        ('SetFrontProcess', OSErr + INPSN),
+        ('CGWarpMouseCursorPosition', WARPSIG),
+        ('CGMainDisplayID', objc._C_PTR + objc._C_VOID),
+        ('CGDisplayPixelsHigh', objc._C_ULNG + objc._C_ULNG),
+        ('CGDisplayHideCursor', CGErr + objc._C_ULNG),
+        ('CGDisplayShowCursor', CGErr + objc._C_ULNG),
         # This is undocumented API
-        (u'CPSSetProcessName', OSErr + INPSN + objc._C_CHARPTR),
-        (u'CPSEnableForegroundOperation', OSErr + INPSN),
+        ('CPSSetProcessName', OSErr + INPSN + objc._C_CHARPTR),
+        ('CPSEnableForegroundOperation', OSErr + INPSN),
     ]
 
     bndl = AppKit.NSBundle.bundleWithPath_(
         objc.pathForFramework(
-            u'/System/Library/Frameworks/ApplicationServices.framework'))
+            '/System/Library/Frameworks/ApplicationServices.framework'))
     if bndl is None:
         raise Exception("Error in aqutil with bundleWithPath_")
 

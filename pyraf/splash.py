@@ -79,7 +79,7 @@ class PyrafSplash(SplashScreen):
         self.nlines = 1
         self.textcolor = textcolor
         if text:
-            if isinstance(text, type("")):
+            if isinstance(text, str):
                 text = text.split("\n")
             self.nlines = len(text)
             self.initialText = text
@@ -135,7 +135,7 @@ class PyrafSplash(SplashScreen):
         """Set text string"""
         if self.text is None:
             return
-        if isinstance(s, type('')):
+        if isinstance(s, str):
             s = s.split("\n")
         s = s[:len(self.text)]
         for i in range(len(s)):
