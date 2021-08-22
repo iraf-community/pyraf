@@ -8,18 +8,16 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     env:
-      PYTHON: ${{ matrix.python }}
+      tmp: /tmp/
+      iraf: /usr/lib/iraf/
+      IRAFARCH: generic
+      TERM: dumb
 
     strategy:
       matrix:
         include:
           - name: Ubuntu 20.04 (Focal) Python-3.8.2
             os: ubuntu-20.04
-            python: python3
-
-          - name: Ubuntu 18.04 (Bionic) Python-2.7.17
-            os: ubuntu-18.04
-            python: python
 
     steps:
       - name: Checkout repository
@@ -29,18 +27,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends iraf iraf-noao iraf-dev build-essential libx11-dev
-          sudo apt-get install --no-install-recommends ${PYTHON}-all-dev ${PYTHON}-astropy ${PYTHON}-numpy-dev ${PYTHON}-setuptools ${PYTHON}-setuptools-scm ${PYTHON}-stsci.tools ${PYTHON}-tk ${PYTHON}-pytest ${PYTHON}-pytest-cov i${PYTHON}
+          sudo apt-get install --no-install-recommends python3-all-dev python3-astropy python3-numpy-dev python3-setuptools python3-setuptools-scm python3-stsci.tools python3-tk python3-pytest python3-pytest-cov ipython3
 
       - name: Build Pyraf
         run: |
-           ${PYTHON} setup.py build
+           python3 setup.py build
 
       - name: Run tests
         run: |
           TEST_BASE=$(ls -d $(pwd)/build/lib.*/)
           export PATH=$(ls -d $(pwd)/build/scripts-*/):${PATH}
-          export tmp=/tmp/
-          export iraf=/usr/lib/iraf/
-          export IRAFARCH=generic
-          export TERM=dumb
-          cd ${TEST_BASE} && ${PYTHON} -m pytest --cov=pyraf
+          cd ${TEST_BASE} && python3 -m pytest --cov=pyraf
