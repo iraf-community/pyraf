@@ -84,7 +84,7 @@ from . import gki
 from . import irafecl
 try:
     from . import sscanf
-except IOError:
+except OSError:
     # basic usage does not actually require sscanf
     sscanf = None
     print("Warning: sscanf library not installed on " + sys.platform)
@@ -166,7 +166,7 @@ def Init(doprint=1, hush=0, savefile=None):
                         _os.environ[key] = value
                 iraf = _os.environ['iraf']
                 arch = _os.environ['IRAFARCH']
-            except IOError:
+            except OSError:
                 raise SystemExit("""
 Your "iraf" and "IRAFARCH" environment variables are not defined and could not
 be determined from /usr/local/bin/cl.  These are needed to find IRAF tasks.
@@ -266,8 +266,8 @@ def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
     if not _irafinst.EXISTS:
         return {'iraf': '/iraf/is/not/here/', 'IRAFARCH': 'arch_is_unused'}
     if not _os.path.exists(file):
-        raise IOError("CL startup file %s does not exist" % file)
-    lines = open(file, 'r').readlines()
+        raise OSError("CL startup file %s does not exist" % file)
+    lines = open(file).readlines()
     # replace commands that exec cl with commands to print environment vars
     pat = _re.compile(r'^\s*exec\s+')
     newlines = []
@@ -281,7 +281,7 @@ def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
         else:
             newlines.append(line)
     if nfound == 0:
-        raise IOError("No exec statement found in script %s" % file)
+        raise OSError("No exec statement found in script %s" % file)
     # write new script to temporary file
     (fd, newfile) = _tempfile.mkstemp()
     _os.close(fd)
@@ -293,7 +293,7 @@ def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
     fh = _io.StringIO()
     status = clOscmd(newfile, Stdout=fh)
     if status:
-        raise IOError("Execution error in script %s (derived from %s)" %
+        raise OSError("Execution error in script %s (derived from %s)" %
                       (newfile, file))
     _os.remove(newfile)
     result = fh.getvalue().split('\n')
@@ -388,7 +388,7 @@ def saveToFile(savefile, **kw):
         savefile = Expand(savefile)
         if (not kw.get('clobber')) and envget(
                 "clobber", "") != yes and _os.path.exists(savefile):
-            raise IOError("Output file `%s' already exists" % savefile)
+            raise OSError("Output file `%s' already exists" % savefile)
         # open binary pickle file
         fh = open(savefile, 'wb')
         doclose = 1
@@ -3746,7 +3746,7 @@ def redirProcess(kw):
                     else:
                         # IRAF doesn't raise an exception here (e.g., on
                         # input redirection from "STDOUT"), but it should
-                        raise IOError("Illegal value `%s' for %s redirection" %
+                        raise OSError("Illegal value `%s' for %s redirection" %
                                       (value, key))
                 else:
                     # expand IRAF variables
@@ -3763,7 +3763,7 @@ def redirProcess(kw):
                                 envget("clobber", "") != yes and \
                                 _os.path.exists(value):
                             # don't overwrite unless clobber is set
-                            raise IOError("Output file `%s' already exists" %
+                            raise OSError("Output file `%s' already exists" %
                                           value)
                     fh = open(value, openArgs)
                     # close this when we're done

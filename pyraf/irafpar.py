@@ -277,7 +277,7 @@ class IrafParL(_StringMixin, IrafPar):
             if self.fh:
                 try:
                     self.fh.close()
-                except IOError:
+                except OSError:
                     pass
                 self.fh = None
                 self.lines = None
@@ -329,7 +329,7 @@ class IrafParL(_StringMixin, IrafPar):
                     raise EOFError("EOF from list parameter `%s'" % self.name)
                 if value[-1:] == "\n":
                     value = value[:-1]
-            except IOError as e:
+            except OSError as e:
                 if not self.errMsg:
                     warning("Unable to read values for list parameter `%s' "
                             "from file `%s'\n%s" %
@@ -477,7 +477,7 @@ class ParCache(filecache.FileCache):
             filename = ''
         try:
             filecache.FileCache.__init__(self, filename)
-        except (OSError, IOError):
+        except OSError:
             # whoops, couldn't open that file
             # start with a null file instead unless strict is set
             if strict:
@@ -1324,7 +1324,7 @@ def _updateSpecialParFileDict(dirToCheck=None, strict=False):
             supfile = open(supfname, 'r')
             buf = supfile.readlines()
             supfile.close()
-        except IOError:
+        except OSError:
             pass
         if len(buf) < 1:
             warning("Unable to read special use parameter file: " + supfname,

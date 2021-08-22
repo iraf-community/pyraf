@@ -392,7 +392,7 @@ class EclTraceback(EclBase):
         cl_file = self.getFilename()
         try:
             cl_code = open(cl_file).readlines()[lineno - 1].strip()
-        except IOError:
+        except OSError:
             cl_code = "<source code not available>"
         if hasattr(e, "_ecl_suppress_first_trace") and \
                 e._ecl_suppress_first_trace:

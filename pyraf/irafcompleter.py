@@ -105,7 +105,7 @@ class IrafCompleter(Completer):
         if os.path.exists(hfile):
             try:
                 readline.read_history_file(hfile)
-            except IOError as e:
+            except OSError as e:
                 # we do NOT want this to prevent startup.  see ticket #132
                 print('ERROR reading "' + hfile + '" -> ' + str(e))
 

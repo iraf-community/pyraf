@@ -84,9 +84,9 @@ def _open(imtdev=None):
         for imtdev in defaults:
             try:
                 return _open(imtdev)
-            except IOError:
+            except OSError:
                 pass
-        raise IOError("Cannot open image display")
+        raise OSError("Cannot open image display")
     # substitute user id in name (multiple times) if necessary
     nd = len(imtdev.split("%d"))
     dev = imtdev % ((os.getuid(),) * (nd - 1))
@@ -175,23 +175,20 @@ class ImageDisplay:
         """
         try:
             return irafutils.tkread(self._fdin, n)
-        except (EOFError, IOError):
-            raise IOError("Error reading from image display")
+        except EOFError:
+            raise OSError("Error reading from image display")
 
     def _write(self, s):
         """Write string s to image display
 
         Raises IOError on failure
         """
-        try:
-            n = len(s)
-            while n > 0:
-                nwritten = os.write(self._fdout, s[-n:])
-                n -= nwritten
-                if nwritten <= 0:
-                    raise IOError("Error writing to image display")
-        except OSError:
-            raise IOError("Error writing to image display")
+        n = len(s)
+        while n > 0:
+            nwritten = os.write(self._fdout, s[-n:])
+            n -= nwritten
+            if nwritten <= 0:
+                raise OSError("Error writing to image display")
 
 
 class FifoImageDisplay(ImageDisplay):
@@ -199,13 +196,10 @@ class FifoImageDisplay(ImageDisplay):
 
     def __init__(self, infile, outfile):
         ImageDisplay.__init__(self)
-        try:
-            self._fdin = os.open(infile, os.O_RDONLY | os.O_NDELAY)
-            fcntl.fcntl(self._fdin, fcntl.F_SETFL, os.O_RDONLY)
-            self._fdout = os.open(outfile, os.O_WRONLY | os.O_NDELAY)
-            fcntl.fcntl(self._fdout, fcntl.F_SETFL, os.O_WRONLY)
-        except OSError as error:
-            raise IOError("Cannot open image display (%s)" % (error,))
+        self._fdin = os.open(infile, os.O_RDONLY | os.O_NDELAY)
+        fcntl.fcntl(self._fdin, fcntl.F_SETFL, os.O_RDONLY)
+        self._fdout = os.open(outfile, os.O_WRONLY | os.O_NDELAY)
+        fcntl.fcntl(self._fdout, fcntl.F_SETFL, os.O_WRONLY)
 
     def __del__(self):
         self.close()
@@ -222,8 +216,8 @@ class UnixImageDisplay(ImageDisplay):
             self._socket = socket.socket(family, type)
             self._socket.connect(filename)
             self._fdin = self._fdout = self._socket.fileno()
-        except socket.error:
-            raise IOError("Cannot open image display")
+        except OSError:
+            raise OSError("Cannot open image display")
 
     def close(self):
         """Close image display connection"""
@@ -283,7 +277,7 @@ class ImageDisplayProxy(ImageDisplay):
             # Null value indicates display was probably closed
             if value:
                 return value
-        except IOError:
+        except OSError:
             pass
         # This error can occur if image display was closed.
         # If a new display has been started then closing and

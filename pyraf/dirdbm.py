@@ -35,31 +35,22 @@ class _Database:
         if not _os.path.exists(directory):
             if flag == 'c':
                 # create directory if it doesn't exist
-                try:
-                    _os.mkdir(directory)
-                except OSError as e:
-                    raise IOError(str(e))
+                _os.mkdir(directory)
             else:
-                raise IOError("Directory " + directory + " does not exist")
+                raise OSError("Directory " + directory + " does not exist")
         elif not _os.path.isdir(directory):
-            raise IOError("File " + directory + " is not a directory")
+            raise OSError("File " + directory + " is not a directory")
         elif self._writable:
             # make sure directory is writable
-            try:
-                testfile = _os.path.join(directory,
-                                         'junk' + repr(_os.getpid()))
-                fh = builtins.open(testfile, 'w')
-                fh.close()
-                _os.remove(testfile)
-            except IOError:
-                raise IOError("Directory %s cannot be opened for writing" %
-                              (directory,))
+            testfile = _os.path.join(directory,
+                                     'junk' + repr(_os.getpid()))
+            fh = builtins.open(testfile, 'w')
+            fh.close()
+            _os.remove(testfile)
+
         # initialize dictionary
         # get list of files from directory and translate to keys
-        try:
-            flist = _os.listdir(self._directory)
-        except OSError:
-            raise IOError("Directory " + directory + " is not readable")
+        flist = _os.listdir(self._directory)
         for fname in flist:
             # replace hyphens and add newline in base64
             key = fname.replace('-', '/') + '\n'
@@ -90,7 +81,7 @@ class _Database:
             # cache object in memory
             self._dict[key] = value
             return value
-        except IOError:
+        except OSError:
             raise KeyError(key)
 
     def __setitem__(self, key, value):
@@ -102,12 +93,12 @@ class _Database:
                 fh = builtins.open(fname, 'wb')
                 fh.write(value)
                 fh.close()
-            except IOError as e:
+            except OSError as e:
                 # clean up on IO error (e.g., if disk fills up)
                 try:
                     if _os.path.exists(fname):
                         _os.remove(fname)
-                except IOError:
+                except OSError:
                     pass
                 raise e
 

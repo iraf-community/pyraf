@@ -98,7 +98,7 @@ try:
         # ONLY if an XWindow was successfully initialized.
         #  WJH (10June2004)
         if xutil.getFocalWindowID() == -1:
-            raise EnvironmentError()
+            raise OSError()
 
         # Successful intialization. Reset dummy methods with
         # those from 'xutil' now.
@@ -127,7 +127,7 @@ try:
 
 except ImportError:
     _has_xutil = 0  # Unsuccessful init of XWindow
-except EnvironmentError:
+except OSError:
     _has_xutil = 0  # Unsuccessful init of XWindow
 
 # Clean up the namespace a bit...
@@ -175,7 +175,7 @@ def getTopID(WindowID):
                 return wid
             else:
                 wid = pid
-    except EnvironmentError:
+    except OSError:
         return None
 
 
@@ -218,7 +218,7 @@ def getTermWindowSize():
         if xsize <= 0:
             xsize = 80
         return ysize, xsize
-    except IOError:
+    except OSError:
         return (24, 80)  # assume generic size
 
 
@@ -268,7 +268,7 @@ class TerminalFocusEntity(FocusEntity):
                 scrnPosDict = aqutil.getPointerGlobalPosition()
                 self.lastScreenX = scrnPosDict['x']
                 self.lastScreenY = scrnPosDict['y']
-        except EnvironmentError:
+        except OSError:
             self.windowID = None
         self.lastX = 30
         self.lastY = 30

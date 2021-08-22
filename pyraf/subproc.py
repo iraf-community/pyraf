@@ -244,7 +244,7 @@ class Subprocess:
                         raise SubprocessError("Write error to %s" % self)
                     return  # ===>
             raise SubprocessError("Write to %s blocked" % self)
-        except select.error as e:
+        except OSError as e:
             raise SubprocessError(
                 "Select error for %s: file descriptors %s\n%s" %
                 (self, self.toChild_fdlist, str(e)))
@@ -346,7 +346,7 @@ class Subprocess:
             try:
                 readable, writable, errors = select.select(
                     self.fromChild_fdlist, self.toChild_fdlist, [], 0)
-            except select.error:
+            except OSError:
                 status = 0
         return status
 
@@ -544,7 +544,7 @@ class ReadBuf:
 
         try:
             sel = select.select([self.fd], [], [self.fd], 0)
-        except select.error:
+        except OSError:
             # select error occurs if self.fd been closed
             # treat like EOF
             self.eof = 1
@@ -594,7 +594,7 @@ class ReadBuf:
         while True:  # (we'll only loop if block set)
             try:
                 sel = select.select(fdlist, [], fdlist, waittime)
-            except select.error:
+            except OSError:
                 # select error occurs if self.fd has been closed
                 # treat like EOF
                 self.eof = 1
@@ -640,7 +640,7 @@ class ReadBuf:
         while True:
             try:
                 sel = select.select(fdlist, [], fdlist)
-            except select.error:
+            except OSError:
                 # select error occurs if self.fd has been closed
                 # treat like EOF
                 self.eof = 1
@@ -692,7 +692,7 @@ class RecordFile:
             try:
                 l = int(line)
             except ValueError:
-                raise IOError("corrupt %s file structure" %
+                raise OSError("corrupt %s file structure" %
                               self.__class__.__name__)
             return f.read(l)
         else:
@@ -724,7 +724,7 @@ def record_trial(s):
     r = c.read()
     show = " start:\t %s\n end:\t %s\n" % (repr(s), repr(r))
     if r != s:
-        raise IOError("String distorted:\n%s" % show)
+        raise OSError("String distorted:\n%s" % show)
 
 
 #############################################################################
@@ -814,7 +814,7 @@ class RedirProcess(Subprocess):
             try:
                 readable, writable, errors = select.select(
                     self.fromChild_fdlist, self.toChild_fdlist, [], timeout)
-            except select.error as e:
+            except OSError as e:
                 # select error occurs if a file descriptor has been closed
                 # this should not happen -- raise an exception
                 raise SubprocessError(
@@ -861,7 +861,7 @@ class RedirProcess(Subprocess):
                     if s:
                         try:
                             self.write(s)  # inside, converts PY3K str to bytes
-                        except IOError as xxx_todo_changeme:
+                        except OSError as xxx_todo_changeme:
                             # broken pipe may be OK
                             # just call it an EOF and see what happens
                             (errnum, msg) = xxx_todo_changeme.args

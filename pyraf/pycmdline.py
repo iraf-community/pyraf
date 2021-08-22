@@ -286,7 +286,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
             import readline
             readline.set_history_length(hlen)  # hlen<0 means unlimited
             readline.write_history_file(hfile)  # clobber any old version
-        except (ImportError, IOError):
+        except (ImportError, OSError):
             pass
 
         # any irafinst tmp files?
@@ -326,7 +326,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                 self.logfile = open(filename, oflag)
                 if oldlogfile:
                     oldlogfile.close()
-            except IOError as e:
+            except OSError as e:
                 self.write("error opening logfile %s\n%s\n" %
                            (filename, str(e)))
         return ""

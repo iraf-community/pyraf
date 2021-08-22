@@ -225,7 +225,7 @@ class PyrafEparDialog(editpar.EditParDialog):
                     irafutils.setWritePrivs(filename, True)
                 retval = self._taskParsObj.saveParList(filename=filename,
                                                        comment=comment)
-            except IOError:
+            except OSError:
                 retval = "Error saving to " + str(
                     filename) + ".  Please check privileges."
                 showerror(message=retval, title='Error Saving File')
