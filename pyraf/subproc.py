@@ -53,13 +53,9 @@ import time
 
 OS_HAS_FORK = hasattr(os, 'fork')
 
-try:
 
-    class SubprocessError(Exception):
-        pass
-except TypeError:
-    # string based exceptions
-    SubprocessError = 'SubprocessError'
+class SubprocessError(Exception):
+    pass
 
 
 class Subprocess:
