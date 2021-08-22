@@ -12,7 +12,7 @@ initialization is complete.
 
 R. White, 2000 January 20
 """
-from __future__ import division, print_function
+
 
 # define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
 

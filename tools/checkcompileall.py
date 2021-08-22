@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 """checkcompileall.py: Read the output from compileallcl and print just the errors
 """
-from __future__ import division, print_function
+
 import re
 import sys
 

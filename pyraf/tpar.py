@@ -9,7 +9,7 @@ contexts or for people who prefer text interfaces to GUIs.
 
 Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
 """
-from __future__ import division, print_function
+
 
 # XXXX Debugging tip:  uncomment self.inform() in the debug() method below
 

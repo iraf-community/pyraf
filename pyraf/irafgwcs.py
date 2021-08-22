@@ -5,7 +5,7 @@ possibly other tasks) where the WCS for an existing plot gets changed
 before the plot is cleared.  I save the changed wcs in self.pending and
 only commit the change when it appears to really be applicable.
 """
-from __future__ import division, print_function
+
 
 import numpy
 import math

@@ -1,6 +1,6 @@
 """Finds device attributes from the graphcap
 """
-from __future__ import division, print_function
+
 
 from stsci.tools import compmixin
 from . import filecache

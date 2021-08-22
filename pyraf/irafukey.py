@@ -1,7 +1,7 @@
 """
 implement IRAF ukey functionality
 """
-from __future__ import division, print_function
+
 
 import os
 import sys

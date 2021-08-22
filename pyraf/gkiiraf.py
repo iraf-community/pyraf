@@ -1,7 +1,7 @@
 """
 OpenGL implementation of the gki kernel class
 """
-from __future__ import division, print_function
+
 
 import sys
 import os

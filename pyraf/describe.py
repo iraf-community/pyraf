@@ -21,7 +21,7 @@
 # http://www.pythonware.com
 #
 
-from __future__ import division, print_function
+
 
 from dis import opname, HAVE_ARGUMENT
 

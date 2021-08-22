@@ -1,6 +1,6 @@
 """irafexecute.py: Functions to execute IRAF connected subprocesses
 """
-from __future__ import division, print_function
+
 
 import os
 import re

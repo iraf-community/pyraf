@@ -2,7 +2,7 @@
 
 R. White, 1999 Jan 25
 """
-from __future__ import division, print_function
+
 
 from .iraffunctions import *
 

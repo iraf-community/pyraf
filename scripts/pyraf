@@ -36,7 +36,6 @@ Long versions of options:
 
 # R. White, 2000 January 21
 
-from __future__ import division
 import sys, os, shutil
 
 # set search path to include directory above this script and current directory

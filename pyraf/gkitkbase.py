@@ -1,7 +1,7 @@
 """
 Tk gui implementation for the gki plot widget
 """
-from __future__ import division, print_function
+
 
 import numpy
 import os

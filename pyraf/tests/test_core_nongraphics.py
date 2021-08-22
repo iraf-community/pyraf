@@ -1,5 +1,5 @@
 """These were tests under core/irafparlist and core/subproc in pandokia."""
-from __future__ import absolute_import, division, print_function
+
 
 import time
 import uuid

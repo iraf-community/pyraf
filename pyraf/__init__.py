@@ -6,7 +6,7 @@ is done verbosely or quietly.
 
 R. White, 2000 February 18
 """
-from __future__ import division, print_function
+
 
 from .version import version as __version__
 

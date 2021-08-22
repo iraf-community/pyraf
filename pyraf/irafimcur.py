@@ -4,7 +4,7 @@ Read the cursor position from stdimage image display device (DS9,
 SAOIMAGE or XIMTOOL) and return a string compatible with IRAF's
 imcur parameter.
 """
-from __future__ import division, print_function
+
 
 import sys
 from stsci.tools import irafutils

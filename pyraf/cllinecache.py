@@ -2,7 +2,7 @@
 
 CL scripts have special filename "<CL script taskname>"
 """
-from __future__ import division, print_function
+
 
 import linecache
 import os

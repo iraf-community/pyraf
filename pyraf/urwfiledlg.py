@@ -9,7 +9,7 @@ copy is based on r49 of urwid/contrib/trunk/rbreu_filechooser.py, updated
 2006.10.17.  Only minor changes were made - mostly to handle use with differing
 versions of urwid.  Many thanks to author Rebecca Breu.
 """
-from __future__ import division, print_function
+
 
 from urwid import (Text, AttrWrap, WidgetWrap, BoxAdapter, ListBox, AttrWrap,
                    Columns, Edit, Button, GridFlow, CheckBox, Pile,

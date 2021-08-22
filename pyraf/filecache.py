@@ -26,7 +26,7 @@ index (cachedict[filename]) or using the .get() method.
 
 R. White, 2000 October 1
 """
-from __future__ import division, print_function
+
 
 import os
 import stat

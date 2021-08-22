@@ -34,7 +34,7 @@ The **kw argument allows minimum matching for the keyword arguments
 
 R. White, 1999 September 23
 """
-from __future__ import division, print_function
+
 
 import __main__
 import re

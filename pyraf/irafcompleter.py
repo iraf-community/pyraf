@@ -12,7 +12,7 @@ information.
 
 RLW, 2000 February 13
 """
-from __future__ import division, print_function
+
 
 import builtins
 import __main__

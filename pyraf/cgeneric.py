@@ -17,7 +17,7 @@ I also added the re match object as an argument to the action function.
 
 Created 1999 September 10 by R. White
 """
-from __future__ import division, print_function
+
 
 
 class ContextSensitiveScanner:

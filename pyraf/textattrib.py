@@ -19,7 +19,7 @@ From experiments, these are some properties of IRAF text:
 This implementation will allow some of these properties to be overriden
 by a system-wide configuration state. See gkiopengl.py
 """
-from __future__ import division, print_function
+
 
 from . import fontdata
 

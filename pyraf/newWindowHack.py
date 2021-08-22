@@ -13,7 +13,7 @@ tk.withdraw()
 import tkSimpleDialog
 tkSimpleDialog.askstring("window title", "question?")
 """
-from __future__ import division, print_function
+
 
 import tkinter.simpledialog
 from tkinter import Toplevel, Frame

@@ -3,7 +3,7 @@
    scrolling canvas composed of a text widget and frame.  When "hidden",
    it turns into a single-line text widget.
 """
-from __future__ import division, print_function
+
 
 # System level modules
 import tkinter

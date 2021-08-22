@@ -5,7 +5,7 @@
 
 M.D. De La Pena, 2000 June 28
 """
-from __future__ import division, print_function
+
 
 # System level modules
 from tkinter import (StringVar, BooleanVar, Canvas, Frame, Scrollbar, Label,

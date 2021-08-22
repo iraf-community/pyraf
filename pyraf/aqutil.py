@@ -3,7 +3,7 @@ not possible in tkinter.  In general, an attempt is made to use the Pyobjc
 bridging package so that compiling another C extension is not needed.
 """
 
-from __future__ import division, print_function
+
 
 import os
 import struct

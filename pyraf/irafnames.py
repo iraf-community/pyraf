@@ -4,7 +4,7 @@ be changed.
 
 R. White, 1999 March 26
 """
-from __future__ import division, print_function
+
 
 import __main__
 from stsci.tools import irafglobals

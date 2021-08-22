@@ -1,6 +1,6 @@
 """clast.py: abstract syntax tree node type for CL parsing
 """
-from __future__ import division, print_function
+
 
 #  Copyright (c) 1998-1999 John Aycock
 #

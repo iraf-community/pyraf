@@ -12,7 +12,7 @@ Code derived from pyraf.pycmdline.py
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
-from __future__ import division, print_function
+
 
 VERY_OLD_IPY = True  # this means prior to v0.12
 try:

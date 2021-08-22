@@ -2,7 +2,7 @@
 
 M.D. De La Pena, 2000 February 04
 """
-from __future__ import division, print_function
+
 
 from stsci.tools import capable
 if capable.OF_GRAPHICS:

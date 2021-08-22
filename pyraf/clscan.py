@@ -4,7 +4,7 @@ This version uses a context-sensitive pattern stack
 
 R. White, 1999 September 10
 """
-from __future__ import division, print_function
+
 
 from .cgeneric import ContextSensitiveScanner
 from .generic import GenericScanner

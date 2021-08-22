@@ -1,6 +1,6 @@
 """This module adds IRAF ECL style error handling to PyRAF."""
 
-from __future__ import division, print_function
+
 
 import inspect
 import sys

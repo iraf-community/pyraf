@@ -3,7 +3,7 @@ Graphics window manager, creates multiple toplevel togl widgets for
 use by python plotting
 
 """
-from __future__ import division, print_function
+
 
 import os
 from stsci.tools import capable

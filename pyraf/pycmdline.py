@@ -22,7 +22,7 @@ Uses standard code module plus some ideas from cmd.py module
 
 R. White, 2000 February 20
 """
-from __future__ import division, print_function
+
 
 import string
 import re

@@ -7,7 +7,7 @@ This is defined so it is safe to say 'from pyrafglobals import *'
 
 Broken out from irafglobals.py which was signed "R. White, 2000 January 5"
 """
-from __future__ import division, print_function
+
 
 import os as _os
 import sys as _sys

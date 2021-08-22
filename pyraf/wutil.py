@@ -4,7 +4,7 @@ These are python stubs that are overloaded by a c version implementations.
 If the c versions do not exist, then these routines will do nothing
 
 """
-from __future__ import division, print_function
+
 
 import struct
 import sys

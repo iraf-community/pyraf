@@ -10,7 +10,7 @@ XXX by another process after open
 R. White, 2000 Sept 26
 """
 
-from __future__ import division, print_function
+
 
 import shelve
 from stsci.tools.for2to3 import PY3K
