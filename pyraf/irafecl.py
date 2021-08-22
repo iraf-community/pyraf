@@ -15,7 +15,7 @@ import pyraf.iraf
 executionMonitor = None
 
 
-class EclState(object):
+class EclState:
     """An object which records the ECL state for one invocation of a CL proc:
 
     1. The procedure's linemap converting Python line numberss to CL line numbers.
@@ -46,7 +46,7 @@ def getTaskModule():
         return iraftask
 
 
-class Erract(object):
+class Erract:
     """Erract is a state variable (singleton) which corresponds to the IRAF ECL
     environment variable 'erract'.  erract has the following properties which
     control ECL exception handling:

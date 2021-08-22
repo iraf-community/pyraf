@@ -21,7 +21,7 @@ import builtins
 error = IOError
 
 
-class _Database(object):
+class _Database:
     """Dictionary-like object with entries stored in separate files
 
     Keys and values must be strings.

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Modified input for PyRAF CL-script execution and pre-processing.
 
 Modifies the IPython intepreter to process PyRAF "magic" prior to
@@ -119,7 +118,7 @@ class IPythonIrafCompleter(IrafCompleter):
 # ---------------------------------------------------------------------------
 
 
-class IPython_PyRAF_Integrator(object):
+class IPython_PyRAF_Integrator:
     """This class supports the integration of these features with IPython:
 
     1. PyRAF readline completion

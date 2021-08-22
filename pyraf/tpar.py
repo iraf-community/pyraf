@@ -203,7 +203,7 @@ TPAR_BINDINGS_VI = {
 }
 
 
-class Binder(object):
+class Binder:
     """The Binder class manages keypresses for urwid and adds the
     ability to bind specific inputs to actions.
     """
