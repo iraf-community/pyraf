@@ -550,7 +550,6 @@ def dumpspecs(outstream=None, skip_volatiles=False):
     out += "\nplatform = " + str(sys.platform)
     if not skip_volatiles:
         out += "\nPyRAF ver = " + pyrver
-    out += "\nPY3K = " + str(capable.PY3K)
     out += "\nc.OF_GRAPHICS = " + str(capable.OF_GRAPHICS)
     dco = 'not yet known'
     if hasattr(capable, 'get_dc_owner'):  # rm hasattr at/after v2.2

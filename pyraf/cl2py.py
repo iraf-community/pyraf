@@ -16,7 +16,6 @@ from . import clparse
 from .clcache import codeCache, DISABLE_CLCACHING
 
 from stsci.tools.irafglobals import Verbose
-from stsci.tools.for2to3 import PY3K
 from stsci.tools import basicpar, minmatch, irafutils
 from . import irafpar
 from . import pyrafglobals
@@ -74,7 +73,7 @@ def cl2py(filename=None,
 
     global _parser, codeCache
 
-    if PY3K or DISABLE_CLCACHING:
+    if True or DISABLE_CLCACHING:
         usecache = False  # ! turn caching off until it is fully tested/worked
         # when this is turned on, see corresponding PY3K note in clcache.py!
 
@@ -2241,7 +2240,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
     def n_inspect_stmt(self, node):
         # The following will create/call print as a statement, but is a function
         # However, there may not be a valid use case to worry about here.
-        if PY3K:
+        if True:
             raise RuntimeError("Error - this code is incorrect in PY3K")
         self.write("print ")
         if node[0].type == "=":

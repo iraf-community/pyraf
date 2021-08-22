@@ -6,7 +6,7 @@ implement IRAF ukey functionality
 import os
 import sys
 from . import wutil
-from stsci.tools import capable, for2to3, irafutils
+from stsci.tools import capable, irafutils
 
 try:
     import termios
@@ -45,9 +45,7 @@ def getSingleTTYChar():  # return type str in all Python versions
         if capable.OF_GRAPHICS:
             c = irafutils.tkread(fd, 1)
         else:
-            c = os.read(fd, 1)
-            if for2to3.PY3K:
-                c = c.decode('ascii', 'replace')
+            c = os.read(fd, 1).decode(errors='replace')
     finally:
         termios.tcsetattr(fd, TERMIOS.TCSAFLUSH, old)
         return c

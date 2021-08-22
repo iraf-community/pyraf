@@ -27,12 +27,10 @@ index (cachedict[filename]) or using the .get() method.
 R. White, 2000 October 1
 """
 
-
 import os
 import stat
 import sys
 import hashlib
-from stsci.tools.for2to3 import PY3K
 
 
 class FileCache:
@@ -144,15 +142,11 @@ class MD5Cache(FileCache):
     def updateValue(self):
         """Called when file has changed."""
 
-        contents = self._getFileHandle().read()  # is unicode str in PY3K
+        contents = self._getFileHandle().read()
         # md5 digest is the value associated with the file
         h = hashlib.md5()
-        if PY3K:  # unicode must be encoded to be hashed
-            h.update(contents.encode('ascii'))
-            self.value = str(h.digest())
-        else:
-            h.update(contents)
-            self.value = h.digest()
+        h.update(contents.encode())
+        self.value = str(h.digest())
 
 
 class FileCacheDict:

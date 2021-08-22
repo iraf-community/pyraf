@@ -10,7 +10,6 @@ import os
 import re
 import types
 from stsci.tools import basicpar, minmatch, irafutils, taskpars
-from stsci.tools.for2to3 import PY3K
 from stsci.tools.irafglobals import INDEF, Verbose, yes, no
 from stsci.tools.basicpar import (warning, _StringMixin, IrafPar, IrafParS,
                                   _cmdlineFlag)
@@ -751,11 +750,7 @@ class IrafParList(taskpars.TaskPars):
         # hidden Python parameters go into the standard dictionary
         # (hope there are none of these in IRAF tasks)
         if name and name[0] == '_':
-            if PY3K:
-                object.__setattr__(self, name,
-                                   value)  # new-style class objects
-            else:
-                self.__dict__[name] = value  # for old-style classes
+            object.__setattr__(self, name, value)
         else:
             self.setParam(name, value)
 

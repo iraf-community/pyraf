@@ -16,28 +16,18 @@ import builtins
 import sys
 from stsci.tools import minmatch
 
-PY3K = sys.version_info[0] > 2
-_importHasLvlArg = PY3K or sys.version_info[1] >= 5  # is 2.*, handle no 1.*
-_reloadIsBuiltin = sys.version_info[0] < 3
-
 IMPORT_DEBUG = False
 
 # Save the original hooks;  replaced at bottom of module...
 _originalImport = builtins.__import__
-if _reloadIsBuiltin:
-    _originalReload = builtins.reload
-else:
-    import imp
-    _originalReload = imp.reload
+import imp
+_originalReload = imp.reload
 
 
 def restoreBuiltins():
     """ Called before exiting pyraf - this puts import and reload back. """
     builtins.__import__ = _originalImport
-    if _reloadIsBuiltin:
-        builtins.reload = _originalReload
-    else:
-        imp.reload = _originalReload
+    imp.reload = _originalReload
 
 
 def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
@@ -47,7 +37,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
               str(level))
 
     # do first: the default value for level changed to 0 as of Python 3.3
-    if PY3K and sys.version_info[1] >= 3 and level < 0:
+    if level < 0:
         level = 0
 
     # e.g. "from iraf import stsdas, noao" or "from .iraf import noao"
@@ -64,9 +54,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
     # e.g. "import iraf" or "from . import iraf" (fromlist is a list OR tuple)
     # (extra Python2 cases are not used in PY3K - double check this)
-    if (PY3K and not fromlist and name == 'iraf') or \
-       ((not PY3K) and (name == "iraf")) or \
-       ((not PY3K) and name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
+    if not fromlist and name == 'iraf':
         if IMPORT_DEBUG:
             print("irafimport: iraf case: n=" + name + ", fl=" +
                   str(fromlist) + ", l=" + str(level))
@@ -115,11 +103,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     if IMPORT_DEBUG:
         print("irafimport - PASSTHRU: n=" + name + ", fl=" + str(fromlist) +
               ", l=" + str(level))
-    if _importHasLvlArg:
-        retval = _originalImport(name, globals, locals, fromlist, level)
-    else:
-        # we could assert here that level is default, but it's safe to assume
-        retval = _originalImport(name, globals, locals, fromlist)
+    retval = _originalImport(name, globals, locals, fromlist, level)
 
     if hadIrafInList:
         # Use case is: "from . import gki, gwm, iraf"
@@ -194,21 +178,15 @@ class _irafModuleClass:
 
 # Install our hooks
 builtins.__import__ = _irafImport
-if _reloadIsBuiltin:
-    builtins.reload = _irafReload
-else:
-    imp.reload = _irafReload
+imp.reload = _irafReload
 
 # create the module proxy
 _irafModuleProxy = _irafModuleClass()
 
 # import iraf module using original mechanism
-if PY3K:
-    # necessary as of Python 3.3+ :  try "import pyraf.iraf"
-    pyrafmod = _originalImport('pyraf.iraf', globals(), locals(), [])
-    the_iraf_module = pyrafmod.iraf
-else:
-    the_iraf_module = _originalImport('iraf', globals(), locals(), [])
+# necessary as of Python 3.3+ :  try "import pyraf.iraf"
+pyrafmod = _originalImport('pyraf.iraf', globals(), locals(), [])
+the_iraf_module = pyrafmod.iraf
 
 # leaving
 if IMPORT_DEBUG:

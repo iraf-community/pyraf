@@ -6,7 +6,6 @@ R. White, 2000 January 19
 
 import os
 import sys
-from stsci.tools.for2to3 import PY3K
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
 if __name__.find('.') < 0:  # for unit test need absolute import
@@ -19,7 +18,7 @@ else:
 
 # In case you wish to disable all CL script caching (for whatever reason)
 DISABLE_CLCACHING = False  # enable caching by default
-if PY3K or 'PYRAF_NO_CLCACHE' in os.environ:
+if True or 'PYRAF_NO_CLCACHE' in os.environ:  # Disabled in Python 3 for the moment
     DISABLE_CLCACHING = True
 
 # set up pickle so it can pickle code objects
@@ -204,12 +203,8 @@ class _CodeCache:
             # there is no filename, but return md5 digest of source as key
             h = hashlib.md5()
 
-            if PY3K:  # unicode must be encoded to be hashed
-                h.update(source.encode('ascii'))
-                return str(h.digest())
-            else:
-                h.update(source)
-                return h.digest()
+            h.update(source.encode())
+            return str(h.digest())
 
     def add(self, index, pycode):
         """Add pycode to cache with key = index.  Ignores if index=None."""
@@ -303,7 +298,7 @@ if not os.path.exists(userCacheDir):
 dbfile = 'clcache'
 
 if DISABLE_CLCACHING:
-    # since CL code caching is turned off currently for PY3K,
+    # since CL code caching is turned off currently for Python 3,
     # there won't be any installed there, but still play with user area
     codeCache = _CodeCache([
         os.path.join(userCacheDir, dbfile),

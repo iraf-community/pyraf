@@ -48,7 +48,6 @@ except ImportError:  # only for Python 2.5
 
 from stsci.tools import minmatch, irafutils
 from stsci.tools.irafglobals import IrafError, IrafTask, IrafPkg
-from stsci.tools.for2to3 import PY3K
 from . import describe
 
 # use this form since the iraf import is circular
@@ -72,10 +71,6 @@ _functionTypes = (types.BuiltinFunctionType, types.FunctionType,
                   types.LambdaType)
 
 _methodTypes = (types.BuiltinMethodType, types.MethodType)
-
-if not PY3K:
-    # in PY3K, UnboundMethodType is simply FunctionType
-    _methodTypes += (types.UnboundMethodType,)
 
 _listTypes = (list, tuple, dict)
 
@@ -112,8 +107,6 @@ def _isinstancetype(an_obj):
     Return True if the passed object is an instance of a class, else False. """
     if an_obj is None:
         return False
-    if not PY3K:
-        return isinstance(an_obj, types.InstanceType)
     typstr = str(type(an_obj))
     # the following logic works, as PyRAF users expect, in both v2 and v3
     return typstr=="<type 'instance'>" or \
@@ -344,8 +337,7 @@ def _getContents(vlist, regexp, an_obj):
                 sortlist[vorder].append((vname, value))
                 namedict[vname] = 1
     # add methods from base classes if this is a class
-    if (not PY3K and isinstance(an_obj, types.ClassType)) or \
-       (PY3K and isinstance(an_obj, type(object))): # i.e. "<class 'type'>"
+    if isinstance(an_obj, type(object)): # i.e. "<class 'type'>"
         classlist = list(an_obj.__bases__)
         for c in classlist:
             classlist.extend(list(c.__bases__))
@@ -401,8 +393,7 @@ def _valueString(value, verbose=0):
             vstr = vstr + ", value = " + repr(value)
     elif issubclass(t, _listTypes):
         return "%s [%d entries]" % (vstr, len(value))
-    elif (PY3K and issubclass(t, io.IOBase)) or \
-         (not PY3K and issubclass(t, file)):
+    elif issubclass(t, io.IOBase):
         vstr = vstr + ", " + repr(value)
     elif issubclass(t, _numericTypes):
         vstr = vstr + ", value = " + repr(value)

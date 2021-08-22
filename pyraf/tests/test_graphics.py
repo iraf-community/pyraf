@@ -158,7 +158,6 @@ def test_dumpspecs():
     # verify it (is version dependent)
     expected = """python ver = {major}.{minor}
 platform = {platform}
-PY3K = {py3k}
 c.OF_GRAPHICS = False
 /dev/console owner = <skipped>
 tkinter use unattempted.
