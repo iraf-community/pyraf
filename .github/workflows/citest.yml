@@ -28,7 +28,7 @@ jobs:
       - name: Setup dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends iraf iraf-noao build-essential libx11-dev
+          sudo apt-get install --no-install-recommends iraf iraf-noao iraf-dev build-essential libx11-dev
           sudo apt-get install --no-install-recommends ${PYTHON}-all-dev ${PYTHON}-astropy ${PYTHON}-numpy-dev ${PYTHON}-setuptools ${PYTHON}-setuptools-scm ${PYTHON}-stsci.tools ${PYTHON}-tk ${PYTHON}-pytest ${PYTHON}-pytest-cov i${PYTHON}
 
       - name: Build Pyraf
