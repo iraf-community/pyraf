@@ -96,7 +96,7 @@ class FileCache:
         if filename is None:
             filename = self.filename
         if isinstance(filename, str):
-            fh = open(filename, 'r')
+            fh = open(filename)
         elif hasattr(filename, 'read'):
             fh = filename
             if hasattr(filename, 'seek'):

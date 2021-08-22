@@ -85,7 +85,7 @@ class GraphCap(filecache.FileCache):
 
     def updateValue(self):
         """Called on init and if file changes"""
-        lines = open(self.filename, 'r').readlines()
+        lines = open(self.filename).readlines()
         mergedlines = merge(lines)
         self.dict = getDevices(mergedlines)
 
