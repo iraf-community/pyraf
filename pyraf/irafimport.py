@@ -95,7 +95,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     # Same for everything in fromlist (which is a tuple in PY3K)
     if fromlist:
         fromlist = tuple(
-            [item.replace('pytools', 'stsci.tools') for item in fromlist])
+            item.replace('pytools', 'stsci.tools') for item in fromlist)
     # !!! END TEMPORARY KLUDGE !!!
 
     hadIrafInList = fromlist and 'iraf' in fromlist and name == '' and level > 0
