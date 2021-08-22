@@ -10,7 +10,7 @@ import sys
 import numpy
 import io
 from stsci.tools import irafutils
-from stsci.tools.for2to3 import tobytes, ndarr2bytes, ndarr2str
+from stsci.tools.for2to3 import ndarr2bytes, ndarr2str
 from stsci.tools.irafglobals import IrafError, IrafTask, Verbose
 from . import subproc
 from . import filecache
@@ -598,7 +598,7 @@ class IrafProcess:
                 # the arg parts to the following are all type bytes in PY3K
                 self.process.write(IPC_PREFIX +
                                    struct.pack('=h', len(dsection)) +
-                                   tobytes(dsection))
+                                   dsection)
                 i = i + block
         except subproc.SubprocessError as e:
             raise IrafProcessError("Error in write: %s" % str(e))

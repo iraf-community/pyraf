@@ -50,7 +50,7 @@ import select
 import signal
 import sys
 import time
-from stsci.tools.for2to3 import tostr, BNULLSTR, BNEWLINE, bytes_read, bytes_write
+from stsci.tools.for2to3 import BNULLSTR, BNEWLINE, bytes_read, bytes_write
 
 OS_HAS_FORK = hasattr(os, 'fork')
 
@@ -832,7 +832,7 @@ class RedirProcess(Subprocess):
                     # stderr
                     s = self.readPendingErrChars()  # returns bytes
                     if s:
-                        sys.stderr.write(tostr(s))
+                        sys.stderr.write(s.decode())
                         sys.stderr.flush()
                     else:
                         # EOF
@@ -845,7 +845,7 @@ class RedirProcess(Subprocess):
                     # stdout
                     s = self.readPendingChars()  # returns bytes
                     if s:
-                        sys.stdout.write(tostr(s))
+                        sys.stdout.write(s.decode())
                         sys.stdout.flush()
                     else:
                         # EOF

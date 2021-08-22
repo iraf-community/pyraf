@@ -9,7 +9,7 @@ only commit the change when it appears to really be applicable.
 
 import numpy
 import math
-from stsci.tools.for2to3 import ndarr2bytes, tobytes, BNULLSTR
+from stsci.tools.for2to3 import ndarr2bytes, BNULLSTR
 from stsci.tools.irafglobals import IrafError
 from . import irafinst
 
@@ -165,9 +165,9 @@ class IrafGWcs:
         init_wcs_sizes()
         self.commit()
         wcsStruct = numpy.zeros(_WCS_RECORD_SIZE * WCS_SLOTS, numpy.int16)
-        pad = tobytes('\x00\x00\x00\x00')
+        pad = b'\x00\x00\x00\x00'
         if _IRAF64BIT:
-            pad = tobytes('\x00\x00\x00\x00\x00\x00\x00\x00')
+            pad = b'\x00\x00\x00\x00\x00\x00\x00\x00'
         for i in range(WCS_SLOTS):
             x = self.wcs[i]
             farr = numpy.array(x[:8], numpy.float32)

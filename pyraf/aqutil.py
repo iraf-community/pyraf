@@ -10,7 +10,6 @@ import struct
 import time
 import objc
 import AppKit
-from stsci.tools.for2to3 import tobytes
 
 # Arbitrary module constants for term vs. gui.  0 and negative numbers have
 # special meanings when queried elsewhere (e.g. wutil).  It is assumed that
@@ -183,12 +182,12 @@ def __doPyobjcWinInit():
     #
     OSErr = objc._C_SHT
     CGErr = objc._C_INT
-    INPSN = tobytes('n^{ProcessSerialNumber=LL}')
-    OUTPSN = tobytes('o^{ProcessSerialNumber=LL}')
-    #   OUTPID = tobytes('o^_C_ULNG') # invalid as of objc v3.2
-    WARPSIG = tobytes('v{CGPoint=ff}')
+    INPSN = b'n^{ProcessSerialNumber=LL}'
+    OUTPSN = b'o^{ProcessSerialNumber=LL}'
+    #   OUTPID = b'o^_C_ULNG'  # invalid as of objc v3.2
+    WARPSIG = b'v{CGPoint=ff}'
     if struct.calcsize("l") > 4:  # is 64-bit python
-        WARPSIG = tobytes('v{CGPoint=dd}')
+        WARPSIG = b'v{CGPoint=dd}'
 
     FUNCTIONS = [
         # These are public API
@@ -238,7 +237,7 @@ def __doPyobjcWinInit():
         raise Exception("GetCurrentProcess: " + str(err))
 
     # Set Proc name
-    err = CPSSetProcessName(__thisPSN, tobytes('PyRAF'))
+    err = CPSSetProcessName(__thisPSN, b'PyRAF')
     if err:
         raise Exception("CPSSetProcessName: " + str(err))
     # Make us a FG app (need to be in order to use SetFrontProcess on us)
