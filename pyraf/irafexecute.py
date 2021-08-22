@@ -293,7 +293,7 @@ class _ProcessCache:
                 if task is not None:
                     self.terminate(task)
         else:
-            for rank, proxy in self._data.values():
+            for rank, proxy in list(self._data.values()):
                 executable = proxy.process.executable
                 if executable not in self._locked:
                     self.terminate(executable)

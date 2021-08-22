@@ -20,7 +20,7 @@ def checkcache(filename=None, orig_checkcache=linecache.checkcache):
     cache = linecache.cache
     save = {}
     if filename is None:
-        filenames = cache.keys()
+        filenames = list(cache.keys())
     else:
         if filename in cache:
             filenames = [filename]
