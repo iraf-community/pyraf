@@ -38,7 +38,7 @@ from __future__ import division, print_function
 __version__ = 'SPARK-0.6.1rlw'
 
 import re
-import cltoken
+from . import cltoken
 
 
 def _namelist(instance):

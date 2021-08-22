@@ -49,7 +49,7 @@ except ImportError:  # only for Python 2.5
 from stsci.tools import minmatch, irafutils
 from stsci.tools.irafglobals import IrafError, IrafTask, IrafPkg
 from stsci.tools.for2to3 import PY3K
-import describe
+from . import describe
 
 # use this form since the iraf import is circular
 import pyraf.iraf

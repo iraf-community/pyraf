@@ -33,10 +33,10 @@ import keyword
 import traceback
 import linecache
 from stsci.tools import capable, minmatch
-import iraf
-import irafinst
-import wutil
-from pyrafglobals import pyrafDir
+from . import iraf
+from . import irafinst
+from . import wutil
+from .pyrafglobals import pyrafDir
 
 
 class CmdConsole(code.InteractiveConsole):
@@ -70,7 +70,7 @@ class CmdConsole(code.InteractiveConsole):
         # history is a list of lines entered by user (allocated in blocks)
         self.history = 100 * [None]
         self.nhistory = 0
-        import irafcompleter
+        from . import irafcompleter
         self.completer = irafcompleter.IrafCompleter()
 
     def addHistory(self, line):

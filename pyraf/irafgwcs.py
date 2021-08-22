@@ -11,7 +11,7 @@ import numpy
 import math
 from stsci.tools.for2to3 import ndarr2bytes, tobytes, BNULLSTR
 from stsci.tools.irafglobals import IrafError
-import irafinst
+from . import irafinst
 
 # global vars
 _IRAF64BIT = False

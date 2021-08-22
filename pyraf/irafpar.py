@@ -208,7 +208,7 @@ class IrafParPset(IrafParS):
         f = self.value.split('.')
         if len(f) > 1 and f[-1] == 'par':
             # must be a file name
-            from iraffunctions import IrafTaskFactory
+            from .iraffunctions import IrafTaskFactory
             irf_val = pyraf.iraf.Expand(self.value)
             return IrafTaskFactory(taskname=irf_val.split(".")[0],
                                    value=irf_val)
@@ -426,7 +426,7 @@ class IrafParGCur(IrafParCursor):
 
     def _getNextValue(self):
         """Return next graphics cursor value"""
-        import gki  # lazy import - reduce circular imports on startup
+        from . import gki  # lazy import - reduce circular imports on startup
         return gki.kernel.gcur()
 
 
@@ -440,7 +440,7 @@ class IrafParImCur(IrafParCursor):
 
     def _getNextValue(self):
         """Return next image display cursor value"""
-        import irafimcur  # lazy import - reduce circular imports on startup
+        from . import irafimcur  # lazy import - reduce circular imports on startup
         return irafimcur.imcur()
 
 
@@ -454,7 +454,7 @@ class IrafParUKey(IrafParL):
 
     def _getNextValue(self):
         """Return next typed character"""
-        import irafukey  # lazy import - reduce circular imports on startup
+        from . import irafukey  # lazy import - reduce circular imports on startup
         return irafukey.ukey()
 
 
@@ -465,7 +465,7 @@ class IrafParUKey(IrafParL):
 if __name__.find('.') < 0:  # for unit test need absolute import
     exec('import filecache', globals())  # 2to3 messes up simpler form
 else:
-    import filecache
+    from . import filecache
 
 
 class ParCache(filecache.FileCache):
@@ -1062,11 +1062,11 @@ class IrafParList(taskpars.TaskPars):
         self.setParam('$nargs', nargs)
 
     def eParam(self):
-        import epar
+        from . import epar
         epar.epar(self)
 
     def tParam(self):
-        import tpar
+        from . import tpar
         tpar.tpar(self)
 
     def lParam(self, verbose=0):

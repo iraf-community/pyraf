@@ -8,15 +8,15 @@ import os
 import sys
 import time
 import tkinter
-import msgiobuffer
-import msgiowidget
-import wutil
+from . import msgiobuffer
+from . import msgiowidget
+from . import wutil
 from stsci.tools import capable, filedlg, irafutils
 from stsci.tools.irafglobals import IrafError, userWorkingHome
 from stsci.tools.for2to3 import ndarr2bytes
-import gki
-import irafgwcs
-from pyrafglobals import pyrafDir
+from . import gki
+from . import irafgwcs
+from .pyrafglobals import pyrafDir
 import tkinter.filedialog
 import tkinter.messagebox
 import tkinter.simpledialog

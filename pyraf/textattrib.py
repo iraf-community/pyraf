@@ -21,7 +21,7 @@ by a system-wide configuration state. See gkiopengl.py
 """
 from __future__ import division, print_function
 
-import fontdata
+from . import fontdata
 
 CHARPATH_LEFT = 2
 CHARPATH_RIGHT = 3

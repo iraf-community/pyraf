@@ -7,12 +7,12 @@ from __future__ import division, print_function
 import numpy
 import tkinter
 from stsci.tools.for2to3 import ndarr2str
-import wutil
-import Ptkplot
-import gki
-import gkitkbase
-import gkigcur
-import tkplottext
+from . import wutil
+from . import Ptkplot
+from . import gki
+from . import gkitkbase
+from . import gkigcur
+from . import tkplottext
 
 TK_LINE_STYLE_PATTERNS = ['.', '.', '_', '.', '.._']
 

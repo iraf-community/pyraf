@@ -4,9 +4,9 @@ R. White, 1999 August 24
 """
 from __future__ import division, print_function
 
-from generic import GenericASTBuilder, GenericASTTraversal
-from clast import AST
-from cltoken import Token
+from .generic import GenericASTBuilder, GenericASTTraversal
+from .clast import AST
+from .cltoken import Token
 
 
 class CLStrictParser(GenericASTBuilder):
@@ -485,7 +485,7 @@ def treelist(ast, terminal=1):
 
 
 def getParser():
-    import pyrafglobals
+    from . import pyrafglobals
     if pyrafglobals._use_ecl:
         _parser = EclParser(AST)
     else:

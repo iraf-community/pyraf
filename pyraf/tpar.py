@@ -38,8 +38,8 @@ try:
     import urwid.curses_display
     import urwid.raw_display
     import urwid
-    import urwutil
-    import urwfiledlg
+    from . import urwutil
+    from . import urwfiledlg
     urwid.set_encoding("ascii")  # gives better performance than 'utf8'
     if 0 == urwid.__version__.find('0.9.8') or 0 == urwid.__version__.find(
             '0.9.7'):
@@ -53,11 +53,11 @@ except Exception as e:
     urwid.the_error = str(e)
 
 # PyRAF modules
-import iraf
-import irafpar
-import irafhelp
-import iraftask
-import iraffunctions
+from . import iraf
+from . import irafpar
+from . import irafhelp
+from . import iraftask
+from . import iraffunctions
 
 TPAR_HELP_EMACS = """                                EDIT COMMANDS (emacs)
 

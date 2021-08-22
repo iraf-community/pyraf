@@ -43,11 +43,11 @@ import sys
 import re
 from stsci.tools.irafglobals import IrafError
 from stsci.tools.for2to3 import ndarr2str, ndarr2bytes
-import wutil
-import graphcap
-import irafgwcs
-import fontdata
-from textattrib import (CHARPATH_RIGHT, JUSTIFIED_NORMAL, FONT_ROMAN,
+from . import wutil
+from . import graphcap
+from . import irafgwcs
+from . import fontdata
+from .textattrib import (CHARPATH_RIGHT, JUSTIFIED_NORMAL, FONT_ROMAN,
                         FQUALITY_NORMAL)
 
 # use this form since the iraf import is circular
@@ -998,13 +998,13 @@ class GkiController(GkiProxy):
                 # open (persistent) interactive kernel
                 if not self.interactiveKernel:
                     if wutil.hasGraphics:
-                        import gwm
+                        from . import gwm
                         self.interactiveKernel = gwm.getGraphicsWindowManager()
                     else:
                         self.interactiveKernel = GkiNull()
                 self.stdgraph = self.interactiveKernel
             else:
-                import gkiiraf
+                from . import gkiiraf
                 self.stdgraph = gkiiraf.GkiIrafKernel(device)
             self.stdin = self.stdgraph.stdin
             self.stdout = self.stdgraph.stdout
@@ -1253,8 +1253,8 @@ def printPlot(window=None):
     """Print contents of window (default active window) to stdplot
     window must be a GkiKernel object (with a gkibuffer attribute.)
     """
-    import gwm
-    import gkiiraf
+    from . import gwm
+    from . import gkiiraf
     if window is None:
         window = gwm.getActiveGraphicsWindow()
         if window is None:
@@ -1639,7 +1639,7 @@ kernel = GkiController()
 # Beware! This is highly experimental and was made only for a test case.
 def _resetGraphicsKernel():
     global kernel
-    import gwm
+    from . import gwm
     if kernel:
         kernel.clearReturnData()
         kernel.flush()

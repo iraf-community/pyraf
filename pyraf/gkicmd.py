@@ -3,8 +3,8 @@ iraf gki metacode (primarily for interactive graphics)"""
 
 from __future__ import division, print_function
 
-import gki
-import gwm
+from . import gki
+from . import gwm
 import numpy
 
 

@@ -20,7 +20,7 @@ import re
 import keyword
 import glob
 import os
-import iraf
+from . import iraf
 from stsci.tools import minmatch
 try:
     import readline

@@ -6,7 +6,7 @@ from __future__ import division, print_function
 
 import sys
 import tkinter
-import wutil
+from . import wutil
 
 
 class _PyrafTk(tkinter.Tk):

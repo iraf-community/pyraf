@@ -9,7 +9,7 @@ import os
 import sys
 import tkinter
 from stsci.tools.irafglobals import IrafPkg
-import wutil
+from . import wutil
 
 logo = "pyraflogo_rgb_web.gif"
 
@@ -174,7 +174,7 @@ class IrafMonitorSplash(PyrafSplash):
         PyrafSplash.__init__(self, text=[None, label], **kw)
         # self.stack tracks messages displayed in monitor
         self.stack = []
-        import iraftask
+        from . import iraftask
         iraftask.executionMonitor = self.monitor
 
     def monitor(self, task=None):
@@ -203,7 +203,7 @@ class IrafMonitorSplash(PyrafSplash):
 
     def Destroy(self, event=None):
         """Shut down window and disable monitor"""
-        import iraftask
+        from . import iraftask
         if iraftask.executionMonitor == self.monitor:
             iraftask.executionMonitor = None
         PyrafSplash.Destroy(self, event)

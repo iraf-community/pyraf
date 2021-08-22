@@ -16,11 +16,11 @@ import copy
 import re
 from stsci.tools import basicpar, minmatch, irafutils, irafglobals, taskpars
 from stsci.tools.irafglobals import IrafError, Verbose
-import subproc
-import irafinst
-import irafpar
-import irafexecute
-import cl2py
+from . import subproc
+from . import irafinst
+from . import irafpar
+from . import irafexecute
+from . import cl2py
 
 # use this form since the iraf import is circular
 import pyraf.iraf
@@ -713,7 +713,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         self.initTask(force=1)
         # XXX always runs on current par list, not running par list?
         if self._currentParList:
-            import epar
+            from . import epar
             epar.epar(self)
         else:
             sys.stderr.write("Task %s has no parameter file\n" % self._name)
@@ -724,7 +724,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         self.initTask(force=1)
         # XXX always runs on current par list, not running par list?
         if self._currentParList:
-            import tpar
+            from . import tpar
             tpar.tpar(self)
         else:
             sys.stderr.write("Task %s has no parameter file\n" % self._name)

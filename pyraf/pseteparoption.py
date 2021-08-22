@@ -6,7 +6,7 @@ from __future__ import division, print_function
 
 # local modules
 from stsci.tools import eparoption
-import epar
+from . import epar
 
 
 class PsetEparOption(eparoption.ActionEparButton):

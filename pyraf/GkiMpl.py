@@ -14,12 +14,12 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from stsci.tools.for2to3 import ndarr2str
 
-import gki
-import gkitkbase
-import textattrib
-import gkigcur
-import MplCanvasAdapter as mca
-from wutil import moveCursorTo
+from . import gki
+from . import gkitkbase
+from . import textattrib
+from . import gkigcur
+from . import MplCanvasAdapter as mca
+from .wutil import moveCursorTo
 try:
     import readline
 except ImportError:

@@ -3,7 +3,7 @@
 from __future__ import division, print_function
 
 from stsci.tools import compmixin
-import filecache
+from . import filecache
 
 
 def merge(inlines):

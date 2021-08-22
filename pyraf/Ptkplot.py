@@ -5,7 +5,7 @@ from __future__ import division, print_function
 import os
 from tkinter import _default_root
 from tkinter import TclError, Canvas
-import wutil
+from . import wutil
 
 # XBM file for cursor is in same directory as this module
 _blankcursor = 'blankcursor.xbm'

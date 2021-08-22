@@ -264,7 +264,7 @@ keep
 
 def getIrafVer():
     """ Return current IRAF version as a string """
-    import iraffunctions
+    from . import iraffunctions
     cltask = iraffunctions.getTask('cl')
     # must use default par list, in case they have a local override
     plist = cltask.getDefaultParList()

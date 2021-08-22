@@ -13,9 +13,9 @@ if __name__.find('.') < 0:  # for unit test need absolute import
     for mmm in ('filecache', 'pyrafglobals', 'dirshelve'):
         exec('import ' + mmm, globals())  # 2to3 messes up simpler form
 else:
-    import filecache
-    import pyrafglobals
-    import dirshelve
+    from . import filecache
+    from . import pyrafglobals
+    from . import dirshelve
 
 # In case you wish to disable all CL script caching (for whatever reason)
 DISABLE_CLCACHING = False  # enable caching by default

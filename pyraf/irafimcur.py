@@ -9,9 +9,9 @@ from __future__ import division, print_function
 import sys
 from stsci.tools import irafutils
 from stsci.tools.irafglobals import Verbose, IrafError
-import irafdisplay
-import gwm
-import iraf
+from . import irafdisplay
+from . import gwm
+from . import iraf
 
 # dictionary of devices to support multiple active displays
 _devices = {}

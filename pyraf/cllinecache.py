@@ -78,7 +78,7 @@ def updateCLscript(filename):
     if filename in cache:
         del cache[filename]
     try:
-        import iraf
+        from . import iraf
         taskname = filename[11:-1]
         taskobj = iraf.getTask(taskname)
         fullname = taskobj.getFullpath()

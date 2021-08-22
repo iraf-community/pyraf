@@ -9,8 +9,8 @@ import os
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
     import tkinter
-import wutil
-import gki
+from . import wutil
+from . import gki
 
 
 class GWMError(Exception):
@@ -139,14 +139,14 @@ def _setGraphicsWindowManager():
         if 'PYRAFGRAPHICS' in os.environ:
             kernelname = os.environ['PYRAFGRAPHICS'].lower()
             if kernelname == "tkplot":
-                import gkitkplot
+                from . import gkitkplot
                 kernel = gkitkplot.GkiTkplotKernel
             elif kernelname == "opengl":
                 print("OpenGL kernel no longer exists, using default instead")
                 kernelname = "default"
             elif kernelname == "matplotlib":
                 try:
-                    import GkiMpl
+                    from . import GkiMpl
                     kernel = GkiMpl.GkiMplKernel
                 except ImportError:
                     print("matplotlib is not installed, using default instead")
@@ -162,7 +162,7 @@ def _setGraphicsWindowManager():
         if 'PYRAFGRAPHICS_TEST' in os.environ:
             print("Using graphics kernel: " + kernelname)
         if kernelname == "default":
-            import gkitkplot
+            from . import gkitkplot
             kernel = gkitkplot.GkiTkplotKernel
         wutil.isGwmStarted = 1
         return GraphicsWindowManager(kernel)

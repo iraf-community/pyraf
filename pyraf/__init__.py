@@ -38,13 +38,8 @@ def usage():
     # to be run at this point - else we'd see run-time import warnings
     os._exit(0)
 
-
-# set search path to include current directory
-if "." not in sys.path:
-    sys.path.insert(0, ".")
-
 # Grab the terminal window's id at the earliest possible moment
-import wutil
+from . import wutil
 
 # Since numpy as absolutely required for any PyRAF use, go ahead and
 # import it now, just to check it
@@ -64,14 +59,14 @@ if _verbosity_ > 0:
 # convenient for the iraf module
 if _verbosity_ > 0:
     print("pyraf: importing irafimport")
-import irafimport
+from . import irafimport
 if _verbosity_ > 0:
     print("pyraf: imported irafimport")
 
 # this gives more useful tracebacks for CL scripts
-import cllinecache
+from . import cllinecache
 
-import irafnames
+from . import irafnames
 
 # initialization is silent unless program name is 'pyraf' or
 # silent flag is set on command line
@@ -86,8 +81,8 @@ _pyrafMain = os.path.split(executable)[1] in ('pyraf', 'runpyraf.py')
 del executable
 
 runCmd = None
-import irafexecute
-import clcache
+from . import irafexecute
+from . import clcache
 from stsci.tools import capable
 
 if _verbosity_ > 0:
@@ -119,7 +114,7 @@ if not _pyrafMain:
     # quietly load initial iraf symbols and packages
     if _verbosity_ > 0:
         print("pyraf: initializing IRAF")
-    import iraf
+    from . import iraf
     if _verbosity_ > 0:
         print("pyraf: imported iraf")
 
@@ -147,7 +142,7 @@ else:
     # special initialization when this is the main program
 
     # command-line options
-    import pyrafglobals as _pyrafglobals
+    from . import pyrafglobals as _pyrafglobals
     import getopt
     try:
         optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsney", [
@@ -205,7 +200,7 @@ else:
     if _verbosity_ > 0:
         print("pyraf: finished arg parsing")
 
-    import iraf
+    from . import iraf
     if _verbosity_ > 0:
         print("pyraf: imported iraf")
     iraf.setVerbose(verbose)
@@ -218,7 +213,7 @@ else:
     else:
         _initkw = {}
         if _dosplash:
-            import splash
+            from . import splash
             _splash = splash.splash('PyRAF ' + __version__)
         else:
             _splash = None

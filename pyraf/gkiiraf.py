@@ -6,10 +6,10 @@ from __future__ import division, print_function
 import sys
 import os
 from stsci.tools.for2to3 import ndarr2bytes
-import gki
-import irafgwcs
-import iraftask
-import iraf
+from . import gki
+from . import irafgwcs
+from . import iraftask
+from . import iraf
 
 # kernels to flush frequently
 # imdkern does not erase, so always flush it
@@ -27,7 +27,7 @@ class GkiIrafKernel(gki.GkiKernel):
 
     def __init__(self, device):
 
-        import irafecl
+        from . import irafecl
         module = irafecl.getTaskModule()
 
         gki.GkiKernel.__init__(self)

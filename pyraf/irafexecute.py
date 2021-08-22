@@ -12,12 +12,12 @@ import io
 from stsci.tools import irafutils
 from stsci.tools.for2to3 import tobytes, ndarr2bytes, ndarr2str
 from stsci.tools.irafglobals import IrafError, IrafTask, Verbose
-import subproc
-import filecache
-import wutil
-import gki
-import irafukey
-import irafgwcs
+from . import subproc
+from . import filecache
+from . import wutil
+from . import gki
+from . import irafukey
+from . import irafgwcs
 
 # use this form since the iraf import is circular
 import pyraf.iraf
@@ -561,7 +561,7 @@ class IrafProcess:
 
         self.stdout.flush()
         self.stderr.flush()
-        import pyrafglobals
+        from . import pyrafglobals
         if verbose and not pyrafglobals._use_ecl:
             sys.stderr.write("Killing IRAF task `%s'\n" % self.task.getName())
             sys.stderr.flush()

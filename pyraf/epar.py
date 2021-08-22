@@ -10,11 +10,11 @@ if capable.OF_GRAPHICS:
     import os
     import io
     from stsci.tools import listdlg, eparoption, editpar, irafutils
-    import iraf
-    import irafpar
-    import irafhelp
-    import wutil
-    from pyrafglobals import pyrafDir
+    from . import iraf
+    from . import irafpar
+    from . import irafhelp
+    from . import wutil
+    from .pyrafglobals import pyrafDir
 else:
     wutil = None
 
@@ -266,7 +266,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         """ Override to allow use of PsetEparOption.
             Return None or a class which derives from EparOption. """
         if paramTypeStr == "pset":
-            import pseteparoption
+            from . import pseteparoption
             return pseteparoption.PsetEparOption
         else:
             return None

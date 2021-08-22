@@ -123,10 +123,10 @@ try:
         # If on OSX w/out X11, use aqutil
         if WUTIL_ON_MAC and not _skipDisplay:  # as opposed to the PC (future?)
             try:
-                import aqutil
+                from . import aqutil
                 # override the few Mac-specific functions needed
-                from aqutil import getFocalWindowID, setFocusTo, getParentID
-                from aqutil import moveCursorTo, getPointerPosition
+                from .aqutil import getFocalWindowID, setFocusTo, getParentID
+                from .aqutil import moveCursorTo, getPointerPosition
                 _has_aqutil = 1
             except ImportError:
                 _has_aqutil = 0

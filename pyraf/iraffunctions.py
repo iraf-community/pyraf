@@ -17,7 +17,7 @@ from __future__ import division, print_function
 # define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
 
 from stsci.tools.irafglobals import *
-from subproc import SubprocessError
+from .subproc import SubprocessError
 
 # -----------------------------------------------------
 # setVerbose: set verbosity level
@@ -72,16 +72,16 @@ import stsci.tools.minmatch as _minmatch
 import stsci.tools.irafutils as _irafutils
 import stsci.tools.teal as _teal
 import numpy as _numpy
-import subproc as _subproc
-import wutil as _wutil
-import irafnames as _irafnames
-import irafinst as _irafinst
-import irafpar as _irafpar
-import iraftask as _iraftask
-import irafexecute as _irafexecute
-import cl2py as _cl2py
-import gki
-import irafecl
+from . import subproc as _subproc
+from . import wutil as _wutil
+from . import irafnames as _irafnames
+from . import irafinst as _irafinst
+from . import irafpar as _irafpar
+from . import iraftask as _iraftask
+from . import irafexecute as _irafexecute
+from . import cl2py as _cl2py
+from . import gki
+from . import irafecl
 try:
     from . import sscanf
 except IOError:
@@ -135,7 +135,7 @@ cl = None
 # help: implemented in irafhelp.py
 # -----------------------------------------------------
 
-from irafhelp import help
+from .irafhelp import help
 
 # -----------------------------------------------------
 # Init: basic initialization
@@ -448,8 +448,8 @@ def restoreFromFile(savefile, doprint=1, **kw):
     from stsci.tools import irafglobals
     import __main__
     import pyraf
-    import irafpar
-    import cltoken
+    from . import irafpar
+    from . import cltoken
     for module in (__main__, pyraf, irafpar, irafglobals, cltoken):
         if hasattr(module, 'INDEF'):
             module.INDEF = INDEF

@@ -5,9 +5,9 @@ from __future__ import division, print_function
 import inspect
 import sys
 from stsci.tools.irafglobals import Verbose
-import pyrafglobals
-import iraftask
-import irafexecute
+from . import pyrafglobals
+from . import iraftask
+from . import irafexecute
 
 # this is better than what 2to3 does, since the iraf import is circular
 import pyraf.iraf
@@ -40,7 +40,7 @@ def getTaskModule():
     language mode,  either ECL or classic CL.
     """
     if pyrafglobals._use_ecl:
-        import irafecl
+        from . import irafecl
         return irafecl
     else:
         return iraftask

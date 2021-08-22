@@ -6,12 +6,12 @@ R. White, 1999 September 10
 """
 from __future__ import division, print_function
 
-from cgeneric import ContextSensitiveScanner
-from generic import GenericScanner
-from cltoken import Token
+from .cgeneric import ContextSensitiveScanner
+from .generic import GenericScanner
+from .cltoken import Token
 import re
 from stsci.tools import irafutils
-import pyrafglobals
+from . import pyrafglobals
 
 # contexts for scanner
 
@@ -987,7 +987,7 @@ def scan(f):
 
 def toklist(tlist, filename=None):
     # list tokens
-    import cltoken
+    from . import cltoken
     if filename:
         import sys
         sys.stdout = open(filename, 'w')
