@@ -81,9 +81,9 @@ class FileCache:
             if oldattr != newattr:
                 if oldattr[1] > newattr[1] or oldattr[2] > newattr[2]:
                     # warning if current file appears older than cached version
-                    self._warning("Warning: current version of file %s"
-                                  " is older than cached version" %
-                                  self.filename)
+                    self._warning("Warning: current version of file {}"
+                                  " is older than cached version"
+                                  .format(self.filename))
                 self.updateValue()
                 self.attributes = newattr
         return self.getValue()

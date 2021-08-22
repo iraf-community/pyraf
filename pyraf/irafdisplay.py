@@ -106,7 +106,7 @@ def _open(imtdev=None):
             return InetImageDisplay(port, hostname)
         except ValueError:
             pass
-    raise ValueError("Illegal image device specification `%s'" % imtdev)
+    raise ValueError("Illegal image device specification `{}'".format(imtdev))
 
 
 class ImageDisplay:

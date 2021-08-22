@@ -55,8 +55,8 @@ def __init__(self, parent, title=None):
     self.protocol("WM_DELETE_WINDOW", self.cancel)
 
     if self.parent is not None:
-        self.geometry("+%d+%d" %
-                      (parent.winfo_rootx() + 50, parent.winfo_rooty() + 50))
+        self.geometry("+{:d}+{:d}".format(parent.winfo_rootx() + 50,
+                                          parent.winfo_rooty() + 50))
 
     self.initial_focus.focus_set()
 

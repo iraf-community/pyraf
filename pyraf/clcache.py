@@ -115,7 +115,7 @@ class _CodeCache:
         """
         # filenames to try, open flags to use
         filelist = [(filename, "w"),
-                    ('%s.%s' % (filename, _currentVersion()), "c")]
+                    ('{}.{}'.format(filename, _currentVersion()), "c")]
         msg = []
         for fname, flag in filelist:
             # first try opening the cache read-write
@@ -129,7 +129,7 @@ class _CodeCache:
                     writeflag = 0
                 except dirshelve.error:
                     # give up on this file and try the next one
-                    msg.append("Unable to open CL script cache %s" % fname)
+                    msg.append("Unable to open CL script cache {}".format(fname))
                     continue
             # check version of cache -- don't use it if version mismatch
             if len(fh) == 0:
@@ -141,17 +141,17 @@ class _CodeCache:
             elif fname.endswith(_currentVersion()):
                 # uh-oh, something is seriously wrong
                 msg.append(
-                    "CL script cache %s has version mismatch, may be corrupt?"
-                    % fname)
+                    "CL script cache {} has version mismatch, may be corrupt?"
+                    .format(fname))
             elif oldVersion > _currentVersion():
                 msg.append(
-                    ("CL script cache %s was created by " +
-                     "a newer version of pyraf (cache %s, this pyraf %s)") %
-                    (fname, repr(oldVersion), repr(_currentVersion())))
+                    ("CL script cache {} was created by "
+                     "a newer version of pyraf (cache {}, this pyraf {})")
+                    .format(fname, repr(oldVersion), repr(_currentVersion())))
             else:
                 msg.append(
-                    "CL script cache %s is obsolete version (old %s, current %s)"
-                    % (fname, repr(oldVersion), repr(_currentVersion())))
+                    "CL script cache {} is obsolete version (old {}, current {})"
+                    .format(fname, repr(oldVersion), repr(_currentVersion())))
             fh.close()
         # failed to open either cache
         self.warning("\n".join(msg))
@@ -273,16 +273,16 @@ class _CodeCache:
             if index in cache:
                 if writeflag:
                     del cache[index]
-                    self.warning(
-                        "Removed %s from CL script cache %s" %
-                        (filename, self.cacheFileList[i]), 2)
+                    self.warning("Removed {} from CL script cache {}"
+                                 .format(filename, self.cacheFileList[i]), 2)
                     nremoved = nremoved + 1
                 else:
-                    self.warning("Cannot remove %s from read-only "
-                                 "CL script cache %s" %
-                                 (filename, self.cacheFileList[i]))
+                    self.warning("Cannot remove {} from read-only "
+                                 "CL script cache {}"
+                                 .format(filename, self.cacheFileList[i]))
         if nremoved == 0:
-            self.warning("Did not find %s in CL script cache" % filename, 2)
+            self.warning("Did not find {} in CL script cache"
+                         .format(filename), 2)
 
 
 # create code cache
@@ -291,9 +291,9 @@ if not os.path.exists(userCacheDir):
     try:
         os.mkdir(userCacheDir)
         if '-s' not in sys.argv and '--silent' not in sys.argv:
-            print('Created directory %s for cache' % userCacheDir)
+            print('Created directory {} for cache'.format(userCacheDir))
     except OSError:
-        print('Could not create directory %s' % userCacheDir)
+        print('Could not create directory {}'.format(userCacheDir))
 
 dbfile = 'clcache'
 

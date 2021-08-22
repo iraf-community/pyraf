@@ -73,7 +73,7 @@ def _getExecutable(arg):
         task = pyraf.iraf.getTask(arg, found=1)
         if task is not None:
             return task.getFullpath()
-    raise IrafProcessError("Cannot find task or executable %s" % arg)
+    raise IrafProcessError("Cannot find task or executable {}".format(arg))
 
 
 class _ProcessProxy(filecache.FileCache):
@@ -141,8 +141,8 @@ class _ProcessCache:
                 # Kill it and start a new one
                 # XXX Eventually can make this a level 0 message
                 # XXX Leave as level -1 for now so we see if bug is gone
-                self.error("Warning: process %s is bad, restarting it\n" %
-                           (executable,),
+                self.error("Warning: process {} is bad, restarting it\n"
+                           .format(executable),
                            level=-1)
                 self.kill(executable, verbose=0)
             # Whoops, process is already active...
@@ -233,7 +233,7 @@ class _ProcessCache:
         for taskname in args:
             task = pyraf.iraf.getTask(taskname, found=1)
             if task is None:
-                print("No such task `%s'" % taskname)
+                print("No such task `{}'".format(taskname))
             elif task.__class__.__name__ == "IrafTask":
                 # cache only executable tasks (not CL tasks, etc.)
                 executable = task.getFullpath()
@@ -242,7 +242,7 @@ class _ProcessCache:
                 if executable in self._data:
                     self._locked[executable] = 1
                 else:
-                    self.error("Cannot cache %s\n" % taskname)
+                    self.error("Cannot cache {}\n".format(taskname))
 
     def delget(self, process):
         """Get process object and delete it from cache
@@ -306,9 +306,9 @@ class _ProcessCache:
             n = n + 1
             executable = proxy.process.executable
             if executable in self._locked:
-                print("%2d: L %s" % (n, executable))
+                print("{:2d}: L {}".format(n, executable))
             else:
-                print("%2d:   %s" % (n, executable))
+                print("{:2d}:   {}".format(n, executable))
 
     def __del__(self):
         self._locked = {}
@@ -333,7 +333,6 @@ def IrafExecute(task,
         irafprocess = processCache.get(task, envdict)
     except (IrafError, subproc.SubprocessError, IrafProcessError) as value:
         raise
-        raise IrafProcessError("Cannot start IRAF executable\n%s" % value)
 
     # Run it
     try:
@@ -405,7 +404,8 @@ class IrafProcess:
         """Start IRAF task executable."""
 
         if test_probe:
-            sys.stdout.write("Starting IRAF process for %s\n" % executable)
+            sys.stdout.write("Starting IRAF process for {}\n"
+                             .format(executable))
 
         self.executable = executable
         self.process = subproc.Subprocess(executable + ' -c')
@@ -427,8 +427,8 @@ class IrafProcess:
 
         outenvstr = []
         for key, value in envdict.items():
-            outenvstr.append("set %s=%s\n" % (key, str(value)))
-        outenvstr.append("chdir %s\n" % os.getcwd())
+            outenvstr.append("set {}={}\n".format(key, str(value)))
+        outenvstr.append("chdir {}\n".format(os.getcwd()))
         if outenvstr:
             self.writeString("".join(outenvstr))
         self.envVarList = []
@@ -458,8 +458,8 @@ class IrafProcess:
         """
 
         if test_probe:
-            sys.stdout.write("Running IRAF task %s from %s\n" %
-                             (task, self.executable))
+            sys.stdout.write("Running IRAF task {} from {}\n"
+                             .format(task, self.executable))
         self.task = task
         # set IO streams
         stdin = pstdin or sys.stdin
@@ -502,8 +502,8 @@ class IrafProcess:
         # (which is better than the CL does)
         if self.stdoutIsatty:
             nlines, ncols = wutil.getTermWindowSize()
-            self.writeString('set ttynlines=%d\nset ttyncols=%d\n' %
-                             (nlines, ncols))
+            self.writeString('set ttynlines={:d}\nset ttyncols={:d}\n'
+                             .format(nlines, ncols))
 
         taskname = self.task.getName()
         # remove leading underscore, which is just a convention for CL
@@ -545,8 +545,8 @@ class IrafProcess:
         except subproc.SubprocessError as e:
             if Verbose > 0:
                 # too bad, if we can't kill it assume it is already dead
-                self.stderr.write("Warning: cannot terminate process %s\n" %
-                                  (e,))
+                self.stderr.write("Warning: cannot terminate process {}\n"
+                                  .format(e))
                 self.stderr.flush()
 
     def kill(self, verbose=1):
@@ -562,7 +562,8 @@ class IrafProcess:
         self.stderr.flush()
         from . import pyrafglobals
         if verbose and not pyrafglobals._use_ecl:
-            sys.stderr.write("Killing IRAF task `%s'\n" % self.task.getName())
+            sys.stderr.write("Killing IRAF task `{}'\n"
+                             .format(self.task.getName()))
             sys.stderr.flush()
         if self.process.cont():
             # get the task's attention for input
@@ -600,7 +601,7 @@ class IrafProcess:
                                    dsection)
                 i = i + block
         except subproc.SubprocessError as e:
-            raise IrafProcessError("Error in write: %s" % str(e))
+            raise IrafProcessError("Error in write: {}".format(str(e)))
 
     def read(self):
         """Read binary data from IRAF pipe"""
@@ -616,7 +617,7 @@ class IrafProcess:
             data = self.process.read(nbytes)  # read returns bytes
             return data
         except subproc.SubprocessError as e:
-            raise IrafProcessError("Error in read: %s" % str(e))
+            raise IrafProcessError("Error in read: {}".format(str(e)))
 
     def slave(self):
         """Talk to the IRAF process in slave mode.
@@ -699,7 +700,7 @@ class IrafProcess:
                     # should never get here
                     #                   L.log("Program bug: uninterpreted message: " + msg)
                     raise RuntimeError(
-                        "Program bug: uninterpreted message `%s'" % (msg,))
+                        "Program bug: uninterpreted message `{}'".format(msg))
 
     def _scanErrno(self, msg):
         sp = "\\s*"
@@ -782,7 +783,7 @@ class IrafProcess:
         except ValueError as e:
             # on ValueError, just print warning and then force set
             if Verbose > 0:
-                self.stderr.write('Warning: %s\n' % (e,))
+                self.stderr.write('Warning: {}\n'.format(e))
                 self.stderr.flush()
             self.task.setParam(paramname, newvalue, check=0)
 
@@ -796,8 +797,8 @@ class IrafProcess:
 
         if len(xdata) != 2 * nbytes:
             raise IrafProcessError("Error, wrong number of bytes read\n" +
-                                   ("(got %d, expected %d, chan %d)" %
-                                    (len(xdata), 2 * nbytes, chan)))
+                                   ("(got {:d}, expected {:d}, chan {:d})"
+                                    .format(len(xdata), 2 * nbytes, chan)))
         if chan == 4:
             if self.task.getTbflag():
                 # for tasks with .tb flag, stdout is binary data
@@ -864,11 +865,11 @@ class IrafProcess:
                     self.write(wcs)
                     stdimagekernel.clearReturnData()
             else:
-                self.stdout.write("GRAPHICS control data for channel %d\n" %
-                                  (forChan,))
+                self.stdout.write("GRAPHICS control data for channel {:d}\n"
+                                  .format(forChan))
                 self.stdout.flush()
         else:
-            self.stdout.write("data for channel %d\n" % (chan,))
+            self.stdout.write("data for channel {:d}\n".format(chan))
             self.stdout.flush()
 
     def xfer(self):
@@ -933,8 +934,8 @@ class IrafProcess:
                 self.writeString(line)
                 self.xferline = ''
         else:
-            raise IrafProcessError("xfer request for unknown channel %d" %
-                                   chan)
+            raise IrafProcessError("xfer request for unknown channel {:d}"
+                                   .format(chan))
 
     def chanbytes(self):
         """Parse xmit(chan,nbytes) and return integer tuple
@@ -950,7 +951,8 @@ class IrafProcess:
             nbytes = int(msg[i + 1:-2])
             self.msg = ''
         except ValueError:
-            raise IrafProcessError("Illegal message format `%s'" % self.msg)
+            raise IrafProcessError("Illegal message format `{}'"
+                                   .format(self.msg))
         return chan, nbytes
 
     def executeClCommand(self):
@@ -985,10 +987,10 @@ class IrafProcess:
                 # Just raise an exception if it does not fit my preconceptions.
                 #
                 ll = -(len(IPCOUT) + 3)
-                if cmd[ll:] != "> %s\n" % IPCOUT:
+                if cmd[ll:] != "> {}\n".format(IPCOUT):
                     raise IrafProcessError(
-                        "Error: cannot understand IPCOUT syntax in `%s'" %
-                        (cmd,))
+                        "Error: cannot understand IPCOUT syntax in `{}'"
+                        .format(cmd))
                 sys.stdout.flush()
                 # strip the redirection off and capture output of command
                 buffer = io.StringIO()
@@ -1009,8 +1011,8 @@ class IrafProcess:
                 # a kluge -- if self.stdout is not a tty, assume it is a
                 # file and give a large number for the number of lines
                 nlines, ncols = 100000, 80
-            self.writeString('set ttynlines=%d\nset ttyncols=%d\n' %
-                             (nlines, ncols))
+            self.writeString('set ttynlines={:d}\nset ttyncols={:d}\n'
+                             .format(nlines, ncols))
             self.msg = self.msg[mcmd.end():]
         elif mcmd.group('curpack'):
             # current package request
@@ -1029,8 +1031,8 @@ class IrafProcess:
             # self.stdout.write(self.msg + "\n")
         else:
             # should never get here
-            raise RuntimeError("Program bug: uninterpreted message `%s'" %
-                               (self.msg,))
+            raise RuntimeError("Program bug: uninterpreted message `{}'"
+                               .format(self.msg))
 
 
 # IRAF string conversions using numpy module

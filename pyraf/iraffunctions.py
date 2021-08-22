@@ -266,7 +266,7 @@ def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
     if not _irafinst.EXISTS:
         return {'iraf': '/iraf/is/not/here/', 'IRAFARCH': 'arch_is_unused'}
     if not _os.path.exists(file):
-        raise OSError("CL startup file %s does not exist" % file)
+        raise OSError("CL startup file {} does not exist".format(file))
     lines = open(file).readlines()
     # replace commands that exec cl with commands to print environment vars
     pat = _re.compile(r'^\s*exec\s+')
@@ -276,12 +276,12 @@ def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
         if pat.match(line):
             nfound += 1
             for var in vars:
-                newlines.append('echo "%s=$%s"\n' % (var, var))
+                newlines.append('echo "{}=${}"\n'.format(var, var))
             newlines.append('exit 0\n')
         else:
             newlines.append(line)
     if nfound == 0:
-        raise OSError("No exec statement found in script %s" % file)
+        raise OSError("No exec statement found in script {}".format(file))
     # write new script to temporary file
     (fd, newfile) = _tempfile.mkstemp()
     _os.close(fd)
@@ -293,8 +293,8 @@ def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
     fh = _io.StringIO()
     status = clOscmd(newfile, Stdout=fh)
     if status:
-        raise OSError("Execution error in script %s (derived from %s)" %
-                      (newfile, file))
+        raise OSError("Execution error in script {} (derived from {})"
+                      .format(newfile, file))
     _os.remove(newfile)
     result = fh.getvalue().split('\n')
     fh.close()
@@ -388,7 +388,7 @@ def saveToFile(savefile, **kw):
         savefile = Expand(savefile)
         if (not kw.get('clobber')) and envget(
                 "clobber", "") != yes and _os.path.exists(savefile):
-            raise OSError("Output file `%s' already exists" % savefile)
+            raise OSError("Output file `{}' already exists".format(savefile))
         # open binary pickle file
         fh = open(savefile, 'wb')
         doclose = 1
@@ -735,8 +735,8 @@ def getTask(taskname, found=0):
                     return None
                 else:
                     raise _minmatch.AmbiguousKeyError(
-                        "Task `%s' is ambiguous, could be %s" %
-                        (taskname, ', '.join(fullname)))
+                        "Task `{}' is ambiguous, could be {}"
+                        .format(taskname, ', '.join(fullname)))
             pkglist.append(sp[0])
         trylist = fullname
 
@@ -775,7 +775,7 @@ def getPkg(pkgname, found=0):
         if isinstance(pkgname, _iraftask.IrafPkg):
             return pkgname
         if not pkgname:
-            raise TypeError("Bad package name `%s'" % repr(pkgname))
+            raise TypeError("Bad package name `{}'".format(repr(pkgname)))
         # undo any modifications to the pkgname
         pkgname = _irafutils.untranslateName(pkgname)
         return _pkgs[pkgname]
@@ -785,7 +785,7 @@ def getPkg(pkgname, found=0):
     except KeyError:
         if found:
             return None
-        raise KeyError("Package `%s' not found" % (pkgname,))
+        raise KeyError("Package `{}' not found".format(pkgname))
 
 
 # -----------------------------------------------------
@@ -897,8 +897,8 @@ def listTasks(pkglist=None, hidden=0, **kw):
                 if pthis.isLoaded():
                     pkgdict[pthis.getName()] = 1
                 else:
-                    _writeError('Package %s has not been loaded' %
-                                pthis.getName())
+                    _writeError('Package {} has not been loaded'
+                                .format(pthis.getName()))
             except KeyError as e:
                 _writeError(str(e))
     if not len(pkgdict):
@@ -954,7 +954,7 @@ def listVars(prefix="", equals="\t= "):
     else:
         keylist.sort()
         for word in keylist:
-            print("%s%s%s%s" % (prefix, word, equals, envget(word)))
+            print("{}{}{}{}".format(prefix, word, equals, envget(word)))
 
 
 @handleRedirAndSaveKwds
@@ -1063,7 +1063,8 @@ def envget(var, default=None):
                 print("Using default TERM value for session.")
                 return 'xterm'
             else:
-                raise KeyError("Undefined environment variable `%s'" % var)
+                raise KeyError("Undefined environment variable `{}'"
+                               .format(var))
 
 
 _tmpfileCounter = 0
@@ -1301,7 +1302,7 @@ def radix(value, base=10, length=0):
     ivalue = int(value)
     if ivalue == 0:
         # handle specially so don't have to worry about it below
-        return "%0*d" % (length, ivalue)
+        return '{:0{:d}d}'.format(ivalue, length)
     # convert to an unsigned long integer
     hexIvalue = hex(ivalue)  # hex() can return a string for an int or a long
     isLong = hexIvalue[-1] == 'L'
@@ -1711,7 +1712,8 @@ def _imextn():
     for f in fields:
         ilist = f.split(":")
         if len(ilist) != 2:
-            raise IrafError("Illegal field `%s' in IRAF variable imextn" % f)
+            raise IrafError("Illegal field `{}' in IRAF variable imextn"
+                            .format(f))
         exts = ilist[1].split(",")
         extlist.append((ilist[0], exts))
     return extlist
@@ -1878,7 +1880,7 @@ def boolean(value):
                 return ival
         except (ValueError, OverflowError):
             pass
-    raise ValueError("Illegal boolean value %s" % repr(value))
+    raise ValueError("Illegal boolean value {}".format(repr(value)))
 
 
 # -----------------------------------------------------
@@ -1937,8 +1939,8 @@ def fscan(theLocals, line, *namelist, **kw):
         # consume the entire remaining string
         if _isStruct(theLocals, namelist[i]):
             if i < len(namelist) - 1:
-                raise TypeError("Struct type param `%s' must be the final"
-                                " argument to scan" % namelist[i])
+                raise TypeError("Struct type param `{}' must be the final"
+                                " argument to scan".format(namelist[i]))
             # ultramessy -- struct needs rest of line with embedded whitespace
             if i == 0:
                 iend = 0
@@ -1953,8 +1955,8 @@ def fscan(theLocals, line, *namelist, **kw):
                 pat = ''.join(pat)
                 mm = _re.match(pat, line)
                 if mm is None:
-                    raise RuntimeError("Bug: line '%s' pattern '%s' failed" %
-                                       (line, pat))
+                    raise RuntimeError("Bug: line '{}' pattern '{}' failed"
+                                       .format(line, pat))
                 iend = mm.end()
             if line[-1:] == '\n':
                 cmd = namelist[i] + ' = ' + repr(line[iend:-1])
@@ -2028,8 +2030,8 @@ def _weirdEOF(theLocals, namelist):
     # (I warned you to abandon hope!)
     if namelist and _isStruct(theLocals, namelist[0], checklegal=1):
         if len(namelist) > 1:
-            raise TypeError("Struct type param `%s' must be the final"
-                            " argument to scan" % namelist[0])
+            raise TypeError("Struct type param `{}' must be the final"
+                            " argument to scan".format(namelist[0]))
         # it is an undefined struct, so set it to null string
         cmd = namelist[0] + ' = ""'
         exec(cmd, theLocals)
@@ -2044,7 +2046,7 @@ def _isStruct(theLocals, name, checklegal=0):
     c = name.split('.')
     if len(c) > 1:
         # must get the parameter object, not the value
-        c[-1] = 'getParObject(%s)' % repr(c[-1])
+        c[-1] = 'getParObject({})'.format(repr(c[-1]))
     fname = '.'.join(c)
     try:
         par = eval(fname, theLocals)
@@ -2161,7 +2163,7 @@ def set(*args, **kw):
                         # vars with sequential commented-out continuation lines
                         svalue = svalue[0:svalue.find('#')]
                     _varDict[keyword] = svalue
-                msg.append("set %s=%s\n" % (keyword, svalue))
+                msg.append("set {}={}\n".format(keyword, svalue))
             _irafexecute.processCache.setenv("".join(msg))
         else:
             # set with no arguments lists all variables (using same format
@@ -2311,8 +2313,8 @@ def stty(terminal=None, **kw):
         except:
             pass  # No error message here - may not always be available
         # no args: print terminal type and size
-        print('%s ncols=%s nlines=%s' %
-              (envget('terminal', 'undefined'), envget(
+        print('{} ncols={} nlines={}'
+              .format(envget('terminal', 'undefined'), envget(
                   'ttyncols', dftNcol), envget('ttynlines', dftNlin)))
     elif expkw['resize'] or expkw['terminal'] == "resize":
         # resize: sets CL env parameters giving screen size; show errors
@@ -2385,8 +2387,8 @@ def tparam(*args):
             # try:
             getTask(taskname).tParam()
             # except (KeyError, TypeError):
-            #    _writeError("Warning: Could not find task %s for tpar\n" %
-            #            taskname)
+            #    _writeError("Warning: Could not find task {} for tpar\n"
+            #            .format(taskname))
 
 
 @handleRedirAndSaveKwds
@@ -2399,8 +2401,8 @@ def lparam(*args):
             try:
                 getTask(taskname).lParam()
             except (KeyError, TypeError):
-                _writeError("Warning: Could not find task %s for lpar\n" %
-                            taskname)
+                _writeError("Warning: Could not find task {} for lpar\n"
+                            .format(taskname))
 
 
 @handleRedirAndSaveKwdsPlus
@@ -2421,8 +2423,8 @@ def dparam(*args, **kw):
             try:
                 getTask(taskname).dParam(cl=cl)
             except (KeyError, TypeError):
-                _writeError("Warning: Could not find task %s for dpar\n" %
-                            taskname)
+                _writeError("Warning: Could not find task {} for dpar\n"
+                            .format(taskname))
 
 
 @handleRedirAndSaveKwds
@@ -2432,8 +2434,8 @@ def update(*args):
         try:
             getTask(taskname).saveParList()
         except KeyError:
-            _writeError("Warning: Could not find task %s for update" %
-                        taskname)
+            _writeError("Warning: Could not find task {} for update"
+                        .format(taskname))
 
 
 @handleRedirAndSaveKwdsPlus
@@ -2460,8 +2462,8 @@ def unlearn(*args, **kw):
                         'delete these files:\n\n\t' + '\n\t'.join(ans) +
                         '\n\nor type "unlearn ' + taskname + ' force=yes"')
             except _teal.cfgpars.NoCfgFileError:
-                _writeError("Warning: Could not find task %s to unlearn" %
-                            taskname)
+                _writeError("Warning: Could not find task {} to unlearn"
+                            .format(taskname))
 
 
 @handleRedirAndSaveKwdsPlus
@@ -2572,7 +2574,7 @@ def pyexecute(filename, **kw):
     spkgname = pkgname.replace('.', '_')
     if spkgname != pkgname:
         _writeError("Warning: `.' illegal in task name, changing "
-                    "`%s' to `%s'" % (pkgname, spkgname))
+                    "`{}' to `{}'".format(pkgname, spkgname))
         pkgname = spkgname
     if len(kw):
         raise TypeError('unexpected keyword argument: ' +
@@ -2641,7 +2643,7 @@ bye = keep = logout = clbye = cache = language = clDummy
 def _notImplemented(cmd):
     """Dummy unimplemented function"""
     if Verbose > 0:
-        _writeError("The %s task has not been implemented" % cmd)
+        _writeError("The {} task has not been implemented".format(cmd))
 
 
 @handleRedirAndSaveKwdsPlus
@@ -2774,7 +2776,8 @@ def hidetask(*args):
         try:
             getTask(taskname).setHidden()
         except KeyError:
-            _writeError("Warning: Could not find task %s to hide" % taskname)
+            _writeError("Warning: Could not find task {} to hide"
+                        .format(taskname))
 
 
 # pattern matching single task name, possibly with $ prefix and/or
@@ -2818,7 +2821,7 @@ def task(*args, **kw):
     spkgname = pkgname.replace('.', '_')
     if spkgname != pkgname:
         _writeError("Warning: `.' illegal in task name, changing "
-                    "`%s' to `%s'" % (pkgname, spkgname))
+                    "`{}' to `{}'".format(pkgname, spkgname))
         pkgname = spkgname
     # get the task name
     if len(kw) > 1:
@@ -2865,7 +2868,7 @@ def task(*args, **kw):
     for tlist in args:
         mtl = _re_taskname.match(tlist)
         if not mtl:
-            raise SyntaxError("Illegal task name `%s'" % (tlist,))
+            raise SyntaxError("Illegal task name `{}'".format(tlist))
         name = mtl.group('taskname')
         prefix = mtl.group('taskprefix')
         suffix = mtl.group('tasksuffix')
@@ -2914,7 +2917,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
                 pkgname = pkg.getName()
                 if pkgname not in printed:
                     printed[pkgname] = 1
-                    print('    %s' % pkgname)
+                    print('    {}'.format(pkgname))
             rv1 = (PkgName, PkgBinary)
         else:
             spkgname = pkgname.replace('.', '_')
@@ -2923,7 +2926,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
                 spkgname = spkgname[:-1]
             if (spkgname != pkgname) and (Verbose > 0):
                 _writeError("Warning: illegal characters in task name, "
-                            "changing `%s' to `%s'" % (pkgname, spkgname))
+                            "changing `{}' to `{}'".format(pkgname, spkgname))
             pkgname = spkgname
             # is the package defined?
             # if not, is there a CL task by this name?
@@ -2933,7 +2936,7 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
                 pkg = getTask(pkgname, found=1)
                 if pkg is None or not isinstance(pkg, _iraftask.IrafCLTask) or \
                         pkg.getName() != pkgname:
-                    raise KeyError("Package `%s' not defined" % pkgname)
+                    raise KeyError("Package `{}' not defined".format(pkgname))
                 # Hack city -- there is a CL task with the package name, but it was
                 # not defined to be a package.  Convert it to an IrafPkg object.
 
@@ -2949,8 +2952,8 @@ def package(pkgname=None, bin=None, PkgName='', PkgBinary='', **kw):
                 loadedPath.append(pkg)
                 addLoaded(pkg)
                 if Verbose > 0:
-                    _writeError("Warning: CL task `%s' apparently is "
-                                "a package" % pkgname)
+                    _writeError("Warning: CL task `{}' apparently is "
+                                "a package".format(pkgname))
 
             # Make sure that this is the current package, even
             # if another package was loaded in the package script
@@ -2982,20 +2985,20 @@ def clPrint(*args):
 
 def _quietConv(w, d, c, args, i):
     """Format codes that are quietly converted to %s"""
-    return "%%%ss" % w
+    return "%{}s".format(w)
 
 
 def _boolConv(w, d, c, args, i):
     """Boolean gets converted to upper case before printing"""
     args[i] = str(args[i]).upper()
-    return "%%%ss" % w
+    return "%{}s".format(w)
 
 
 def _badConv(w, d, c, args, i):
     """Format codes that are converted to %s with warning"""
-    _writeError("Warning: printf cannot handle format '%%%s', "
-                "using '%%%ss' instead\n" % (w + d + c, w))
-    return "%%%ss" % w
+    _writeError("Warning: printf cannot handle format '%{}', "
+                "using '%{}s' instead\n".format(w + d + c, w))
+    return "%{}s".format(w)
 
 
 def _hConv(w, d, c, args, i):
@@ -3014,7 +3017,7 @@ def _hConv(w, d, c, args, i):
             args[i] = clDms(value, digits=digits, seconds=c not in "mM")
         except ValueError:
             pass
-    return "%%%ss" % w
+    return "%{}s".format(w)
 
 
 def _rConv(w, d, c, args, i):
@@ -3029,7 +3032,7 @@ def _rConv(w, d, c, args, i):
             args[i] = radix(args[i], base, length=int(w))
         else:
             args[i] = radix(args[i], base)
-    return "%%%ss" % w
+    return "%{}s".format(w)
 
 
 def _wConv(w, d, c, args, i):
@@ -3044,7 +3047,7 @@ def _wConv(w, d, c, args, i):
             except ValueError:
                 w = 0
     args[i] = ""
-    return "%%%ss" % w
+    return "%{}s".format(w)
 
 
 # pattern matching %w.dc where c is single letter format code
@@ -3123,8 +3126,8 @@ def printf(format, *args):
     except ValueError as e:
         raise IrafError(str(e))
     except TypeError as e:
-        raise IrafError('%s\nFormat/datatype mismatch in printf '
-                        '(format is %s)' % (str(e), repr(format)))
+        raise IrafError('{}\nFormat/datatype mismatch in printf '
+                        '(format is {})'.format(str(e), repr(format)))
 
 
 # _backDir is previous working directory
@@ -3164,15 +3167,15 @@ def chdir(directory=None):
         edir = Expand(directory)
         _os.chdir(edir)
         _backDir = _newBack
-        _irafexecute.processCache.setenv('chdir %s\n' % edir)
+        _irafexecute.processCache.setenv('chdir {}\n'.format(edir))
     except (IrafError, OSError):
         try:
             edir = Expand(directory + '$')
             _os.chdir(edir)
             _backDir = _newBack
-            _irafexecute.processCache.setenv('chdir %s\n' % edir)
+            _irafexecute.processCache.setenv('chdir {}\n'.format(edir))
         except (IrafError, OSError):
-            raise IrafError("Cannot change directory to `%s'" % (directory,))
+            raise IrafError("Cannot change directory to `{}'".format(directory))
 
 
 cd = chdir
@@ -3191,13 +3194,13 @@ def back():
         _newBack = _backDir
     _os.chdir(_backDir)
     print(_backDir)
-    _irafexecute.processCache.setenv('chdir %s\n' % _backDir)
+    _irafexecute.processCache.setenv('chdir {}\n'.format(_backDir))
     _backDir = _newBack
 
 
 def error(errno=0, errmsg='', task="error", _save=False, suppress=True):
     """Print error message"""
-    e = IrafError("ERROR: %s\n" % errmsg,
+    e = IrafError("ERROR: {}\n".format(errmsg),
                   errno=errno,
                   errmsg=errmsg,
                   errtask=task)
@@ -3246,7 +3249,7 @@ def clCompatibilityMode(verbose=0, _save=0):
         vmode = ' (verbose)'
     else:
         vmode = ''
-    print('Entering CL-compatibility%s mode...' % vmode)
+    print('Entering CL-compatibility{} mode...'.format(vmode))
 
     # logging may be active if Monty is in use
     if hasattr(__main__, '_pycmdline'):
@@ -3343,7 +3346,7 @@ def clArray(array_size,
                                     array_size=array_size,
                                     strict=strict)
     except ValueError as e:
-        raise ValueError("Error creating Cl array `%s'\n%s" % (name, str(e)))
+        raise ValueError("Error creating Cl array `{}'\n{}".format(name, str(e)))
 
 
 # -----------------------------------------------------
@@ -3378,8 +3381,8 @@ def clExecute(s,
                               local_vars_dict=local_vars_dict,
                               local_vars_list=local_vars_list)
         # use special scriptname
-        taskname = "CL%s" % (_clExecuteCount,)
-        scriptname = "<CL script %s>" % (taskname,)
+        taskname = "CL{}".format(_clExecuteCount)
+        scriptname = "<CL script {}>".format(taskname)
         code = pycode.code.lstrip()  # XXX needed?
         #       DBG('*'*80)
         #       DBG('pycode for task,script='+str((taskname,scriptname,))+':\n'+code)
@@ -3466,8 +3469,8 @@ def _expand1(instring, noerror):
         elif noerror:
             varname = ""
         else:
-            raise IrafError("Undefined variable `%s' in string `%s'" %
-                            (varname, instring))
+            raise IrafError("Undefined variable `{}' in string `{}'"
+                            .format(varname, instring))
         instring = instring[:mm.start()] + varname + instring[mm.end():]
         mm = __re_var_paren.search(instring)
     # now expand variable name at start of string
@@ -3481,8 +3484,8 @@ def _expand1(instring, noerror):
     elif noerror:
         return _expand1(varname + instring[mm.end():], noerror)
     else:
-        raise IrafError("Undefined variable `%s' in string `%s'" %
-                        (varname, instring))
+        raise IrafError("Undefined variable `{}' in string `{}'"
+                        .format(varname, instring))
 
 
 def IrafTaskFactory(prefix='',
@@ -3519,13 +3522,13 @@ def IrafTaskFactory(prefix='',
     spkgname = pkgname.replace('.', '_')
     if spkgname != pkgname:
         _writeError("Warning: `.' illegal in package name, changing "
-                    "`%s' to `%s'" % (pkgname, spkgname))
+                    "`{}' to `{}'".format(pkgname, spkgname))
         pkgname = spkgname
 
     staskname = taskname.replace('.', '_')
     if staskname != taskname:
         _writeError("Warning: `.' illegal in task name, changing "
-                    "`%s' to `%s'" % (taskname, staskname))
+                    "`{}' to `{}'".format(taskname, staskname))
         taskname = staskname
 
     if suffix == '.pkg':
@@ -3553,7 +3556,7 @@ def IrafTaskFactory(prefix='',
     # existing task object (if any)
     task = _tasks.get(fullname)
     if task is None and redefine:
-        _writeError("Warning: `%s' is not a defined task" % taskname)
+        _writeError("Warning: `{}' is not a defined task".format(taskname))
 
     if function is not None:
         newtask = module.IrafPythonTask(prefix,
@@ -3578,7 +3581,8 @@ def IrafTaskFactory(prefix='',
         if not task.isConsistent(newtask):
             # looks different -- print warning and continue
             if not redefine:
-                _writeError("Warning: `%s' is a task redefinition" % fullname)
+                _writeError("Warning: `{}' is a task redefinition"
+                            .format(fullname))
         else:
             # new task is consistent with old task, so return old task
             if task.getPkgbinary() != newtask.getPkgbinary():
@@ -3616,7 +3620,7 @@ def IrafPsetFactory(prefix,
     fullname = pkgname + '.' + taskname
     task = _tasks.get(fullname)
     if task is None and redefine:
-        _writeError("Warning: `%s' is not a defined task" % taskname)
+        _writeError("Warning: `{}' is not a defined task".format(taskname))
 
     newtask = module.IrafPset(prefix, taskname, suffix, value, pkgname,
                               pkgbinary)
@@ -3625,7 +3629,8 @@ def IrafPsetFactory(prefix,
         # object (which will be discarded)
         if task.getFilename() != newtask.getFilename():
             if redefine:
-                _writeError("Warning: `%s' is a task redefinition" % fullname)
+                _writeError("Warning: `{}' is a task redefinition"
+                            .format(fullname))
         else:
             # old version of task is same as new
             return task
@@ -3665,20 +3670,20 @@ def IrafPkgFactory(prefix,
     # dictionary _pkgs?
     pkg = _pkgs.get_exact_key(taskname)
     if pkg is None and redefine:
-        _writeError("Warning: `%s' is not a defined task" % taskname)
+        _writeError("Warning: `{}' is not a defined task".format(taskname))
     newpkg = module.IrafPkg(prefix, taskname, suffix, value, pkgname,
                             pkgbinary)
     if pkg is not None:
         if pkg.getFilename() != newpkg.getFilename() or \
            pkg.hasParfile()  != newpkg.hasParfile():
             if pkg.isLoaded():
-                _writeError("Warning: currently loaded package `%s' was not "
-                            "redefined" % taskname)
+                _writeError("Warning: currently loaded package `{}' was not "
+                            "redefined".format(taskname))
                 return pkg
             else:
                 if not redefine:
-                    _writeError("Warning: `%s' is a task redefinition" %
-                                taskname)
+                    _writeError("Warning: `{}' is a task redefinition"
+                                .format(taskname))
                 _addPkg(newpkg)
                 return newpkg
         if pkg.getPkgbinary() != newpkg.getPkgbinary():
@@ -3746,8 +3751,8 @@ def redirProcess(kw):
                     else:
                         # IRAF doesn't raise an exception here (e.g., on
                         # input redirection from "STDOUT"), but it should
-                        raise OSError("Illegal value `%s' for %s redirection" %
-                                      (value, key))
+                        raise OSError("Illegal value `{}' for {} redirection"
+                                      .format(value, key))
                 else:
                     # expand IRAF variables
                     value = Expand(value)
@@ -3763,8 +3768,8 @@ def redirProcess(kw):
                                 envget("clobber", "") != yes and \
                                 _os.path.exists(value):
                             # don't overwrite unless clobber is set
-                            raise OSError("Output file `%s' already exists" %
-                                          value)
+                            raise OSError("Output file `{}' already exists"
+                                          .format(value))
                     fh = open(value, openArgs)
                     # close this when we're done
                     closeFHList.append(fh)
@@ -3773,9 +3778,9 @@ def redirProcess(kw):
                 # that output should be captured and returned as
                 # function value
                 if not outputFlag:
-                    raise IrafError("%s redirection must "
+                    raise IrafError("{} redirection must "
                                     "be from a file handle or string\n"
-                                    "Value is `%s'" % (key, value))
+                                    "Value is `{}'".format(key, value))
                 if not value:
                     fh = None
                 else:
@@ -3791,9 +3796,9 @@ def redirProcess(kw):
             elif isinstance(value, (list, tuple)):
                 # list/tuple of strings is OK for input
                 if outputFlag:
-                    raise IrafError("%s redirection must "
+                    raise IrafError("{} redirection must "
                                     "be to a file handle or string\n"
-                                    "Value is type %s" % (key, type(value)))
+                                    "Value is type {}".format(key, type(value)))
                 try:
                     if value and value[0][-1:] == '\n':
                         s = ''.join(value)
@@ -3806,19 +3811,19 @@ def redirProcess(kw):
                     # close this when we're done
                     closeFHList.append(fh)
                 except TypeError:
-                    raise IrafError("%s redirection must "
-                                    "be from a sequence of strings\n" % key)
+                    raise IrafError("{} redirection must be from a "
+                                    "sequence of strings\n".format(key))
             else:
                 # must be a file handle
                 if outputFlag:
                     if not hasattr(value, 'write'):
-                        raise IrafError("%s redirection must "
+                        raise IrafError("{} redirection must "
                                         "be to a file handle or string\n"
-                                        "Value is `%s'" % (key, value))
+                                        "Value is `{}'".format(key, value))
                 elif not hasattr(value, 'read'):
-                    raise IrafError("%s redirection must "
+                    raise IrafError("{} redirection must "
                                     "be from a file handle or string\n"
-                                    "Value is `%s'" % (key, value))
+                                    "Value is `{}'".format(key, value))
                 fh = value
             if fh is not None:
                 redirKW[standardName] = fh

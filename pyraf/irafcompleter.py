@@ -36,11 +36,11 @@ lab2char = {}
 for i in range(1, 27):
     char = chr(i)
     ichar = chr(ord('a') + i - 1)
-    lab = "Control-%s" % ichar
+    lab = "Control-{}".format(ichar)
     char2lab[char] = lab
     lab2char[lab] = char
-    lab2char["Control-%s" % ichar] = char
-    lab2char[r"\C-%s" % ichar] = char
+    lab2char["Control-{}".format(ichar)] = char
+    lab2char[r"\C-{}".format(ichar)] = char
 char2lab["\t"] = "tab"
 lab2char["tab"] = "\t"
 char2lab["\033"] = "esc"
@@ -92,7 +92,7 @@ class IrafCompleter(Completer):
         if lab == char:
             char = lab2char.get(lab, lab)
         readline.set_completer(self.complete)
-        readline.parse_and_bind("%s: complete" % lab)
+        readline.parse_and_bind("{}: complete".format(lab))
         readline.parse_and_bind("set bell-style none")
         readline.parse_and_bind("set show-all-if-ambiguous")
         self.completionChar = char
@@ -114,7 +114,7 @@ class IrafCompleter(Completer):
         if readline is not None and self.completionChar:
             # restore normal behavior for previous completion character
             lab = char2lab.get(self.completionChar, self.completionChar)
-            readline.parse_and_bind("%s: self-insert" % lab)
+            readline.parse_and_bind("{}: self-insert".format(lab))
             self.completionChar = None
 
     def executive(self, elist):
@@ -252,7 +252,7 @@ class IrafCompleter(Completer):
             # filename is preceded by path separator
             # match filenames with letters, numbers, $, ~, ., -, +,  and
             # directory separator
-            m = re.search(r'[\w.~$+-%s]*$' % os.sep, line)
+            m = re.search(r'[\w.~$+-{}]*$'.format(os.sep), line)
             dir = iraf.Expand(m.group())
         else:
             dir = ''
@@ -342,7 +342,7 @@ class IrafCompleter(Completer):
         """Return matches for iraf.package.task.param..."""
         head = ".".join(fields[:-1])
         tail = fields[-1]
-        matches = eval("%s.getAllMatches(%s)" % (head, repr(tail)))
+        matches = eval("{}.getAllMatches({})".format(head, repr(tail)))
 
         def addhead(s, head=head + "."):
             return head + s

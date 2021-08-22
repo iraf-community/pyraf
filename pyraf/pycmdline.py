@@ -90,11 +90,11 @@ class CmdConsole(code.InteractiveConsole):
 
         Also is modified so it does not catch EOFErrors."""
         if banner is None:
-            self.write("Python %s on %s\n%s\n(%s)\n" %
-                       (sys.version, sys.platform, sys.copyright,
+            self.write("Python {} on {}\n{}\n({})\n"
+                       .format(sys.version, sys.platform, sys.copyright,
                         self.__class__.__name__))
         else:
-            self.write("%s\n" % str(banner))
+            self.write("{}\n".format(str(banner)))
         more = 0
         # number of consecutive EOFs
         neofs = 0
@@ -243,7 +243,7 @@ class PyCmdLine(CmdConsole):
     def do_help(self, line='', i=0):
         """Print help on executive commands"""
         if self.debug > 1:
-            self.write('do_help: %s\n' % line[i:])
+            self.write('do_help: {}\n'.format(line[i:]))
         self.write("""Executive commands (commands can be abbreviated):
 .exit
 Exit from Pyraf.
@@ -272,7 +272,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
     def do_exit(self, line='', i=0):
         """Exit from PyRAF and then Python"""
         if self.debug > 1:
-            self.write('do_exit: %s\n' % line[i:])
+            self.write('do_exit: {}\n'.format(line[i:]))
 
         # write out history - ignore write errors
         hfile = os.getenv('HOME', '.') + os.sep + '.pyraf_history'
@@ -301,7 +301,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
     def do_logfile(self, line='', i=0):
         """Start or stop logging commands"""
         if self.debug > 1:
-            self.write('do_logfile: %s\n' % line[i:])
+            self.write('do_logfile: {}\n'.format(line[i:]))
         args = line[i:].split()
         if len(args) == 0:  # turn off logging (if on)
             if self.logfile:
@@ -320,21 +320,22 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
                 elif args[0] == 'append':
                     del args[0]
             if args:
-                self.write('Ignoring unknown options: %s\n' % " ".join(args))
+                self.write('Ignoring unknown options: {}\n'
+                           .format(" ".join(args)))
             try:
                 oldlogfile = self.logfile
                 self.logfile = open(filename, oflag)
                 if oldlogfile:
                     oldlogfile.close()
             except OSError as e:
-                self.write("error opening logfile %s\n%s\n" %
-                           (filename, str(e)))
+                self.write("error opening logfile {}\n{}\n"
+                           .format(filename, str(e)))
         return ""
 
     def do_clemulate(self, line='', i=0):
         """Turn CL emulation on or off"""
         if self.debug > 1:
-            self.write('do_clemulate: %s\n' % line[i:])
+            self.write('do_clemulate: {}\n'.format(line[i:]))
         self.clemulate = 1
         if line[i:] != "":
             try:
@@ -348,7 +349,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
     def do_complete(self, line='', i=0, default=1):
         """Turn command completion on or off"""
         if self.debug > 1:
-            self.write('do_complete: %s\n' % line[i:])
+            self.write('do_complete: {}\n'.format(line[i:]))
         self.complete = default
         if line[i:] != "":
             try:
@@ -368,7 +369,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
     def do_debug(self, line='', i=0):
         """Turn debug output on or off"""
         if self.debug > 1:
-            self.write('do_debug: %s\n' % line[i:])
+            self.write('do_debug: {}\n'.format(line[i:]))
         self.debug = 1
         if line[i:] != "":
             try:
@@ -382,7 +383,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
     def do_fulltraceback(self, line='', i=0):
         """Print full version of last traceback"""
         if self.debug > 1:
-            self.write('do_fulltraceback: %s\n' % line[i:])
+            self.write('do_fulltraceback: {}\n'.format(line[i:]))
         self.showtraceback(reprint=1)
         return ""
 
@@ -394,7 +395,7 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         i = index in line of first non-blank character following cmd
         """
         if self.debug > 1:
-            self.write('default: %s - %s\n' % (cmd, line[i:]))
+            self.write('default: {} - {}\n'.format(cmd, line[i:]))
         if len(cmd) == 0:
             if line[i:i + 1] == '!':
                 # '!' is shell escape
@@ -460,14 +461,14 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
 
         # if we get to here then it looks like CL code
         if self.debug > 1:
-            self.write('CL: %s\n' % line)
+            self.write('CL: {}\n'.format(line))
         try:
             code = iraf.clExecute(line, locals=self.locals, mode='single')
             if self.logfile is not None:
                 # log CL code as comment
                 cllines = line.split('\n')
                 for oneline in cllines:
-                    self.logfile.write('# %s\n' % oneline)
+                    self.logfile.write('# {}\n'.format(oneline))
                 self.logfile.write(code)
                 self.logfile.flush()
         except:

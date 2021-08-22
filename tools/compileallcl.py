@@ -143,7 +143,7 @@ They screw up subsequent loading of imred/digiphot tasks.
         pkg_list = iraf.getPkgList()
 
     t1 = time.time()
-    print("Finished package and task loading (%f seconds)" % (t1 - t0,))
+    print("Finished package and task loading ({:f} seconds)".format(t1 - t0))
     print("Compiled %d CL tasks -- %d failed" % (ntask_total, ntask_failed))
     sys.stdout.flush()
 

@@ -226,7 +226,7 @@ class Binder:
                 return self.bindings["ready"]()
             else:
                 return "ready"
-        self.debug("pos: %s    key: %s" % (pos, key))
+        self.debug("pos: {}    key: {}".format(pos, key))
         if key in self.mode_keys:
             self.chord.append(key)
             return None
@@ -243,8 +243,8 @@ class Binder:
                 key = f
             else:
                 key = f()
-            self.debug("pos: %s  visited: %s  key: %s mapping: %s" %
-                       (pos, " --> ".join(visited), key, f))
+            self.debug("pos: {}  visited: {}  key: {} mapping: {}"
+                       .format(pos, " --> ".join(visited), key, f))
         return key
 
     def debug(self, s):
@@ -433,15 +433,15 @@ class StringTparOption(urwid.Columns):
             help = ") " + help
         else:
             help = "  " + help
-        self._name = urwid.Text("%-10s=" % name)
+        self._name = urwid.Text("{:<10s}=".format(name))
         self._edit = PyrafEdit("",
                                "",
                                wrap="clip",
                                align="right",
                                inform=inform)
         self._edit.verify = self.verify
-        self._value = urwid.Text("%10s" % value, align="right")
-        self._help = urwid.Text("%-30s" % help)
+        self._value = urwid.Text("{:10s}".format(value), align="right")
+        self._help = urwid.Text("{:<30s}".format(help))
         urwid.Columns.__init__(self, [('weight', 0.20, self._name),
                                       ('weight', 0.20, self._edit),
                                       ('weight', 0.20, self._value),
@@ -653,9 +653,9 @@ class TparHeader(urwid.Pile):
 
     def __init__(self, package, task=None):
         top = urwid.Text(("header", self.banner))
-        s = "%8s= %-10s\n" % ("PACKAGE", package)
+        s = "{:>8}= {:<10}\n".format("PACKAGE", package)
         if task is not None:
-            s += "%8s= %-10s" % ("TASK", task)
+            s += "{:>8}= {:<10}".format("TASK", task)
         info = urwid.Text(("body", s))
         urwid.Pile.__init__(self, [top, info])
 
@@ -861,7 +861,7 @@ class TparDisplay(Binder):
         if len(dlist) != len(self.paramList):
             # whoops, lengths don't match
             raise ValueError("Mismatch between default, current par lists"
-                             " for task %s (try unlearn)" % self.taskName)
+                             " for task {} (try unlearn)".format(self.taskName))
         pardict = {}
         for par in dlist:
             pardict[par.name] = par
@@ -873,7 +873,7 @@ class TparDisplay(Binder):
                 dsort.append(pardict[par.name])
         except KeyError:
             raise ValueError("Mismatch between default, current par lists"
-                             " for task %s (try unlearn)" % self.taskName)
+                             " for task {} (try unlearn)".format(self.taskName))
         self.defaultParamList = dsort
 
     # Method to create the parameter entries
@@ -923,7 +923,7 @@ class TparDisplay(Binder):
                                           focus=True)
                 elif k == 'window resize':
                     size = self.ui.get_cols_rows()
-                    self.inform("resize %s" % (str(size)))
+                    self.inform("resize {}".format(str(size)))
                 k = self.keypress(size, k)
                 self.view.keypress(size, k)
 
@@ -987,8 +987,8 @@ class TparDisplay(Binder):
             try:
                 f(file, emph)
             except Exception as e:
-                self.inform("command '%s' failed with exception '%s'" %
-                            (cmd, e))
+                self.inform("command '{}' failed with exception '{}'"
+                            .format(cmd, e))
 
     def save_as(self):
         """ Save the parameter settings to a user-specified file.  Any
@@ -1171,7 +1171,7 @@ class TparDisplay(Binder):
         self.save(emph)
 
         def go_continue():
-            print("\nTask %s is running...\n" % self.taskName)
+            print("\nTask {} is running...\n".format(self.taskName))
             self.run_task()
 
         self.done = go_continue
@@ -1206,10 +1206,10 @@ class TparDisplay(Binder):
 
     def write_pset(self, file, overwrite):
         if os.path.exists(file) and not overwrite:
-            self.inform("File '%s' exists and overwrite (!) not used." %
-                        (file,))
+            self.inform("File '{}' exists and overwrite (!) not used."
+                        .format(file))
         # XXXX write out parameters to file
-        self.inform("write pset: %s" % (file,))
+        self.inform("write pset: {}".format(file))
 
     def set_all_entries_from_par_list(self, aParList):
         """ Set all the parameter entry values in the GUI to the values
@@ -1359,16 +1359,14 @@ class TparDisplay(Binder):
     # Process invalid input values and invoke a query dialog
     def process_bad_entries(self, badEntriesList, taskname):
 
-        format = "%20s %20s %20s\n"
+        tpl = "{:>20s} {:>20s} {:>20s}\n"
         badEntriesString = "\nTask " + taskname.upper() + \
                            " -- Invalid values have been entered.\n\n"
-        badEntriesString += format % \
-            ("Parameter", "Bad Value", "Reset Value")
+        badEntriesString += tpl.format("Parameter", "Bad Value", "Reset Value")
         for i in range(len(badEntriesList)):
-            badEntriesString += format % \
-                (badEntriesList[i][0].strip(),
-                 badEntriesList[i][1].strip(),
-                 badEntriesList[i][2].strip())
+            badEntriesString += tpl.format(badEntriesList[i][0].strip(),
+                                           badEntriesList[i][1].strip(),
+                                           badEntriesList[i][2].strip())
 
             badEntriesString += "\nOK to continue using"\
                 " the reset\nvalues or cancel to re-enter\nvalues?\n"

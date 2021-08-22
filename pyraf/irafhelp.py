@@ -392,7 +392,7 @@ def _valueString(value, verbose=0):
         else:
             vstr = vstr + ", value = " + repr(value)
     elif issubclass(t, _listTypes):
-        return "%s [%d entries]" % (vstr, len(value))
+        return "{} [{:d} entries]".format(vstr, len(value))
     elif issubclass(t, io.IOBase):
         vstr = vstr + ", " + repr(value)
     elif issubclass(t, _numericTypes):

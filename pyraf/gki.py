@@ -546,9 +546,10 @@ class GkiKernel:
             if not value:
                 badlist.append(name)
         if badlist:
-            raise SyntaxError("Bug: error in definition of class %s\n"
-                              "Special method name is incorrect: %s" %
-                              (self.__class__.__name__, " ".join(badlist)))
+            raise SyntaxError("Bug: error in definition of class {}\n"
+                              "Special method name is incorrect: {}"
+                              .format(self.__class__.__name__,
+                                      " ".join(badlist)))
 
     def control(self, gkiMetacode):
         gkiTranslate(gkiMetacode, self.controlFunctionTable)
@@ -1023,8 +1024,8 @@ class GkiController(GkiProxy):
             devstr = pyraf.iraf.envget(pdevstr, "")
             if not devstr:
                 raise IrafError(
-                    "No entry found for specified stdgraph device `%s'" %
-                    device)
+                    "No entry found for specified stdgraph device `{}'"
+                    .format(device))
             elif devstr in tried:
                 # track back through circular definition
                 s = [devstr]
@@ -1035,9 +1036,8 @@ class GkiController(GkiProxy):
                 if next:
                     s.append(next)
                 s.reverse()
-                raise IrafError(
-                    "Circular definition in graphcap for device\n%s" %
-                    ' -> '.join(s))
+                raise IrafError("Circular definition in graphcap for device\n{}"
+                                .format(' -> '.join(s)))
             else:
                 tried[devstr] = pdevstr
         return devstr
@@ -1264,14 +1264,14 @@ def printPlot(window=None):
         if not stdplot:
             msg = "No hardcopy device defined in stdplot"
         elif stdplot not in graphcap:
-            msg = "Unknown hardcopy device stdplot=`%s'" % stdplot
+            msg = "Unknown hardcopy device stdplot=`{}'".format(stdplot)
         else:
             printer = gkiiraf.GkiIrafKernel(stdplot)
             printer.append(gkibuff)
             printer.flush()
             msg = "snap completed"
     stdout = kernel.getStdout(default=sys.stdout)
-    stdout.write("%s\n" % msg)
+    stdout.write("{}\n".format(msg))
 
 
 # **********************************************************************
@@ -1338,8 +1338,8 @@ class IrafGkiConfig:
         ]
         self.cursorColor = 2  # red
         if len(self.defaultColors) != nIrafColors:
-            raise ValueError("defaultColors should have %d elements (has %d)" %
-                             (nIrafColors, len(self.defaultColors)))
+            raise ValueError("defaultColors should have {:d} elements (has {:d})"
+                             .format(nIrafColors, len(self.defaultColors)))
 
         # old colors
         #       (1.,0.5,0.),      # coral
@@ -1353,8 +1353,8 @@ class IrafGkiConfig:
 
     def setCursorColor(self, color):
         if not 0 <= color < len(self.defaultColors):
-            raise ValueError("Bad cursor color (%d) should be >=0 and <%d" %
-                             (color, len(self.defaultColors) - 1))
+            raise ValueError("Bad cursor color ({:d}) should be >=0 and <{:d}"
+                             .format(color, len(self.defaultColors) - 1))
         self.cursorColor = color
 
     def fontSize(self, gwidget):

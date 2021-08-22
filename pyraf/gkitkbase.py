@@ -517,11 +517,11 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         for i in range(pmin, pmax):
             task = h[i][2]
             if i == pmin and pmin > 0:
-                label = "<< %s" % task
+                label = "<< {}".format(task)
             elif i == pmax - 1 and pmax < lhis:
-                label = ">> %s" % task
+                label = ">> {}".format(task)
             else:
-                label = "%2d %s" % (i + 1, task)
+                label = "{:2d} {}".format(i + 1, task)
             menu.add_radiobutton(label=label,
                                  command=self.selectedPage,
                                  value=i,

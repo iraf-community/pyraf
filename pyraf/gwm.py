@@ -93,7 +93,7 @@ class GraphicsWindowManager(gki.GkiProxy):
         windowName = str(windowName).strip()
         window = self.windows.get(windowName)
         if window is None:
-            print("error: graphics window `%s' doesn't exist" % (windowName,))
+            print("error: graphics window `{}' doesn't exist".format(windowName))
         else:
             changeActiveWindow = (self.stdgraph == window)
             window.top.destroy()

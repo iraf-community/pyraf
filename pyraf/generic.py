@@ -69,7 +69,7 @@ class GenericScanner:
 
     def makeRE(self, name):
         doc = getattr(self, name).__doc__
-        rv = '(?P<%s>%s)' % (name[2:], doc)
+        rv = '(?P<{}>{})'.format(name[2:], doc)
         return rv
 
     def reflect(self):
@@ -82,7 +82,7 @@ class GenericScanner:
         return '|'.join(rv)
 
     def error(self, s, pos):
-        print("Lexical error at position %s" % pos)
+        print("Lexical error at position {}".format(pos))
         raise SystemExit()
 
     def tokenize(self, s):
@@ -272,7 +272,7 @@ class GenericParser:
         return None
 
     def error(self, token, value=None):
-        print("Syntax error at or near `%s' token" % token)
+        print("Syntax error at or near `{}' token".format(token))
         if value is not None:
             print(str(value))
         raise SystemExit()
