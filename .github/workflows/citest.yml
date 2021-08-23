@@ -31,10 +31,9 @@ jobs:
 
       - name: Build Pyraf
         run: |
-           python3 setup.py build
+           python3 setup.py build_ext -i
 
       - name: Run tests
         run: |
-          TEST_BASE=$(ls -d $(pwd)/build/lib.*/)
-          export PATH=$(ls -d $(pwd)/build/scripts-*/):${PATH}
-          cd ${TEST_BASE} && python3 -m pytest --cov=pyraf
+          export PATH=$(pwd)/scripts:${PATH}
+          python3 -m pytest --cov=pyraf
