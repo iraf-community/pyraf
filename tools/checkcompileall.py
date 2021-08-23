@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 """checkcompileall.py: Read the output from compileallcl and print just the errors
 """
 

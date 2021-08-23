@@ -1,4 +1,4 @@
-#! python
+#! /usr/bin/env python3
 """
 Copyright (C) 2003 Association of Universities for Research in Astronomy
 (AURA)

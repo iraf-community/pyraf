@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 """compileallcl.py: Load all the packages in IRAF and compile all
 the CL scripts
 

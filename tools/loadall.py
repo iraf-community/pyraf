@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 """loadall.py: Load all the main packages in IRAF with verbose turned on
 """
 

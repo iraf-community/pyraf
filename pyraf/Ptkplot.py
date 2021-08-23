@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-
-
-
 import os
 from tkinter import _default_root
 from tkinter import TclError, Canvas

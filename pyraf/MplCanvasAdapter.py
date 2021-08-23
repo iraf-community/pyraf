@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-
-
-
 import matplotlib
 matplotlib.use('TkAgg')  # set backend
 import matplotlib.backends.backend_tkagg as tkagg

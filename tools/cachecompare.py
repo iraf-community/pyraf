@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 """cachecompare.py: Compare contents of new CL to old cache
 """
 

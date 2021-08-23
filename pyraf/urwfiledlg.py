@@ -1,4 +1,4 @@
-#!/usr/bin/env  python
+#!/usr/bin/env  python3
 """
 A filechooser for urwid.
 Author: Rebecca Breu (rebecca@rbreu.de)
