@@ -92,16 +92,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 static char scanset[1 << BITSPERCHAR];
 
 
-/*
- * Use PyStr_FromStringAndSize to support both Python 2 and 3.
- * We use them here the same way.
- */
-#if PY_MAJOR_VERSION >= 3
-#define PyStr_FromStringAndSize PyUnicode_FromStringAndSize
-#else
-#define PyStr_FromStringAndSize PyString_FromStringAndSize
-#endif
-
 /* ----------------------------------------------------- */
 
 static char sscanf_sscanf__doc__[] =
@@ -214,7 +204,7 @@ sscanf_sscanf( PyObject *self, PyObject *args )
             if (width < 1)
                 width = 1;
             if (doassign)
-                item = PyStr_FromStringAndSize(start, width);
+                item = PyUnicode_FromStringAndSize(start, width);
             inptr += width;
 
         } else if (c == 'd' || c == 'i' || c == 'l' ||
@@ -269,11 +259,7 @@ sscanf_sscanf( PyObject *self, PyObject *args )
                 if (end == s)
                     break;
                 if (doassign)
-#if PY_MAJOR_VERSION >= 3
                     item = PyLong_FromLong(lval);
-#else
-                    item = PyInt_FromLong(lval);
-#endif
             }
             inptr += end - start;
 
@@ -305,11 +291,7 @@ sscanf_sscanf( PyObject *self, PyObject *args )
                 if (ellmod) {
                     item = PyLong_FromLong(lval);
                 } else {
-#if PY_MAJOR_VERSION >= 3
                     item = PyLong_FromLong(lval);
-#else
-                    item = PyInt_FromLong(lval);
-#endif
                 }
             }
 
@@ -323,7 +305,7 @@ sscanf_sscanf( PyObject *self, PyObject *args )
             if (end == s)
                 break;
             if (doassign)
-                item = PyStr_FromStringAndSize(s, end - s);
+                item = PyUnicode_FromStringAndSize(s, end - s);
             inptr += end - start;
 
         } else if (c == '[') {
@@ -373,7 +355,7 @@ sscanf_sscanf( PyObject *self, PyObject *args )
             if (end == start)
                 break;
             if (doassign)
-                item = PyStr_FromStringAndSize(start, end - start);
+                item = PyUnicode_FromStringAndSize(start, end - start);
             inptr += end - start;
 
         } else {
@@ -425,7 +407,6 @@ static struct PyMethodDef sscanf_methods[] = {
 #define PyInit_sscanf PyInit_sscanfmodule
 #endif
 
-#if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef moduledef = {
         PyModuleDef_HEAD_INIT,
         "sscanf",
@@ -435,23 +416,10 @@ static struct PyModuleDef moduledef = {
         NULL, NULL, NULL, NULL,
 };
 PyObject* PyInit_sscanf(void)
-#else
-void initsscanf(void)
-#endif
 {
    /* Create the module and add the functions */
    PyObject *m;
-#if PY_MAJOR_VERSION >= 3
    m = PyModule_Create(&moduledef);
-#else
-   m = Py_InitModule4("sscanf", sscanf_methods,
-       (char *)NULL, (PyObject *) NULL, PYTHON_API_VERSION);
-   if (PyErr_Occurred())
-       Py_FatalError("can't initialize module sscanf");
-#endif
 
-/* in Py2.*: just return */
-#if PY_MAJOR_VERSION >= 3
    return m;
-#endif
 }

@@ -62,7 +62,7 @@ int MyXlibErrorHandler(Display *d, XErrorEvent *myerror) {
 
 int MyXlibIOErrorHandler(Display *d) {
   /* just put a constant string in the error message */
-  strncat(XErrorMsg,IOError,80);
+  strncat(XErrorMsg,IOError,79);
   longjmp(ErrorEnv, 1);
   /* Pointless, but it shuts up some compiler warning messages */
   return 0;
@@ -72,13 +72,12 @@ int MyXlibIOErrorHandler(Display *d) {
 void moveCursorTo(int win, int rx, int ry, int x, int y) {
   Window w;
   /*  Display *XOpenDisplay(char *); */
-  int s;
   if (d == NULL) {
     printf("could not open XWindow display\n");
     return;
   }
   w = (Window) win;
-  s = XGrabPointer(d,w,True,ButtonPressMask | EnterWindowMask,GrabModeSync,
+  XGrabPointer(d,w,True,ButtonPressMask | EnterWindowMask,GrabModeSync,
         GrabModeSync,None,None,CurrentTime);
   XWarpPointer(d,None,w,0,0,0,0,x,y);
   XUngrabPointer(d,CurrentTime);
@@ -420,7 +419,6 @@ static PyMethodDef xutil_funcs[] = {
   {NULL, NULL}
 };
 
-#if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef moduledef = {
         PyModuleDef_HEAD_INIT,
         "xutil",
@@ -430,19 +428,6 @@ static struct PyModuleDef moduledef = {
         NULL, NULL, NULL, NULL,
 };
 PyObject* PyInit_xutil(void)
-#else
-void initxutil(void)
-#endif
 {
-   PyObject *m;
-#if PY_MAJOR_VERSION >= 3
-   m = PyModule_Create(&moduledef);
-#else
-   m = Py_InitModule("xutil", xutil_funcs);
-#endif
-
-/* in Py2.*: just return */
-#if PY_MAJOR_VERSION >= 3
-   return m;
-#endif
+   return PyModule_Create(&moduledef);
 }
