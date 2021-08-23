@@ -20,14 +20,14 @@ IMPORT_DEBUG = False
 
 # Save the original hooks;  replaced at bottom of module...
 _originalImport = builtins.__import__
-import imp
-_originalReload = imp.reload
+import importlib
+_originalReload = importlib.reload
 
 
 def restoreBuiltins():
     """ Called before exiting pyraf - this puts import and reload back. """
     builtins.__import__ = _originalImport
-    imp.reload = _originalReload
+    importlib.reload = _originalReload
 
 
 def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
@@ -178,7 +178,7 @@ class _irafModuleClass:
 
 # Install our hooks
 builtins.__import__ = _irafImport
-imp.reload = _irafReload
+importlib.reload = _irafReload
 
 # create the module proxy
 _irafModuleProxy = _irafModuleClass()
