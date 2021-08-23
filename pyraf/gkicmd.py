@@ -17,7 +17,7 @@ def text(textstring, x, y):
     """Return metacode for text string written at x,y"""
     gkiX = gkiCoord(x)
     gkiY = gkiCoord(y)
-    data = numpy.fromstring(textstring, numpy.int8)  # OK if str or uni
+    data = numpy.frombuffer(textstring.encode('ascii'), numpy.int8)
     data = data.astype(numpy.int16)
     size = 6 + len(textstring)
     metacode = numpy.zeros(size, numpy.int16)

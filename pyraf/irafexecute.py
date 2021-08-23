@@ -829,17 +829,14 @@ class IrafProcess:
             self.stderr.write(Iraf2AscString(xdata))
             self.stderr.flush()
         elif chan == 6:
-            gki.kernel.append(numpy.fromstring(
-                xdata, dtype=numpy.int16))  # OK if str or uni
+            gki.kernel.append(numpy.frombuffer(xdata, dtype=numpy.int16))
         elif chan == 7:
-            stdimagekernel.append(numpy.fromstring(
-                xdata, dtype=numpy.int16))  # OK if str or uni
+            stdimagekernel.append(numpy.frombuffer(xdata, dtype=numpy.int16))
         elif chan == 8:
             self.stdout.write("data for STDPLOT\n")
             self.stdout.flush()
         elif chan == 9:
-            sdata = numpy.fromstring(xdata,
-                                     dtype=numpy.int16)  # OK if str or uni
+            sdata = numpy.frombuffer(xdata, dtype=numpy.int16)
             if isBigEndian:
                 # Actually, the channel destination is sent
                 # by the iraf process as a 4 byte int, the following
@@ -1041,7 +1038,7 @@ class IrafProcess:
 
 def Asc2IrafString(ascii_string):
     """translate ascii to IRAF 16-bit string format"""
-    inarr = numpy.fromstring(ascii_string, numpy.int8)  # OK if str or uni
+    inarr = numpy.frombuffer(ascii_string.encode('ascii'), numpy.int8)
     retval = inarr.astype(numpy.int16).tobytes()
     #   log_task_comm('Asc2IrafString (write to task)', retval, False)
     return retval
@@ -1049,7 +1046,7 @@ def Asc2IrafString(ascii_string):
 
 def Iraf2AscString(iraf_string):
     """translate 16-bit IRAF characters to ascii"""
-    inarr = numpy.fromstring(iraf_string, numpy.int16)  # OK if str or uni
+    inarr = numpy.frombuffer(iraf_string, numpy.int16)
     retval = inarr.astype(numpy.int8).tobytes().decode('ascii')
     #   log_task_comm('Iraf2AscString', retval, True)
     return retval

@@ -323,8 +323,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         if not fname:
             return
         fh = open(fname, 'rb')
-        metacode = numpy.fromstring(fh.read(),
-                                    numpy.int16)  # OK: bytes in PY3K
+        metacode = numpy.frombuffer(fh.read(), numpy.int16)
         fh.close()
         self.clear(name=fname)
         self.append(metacode, isUndoable=1)
