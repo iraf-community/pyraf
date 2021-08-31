@@ -2,12 +2,12 @@
 
 R. White, 1999 Jan 25
 """
-from __future__ import division, print_function
 
-from iraffunctions import *
+
+from .iraffunctions import *
 
 # a few CL tasks have modified names (because they start with '_')
-import iraffunctions
+from . import iraffunctions
 
 _curpack = iraffunctions.curpack
 _allocate = iraffunctions.clAllocate

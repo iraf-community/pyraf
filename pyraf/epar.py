@@ -2,19 +2,19 @@
 
 M.D. De La Pena, 2000 February 04
 """
-from __future__ import division, print_function
+
 
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
     from Tkinter.tkMessageBox import askokcancel, showwarning, showerror
     import os
-    import cStringIO
+    import io
     from stsci.tools import listdlg, eparoption, editpar, irafutils
-    import iraf
-    import irafpar
-    import irafhelp
-    import wutil
-    from pyrafglobals import pyrafDir
+    from . import iraf
+    from . import irafpar
+    from . import irafhelp
+    from . import wutil
+    from .pyrafglobals import pyrafDir
 else:
     wutil = None
 
@@ -225,7 +225,7 @@ class PyrafEparDialog(editpar.EditParDialog):
                     irafutils.setWritePrivs(filename, True)
                 retval = self._taskParsObj.saveParList(filename=filename,
                                                        comment=comment)
-            except IOError:
+            except OSError:
                 retval = "Error saving to " + str(
                     filename) + ".  Please check privileges."
                 showerror(message=retval, title='Error Saving File')
@@ -266,7 +266,7 @@ class PyrafEparDialog(editpar.EditParDialog):
         """ Override to allow use of PsetEparOption.
             Return None or a class which derives from EparOption. """
         if paramTypeStr == "pset":
-            import pseteparoption
+            from . import pseteparoption
             return pseteparoption.PsetEparOption
         else:
             return None
@@ -346,7 +346,7 @@ class PyrafEparDialog(editpar.EditParDialog):
     def getHelpString(self, taskname):
         """ Override this - in PyRAF we'll always use use iraf system help.
             Do not query the task object. """
-        fh = cStringIO.StringIO()
+        fh = io.StringIO()
         iraf.system.help(taskname, page=0, Stdout=fh, Stderr=fh)
         result = fh.getvalue()
         fh.close()

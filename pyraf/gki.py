@@ -36,18 +36,17 @@ GkiController is a GkiProxy that allows switching between different
 graphics kernels as directed by commands embedded in the metacode stream.
 
 """
-from __future__ import division, print_function
+
 
 import numpy
 import sys
 import re
 from stsci.tools.irafglobals import IrafError
-from stsci.tools.for2to3 import ndarr2str, ndarr2bytes
-import wutil
-import graphcap
-import irafgwcs
-import fontdata
-from textattrib import (CHARPATH_RIGHT, JUSTIFIED_NORMAL, FONT_ROMAN,
+from . import wutil
+from . import graphcap
+from . import irafgwcs
+from . import fontdata
+from .textattrib import (CHARPATH_RIGHT, JUSTIFIED_NORMAL, FONT_ROMAN,
                         FQUALITY_NORMAL)
 
 # use this form since the iraf import is circular
@@ -547,9 +546,10 @@ class GkiKernel:
             if not value:
                 badlist.append(name)
         if badlist:
-            raise SyntaxError("Bug: error in definition of class %s\n"
-                              "Special method name is incorrect: %s" %
-                              (self.__class__.__name__, " ".join(badlist)))
+            raise SyntaxError("Bug: error in definition of class {}\n"
+                              "Special method name is incorrect: {}"
+                              .format(self.__class__.__name__,
+                                      " ".join(badlist)))
 
     def control(self, gkiMetacode):
         gkiTranslate(gkiMetacode, self.controlFunctionTable)
@@ -976,8 +976,7 @@ class GkiController(GkiProxy):
         return self.stdgraph.control(gkiMetacode)
 
     def control_openws(self, arg):
-
-        device = ndarr2str(arg[2:].astype(numpy.int8)).strip()
+        device = arg[2:].astype(numpy.int8).tobytes().decode().strip()
         self.openKernel(device)
 
     def openKernel(self, device=None):
@@ -998,13 +997,13 @@ class GkiController(GkiProxy):
                 # open (persistent) interactive kernel
                 if not self.interactiveKernel:
                     if wutil.hasGraphics:
-                        import gwm
+                        from . import gwm
                         self.interactiveKernel = gwm.getGraphicsWindowManager()
                     else:
                         self.interactiveKernel = GkiNull()
                 self.stdgraph = self.interactiveKernel
             else:
-                import gkiiraf
+                from . import gkiiraf
                 self.stdgraph = gkiiraf.GkiIrafKernel(device)
             self.stdin = self.stdgraph.stdin
             self.stdout = self.stdgraph.stdout
@@ -1025,8 +1024,8 @@ class GkiController(GkiProxy):
             devstr = pyraf.iraf.envget(pdevstr, "")
             if not devstr:
                 raise IrafError(
-                    "No entry found for specified stdgraph device `%s'" %
-                    device)
+                    "No entry found for specified stdgraph device `{}'"
+                    .format(device))
             elif devstr in tried:
                 # track back through circular definition
                 s = [devstr]
@@ -1037,9 +1036,8 @@ class GkiController(GkiProxy):
                 if next:
                     s.append(next)
                 s.reverse()
-                raise IrafError(
-                    "Circular definition in graphcap for device\n%s" %
-                    ' -> '.join(s))
+                raise IrafError("Circular definition in graphcap for device\n{}"
+                                .format(' -> '.join(s)))
             else:
                 tried[devstr] = pdevstr
         return devstr
@@ -1096,7 +1094,7 @@ class GkiRedirection(GkiKernel):
     def append(self, metacode):
         # Overloads the baseclass implementation.
         # metacode is array of 16-bit ints
-        self.filehandle.write(ndarr2bytes(metacode))
+        self.filehandle.write(metacode.tobytes())
 
     # control needs to get and set WCS data
     def control_setwcs(self, arg):
@@ -1253,8 +1251,8 @@ def printPlot(window=None):
     """Print contents of window (default active window) to stdplot
     window must be a GkiKernel object (with a gkibuffer attribute.)
     """
-    import gwm
-    import gkiiraf
+    from . import gwm
+    from . import gkiiraf
     if window is None:
         window = gwm.getActiveGraphicsWindow()
         if window is None:
@@ -1266,14 +1264,14 @@ def printPlot(window=None):
         if not stdplot:
             msg = "No hardcopy device defined in stdplot"
         elif stdplot not in graphcap:
-            msg = "Unknown hardcopy device stdplot=`%s'" % stdplot
+            msg = "Unknown hardcopy device stdplot=`{}'".format(stdplot)
         else:
             printer = gkiiraf.GkiIrafKernel(stdplot)
             printer.append(gkibuff)
             printer.flush()
             msg = "snap completed"
     stdout = kernel.getStdout(default=sys.stdout)
-    stdout.write("%s\n" % msg)
+    stdout.write("{}\n".format(msg))
 
 
 # **********************************************************************
@@ -1340,8 +1338,8 @@ class IrafGkiConfig:
         ]
         self.cursorColor = 2  # red
         if len(self.defaultColors) != nIrafColors:
-            raise ValueError("defaultColors should have %d elements (has %d)" %
-                             (nIrafColors, len(self.defaultColors)))
+            raise ValueError("defaultColors should have {:d} elements (has {:d})"
+                             .format(nIrafColors, len(self.defaultColors)))
 
         # old colors
         #       (1.,0.5,0.),      # coral
@@ -1355,8 +1353,8 @@ class IrafGkiConfig:
 
     def setCursorColor(self, color):
         if not 0 <= color < len(self.defaultColors):
-            raise ValueError("Bad cursor color (%d) should be >=0 and <%d" %
-                             (color, len(self.defaultColors) - 1))
+            raise ValueError("Bad cursor color ({:d}) should be >=0 and <{:d}"
+                             .format(color, len(self.defaultColors) - 1))
         self.cursorColor = color
 
     def fontSize(self, gwidget):
@@ -1639,7 +1637,7 @@ kernel = GkiController()
 # Beware! This is highly experimental and was made only for a test case.
 def _resetGraphicsKernel():
     global kernel
-    import gwm
+    from . import gwm
     if kernel:
         kernel.clearReturnData()
         kernel.flush()

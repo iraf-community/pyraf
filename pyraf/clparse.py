@@ -2,11 +2,11 @@
 
 R. White, 1999 August 24
 """
-from __future__ import division, print_function
 
-from generic import GenericASTBuilder, GenericASTTraversal
-from clast import AST
-from cltoken import Token
+
+from .generic import GenericASTBuilder, GenericASTTraversal
+from .clast import AST
+from .cltoken import Token
 
 
 class CLStrictParser(GenericASTBuilder):
@@ -83,12 +83,12 @@ class CLStrictParser(GenericASTBuilder):
         if hasattr(token, 'lineno'):
             if len(finfo):
                 finfo += ', '
-            errmsg = "CL syntax error at `%s' (%sline %d)" % (token, finfo,
-                                                              token.lineno)
+            errmsg = ("CL syntax error at `{}' ({}line {:d})"
+                      .format(token, finfo, token.lineno))
         else:
             if len(finfo):
                 finfo = '(' + finfo + ')'
-            errmsg = "CL syntax error at `%s' %s" % (token, finfo)
+            errmsg = "CL syntax error at `{}' {}".format(token, finfo)
         if value is not None:
             errmsg = errmsg + "\n" + str(value)
         raise SyntaxError(errmsg)
@@ -485,7 +485,7 @@ def treelist(ast, terminal=1):
 
 
 def getParser():
-    import pyrafglobals
+    from . import pyrafglobals
     if pyrafglobals._use_ecl:
         _parser = EclParser(AST)
     else:

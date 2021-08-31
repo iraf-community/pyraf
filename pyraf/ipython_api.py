@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Modified input for PyRAF CL-script execution and pre-processing.
 
 Modifies the IPython intepreter to process PyRAF "magic" prior to
@@ -12,7 +11,7 @@ Code derived from pyraf.pycmdline.py
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file COPYING, distributed as part of this software.
 # *****************************************************************************
-from __future__ import division, print_function
+
 
 VERY_OLD_IPY = True  # this means prior to v0.12
 try:
@@ -119,7 +118,7 @@ class IPythonIrafCompleter(IrafCompleter):
 # ---------------------------------------------------------------------------
 
 
-class IPython_PyRAF_Integrator(object):
+class IPython_PyRAF_Integrator:
     """This class supports the integration of these features with IPython:
 
     1. PyRAF readline completion

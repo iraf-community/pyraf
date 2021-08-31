@@ -3,14 +3,13 @@ not possible in tkinter.  In general, an attempt is made to use the Pyobjc
 bridging package so that compiling another C extension is not needed.
 """
 
-from __future__ import division, print_function
+
 
 import os
 import struct
 import time
 import objc
 import AppKit
-from stsci.tools.for2to3 import tobytes
 
 # Arbitrary module constants for term vs. gui.  0 and negative numbers have
 # special meanings when queried elsewhere (e.g. wutil).  It is assumed that
@@ -183,32 +182,32 @@ def __doPyobjcWinInit():
     #
     OSErr = objc._C_SHT
     CGErr = objc._C_INT
-    INPSN = tobytes('n^{ProcessSerialNumber=LL}')
-    OUTPSN = tobytes('o^{ProcessSerialNumber=LL}')
-    #   OUTPID = tobytes('o^_C_ULNG') # invalid as of objc v3.2
-    WARPSIG = tobytes('v{CGPoint=ff}')
+    INPSN = b'n^{ProcessSerialNumber=LL}'
+    OUTPSN = b'o^{ProcessSerialNumber=LL}'
+    #   OUTPID = b'o^_C_ULNG'  # invalid as of objc v3.2
+    WARPSIG = b'v{CGPoint=ff}'
     if struct.calcsize("l") > 4:  # is 64-bit python
-        WARPSIG = tobytes('v{CGPoint=dd}')
+        WARPSIG = b'v{CGPoint=dd}'
 
     FUNCTIONS = [
         # These are public API
-        (u'GetCurrentProcess', OSErr + OUTPSN),
-        (u'GetFrontProcess', OSErr + OUTPSN),
+        ('GetCurrentProcess', OSErr + OUTPSN),
+        ('GetFrontProcess', OSErr + OUTPSN),
         #        ( u'GetProcessPID', OSStat+INPSN+OUTPID), # see OUTPID note
-        (u'SetFrontProcess', OSErr + INPSN),
-        (u'CGWarpMouseCursorPosition', WARPSIG),
-        (u'CGMainDisplayID', objc._C_PTR + objc._C_VOID),
-        (u'CGDisplayPixelsHigh', objc._C_ULNG + objc._C_ULNG),
-        (u'CGDisplayHideCursor', CGErr + objc._C_ULNG),
-        (u'CGDisplayShowCursor', CGErr + objc._C_ULNG),
+        ('SetFrontProcess', OSErr + INPSN),
+        ('CGWarpMouseCursorPosition', WARPSIG),
+        ('CGMainDisplayID', objc._C_PTR + objc._C_VOID),
+        ('CGDisplayPixelsHigh', objc._C_ULNG + objc._C_ULNG),
+        ('CGDisplayHideCursor', CGErr + objc._C_ULNG),
+        ('CGDisplayShowCursor', CGErr + objc._C_ULNG),
         # This is undocumented API
-        (u'CPSSetProcessName', OSErr + INPSN + objc._C_CHARPTR),
-        (u'CPSEnableForegroundOperation', OSErr + INPSN),
+        ('CPSSetProcessName', OSErr + INPSN + objc._C_CHARPTR),
+        ('CPSEnableForegroundOperation', OSErr + INPSN),
     ]
 
     bndl = AppKit.NSBundle.bundleWithPath_(
         objc.pathForFramework(
-            u'/System/Library/Frameworks/ApplicationServices.framework'))
+            '/System/Library/Frameworks/ApplicationServices.framework'))
     if bndl is None:
         raise Exception("Error in aqutil with bundleWithPath_")
 
@@ -238,7 +237,7 @@ def __doPyobjcWinInit():
         raise Exception("GetCurrentProcess: " + str(err))
 
     # Set Proc name
-    err = CPSSetProcessName(__thisPSN, tobytes('PyRAF'))
+    err = CPSSetProcessName(__thisPSN, b'PyRAF')
     if err:
         raise Exception("CPSSetProcessName: " + str(err))
     # Make us a FG app (need to be in order to use SetFrontProcess on us)

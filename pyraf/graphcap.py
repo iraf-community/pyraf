@@ -1,9 +1,9 @@
 """Finds device attributes from the graphcap
 """
-from __future__ import division, print_function
+
 
 from stsci.tools import compmixin
-import filecache
+from . import filecache
 
 
 def merge(inlines):
@@ -26,14 +26,16 @@ def getAliases(entry):
     # return list of aliases (and dump the comment)
     aend = entry.find(':')
     if aend < 0:
-        raise ValueError("Graphcap entry does not have any colons\n%s" % entry)
+        raise ValueError("Graphcap entry does not have any colons\n{}"
+                         .format(entry))
     return entry[:aend].split("|")[:-1]
 
 
 def getAttributes(entry):
     abeg = entry.find(':')
     if abeg < 0:
-        raise ValueError("Graphcap entry does not have any colons\n%s" % entry)
+        raise ValueError("Graphcap entry does not have any colons\n{}"
+                         .format(entry))
     astring = entry[abeg + 1:]
     attr = {}
     attrlist = astring.split(':')
@@ -85,7 +87,7 @@ class GraphCap(filecache.FileCache):
 
     def updateValue(self):
         """Called on init and if file changes"""
-        lines = open(self.filename, 'r').readlines()
+        lines = open(self.filename).readlines()
         mergedlines = merge(lines)
         self.dict = getDevices(mergedlines)
 

@@ -3,18 +3,18 @@
 R. White, 2001 Dec 15
 """
 
-from __future__ import division, print_function
+
 
 import os
 import sys
-import Tkinter as TKNTR  # requires 2to3
+import tkinter
 from stsci.tools.irafglobals import IrafPkg
-import wutil
+from . import wutil
 
 logo = "pyraflogo_rgb_web.gif"
 
 
-class SplashScreen(TKNTR.Toplevel):
+class SplashScreen(tkinter.Toplevel):
     """Base class for splash screen
 
     Subclass and override createWidgets().
@@ -26,8 +26,8 @@ class SplashScreen(TKNTR.Toplevel):
     Based closely on news posting by Alexander Schliep, 07 Apr 1999
     """
 
-    def __init__(self, master=None, borderwidth=4, relief=TKNTR.RAISED, **kw):
-        TKNTR.Toplevel.__init__(self,
+    def __init__(self, master=None, borderwidth=4, relief=tkinter.RAISED, **kw):
+        tkinter.Toplevel.__init__(self,
                                 master,
                                 relief=relief,
                                 borderwidth=borderwidth,
@@ -46,7 +46,7 @@ class SplashScreen(TKNTR.Toplevel):
         ymax = self.winfo_screenheight()
         x0 = (xmax - self.winfo_reqwidth()) // 2
         y0 = (ymax - self.winfo_reqheight()) // 2
-        self.geometry("+%d+%d" % (x0, y0))
+        self.geometry("+{:d}+{:d}".format(x0, y0))
 
     def createWidgets(self):
         # Implement in derived class
@@ -73,13 +73,13 @@ class PyrafSplash(SplashScreen):
         if not os.path.exists(filename):
             tfilename = os.path.join(os.path.dirname(__file__), filename)
             if not os.path.exists(tfilename):
-                raise ValueError("Splash image `%s' not found" % filename)
+                raise ValueError("Splash image `{}' not found".format(filename))
             filename = tfilename
         self.filename = filename
         self.nlines = 1
         self.textcolor = textcolor
         if text:
-            if isinstance(text, type("")):
+            if isinstance(text, str):
                 text = text.split("\n")
             self.nlines = len(text)
             self.initialText = text
@@ -98,11 +98,11 @@ class PyrafSplash(SplashScreen):
 
     def createWidgets(self):
         """Create pyraf splash image"""
-        self.img = TKNTR.PhotoImage(file=self.filename)
+        self.img = tkinter.PhotoImage(file=self.filename)
         width = self.img.width() + 20
         iheight = self.img.height()
         height = iheight + 10 + 15 * self.nlines
-        self.canvas = TKNTR.Canvas(self,
+        self.canvas = tkinter.Canvas(self,
                                    width=width,
                                    height=height,
                                    background=self["background"])
@@ -135,7 +135,7 @@ class PyrafSplash(SplashScreen):
         """Set text string"""
         if self.text is None:
             return
-        if isinstance(s, type('')):
+        if isinstance(s, str):
             s = s.split("\n")
         s = s[:len(self.text)]
         for i in range(len(s)):
@@ -174,7 +174,7 @@ class IrafMonitorSplash(PyrafSplash):
         PyrafSplash.__init__(self, text=[None, label], **kw)
         # self.stack tracks messages displayed in monitor
         self.stack = []
-        import iraftask
+        from . import iraftask
         iraftask.executionMonitor = self.monitor
 
     def monitor(self, task=None):
@@ -189,13 +189,13 @@ class IrafMonitorSplash(PyrafSplash):
             name = task.getName()
             if name != 'cl':
                 if isinstance(task, IrafPkg):
-                    msg = "Loading %s" % name
+                    msg = "Loading {}".format(name)
                 else:
-                    msg = "Running %s" % name
+                    msg = "Running {}".format(name)
             else:
                 # cl task message includes input file name
                 try:
-                    msg = "cl %s" % os.path.basename(sys.stdin.name)
+                    msg = "cl {}".format(os.path.basename(sys.stdin.name))
                 except AttributeError:
                     msg = "cl <pipe>"
             self.stack.append(msg)
@@ -203,7 +203,7 @@ class IrafMonitorSplash(PyrafSplash):
 
     def Destroy(self, event=None):
         """Shut down window and disable monitor"""
-        import iraftask
+        from . import iraftask
         if iraftask.executionMonitor == self.monitor:
             iraftask.executionMonitor = None
         PyrafSplash.Destroy(self, event)
@@ -217,6 +217,6 @@ def splash(label="PyRAF Execution Monitor", background="LightYellow", **kw):
     if wutil.hasGraphics:
         try:
             return IrafMonitorSplash(label, background=background, **kw)
-        except TKNTR.TclError:
+        except tkinter.TclError:
             pass
     return None

@@ -2,7 +2,7 @@
 
 CL scripts have special filename "<CL script taskname>"
 """
-from __future__ import division, print_function
+
 
 import linecache
 import os
@@ -20,7 +20,7 @@ def checkcache(filename=None, orig_checkcache=linecache.checkcache):
     cache = linecache.cache
     save = {}
     if filename is None:
-        filenames = cache.keys()
+        filenames = list(cache.keys())
     else:
         if filename in cache:
             filenames = [filename]
@@ -78,7 +78,7 @@ def updateCLscript(filename):
     if filename in cache:
         del cache[filename]
     try:
-        import iraf
+        from . import iraf
         taskname = filename[11:-1]
         taskobj = iraf.getTask(taskname)
         fullname = taskobj.getFullpath()

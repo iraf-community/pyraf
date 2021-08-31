@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 """compileallcl.py: Load all the packages in IRAF and compile all
 the CL scripts
 
@@ -8,7 +8,7 @@ is moved to ~/iraf/pyraf/clcache.old.
 Set the -r flag to recompile (default is to close the system cache
 and move the user cache so that everything gets compiled from scratch.)
 """
-from __future__ import division, print_function
+
 
 import os
 import sys
@@ -143,7 +143,7 @@ They screw up subsequent loading of imred/digiphot tasks.
         pkg_list = iraf.getPkgList()
 
     t1 = time.time()
-    print("Finished package and task loading (%f seconds)" % (t1 - t0,))
+    print("Finished package and task loading ({:f} seconds)".format(t1 - t0))
     print("Compiled %d CL tasks -- %d failed" % (ntask_total, ntask_failed))
     sys.stdout.flush()
 

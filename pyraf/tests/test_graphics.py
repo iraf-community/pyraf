@@ -1,7 +1,6 @@
 """These were tests under core/graphics_checks in pandokia."""
-from __future__ import absolute_import, print_function
-import six
 
+import io
 import glob
 import os
 import sys
@@ -145,7 +144,7 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_dumpspecs():
     # get dumpspecs output
-    out_f = six.StringIO()
+    out_f = io.StringIO()
     wutil.dumpspecs(outstream=out_f, skip_volatiles=True)
     out_str = out_f.getvalue()
     out_f.close()
@@ -159,14 +158,12 @@ def test_dumpspecs():
     # verify it (is version dependent)
     expected = """python ver = {major}.{minor}
 platform = {platform}
-PY3K = {py3k}
 c.OF_GRAPHICS = False
 /dev/console owner = <skipped>
 tkinter use unattempted.
 """.format(major=sys.version_info.major,
            minor=sys.version_info.minor,
-           platform=sys.platform,
-           py3k=(sys.version_info.major >= 3))
+           platform=sys.platform)
 
     assert expected.strip() == out_str.strip(), \
         'Unexpected output from wutil.dumpspecs: {}'.format(out_str)

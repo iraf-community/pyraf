@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-import six
-
+import io
 import os
 
 import pytest
@@ -48,7 +46,7 @@ class TestPyraf(object):
             assert f[0].data.shape == (512, 512)
 
     def test_imhead(self):
-        out = six.StringIO()
+        out = io.StringIO()
         iraf.imhead('dev$pix', Stdout=out)
         assert out.getvalue() == 'dev$pix[512,512][short]: m51  B  600s\n'
 

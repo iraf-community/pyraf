@@ -1,7 +1,7 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 """cachesearch.py: Check all entries in CL cache for a particular string
 """
-from __future__ import division, print_function
+
 
 import os
 import re

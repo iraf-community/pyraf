@@ -1,15 +1,14 @@
 """
 OpenGL implementation of the gki kernel class
 """
-from __future__ import division, print_function
+
 
 import sys
 import os
-from stsci.tools.for2to3 import ndarr2bytes
-import gki
-import irafgwcs
-import iraftask
-import iraf
+from . import gki
+from . import irafgwcs
+from . import iraftask
+from . import iraf
 
 # kernels to flush frequently
 # imdkern does not erase, so always flush it
@@ -27,14 +26,15 @@ class GkiIrafKernel(gki.GkiKernel):
 
     def __init__(self, device):
 
-        import irafecl
+        from . import irafecl
         module = irafecl.getTaskModule()
 
         gki.GkiKernel.__init__(self)
         graphcap = gki.getGraphcap()
         if device not in graphcap:
             raise iraf.IrafError(
-                "No entry found for specified stdgraph device `%s'" % device)
+                "No entry found for specified stdgraph device `{}'"
+                .format(device))
         gentry = graphcap[device]
         self.device = device
         self.executable = executable = gentry['kf']
@@ -75,7 +75,7 @@ class GkiIrafKernel(gki.GkiKernel):
 
     def flush(self):
         # grab last part of buffer and delete it
-        metacode = ndarr2bytes(self.gkibuffer.delget())
+        metacode = self.gkibuffer.delget().tobytes()
         # only plot if buffer contains something
         if metacode:
             # write to a temporary file

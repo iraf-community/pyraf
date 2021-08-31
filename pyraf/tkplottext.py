@@ -19,11 +19,11 @@ From experiments, these are some properties of IRAF text:
 This implementation will allow some of these properties to be overriden
 by a system-wide configuration state. See gkiopengl.py
 """
-from __future__ import division, print_function
+
 
 import numpy
 import math
-from textattrib import (CHARPATH_LEFT, CHARPATH_RIGHT, CHARPATH_UP,
+from .textattrib import (CHARPATH_LEFT, CHARPATH_RIGHT, CHARPATH_UP,
                         CHARPATH_DOWN, JUSTIFIED_CENTER, JUSTIFIED_RIGHT,
                         JUSTIFIED_LEFT, JUSTIFIED_NORMAL, JUSTIFIED_TOP,
                         JUSTIFIED_BOTTOM)

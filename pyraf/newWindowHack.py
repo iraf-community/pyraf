@@ -7,16 +7,16 @@ code:  the dialog is created,  but it is withdrawn just like the
 root window (!) so there is nothing to interact with and the system
 hangs.
 
-import Tkinter as TKNTR
-tk = TKNTR.Tk()
+import tkinter
+tk = tkinter.Tk()
 tk.withdraw()
 import tkSimpleDialog
 tkSimpleDialog.askstring("window title", "question?")
 """
-from __future__ import division, print_function
 
-import tkSimpleDialog
-from Tkinter import Toplevel, Frame
+
+import tkinter.simpledialog
+from tkinter import Toplevel, Frame
 
 
 def __init__(self, parent, title=None):
@@ -55,15 +55,15 @@ def __init__(self, parent, title=None):
     self.protocol("WM_DELETE_WINDOW", self.cancel)
 
     if self.parent is not None:
-        self.geometry("+%d+%d" %
-                      (parent.winfo_rootx() + 50, parent.winfo_rooty() + 50))
+        self.geometry("+{:d}+{:d}".format(parent.winfo_rootx() + 50,
+                                          parent.winfo_rooty() + 50))
 
     self.initial_focus.focus_set()
 
     self.wait_window(self)
 
 
-tkSimpleDialog.Dialog.__init__ = __init__
+tkinter.simpledialog.Dialog.__init__ = __init__
 """
 Here are some more notes from my "investigation":
 

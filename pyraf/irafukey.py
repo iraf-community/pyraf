@@ -1,26 +1,13 @@
 """
 implement IRAF ukey functionality
 """
-from __future__ import division, print_function
+
 
 import os
 import sys
-import wutil
-from stsci.tools import capable, for2to3, irafutils
-
-try:
-    import termios
-except ImportError:
-    if 0 == sys.platform.find('win'):  # not on win*, but IS on darwin & cygwin
-        termios = None
-    else:
-        raise
-
-# TERMIOS is deprecated in Python 2.1
-if hasattr(termios, 'ICANON') or termios is None:
-    TERMIOS = termios
-else:
-    import TERMIOS
+import termios
+from . import wutil
+from stsci.tools import capable, irafutils
 
 # This class emulates the IRAF ukey parameter mechanism. IRAF calls for
 # a ukey parameter and expects that the user will type a character in
@@ -34,10 +21,10 @@ def getSingleTTYChar():  # return type str in all Python versions
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
     new = termios.tcgetattr(fd)
-    new[3] = new[3] & ~(TERMIOS.ICANON | TERMIOS.ECHO | TERMIOS.ISIG)
-    new[6][TERMIOS.VMIN] = 1
-    new[6][TERMIOS.VTIME] = 0
-    termios.tcsetattr(fd, TERMIOS.TCSANOW, new)
+    new[3] = new[3] & ~(termios.ICANON | termios.ECHO | termios.ISIG)
+    new[6][termios.VMIN] = 1
+    new[6][termios.VTIME] = 0
+    termios.tcsetattr(fd, termios.TCSANOW, new)
     c = None
     try:
         # allow Tk mainloop to run while waiting...
@@ -45,11 +32,9 @@ def getSingleTTYChar():  # return type str in all Python versions
         if capable.OF_GRAPHICS:
             c = irafutils.tkread(fd, 1)
         else:
-            c = os.read(fd, 1)
-            if for2to3.PY3K:
-                c = c.decode('ascii', 'replace')
+            c = os.read(fd, 1).decode(errors='replace')
     finally:
-        termios.tcsetattr(fd, TERMIOS.TCSAFLUSH, old)
+        termios.tcsetattr(fd, termios.TCSAFLUSH, old)
         return c
 
 
@@ -68,7 +53,7 @@ def ukey():
         raise EOFError()
     elif ord(char) <= ord(' '):
         # convert to octal ascii representation
-        returnStr = '\\' + "%03o" % ord(char)
+        returnStr = '\\{:03o}'.format(ord(char))
     elif char == ':':
         # suck in colon string until newline is encountered
         done = 0

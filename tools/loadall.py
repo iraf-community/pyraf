@@ -1,7 +1,7 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 """loadall.py: Load all the main packages in IRAF with verbose turned on
 """
-from __future__ import division, print_function
+
 
 import sys
 import traceback

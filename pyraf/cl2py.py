@@ -2,24 +2,23 @@
 
 R. White, 1999 December 20
 """
-from __future__ import division, print_function
 
-import cStringIO
+
+import io
 import os
 import sys
 
-from generic import GenericASTTraversal
-from clast import AST
-from cltoken import Token
-import clscan
-import clparse
-from clcache import codeCache, DISABLE_CLCACHING
+from .generic import GenericASTTraversal
+from .clast import AST
+from .cltoken import Token
+from . import clscan
+from . import clparse
+from .clcache import codeCache, DISABLE_CLCACHING
 
 from stsci.tools.irafglobals import Verbose
-from stsci.tools.for2to3 import PY3K
 from stsci.tools import basicpar, minmatch, irafutils
-import irafpar
-import pyrafglobals
+from . import irafpar
+from . import pyrafglobals
 
 # The parser object can be constructed once and used many times.
 # The other classes have instance variables (e.g. lineno in CLScanner),
@@ -74,7 +73,7 @@ def cl2py(filename=None,
 
     global _parser, codeCache
 
-    if PY3K or DISABLE_CLCACHING:
+    if True or DISABLE_CLCACHING:
         usecache = False  # ! turn caching off until it is fully tested/worked
         # when this is turned on, see corresponding PY3K note in clcache.py!
 
@@ -82,7 +81,7 @@ def cl2py(filename=None,
         _parser = clparse.getParser()
 
     if mode not in ["proc", "single"]:
-        raise ValueError("Mode = `%s', must be `proc' or `single'" % (mode,))
+        raise ValueError("Mode = `{}', must be `proc' or `single'".format(mode))
 
     if filename not in (None, ''):
         if isinstance(filename, str):
@@ -240,8 +239,8 @@ def _checkVars(vars, parlist, parfile):
         if Verbose > 0:
             sys.stdout.flush()
             sys.stderr.write("Parameters from CL code inconsistent "
-                             "with .par file for task %s\n" %
-                             vars.getProcName())
+                             "with .par file for task {}\n"
+                             .format(vars.getProcName()))
             sys.stderr.flush()
 
     # create copies of the list and dictionary
@@ -300,7 +299,7 @@ class ErrorTracker:
 
         if not hasattr(self, 'errlist'):
             self._error_init()
-        self.warnlist.append((self.getlineno(node), "Warning: %s" % msg))
+        self.warnlist.append((self.getlineno(node), "Warning: {}".format(msg)))
 
     def comment(self, msg):
         """Add comments to the list - to be helpful to the debugging soul"""
@@ -336,12 +335,12 @@ class ErrorTracker:
             self.errlist.extend(self.warnlist)
             self.errlist.sort()
             try:
-                errmsg = ["Error in CL script %s" % self.filename]
+                errmsg = ["Error in CL script {}".format(self.filename)]
             except AttributeError:
                 errmsg = ["Error in CL script"]
             for lineno, msg in self.errlist:
                 if lineno:
-                    errmsg.append("%s (line %d)" % (msg, lineno))
+                    errmsg.append("{} (line {:d})".format(msg, lineno))
                 else:
                     errmsg.append(msg)
             for comment in self.comments:
@@ -350,12 +349,12 @@ class ErrorTracker:
         elif self.warnlist:
             self.warnlist.sort()
             try:
-                warnmsg = ["Warning in CL script %s" % self.filename]
+                warnmsg = ["Warning in CL script {}".format(self.filename)]
             except AttributeError:
                 warnmsg = ["Warning in CL script"]
             for lineno, msg in self.warnlist:
                 if lineno:
-                    warnmsg.append("%s (line %d)" % (msg, lineno))
+                    warnmsg.append("{} (line {:d})".format(msg, lineno))
                 else:
                     warnmsg.append(msg)
             for comment in self.comments:
@@ -578,7 +577,8 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
             shape = None
         if name in self.var_dict:
             if self.var_dict[name]:
-                self.error("Variable `%s' is multiply declared" % name, node)
+                self.error("Variable `{}' is multiply declared".format(name),
+                           node)
                 self.prune()
             else:
                 # existing but undefined entry comes from procedure line
@@ -607,9 +607,9 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
         # begin list of initial values
         if self.current_var.init_value is not None:
             # oops, looks like this was already initialized
-            errmsg = \
-                "%s: Variable `%s' has more than one set of initial values" % \
-                (self.filename, self.current_var.name,)
+            errmsg = (
+                "{}: Variable `{}' has more than one set of initial values"
+                .format(self.filename, self.current_var.name))
             self.error(errmsg, node)
         else:
             self.current_var.init_value = []
@@ -624,7 +624,7 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
                 v.init_value = _convFunc(v, ilist[0])
             except ValueError as e:
                 self.error(
-                    "Bad initial value for variable `%s': %s" % (v.name, e),
+                    "Bad initial value for variable `{}': {}".format(v.name, e),
                     node)
         else:
             # it is an array, set size or pad initial values
@@ -635,7 +635,7 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
                     v.init_value.append(None)
             elif len(v) < len(ilist):
                 self.error(
-                    "Variable `%s' has too many initial values" % (v.name,),
+                    "Variable `{}' has too many initial values".format(v.name),
                     node)
             else:
                 try:
@@ -643,8 +643,8 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
                         v.init_value[i] = _convFunc(v, v.init_value[i])
                 except ValueError as e:
                     self.error(
-                        "Bad initial value for array variable `%s': %s" %
-                        (v.name, e), node)
+                        "Bad initial value for array variable `{}': {}"
+                        .format(v.name, e), node)
 
     def n_decl_init_value(self, node):
         # initial value is token with value
@@ -672,7 +672,7 @@ class ExtractDeclInfo(GenericASTTraversal, ErrorTracker):
                 optvalue = vnode[1].get()
         optdict = self.current_var.options
         if optname not in optdict:
-            errmsg = "Unknown option `%s' for variable `%s'" % (
+            errmsg = "Unknown option `{}' for variable `{}'".format(
                 optname, self.current_var.name)
             self.error(errmsg, node)
         else:
@@ -769,13 +769,12 @@ class VarList(GenericASTTraversal, ErrorTracker):
         # names with embedded dots are allow by the CL but should be illegal
         pdot = proc_name.find('.')
         if pdot == 0:
-            self.error(
-                "Illegal procedure name `%s' starts with `.'" % proc_name,
-                node)
+            self.error("Illegal procedure name `{}' starts with `.'"
+                       .format(proc_name), node)
         if pdot >= 0:
             self.warning(
-                "Bad procedure name `%s' truncated after dot to `%s'" %
-                (proc_name, proc_name[:pdot]), node)
+                "Bad procedure name `{}' truncated after dot to `{}'"
+                .format(proc_name, proc_name[:pdot]), node)
             proc_name = proc_name[:pdot]
         # Procedure name is stored in translated form ('PY' added
         # to Python keywords, etc.)
@@ -820,12 +819,12 @@ class VarList(GenericASTTraversal, ErrorTracker):
     def checkLocalConflict(self):
         """Check for local variables that conflict with parameters"""
 
-        errlist = ["Error in procedure `%s'" % self.getProcName()]
+        errlist = ["Error in procedure `{}'".format(self.getProcName())]
         for v in self.local_vars_list:
             if v in self.proc_args_dict:
                 errlist.append(
-                    "Local variable `%s' overrides parameter of same name" %
-                    (v,))
+                    "Local variable `{}' overrides parameter of same name"
+                    .format(v))
         if len(errlist) > 1:
             self.error("\n".join(errlist))
 
@@ -854,8 +853,8 @@ class VarList(GenericASTTraversal, ErrorTracker):
         self.proc_args_list = p.proc_args_list
         for arg in self.proc_args_list:
             if arg in self.proc_args_dict:
-                errmsg = "Argument `%s' repeated in procedure statement %s" % \
-                    (arg, self.getProcName())
+                errmsg = ("Argument `{}' repeated in procedure statement {}"
+                          .format(arg, self.getProcName()))
                 self.error(errmsg, node)
             else:
                 self.proc_args_dict[arg] = None
@@ -872,7 +871,7 @@ class VarList(GenericASTTraversal, ErrorTracker):
                 # try substituting from parlist parameter list
                 d[arg] = self.getFromInputList(arg)
                 if not d[arg]:
-                    errmsg = "Procedure argument `%s' is not declared" % (arg,)
+                    errmsg = "Procedure argument `{}' is not declared".format(arg)
                     self.error(errmsg, node)
         self.prune()
 
@@ -1205,7 +1204,8 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
         for label in self.goto_blockidlist.keys():
             if label not in self.label_blockid:
                 node = self.goto_nodelist[label][0]
-                self.error("GOTO refers to unknown label `%s'" % label, node)
+                self.error("GOTO refers to unknown label `{}'".format(label),
+                           node)
 
         # note that we count on the Tree2Python class to print errors
 
@@ -1260,22 +1260,21 @@ class GoToAnalyze(GenericASTTraversal, ErrorTracker):
     def n_label_stmt(self, node):
         label = node[0].attr
         if label in self.label_blockid:
-            self.error("Duplicate statement label `%s'" % label, node)
+            self.error("Duplicate statement label `{}'".format(label), node)
         else:
             cblockid = self.current_blockid
             self.label_blockid[label] = cblockid
             # make sure all gotos for this label are in this or deeper blocks
             for i in self.goto_blockidlist.get(label, []):
                 if self.blocks[i].blockid < cblockid:
-                    self.error(
-                        "GOTO branches to label `%s' in inner block" % label,
-                        node)
+                    self.error("GOTO branches to label `{}' in inner block"
+                               .format(label), node)
 
     def n_goto_stmt(self, node):
         label = str(node[1])
         if label in self.label_blockid:
-            self.error("Backwards GOTO to label `%s' is not allowed" % label,
-                       node)
+            self.error("Backwards GOTO to label `{}' is not allowed"
+                       .format(label), node)
         elif label in self.goto_blockidlist:
             self.goto_blockidlist[label].append(self.current_blockid)
             self.goto_nodelist[label].append(node)
@@ -1445,15 +1444,15 @@ def _convFunc(var, value):
                 # parameter indirection
                 return value
             else:
-                raise ValueError("Illegal value `%s' for boolean variable %s" %
-                                 (s, var.name))
+                raise ValueError("Illegal value `{}' for boolean variable {}"
+                                 .format(s, var.name))
             return s
         else:
             try:
                 return value.bool()
             except AttributeError as e:
                 raise AttributeError(var.name + ':' + str(e))
-    raise ValueError("unimplemented type `%s'" % (var.type,))
+    raise ValueError("unimplemented type `{}'".format(var.type))
 
 
 class CheckArgList(GenericASTTraversal, ErrorTracker):
@@ -1492,9 +1491,8 @@ class CheckArgList(GenericASTTraversal, ErrorTracker):
     def n_param_name(self, node):
         keyword = node[0].attr
         if keyword in self.keywords[-1]:
-            self.error(
-                "Duplicate keyword `%s' in call to %s" %
-                (keyword, self.taskname[-1]), node)
+            self.error("Duplicate keyword `{}' in call to {}"
+                       .format(keyword, self.taskname[-1]), node)
         else:
             self.keywords[-1][keyword] = 1
 
@@ -1502,16 +1500,14 @@ class CheckArgList(GenericASTTraversal, ErrorTracker):
         if node[0].type not in [
                 'keyword_arg', 'bool_arg', 'redir_arg', 'non_expr_arg'
         ] and self.keywords[-1]:
-            self.error(
-                "Non-keyword arg after keyword arg in call to %s" %
-                self.taskname[-1], node)
+            self.error("Non-keyword arg after keyword arg in call to {}"
+                       .format(self.taskname[-1]), node)
 
     def n_empty_arg(self, node):
         if self.keywords[-1]:
             # empty args don't have line number, so use task line
-            self.error(
-                "Non-keyword (empty) arg after keyword arg in call to %s" %
-                self.taskname[-1], self.tasknode[-1])
+            self.error("Non-keyword (empty) arg after keyword arg in call to {}"
+                       .format(self.taskname[-1]), self.tasknode[-1])
 
 
 class Tree2Python(GenericASTTraversal, ErrorTracker):
@@ -1530,7 +1526,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # Start with a reasonable size for printPass array.
         # (It gets extended if necessary.)
         self.printPass = [1] * 10
-        self.code_buffer = cStringIO.StringIO()
+        self.code_buffer = io.StringIO()
         self.importDict = {}
         self.specialDict = {}
         self.pipeOut = []
@@ -1553,7 +1549,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.indent = 0
 
         if taskObj and self._ecl_iferr_entered:
-            self.write("taskObj = iraf.getTask('%s')\n" % taskObj)
+            self.write("taskObj = iraf.getTask('{}')\n".format(taskObj))
 
         # analyze goto structure
         # this assigns the label_count field for statement blocks
@@ -1578,7 +1574,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # code.  Now that we have performed the entire translation,
         # we know which of the initialization steps we need.  Stick
         # them on the front of the translated python.
-        self.code_buffer = cStringIO.StringIO()
+        self.code_buffer = io.StringIO()
         self.writeProcHeader()
         header = self.code_buffer.getvalue()
         if pyrafglobals._use_ecl:
@@ -1757,12 +1753,12 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
 
         if pyrafglobals._use_ecl:
             self.writeIndent("from pyraf.irafecl import EclState")
-            self.writeIndent("_ecl = EclState(_ecl_linemap_%s)\n" %
-                             self.vars.proc_name)
+            self.writeIndent("_ecl = EclState(_ecl_linemap_{})\n"
+                             .format(self.vars.proc_name))
 
         # write goto label definitions if needed
         for label in self.gotos.labels():
-            self.writeIndent("class GoTo_%s(Exception): pass" % label)
+            self.writeIndent("class GoTo_{}(Exception): pass".format(label))
 
         # decrement indentation (which writes the pass if necessary)
         self.decrIndent()
@@ -1920,9 +1916,9 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         if s in self.vars:
             v = self.vars.get(s)
             if nsub < len(v.shape):
-                self.error("Too few subscripts for array %s" % s, node)
+                self.error("Too few subscripts for array {}".format(s), node)
             elif nsub > len(v.shape):
-                self.error("Too many subscripts for array %s" % s, node)
+                self.error("Too many subscripts for array {}".format(s), node)
         self.prune()
 
     def n_param_name(self, node):
@@ -2012,7 +2008,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
     def n_term(self, node):
         if pyrafglobals._use_ecl and node[1] in ['/', '%']:
             kind = {"/": "divide", "%": "modulo"}[node[1]]
-            self.write("taskObj._ecl_safe_%s(" % kind)
+            self.write("taskObj._ecl_safe_{}(".format(kind))
             self.preorder(node[0])
             self.write(",")
             self.preorder(node[2])
@@ -2227,21 +2223,21 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         label = node[0].attr
         if label in self.gotos:
             self.decrIndent()
-            self.writeIndent("except GoTo_%s:" %
-                             irafutils.translateName(label))
+            self.writeIndent("except GoTo_{}:".format(
+                irafutils.translateName(label)))
             self.incrIndent()
             self.writeIndent("pass")
             self.decrIndent()
         self.prune()
 
     def n_goto_stmt(self, node):
-        self.write("raise GoTo_%s" % irafutils.translateName(node[1].attr))
+        self.write("raise GoTo_{}".format(irafutils.translateName(node[1].attr)))
         self.prune()
 
     def n_inspect_stmt(self, node):
         # The following will create/call print as a statement, but is a function
         # However, there may not be a valid use case to worry about here.
-        if PY3K:
+        if True:
             raise RuntimeError("Error - this code is incorrect in PY3K")
         self.write("print ")
         if node[0].type == "=":
@@ -2255,7 +2251,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
     def n_switch_stmt(self, node):
         self.inSwitch = self.inSwitch + 1
         self.caseCount.append(0)
-        self.write("SwitchVal%d = " % (self.inSwitch,))
+        self.write("SwitchVal{:d} = ".format(self.inSwitch))
         self.preorder(node[2])
         self.preorder(node[4])
         self.inSwitch = self.inSwitch - 1
@@ -2273,7 +2269,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.writeIndent("if ")
         else:
             self.writeIndent("elif ")
-        self.write("SwitchVal%d in [" % (self.inSwitch,))
+        self.write("SwitchVal{:d} in [".format(self.inSwitch))
         self.preorder(node[2])
         self.write("]")
         self.preorder(node[4])
@@ -2423,7 +2419,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         # Also add special character after arguments to make it
         # easier to break up long lines
 
-        arg_buffer = cStringIO.StringIO()
+        arg_buffer = io.StringIO()
         saveColumn = self.column
         saveBuffer = self.code_buffer
         self.code_buffer = arg_buffer

@@ -2,24 +2,23 @@
 matplotlib implementation of the gki kernel class
 """
 
-from __future__ import division, print_function
+
 
 import math
 import numpy
-import Tkinter as TKNTR
+import tkinter
 import matplotlib
 # (done in mca file) matplotlib.use('TkAgg') # set backend
 from matplotlib.lines import Line2D
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
-from stsci.tools.for2to3 import ndarr2str
 
-import gki
-import gkitkbase
-import textattrib
-import gkigcur
-import MplCanvasAdapter as mca
-from wutil import moveCursorTo
+from . import gki
+from . import gkitkbase
+from . import textattrib
+from . import gkigcur
+from . import MplCanvasAdapter as mca
+from .wutil import moveCursorTo
 try:
     import readline
 except ImportError:
@@ -64,8 +63,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
 
     def makeGWidget(self, width=600, height=420):
         """Make the graphics widget.  Also perform some self init."""
-        self.__pf = TKNTR.Frame(self.top)
-        self.__pf.pack(side=TKNTR.TOP, fill=TKNTR.BOTH, expand=1)
+        self.__pf = tkinter.Frame(self.top)
+        self.__pf.pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
         self.__xsz = width
         self.__ysz = height
 
@@ -76,7 +75,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         self.__fig.set_facecolor('k')  # default to black
 
         self.__mca = mca.MplCanvasAdapter(self, self.__fig, master=self.__pf)
-        self.__mca.pack(side=TKNTR.TOP, fill=TKNTR.BOTH, expand=1)
+        self.__mca.pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
         self.__mca.gwidgetize(width, height)  # Add attrs to the gwidget
         self.gwidget = self.__mca.get_tk_widget()
 
@@ -477,7 +476,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # add the text
         x = gki.ndc(arg[0])
         y = gki.ndc(arg[1])
-        text = ndarr2str(arg[3:].astype(numpy.int8))
+        text = arg[3:].astype(numpy.int8).tobytes().encode('ascii')
         ta = self.textAttributes
 
         # For now, force this to be non-bold for decent looking plots.  It
@@ -734,4 +733,4 @@ class tkColorManager:
         red = int(255 * color[0])
         green = int(255 * color[1])
         blue = int(255 * color[2])
-        return "#%02x%02x%02x" % (red, green, blue)
+        return "#{:02x}{:02x}{:02x}".format(red, green, blue)

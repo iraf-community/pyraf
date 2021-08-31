@@ -2,7 +2,7 @@
 
 R. White, 2000 January 7
 """
-from __future__ import division, print_function
+
 
 import copy
 import glob
@@ -10,7 +10,6 @@ import os
 import re
 import types
 from stsci.tools import basicpar, minmatch, irafutils, taskpars
-from stsci.tools.for2to3 import PY3K
 from stsci.tools.irafglobals import INDEF, Verbose, yes, no
 from stsci.tools.basicpar import (warning, _StringMixin, IrafPar, IrafParS,
                                   _cmdlineFlag)
@@ -155,9 +154,8 @@ def makeIrafPar(init_value,
             fields.extend([min, max, prompt])
         if init_value is not None:
             if len(init_value) != array_size:
-                raise ValueError(
-                    "Initial value list does not match array size for parameter `%s'"
-                    % name)
+                raise ValueError("Initial value list does not match array "
+                                 "size for parameter `{}'".format(name))
             for iv in init_value:
                 fields.append(iv)
         else:
@@ -168,7 +166,7 @@ def makeIrafPar(init_value,
     try:
         return IrafParFactory(fields, strict=strict)
     except ValueError as e:
-        errmsg = "Bad value for parameter `%s'\n%s" % (name, str(e))
+        errmsg = "Bad value for parameter `{}'\n{}".format(name, str(e))
         raise ValueError(errmsg)
 
 
@@ -208,7 +206,7 @@ class IrafParPset(IrafParS):
         f = self.value.split('.')
         if len(f) > 1 and f[-1] == 'par':
             # must be a file name
-            from iraffunctions import IrafTaskFactory
+            from .iraffunctions import IrafTaskFactory
             irf_val = pyraf.iraf.Expand(self.value)
             return IrafTaskFactory(taskname=irf_val.split(".")[0],
                                    value=irf_val)
@@ -278,7 +276,7 @@ class IrafParL(_StringMixin, IrafPar):
             if self.fh:
                 try:
                     self.fh.close()
-                except IOError:
+                except OSError:
                     pass
                 self.fh = None
                 self.lines = None
@@ -311,7 +309,7 @@ class IrafParL(_StringMixin, IrafPar):
             # non-null value means we're reading from a file
             try:
                 if not self.fh:
-                    self.fh = open(pyraf.iraf.Expand(self.value), "r")
+                    self.fh = open(pyraf.iraf.Expand(self.value))
                     if self.fh.isatty():
                         self.lines = None
                     else:
@@ -327,14 +325,15 @@ class IrafParL(_StringMixin, IrafPar):
                     value = ''
                 if not value:
                     # EOF -- raise exception
-                    raise EOFError("EOF from list parameter `%s'" % self.name)
+                    raise EOFError("EOF from list parameter `{}'"
+                                   .format(self.name))
                 if value[-1:] == "\n":
                     value = value[:-1]
-            except IOError as e:
+            except OSError as e:
                 if not self.errMsg:
-                    warning("Unable to read values for list parameter `%s' "
-                            "from file `%s'\n%s" %
-                            (self.name, self.value, str(e)),
+                    warning("Unable to read values for list parameter `{}' "
+                            "from file `{}'\n{}"
+                            .format(self.name, self.value, str(e)),
                             level=-1)
                     # only print message one time
                     self.errMsg = 1
@@ -426,7 +425,7 @@ class IrafParGCur(IrafParCursor):
 
     def _getNextValue(self):
         """Return next graphics cursor value"""
-        import gki  # lazy import - reduce circular imports on startup
+        from . import gki  # lazy import - reduce circular imports on startup
         return gki.kernel.gcur()
 
 
@@ -440,7 +439,7 @@ class IrafParImCur(IrafParCursor):
 
     def _getNextValue(self):
         """Return next image display cursor value"""
-        import irafimcur  # lazy import - reduce circular imports on startup
+        from . import irafimcur  # lazy import - reduce circular imports on startup
         return irafimcur.imcur()
 
 
@@ -454,7 +453,7 @@ class IrafParUKey(IrafParL):
 
     def _getNextValue(self):
         """Return next typed character"""
-        import irafukey  # lazy import - reduce circular imports on startup
+        from . import irafukey  # lazy import - reduce circular imports on startup
         return irafukey.ukey()
 
 
@@ -465,7 +464,7 @@ class IrafParUKey(IrafParL):
 if __name__.find('.') < 0:  # for unit test need absolute import
     exec('import filecache', globals())  # 2to3 messes up simpler form
 else:
-    import filecache
+    from . import filecache
 
 
 class ParCache(filecache.FileCache):
@@ -478,7 +477,7 @@ class ParCache(filecache.FileCache):
             filename = ''
         try:
             filecache.FileCache.__init__(self, filename)
-        except (OSError, IOError):
+        except OSError:
             # whoops, couldn't open that file
             # start with a null file instead unless strict is set
             if strict:
@@ -656,11 +655,11 @@ class IrafParList(taskpars.TaskPars):
                         self.__pars[j] = p
                         return
                 else:
-                    raise RuntimeError("Bug: parameter `%s' is in dictionary "
-                                       "__pardict but not in list __pars??" %
-                                       p.name)
-            raise ValueError("Parameter named `%s' is already defined" %
-                             p.name)
+                    raise RuntimeError("Bug: parameter `{}' is in dictionary "
+                                       "__pardict but not in list __pars??"
+                                       .format(p.name))
+            raise ValueError("Parameter named `{}' is already defined"
+                             .format(p.name))
         # add it just before the mode and $nargs parameters (if present)
         j = -1
         for i in range(len(self.__pars)):
@@ -692,7 +691,8 @@ class IrafParList(taskpars.TaskPars):
         """
         if not isinstance(other, self.__class__):
             if Verbose > 0:
-                print('Comparison list is not a %s' % self.__class__.__name__)
+                print('Comparison list is not a {}'
+                      .format(self.__class__.__name__))
             return 0
         # compare minimal set of parameter attributes
         thislist = self._getConsistentList()
@@ -751,11 +751,7 @@ class IrafParList(taskpars.TaskPars):
         # hidden Python parameters go into the standard dictionary
         # (hope there are none of these in IRAF tasks)
         if name and name[0] == '_':
-            if PY3K:
-                object.__setattr__(self, name,
-                                   value)  # new-style class objects
-            else:
-                self.__dict__[name] = value  # for old-style classes
+            object.__setattr__(self, name, value)
         else:
             self.setParam(name, value)
 
@@ -1062,11 +1058,11 @@ class IrafParList(taskpars.TaskPars):
         self.setParam('$nargs', nargs)
 
     def eParam(self):
-        import epar
+        from . import epar
         epar.epar(self)
 
     def tParam(self):
-        import tpar
+        from . import tpar
         tpar.tpar(self)
 
     def lParam(self, verbose=0):
@@ -1100,7 +1096,7 @@ class IrafParList(taskpars.TaskPars):
         for i in range(len(self.__pars)):
             p = self.__pars[i]
             if p.name != '$nargs':
-                print("%s%s" % (taskname, p.dpar(cl=cl)))
+                print("{}{}".format(taskname, p.dpar(cl=cl)))
         if cl:
             print("# EOF")
 
@@ -1135,11 +1131,11 @@ class IrafParList(taskpars.TaskPars):
                 fh.write(par.save() + '\n')
         if fh != filename:
             fh.close()
-            return "%d parameters written to %s" % (nsave, filename)
+            return "{:d} parameters written to {}".format(nsave, filename)
         elif hasattr(fh, 'name'):
-            return "%d parameters written to %s" % (nsave, fh.name)
+            return "{:d} parameters written to {}".format(nsave, fh.name)
         else:
-            return "%d parameters written" % (nsave,)
+            return "{:d} parameters written".format(nsave)
 
     def __getinitargs__(self):
         """Return parameters for __init__ call in pickle"""
@@ -1205,12 +1201,12 @@ def _extractDiffInfo(alist):
 def _printHiddenDiff(pd1, hd1, pd2, hd2):
     for key in pd1.keys():
         if key in hd2:
-            print("Parameter `%s' is hidden in list 2 but not list 1" % (key,))
+            print("Parameter `{}' is hidden in list 2 but not list 1".format(key))
             del pd1[key]
             del hd2[key]
     for key in pd2.keys():
         if key in hd1:
-            print("Parameter `%s' is hidden in list 1 but not list 2" % (key,))
+            print("Parameter `{}' is hidden in list 1 but not list 2".format(key))
             del pd2[key]
             del hd1[key]
 
@@ -1235,27 +1231,27 @@ def _printDiff(pd1, pd2, label):
             else:
                 # one or both parameters missing
                 if key1 not in pd2:
-                    print("Extra %s parameter `%s' (type `%s') in list 1" %
-                          (label, key1, pd1[key1][0]))
+                    print("Extra {} parameter `{}' (type `{}') in list 1"
+                          .format(label, key1, pd1[key1][0]))
                     # delete the extra parameter
                     del pd1[key1]
                     i1 = i1 + 1
                 if key2 not in pd1:
-                    print("Extra %s parameter `%s' (type `%s') in list 2" %
-                          (label, key2, pd2[key2][0]))
+                    print("Extra {} parameter `{}' (type `{}') in list 2"
+                          .format(label, key2, pd2[key2][0]))
                     del pd2[key2]
                     i2 = i2 + 1
         # other parameters must be missing
         while i1 < len(k1):
             key1 = k1[i1]
-            print("Extra %s parameter `%s' (type `%s') in list 1" %
-                  (label, key1, pd1[key1][0]))
+            print("Extra {} parameter `{}' (type `{}') in list 1"
+                  .format(label, key1, pd1[key1][0]))
             del pd1[key1]
             i1 = i1 + 1
         while i2 < len(k2):
             key2 = k2[i2]
-            print("Extra %s parameter `%s' (type `%s') in list 2" %
-                  (label, key2, pd2[key2][0]))
+            print("Extra {} parameter `{}' (type `{}') in list 2"
+                  .format(label, key2, pd2[key2][0]))
             del pd2[key2]
             i2 = i2 + 1
     # remaining parameters are in both lists
@@ -1269,8 +1265,8 @@ def _printDiff(pd1, pd2, label):
             if noextra and order1 != order2:
                 mm.append("order disagreement")
             if type1 != type2:
-                mm.append("type disagreement (`%s' vs. `%s')" % (type1, type2))
-            print("Parameter `%s': %s" % (key, ", ".join(mm)))
+                mm.append("type disagreement (`{}' vs. `{}')".format(type1, type2))
+            print("Parameter `{}': {}".format(key, ", ".join(mm)))
 
 
 # The dictionary of all special-use par files found on disk.
@@ -1326,10 +1322,10 @@ def _updateSpecialParFileDict(dirToCheck=None, strict=False):
     for supfname in flist:
         buf = []
         try:
-            supfile = open(supfname, 'r')
+            supfile = open(supfname)
             buf = supfile.readlines()
             supfile.close()
-        except IOError:
+        except OSError:
             pass
         if len(buf) < 1:
             warning("Unable to read special use parameter file: " + supfname,
@@ -1479,7 +1475,7 @@ def _readpar(filename, strict=0):
 
     param_dict = {}
     param_list = []
-    fh = open(os.path.expanduser(filename), 'r')
+    fh = open(os.path.expanduser(filename))
     lines = fh.readlines()
     fh.close()
     # reverse order of lines so we can use pop method

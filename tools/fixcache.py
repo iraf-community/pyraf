@@ -1,7 +1,7 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # rename clcache files
 
-from __future__ import division, print_function
+
 import os
 
 
@@ -11,7 +11,7 @@ def fixit(trylist, verbose=0):
         if os.path.exists(cachedir):
             break
     else:
-        raise OSError("clcache directory not found (tried %s)" % (trylist,))
+        raise OSError("clcache directory not found (tried {})".format(trylist))
     flist = os.listdir(cachedir)
     fcount = 0
     rcount = 0

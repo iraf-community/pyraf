@@ -4,19 +4,13 @@ These are python stubs that are overloaded by a c version implementations.
 If the c versions do not exist, then these routines will do nothing
 
 """
-from __future__ import division, print_function
+
 
 import struct
 import sys
 import os
-
-try:
-    import fcntl
-except ImportError:
-    if 0 == sys.platform.find('win') or sys.platform == 'cygwin':
-        fcntl = None  # not used on win (yet) but IS on darwin
-    else:
-        raise
+import tkinter
+import fcntl
 
 
 # empty placeholder versions for X
@@ -104,7 +98,7 @@ try:
         # ONLY if an XWindow was successfully initialized.
         #  WJH (10June2004)
         if xutil.getFocalWindowID() == -1:
-            raise EnvironmentError()
+            raise OSError()
 
         # Successful intialization. Reset dummy methods with
         # those from 'xutil' now.
@@ -122,10 +116,10 @@ try:
         # If on OSX w/out X11, use aqutil
         if WUTIL_ON_MAC and not _skipDisplay:  # as opposed to the PC (future?)
             try:
-                import aqutil
+                from . import aqutil
                 # override the few Mac-specific functions needed
-                from aqutil import getFocalWindowID, setFocusTo, getParentID
-                from aqutil import moveCursorTo, getPointerPosition
+                from .aqutil import getFocalWindowID, setFocusTo, getParentID
+                from .aqutil import moveCursorTo, getPointerPosition
                 _has_aqutil = 1
             except ImportError:
                 _has_aqutil = 0
@@ -133,7 +127,7 @@ try:
 
 except ImportError:
     _has_xutil = 0  # Unsuccessful init of XWindow
-except EnvironmentError:
+except OSError:
     _has_xutil = 0  # Unsuccessful init of XWindow
 
 # Clean up the namespace a bit...
@@ -142,29 +136,8 @@ try:
 except NameError:
     pass  # may not have imported it
 
-magicConstant = None
-try:
-    import IOCTL
-    magicConstant = IOCTL.TIOCGWINSZ
-except ImportError:
-    if sys.platform == 'sunos5':
-        magicConstant = ord('T') * 256 + 104
-    elif sys.platform.startswith('linux'):
-        magicConstant = 0x5413
-    elif sys.platform[:4] == 'osf1':
-        magicConstant = 0x40087468
-    elif sys.platform.startswith('win'):
-        magicConstant = None  # this is unused on windows (so far)
-    elif sys.platform == 'darwin':
-        try:
-            import termios
-            magicConstant = termios.TIOCGWINSZ
-        except ImportError:
-            magicConstant = 1074275912
-    else:
-        raise ImportError(
-            "wutil.py: Needs definition of TIOCGWINSZ constant for platform %s"
-            % sys.platform)
+import termios
+magicConstant = termios.TIOCGWINSZ
 
 
 def getScreenDepth():
@@ -202,7 +175,7 @@ def getTopID(WindowID):
                 return wid
             else:
                 wid = pid
-    except EnvironmentError:
+    except OSError:
         return None
 
 
@@ -245,7 +218,7 @@ def getTermWindowSize():
         if xsize <= 0:
             xsize = 80
         return ysize, xsize
-    except (IOError, AttributeError):
+    except OSError:
         return (24, 80)  # assume generic size
 
 
@@ -278,9 +251,6 @@ class FocusEntity:
         raise NotImplementedError("class FocusEntity cannot be used directly")
 
 
-# XXXX find more portable scheme for handling absence of FCNTL
-
-
 class TerminalFocusEntity(FocusEntity):
     """Implementation of FocusEntity interface for the originating
     terminal window"""
@@ -298,7 +268,7 @@ class TerminalFocusEntity(FocusEntity):
                 scrnPosDict = aqutil.getPointerGlobalPosition()
                 self.lastScreenX = scrnPosDict['x']
                 self.lastScreenY = scrnPosDict['y']
-        except EnvironmentError:
+        except OSError:
             self.windowID = None
         self.lastX = 30
         self.lastY = 30
@@ -370,9 +340,6 @@ class TerminalFocusEntity(FocusEntity):
     def getWindowSize(self):
         """return a tuple containing the x,y size of the terminal window
         in characters"""
-
-        if magicConstant is None:
-            raise Exception("platform isn't supported: " + sys.platform)
 
         # define string to serve as memory area to receive copy of structure
         # created by IOCTL call
@@ -479,7 +446,7 @@ class FocusController:
                 focusTarget.gwidget.focus_set()
 
         current = self.focusStack[-1]
-        if isinstance(focusTarget, type("")):
+        if isinstance(focusTarget, str):
             next = self.focusEntities[focusTarget]
         else:
             next = focusTarget
@@ -549,24 +516,19 @@ def dumpspecs(outstream=None, skip_volatiles=False):
     out += "\nplatform = " + str(sys.platform)
     if not skip_volatiles:
         out += "\nPyRAF ver = " + pyrver
-    out += "\nPY3K = " + str(capable.PY3K)
     out += "\nc.OF_GRAPHICS = " + str(capable.OF_GRAPHICS)
     dco = 'not yet known'
-    if hasattr(capable, 'get_dc_owner'):  # rm hasattr at/after v2.2
-        if skip_volatiles:
-            out += "\n/dev/console owner = <skipped>"
-        else:
-            dco = capable.get_dc_owner(False, True)
-            out += "\n/dev/console owner = " + str(dco)
+    if skip_volatiles:
+        out += "\n/dev/console owner = <skipped>"
+    else:
+        dco = capable.get_dc_owner(False, True)
+        out += "\n/dev/console owner = " + str(dco)
 
     if not capable.OF_GRAPHICS:
-        if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
-            out += "\ntkinter import failed."
-        else:
-            out += "\ntkinter use unattempted."
+        out += "\ntkinter use unattempted."
     else:
-        out += "\nTclVersion = " + str(capable.TKNTR.TclVersion)
-        out += "\nTkVersion = " + str(capable.TKNTR.TkVersion)
+        out += "\nTclVersion = " + str(tkinter.TclVersion)
+        out += "\nTkVersion = " + str(tkinter.TkVersion)
         out += "\nWUTIL_ON_MAC = " + str(WUTIL_ON_MAC)
         out += "\nWUTIL_ON_WIN = " + str(WUTIL_ON_WIN)
         out += "\nWUTIL_USING_X = " + str(WUTIL_USING_X)
@@ -639,8 +601,6 @@ if _skipDisplay:
             print("No graphics/display intended for this session.")
         else:
             print("No graphics/display possible for this session.")
-            if hasattr(capable, 'TKINTER_IMPORT_FAILED'):
-                print("tkinter import failed.")
 else:
     if _has_xutil or _has_aqutil:
         hasGraphics = focusController.hasGraphics

@@ -2,35 +2,31 @@
 
 R. White, 2000 January 19
 """
-from __future__ import division, print_function
+
 
 import os
 import sys
-from stsci.tools.for2to3 import PY3K
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
 if __name__.find('.') < 0:  # for unit test need absolute import
     for mmm in ('filecache', 'pyrafglobals', 'dirshelve'):
         exec('import ' + mmm, globals())  # 2to3 messes up simpler form
 else:
-    import filecache
-    import pyrafglobals
-    import dirshelve
+    from . import filecache
+    from . import pyrafglobals
+    from . import dirshelve
 
 # In case you wish to disable all CL script caching (for whatever reason)
 DISABLE_CLCACHING = False  # enable caching by default
-if PY3K or 'PYRAF_NO_CLCACHE' in os.environ:
+if True or 'PYRAF_NO_CLCACHE' in os.environ:  # Disabled in Python 3 for the moment
     DISABLE_CLCACHING = True
 
 # set up pickle so it can pickle code objects
 
-import copy_reg
+import copyreg
 import marshal
 import types
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle  # noqa
+import pickle
 
 
 def code_unpickler(data):
@@ -41,7 +37,7 @@ def code_pickler(code):
     return code_unpickler, (marshal.dumps(code),)
 
 
-copy_reg.pickle(types.CodeType, code_pickler, code_unpickler)
+copyreg.pickle(types.CodeType, code_pickler, code_unpickler)
 
 # Code cache is implemented using a dictionary clFileDict and
 # a list of persistent dictionaries (shelves) in cacheList.
@@ -119,7 +115,7 @@ class _CodeCache:
         """
         # filenames to try, open flags to use
         filelist = [(filename, "w"),
-                    ('%s.%s' % (filename, _currentVersion()), "c")]
+                    ('{}.{}'.format(filename, _currentVersion()), "c")]
         msg = []
         for fname, flag in filelist:
             # first try opening the cache read-write
@@ -133,7 +129,7 @@ class _CodeCache:
                     writeflag = 0
                 except dirshelve.error:
                     # give up on this file and try the next one
-                    msg.append("Unable to open CL script cache %s" % fname)
+                    msg.append("Unable to open CL script cache {}".format(fname))
                     continue
             # check version of cache -- don't use it if version mismatch
             if len(fh) == 0:
@@ -145,17 +141,17 @@ class _CodeCache:
             elif fname.endswith(_currentVersion()):
                 # uh-oh, something is seriously wrong
                 msg.append(
-                    "CL script cache %s has version mismatch, may be corrupt?"
-                    % fname)
+                    "CL script cache {} has version mismatch, may be corrupt?"
+                    .format(fname))
             elif oldVersion > _currentVersion():
                 msg.append(
-                    ("CL script cache %s was created by " +
-                     "a newer version of pyraf (cache %s, this pyraf %s)") %
-                    (fname, repr(oldVersion), repr(_currentVersion())))
+                    ("CL script cache {} was created by "
+                     "a newer version of pyraf (cache {}, this pyraf {})")
+                    .format(fname, repr(oldVersion), repr(_currentVersion())))
             else:
                 msg.append(
-                    "CL script cache %s is obsolete version (old %s, current %s)"
-                    % (fname, repr(oldVersion), repr(_currentVersion())))
+                    "CL script cache {} is obsolete version (old {}, current {})"
+                    .format(fname, repr(oldVersion), repr(_currentVersion())))
             fh.close()
         # failed to open either cache
         self.warning("\n".join(msg))
@@ -207,12 +203,8 @@ class _CodeCache:
             # there is no filename, but return md5 digest of source as key
             h = hashlib.md5()
 
-            if PY3K:  # unicode must be encoded to be hashed
-                h.update(source.encode('ascii'))
-                return str(h.digest())
-            else:
-                h.update(source)
-                return h.digest()
+            h.update(source.encode())
+            return str(h.digest())
 
     def add(self, index, pycode):
         """Add pycode to cache with key = index.  Ignores if index=None."""
@@ -281,16 +273,16 @@ class _CodeCache:
             if index in cache:
                 if writeflag:
                     del cache[index]
-                    self.warning(
-                        "Removed %s from CL script cache %s" %
-                        (filename, self.cacheFileList[i]), 2)
+                    self.warning("Removed {} from CL script cache {}"
+                                 .format(filename, self.cacheFileList[i]), 2)
                     nremoved = nremoved + 1
                 else:
-                    self.warning("Cannot remove %s from read-only "
-                                 "CL script cache %s" %
-                                 (filename, self.cacheFileList[i]))
+                    self.warning("Cannot remove {} from read-only "
+                                 "CL script cache {}"
+                                 .format(filename, self.cacheFileList[i]))
         if nremoved == 0:
-            self.warning("Did not find %s in CL script cache" % filename, 2)
+            self.warning("Did not find {} in CL script cache"
+                         .format(filename), 2)
 
 
 # create code cache
@@ -299,14 +291,14 @@ if not os.path.exists(userCacheDir):
     try:
         os.mkdir(userCacheDir)
         if '-s' not in sys.argv and '--silent' not in sys.argv:
-            print('Created directory %s for cache' % userCacheDir)
+            print('Created directory {} for cache'.format(userCacheDir))
     except OSError:
-        print('Could not create directory %s' % userCacheDir)
+        print('Could not create directory {}'.format(userCacheDir))
 
 dbfile = 'clcache'
 
 if DISABLE_CLCACHING:
-    # since CL code caching is turned off currently for PY3K,
+    # since CL code caching is turned off currently for Python 3,
     # there won't be any installed there, but still play with user area
     codeCache = _CodeCache([
         os.path.join(userCacheDir, dbfile),

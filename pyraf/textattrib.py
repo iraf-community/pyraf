@@ -19,9 +19,9 @@ From experiments, these are some properties of IRAF text:
 This implementation will allow some of these properties to be overriden
 by a system-wide configuration state. See gkiopengl.py
 """
-from __future__ import division, print_function
 
-import fontdata
+
+from . import fontdata
 
 CHARPATH_LEFT = 2
 CHARPATH_RIGHT = 3

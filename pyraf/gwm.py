@@ -3,14 +3,14 @@ Graphics window manager, creates multiple toplevel togl widgets for
 use by python plotting
 
 """
-from __future__ import division, print_function
+
 
 import os
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
-    import Tkinter as TKNTR  # requires 2to3
-import wutil
-import gki
+    import tkinter
+from . import wutil
+from . import gki
 
 
 class GWMError(Exception):
@@ -66,7 +66,7 @@ class GraphicsWindowManager(gki.GkiProxy):
             self.createList.append(windowName)
         if self.windowVar is None:
             # create Tk string variable with active window name
-            self.windowVar = TKNTR.StringVar()
+            self.windowVar = tkinter.StringVar()
             self.windowVar.trace('w', self._setWindowVar)
         self.windowVar.set(windowName)
 
@@ -93,7 +93,7 @@ class GraphicsWindowManager(gki.GkiProxy):
         windowName = str(windowName).strip()
         window = self.windows.get(windowName)
         if window is None:
-            print("error: graphics window `%s' doesn't exist" % (windowName,))
+            print("error: graphics window `{}' doesn't exist".format(windowName))
         else:
             changeActiveWindow = (self.stdgraph == window)
             window.top.destroy()
@@ -139,14 +139,14 @@ def _setGraphicsWindowManager():
         if 'PYRAFGRAPHICS' in os.environ:
             kernelname = os.environ['PYRAFGRAPHICS'].lower()
             if kernelname == "tkplot":
-                import gkitkplot
+                from . import gkitkplot
                 kernel = gkitkplot.GkiTkplotKernel
             elif kernelname == "opengl":
                 print("OpenGL kernel no longer exists, using default instead")
                 kernelname = "default"
             elif kernelname == "matplotlib":
                 try:
-                    import GkiMpl
+                    from . import GkiMpl
                     kernel = GkiMpl.GkiMplKernel
                 except ImportError:
                     print("matplotlib is not installed, using default instead")
@@ -162,7 +162,7 @@ def _setGraphicsWindowManager():
         if 'PYRAFGRAPHICS_TEST' in os.environ:
             print("Using graphics kernel: " + kernelname)
         if kernelname == "default":
-            import gkitkplot
+            from . import gkitkplot
             kernel = gkitkplot.GkiTkplotKernel
         wutil.isGwmStarted = 1
         return GraphicsWindowManager(kernel)

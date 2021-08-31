@@ -26,13 +26,11 @@ index (cachedict[filename]) or using the .get() method.
 
 R. White, 2000 October 1
 """
-from __future__ import division, print_function
 
 import os
 import stat
 import sys
 import hashlib
-from stsci.tools.for2to3 import PY3K
 
 
 class FileCache:
@@ -83,9 +81,9 @@ class FileCache:
             if oldattr != newattr:
                 if oldattr[1] > newattr[1] or oldattr[2] > newattr[2]:
                     # warning if current file appears older than cached version
-                    self._warning("Warning: current version of file %s"
-                                  " is older than cached version" %
-                                  self.filename)
+                    self._warning("Warning: current version of file {}"
+                                  " is older than cached version"
+                                  .format(self.filename))
                 self.updateValue()
                 self.attributes = newattr
         return self.getValue()
@@ -98,7 +96,7 @@ class FileCache:
         if filename is None:
             filename = self.filename
         if isinstance(filename, str):
-            fh = open(filename, 'r')
+            fh = open(filename)
         elif hasattr(filename, 'read'):
             fh = filename
             if hasattr(filename, 'seek'):
@@ -144,15 +142,11 @@ class MD5Cache(FileCache):
     def updateValue(self):
         """Called when file has changed."""
 
-        contents = self._getFileHandle().read()  # is unicode str in PY3K
+        contents = self._getFileHandle().read()
         # md5 digest is the value associated with the file
         h = hashlib.md5()
-        if PY3K:  # unicode must be encoded to be hashed
-            h.update(contents.encode('ascii'))
-            self.value = str(h.digest())
-        else:
-            h.update(contents)
-            self.value = h.digest()
+        h.update(contents.encode())
+        self.value = str(h.digest())
 
 
 class FileCacheDict:

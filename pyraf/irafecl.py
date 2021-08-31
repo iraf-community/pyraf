@@ -1,13 +1,13 @@
 """This module adds IRAF ECL style error handling to PyRAF."""
 
-from __future__ import division, print_function
+
 
 import inspect
 import sys
 from stsci.tools.irafglobals import Verbose
-import pyrafglobals
-import iraftask
-import irafexecute
+from . import pyrafglobals
+from . import iraftask
+from . import irafexecute
 
 # this is better than what 2to3 does, since the iraf import is circular
 import pyraf.iraf
@@ -15,7 +15,7 @@ import pyraf.iraf
 executionMonitor = None
 
 
-class EclState(object):
+class EclState:
     """An object which records the ECL state for one invocation of a CL proc:
 
     1. The procedure's linemap converting Python line numberss to CL line numbers.
@@ -40,13 +40,13 @@ def getTaskModule():
     language mode,  either ECL or classic CL.
     """
     if pyrafglobals._use_ecl:
-        import irafecl
+        from . import irafecl
         return irafecl
     else:
         return iraftask
 
 
-class Erract(object):
+class Erract:
     """Erract is a state variable (singleton) which corresponds to the IRAF ECL
     environment variable 'erract'.  erract has the following properties which
     control ECL exception handling:
@@ -185,8 +185,8 @@ class EclBase:
         self.setParList(*args, **kw)
 
         if Verbose > 1:
-            print("run %s (%s: %s)" %
-                  (self._name, self.__class__.__name__, self._fullpath))
+            print("run {} ({}: {})"
+                  .format(self._name, self.__class__.__name__, self._fullpath))
             if self._runningParList:
                 self._runningParList.lParam()
 
@@ -291,8 +291,9 @@ class EclBase:
         """Formats an ECL error message from an exception and returns it as a string."""
         errno, errmsg, errtask = self._ecl_exception_properties(e)
         if errno and errmsg and errtask:
-            text = "Error (%d): on line %d of '%s' from '%s':\n\t'%s'" % \
-                   (errno, self._ecl_get_lineno(), self._name, errtask, errmsg)
+            text = ("Error ({:d}): on line {:d} of '{}' from '{}':\n\t'{}'"
+                    .format(errno, self._ecl_get_lineno(),
+                            self._name, errtask, errmsg))
         else:
             text = str(e)
         return text
@@ -326,8 +327,8 @@ class EclBase:
         if b == 0:
             if not erract.abort or self._ecl_iferr_entered():
                 self._ecl_trace(
-                    "Warning on line %d of '%s':  divide by zero - using $err_dzvalue ="
-                    % (self._ecl_get_lineno(), self._name),
+                    "Warning on line {:d} of '{}':  divide by zero - using $err_dzvalue ="
+                    .format(self._ecl_get_lineno(), self._name),
                     self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
@@ -342,8 +343,8 @@ class EclBase:
         if b == 0:
             if not erract.abort or self._ecl_iferr_entered():
                 self._ecl_trace(
-                    "Warning on line %d of task '%s':  modulo by zero - using $err_dzvalue ="
-                    % (self._ecl_get_lineno(), self._name),
+                    "Warning on line {:d} of task '{}':  modulo by zero - using $err_dzvalue ="
+                    .format(self._ecl_get_lineno(), self._name),
                     self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
@@ -375,7 +376,7 @@ class EclTraceback(EclBase):
             raise e
         else:
             try:
-                self._ecl_trace("ERROR (%d): %s" % (e.errno, e.errmsg))
+                self._ecl_trace("ERROR ({:d}): {}".format(e.errno, e.errmsg))
             except:
                 self._ecl_trace("ERROR:", str(e))
             self._ecl_traceback(e)
@@ -392,14 +393,14 @@ class EclTraceback(EclBase):
         cl_file = self.getFilename()
         try:
             cl_code = open(cl_file).readlines()[lineno - 1].strip()
-        except IOError:
+        except OSError:
             cl_code = "<source code not available>"
         if hasattr(e, "_ecl_suppress_first_trace") and \
                 e._ecl_suppress_first_trace:
             del e._ecl_suppress_first_trace
         else:
             self._ecl_trace("  ", repr(cl_code))
-        self._ecl_trace("      line %d: %s" % (lineno, cl_file))
+        self._ecl_trace("      line {:d}: {}".format(lineno, cl_file))
         parent = _ecl_parent_task()
         if parent:
             parent_lineno = self._ecl_get_lineno()

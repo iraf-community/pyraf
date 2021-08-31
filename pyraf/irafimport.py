@@ -10,34 +10,24 @@ module attributes.  Only affects imports of iraf module.
 
 R. White, 1999 August 17
 """
-from __future__ import absolute_import, division, print_function
 
-import __builtin__
+
+import builtins
 import sys
 from stsci.tools import minmatch
-
-PY3K = sys.version_info[0] > 2
-_importHasLvlArg = PY3K or sys.version_info[1] >= 5  # is 2.*, handle no 1.*
-_reloadIsBuiltin = sys.version_info[0] < 3
 
 IMPORT_DEBUG = False
 
 # Save the original hooks;  replaced at bottom of module...
-_originalImport = __builtin__.__import__
-if _reloadIsBuiltin:
-    _originalReload = __builtin__.reload
-else:
-    import imp
-    _originalReload = imp.reload
+_originalImport = builtins.__import__
+import importlib
+_originalReload = importlib.reload
 
 
 def restoreBuiltins():
     """ Called before exiting pyraf - this puts import and reload back. """
-    __builtin__.__import__ = _originalImport
-    if _reloadIsBuiltin:
-        __builtin__.reload = _originalReload
-    else:
-        imp.reload = _originalReload
+    builtins.__import__ = _originalImport
+    importlib.reload = _originalReload
 
 
 def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
@@ -47,7 +37,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
               str(level))
 
     # do first: the default value for level changed to 0 as of Python 3.3
-    if PY3K and sys.version_info[1] >= 3 and level < 0:
+    if level < 0:
         level = 0
 
     # e.g. "from iraf import stsdas, noao" or "from .iraf import noao"
@@ -64,9 +54,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
     # e.g. "import iraf" or "from . import iraf" (fromlist is a list OR tuple)
     # (extra Python2 cases are not used in PY3K - double check this)
-    if (PY3K and not fromlist and name == 'iraf') or \
-       ((not PY3K) and (name == "iraf")) or \
-       ((not PY3K) and name=='' and level==1 and len(fromlist)==1 and 'iraf' in fromlist):
+    if not fromlist and name == 'iraf':
         if IMPORT_DEBUG:
             print("irafimport: iraf case: n=" + name + ", fl=" +
                   str(fromlist) + ", l=" + str(level))
@@ -98,8 +86,8 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
                 'minmatch', 'irafutils', 'dialog', 'listdlg', 'filedlg',
                 'alert', 'irafglobals'
         ]:
-            if name == ('pyraf.%s' % module):
-                name = 'stsci.tools.%s' % module
+            if name == 'pyraf.{}'.format(module):
+                name = 'stsci.tools.{}'.format(module)
         # Replace any instances of 'pytools' with 'stsci.tools' -- the
         # new name of the former pytools package
         name = name.replace('pytools.', 'stsci.tools.')
@@ -107,7 +95,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     # Same for everything in fromlist (which is a tuple in PY3K)
     if fromlist:
         fromlist = tuple(
-            [item.replace('pytools', 'stsci.tools') for item in fromlist])
+            item.replace('pytools', 'stsci.tools') for item in fromlist)
     # !!! END TEMPORARY KLUDGE !!!
 
     hadIrafInList = fromlist and 'iraf' in fromlist and name == '' and level > 0
@@ -115,11 +103,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     if IMPORT_DEBUG:
         print("irafimport - PASSTHRU: n=" + name + ", fl=" + str(fromlist) +
               ", l=" + str(level))
-    if _importHasLvlArg:
-        retval = _originalImport(name, globals, locals, fromlist, level)
-    else:
-        # we could assert here that level is default, but it's safe to assume
-        retval = _originalImport(name, globals, locals, fromlist)
+    retval = _originalImport(name, globals, locals, fromlist, level)
 
     if hadIrafInList:
         # Use case is: "from . import gki, gwm, iraf"
@@ -170,7 +154,7 @@ class _irafModuleClass:
         try:
             return self.mmdict[attr]
         except KeyError:
-            raise AttributeError("Undefined IRAF task `%s'" % (attr,))
+            raise AttributeError("Undefined IRAF task `{}'".format(attr))
 
     def __setattr__(self, attr, value):
         # add an attribute to the module itself
@@ -193,22 +177,16 @@ class _irafModuleClass:
 
 
 # Install our hooks
-__builtin__.__import__ = _irafImport
-if _reloadIsBuiltin:
-    __builtin__.reload = _irafReload
-else:
-    imp.reload = _irafReload
+builtins.__import__ = _irafImport
+importlib.reload = _irafReload
 
 # create the module proxy
 _irafModuleProxy = _irafModuleClass()
 
 # import iraf module using original mechanism
-if PY3K:
-    # necessary as of Python 3.3+ :  try "import pyraf.iraf"
-    pyrafmod = _originalImport('pyraf.iraf', globals(), locals(), [])
-    the_iraf_module = pyrafmod.iraf
-else:
-    the_iraf_module = _originalImport('iraf', globals(), locals(), [])
+# necessary as of Python 3.3+ :  try "import pyraf.iraf"
+pyrafmod = _originalImport('pyraf.iraf', globals(), locals(), [])
+the_iraf_module = pyrafmod.iraf
 
 # leaving
 if IMPORT_DEBUG:

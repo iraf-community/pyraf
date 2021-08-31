@@ -6,7 +6,7 @@ Obviously, this module should refrain as much as possible from importing any
 IRAF related code (at least globally), since this is heavily relied upon in
 non-IRAF situations.
 """
-from __future__ import division, print_function
+
 
 import os
 import shutil
@@ -264,7 +264,7 @@ keep
 
 def getIrafVer():
     """ Return current IRAF version as a string """
-    import iraffunctions
+    from . import iraffunctions
     cltask = iraffunctions.getTask('cl')
     # must use default par list, in case they have a local override
     plist = cltask.getDefaultParList()

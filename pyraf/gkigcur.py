@@ -1,12 +1,12 @@
 """
 implement IRAF gcur functionality
 """
-from __future__ import division, print_function
+
 
 import sys
-import Tkinter as TKNTR
+import tkinter
 from stsci.tools import irafutils
-import wutil
+from . import wutil
 
 # The following class attempts to emulate the standard IRAF gcursor
 # mode of operation. That is to say, it is basically a keyboard driven
@@ -54,7 +54,7 @@ class Gcursor:
                 self.active = 0
                 self.unbind()
                 self.cursorOff()
-            except TKNTR.TclError:
+            except tkinter.TclError:
                 pass
         # EOF flag can get set by window-close event or 'I' keystroke
         # It should be set to string message
@@ -192,7 +192,7 @@ class Gcursor:
 
     def getKey(self, event):
 
-        import gkicmd
+        from . import gkicmd
         # The main character handling routine where no special keys
         # are used (e.g., arrow keys)
         key = event.char
@@ -222,13 +222,13 @@ class Gcursor:
                     elif colonString[1:] == 'markcur':
                         self.markcur = not self.markcur
                     else:
-                        self.writeString("Unimplemented CL gcur `:%s'" %
-                                         colonString)
+                        self.writeString("Unimplemented CL gcur `:{}'"
+                                         .format(colonString))
                 else:
                     self._setRetString(key, x, y, colonString)
         elif key == '=':
             # snap command - print the plot
-            import gki
+            from . import gki
             gki.printPlot(self.window)
         elif key.isupper():
             if key == 'I':
@@ -247,9 +247,10 @@ class Gcursor:
                 self.window.undoN()
             elif key == 'C':
                 wx, wy, gwcs = self._convertXY(x, y)
-                self.writeString("%g %g" % (wx, wy))
+                self.writeString("{:g} {:g}".format(wx, wy))
             else:
-                self.writeString("Unimplemented CL gcur command `%s'" % key)
+                self.writeString("Unimplemented CL gcur command `{}'"
+                                 .format(key))
         else:
             self._setRetString(key, x, y, "")
 
@@ -269,7 +270,7 @@ class Gcursor:
 
         wx, wy, gwcs = self._convertXY(x, y)
         if key <= ' ' or ord(key) >= 127:
-            key = '\\%03o' % ord(key)
+            key = '\\{:03o}'.format(ord(key))
         self.retString = str(wx) + ' ' + str(wy) + ' ' + str(gwcs) + ' ' + key
         if colonString:
             self.retString = self.retString + ' ' + colonString

@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import math
 import os
@@ -12,7 +12,7 @@ if HAS_IRAF:
     from pyraf import iraf
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
     from io import StringIO
 

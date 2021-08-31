@@ -2,11 +2,11 @@
    options to be used for PSETs in the parameter editor task.  Code was
    broken out from eparoption.py.
 """
-from __future__ import division, print_function
+
 
 # local modules
 from stsci.tools import eparoption
-import epar
+from . import epar
 
 
 class PsetEparOption(eparoption.ActionEparButton):

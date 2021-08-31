@@ -11,17 +11,17 @@ XXX keys, len are incomplete if directory is not writable?
 R. White, 2000 September 26
 """
 
-from __future__ import division, print_function
+
 
 import os as _os
 import binascii as _binascii
-import __builtin__
+import builtins
 
 # For anydbm
 error = IOError
 
 
-class _Database(object):
+class _Database:
     """Dictionary-like object with entries stored in separate files
 
     Keys and values must be strings.
@@ -35,31 +35,22 @@ class _Database(object):
         if not _os.path.exists(directory):
             if flag == 'c':
                 # create directory if it doesn't exist
-                try:
-                    _os.mkdir(directory)
-                except OSError as e:
-                    raise IOError(str(e))
+                _os.mkdir(directory)
             else:
-                raise IOError("Directory " + directory + " does not exist")
+                raise OSError("Directory " + directory + " does not exist")
         elif not _os.path.isdir(directory):
-            raise IOError("File " + directory + " is not a directory")
+            raise OSError("File " + directory + " is not a directory")
         elif self._writable:
             # make sure directory is writable
-            try:
-                testfile = _os.path.join(directory,
-                                         'junk' + repr(_os.getpid()))
-                fh = __builtin__.open(testfile, 'w')
-                fh.close()
-                _os.remove(testfile)
-            except IOError:
-                raise IOError("Directory %s cannot be opened for writing" %
-                              (directory,))
+            testfile = _os.path.join(directory,
+                                     'junk' + repr(_os.getpid()))
+            fh = builtins.open(testfile, 'w')
+            fh.close()
+            _os.remove(testfile)
+
         # initialize dictionary
         # get list of files from directory and translate to keys
-        try:
-            flist = _os.listdir(self._directory)
-        except OSError:
-            raise IOError("Directory " + directory + " is not readable")
+        flist = _os.listdir(self._directory)
         for fname in flist:
             # replace hyphens and add newline in base64
             key = fname.replace('-', '/') + '\n'
@@ -84,13 +75,13 @@ class _Database(object):
         # look for file even if dict doesn't have key because
         # another process could create it
         try:
-            fh = __builtin__.open(self._getFilename(key), 'rb')
+            fh = builtins.open(self._getFilename(key), 'rb')
             value = fh.read()
             fh.close()
             # cache object in memory
             self._dict[key] = value
             return value
-        except IOError:
+        except OSError:
             raise KeyError(key)
 
     def __setitem__(self, key, value):
@@ -99,15 +90,15 @@ class _Database(object):
         if self._writable:
             try:
                 fname = self._getFilename(key)
-                fh = __builtin__.open(fname, 'wb')
+                fh = builtins.open(fname, 'wb')
                 fh.write(value)
                 fh.close()
-            except IOError as e:
+            except OSError as e:
                 # clean up on IO error (e.g., if disk fills up)
                 try:
                     if _os.path.exists(fname):
                         _os.remove(fname)
-                except IOError:
+                except OSError:
                     pass
                 raise e
 

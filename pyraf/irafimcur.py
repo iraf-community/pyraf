@@ -4,14 +4,14 @@ Read the cursor position from stdimage image display device (DS9,
 SAOIMAGE or XIMTOOL) and return a string compatible with IRAF's
 imcur parameter.
 """
-from __future__ import division, print_function
+
 
 import sys
 from stsci.tools import irafutils
 from stsci.tools.irafglobals import Verbose, IrafError
-import irafdisplay
-import gwm
-import iraf
+from . import irafdisplay
+from . import gwm
+from . import iraf
 
 # dictionary of devices to support multiple active displays
 _devices = {}
@@ -31,7 +31,7 @@ def _getDevice(displayname=None):
         device = gwm.gki.getGraphcap()[displayname]
         dd = device['DD'].split(',')
         if len(dd) > 1 and dd[1] != '':
-            imtdev = 'fifo:%si:%so' % (dd[1], dd[1])
+            imtdev = 'fifo:{}i:{}o'.format(dd[1], dd[1])
         else:
             imtdev = None
         # multiple stdimage/graphcap entries can share the same device
@@ -39,7 +39,7 @@ def _getDevice(displayname=None):
             _devices[imtdev] = irafdisplay.ImageDisplayProxy(imtdev)
         device = _devices[displayname] = _devices[imtdev]
         return device
-    except (KeyError, IOError, OSError):
+    except (KeyError, OSError):
         pass
 
     # last gasp is to assume display is an imtdev string
@@ -47,9 +47,9 @@ def _getDevice(displayname=None):
         device = _devices[displayname] = irafdisplay.ImageDisplayProxy(
             displayname)
         return device
-    except (ValueError, IOError):
+    except (ValueError, OSError):
         pass
-    raise IrafError("Unable to open image display `%s'\n" % displayname)
+    raise IrafError("Unable to open image display `{}'\n".format(displayname))
 
 
 def imcur(displayname=None):
@@ -71,7 +71,7 @@ def imcur(displayname=None):
         # Read cursor position at keystroke
         result = device.readCursor()
         if Verbose > 1:
-            sys.__stdout__.write("%s\n" % (result,))
+            sys.__stdout__.write("{}\n".format(result))
             sys.__stdout__.flush()
         if result == 'EOF':
             raise EOFError()
@@ -86,5 +86,5 @@ def imcur(displayname=None):
             sys.stdout.flush()
             result = result + ' ' + irafutils.tkreadline()[:-1]
         return result
-    except IOError as error:
+    except OSError as error:
         raise IrafError(str(error))

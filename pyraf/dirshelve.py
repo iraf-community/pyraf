@@ -10,15 +10,14 @@ XXX by another process after open
 R. White, 2000 Sept 26
 """
 
-from __future__ import division, print_function
+
 
 import shelve
-from stsci.tools.for2to3 import PY3K
 
 if __name__.find('.') < 0:  # for unit test need absolute import
     exec('import dirdbm', globals())  # 2to3 messes up simpler form
 else:
-    import dirdbm
+    from . import dirdbm
 
 # tuple of errors that can be raised
 error = (dirdbm.error,)
@@ -35,8 +34,8 @@ class Shelf(shelve.Shelf):
             # apparently file is truncated; delete it and raise
             # and exception
             del self.dict[key]
-            raise KeyError("Corrupted or truncated file for key %s "
-                           "(bad file has been deleted)" % (repr(key),))
+            raise KeyError("Corrupted or truncated file for key {} "
+                           "(bad file has been deleted)".format(repr(key)))
 
     def __setitem__(self, key, value):
         f = shelve.StringIO()
@@ -75,10 +74,7 @@ def open(filename, flag='c'):
            'n'     Always create a new, empty db, open for reading and writing
     """
 
-    if PY3K:
-        try:
-            return shelve.DbfilenameShelf(filename, flag)
-        except Exception as ex:  # is dbm.error
-            raise dirdbm.error(str(ex))
-    else:
-        return DirectoryShelf(filename, flag)
+    try:
+        return shelve.DbfilenameShelf(filename, flag)
+    except Exception as ex:  # is dbm.error
+        raise dirdbm.error(str(ex))

@@ -21,7 +21,7 @@
 # http://www.pythonware.com
 #
 
-from __future__ import division, print_function
+
 
 from dis import opname, HAVE_ARGUMENT
 
@@ -110,10 +110,10 @@ def describe(func, name=None):
     a = describeParams(func)
     args = []
     for arg in a:
-        if isinstance(arg, type("")):
+        if isinstance(arg, str):
             args.append(arg)
         else:
-            args.append("%s=%s" % (arg[0], repr(arg[1])))
+            args.append("{}={}".format(arg[0], repr(arg[1])))
     args = ", ".join(args)
 
     # function name
@@ -122,8 +122,8 @@ def describe(func, name=None):
         # name = func.func_name
         name = func.__name__
         if name == "<lambda>":
-            return "lambda %s" % args
-    return "%s(%s)" % (name, args)
+            return "lambda {}".format(args)
+    return "{}({})".format(name, args)
 
 
 def __getmethods(c, m):

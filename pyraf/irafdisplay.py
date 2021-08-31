@@ -26,28 +26,12 @@ This could be used to maintain references to multiple display servers.
 Ultimately more functionality may be added to make this a complete
 replacement for CDL.
 """
-from __future__ import division, print_function
-
 import os
 import numpy
 import socket
 import sys
-from stsci.tools.for2to3 import bytes_write, ndarr2bytes
+import fcntl
 from stsci.tools import irafutils
-
-try:
-    import fcntl
-except ImportError:
-    if 0 == sys.platform.find('win'):  # not on win*, but IS on darwin & cygwin
-        fcntl = None
-    else:
-        raise
-
-# FCNTL is deprecated in Python 2.2
-if hasattr(fcntl, 'F_SETFL') or fcntl is None:
-    FCNTL = fcntl
-else:
-    import FCNTL
 
 _default_imtdev = ("unix:/tmp/.IMT%d", "fifo:/dev/imt1i:/dev/imt1o")
 
@@ -100,9 +84,9 @@ def _open(imtdev=None):
         for imtdev in defaults:
             try:
                 return _open(imtdev)
-            except IOError:
+            except OSError:
                 pass
-        raise IOError("Cannot open image display")
+        raise OSError("Cannot open image display")
     # substitute user id in name (multiple times) if necessary
     nd = len(imtdev.split("%d"))
     dev = imtdev % ((os.getuid(),) * (nd - 1))
@@ -122,7 +106,7 @@ def _open(imtdev=None):
             return InetImageDisplay(port, hostname)
         except ValueError:
             pass
-    raise ValueError("Illegal image device specification `%s'" % imtdev)
+    raise ValueError("Illegal image device specification `{}'".format(imtdev))
 
 
 class ImageDisplay:
@@ -168,7 +152,7 @@ class ImageDisplay:
         sum = numpy.add.reduce(a)
         sum = 0xffff - (sum & 0xffff)
         a[3] = sum
-        self._write(ndarr2bytes(a))
+        self._write(a.tobytes())
 
     def close(self, os_close=os.close):
         """Close image display connection"""
@@ -191,23 +175,20 @@ class ImageDisplay:
         """
         try:
             return irafutils.tkread(self._fdin, n)
-        except (EOFError, IOError):
-            raise IOError("Error reading from image display")
+        except EOFError:
+            raise OSError("Error reading from image display")
 
     def _write(self, s):
         """Write string s to image display
 
         Raises IOError on failure
         """
-        try:
-            n = len(s)
-            while n > 0:
-                nwritten = bytes_write(self._fdout, s[-n:])
-                n -= nwritten
-                if nwritten <= 0:
-                    raise IOError("Error writing to image display")
-        except OSError:
-            raise IOError("Error writing to image display")
+        n = len(s)
+        while n > 0:
+            nwritten = os.write(self._fdout, s[-n:])
+            n -= nwritten
+            if nwritten <= 0:
+                raise OSError("Error writing to image display")
 
 
 class FifoImageDisplay(ImageDisplay):
@@ -215,15 +196,10 @@ class FifoImageDisplay(ImageDisplay):
 
     def __init__(self, infile, outfile):
         ImageDisplay.__init__(self)
-        try:
-            self._fdin = os.open(infile, os.O_RDONLY | os.O_NDELAY)
-            fcntl.fcntl(self._fdin, FCNTL.F_SETFL, os.O_RDONLY)
-            self._fdout = os.open(outfile, os.O_WRONLY | os.O_NDELAY)
-            fcntl.fcntl(self._fdout, FCNTL.F_SETFL, os.O_WRONLY)
-        except OSError as error:
-            raise IOError("Cannot open image display (%s)" % (error,))
-        except AttributeError:
-            raise RuntimeError("Image fcntl is not supported on this platform")
+        self._fdin = os.open(infile, os.O_RDONLY | os.O_NDELAY)
+        fcntl.fcntl(self._fdin, fcntl.F_SETFL, os.O_RDONLY)
+        self._fdout = os.open(outfile, os.O_WRONLY | os.O_NDELAY)
+        fcntl.fcntl(self._fdout, fcntl.F_SETFL, os.O_WRONLY)
 
     def __del__(self):
         self.close()
@@ -240,8 +216,8 @@ class UnixImageDisplay(ImageDisplay):
             self._socket = socket.socket(family, type)
             self._socket.connect(filename)
             self._fdin = self._fdout = self._socket.fileno()
-        except socket.error:
-            raise IOError("Cannot open image display")
+        except OSError:
+            raise OSError("Cannot open image display")
 
     def close(self):
         """Close image display connection"""
@@ -301,7 +277,7 @@ class ImageDisplayProxy(ImageDisplay):
             # Null value indicates display was probably closed
             if value:
                 return value
-        except IOError:
+        except OSError:
             pass
         # This error can occur if image display was closed.
         # If a new display has been started then closing and
