@@ -10,7 +10,6 @@ jobs:
     env:
       tmp: /tmp/
       iraf: /usr/lib/iraf/
-      IRAFARCH: generic
       TERM: dumb
 
     strategy:
