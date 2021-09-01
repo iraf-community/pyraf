@@ -11,7 +11,6 @@ import hashlib
 import copyreg
 import marshal
 import types
-import pickle
 
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
