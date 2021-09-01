@@ -98,7 +98,7 @@ class _CodeCache:
         self.cacheFileList = flist
         self.nwrite = nwrite
         # flag indicating preference for system cache
-        self.useSystem = 0
+        self.useSystem = False
         if not cacheList:
             self.warning("Warning: unable to open any CL script cache, "
                          "performance may be slow")
@@ -121,12 +121,12 @@ class _CodeCache:
             # first try opening the cache read-write
             try:
                 fh = dirshelve.open(fname, flag)
-                writeflag = 1
+                writeflag = True
             except dirshelve.error:
                 # initial open failed -- try opening the cache read-only
                 try:
                     fh = dirshelve.open(fname, "r")
-                    writeflag = 0
+                    writeflag = False
                 except dirshelve.error:
                     # give up on this file and try the next one
                     msg.append("Unable to open CL script cache {}".format(fname))
@@ -165,15 +165,15 @@ class _CodeCache:
             sys.stderr.write(msg + "\n")
             sys.stderr.flush()
 
-    def writeSystem(self, value=1):
+    def writeSystem(self, value=True):
         """Add scripts to system cache instead of user cache"""
 
-        if value == 0:
-            self.useSystem = 0
+        if not value:
+            self.useSystem = False
         elif self.cacheList:
             writeflag, cache = self.cacheList[-1]
             if writeflag:
-                self.useSystem = 1
+                self.useSystem = True
             else:
                 self.warning("System CL script cache is not writable")
         else:

@@ -38,7 +38,7 @@ def cl2py(filename=None,
           mode="proc",
           local_vars_dict=None,
           local_vars_list=None,
-          usecache=1):
+          usecache=True):
     """Read CL program from file and return pycode object with Python equivalent
 
     filename: Name of the CL source file or a filehandle from which the
