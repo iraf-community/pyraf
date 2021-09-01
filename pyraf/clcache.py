@@ -6,6 +6,13 @@ R. White, 2000 January 19
 
 import os
 import sys
+import hashlib
+
+import copyreg
+import marshal
+import types
+import pickle
+
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
 if __name__.find('.') < 0:  # for unit test need absolute import
@@ -16,18 +23,25 @@ else:
     from . import pyrafglobals
     from . import dirshelve
 
-# In case you wish to disable all CL script caching (for whatever reason)
-DISABLE_CLCACHING = False  # enable caching by default
-if 'PYRAF_NO_CLCACHE' in os.environ:
-    DISABLE_CLCACHING = True
+
+if 'CLCACHE_PATH' in os.environ:
+    clcache_path = os.environ['CLCACHE_PATH'].split(':')
+    if 'disable' in clcache_path:
+        clcache_path = []
+else:
+    # create code cache
+    userCacheDir = os.path.join(userIrafHome, 'pyraf')
+    if not os.path.exists(userCacheDir):
+        try:
+            os.mkdir(userCacheDir)
+            if '-s' not in sys.argv and '--silent' not in sys.argv:
+                print('Created directory {} for cache'.format(userCacheDir))
+        except OSError:
+            print('Could not create directory {}'.format(userCacheDir))
+    clcache_path = [userCacheDir, pyrafglobals.pyrafDir]
+
 
 # set up pickle so it can pickle code objects
-
-import copyreg
-import marshal
-import types
-import pickle
-
 
 def code_unpickler(data):
     return marshal.loads(data)
@@ -54,8 +68,6 @@ copyreg.pickle(types.CodeType, code_pickler, code_unpickler)
 # name, determine the shelve key) while staying up-to-date
 # with changes of the CL file contents when the script is
 # being developed.
-
-import hashlib
 
 _versionKey = 'CACHE_VERSION'
 
@@ -285,24 +297,4 @@ class _CodeCache:
                          .format(filename), 2)
 
 
-# create code cache
-userCacheDir = os.path.join(userIrafHome, 'pyraf')
-if not os.path.exists(userCacheDir):
-    try:
-        os.mkdir(userCacheDir)
-        if '-s' not in sys.argv and '--silent' not in sys.argv:
-            print('Created directory {} for cache'.format(userCacheDir))
-    except OSError:
-        print('Could not create directory {}'.format(userCacheDir))
-
-dbfile = 'clcache'
-
-if DISABLE_CLCACHING:
-    codeCache = _CodeCache([])
-else:
-    codeCache = _CodeCache([
-        os.path.join(userCacheDir, dbfile),
-        os.path.join(pyrafglobals.pyrafDir, dbfile)
-    ])
-
-del userCacheDir, dbfile
+codeCache = _CodeCache([os.path.join(d, 'clcache') for d in clcache_path])
