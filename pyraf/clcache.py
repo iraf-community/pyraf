@@ -18,7 +18,7 @@ else:
 
 # In case you wish to disable all CL script caching (for whatever reason)
 DISABLE_CLCACHING = False  # enable caching by default
-if True or 'PYRAF_NO_CLCACHE' in os.environ:  # Disabled in Python 3 for the moment
+if 'PYRAF_NO_CLCACHE' in os.environ:
     DISABLE_CLCACHING = True
 
 # set up pickle so it can pickle code objects
@@ -298,11 +298,7 @@ if not os.path.exists(userCacheDir):
 dbfile = 'clcache'
 
 if DISABLE_CLCACHING:
-    # since CL code caching is turned off currently for Python 3,
-    # there won't be any installed there, but still play with user area
-    codeCache = _CodeCache([
-        os.path.join(userCacheDir, dbfile),
-    ])
+    codeCache = _CodeCache([])
 else:
     codeCache = _CodeCache([
         os.path.join(userCacheDir, dbfile),

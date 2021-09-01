@@ -13,7 +13,7 @@ from .clast import AST
 from .cltoken import Token
 from . import clscan
 from . import clparse
-from .clcache import codeCache, DISABLE_CLCACHING
+from .clcache import codeCache
 
 from stsci.tools.irafglobals import Verbose
 from stsci.tools import basicpar, minmatch, irafutils
@@ -72,10 +72,6 @@ def cl2py(filename=None,
     """
 
     global _parser, codeCache
-
-    if True or DISABLE_CLCACHING:
-        usecache = False  # ! turn caching off until it is fully tested/worked
-        # when this is turned on, see corresponding PY3K note in clcache.py!
 
     if _parser is None:
         _parser = clparse.getParser()
