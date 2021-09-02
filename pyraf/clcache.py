@@ -194,7 +194,7 @@ class _CodeCache:
             h = hashlib.md5()
 
             h.update(source.encode())
-            return str(h.digest())
+            return h.hexdigest()
 
     def add(self, index, pycode):
         """Add pycode to cache with key = index.  Ignores if index=None."""

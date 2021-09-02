@@ -146,7 +146,7 @@ class MD5Cache(FileCache):
         # md5 digest is the value associated with the file
         h = hashlib.md5()
         h.update(contents.encode())
-        self.value = str(h.digest())
+        self.value = h.hexdigest()
 
 
 class FileCacheDict:
