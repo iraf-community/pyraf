@@ -83,7 +83,7 @@ del executable
 runCmd = None
 from . import irafexecute
 from . import clcache
-from stsci.tools import capable
+from stsci.tools import capable, irafglobals
 
 if _verbosity_ > 0:
     print("pyraf: setting exit handler")
