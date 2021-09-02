@@ -9,15 +9,9 @@ XXX by another process after open
 
 R. White, 2000 Sept 26
 """
-
-
-
 import shelve
 
-if __name__.find('.') < 0:  # for unit test need absolute import
-    exec('import dirdbm', globals())  # 2to3 messes up simpler form
-else:
-    from . import dirdbm
+from . import dirdbm
 
 # tuple of errors that can be raised
 error = (dirdbm.error,)

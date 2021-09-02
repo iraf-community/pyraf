@@ -461,10 +461,7 @@ class IrafParUKey(IrafParL):
 # IRAF parameter list synchronized to disk file
 # -----------------------------------------------------
 
-if __name__.find('.') < 0:  # for unit test need absolute import
-    exec('import filecache', globals())  # 2to3 messes up simpler form
-else:
-    from . import filecache
+from . import filecache
 
 
 class ParCache(filecache.FileCache):

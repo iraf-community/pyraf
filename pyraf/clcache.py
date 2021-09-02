@@ -14,13 +14,9 @@ import types
 
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
-if __name__.find('.') < 0:  # for unit test need absolute import
-    for mmm in ('filecache', 'pyrafglobals', 'dirshelve'):
-        exec('import ' + mmm, globals())  # 2to3 messes up simpler form
-else:
-    from . import filecache
-    from . import pyrafglobals
-    from . import dirshelve
+from . import filecache
+from . import pyrafglobals
+from . import dirshelve
 
 
 if 'CLCACHE_PATH' in os.environ:
