@@ -45,7 +45,7 @@ distribute-*.tar.gz
 *~
 cmd*.cl
 .pytest_cache/
-clcache.v2
+clcache.v2.sqlite3
 uparm
 
 # Mac OSX

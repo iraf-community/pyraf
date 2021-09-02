@@ -5,13 +5,12 @@ R. White, 2000 January 19
 import os
 import sys
 import hashlib
-import shelve
-import dbm
 
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
 from . import filecache
 from . import pyrafglobals
+from . import sqliteshelve
 
 
 if 'CLCACHE_PATH' in os.environ:
@@ -104,20 +103,19 @@ class _CodeCache:
         the cache.
         """
         # filenames to try, open flags to use
-        filelist = [(filename, "w"),
-                    ('{}.{}'.format(filename, _currentVersion()), "c")]
+        filelist = [('{}.{}'.format(filename, _currentVersion()), "w")]
         msg = []
         for fname, flag in filelist:
             # first try opening the cache read-write
             try:
-                fh = shelve.open(fname, flag)
+                fh = sqliteshelve.open(fname, flag)
                 writeflag = True
-            except dbm.error:
+            except OSError:
                 # initial open failed -- try opening the cache read-only
                 try:
-                    fh = shelve.open(fname, "r")
+                    fh = sqliteshelve.open(fname, "r")
                     writeflag = False
-                except dbm.error:
+                except OSError:
                     # give up on this file and try the next one
                     msg.append("Unable to open CL script cache {}".format(fname))
                     continue
