@@ -2,21 +2,16 @@
 
 R. White, 2000 January 19
 """
-
-
 import os
 import sys
 import hashlib
-
-import copyreg
-import marshal
-import types
+import shelve
+import dbm
 
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
 from . import filecache
 from . import pyrafglobals
-from . import dirshelve
 
 
 if 'CLCACHE_PATH' in os.environ:
@@ -35,18 +30,6 @@ else:
             print('Could not create directory {}'.format(userCacheDir))
     clcache_path = [userCacheDir, pyrafglobals.pyrafDir]
 
-
-# set up pickle so it can pickle code objects
-
-def code_unpickler(data):
-    return marshal.loads(data)
-
-
-def code_pickler(code):
-    return code_unpickler, (marshal.dumps(code),)
-
-
-copyreg.pickle(types.CodeType, code_pickler, code_unpickler)
 
 # Code cache is implemented using a dictionary clFileDict and
 # a list of persistent dictionaries (shelves) in cacheList.
@@ -127,14 +110,14 @@ class _CodeCache:
         for fname, flag in filelist:
             # first try opening the cache read-write
             try:
-                fh = dirshelve.open(fname, flag)
+                fh = shelve.open(fname, flag)
                 writeflag = True
-            except dirshelve.error:
+            except dbm.error:
                 # initial open failed -- try opening the cache read-only
                 try:
-                    fh = dirshelve.open(fname, "r")
+                    fh = shelve.open(fname, "r")
                     writeflag = False
-                except dirshelve.error:
+                except dbm.error:
                     # give up on this file and try the next one
                     msg.append("Unable to open CL script cache {}".format(fname))
                     continue
