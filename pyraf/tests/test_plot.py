@@ -7,7 +7,12 @@ from stsci.tools import capable
 if HAS_IRAF:
     from pyraf import iraf
 
-no_graphics = 'DISPLAY' not in os.environ
+no_graphics = False
+try:
+    import tkinter
+    tkinter.Tk().destroy()
+except Exception:
+    no_graphics = True
 
 markers = [None, 'point', 'box', 'plus', 'cross', 'circle']
 graphics = ['tkplot', 'matplotlib']
