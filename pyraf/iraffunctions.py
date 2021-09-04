@@ -165,7 +165,7 @@ def Init(doprint=1, hush=0, savefile=None):
                         _os.environ[key] = value
                 iraf = _os.environ['iraf']
             except OSError:
-                raise SystemExit("""
+                raise OSError("""
 Your "iraf" environment variable is not defined and could not be
 determined from /usr/local/bin/cl.  This is are needed to find IRAF
 tasks.  Before starting pyraf, define ot by doing (for example):

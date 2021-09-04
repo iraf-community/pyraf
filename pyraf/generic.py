@@ -82,8 +82,7 @@ class GenericScanner:
         return '|'.join(rv)
 
     def error(self, s, pos):
-        print("Lexical error at position {}".format(pos))
-        raise SystemExit()
+        raise SyntaxError("Lexical error at position {}".format(pos))
 
     def tokenize(self, s):
         pos = 0
@@ -272,10 +271,7 @@ class GenericParser:
         return None
 
     def error(self, token, value=None):
-        print("Syntax error at or near `{}' token".format(token))
-        if value is not None:
-            print(str(value))
-        raise SystemExit()
+        raise SyntaxError("Syntax error at or near `{}' token: {}".format(token, value))
 
     def parse(self, tokens):
         tree = {}
