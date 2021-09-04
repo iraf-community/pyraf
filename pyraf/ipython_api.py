@@ -25,8 +25,8 @@ __license__ = release.license
 # (bypassing the __init__ mechanism.)
 
 import sys
-from pyraf import iraf, __version__
-from pyraf.irafpar import makeIrafPar
+from . import iraf, __version__
+from .irafpar import makeIrafPar
 from stsci.tools.irafglobals import yes, no, INDEF, EOF
 
 _locals = globals()
@@ -40,7 +40,7 @@ if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
 # Keep the command-line object in namespace too for access to history
 
 # --------------------------------------------------------------------------
-from pyraf.irafcompleter import IrafCompleter
+from .irafcompleter import IrafCompleter
 
 
 class IPythonIrafCompleter(IrafCompleter):

@@ -48,9 +48,7 @@ from . import irafgwcs
 from . import fontdata
 from .textattrib import (CHARPATH_RIGHT, JUSTIFIED_NORMAL, FONT_ROMAN,
                         FQUALITY_NORMAL)
-
-# use this form since the iraf import is circular
-import pyraf.iraf
+from . import iraf
 
 nIrafColors = 16
 
@@ -512,8 +510,7 @@ class GkiKernel:
         # set this without knowing what you are doing - it breaks some commonly
         # used command-line redirection within PyRAF. (thus default = False)
         if self.gkiPreferTtyIpc is None:
-            self.gkiPreferTtyIpc = pyraf.iraf.envget('gkiprefertty',
-                                                     '') == 'yes'
+            self.gkiPreferTtyIpc = iraf.envget('gkiprefertty','') == 'yes'
         return self.gkiPreferTtyIpc
 
     def createFunctionTables(self):
@@ -1014,14 +1011,14 @@ class GkiController(GkiProxy):
         """Starting with stdgraph, drill until a device is found in
         the graphcap or isn't"""
         if not device:
-            device = pyraf.iraf.envget("stdgraph", "")
+            device = iraf.envget("stdgraph", "")
         graphcap = getGraphcap()
         # protect against circular definitions
         devstr = device
         tried = {devstr: None}
         while devstr not in graphcap:
             pdevstr = devstr
-            devstr = pyraf.iraf.envget(pdevstr, "")
+            devstr = iraf.envget(pdevstr, "")
             if not devstr:
                 raise IrafError(
                     "No entry found for specified stdgraph device `{}'"
@@ -1236,8 +1233,7 @@ graphcapDict = {}
 def getGraphcap(filename=None):
     """Get graphcap file from filename (or cached version if possible)"""
     if filename is None:
-        filename = pyraf.iraf.osfn(
-            pyraf.iraf.envget('graphcap', 'dev$graphcap'))
+        filename = iraf.osfn(iraf.envget('graphcap', 'dev$graphcap'))
     if filename not in graphcapDict:
         graphcapDict[filename] = graphcap.GraphCap(filename)
     return graphcapDict[filename]
@@ -1260,7 +1256,7 @@ def printPlot(window=None):
     gkibuff = window.gkibuffer.get()
     if len(gkibuff):
         graphcap = getGraphcap()
-        stdplot = pyraf.iraf.envget('stdplot', '')
+        stdplot = iraf.envget('stdplot', '')
         if not stdplot:
             msg = "No hardcopy device defined in stdplot"
         elif stdplot not in graphcap:

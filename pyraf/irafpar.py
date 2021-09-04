@@ -16,10 +16,7 @@ from stsci.tools.basicpar import (warning, _StringMixin, IrafPar, IrafParS,
 # also import basicpar.IrafPar* class names for cached scripts
 from stsci.tools.basicpar import (IrafParB, IrafParI, IrafParR, IrafParAB,
                                   IrafParAI, IrafParAR, IrafParAS)
-
-if __name__.find('.') >= 0:  # not a unit test
-    # use this form since the iraf import is circular
-    import pyraf.iraf
+from . import iraf
 
 # -----------------------------------------------------
 # IRAF parameter factory
@@ -207,7 +204,7 @@ class IrafParPset(IrafParS):
         if len(f) > 1 and f[-1] == 'par':
             # must be a file name
             from .iraffunctions import IrafTaskFactory
-            irf_val = pyraf.iraf.Expand(self.value)
+            irf_val = iraf.Expand(self.value)
             return IrafTaskFactory(taskname=irf_val.split(".")[0],
                                    value=irf_val)
         else:
@@ -221,12 +218,12 @@ class IrafParPset(IrafParS):
                         '>') and self.name in self.value:
                     # don't lookup task for self.value, it is something like:
                     # "<IrafCLTask ccdproc (mscsrc$ccdproc.cl) Pkg: mscred Bin: mscbin$>"
-                    return pyraf.iraf.getTask(self.name)
+                    return iraf.getTask(self.name)
                     # this is only a safe assumption to make in a PSET
                 else:
-                    return pyraf.iraf.getTask(self.value)
+                    return iraf.getTask(self.value)
             else:
-                return pyraf.iraf.getTask(self.name)
+                return iraf.getTask(self.name)
 
 
 # -----------------------------------------------------
@@ -309,7 +306,7 @@ class IrafParL(_StringMixin, IrafPar):
             # non-null value means we're reading from a file
             try:
                 if not self.fh:
-                    self.fh = open(pyraf.iraf.Expand(self.value))
+                    self.fh = open(iraf.Expand(self.value))
                     if self.fh.isatty():
                         self.lines = None
                     else:
@@ -895,14 +892,14 @@ class IrafParList(taskpars.TaskPars):
         if isinstance(value, str) and value and value[0] == ")":
             # parameter indirection: ')task.param'
             try:
-                task = pyraf.iraf.getTask(self.__name)
+                task = iraf.getTask(self.__name)
                 value = task.getParam(value[1:], native=native, mode="h")
             except KeyError:
                 # if task is not known, use generic function to get param
-                value = pyraf.iraf.clParGet(value[1:],
-                                            native=native,
-                                            mode="h",
-                                            prompt=prompt)
+                value = iraf.clParGet(value[1:],
+                                      native=native,
+                                      mode="h",
+                                      prompt=prompt)
         return value
 
     def setParam(self, param, value, scope='', check=0, idxHint=None):
@@ -1104,7 +1101,7 @@ class IrafParList(taskpars.TaskPars):
         if not filename:
             raise ValueError("No filename specified to save parameters")
         # but not if user turned off parameter writes
-        writepars = int(pyraf.iraf.envget("writepars", 1))
+        writepars = int(iraf.envget("writepars", 1))
         if writepars < 1:
             msg = "No parameters written to disk."
             print(msg)
@@ -1113,7 +1110,7 @@ class IrafParList(taskpars.TaskPars):
         if hasattr(filename, 'write'):
             fh = filename
         else:
-            absFileName = pyraf.iraf.Expand(filename)
+            absFileName = iraf.Expand(filename)
             absDir = os.path.dirname(absFileName)
             if len(absDir) and not os.path.isdir(absDir):
                 os.makedirs(absDir)
@@ -1293,7 +1290,7 @@ def _updateSpecialParFileDict(dirToCheck=None, strict=False):
     # usual places (which calls us recursively).
     if dirToCheck is None:
         # Check the auxilliary par dir
-        uparmAux = pyraf.iraf.envget("uparm_aux", "")
+        uparmAux = iraf.envget("uparm_aux", "")
         if 'UPARM_AUX' in os.environ:
             uparmAux = os.environ['UPARM_AUX']
         if len(uparmAux) > 0:

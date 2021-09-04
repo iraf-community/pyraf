@@ -8,9 +8,7 @@ from stsci.tools.irafglobals import Verbose
 from . import pyrafglobals
 from . import iraftask
 from . import irafexecute
-
-# this is better than what 2to3 does, since the iraf import is circular
-import pyraf.iraf
+from . import iraf
 
 executionMonitor = None
 
@@ -122,7 +120,7 @@ def _ecl_parent_task():
     while f and not _ecl_runframe(f):
         f = f.f_back
     if not f:
-        return pyraf.iraf.cl
+        return iraf.cl
     return f.f_locals["self"]
 
 
@@ -178,7 +176,7 @@ class EclBase:
         specialKW = self._specialKW(kw)
 
         # Special Stdout, Stdin, Stderr keywords are used to redirect IO
-        redirKW, closeFHList = pyraf.iraf.redirProcess(kw)
+        redirKW, closeFHList = iraf.redirProcess(kw)
 
         # set parameters
         kw['_setMode'] = 1
@@ -227,7 +225,7 @@ class EclBase:
 
     def _run(self, redirKW, specialKW):
         # OVERRIDE IrafTask._run for primitive (SPP, C, etc.) tasks to avoid exception trap.
-        irafexecute.IrafExecute(self, pyraf.iraf.getVarDict(), **redirKW)
+        irafexecute.IrafExecute(self, iraf.getVarDict(), **redirKW)
 
     def _ecl_push_err(self):
         """Method call emitted in compiled CL code to start an iferr
@@ -251,7 +249,7 @@ class EclBase:
         """IrafTask version of handle error:  register error with calling task but continue."""
         self._ecl_record_error(e)
         if erract.flpr:
-            pyraf.iraf.flpr(self)
+            iraf.flpr(self)
         parent = _ecl_parent_task()
         parent._ecl_record_error(e)
         self._ecl_trace(parent._ecl_err_msg(e))
@@ -332,10 +330,7 @@ class EclBase:
                     self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
-                pyraf.iraf.error(1,
-                                 "divide by zero",
-                                 self._name,
-                                 suppress=False)
+                iraf.error(1, "divide by zero", self._name, suppress=False)
         return a / b
 
     def _ecl_safe_modulo(self, a, b):
@@ -348,10 +343,7 @@ class EclBase:
                     self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
-                pyraf.iraf.error(1,
-                                 "modulo by zero",
-                                 self._name,
-                                 suppress=False)
+                iraf.error(1, "modulo by zero", self._name, suppress=False)
         return a % b
 
 
