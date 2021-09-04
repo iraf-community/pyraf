@@ -13,7 +13,7 @@ from .clast import AST
 from .cltoken import Token
 from . import clscan
 from . import clparse
-from .clcache import codeCache, DISABLE_CLCACHING
+from .clcache import codeCache
 
 from stsci.tools.irafglobals import Verbose
 from stsci.tools import basicpar, minmatch, irafutils
@@ -38,7 +38,7 @@ def cl2py(filename=None,
           mode="proc",
           local_vars_dict=None,
           local_vars_list=None,
-          usecache=1):
+          usecache=True):
     """Read CL program from file and return pycode object with Python equivalent
 
     filename: Name of the CL source file or a filehandle from which the
@@ -72,10 +72,6 @@ def cl2py(filename=None,
     """
 
     global _parser, codeCache
-
-    if True or DISABLE_CLCACHING:
-        usecache = False  # ! turn caching off until it is fully tested/worked
-        # when this is turned on, see corresponding PY3K note in clcache.py!
 
     if _parser is None:
         _parser = clparse.getParser()
@@ -2235,17 +2231,14 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.prune()
 
     def n_inspect_stmt(self, node):
-        # The following will create/call print as a statement, but is a function
-        # However, there may not be a valid use case to worry about here.
-        if True:
-            raise RuntimeError("Error - this code is incorrect in PY3K")
-        self.write("print ")
+        self.write("print(")
         if node[0].type == "=":
             # '= expr' version of inspect
             self.preorder(node[1])
         else:
             # 'IDENT =' version of inspect
             self.preorder(node[0])
+        self.write(")")
         self.prune()
 
     def n_switch_stmt(self, node):

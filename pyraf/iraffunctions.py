@@ -155,7 +155,6 @@ def Init(doprint=1, hush=0, savefile=None):
     if len(_pkgs) == 0:
         try:
             iraf = _os.environ['iraf']
-            arch = _os.environ['IRAFARCH']
         except KeyError:
             # iraf or IRAFARCH environment variable not defined
             # try to get them from cl startup file
@@ -165,15 +164,13 @@ def Init(doprint=1, hush=0, savefile=None):
                     if key not in _os.environ:
                         _os.environ[key] = value
                 iraf = _os.environ['iraf']
-                arch = _os.environ['IRAFARCH']
             except OSError:
                 raise SystemExit("""
-Your "iraf" and "IRAFARCH" environment variables are not defined and could not
-be determined from /usr/local/bin/cl.  These are needed to find IRAF tasks.
-Before starting pyraf, define them by doing (for example):
+Your "iraf" environment variable is not defined and could not be
+determined from /usr/local/bin/cl.  This is are needed to find IRAF
+tasks.  Before starting pyraf, define ot by doing (for example):
 
     export iraf=/iraf/iraf/
-    export IRAFARCH=linux
 
 at the Unix command line. Actual values will depend on your IRAF installation,
 and they are set during the IRAF user installation (see https://iraf-community.github.io).
@@ -181,6 +178,7 @@ Also be sure to run the "mkiraf" command to create a logion.cl
 (http://www.google.com/search?q=mkiraf).
 """)
 
+        arch = _os.environ.get('IRAFARCH')
         # stacksize problem on linux
 
         if arch == 'redhat' or \
@@ -206,7 +204,8 @@ Also be sure to run the "mkiraf" command to create a logion.cl
         set(tmp=tmp)
         if arch and arch[0] != '.':
             arch = '.' + arch
-        set(arch=arch)
+        if arch:
+            set(arch=arch)
         global userIrafHome
         set(home=userIrafHome)
 

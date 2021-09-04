@@ -461,10 +461,7 @@ class IrafParUKey(IrafParL):
 # IRAF parameter list synchronized to disk file
 # -----------------------------------------------------
 
-if __name__.find('.') < 0:  # for unit test need absolute import
-    exec('import filecache', globals())  # 2to3 messes up simpler form
-else:
-    from . import filecache
+from . import filecache
 
 
 class ParCache(filecache.FileCache):
@@ -1199,12 +1196,12 @@ def _extractDiffInfo(alist):
 
 
 def _printHiddenDiff(pd1, hd1, pd2, hd2):
-    for key in pd1.keys():
+    for key in list(pd1.keys()):
         if key in hd2:
             print("Parameter `{}' is hidden in list 2 but not list 1".format(key))
             del pd1[key]
             del hd2[key]
-    for key in pd2.keys():
+    for key in list(pd2.keys()):
         if key in hd1:
             print("Parameter `{}' is hidden in list 1 but not list 2".format(key))
             del pd2[key]

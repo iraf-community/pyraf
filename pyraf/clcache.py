@@ -2,42 +2,33 @@
 
 R. White, 2000 January 19
 """
-
-
 import os
 import sys
+import hashlib
+
 from stsci.tools.irafglobals import Verbose, userIrafHome
 
-if __name__.find('.') < 0:  # for unit test need absolute import
-    for mmm in ('filecache', 'pyrafglobals', 'dirshelve'):
-        exec('import ' + mmm, globals())  # 2to3 messes up simpler form
+from . import filecache
+from . import pyrafglobals
+from . import sqliteshelve
+
+
+if 'CLCACHE_PATH' in os.environ:
+    clcache_path = os.environ['CLCACHE_PATH'].split(':')
+    if 'disable' in clcache_path:
+        clcache_path = []
 else:
-    from . import filecache
-    from . import pyrafglobals
-    from . import dirshelve
+    # create code cache
+    userCacheDir = os.path.join(userIrafHome, 'pyraf')
+    if not os.path.exists(userCacheDir):
+        try:
+            os.mkdir(userCacheDir)
+            if '-s' not in sys.argv and '--silent' not in sys.argv:
+                print('Created directory {} for cache'.format(userCacheDir))
+        except OSError:
+            print('Could not create directory {}'.format(userCacheDir))
+    clcache_path = [userCacheDir, pyrafglobals.pyrafDir]
 
-# In case you wish to disable all CL script caching (for whatever reason)
-DISABLE_CLCACHING = False  # enable caching by default
-if True or 'PYRAF_NO_CLCACHE' in os.environ:  # Disabled in Python 3 for the moment
-    DISABLE_CLCACHING = True
-
-# set up pickle so it can pickle code objects
-
-import copyreg
-import marshal
-import types
-import pickle
-
-
-def code_unpickler(data):
-    return marshal.loads(data)
-
-
-def code_pickler(code):
-    return code_unpickler, (marshal.dumps(code),)
-
-
-copyreg.pickle(types.CodeType, code_pickler, code_unpickler)
 
 # Code cache is implemented using a dictionary clFileDict and
 # a list of persistent dictionaries (shelves) in cacheList.
@@ -54,8 +45,6 @@ copyreg.pickle(types.CodeType, code_pickler, code_unpickler)
 # name, determine the shelve key) while staying up-to-date
 # with changes of the CL file contents when the script is
 # being developed.
-
-import hashlib
 
 _versionKey = 'CACHE_VERSION'
 
@@ -98,7 +87,7 @@ class _CodeCache:
         self.cacheFileList = flist
         self.nwrite = nwrite
         # flag indicating preference for system cache
-        self.useSystem = 0
+        self.useSystem = False
         if not cacheList:
             self.warning("Warning: unable to open any CL script cache, "
                          "performance may be slow")
@@ -114,20 +103,19 @@ class _CodeCache:
         the cache.
         """
         # filenames to try, open flags to use
-        filelist = [(filename, "w"),
-                    ('{}.{}'.format(filename, _currentVersion()), "c")]
+        filelist = [('{}.{}'.format(filename, _currentVersion()), "w")]
         msg = []
         for fname, flag in filelist:
             # first try opening the cache read-write
             try:
-                fh = dirshelve.open(fname, flag)
-                writeflag = 1
-            except dirshelve.error:
+                fh = sqliteshelve.open(fname, flag)
+                writeflag = True
+            except OSError:
                 # initial open failed -- try opening the cache read-only
                 try:
-                    fh = dirshelve.open(fname, "r")
-                    writeflag = 0
-                except dirshelve.error:
+                    fh = sqliteshelve.open(fname, "r")
+                    writeflag = False
+                except OSError:
                     # give up on this file and try the next one
                     msg.append("Unable to open CL script cache {}".format(fname))
                     continue
@@ -165,15 +153,15 @@ class _CodeCache:
             sys.stderr.write(msg + "\n")
             sys.stderr.flush()
 
-    def writeSystem(self, value=1):
+    def writeSystem(self, value=True):
         """Add scripts to system cache instead of user cache"""
 
-        if value == 0:
-            self.useSystem = 0
+        if not value:
+            self.useSystem = False
         elif self.cacheList:
             writeflag, cache = self.cacheList[-1]
             if writeflag:
-                self.useSystem = 1
+                self.useSystem = True
             else:
                 self.warning("System CL script cache is not writable")
         else:
@@ -204,7 +192,7 @@ class _CodeCache:
             h = hashlib.md5()
 
             h.update(source.encode())
-            return str(h.digest())
+            return h.hexdigest()
 
     def add(self, index, pycode):
         """Add pycode to cache with key = index.  Ignores if index=None."""
@@ -285,28 +273,4 @@ class _CodeCache:
                          .format(filename), 2)
 
 
-# create code cache
-userCacheDir = os.path.join(userIrafHome, 'pyraf')
-if not os.path.exists(userCacheDir):
-    try:
-        os.mkdir(userCacheDir)
-        if '-s' not in sys.argv and '--silent' not in sys.argv:
-            print('Created directory {} for cache'.format(userCacheDir))
-    except OSError:
-        print('Could not create directory {}'.format(userCacheDir))
-
-dbfile = 'clcache'
-
-if DISABLE_CLCACHING:
-    # since CL code caching is turned off currently for Python 3,
-    # there won't be any installed there, but still play with user area
-    codeCache = _CodeCache([
-        os.path.join(userCacheDir, dbfile),
-    ])
-else:
-    codeCache = _CodeCache([
-        os.path.join(userCacheDir, dbfile),
-        os.path.join(pyrafglobals.pyrafDir, dbfile)
-    ])
-
-del userCacheDir, dbfile
+codeCache = _CodeCache([os.path.join(d, 'clcache') for d in clcache_path])
