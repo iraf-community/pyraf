@@ -424,7 +424,7 @@ class GkiBuffer:
                     break
                 self.lastTranslate = ip
                 self.lastOpcode = opcode
-                arg = buffer[ip + 3:ip + arglen].astype(numpy.int)
+                arg = buffer[ip + 3:ip + arglen].astype(int)
                 ip = ip + arglen
                 if ((opcode < 0) or (opcode > GKI_MAX_OP_CODE) or
                     (opcode in GKI_ILLEGAL_LIST)):
