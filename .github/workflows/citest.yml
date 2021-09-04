@@ -80,7 +80,6 @@ jobs:
       - name: Run tests (locally built)
         if: matrix.method == 'native'
         run: |
-          export PATH=$(pwd)/scripts:${PATH}
           python3 -m pytest --cov=pyraf
 
       - name: Run tests (installed package)

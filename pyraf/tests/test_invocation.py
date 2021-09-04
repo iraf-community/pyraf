@@ -1,9 +1,10 @@
+import sys
 import subprocess
 
 import pytest
 
 import pyraf
-from .utils import HAS_IRAF, HAS_PYRAF_EXEC
+from .utils import HAS_IRAF
 
 cl_cases = (
     (('print(1)'), '1'),
@@ -41,7 +42,7 @@ class PyrafEx:
         if isinstance(args, str):
             args = args.split()
 
-        cmd = ['pyraf', '-x', '-s']
+        cmd = [sys.executable, '-m', 'pyraf', '-x', '-s']
         if use_ecl:
             cmd += ['-e']
         cmd += args
@@ -67,8 +68,8 @@ def _with_pyraf(tmpdir):
     return PyrafEx()
 
 
-@pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
-                    reason='PyRAF and IRAF must be installed to run')
+@pytest.mark.skipif(not HAS_IRAF,
+                    reason='IRAF must be installed to run')
 @pytest.mark.parametrize('test_input', [
     ('--version'),
     ('-V'),
@@ -81,7 +82,7 @@ def test_invoke_version(_with_pyraf, test_input):
     assert pyraf.__version__ in result.stdout
 
 
-@pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
+@pytest.mark.skipif(not HAS_IRAF,
                     reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', cl_cases)
 @pytest.mark.parametrize('use_ecl', [False, True])
@@ -93,7 +94,7 @@ def test_invoke_command(_with_pyraf, test_input, expected, use_ecl):
     assert not result.code, result.stderr
 
 
-@pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
+@pytest.mark.skipif(not HAS_IRAF,
                     reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', cl_cases)
 @pytest.mark.parametrize('use_ecl', [False, True])
@@ -106,7 +107,7 @@ def test_invoke_command_direct(_with_pyraf, test_input, expected, use_ecl):
     assert not result.code, result.stderr
 
 
-@pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
+@pytest.mark.skipif(not HAS_IRAF,
                     reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', python_cases)
 @pytest.mark.parametrize('use_ecl', [False, True])
@@ -123,7 +124,7 @@ def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected, use
     assert not result.code, result.stderr
 
 
-@pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
+@pytest.mark.skipif(not HAS_IRAF,
                     reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', ipython_cases)
 @pytest.mark.parametrize('use_ecl', [False, True])

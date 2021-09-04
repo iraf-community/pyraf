@@ -5,7 +5,6 @@ from astropy.utils.data import get_pkg_data_contents
 from distutils.spawn import find_executable
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
-HAS_PYRAF_EXEC = bool(find_executable('pyraf'))
 
 try:
     from pyraf import iraf
