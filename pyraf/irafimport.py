@@ -62,7 +62,7 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
 
     # e.g. "import pyraf.iraf" (return module is for pyraf, not iraf)
     if not fromlist and name == 'pyraf.iraf' and level == 0:
-        assert 'pyraf' in sys.modules, 'Unexpected import error - contact STScI'
+        assert 'pyraf' in sys.modules, 'Unexpected import error'
         if IMPORT_DEBUG:
             print("irafimport: pyraf.iraf case: n=" + name + ", fl=" +
                   str(fromlist) + ", l=" + str(level) +
