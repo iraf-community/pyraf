@@ -9,7 +9,6 @@ If the c versions do not exist, then these routines will do nothing
 import struct
 import sys
 import os
-import tkinter
 import fcntl
 
 
@@ -527,6 +526,7 @@ def dumpspecs(outstream=None, skip_volatiles=False):
     if not capable.OF_GRAPHICS:
         out += "\ntkinter use unattempted."
     else:
+        import tkinter
         out += "\nTclVersion = " + str(tkinter.TclVersion)
         out += "\nTkVersion = " + str(tkinter.TkVersion)
         out += "\nWUTIL_ON_MAC = " + str(WUTIL_ON_MAC)
