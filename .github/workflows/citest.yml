@@ -65,7 +65,7 @@ jobs:
           echo "PATH=${iraf}links:$PATH" >> $GITHUB_ENV
           echo "host=${iraf}unix/" >> $GITHUB_ENV
           $iraf/unix/hlib/mkiraf.sh -t=$TERM -n
-          pip3 install pytest ipython
+          pip3 install pytest
 
       - name: Build PyRAF locally
         if: matrix.method == 'native'

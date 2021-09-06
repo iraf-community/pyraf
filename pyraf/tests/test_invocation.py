@@ -6,6 +6,12 @@ import pytest
 import pyraf
 from .utils import HAS_IRAF
 
+HAS_IPYTHON = True
+try:
+    import IPython
+except ImportError:
+    HAS_IPYTHON = False
+
 cl_cases = (
     (('print(1)'), '1'),
     (('print(1)'), '1'),
@@ -127,6 +133,8 @@ def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected, use
 
 @pytest.mark.skipif(not HAS_IRAF,
                     reason='PyRAF and IRAF must be installed to run')
+@pytest.mark.skipif(not HAS_IPYTHON,
+                    reason='IPython must be installed to run')
 @pytest.mark.parametrize('test_input,expected', ipython_cases)
 @pytest.mark.parametrize('use_ecl', [False, True])
 def test_invoke_command_ipython(_with_pyraf, test_input, expected, use_ecl):
@@ -145,6 +153,8 @@ def test_invoke_command_ipython(_with_pyraf, test_input, expected, use_ecl):
 def test_invoke_nosilent(_with_pyraf, test_input):
     """Ensure full invocation is somehow verbose
     """
+    if test_input in ('--ipython', '-y') and not HAS_IPYTHON:
+        pytest.skip('IPython must be installed to run')
     result = _with_pyraf.run(test_input, silent=False)
     assert not result.code
     assert "Welcome to IRAF." in result.stdout
