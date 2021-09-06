@@ -10,7 +10,7 @@ from stsci.tools import capable
 if "." not in sys.path:
     sys.path.insert(0, ".")
 
-from pyraf import __version__
+from .import __version__
 
 
 # command-line options
@@ -90,10 +90,10 @@ if args.silent:
 if args.nographics:
     os.environ['PYRAF_NO_DISPLAY'] = '1'  # what the rest of PyRAF triggers on
 
-from pyraf import pyrafglobals
+from .import pyrafglobals
 pyrafglobals._use_ecl = args.ecl
 
-from pyraf import iraf
+from .import iraf
 iraf.setVerbose(args.verbose)
 
 # If not silent and graphics is available, use splash window
@@ -103,7 +103,7 @@ if args.silent:
 else:
     initkw = {}
     if not args.nosplash:
-        from pyraf import splash
+        from .import splash
         splash_screen = splash.splash('PyRAF ' + __version__)
     else:
         splash_screen = None
