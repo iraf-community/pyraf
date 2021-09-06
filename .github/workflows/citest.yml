@@ -1,7 +1,7 @@
 
 name: PyRAF CI test
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   tests:
@@ -15,25 +15,52 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Ubuntu 20.04 (Focal) Python-3.8.2
+          - name: Ubuntu 20.04 (Python-3.8.2), native
             os: ubuntu-20.04
+            method: native
+
+          - name: Ubuntu 18.04 (Python-3.7), pip
+            os: ubuntu-18.04
+            method: pip
 
     steps:
       - name: Checkout repository
+        if: matrix.method == 'native'
         uses: actions/checkout@v2
 
       - name: Setup dependencies
+        if: startsWith(matrix.os, 'ubuntu') && matrix.method == 'native'
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends iraf iraf-noao iraf-dev build-essential libx11-dev
-          sudo apt-get install --no-install-recommends python3-all-dev python3-pip python3-astropy python3-numpy-dev python3-setuptools python3-setuptools-scm python3-tk python3-pytest python3-pytest-cov ipython3
+          sudo apt-get install --no-install-recommends python3-dev python3-pip python3-astropy python3-numpy-dev python3-setuptools python3-setuptools-scm python3-tk python3-pytest python3-pytest-cov ipython3
           pip3 install "stsci.tools>=4.0.1"
 
-      - name: Build Pyraf
+      - name: Setup dependencies
+        if: startsWith(matrix.os, 'ubuntu') && matrix.method == 'pip'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends iraf iraf-noao iraf-dev build-essential libx11-dev
+          sudo apt-get install --no-install-recommends python3-dev python3-pip
+          pip3 install pytest ipython
+
+      - name: Build PyRAF locally
+        if: matrix.method == 'native'
         run: |
            python3 setup.py build_ext -i
 
-      - name: Run tests
+      - name: Install PyRAF via pip
+        if: matrix.method == 'pip'
+        run: |
+          pip3 install git+$GITHUB_SERVER_URL/$GITHUB_REPOSITORY@$GITHUB_SHA
+
+      - name: Run tests (locally built)
+        if: matrix.method == 'native'
         run: |
           export PATH=$(pwd)/scripts:${PATH}
           python3 -m pytest --cov=pyraf
+
+      - name: Run tests (installed package)
+        if: matrix.method == 'pip'
+        run: |
+          python3 -m pytest -s --pyargs pyraf
