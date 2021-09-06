@@ -119,109 +119,36 @@ if 'PYTHONSTARTUP' in os.environ and \
             open(os.environ["PYTHONSTARTUP"]).read(),
             os.environ["PYTHONSTARTUP"], 'exec'))
 
-# load initial iraf symbols and packages
+if args.savefile:
+    iraf.Init(savefile=args.savefile, **initkw)
+else:
+    iraf.Init(**initkw)
 
-# If iraf.Init() throws an exception, we cannot be confident
-# that it has initialized properly.  This can later lead to
-# exceptions from an atexit function.  This results in a lot
-# of help tickets about "gki", which are really caused by
-# something wrong in login.cl
-#
-# By setting iraf=None in the case of an exception, the cleanup
-# function skips the parts that don't work.  By re-raising the
-# exception, we ensure that the user sees what really happened.
-#
-# This is the case for pyraf invoked from the command line.
-try:
-    if args.savefile:
-        iraf.Init(savefile=args.savefile, **initkw)
-    else:
-        iraf.Init(**initkw)
-except Exception:
-    iraf = None
-    raise
 if args.verbose > 0:
     print("pyraf: finished iraf.Init")
 
 if splash_screen is not None:
     splash_screen.Destroy()
 
-# By now, the bulk of the startup work is done
-logout = quit = exit = 'Use ".exit" to exit'
+if not args.silent:
+    print("PyRAF {}".format(__version__))
 
-# IPython Pyraf profile RC installation - this is only done so
-# that the next step (below) can find/run the rc file (to execute
-# some pyraf magic setup)
-if args.ipython:
-    # the following should be removed soon, it is only used for versions
-    # of IPython older than 0.11
-    import pyraf
-    home = None
-    ip = os.getenv("IPYTHONDIR")
-    if not ip:
-        home = os.getenv("HOME") or ""
-        ip = os.path.join(home, ".ipython")
-
-    pyrafrc_dest = os.path.join(ip, "ipythonrc-pyraf")
-    pyrafrc_source = os.path.join(
-        os.path.split(pyraf.__file__)[0], "ipythonrc-pyraf")
-    if os.path.exists(ip):
-        if not os.path.exists(pyrafrc_dest):
-            shutil.copy(pyrafrc_source, pyrafrc_dest)
-    else:
-        os.mkdir(ip)
-        shutil.copy(pyrafrc_source, pyrafrc_dest)
-else:
-    if not args.silent:
-        print("PyRAF {} Copyright (c) 2002 AURA".format(__version__))
-        # just print first line of Python copyright (long in v2.0)
-        print("Python {} {}".format(sys.version.split()[0],
-                                    sys.copyright.split('\n')[0]))
-
-# Run given command
 if args.command:
     iraf.task(cmd_line=args.command, IsCmdString=True)
     iraf.cmd_line()
-    sys.exit()
-
-# Start command line
-if args.commandwrapper:
-    # Start up command line wrapper keeping definitions in main name space
-    # Keep the command-line object in namespace too for access to history
-    if args.ipython:
-        # rewrite sys.argv
-        new_argv = [
-            "ipython",
-        ]
-        if args.silent:
-            new_argv.append("--no-banner")
-        sys.argv = new_argv[:]
-
-        # Start the interactive shell.  Also, see IPython.embed() here:
-        #     http://ipython.org/ipython-doc/stable/interactive/ \
-        #     reference.html#embedding-ipython
-        from IPython.terminal.ipapp import TerminalIPythonApp
-        app = TerminalIPythonApp.instance()
-        app.initialize()
-        # import pyraf to write this shell obj to its namespace
-        # we have already fully imported it above
-        import pyraf
-        # create and run the Ipython shell - it takes over from here
-        pyraf._ipyshell = app.shell
-        # in the end, with this run_code(), all of this is the equivalent
-        # of simply running ipython standalone with these imports
-        pyraf._ipyshell.run_code(
-            'from pyraf import iraf, ipython_api; from stsci.tools.irafglobals import INDEF, Verbose, yes, no'
-        )
-        app.start()
-        sys.exit()
+elif args.ipython:
+    from IPython import embed
+    if args.silent:
+        embed(banner1='')
     else:
-        import pyraf.pycmdline
-        pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
-        if args.silent:
-            pycmdline.start('')  # use no banner
-        else:
-            pycmdline.start()  # use default banner
+        embed()
+elif args.commandwrapper:
+    import pyraf.pycmdline
+    pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
+    if args.silent:
+        pycmdline.start('')  # use no banner
+    else:
+        pycmdline.start()  # use default banner
 else:
     # run the standard Python interpreter
     import code
