@@ -71,7 +71,7 @@ def test_plot_graph(marker, graphics):
 @pytest.mark.parametrize('graphics', graphics)
 def test_plot_contour(graphics):
     os.environ['PYRAFGRAPHICS'] = graphics
-    iraf.contour("dev$pix", Stdout='/dev/null')
+    iraf.contour("dev$pix", Stderr='/dev/null')
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
@@ -79,4 +79,4 @@ def test_plot_contour(graphics):
 @pytest.mark.parametrize('graphics', graphics)
 def test_plot_surface(graphics):
     os.environ['PYRAFGRAPHICS'] = graphics
-    iraf.surface("dev$pix", Stdout='/dev/null')
+    iraf.surface("dev$pix", Stderr='/dev/null')
