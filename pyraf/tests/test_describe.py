@@ -1,5 +1,3 @@
-
-
 import pytest
 
 from .utils import HAS_IRAF

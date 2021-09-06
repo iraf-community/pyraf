@@ -31,7 +31,7 @@ def _getDevice(displayname=None):
         device = gwm.gki.getGraphcap()[displayname]
         dd = device['DD'].split(',')
         if len(dd) > 1 and dd[1] != '':
-            imtdev = 'fifo:{}i:{}o'.format(dd[1], dd[1])
+            imtdev = f'fifo:{dd[1]}i:{dd[1]}o'
         else:
             imtdev = None
         # multiple stdimage/graphcap entries can share the same device
@@ -49,7 +49,7 @@ def _getDevice(displayname=None):
         return device
     except (ValueError, OSError):
         pass
-    raise IrafError("Unable to open image display `{}'\n".format(displayname))
+    raise IrafError(f"Unable to open image display `{displayname}'\n")
 
 
 def imcur(displayname=None):
@@ -71,7 +71,7 @@ def imcur(displayname=None):
         # Read cursor position at keystroke
         result = device.readCursor()
         if Verbose > 1:
-            sys.__stdout__.write("{}\n".format(result))
+            sys.__stdout__.write(f"{result}\n")
             sys.__stdout__.flush()
         if result == 'EOF':
             raise EOFError()

@@ -1,5 +1,3 @@
-
-
 import os
 
 import pytest
@@ -11,7 +9,7 @@ if HAS_IRAF:
 
 
 # simple class to mimic pycode, for unit test (save us from importing others)
-class DummyCodeObj(object):
+class DummyCodeObj:
 
     def setFilename(self, f):
         self.filename = f

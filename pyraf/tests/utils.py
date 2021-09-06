@@ -36,7 +36,7 @@ def diff_outputs(fin, reffile):
 
     for x, y in zip(lines, ans):
         if x.strip(os.linesep) != y:
-            all_bad_lines.append('{} : {}'.format(x, y))
+            all_bad_lines.append(f'{x} : {y}')
 
     if len(all_bad_lines) > 0:
         raise AssertionError(os.linesep.join(all_bad_lines))

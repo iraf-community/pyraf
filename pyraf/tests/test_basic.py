@@ -23,7 +23,7 @@ def teardown_module():
 
 # NOTE: IRAF does not respect tmpdir
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-class TestPyraf(object):
+class TestPyraf:
     """
     Few simple tests based on
 

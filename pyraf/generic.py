@@ -69,7 +69,7 @@ class GenericScanner:
 
     def makeRE(self, name):
         doc = getattr(self, name).__doc__
-        rv = '(?P<{}>{})'.format(name[2:], doc)
+        rv = f'(?P<{name[2:]}>{doc})'
         return rv
 
     def reflect(self):
@@ -82,7 +82,7 @@ class GenericScanner:
         return '|'.join(rv)
 
     def error(self, s, pos):
-        raise SyntaxError("Lexical error at position {}".format(pos))
+        raise SyntaxError(f"Lexical error at position {pos}")
 
     def tokenize(self, s):
         pos = 0
@@ -271,7 +271,7 @@ class GenericParser:
         return None
 
     def error(self, token, value=None):
-        raise SyntaxError("Syntax error at or near `{}' token: {}".format(token, value))
+        raise SyntaxError(f"Syntax error at or near `{token}' token")
 
     def parse(self, tokens):
         tree = {}

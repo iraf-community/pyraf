@@ -183,8 +183,8 @@ class EclBase:
         self.setParList(*args, **kw)
 
         if Verbose > 1:
-            print("run {} ({}: {})"
-                  .format(self._name, self.__class__.__name__, self._fullpath))
+            print(f"run {self._name} ({self.__class__.__name__}: "
+                  f"{self._fullpath})")
             if self._runningParList:
                 self._runningParList.lParam()
 
@@ -289,9 +289,8 @@ class EclBase:
         """Formats an ECL error message from an exception and returns it as a string."""
         errno, errmsg, errtask = self._ecl_exception_properties(e)
         if errno and errmsg and errtask:
-            text = ("Error ({:d}): on line {:d} of '{}' from '{}':\n\t'{}'"
-                    .format(errno, self._ecl_get_lineno(),
-                            self._name, errtask, errmsg))
+            text = (f"Error ({errno:d}): on line {self._ecl_get_lineno():d} "
+                    f"of '{self._name}' from '{errtask}':\n\t'{errmsg}'")
         else:
             text = str(e)
         return text
@@ -324,10 +323,10 @@ class EclBase:
         """_ecl_safe_divide is used to wrap the division operator for ECL code and trap divide-by-zero errors."""
         if b == 0:
             if not erract.abort or self._ecl_iferr_entered():
-                self._ecl_trace(
-                    "Warning on line {:d} of '{}':  divide by zero - using $err_dzvalue ="
-                    .format(self._ecl_get_lineno(), self._name),
-                    self.DOLLARerr_dzvalue)
+                self._ecl_trace(f"Warning on line {self._ecl_get_lineno():d} "
+                                f"of '{self._name}':  "
+                                "divide by zero - using $err_dzvalue =",
+                                self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
                 iraf.error(1, "divide by zero", self._name, suppress=False)
@@ -337,10 +336,10 @@ class EclBase:
         """_ecl_safe_modulus is used to wrap the modulus operator for ECL code and trap mod-by-zero errors."""
         if b == 0:
             if not erract.abort or self._ecl_iferr_entered():
-                self._ecl_trace(
-                    "Warning on line {:d} of task '{}':  modulo by zero - using $err_dzvalue ="
-                    .format(self._ecl_get_lineno(), self._name),
-                    self.DOLLARerr_dzvalue)
+                self._ecl_trace(f"Warning on line {self._ecl_get_lineno():d} "
+                                f"of task '{self._name}':  "
+                                "modulo by zero - using $err_dzvalue =",
+                                self.DOLLARerr_dzvalue)
                 return self.DOLLARerr_dzvalue
             else:
                 iraf.error(1, "modulo by zero", self._name, suppress=False)
@@ -368,7 +367,7 @@ class EclTraceback(EclBase):
             raise e
         else:
             try:
-                self._ecl_trace("ERROR ({:d}): {}".format(e.errno, e.errmsg))
+                self._ecl_trace(f"ERROR ({e.errno:d}): {e.errmsg}")
             except:
                 self._ecl_trace("ERROR:", str(e))
             self._ecl_traceback(e)
@@ -392,7 +391,7 @@ class EclTraceback(EclBase):
             del e._ecl_suppress_first_trace
         else:
             self._ecl_trace("  ", repr(cl_code))
-        self._ecl_trace("      line {:d}: {}".format(lineno, cl_file))
+        self._ecl_trace(f"      line {lineno:d}: {cl_file}")
         parent = _ecl_parent_task()
         if parent:
             parent_lineno = self._ecl_get_lineno()

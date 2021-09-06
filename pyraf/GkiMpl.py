@@ -733,4 +733,4 @@ class tkColorManager:
         red = int(255 * color[0])
         green = int(255 * color[1])
         blue = int(255 * color[2])
-        return "#{:02x}{:02x}{:02x}".format(red, green, blue)
+        return f"#{red:02x}{green:02x}{blue:02x}"

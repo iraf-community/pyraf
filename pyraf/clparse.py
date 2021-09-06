@@ -83,12 +83,11 @@ class CLStrictParser(GenericASTBuilder):
         if hasattr(token, 'lineno'):
             if len(finfo):
                 finfo += ', '
-            errmsg = ("CL syntax error at `{}' ({}line {:d})"
-                      .format(token, finfo, token.lineno))
+            errmsg = f"CL syntax error at `{token}' ({finfo}line {token.lineno:d})"
         else:
             if len(finfo):
                 finfo = '(' + finfo + ')'
-            errmsg = "CL syntax error at `{}' {}".format(token, finfo)
+            errmsg = f"CL syntax error at `{token}' {finfo}"
         if value is not None:
             errmsg = errmsg + "\n" + str(value)
         raise SyntaxError(errmsg)

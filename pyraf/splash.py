@@ -46,7 +46,7 @@ class SplashScreen(tkinter.Toplevel):
         ymax = self.winfo_screenheight()
         x0 = (xmax - self.winfo_reqwidth()) // 2
         y0 = (ymax - self.winfo_reqheight()) // 2
-        self.geometry("+{:d}+{:d}".format(x0, y0))
+        self.geometry(f"+{x0:d}+{y0:d}")
 
     def createWidgets(self):
         # Implement in derived class
@@ -73,7 +73,7 @@ class PyrafSplash(SplashScreen):
         if not os.path.exists(filename):
             tfilename = os.path.join(os.path.dirname(__file__), filename)
             if not os.path.exists(tfilename):
-                raise ValueError("Splash image `{}' not found".format(filename))
+                raise ValueError(f"Splash image `{filename}' not found")
             filename = tfilename
         self.filename = filename
         self.nlines = 1
@@ -189,13 +189,13 @@ class IrafMonitorSplash(PyrafSplash):
             name = task.getName()
             if name != 'cl':
                 if isinstance(task, IrafPkg):
-                    msg = "Loading {}".format(name)
+                    msg = f"Loading {name}"
                 else:
-                    msg = "Running {}".format(name)
+                    msg = f"Running {name}"
             else:
                 # cl task message includes input file name
                 try:
-                    msg = "cl {}".format(os.path.basename(sys.stdin.name))
+                    msg = f"cl {os.path.basename(sys.stdin.name)}"
                 except AttributeError:
                     msg = "cl <pipe>"
             self.stack.append(msg)

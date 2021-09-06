@@ -26,16 +26,14 @@ def getAliases(entry):
     # return list of aliases (and dump the comment)
     aend = entry.find(':')
     if aend < 0:
-        raise ValueError("Graphcap entry does not have any colons\n{}"
-                         .format(entry))
+        raise ValueError(f"Graphcap entry does not have any colons\n{entry}")
     return entry[:aend].split("|")[:-1]
 
 
 def getAttributes(entry):
     abeg = entry.find(':')
     if abeg < 0:
-        raise ValueError("Graphcap entry does not have any colons\n{}"
-                         .format(entry))
+        raise ValueError(f"Graphcap entry does not have any colons\n{entry}")
     astring = entry[abeg + 1:]
     attr = {}
     attrlist = astring.split(':')

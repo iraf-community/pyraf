@@ -53,7 +53,7 @@ def ukey():
         raise EOFError()
     elif ord(char) <= ord(' '):
         # convert to octal ascii representation
-        returnStr = '\\{:03o}'.format(ord(char))
+        returnStr = f'\\{ord(char):03o}'
     elif char == ':':
         # suck in colon string until newline is encountered
         done = 0

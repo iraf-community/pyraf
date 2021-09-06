@@ -24,9 +24,9 @@ else:
         try:
             os.mkdir(userCacheDir)
             if '-s' not in sys.argv and '--silent' not in sys.argv:
-                print('Created directory {} for cache'.format(userCacheDir))
+                print(f'Created directory {userCacheDir} for cache')
         except OSError:
-            print('Could not create directory {}'.format(userCacheDir))
+            print(f'Could not create directory {userCacheDir}')
     clcache_path = [userCacheDir, pyrafglobals.pyrafDir]
 
 
@@ -103,7 +103,7 @@ class _CodeCache:
         the cache.
         """
         # filenames to try, open flags to use
-        filelist = [('{}.{}'.format(filename, _currentVersion()), "w")]
+        filelist = [(f'{filename}.{_currentVersion()}', "w")]
         msg = []
         for fname, flag in filelist:
             # first try opening the cache read-write
@@ -117,7 +117,7 @@ class _CodeCache:
                     writeflag = False
                 except OSError:
                     # give up on this file and try the next one
-                    msg.append("Unable to open CL script cache {}".format(fname))
+                    msg.append(f"Unable to open CL script cache {fname}")
                     continue
             # check version of cache -- don't use it if version mismatch
             if len(fh) == 0:
@@ -128,18 +128,16 @@ class _CodeCache:
                 return (writeflag, fh, fname)
             elif fname.endswith(_currentVersion()):
                 # uh-oh, something is seriously wrong
-                msg.append(
-                    "CL script cache {} has version mismatch, may be corrupt?"
-                    .format(fname))
+                msg.append(f"CL script cache {fname} has version mismatch, "
+                           "may be corrupt?")
             elif oldVersion > _currentVersion():
-                msg.append(
-                    ("CL script cache {} was created by "
-                     "a newer version of pyraf (cache {}, this pyraf {})")
-                    .format(fname, repr(oldVersion), repr(_currentVersion())))
+                msg.append(f"CL script cache {fname} was created by a newer "
+                           f"version of pyraf (cache {repr(oldVersion)}, "
+                           f"this pyraf {repr(_currentVersion())})")
             else:
-                msg.append(
-                    "CL script cache {} is obsolete version (old {}, current {})"
-                    .format(fname, repr(oldVersion), repr(_currentVersion())))
+                msg.append(f"CL script cache {fname} is obsolete version "
+                           f"(old {repr(oldVersion)}, "
+                           f"current {repr(_currentVersion())})")
             fh.close()
         # failed to open either cache
         self.warning("\n".join(msg))
@@ -261,16 +259,14 @@ class _CodeCache:
             if index in cache:
                 if writeflag:
                     del cache[index]
-                    self.warning("Removed {} from CL script cache {}"
-                                 .format(filename, self.cacheFileList[i]), 2)
+                    self.warning(f"Removed {filename} from CL script cache "
+                                 f"{self.cacheFileList[i]}", 2)
                     nremoved = nremoved + 1
                 else:
-                    self.warning("Cannot remove {} from read-only "
-                                 "CL script cache {}"
-                                 .format(filename, self.cacheFileList[i]))
+                    self.warning(f"Cannot remove {filename} from read-only "
+                                 f"CL script cache {self.cacheFileList[i]}")
         if nremoved == 0:
-            self.warning("Did not find {} in CL script cache"
-                         .format(filename), 2)
+            self.warning(f"Did not find {filename} in CL script cache", 2)
 
 
 codeCache = _CodeCache([os.path.join(d, 'clcache') for d in clcache_path])

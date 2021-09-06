@@ -269,8 +269,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                 return paramdict[paramname]
         except minmatch.AmbiguousKeyError as e:
             # re-raise the error with a bit more info
-            raise IrafError("Cannot get parameter `{}'\n{}"
-                            .format(paramname, str(e)))
+            raise IrafError(f"Cannot get parameter `{paramname}'\n{str(e)}")
 
         if alldict:
             # OK, the easy case didn't work -- now initialize the
@@ -359,9 +358,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         self.setParList(*args, **kw)
 
         if Verbose > 1:
-            print("run {} ({}: {})"
-                  .format(self._name, self.__class__.__name__, self._fullpath),
-                  file=sys.stderr)
+            print(f"run {self._name} ({self.__class__.__name__}: "
+                  f"{self._fullpath})", file=sys.stderr)
             if self._runningParList:
                 self._runningParList.lParam()
 
@@ -671,8 +669,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                                             prompt=prompt)
         except minmatch.AmbiguousKeyError as e:
             # re-raise the error with a bit more info
-            raise IrafError("Cannot get parameter `{}'\n{}"
-                            .format(paramname, str(e)))
+            raise IrafError(f"Cannot get parameter `{paramname}'\n{str(e)}")
 
         # OK, the easy case didn't work -- now initialize the
         # complete parDictList (if necessary) and search them all
@@ -688,9 +685,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                                             mode="h",
                                             prompt=prompt)
         else:
-            raise IrafError('Unknown parameter requested: "' + paramname +
-                            '" for task: "' + self._name + '" in pkg: "' +
-                            self._pkgname + '"')
+            raise IrafError(f'Unknown parameter requested: "{paramname}" '
+                            f'for task: "{self._name}" '
+                            f'in pkg: "{self._pkgname}"')
 
     # ---------------------------------------------------------
     # task parameter utility methods
@@ -703,8 +700,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         if plist:
             plist.lParam(verbose=verbose)
         else:
-            sys.stderr.write("Task {} has no parameter file\n"
-                             .format(self._name))
+            sys.stderr.write(f"Task {self._name} has no parameter file\n")
             sys.stderr.flush()
 
     def eParam(self):
@@ -715,8 +711,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             from . import epar
             epar.epar(self)
         else:
-            sys.stderr.write("Task {} has no parameter file\n"
-                             .format(self._name))
+            sys.stderr.write(f"Task {self._name} has no parameter file\n")
             sys.stderr.flush()
 
     def tParam(self):
@@ -727,8 +722,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             from . import tpar
             tpar.tpar(self)
         else:
-            sys.stderr.write("Task {} has no parameter file\n"
-                             .format(self._name))
+            sys.stderr.write(f"Task {self._name} has no parameter file\n")
             sys.stderr.flush()
 
     def dParam(self, cl=1):
@@ -743,11 +737,10 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             if cl:
                 taskname = self._name
             else:
-                taskname = "iraf.{}".format(self._name)
+                taskname = f"iraf.{self._name}"
             plist.dParam(taskname, cl=cl)
         else:
-            sys.stderr.write("Task {} has no parameter file\n"
-                             .format(self._name))
+            sys.stderr.write(f"Task {self._name} has no parameter file\n")
             sys.stderr.flush()
 
     def saveParList(self, filename=None, comment=None):
@@ -759,13 +752,12 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         self.initTask()
         # XXX always runs on current par list, not running par list?
         if not self._currentParList:
-            return "No parameters to save for task {}".format(self._name)
+            return f"No parameters to save for task {self._name}"
         if filename is None:
             if self._scrunchParpath:
                 filename = self._scrunchParpath
             else:
-                status = ("Unable to save parameters for task {}"
-                          .format(self._name))
+                status = f"Unable to save parameters for task {self._name}"
                 if Verbose > 0:
                     print(status, file=sys.stderr)
                 return status
@@ -844,9 +836,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         return self.run(*args, **kw)
 
     def __repr__(self):
-        s = ('<{} {} ({}) Pkg: {} Bin: {}'
-             .format(self.__class__.__name__, self._name, self._filename,
-                     self._pkgname, ':'.join(self._pkgbinary)))
+        s = (f'<{self.__class__.__name__} {self._name} ({self._filename}) '
+             f'Pkg: {self._pkgname} Bin: {":".join(self._pkgbinary)}')
         if self._foreign:
             s = s + ' Foreign'
         if self._hidden:
@@ -1026,8 +1017,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             basename = s[-1]
         if basename == "":
             self._fullpath = ""
-            raise IrafError("No filename in task {} definition: `{}'"
-                            .format(self._name, self._filename))
+            raise IrafError(f"No filename in task {self._name} definition: "
+                            f"`{self._filename}'")
         # for foreign tasks, just set path to filename (XXX will
         # want to improve this by checking os path for existence)
         if self._foreign:
@@ -1054,8 +1045,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                     self._fullpath = ""
                     exelist.append(exename1)
                     raise IrafError(
-                        "Cannot find executable for task {}\nTried {}"
-                        .format(self._name, ", ".join(exelist)))
+                        f"Cannot find executable for task {self._name}\n"
+                        f"Tried " + ", ".join(exelist))
 
     def _initParpath(self):
         """Initialize parameter file paths"""
@@ -1122,11 +1113,10 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
                 self._name, iraf.Expand(self._currentParpath, noerror=1))
             # are lists consistent?
             if not self._isConsistentPar():
-                sys.stderr.write("uparm parameter list `{}' inconsistent "
-                                 "with default parameters for {} `{}'\n"
-                                 .format(self._currentParpath,
-                                         self.__class__.__name__,
-                                         self._name))
+                sys.stderr.write("uparm parameter list "
+                                 f"`{self._currentParpath}' inconsistent with "
+                                 "default parameters for "
+                                 f"{self.__class__.__name__} `{self._name}'\n")
                 sys.stderr.flush()
                 # XXX just toss it for now -- later can try to merge new,old
                 try:
@@ -1193,10 +1183,10 @@ class IrafPset(IrafTask):
         # - not a foreign task
         # - has a parameter file
         if self.getForeign():
-            raise IrafError("Bad filename for pset {}: {}"
-                            .format(self.getName(), filename))
+            raise IrafError(
+                f"Bad filename for pset {self.getName()}: {filename}")
         if not self.hasParfile():
-            raise KeyError("Pset " + self.getName() + " has no parameter file")
+            raise KeyError(f"Pset {self.getName()} has no parameter file")
 
     def _run(self, redirKW, specialKW):
         # executing a pset
@@ -1222,9 +1212,8 @@ class IrafPythonTask(IrafTask):
         IrafTask.__init__(self, prefix, name, suffix, filename, pkgname,
                           pkgbinary)
         if self.getForeign():
-            raise IrafError(
-                "Python task `{}' cannot be foreign (filename=`{}')"
-                .format(self.getName(), filename))
+            raise IrafError(f"Python task `{self.getName()}' cannot be foreign"
+                            f" (filename=`{filename}')")
         self.__dict__['_pyFunction'] = function
 
     def isConsistent(self, other):
@@ -1317,9 +1306,8 @@ class ParDictListSearch:
             raise AttributeError(str(e))
         # it was found, but we don't allow min-match in CL scripts
         # print a more useful message
-        raise AttributeError(
-            "Unknown parameter `{}' (possibly intended `{}'?)"
-            .format(paramname, p.name))
+        raise AttributeError(f"Unknown parameter `{paramname}' "
+                             f"(possibly intended `{p.name}'?)")
 
     def getParObject(self, paramname):
         # try exact match
@@ -1335,9 +1323,8 @@ class ParDictListSearch:
             raise AttributeError(str(e))
         # it was found, but we don't allow min-match in CL scripts
         # print a more useful message
-        raise AttributeError(
-            "Unknown parameter `{}' (possibly intended `{}'?)"
-            .format(paramname, p.name))
+        raise AttributeError(f"Unknown parameter `{paramname}' "
+                             f"(possibly intended `{p.name}'?)")
 
     def __setattr__(self, paramname, value):
         if self._taskObj.is_pseudo(paramname):
@@ -1357,9 +1344,8 @@ class ParDictListSearch:
             raise AttributeError(str(e))
         # it was found, but we don't allow min-match in CL scripts
         # print a more useful message
-        raise AttributeError(
-            "Unknown parameter `{}' (possibly intended `{}'?)"
-            .format(paramname, p.name))
+        raise AttributeError(f"Unknown parameter `{paramname}' "
+                             f"(possibly intended `{p.name}'?)")
 
 
 # -----------------------------------------------------
@@ -1386,8 +1372,8 @@ class IrafCLTask(IrafTask):
         IrafTask.__init__(self, prefix, name, suffix, filename, pkgname,
                           pkgbinary)
         if self.getForeign():
-            raise IrafError("CL task `{}' cannot be foreign (filename=`{}')"
-                            .format(self.getName(), filename))
+            raise IrafError(f"CL task `{self.getName()}' cannot be foreign "
+                            f"(filename=`{filename}')")
         # placeholder for Python translation of CL code
         # (lazy instantiation)
         self.__dict__['_pycode'] = None
@@ -1484,10 +1470,10 @@ class IrafCLTask(IrafTask):
             # again in any case.
             self._clFunction = None
             if self._pkgname:
-                scriptname = '<CL script {}.{}>'.format(self._pkgname, self._name)
+                scriptname = f'<CL script {self._pkgname}.{self._name}>'
             else:
                 # null pkgname -- just use task in name
-                scriptname = '<CL script {}>'.format(self._name)
+                scriptname = f'<CL script {self._name}>'
             # force compile to inherit future div. so we don't rely on 2.x div.
             self._codeObject = compile(self._pycode.code, scriptname, 'exec',
                                        0, 0)
@@ -1505,11 +1491,10 @@ class IrafCLTask(IrafTask):
             # use currentParList from .par file if exists and consistent
             if self._currentParpath:
                 if not self._defaultParList.isConsistent(self._currentParList):
-                    sys.stderr.write("uparm parameter list `{}' inconsistent "
-                                     "with default parameters for {} `{}'\n"
-                                     .format(self._currentParpath,
-                                             self.__class__.__name__,
-                                             self._name))
+                    sys.stderr.write(
+                        f"uparm parameter list `{self._currentParpath}' "
+                        "inconsistent with default parameters for "
+                        f"{self.__class__.__name__} `{self._name}'\n")
                     sys.stderr.flush()
                     # XXX just toss it for now -- later can try to merge new,old
                     if self._currentParpath == self._scrunchParpath:
@@ -1688,7 +1673,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
         if fullname:
             return iraf.getTask(fullname)
         else:
-            raise AttributeError("Parameter {} not found".format(name))
+            raise AttributeError(f"Parameter {name} not found")
 
     # =========================================================
     # private methods
@@ -1803,8 +1788,7 @@ def mutateCLTask2Pkg(o, loaded=1, klass=IrafPkg):
     if isinstance(o, IrafPkg):
         return
     if not isinstance(o, IrafCLTask):
-        raise TypeError("Cannot turn object `{}' into an IrafPkg"
-                        .format(repr(o)))
+        raise TypeError("Cannot turn object `{repr(o)}' into an IrafPkg")
 
     # add the extra attributes used in IrafPkg
     # this is usually called while actually loading the package, so by
@@ -1837,8 +1821,8 @@ class IrafForeignTask(IrafTask):
         # - foreign flag set
         # - no parameter file
         if not self.getForeign():
-            raise IrafError("Bad filename for foreign task {}: {}"
-                            .format(self.getName(), filename))
+            raise IrafError(f"Bad filename for foreign task {self.getName()}: "
+                            f"{filename}")
         if self.hasParfile():
             if Verbose > 0:
                 print("Foreign task " + self.getName() +
@@ -1855,10 +1839,8 @@ class IrafForeignTask(IrafTask):
         if '_setMode' in kw:
             del kw['_setMode']
         if len(kw) > 0:
-            raise ValueError('Illegal keyword parameters {} for task {}'.format(
-                list(kw.keys()),
-                self._name,
-            ))
+            raise ValueError(f'Illegal keyword parameters {list(kw.keys())} '
+                             f'for task {self._name}')
         # self._args = args
         # Insure that all arguments passed to ForeignTasks are
         # converted to strings, including objects which are not
@@ -1925,8 +1907,8 @@ class IrafForeignTask(IrafTask):
         if n is not None:
             # $(*) -- append all arguments with virtual filenames converted
             return ' '.join(map(iraf.Expand, self._args))
-        raise IrafError("Cannot handle foreign string `{}' "
-                        "for task {}".format(self._filename, self._name))
+        raise IrafError(f"Cannot handle foreign string `{self._filename}' "
+                        f"for task {self._name}")
 
 
 # -----------------------------------------------------
@@ -1998,8 +1980,7 @@ def printable_task_def(x):
 
     # I wonder if there is a significance to using getFullpath instead of _filename
 
-    s = "{} : {} - pkgbinary={} class={}".format(x._name, x.getFullpath(),
-                                             x._pkgbinary, cl)
+    s = f"{x._name} : {x.getFullpath()} - pkgbinary={x._pkgbinary} class={cl}"
     return s
 
 
@@ -2009,7 +1990,7 @@ def printable_task_def(x):
 def showtasklong(name, level=0):
     l = gettask(name)
     if len(l) < 1:
-        print(("    " * level) + '{} : NOT FOUND'.format(name))
+        print(("    " * level) + f'{name} : NOT FOUND')
     else:
         l.sort()
         for x in l:
