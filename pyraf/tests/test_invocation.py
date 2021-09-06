@@ -30,19 +30,20 @@ python_cases = (
 
 
 class PyrafEx:
-
     def __init__(self):
         self.code = 0
         self.stdout = None
         self.stderr = None
 
-    def run(self, args, use_ecl=False, stdin=None):
+    def run(self, args, stdin=None, silent=True, use_ecl=False):
         """Execute pyraf and store the relevant results
         """
         if isinstance(args, str):
             args = args.split()
 
-        cmd = [sys.executable, '-m', 'pyraf', '-x', '-s']
+        cmd = [sys.executable, '-m', 'pyraf', '-x']
+        if silent:
+            cmd += ['-s']
         if use_ecl:
             cmd += ['-e']
         cmd += args
@@ -89,7 +90,7 @@ def test_invoke_version(_with_pyraf, test_input):
 def test_invoke_command(_with_pyraf, test_input, expected, use_ecl):
     """Issue basic commands to CL parser
     """
-    result = _with_pyraf.run(['-c', test_input], use_ecl)
+    result = _with_pyraf.run(['-c', test_input], use_ecl=use_ecl)
     assert result.stdout.startswith(expected)
     assert not result.code, result.stderr
 
@@ -134,3 +135,18 @@ def test_invoke_command_ipython(_with_pyraf, test_input, expected, use_ecl):
     result = _with_pyraf.run('-y', use_ecl=use_ecl, stdin=test_input)
     assert expected in result.stdout
     assert not result.code, result.stderr
+
+
+@pytest.mark.parametrize('test_input', [
+    '--commandwrapper=yes',
+    '-i',
+    '--ipython',
+])
+def test_invoke_nosilent(_with_pyraf, test_input):
+    """Ensure full invocation is somehow verbose
+    """
+    result = _with_pyraf.run(test_input, silent=False)
+    assert not result.code
+    assert "Welcome to IRAF." in result.stdout
+    assert "clpackage" in result.stdout
+    assert f"PyRAF {pyraf.__version__}" in result.stdout
