@@ -41,26 +41,15 @@ import re
 import os
 import sys
 import types
-try:
-    import io
-except ImportError:  # only for Python 2.5
-    io = None
+import io
 
 from stsci.tools import minmatch, irafutils
 from stsci.tools.irafglobals import IrafError, IrafTask, IrafPkg
 from . import describe
+from . import iraf
 
-# use this form since the iraf import is circular
-import pyraf.iraf
-
-# print info on numpy arrays if numpy is available
-
-try:
-    import numpy
-    _numpyArrayType = numpy.ndarray
-except ImportError:
-    # no numpy available, so we won't encounter arrays
-    _numpyArrayType = None
+import numpy
+_numpyArrayType = numpy.ndarray
 
 _MODULE = 0
 _FUNCTION = 1
@@ -151,7 +140,7 @@ Other keywords are passed on to the IRAF help task if it is called.
 """
 
     # handle I/O redirection keywords
-    redirKW, closeFHList = pyraf.iraf.redirProcess(kw)
+    redirKW, closeFHList = iraf.redirProcess(kw)
     if '_save' in kw:
         del kw['_save']
 
@@ -169,7 +158,7 @@ Other keywords are passed on to the IRAF help task if it is called.
         except KeyError as e:
             raise e.__class__("Error in keyword " + key + "\n" + str(e))
 
-    resetList = pyraf.iraf.redirApply(redirKW)
+    resetList = iraf.redirApply(redirKW)
 
     # try block for I/O redirection
 
@@ -177,7 +166,7 @@ Other keywords are passed on to the IRAF help task if it is called.
         _help(an_obj, variables, functions, modules, tasks, packages, hidden,
               padchars, regexp, html, irafkw)
     finally:
-        rv = pyraf.iraf.redirReset(resetList, closeFHList)
+        rv = iraf.redirReset(resetList, closeFHList)
     return rv
 
 
@@ -212,7 +201,7 @@ def _help(an_obj, variables, functions, modules, tasks, packages, hidden,
         # IRAF task names
         if re.match(r'[A-Za-z_][A-Za-z0-9_.]*$', an_obj) or \
             (re.match(r'[^\0]*$', an_obj) and
-             os.path.exists(pyraf.iraf.Expand(an_obj, noerror=1))):
+             os.path.exists(iraf.Expand(an_obj, noerror=1))):
             if _printIrafHelp(an_obj, html, irafkw):
                 return
 
@@ -438,11 +427,11 @@ def _irafHelp(taskname, irafkw):
         taskname = taskname.getName()
     else:
         # expand IRAF variables in case this is name of a help file
-        taskname = pyraf.iraf.Expand(taskname, noerror=1)
+        taskname = iraf.Expand(taskname, noerror=1)
     try:
         if 'page' not in irafkw:
             irafkw['page'] = 1
-        pyraf.iraf.system.help(taskname, **irafkw)
+        iraf.system.help(taskname, **irafkw)
         return 1
     except IrafError as e:
         print(str(e))

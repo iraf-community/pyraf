@@ -8,8 +8,8 @@ R. White, 1999 March 26
 
 import __main__
 from stsci.tools import irafglobals
-# this is better than what 2to3 does, since the iraf import is circular
-import pyraf.iraf
+
+from . import iraf
 
 
 def _addName(task, module):
@@ -50,7 +50,7 @@ class IrafNameStrategy:
 class IrafNameClean(IrafNameStrategy):
 
     def addTask(self, task):
-        _addName(task, pyraf.iraf)
+        _addName(task, iraf)
 
 
 # IrafNamePkg also adds packages to __main__ name space
@@ -68,7 +68,7 @@ class IrafNamePkg(IrafNameClean):
 class IrafNameTask(IrafNameClean):
 
     def addTask(self, task):
-        _addName(task, pyraf.iraf)
+        _addName(task, iraf)
         _addName(task, __main__)
 
 

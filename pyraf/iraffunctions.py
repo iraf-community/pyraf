@@ -165,7 +165,7 @@ def Init(doprint=1, hush=0, savefile=None):
                         _os.environ[key] = value
                 iraf = _os.environ['iraf']
             except OSError:
-                raise SystemExit("""
+                raise OSError("""
 Your "iraf" environment variable is not defined and could not be
 determined from /usr/local/bin/cl.  This is are needed to find IRAF
 tasks.  Before starting pyraf, define ot by doing (for example):
@@ -179,20 +179,6 @@ Also be sure to run the "mkiraf" command to create a logion.cl
 """)
 
         arch = _os.environ.get('IRAFARCH')
-        # stacksize problem on linux
-
-        if arch == 'redhat' or \
-                arch == 'linux' or \
-                arch == 'linuxppc' or \
-                arch == 'suse':
-            import resource
-            if resource.getrlimit(resource.RLIMIT_STACK)[1] == -1:
-                resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
-            else:
-                pass
-        else:
-            pass
-
         # ensure trailing slash is present
         iraf = _os.path.join(iraf, '')
         host = _os.environ.get('host', _os.path.join(iraf, 'unix', ''))
@@ -1764,8 +1750,8 @@ def imaccess(filename):
     # Any error output is taken to mean failure.
     sout = _io.StringIO()
     serr = _io.StringIO()
-    import pyraf.iraf
-    pyraf.iraf.imhead(filename, Stdout=sout, Stderr=serr)
+    from . import iraf
+    iraf.imhead(filename, Stdout=sout, Stderr=serr)
     errstr = serr.getvalue().lower()
     outstr = sout.getvalue().lower()
     if errstr:
@@ -1801,8 +1787,8 @@ def deftask(taskname):
     if taskname == INDEF:
         return INDEF
     try:
-        import pyraf.iraf
-        getattr(pyraf.iraf, taskname)
+        from . import iraf
+        getattr(iraf, taskname)
         return 1
     except AttributeError:
         # treat all errors (including ambiguous task names) as a missing task
@@ -1911,8 +1897,8 @@ def fscan(theLocals, line, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        import pyraf.iraf
-        line = eval(line, {'iraf': pyraf.iraf}, theLocals)
+        from . import iraf
+        line = eval(line, {'iraf': iraf}, theLocals)
     except EOFError:
         _weirdEOF(theLocals, namelist)
         _nscan = 0
@@ -1990,8 +1976,8 @@ def fscanf(theLocals, line, format, *namelist, **kw):
     # expression, or an IRAF list parameter)
     global _nscan
     try:
-        import pyraf.iraf
-        line = eval(line, {'iraf': pyraf.iraf}, theLocals)
+        from . import iraf
+        line = eval(line, {'iraf': iraf}, theLocals)
         # format also needs to be evaluated
         format = eval(format, theLocals)
     except EOFError:

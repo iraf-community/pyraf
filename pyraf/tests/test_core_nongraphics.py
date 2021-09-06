@@ -9,8 +9,8 @@ import pytest
 from .utils import HAS_IRAF
 
 if HAS_IRAF:
-    from pyraf.irafpar import IrafParList
-    from pyraf.subproc import Subprocess
+    from ..irafpar import IrafParList
+    from ..subproc import Subprocess
     from stsci.tools import basicpar
     from stsci.tools.basicpar import parFactory
 

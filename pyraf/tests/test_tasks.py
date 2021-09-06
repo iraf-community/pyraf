@@ -39,7 +39,7 @@ def test_load_cl_task(task):
 @pytest.mark.parametrize('task', ['user.date', 'softools.xc'])
 def test_exec_foreign_task(task):
     t = iraf.getTask(task)
-    t()
+    t(Stdout="/dev/null")
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')

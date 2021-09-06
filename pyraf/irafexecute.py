@@ -17,9 +17,7 @@ from . import wutil
 from . import gki
 from . import irafukey
 from . import irafgwcs
-
-# use this form since the iraf import is circular
-import pyraf.iraf
+from . import iraf
 
 # test_probe is a flag that a testing system can use to tell pyraf
 # (when used as a library, e.g. in stsci_regtest) to print various
@@ -27,8 +25,8 @@ import pyraf.iraf
 # This is different from verbose, because it is more selective.
 #
 # There is no interface to activate this feature.  Use:
-#   import pyraf.irafexecute
-#   pyraf.irafexecute.test_probe = True
+#   from . import irafexecute
+#   irafexecute.test_probe = True
 test_probe = False
 
 # stdgraph = None
@@ -70,7 +68,7 @@ def _getExecutable(arg):
     elif isinstance(arg, str):
         if os.path.exists(arg):
             return arg
-        task = pyraf.iraf.getTask(arg, found=1)
+        task = iraf.getTask(arg, found=1)
         if task is not None:
             return task.getFullpath()
     raise IrafProcessError("Cannot find task or executable {}".format(arg))
@@ -231,13 +229,13 @@ class _ProcessCache:
         if self._plimit <= len(self._locked):
             return
         for taskname in args:
-            task = pyraf.iraf.getTask(taskname, found=1)
+            task = iraf.getTask(taskname, found=1)
             if task is None:
                 print("No such task `{}'".format(taskname))
             elif task.__class__.__name__ == "IrafTask":
                 # cache only executable tasks (not CL tasks, etc.)
                 executable = task.getFullpath()
-                process = self.get(task, pyraf.iraf.getVarDict())
+                process = self.get(task, iraf.getVarDict())
                 self.add(process)
                 if executable in self._data:
                     self._locked[executable] = 1
@@ -288,7 +286,7 @@ class _ProcessCache:
         """
         if args:
             for taskname in args:
-                task = pyraf.iraf.getTask(taskname, found=1)
+                task = iraf.getTask(taskname, found=1)
                 if task is not None:
                     self.terminate(task)
         else:
@@ -972,10 +970,10 @@ class IrafProcess:
             if not (cmd.find(IPCOUT) >= 0):
                 # normal case -- execute the CL script code
                 # redirect I/O (but don't use graphics status line)
-                pyraf.iraf.clExecute(cmd,
-                                     Stdout=self.default_stdout,
-                                     Stdin=self.default_stdin,
-                                     Stderr=self.default_stderr)
+                iraf.clExecute(cmd,
+                               Stdout=self.default_stdout,
+                               Stdin=self.default_stdin,
+                               Stderr=self.default_stderr)
             else:
                 #
                 # Bizzaro protocol -- redirection to file with special
@@ -995,10 +993,10 @@ class IrafProcess:
                 # strip the redirection off and capture output of command
                 buffer = io.StringIO()
                 # redirect other I/O (but don't use graphics status line)
-                pyraf.iraf.clExecute(cmd[:ll] + "\n",
-                                     Stdout=buffer,
-                                     Stdin=self.default_stdin,
-                                     Stderr=self.default_stderr)
+                iraf.clExecute(cmd[:ll] + "\n",
+                               Stdout=buffer,
+                               Stdin=self.default_stdin,
+                               Stderr=self.default_stderr)
                 # send it off to the task with special flag line at end
                 buffer.write(IPCDONEMSG)
                 self.writeString(buffer.getvalue())
@@ -1016,16 +1014,16 @@ class IrafProcess:
             self.msg = self.msg[mcmd.end():]
         elif mcmd.group('curpack'):
             # current package request
-            self.writeString(pyraf.iraf.curpack() + '\n')
+            self.writeString(iraf.curpack() + '\n')
             self.msg = self.msg[mcmd.end():]
         elif mcmd.group('sysescape'):
             # OS escape
             tmsg = mcmd.group('sys_cmd')
             # use my version of system command so redirection works
-            sysstatus = pyraf.iraf.clOscmd(tmsg,
-                                           Stdin=self.stdin,
-                                           Stdout=self.stdout,
-                                           Stderr=self.stderr)
+            sysstatus = iraf.clOscmd(tmsg,
+                                     Stdin=self.stdin,
+                                     Stdout=self.stdout,
+                                     Stderr=self.stderr)
             self.writeString(str(sysstatus) + "\n")
             self.msg = self.msg[mcmd.end():]
             # self.stdout.write(self.msg + "\n")

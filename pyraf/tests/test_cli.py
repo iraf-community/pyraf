@@ -6,17 +6,13 @@ import pytest
 from .utils import diff_outputs, HAS_IRAF
 
 if HAS_IRAF:
-    from pyraf import iraf
-
-    try:
-        from pyraf import sscanf  # C-extension
-    except ImportError:
-        sscanf = None
+    from .. import iraf
+    from .. import sscanf
 
     # Turn off the test probe output since it comes with
     # path info that is ever changing
-    import pyraf
-    pyraf.irafexecute.test_probe = False
+    from .. import irafexecute
+    irafexecute.test_probe = False
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
@@ -63,9 +59,6 @@ def test_sscanf(tmpdir):
     """A basic unit test that sscanf was built/imported correctly and
     can run.
     """
-    assert sscanf is not None, \
-        'Error importing sscanf during iraffunctions init'
-
     # aliveness
     l = sscanf.sscanf("seven 6 4.0 -7", "%s %d %g %d")
     assert l == ['seven', 6, 4.0, -7]
