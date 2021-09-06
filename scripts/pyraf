@@ -1,84 +1,115 @@
 #! /usr/bin/env python3
-"""
-Copyright (C) 2003 Association of Universities for Research in Astronomy
-(AURA)
-See LICENSE.txt in the docs directory of the source distribution for the
-terms of use.
+import sys
+import os
+import shutil
+import argparse
 
-Usage: pyraf [options] [savefile]
+from stsci.tools import capable
 
-where savefile is an optional save file to start from, and options are:
-  -c cmd  Command passed in as string (any valid PyRAF command)
-  -e      Turn on ECL mode
-  -h      Print this message
-  -i      No command line wrapper, just run standard interactive Python shell
-  -m      Run command line wrapper to provide extra capabilities (default)
-  -n      No splash screen during startup (also see -x)
-  -s      Silent initialization (does not print startup messages)
-  -V      Print version info and exit
-  -v      Set verbosity level (may be repeated to increase verbosity)
-  -x      No graphics will be attempted/loaded during session
-  -y      Run the IPython shell instead of the normal PyRAF command shell
-
-Long versions of options:
-  -c  --comand=<cmd>
-  -e  --ecl
-  -h  --help
-  -i  --commandwrapper=no
-  -m  --commandwrapper=yes
-  -n  --nosplash
-  -s  --silent
-  -V  --version
-  -v  --verbose
-  -x  --nographics
-  -y  --ipython
-"""
-
-# R. White, 2000 January 21
-
-import sys, os, shutil
-
-# set search path to include directory above this script and current directory
-# ... but do not want the pyraf package directory itself in the path, since
-# that messes things up by allowing direct imports of pyraf submodules
-# (bypassing the __init__ mechanism.)
-
-# follow links to get to the real executable filename
-executable = sys.argv[0]
-while os.path.islink(executable):
-    executable = os.readlink(executable)
-pyrafDir = os.path.dirname(executable)
-del executable
-try:
-    sys.path.remove(pyrafDir)
-except ValueError:
-    pass
-del pyrafDir
 
 if "." not in sys.path:
     sys.path.insert(0, ".")
 
+from pyraf import __version__
+
+
+# command-line options
+desc = '''
+PyRAF is a command language for running IRAF tasks in a Python like
+environment.
+'''
+epilog = '''
+Copyright (C) 2003 Association of Universities for Research in
+Astronomy (AURA).
+'''
+parser = argparse.ArgumentParser(prog='pyraf', description=desc,
+                                 epilog=epilog)
+parser.add_argument('-c', '--command',
+                    help='Command passed in as string'
+                         ' (any valid PyRAF command)',
+                    metavar='cmd')
+parser.add_argument('-e', '--ecl',
+                    help='Turn on ECL mode',
+                    action='store_true', default=False)
+parser.add_argument('-i',
+                    help='No command line wrapper, just run standard'
+                         ' interactive Python shell',
+                    action='store_false', dest='commandwrapper')
+parser.add_argument('-m',
+                    help='Run command line wrapper to provide extra'
+                         ' capabilities (default)',
+                    action='store_true', dest='commandwrapper')
+parser.add_argument('--commandwrapper',
+                    help='Use of command line wrapper',
+                    metavar='y|n', type=bool, default=True)
+parser.add_argument('-n', '--nosplash',
+                    help='No splash screen during startup (also see -x)',
+                    action='store_true', default=not capable.OF_GRAPHICS)
+parser.add_argument('-s', '--silent',
+                    help='Silent initialization (does not print'
+                         ' startup messages)',
+                    action='store_true', default=False)
+parser.add_argument('-V', '--version',
+                    help='Print version info and exit',
+                    action='version', version=__version__)
+parser.add_argument('-v', '--verbose',
+                    help='Set verbosity level (may be repeated'
+                         ' to increase verbosity)',
+                    action='count', default=0)
+parser.add_argument('-x', '--nographics',
+                    help='No graphics will be attempted/loaded'
+                         ' during session',
+                    action='store_true', default=False)
+parser.add_argument('-y', '--ipython',
+                    help='Run the IPython shell instead of the normal'
+                         ' PyRAF command shell',
+                    action='store_true', default=False)
+parser.add_argument('savefile',
+                    help='Optional savefile to start from',
+                    nargs='?')
+
 # allow the use of PYRAF_ARGS
-extraArgs = os.getenv('PYRAF_ARGS', '').strip()
-extraArgsList = [x for x in extraArgs.split(' ') if len(x)]
-if len(extraArgsList):
-    sys.argv.extend(extraArgsList)
-x = None
-del extraArgs, extraArgsList, x
+extraArgs = os.environ.get('PYRAF_ARGS', '').split()
+
+# Special case that the executable is called epyraf --> ECL mode
+if sys.argv[0] == 'epyraf':
+    extraArgs.append('-e')
+
+args = parser.parse_args(sys.argv[1:] + extraArgs)
+
+# Show version at earliest possible moment when in debugging/verbose mode.
+if args.verbose > 0:
+    print('pyraf version ' + __version__)
 
 # handle any warning supression right away, before any more imports
-if '-s' in sys.argv or '--silent' in sys.argv:
+if args.silent:
     import warnings
     warnings.simplefilter("ignore")
-    del warnings
 
 # allow them to specifiy no graphics, done before any imports
-if '-x' in sys.argv or '--nographics' in sys.argv:
+if args.nographics:
     os.environ['PYRAF_NO_DISPLAY'] = '1'  # what the rest of PyRAF triggers on
-    if '-x' in sys.argv:  # keep the option parsing simpler when we get to it
-        sys.argv.remove('-x')
+
+from pyraf import pyrafglobals
+pyrafglobals._use_ecl = args.ecl
+
+from pyraf import iraf
+iraf.setVerbose(args.verbose)
+
+# If not silent and graphics is available, use splash window
+if args.silent:
+    splash_screen = None
+    initkw = {'doprint': False, 'hush': True}
+else:
+    initkw = {}
+    if not args.nosplash:
+        from pyraf import splash
+        splash_screen = splash.splash('PyRAF ' + __version__)
     else:
-        sys.argv.remove('--nographics')
+        splash_screen = None
+
+if args.verbose > 0:
+    print("pyraf: splashed")
 
 # read the user's startup file (if there is one)
 if 'PYTHONSTARTUP' in os.environ and \
@@ -88,19 +119,40 @@ if 'PYTHONSTARTUP' in os.environ and \
             open(os.environ["PYTHONSTARTUP"]).read(),
             os.environ["PYTHONSTARTUP"], 'exec'))
 
-#------------------------------------------------------------------------------
-# In next line we get into pyraf's __init__.py - this does ALL KINDS OF THINGS
-#------------------------------------------------------------------------------
-from pyraf import doCmdline, _use_ipython_shell, runCmd, __version__
+# load initial iraf symbols and packages
+
+# If iraf.Init() throws an exception, we cannot be confident
+# that it has initialized properly.  This can later lead to
+# exceptions from an atexit function.  This results in a lot
+# of help tickets about "gki", which are really caused by
+# something wrong in login.cl
+#
+# By setting iraf=None in the case of an exception, the cleanup
+# function skips the parts that don't work.  By re-raising the
+# exception, we ensure that the user sees what really happened.
+#
+# This is the case for pyraf invoked from the command line.
+try:
+    if args.savefile:
+        iraf.Init(savefile=args.savefile, **initkw)
+    else:
+        iraf.Init(**initkw)
+except Exception:
+    iraf = None
+    raise
+if args.verbose > 0:
+    print("pyraf: finished iraf.Init")
+
+if splash_screen is not None:
+    splash_screen.Destroy()
+
 # By now, the bulk of the startup work is done
-from pyraf import iraf
-from pyraf.irafpar import makeIrafPar
-from stsci.tools.irafglobals import yes, no, INDEF, EOF
 logout = quit = exit = 'Use ".exit" to exit'
 
-# IPython Pyraf profile RC installation - this is only done so that the next
-# step (below) can find/run the rc file (to execute some pyraf magic setup)
-if _use_ipython_shell:
+# IPython Pyraf profile RC installation - this is only done so
+# that the next step (below) can find/run the rc file (to execute
+# some pyraf magic setup)
+if args.ipython:
     # the following should be removed soon, it is only used for versions
     # of IPython older than 0.11
     import pyraf
@@ -119,84 +171,58 @@ if _use_ipython_shell:
     else:
         os.mkdir(ip)
         shutil.copy(pyrafrc_source, pyrafrc_dest)
-    del pyraf, home, ip, pyrafrc_dest, pyrafrc_source
 else:
-    if '-s' not in sys.argv and '--silent' not in sys.argv:
-        print("PyRAF" + ' ' + __version__ + ' ' + "Copyright (c) 2002 AURA")
+    if not args.silent:
+        print("PyRAF {} Copyright (c) 2002 AURA".format(__version__))
         # just print first line of Python copyright (long in v2.0)
-        print("Python" + ' ' + sys.version.split()[0] + ' ' +
-              sys.copyright.split('\n')[0])
+        print("Python {} {}".format(sys.version.split()[0],
+                                    sys.copyright.split('\n')[0]))
 
 # Run given command
-if runCmd:
-    iraf.task(cmd_line=runCmd, IsCmdString=1)
+if args.command:
+    iraf.task(cmd_line=args.command, IsCmdString=True)
     iraf.cmd_line()
     sys.exit()
-else:
-    del runCmd
 
 # Start command line
-if doCmdline:
-    del doCmdline
+if args.commandwrapper:
     # Start up command line wrapper keeping definitions in main name space
     # Keep the command-line object in namespace too for access to history
-    if _use_ipython_shell:
-        import sys
-        import IPython
-
+    if args.ipython:
         # rewrite sys.argv
         new_argv = [
             "ipython",
         ]
-        if hasattr(IPython, 'Shell'):  # old versions
-            if '-s' in sys.argv or '--silent' in sys.argv:
-                new_argv.append("-nobanner")
-            new_argv.append("-p")
-            new_argv.append("pyraf")
-        else:
-            if '-s' in sys.argv or '--silent' in sys.argv:
-                new_argv.append("--no-banner")
+        if args.silent:
+            new_argv.append("--no-banner")
         sys.argv = new_argv[:]
-        del new_argv
 
-        if hasattr(IPython, 'Shell'):  # old IPython versions
-            IPython.Shell.start(user_ns=globals()).mainloop()
-        else:
-            # Start the interactive shell.  Also, see IPython.embed() here:
-            #     http://ipython.org/ipython-doc/stable/interactive/ \
-            #     reference.html#embedding-ipython
-            try:
-                # new location of terminal as of v1.*
-                from IPython.terminal.ipapp import TerminalIPythonApp
-            except:
-                from IPython.frontend.terminal.ipapp import TerminalIPythonApp
-# was:     from ..... import TerminalInteractiveShell
-            app = TerminalIPythonApp.instance()
-            app.initialize()
-            # import pyraf to write this shell obj to its namespace
-            # we have already fully imported it above
-            import pyraf
-            # create and run the Ipython shell - it takes over from here
-            pyraf._ipyshell = app.shell
-            # was:     pyraf._ipyshell = TerminalInteractiveShell(user_ns=globals())
-            # in the end, with this run_code(), all of this is the equivalent
-            # of simply running ipython standalone with these imports
-            pyraf._ipyshell.run_code(
-                'from pyraf import iraf, ipython_api; from stsci.tools.irafglobals import INDEF, Verbose, yes, no'
-            )
-            app.start()
-# was:     pyraf._ipyshell.mainloop()
+        # Start the interactive shell.  Also, see IPython.embed() here:
+        #     http://ipython.org/ipython-doc/stable/interactive/ \
+        #     reference.html#embedding-ipython
+        from IPython.terminal.ipapp import TerminalIPythonApp
+        app = TerminalIPythonApp.instance()
+        app.initialize()
+        # import pyraf to write this shell obj to its namespace
+        # we have already fully imported it above
+        import pyraf
+        # create and run the Ipython shell - it takes over from here
+        pyraf._ipyshell = app.shell
+        # in the end, with this run_code(), all of this is the equivalent
+        # of simply running ipython standalone with these imports
+        pyraf._ipyshell.run_code(
+            'from pyraf import iraf, ipython_api; from stsci.tools.irafglobals import INDEF, Verbose, yes, no'
+        )
+        app.start()
         sys.exit()
     else:
         import pyraf.pycmdline
-        del _use_ipython_shell
-        _pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
-        if '-s' in sys.argv or '--silent' in sys.argv:
-            _pycmdline.start('')  # use no banner
+        pycmdline = pyraf.pycmdline.PyCmdLine(locals=globals())
+        if args.silent:
+            pycmdline.start('')  # use no banner
         else:
-            _pycmdline.start()  # use default banner
+            pycmdline.start()  # use default banner
 else:
-    del doCmdline
     # run the standard Python interpreter
     import code
     code.interact(local=locals())

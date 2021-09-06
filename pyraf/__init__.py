@@ -1,92 +1,31 @@
-""" __init__.py: main Pyraf package initialization
-
-
-Checks sys.argv[0] == 'pyraf' to determine whether IRAF initialization
-is done verbosely or quietly.
-
-R. White, 2000 February 18
 """
-
-
-from .version import version as __version__
-
+PyRAF is a command language for running IRAF tasks in a Python like
+environment. It works very similar to IRAF, but has been updated to
+allow such things as importing Python modules, starting in any
+directory, GUI parameter editing and help. Most importantly, it can be
+imported into Python allowing you to run IRAF commands from within a
+larger script.
+"""
 import os
 import sys
-import __main__
 
-# Dump version and exit here, if requested
-if '-V' in sys.argv or '--version' in sys.argv:
-    print(__version__)
-    sys.stdout.flush()
-    os._exit(0)  # see note in usage()
+from stsci.tools import irafglobals  # noqa: F401
 
-# Do a quick, non-intrusive check to see how verbose we are.  This is
-# just for here.  This does not correctly count -v vs. -vv, -vvv, etc.
-_verbosity_ = len(
-    [j for j in sys.argv if j in ('--verbose', '-v', '-vv', '-vvv')])
-
-# Show version at earliest possible moment when in debugging/verbose mode.
-if _verbosity_ > 0:
-    print('pyraf version ' + __version__)
-
-
-def usage():
-    print(__main__.__doc__)
-    sys.stdout.flush()
-    irafimport.restoreBuiltins()
-    # exit with prejudice, not a raised exc; we don't want/need anything
-    # to be run at this point - else we'd see run-time import warnings
-    os._exit(0)
+from .version import version as __version__  # noqa: F401
 
 # Grab the terminal window's id at the earliest possible moment
-from . import wutil
-
-# Since numpy as absolutely required for any PyRAF use, go ahead and
-# import it now, just to check it
-if _verbosity_ > 0:
-    print("pyraf: importing numpy")
-try:
-    import numpy
-except ImportError:
-    print(
-        "The numpy package is required by PyRAF and was not found.  Please visit http://numpy.scipy.org"
-    )
-    os._exit(1)
-if _verbosity_ > 0:
-    print("pyraf: imported numpy")
+from . import wutil  # noqa: F401
 
 # Modify the standard import mechanism to make it more
 # convenient for the iraf module
-if _verbosity_ > 0:
-    print("pyraf: importing irafimport")
-from . import irafimport
-if _verbosity_ > 0:
-    print("pyraf: imported irafimport")
+from . import irafimport  # noqa: F401
 
 # this gives more useful tracebacks for CL scripts
-from . import cllinecache
+from . import cllinecache  # noqa: F401
 
-from . import irafnames
-
-# initialization is silent unless program name is 'pyraf' or
-# silent flag is set on command line
-if _verbosity_ > 0:
-    print("pyraf: setting _pyrafMain")
-
-# follow links to get to the real executable filename
-executable = sys.argv[0]
-while os.path.islink(executable):
-    executable = os.readlink(executable)
-_pyrafMain = os.path.split(executable)[1] in ('pyraf', 'runpyraf.py')
-del executable
-
-runCmd = None
-from . import irafexecute
+from . import irafnames  # noqa: F401
+from . import irafexecute  # noqa: F401
 from . import clcache
-from stsci.tools import capable, irafglobals
-
-if _verbosity_ > 0:
-    print("pyraf: setting exit handler")
 
 
 # set up exit handler to close caches
@@ -99,194 +38,36 @@ def _cleanup():
         del clcache.codeCache
 
 
-# Register the exit handler, but only if 'pyraf' is going to import fully
-# But, always register it when in Python-API mode (CNSHD817031)
-if not _pyrafMain or ('-h' not in sys.argv and '--help' not in sys.argv):
-    import atexit
-    atexit.register(_cleanup)
-    del atexit
+import atexit  # noqa: E402
+atexit.register(_cleanup)
+del atexit
 
-if _verbosity_ > 0:
-    print("pyraf: finished all work prior to IRAF use")
+# follow links to get to the real executable filename
+executable = sys.argv[0]
+while os.path.islink(executable):
+    executable = os.readlink(executable)
+_pyrafMain = os.path.split(executable)[1] in ('pyraf', 'runpyraf.py')
+del executable
+
 # now get ready to do the serious IRAF initialization
-if not _pyrafMain:
-    # if not executing as pyraf main, just initialize iraf module
-    # quietly load initial iraf symbols and packages
-    if _verbosity_ > 0:
-        print("pyraf: initializing IRAF")
-    from . import iraf
-    if _verbosity_ > 0:
-        print("pyraf: imported iraf")
 
-    # If iraf.Init() throws an exception, we cannot be confident
-    # that it has initialized properly.  This can later lead to
-    # exceptions from an atexit function.  This results in a lot
-    # of help tickets about "gki", which are really caused by
-    # something wrong in login.cl
-    #
-    # By setting iraf=None in the case of an exception, the cleanup
-    # function skips the parts that don't work.  By re-raising the
-    # exception, we ensure that the user sees what really happened.
-    #
-    # This is the case for "import pyraf"
-    try:
-        iraf.Init(doprint=0, hush=1)
-    except:
-        iraf = None
-        raise
-    if _verbosity_ > 0:
-        print("pyraf: initialized IRAF")
-else:
-    if _verbosity_ > 0:
-        print("pyraf: is main program")
-    # special initialization when this is the main program
-
-    # command-line options
-    from . import pyrafglobals as _pyrafglobals
-    import getopt
-    try:
-        optlist, args = getopt.getopt(sys.argv[1:], "imc:vhsney", [
-            "commandwrapper=", "command=", "verbose", "help", "silent",
-            "nosplash", "ipython", "ecl"
-        ])
-        if len(args) > 1:
-            print('Error: more than one savefile argument')
-            usage()
-    except getopt.error as e:
-        print(str(e))
-        usage()
-    verbose = 0
-    doCmdline = 1
-    _silent = 0
-    _dosplash = capable.OF_GRAPHICS
-    _use_ipython_shell = 0
-    if optlist:
-        for opt, value in optlist:
-            if opt == "-i":
-                doCmdline = 0
-            elif opt == "-m":
-                doCmdline = 1
-            elif opt == "--commandwrapper":
-                if value in ("yes", "y"):
-                    doCmdline = 1
-                elif value in ("no", "n"):
-                    doCmdline = 0
-                else:
-                    usage()
-            elif opt in ("-c", "--command"):
-                if value is not None and len(value) > 0:
-                    runCmd = value
-                else:
-                    usage()
-            elif opt in ("-v", "--verbose"):
-                verbose = verbose + 1
-            elif opt in ("-h", "--help"):
-                usage()
-            elif opt in ("-s", "--silent"):
-                _silent = 1
-            elif opt in ("-n", "--nosplash"):
-                _dosplash = 0
-            elif opt in ("-y", "--ipython"):
-                _use_ipython_shell = 1
-            elif opt in ("-e", "--ecl"):
-                _pyrafglobals._use_ecl = True
-            else:
-                print("Program bug, uninterpreted option", opt)
-                raise SystemExit()
-
-    if "epyraf" in sys.argv[0]:  # See also -e and --ecl switches
-        _pyrafglobals._use_ecl = True
-
-    if _verbosity_ > 0:
-        print("pyraf: finished arg parsing")
-
-    from . import iraf
-    if _verbosity_ > 0:
-        print("pyraf: imported iraf")
-    iraf.setVerbose(verbose)
-    del getopt, verbose, usage, optlist
-
-    # If not silent and graphics is available, use splash window
-    if _silent:
-        _splash = None
-        _initkw = {'doprint': 0, 'hush': 1}
-    else:
-        _initkw = {}
-        if _dosplash:
-            from . import splash
-            _splash = splash.splash('PyRAF ' + __version__)
-        else:
-            _splash = None
-
-    if _verbosity_ > 0:
-        print("pyraf: splashed")
-
-    # load initial iraf symbols and packages
-
-    # If iraf.Init() throws an exception, we cannot be confident
-    # that it has initialized properly.  This can later lead to
-    # exceptions from an atexit function.  This results in a lot
-    # of help tickets about "gki", which are really caused by
-    # something wrong in login.cl
-    #
-    # By setting iraf=None in the case of an exception, the cleanup
-    # function skips the parts that don't work.  By re-raising the
-    # exception, we ensure that the user sees what really happened.
-    #
-    # This is the case for pyraf invoked from the command line.
-    try:
-        if args:
-            iraf.Init(savefile=args[0], **_initkw)
-        else:
-            iraf.Init(**_initkw)
-    except:
-        iraf = None
-        raise
-    del args
-    if _verbosity_ > 0:
-        print("pyraf: finished iraf.Init")
-
-    if _splash:
-        _splash.Destroy()
-    del _splash, _silent, _dosplash
-
-del _verbosity_
-help = iraf.help
-
-# We have too many users on systems that have stack limits that
-# are too low to run IRAF tasks.  Instead of waiting for all of
-# them to send us a help ticket and then telling them to raise
-# the limit, we raise it here.
+# If iraf.Init() throws an exception, we cannot be confident
+# that it has initialized properly.  This can later lead to
+# exceptions from an atexit function.  This results in a lot
+# of help tickets about "gki", which are really caused by
+# something wrong in login.cl
+#
+# By setting iraf=None in the case of an exception, the cleanup
+# function skips the parts that don't work.  By re-raising the
+# exception, we ensure that the user sees what really happened.
+#
+# This is the case for "import pyraf"
 try:
-    import resource
-except ImportError:
-    # ok to skip this on Windows
-    pass
-else:
+    from . import iraf
+    if not _pyrafMain:
+        iraf.Init(doprint=0, hush=1)
+except Exception:
+    iraf = None
+    raise
 
-    def raise_limit(which, howmuch):
-
-        # We have to know the old limit so we don't ask to go above that.
-        # Some systems don't let you use -1 for the max limit if the
-        # max limit is already set.
-        oldlims = resource.getrlimit(which)
-
-        # Raise it to the max.
-        if (howmuch is None) or (howmuch == -1):
-            newlims = (oldlims[1], oldlims[1])
-        else:
-            newlims = (howmuch, oldlims[1])
-
-        # Try to set it.
-        try:
-            resource.setrlimit(which, newlims)
-        # this naughty little bit of code can raise either resource.error,
-        # ValueError, or OSError, depending on the Python version.  Catch all.
-        except:
-            # Well, we tried; this is nothing worth killing pyraf over,
-            # though -- either we will get by anyway, or we will find
-            # out later.
-            pass
-
-    # Currently, we just raise the stack limit.
-    raise_limit(resource.RLIMIT_STACK, None)
+help = iraf.help
