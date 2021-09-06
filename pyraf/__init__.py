@@ -43,7 +43,11 @@ atexit.register(_cleanup)
 del atexit
 
 # Detect if the module was called via `python3 -m pyraf`:
-_pyrafMain = sys.argv[0] == '-m'
+executable = sys.argv[0]
+while os.path.islink(executable):
+    executable = os.readlink(executable)
+_pyrafMain = os.path.split(executable)[1] in ('pyraf', '-m', 'epyraf')
+del executable
 
 # now get ready to do the serious IRAF initialization
 
@@ -67,3 +71,6 @@ except Exception:
     raise
 
 help = iraf.help
+
+if '-m' not in sys.argv:
+    from .__main__ import main  # noqa: F401
