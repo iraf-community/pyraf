@@ -1,5 +1,3 @@
-
-
 import math
 import os
 
@@ -33,12 +31,11 @@ def _assertApproxEqual(afloat, bfloat, tolerance=1.0e-12):
     if math.fabs(bfloat) > tolerance:
         ratiodiff = math.fabs(1.0 - math.fabs(afloat / (1.0 * bfloat)))
         assert ratiodiff < tolerance, \
-            '{} != {}, radiodiff = {}'.format(
-                afloat, bfloat, math.fabs(ratiodiff))
+            f'{afloat} != {bfloat}, radiodiff = {math.fabs(ratiodiff)}'
     else:
         diff = math.fabs(afloat - bfloat)
         assert diff < tolerance, \
-            '{} != {}, diff = {}'.format(afloat, bfloat, math.fabs.diff)
+            f'{afloat} != {bfloat}, diff = {math.fabs.diff}'
 
 
 def _check_all_dqbits(the_dqbits_obj, valtup):
@@ -48,10 +45,9 @@ def _check_all_dqbits(the_dqbits_obj, valtup):
 
     # check each one
     for i in range(16):
-        expect_is_true = 'the_dqbits_obj.bit{} == {}'.format(
-            i + 1, yes_no_map[bool(valtup[i])])
+        expect_is_true = f'the_dqbits_obj.bit{i+1} == {yes_no_map[bool(valtup[i])]}'
         result = eval(expect_is_true)
-        msg = "Expected this to be True: {}".format(expect_is_true)
+        msg = f"Expected this to be True: {expect_is_true}"
         msg = msg.replace('the_dqbits_obj', 'dqbits')
         assert result, msg
 

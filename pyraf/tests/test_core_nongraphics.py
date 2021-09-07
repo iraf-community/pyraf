@@ -146,8 +146,8 @@ def test_irafparlist_addParam_verify(_ipl, _pars):
     """
     for idx, par in enumerate(_pars, start=1):
         # Probably pointless.
-        assert par.dpar().strip() == "{} = {}".format(
-            par.name, par.toString(par.value, quoted=1))
+        assert par.dpar().strip() == \
+            f"{par.name} = {par.toString(par.value, quoted=1)}"
         # Add the paramater (+2 takes each par's default values into account)
         _ipl.addParam(par)
         assert len(_ipl) == idx + 2
@@ -179,7 +179,7 @@ def test_irafparlist_getAllMatches_known_needle(_ipl, _pars):
     needle = 'd'
     # Verify the pars returned by getAllMatches(needle) are correct
     solution = sorted(
-        [str(x.name) for x in _pars if str(x.name).startswith(needle)])
+        str(x.name) for x in _pars if str(x.name).startswith(needle))
     assert sorted(_ipl.getAllMatches(needle)) == solution
 
 

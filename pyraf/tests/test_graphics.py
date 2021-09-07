@@ -35,8 +35,8 @@ def setup_module():
 def diffit(exp2ig, f_new, f_ref, cleanup=True):
     """ Run the diff and check the return status """
     # don't do the diff if the new file isn't there or if it is empty
-    assert os.path.exists(f_new), "New file unfound: {}".format(f_new)
-    assert os.path.exists(f_ref), "Ref file unfound: {}".format(f_ref)
+    assert os.path.exists(f_new), f"New file unfound: {f_new}"
+    assert os.path.exists(f_ref), f"Ref file unfound: {f_ref}"
     # expect new file to at least be 80% as big as ref file, before we compare
     expected_sz = int(0.8 * os.path.getsize(f_ref))
     sz = os.path.getsize(f_new)
@@ -47,10 +47,10 @@ def diffit(exp2ig, f_new, f_ref, cleanup=True):
         if sz < expected_sz:
             time.sleep(5)
     sz = os.path.getsize(f_new)
-    assert sz > 0, "New file is empty: {}".format(f_new)
-    cmd = "diff -I '{}' {} {}".format(exp2ig, f_ref, f_new)
+    assert sz > 0, f"New file is empty: {f_new}"
+    cmd = f"diff -I '{exp2ig}' {f_ref} {f_new}"
     assert 0 == os.system(cmd), \
-        "Diff of postscript failed!  Command = {}".format(cmd)
+        f"Diff of postscript failed!  Command = {cmd}"
     if cleanup:
         os.remove(f_new)
 
@@ -126,12 +126,11 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
                     os.system("/bin/ls -ld " + f)
                 # Or, did the /tmp version suddenly get deleted?
                 if not os.path.exists(flistAft[0]):
-                    print("Am somehow missing the deletes.  Test: {}".format(
-                        title))
+                    print(f"Am somehow missing the deletes.  Test: {title}")
                     return flistAft[-1]
             # Either way, throw something
-            raise Exception('Expected single postcript file during: "' +
-                            title + '": ' + str(flistAft))
+            raise Exception('Expected single postcript file during: '
+                            f'"{title}": {str(flistAft)}')
     else:
         # Here we allow more than one, and return the preferred option.
         for f in flistAft:
@@ -156,17 +155,15 @@ def test_dumpspecs():
     out_str = out_str.replace('Tkinter', 'tkinter')
 
     # verify it (is version dependent)
-    expected = """python ver = {major}.{minor}
-platform = {platform}
+    expected = f"""python ver = {sys.version_info.major}.{sys.version_info.minor}
+platform = {sys.platform}
 c.OF_GRAPHICS = False
 /dev/console owner = <skipped>
 tkinter use unattempted.
-""".format(major=sys.version_info.major,
-           minor=sys.version_info.minor,
-           platform=sys.platform)
+"""
 
     assert expected.strip() == out_str.strip(), \
-        'Unexpected output from wutil.dumpspecs: {}'.format(out_str)
+        f'Unexpected output from wutil.dumpspecs: {out_str}'
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
@@ -192,10 +189,10 @@ def test_gki_postscript_in_graphcap(test_input):
     gc = gki.getGraphcap()
     assert gc, "default graphcap not found"
     assert test_input in gc, \
-        "default graphcap does not support {}".format(test_input)
+        f"default graphcap does not support {test_input}"
     device = gc[test_input]
     assert device.devname == test_input, \
-        "Invalid graphcap device for {}".format(test_input)
+        f"Invalid graphcap device for {test_input}"
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')

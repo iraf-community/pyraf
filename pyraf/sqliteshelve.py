@@ -27,7 +27,7 @@ import sqlite3
 import os
 
 
-class Shelf(object):
+class Shelf:
     """An SQLite implementation of the Python Shelf interface
 
     """
@@ -37,18 +37,18 @@ class Shelf(object):
         """
         if mode == 'r':
             if not os.access(fname, os.R_OK):
-                raise OSError('Cannot read {}'.format(fname))
+                raise OSError(f'Cannot read {fname}')
             fname += '?mode=ro'
             self.readonly = True
         elif mode in 'cw':
             if not os.access(fname, os.F_OK):
                 if not os.access(os.path.dirname(fname), os.W_OK):
-                    raise OSError('Cannot create {}'.format(fname))
+                    raise OSError(f'Cannot create {fname}')
             elif not os.access(fname, os.W_OK):
-                raise OSError('Cannot write {}'.format(fname))
+                raise OSError(f'Cannot write {fname}')
             self.readonly = False
         else:
-            raise ValueError('Illegal mode {}'.format(mode))
+            raise ValueError(f'Illegal mode {mode}')
 
         self.db = sqlite3.connect('file:' + fname, uri=True,
                                   isolation_level=None)

@@ -111,7 +111,7 @@ def test_whereis(tmpdir):
                 pass
             else:
                 assert all([s.split('.')[1].startswith(cmd) for s in row]), \
-                    '{}'.format(row)
+                    f'{row}'
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')

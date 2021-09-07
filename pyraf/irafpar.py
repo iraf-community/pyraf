@@ -152,7 +152,7 @@ def makeIrafPar(init_value,
         if init_value is not None:
             if len(init_value) != array_size:
                 raise ValueError("Initial value list does not match array "
-                                 "size for parameter `{}'".format(name))
+                                 f"size for parameter `{name}'")
             for iv in init_value:
                 fields.append(iv)
         else:
@@ -163,7 +163,7 @@ def makeIrafPar(init_value,
     try:
         return IrafParFactory(fields, strict=strict)
     except ValueError as e:
-        errmsg = "Bad value for parameter `{}'\n{}".format(name, str(e))
+        errmsg = f"Bad value for parameter `{name}'\n{str(e)}"
         raise ValueError(errmsg)
 
 
@@ -322,15 +322,13 @@ class IrafParL(_StringMixin, IrafPar):
                     value = ''
                 if not value:
                     # EOF -- raise exception
-                    raise EOFError("EOF from list parameter `{}'"
-                                   .format(self.name))
+                    raise EOFError(f"EOF from list parameter `{self.name}'")
                 if value[-1:] == "\n":
                     value = value[:-1]
             except OSError as e:
                 if not self.errMsg:
-                    warning("Unable to read values for list parameter `{}' "
-                            "from file `{}'\n{}"
-                            .format(self.name, self.value, str(e)),
+                    warning(f"Unable to read values for list parameter "
+                            f"`{self.name}' from file `{self.value}'\n{str(e)}",
                             level=-1)
                     # only print message one time
                     self.errMsg = 1
@@ -649,11 +647,10 @@ class IrafParList(taskpars.TaskPars):
                         self.__pars[j] = p
                         return
                 else:
-                    raise RuntimeError("Bug: parameter `{}' is in dictionary "
-                                       "__pardict but not in list __pars??"
-                                       .format(p.name))
-            raise ValueError("Parameter named `{}' is already defined"
-                             .format(p.name))
+                    raise RuntimeError(f"Bug: parameter `{name}' is in "
+                                       "dictionary __pardict but not in "
+                                       "list __pars??")
+            raise ValueError(f"Parameter named `{p.name}' is already defined")
         # add it just before the mode and $nargs parameters (if present)
         j = -1
         for i in range(len(self.__pars)):
@@ -685,8 +682,7 @@ class IrafParList(taskpars.TaskPars):
         """
         if not isinstance(other, self.__class__):
             if Verbose > 0:
-                print('Comparison list is not a {}'
-                      .format(self.__class__.__name__))
+                print(f'Comparison list is not a {self.__class__.__name__}')
             return 0
         # compare minimal set of parameter attributes
         thislist = self._getConsistentList()
@@ -1090,7 +1086,7 @@ class IrafParList(taskpars.TaskPars):
         for i in range(len(self.__pars)):
             p = self.__pars[i]
             if p.name != '$nargs':
-                print("{}{}".format(taskname, p.dpar(cl=cl)))
+                print(f"{taskname}{p.dpar(cl=cl)}")
         if cl:
             print("# EOF")
 
@@ -1125,11 +1121,11 @@ class IrafParList(taskpars.TaskPars):
                 fh.write(par.save() + '\n')
         if fh != filename:
             fh.close()
-            return "{:d} parameters written to {}".format(nsave, filename)
+            return f"{nsave:d} parameters written to {filename}"
         elif hasattr(fh, 'name'):
-            return "{:d} parameters written to {}".format(nsave, fh.name)
+            return f"{nsave:d} parameters written to {fh.name}"
         else:
-            return "{:d} parameters written".format(nsave)
+            return f"{nsave:d} parameters written"
 
     def __getinitargs__(self):
         """Return parameters for __init__ call in pickle"""
@@ -1195,12 +1191,12 @@ def _extractDiffInfo(alist):
 def _printHiddenDiff(pd1, hd1, pd2, hd2):
     for key in list(pd1.keys()):
         if key in hd2:
-            print("Parameter `{}' is hidden in list 2 but not list 1".format(key))
+            print(f"Parameter `{key}' is hidden in list 2 but not list 1")
             del pd1[key]
             del hd2[key]
     for key in list(pd2.keys()):
         if key in hd1:
-            print("Parameter `{}' is hidden in list 1 but not list 2".format(key))
+            print(f"Parameter `{key}' is hidden in list 1 but not list 2")
             del pd2[key]
             del hd1[key]
 
@@ -1225,27 +1221,27 @@ def _printDiff(pd1, pd2, label):
             else:
                 # one or both parameters missing
                 if key1 not in pd2:
-                    print("Extra {} parameter `{}' (type `{}') in list 1"
-                          .format(label, key1, pd1[key1][0]))
+                    print(f"Extra {label} parameter `{key1}' "
+                          f"(type `{pd1[key1][0]}') in list 1")
                     # delete the extra parameter
                     del pd1[key1]
                     i1 = i1 + 1
                 if key2 not in pd1:
-                    print("Extra {} parameter `{}' (type `{}') in list 2"
-                          .format(label, key2, pd2[key2][0]))
+                    print(f"Extra {label} parameter `{key2}' "
+                          f"(type `{pd2[key2][0]}') in list 2")
                     del pd2[key2]
                     i2 = i2 + 1
         # other parameters must be missing
         while i1 < len(k1):
             key1 = k1[i1]
-            print("Extra {} parameter `{}' (type `{}') in list 1"
-                  .format(label, key1, pd1[key1][0]))
+            print("Extra {label} parameter `{key1}' "
+                  f"(type `{pd1[key1][0]}') in list 1")
             del pd1[key1]
             i1 = i1 + 1
         while i2 < len(k2):
             key2 = k2[i2]
-            print("Extra {} parameter `{}' (type `{}') in list 2"
-                  .format(label, key2, pd2[key2][0]))
+            print(f"Extra {label} parameter `{key2}' "
+                  f"(type `{pd2[key2][0]}') in list 2")
             del pd2[key2]
             i2 = i2 + 1
     # remaining parameters are in both lists
@@ -1259,8 +1255,8 @@ def _printDiff(pd1, pd2, label):
             if noextra and order1 != order2:
                 mm.append("order disagreement")
             if type1 != type2:
-                mm.append("type disagreement (`{}' vs. `{}')".format(type1, type2))
-            print("Parameter `{}': {}".format(key, ", ".join(mm)))
+                mm.append(f"type disagreement (`{type1}' vs. `{type2}')")
+            print(f"Parameter `{key}': {', '.join(mm)}")
 
 
 # The dictionary of all special-use par files found on disk.

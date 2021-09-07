@@ -1,5 +1,3 @@
-
-
 import subprocess
 
 import pytest
@@ -30,7 +28,7 @@ python_cases = (
 )
 
 
-class PyrafEx(object):
+class PyrafEx:
 
     def __init__(self):
         self.code = 0

@@ -86,8 +86,8 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
                 'minmatch', 'irafutils', 'dialog', 'listdlg', 'filedlg',
                 'alert', 'irafglobals'
         ]:
-            if name == 'pyraf.{}'.format(module):
-                name = 'stsci.tools.{}'.format(module)
+            if name == f'pyraf.{module}':
+                name = f'stsci.tools.{module}'
         # Replace any instances of 'pytools' with 'stsci.tools' -- the
         # new name of the former pytools package
         name = name.replace('pytools.', 'stsci.tools.')
@@ -154,7 +154,7 @@ class _irafModuleClass:
         try:
             return self.mmdict[attr]
         except KeyError:
-            raise AttributeError("Undefined IRAF task `{}'".format(attr))
+            raise AttributeError(f"Undefined IRAF task `{attr}'")
 
     def __setattr__(self, attr, value):
         # add an attribute to the module itself

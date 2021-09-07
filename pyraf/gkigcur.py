@@ -222,8 +222,8 @@ class Gcursor:
                     elif colonString[1:] == 'markcur':
                         self.markcur = not self.markcur
                     else:
-                        self.writeString("Unimplemented CL gcur `:{}'"
-                                         .format(colonString))
+                        self.writeString(
+                            f"Unimplemented CL gcur `:{colonString}'")
                 else:
                     self._setRetString(key, x, y, colonString)
         elif key == '=':
@@ -247,10 +247,9 @@ class Gcursor:
                 self.window.undoN()
             elif key == 'C':
                 wx, wy, gwcs = self._convertXY(x, y)
-                self.writeString("{:g} {:g}".format(wx, wy))
+                self.writeString(f"{wx:g} {wy:g}")
             else:
-                self.writeString("Unimplemented CL gcur command `{}'"
-                                 .format(key))
+                self.writeString(f"Unimplemented CL gcur command `{key}'")
         else:
             self._setRetString(key, x, y, "")
 
@@ -270,7 +269,7 @@ class Gcursor:
 
         wx, wy, gwcs = self._convertXY(x, y)
         if key <= ' ' or ord(key) >= 127:
-            key = '\\{:03o}'.format(ord(key))
+            key = f'\\{ord(key):03o}'
         self.retString = str(wx) + ' ' + str(wy) + ' ' + str(gwcs) + ' ' + key
         if colonString:
             self.retString = self.retString + ' ' + colonString

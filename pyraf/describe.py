@@ -113,7 +113,7 @@ def describe(func, name=None):
         if isinstance(arg, str):
             args.append(arg)
         else:
-            args.append("{}={}".format(arg[0], repr(arg[1])))
+            args.append(f"{arg[0]}={repr(arg[1])}")
     args = ", ".join(args)
 
     # function name
@@ -122,8 +122,8 @@ def describe(func, name=None):
         # name = func.func_name
         name = func.__name__
         if name == "<lambda>":
-            return "lambda {}".format(args)
-    return "{}({})".format(name, args)
+            return f"lambda {args}"
+    return f"{name}({args})"
 
 
 def __getmethods(c, m):
