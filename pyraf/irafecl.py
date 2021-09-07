@@ -330,7 +330,10 @@ class EclBase:
                 return self.DOLLARerr_dzvalue
             else:
                 iraf.error(1, "divide by zero", self._name, suppress=False)
-        return a / b
+        if isinstance(a, int) and isinstance(b, int):
+            return a // b
+        else:
+            return a / b
 
     def _ecl_safe_modulo(self, a, b):
         """_ecl_safe_modulus is used to wrap the modulus operator for ECL code and trap mod-by-zero errors."""
