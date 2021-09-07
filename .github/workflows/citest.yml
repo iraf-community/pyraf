@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       tmp: /tmp/
-      iraf: /usr/lib/iraf/
+      iraf:  ${{ matrix.iraf }}
       TERM: dumb
 
     strategy:
@@ -18,10 +18,17 @@ jobs:
           - name: Ubuntu 20.04 (Python-3.8.2), native
             os: ubuntu-20.04
             method: native
+            iraf: /usr/lib/iraf/
 
           - name: Ubuntu 18.04 (Python-3.7), pip
             os: ubuntu-18.04
             method: pip
+            iraf: /usr/lib/iraf/
+
+          - name: macOS 10.15, pip
+            os: macos-10.15
+            method: pip
+            iraf: /Users/runner/work/iraf/
 
     steps:
       - name: Checkout repository
@@ -44,6 +51,22 @@ jobs:
           sudo apt-get install --no-install-recommends python3-dev python3-pip
           pip3 install pytest ipython
 
+      - name: Setup dependencies, Mac
+        if: startsWith(matrix.os, 'macos') && matrix.method == 'pip'
+        run: |
+          pwd
+          mkdir $iraf
+          curl --no-progress-meter https://cloud.aip.de/index.php/s/iPj7LGxbRedYnqa/download/iraf-macintel.tar.gz | tar -C $iraf -x -z
+          ls -l $iraf
+          mkdir $iraf/links
+          ln -sf ../unix/bin/xc.e $iraf/links/xc
+          ln -sf ../unix/bin/sgidispatch.e $iraf/links/sgidispatch
+          (cd $iraf ; ./install < /dev/null || true)
+          echo "PATH=${iraf}links:$PATH" >> $GITHUB_ENV
+          echo "host=${iraf}unix/" >> $GITHUB_ENV
+          $iraf/unix/hlib/mkiraf.sh -t=$TERM -n
+          pip3 install pytest ipython
+
       - name: Build PyRAF locally
         if: matrix.method == 'native'
         run: |
@@ -63,4 +86,5 @@ jobs:
       - name: Run tests (installed package)
         if: matrix.method == 'pip'
         run: |
+          if [ $RUNNER_OS = 'macOS' ] ; then export IRAFARCH=macintel ; fi
           python3 -m pytest -s --pyargs pyraf
