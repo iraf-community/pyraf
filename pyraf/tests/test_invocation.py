@@ -17,7 +17,7 @@ cl_cases = (
     (('print(1)'), '1'),
     (('print(1 + 2)'), '3'),
     (('print(6 - 1)'), '5'),
-    (('print(int(14 / 2))'), '7'),
+    (('print(14 / 3))'), '4'),
     (('print(3 * 3)'), '9'),
     (('imhead("dev$pix")'), 'dev$pix[512,512][short]: m51  B  600s'),
     (('unlearn imcoords'), ''),
@@ -108,7 +108,11 @@ def test_invoke_command(_with_pyraf, test_input, expected, use_ecl):
 def test_invoke_command_direct(_with_pyraf, test_input, expected, use_ecl):
     """Issue basic commands on pyraf's native shell
     """
-    result = _with_pyraf.run(['-s'], use_ecl=use_ecl, stdin=test_input + '\n.exit')
+    if '/' in test_input:
+        pytest.xfail('Integer division is different as the Python 3 '
+                     'parser is used here')
+    result = _with_pyraf.run(['-s'], use_ecl=use_ecl
+                             , stdin=test_input + '\n.exit')
     assert result.stdout.strip().endswith(expected)
     # assert not result.stderr  # BUG: Why is there a single newline on stderr?
     assert not result.code, result.stderr
