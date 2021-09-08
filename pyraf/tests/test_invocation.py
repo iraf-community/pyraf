@@ -35,13 +35,15 @@ class PyrafEx:
         self.stdout = None
         self.stderr = None
 
-    def run(self, args, stdin=None):
+    def run(self, args, use_ecl=False, stdin=None):
         """Execute pyraf and store the relevant results
         """
         if isinstance(args, str):
             args = args.split()
 
         cmd = ['pyraf', '-x', '-s']
+        if use_ecl:
+            cmd += ['-e']
         cmd += args
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
@@ -82,10 +84,11 @@ def test_invoke_version(_with_pyraf, test_input):
 @pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
                     reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', cl_cases)
-def test_invoke_command(_with_pyraf, test_input, expected):
+@pytest.mark.parametrize('use_ecl', [False, True])
+def test_invoke_command(_with_pyraf, test_input, expected, use_ecl):
     """Issue basic commands to CL parser
     """
-    result = _with_pyraf.run(['-c', test_input])
+    result = _with_pyraf.run(['-c', test_input], use_ecl)
     assert result.stdout.startswith(expected)
     assert not result.code, result.stderr
 
@@ -93,10 +96,11 @@ def test_invoke_command(_with_pyraf, test_input, expected):
 @pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
                     reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', cl_cases)
-def test_invoke_command_direct(_with_pyraf, test_input, expected):
+@pytest.mark.parametrize('use_ecl', [False, True])
+def test_invoke_command_direct(_with_pyraf, test_input, expected, use_ecl):
     """Issue basic commands on pyraf's native shell
     """
-    result = _with_pyraf.run(['-s'], stdin=test_input + '\n.exit')
+    result = _with_pyraf.run(['-s'], use_ecl=use_ecl, stdin=test_input + '\n.exit')
     assert result.stdout.strip().endswith(expected)
     # assert not result.stderr  # BUG: Why is there a single newline on stderr?
     assert not result.code, result.stderr
@@ -105,10 +109,11 @@ def test_invoke_command_direct(_with_pyraf, test_input, expected):
 @pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
                     reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', python_cases)
-def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected):
+@pytest.mark.parametrize('use_ecl', [False, True])
+def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected, use_ecl):
     """Issue basic commands on pyraf's passthrough shell
     """
-    result = _with_pyraf.run(['-i'], stdin=test_input)
+    result = _with_pyraf.run(['-i'], use_ecl=use_ecl, stdin=test_input)
     _output = result.stdout.strip()
     begin = _output.find('>>>')
     output = ''.join(
@@ -121,9 +126,10 @@ def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected):
 @pytest.mark.skipif((not HAS_PYRAF_EXEC) or (not HAS_IRAF),
                     reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', ipython_cases)
-def test_invoke_command_ipython(_with_pyraf, test_input, expected):
+@pytest.mark.parametrize('use_ecl', [False, True])
+def test_invoke_command_ipython(_with_pyraf, test_input, expected, use_ecl):
     """Issue basic commands on pyraf's ipython shell wrapper
     """
-    result = _with_pyraf.run('-y', stdin=test_input)
+    result = _with_pyraf.run('-y', use_ecl=use_ecl, stdin=test_input)
     assert expected in result.stdout
     assert not result.code, result.stderr

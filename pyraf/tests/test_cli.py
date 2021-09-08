@@ -7,6 +7,7 @@ from .utils import diff_outputs, HAS_IRAF
 
 if HAS_IRAF:
     from .. import iraf
+    from .. import pyrafglobals
     from .. import sscanf
 
     # Turn off the test probe output since it comes with
@@ -16,7 +17,9 @@ if HAS_IRAF:
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-def test_division(tmpdir):
+@pytest.mark.parametrize('use_ecl', [False, True])
+def test_division(use_ecl, tmpdir):
+    pyrafglobals.use_ecl = use_ecl
     outfile = str(tmpdir.join('output.txt'))
 
     # First show straight Python
