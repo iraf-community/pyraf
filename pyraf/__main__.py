@@ -7,6 +7,11 @@ import argparse
 from stsci.tools import capable
 from . import iraf
 
+try:
+    import IPython
+except ImportError:
+    IPython = None
+
 def main():
     if "." not in sys.path:
         sys.path.insert(0, ".")
@@ -61,10 +66,12 @@ def main():
                         help='No graphics will be attempted/loaded'
                              ' during session',
                         action='store_true', default=False)
-    parser.add_argument('-y', '--ipython',
-                        help='Run the IPython shell instead of the normal'
-                             ' PyRAF command shell',
-                        action='store_true', default=False)
+    if IPython is not None:
+        parser.add_argument('-y', '--ipython',
+                            help='Run the IPython shell instead of the normal'
+                            ' PyRAF command shell',
+                            action='store_true', default=False)
+
     parser.add_argument('savefile',
                         help='Optional savefile to start from',
                         nargs='?')
@@ -133,12 +140,11 @@ def main():
     if args.command:
         iraf.task(cmd_line=args.command, IsCmdString=True)
         iraf.cmd_line()
-    elif args.ipython:
-        from IPython import embed
+    elif IPython is not None and args.ipython:
         if args.silent:
-            embed(banner1='')
+            IPython.embed(banner1='')
         else:
-            embed()
+            IPython.embed()
     elif args.commandwrapper:
         from . import pycmdline
         cmdline = pycmdline.PyCmdLine(locals=globals())
