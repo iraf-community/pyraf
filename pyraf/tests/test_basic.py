@@ -9,6 +9,8 @@ from .utils import HAS_IRAF
 
 if HAS_IRAF:
     from pyraf import iraf
+else:
+    pytestmark = pytest.mark.skip('Need IRAF to run')
 
 
 def setup_module():
@@ -22,7 +24,6 @@ def teardown_module():
 
 
 # NOTE: IRAF does not respect tmpdir
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 class TestPyraf:
     """
     Few simple tests based on

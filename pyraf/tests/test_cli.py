@@ -24,7 +24,6 @@ def use_ecl(flag):
     pyrafglobals._use_ecl = old_ecl
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_division_task(tmpdir):
     # Show how a .cl script would be run
     with use_ecl(False):
@@ -36,7 +35,6 @@ def test_division_task(tmpdir):
         assert stdout.getvalue() == "e: 1\nf: 1.8\ng: 95\nh: 95.0\n"
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_division_task_ecl(tmpdir):
     with use_ecl(True):
         # Show how a .cl script would be run
@@ -48,7 +46,6 @@ def test_division_task_ecl(tmpdir):
         assert stdout.getvalue() == "e: 1\nf: 1.8\ng: 95\nh: 95.0\n"
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.parametrize('arg,expected', [
     ('9/5', '1'),
     ('9/5.', '1.8'),
@@ -63,7 +60,6 @@ def test_division(arg, expected, ecl_flag, tmpdir):
         assert stdout.getvalue().strip() == f'i: {expected}'
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.parametrize('arg,fmt,expected', [
     ("seven 6 4.0 -7", "%s %d %g %d", ['seven', 6, 4.0, -7]), # aliveness
     ("seven", "%d", []),
@@ -78,7 +74,6 @@ def test_sscanf(arg, fmt, expected, tmpdir):
     assert l == expected
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_sscanf_error(tmpdir):
     # API error
     with pytest.raises(TypeError):

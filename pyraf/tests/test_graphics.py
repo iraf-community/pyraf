@@ -14,6 +14,8 @@ if HAS_IRAF:
     from pyraf import iraf
     from pyraf import gki
     from pyraf import wutil
+else:
+    pytestmark = pytest.mark.skip('Need IRAF to run')
 
 # Graphics kernel to use. This seems to work on Linux now.
 PSDEV = 'psdump'
@@ -140,7 +142,6 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
     return flistAft[0]
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_dumpspecs():
     # get dumpspecs output
     out_f = io.StringIO()
@@ -166,7 +167,6 @@ tkinter use unattempted.
         f'Unexpected output from wutil.dumpspecs: {out_str}'
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_gkidecode(tmpdir):
     iraf.plot(_doprint=0)
     prow_stdout = str(tmpdir.join('test_prow_256.gki'))
@@ -179,7 +179,6 @@ def test_gkidecode(tmpdir):
     assert not open(gki_stderr).readlines()
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.parametrize('test_input', [
     'psdump',
     'psi_land',
@@ -195,21 +194,18 @@ def test_gki_postscript_in_graphcap(test_input):
         f"Invalid graphcap device for {test_input}"
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_gki_opcodes():
     """ Simple aliveness test for the opcode2name dict """
     for opc in gki.GKI_ILLEGAL_LIST:
         assert gki.opcode2name[opc] == 'gki_unknown'
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_gki_control_codes():
     """ Simple aliveness test for the control2name dict """
     for ctl in gki.GKI_ILLEGAL_LIST:
         assert gki.control2name[ctl] == 'control_unknown'
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_gki_single_prow():
     """ Test a prow-plot of a single row from dev$pix to .ps """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -224,7 +220,6 @@ def test_gki_single_prow():
     diffit(EXP2IGNORE, psOut, os.path.join(DATA_DIR, PSDEV + "_prow_256.ps"))
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_gki_prow_1_append():
     """ Test a prow-plot with 1 append (2 rows total, dev$pix) to .ps """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -241,7 +236,6 @@ def test_gki_prow_1_append():
                                            PSDEV + "_prow_256_250.ps"))
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_gki_prow_2_appends():
     """ Test a prow-plot with 2 appends (3 rows total, dev$pix) to .ps """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -259,7 +253,6 @@ def test_gki_prow_2_appends():
            os.path.join(DATA_DIR, PSDEV + "_prow_256_250_200.ps"))
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_gki_2_prows_no_append():
     """ Test 2 prow calls with no append (2 dev$pix rows) to 2 .ps's """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -288,7 +281,6 @@ def test_gki_2_prows_no_append():
     diffit(EXP2IGNORE, psOut, os.path.join(DATA_DIR, PSDEV + "_prow_250.ps"))
 
 
-# @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.skip(reason="Erroneously sends jobs to network printers")
 def test_gki_prow_to_different_devices():  # rename to disable for now
     """Test 2 prow calls, each to different devices - one .ps written.

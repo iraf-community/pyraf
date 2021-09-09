@@ -13,6 +13,8 @@ if HAS_IRAF:
     from ..subproc import Subprocess
     from stsci.tools import basicpar
     from stsci.tools.basicpar import parFactory
+else:
+    pytestmark = pytest.mark.skip('IRAF must be installed to run')
 
 
 @pytest.fixture
@@ -20,13 +22,11 @@ def _proc():
     return Subprocess('cat', expire_noisily=0)
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_wait():
     proc = Subprocess('true', 1, expire_noisily=0)
     assert proc.wait(1), 'How is this still alive after 1 sec?'
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_write_readline(_proc):
     """Buffer readback test; readline
     """
@@ -38,7 +38,6 @@ def test_subproc_write_readline(_proc):
     assert _proc.readline() == b'test string two\n'
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_write_readPendingChars(_proc):
     """Buffer readback test; readPendingChars
     """
@@ -51,7 +50,6 @@ def test_subproc_write_readPendingChars(_proc):
     assert test_inputs == expected
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_stop_resume(_proc):
     """Ensure we can stop and resume a process
     """
@@ -59,7 +57,6 @@ def test_subproc_stop_resume(_proc):
     assert _proc.cont()
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_stop_resume_write_read(_proc):
     """Ensure we can stop the process, write data to the pipe,
     resume, then read the buffered data back from the pipe.
@@ -71,7 +68,6 @@ def test_subproc_stop_resume_write_read(_proc):
     assert _proc.readline() == b'test string\n'
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_kill_via_delete(_proc):
     """Kill the process by deleting the instance.
     We cannot assert anything, but an exception will bomb this out.
@@ -79,7 +75,6 @@ def test_subproc_kill_via_delete(_proc):
     del _proc
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_subproc_kill_via_die(_proc):
     """Kill the process the "right way."
     """
@@ -117,29 +112,24 @@ def _pars():
     return [parFactory(*x) for x in values]
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_getName(_ipl, _ipl_defaults):
     assert _ipl.getName() == _ipl_defaults['name']
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_getFilename(_ipl, _ipl_defaults):
     assert _ipl.getFilename() == _ipl_defaults['filename']
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_getPkgname(_ipl, _ipl_defaults):
     assert not _ipl.getPkgname()
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_hasPar_defaults(_ipl, _ipl_defaults):
     assert _ipl.hasPar('$nargs')
     assert _ipl.hasPar('mode')
     assert len(_ipl) == 2
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_addParam_verify(_ipl, _pars):
     """Add a series of pars to _ipl while verifying
     the data can be read back as it appears.
@@ -158,7 +148,6 @@ def test_irafparlist_addParam_verify(_ipl, _pars):
         assert sorted(_ipl.getAllMatches('')) == solution
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_getAllMatches(_ipl, _pars):
     for par in _pars:
         _ipl.addParam(par)
@@ -169,7 +158,6 @@ def test_irafparlist_getAllMatches(_ipl, _pars):
     assert sorted(_ipl.getAllMatches('')) == solution
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_getAllMatches_known_needle(_ipl, _pars):
     """Expect to receive a list of pars starting with needle
     """
@@ -183,7 +171,6 @@ def test_irafparlist_getAllMatches_known_needle(_ipl, _pars):
     assert sorted(_ipl.getAllMatches(needle)) == solution
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_getAllMatches_unknown_needle(_ipl, _pars):
     """Expect to receive an empty list with no par match
     """
@@ -194,7 +181,6 @@ def test_irafparlist_getAllMatches_unknown_needle(_ipl, _pars):
     assert sorted(_ipl.getAllMatches(needle)) == list()
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_getParDict(_ipl, _pars):
     for par in _pars:
         _ipl.addParam(par)
@@ -205,7 +191,6 @@ def test_irafparlist_getParDict(_ipl, _pars):
         assert par.name in par_dict
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_getParList(_ipl, _pars):
     for par in _pars:
         _ipl.addParam(par)
@@ -216,7 +201,6 @@ def test_irafparlist_getParList(_ipl, _pars):
         assert par in par_list
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_hasPar(_ipl, _pars):
     for par in _pars:
         _ipl.addParam(par)
@@ -225,7 +209,6 @@ def test_irafparlist_hasPar(_ipl, _pars):
         assert _ipl.hasPar(par.name)
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_setParam_string(_ipl, _pars):
     """Change existing parameter then verify it
     """
@@ -240,7 +223,6 @@ def test_irafparlist_setParam_string(_ipl, _pars):
     assert 'different value' == _ipl.getParDict()[par.name].value
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_setParam_integer(_ipl, _pars):
     """Change existing parameter then verify it
     """
@@ -257,7 +239,6 @@ def test_irafparlist_setParam_integer(_ipl, _pars):
     assert new_value == _ipl.getParDict()[par.name].value
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_setParam_float(_ipl, _pars):
     """Change existing parameter then verify it
     """
@@ -274,7 +255,6 @@ def test_irafparlist_setParam_float(_ipl, _pars):
     assert new_value == _ipl.getParDict()[par.name].value
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 @pytest.mark.xfail(reason='Can overwrite string type with uncast integer')
 def test_irafparlist_incompatible_assignment_raises(_ipl, _pars):
     """Assign incompatible values to existing pars
@@ -297,7 +277,6 @@ def test_irafparlist_incompatible_assignment_raises(_ipl, _pars):
             setattr(_ipl, par.name, break_with[par.type])
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_boolean_convert_false(_ipl, _pars):
     # Select first boolean par
     for par in _pars:
@@ -312,7 +291,6 @@ def test_irafparlist_boolean_convert_false(_ipl, _pars):
         assert getattr(_ipl, par.name) == 'no'
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='PyRAF must be installed to run')
 def test_irafparlist_boolean_convert_true(_ipl, _pars):
     # Select first boolean par
     for par in _pars:

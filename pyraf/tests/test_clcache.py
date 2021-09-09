@@ -2,10 +2,7 @@ import os
 
 import pytest
 
-from .utils import HAS_IRAF
-
-if HAS_IRAF:
-    from pyraf.clcache import _CodeCache
+from pyraf.clcache import _CodeCache
 
 
 # simple class to mimic pycode, for unit test (save us from importing others)
@@ -24,7 +21,6 @@ class DummyCodeObj:
         return retval
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 def test_codecache(tmpdir):
     # Dummy file for caching test
     fname = 'dummyfile.py'

@@ -6,6 +6,9 @@ import pytest
 import pyraf
 from .utils import HAS_IRAF
 
+pytestmark = pytest.mark.skipif(not HAS_IRAF,
+                                reason='IRAF must be installed to run')
+
 HAS_IPYTHON = True
 try:
     import IPython
@@ -75,8 +78,6 @@ def _with_pyraf(tmpdir):
     return PyrafEx()
 
 
-@pytest.mark.skipif(not HAS_IRAF,
-                    reason='IRAF must be installed to run')
 @pytest.mark.parametrize('test_input', [
     ('--version'),
     ('-V'),
@@ -89,8 +90,6 @@ def test_invoke_version(_with_pyraf, test_input):
     assert pyraf.__version__ in result.stdout
 
 
-@pytest.mark.skipif(not HAS_IRAF,
-                    reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', cl_cases)
 @pytest.mark.parametrize('use_ecl', [False, True])
 def test_invoke_command(_with_pyraf, test_input, expected, use_ecl):
@@ -101,8 +100,6 @@ def test_invoke_command(_with_pyraf, test_input, expected, use_ecl):
     assert not result.code, result.stderr
 
 
-@pytest.mark.skipif(not HAS_IRAF,
-                    reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', cl_cases)
 @pytest.mark.parametrize('use_ecl', [False, True])
 def test_invoke_command_direct(_with_pyraf, test_input, expected, use_ecl):
@@ -118,8 +115,6 @@ def test_invoke_command_direct(_with_pyraf, test_input, expected, use_ecl):
     assert not result.code, result.stderr
 
 
-@pytest.mark.skipif(not HAS_IRAF,
-                    reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.parametrize('test_input,expected', python_cases)
 @pytest.mark.parametrize('use_ecl', [False, True])
 def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected, use_ecl):
@@ -135,8 +130,6 @@ def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected, use
     assert not result.code, result.stderr
 
 
-@pytest.mark.skipif(not HAS_IRAF,
-                    reason='PyRAF and IRAF must be installed to run')
 @pytest.mark.skipif(not HAS_IPYTHON,
                     reason='IPython must be installed to run')
 @pytest.mark.parametrize('test_input,expected', ipython_cases)
