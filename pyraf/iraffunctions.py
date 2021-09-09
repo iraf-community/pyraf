@@ -178,7 +178,7 @@ Also be sure to run the "mkiraf" command to create a logion.cl
 (http://www.google.com/search?q=mkiraf).
 """)
 
-        arch = _os.environ.get('IRAFARCH')
+        arch = _os.environ.get('IRAFARCH', '')
         # ensure trailing slash is present
         iraf = _os.path.join(iraf, '')
         host = _os.environ.get('host', _os.path.join(iraf, 'unix', ''))
@@ -190,8 +190,7 @@ Also be sure to run the "mkiraf" command to create a logion.cl
         set(tmp=tmp)
         if arch and arch[0] != '.':
             arch = '.' + arch
-        if arch:
-            set(arch=arch)
+        set(arch=arch)
         global userIrafHome
         set(home=userIrafHome)
 
