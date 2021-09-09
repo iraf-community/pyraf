@@ -92,7 +92,9 @@ def main():
 
     # allow them to specifiy no graphics, done before any imports
     if args.nographics:
-        os.environ['PYRAF_NO_DISPLAY'] = '1'  # what the rest of PyRAF triggers on
+        os.environ['PYRAF_NO_DISPLAY'] = '1'  # triggers on the rest of PyRAF
+        capable.OF_GRAPHICS = False
+        args.nosplash = True
 
     from . import pyrafglobals
     pyrafglobals._use_ecl = args.ecl
