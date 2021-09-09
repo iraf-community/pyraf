@@ -54,17 +54,13 @@ jobs:
       - name: Setup dependencies, Mac
         if: startsWith(matrix.os, 'macos') && matrix.method == 'pip'
         run: |
-          pwd
           mkdir $iraf
-          curl --no-progress-meter https://cloud.aip.de/index.php/s/iPj7LGxbRedYnqa/download/iraf-macintel.tar.gz | tar -C $iraf -x -z
-          ls -l $iraf
-          mkdir $iraf/links
-          ln -sf ../unix/bin/xc.e $iraf/links/xc
-          ln -sf ../unix/bin/sgidispatch.e $iraf/links/sgidispatch
+          curl https://cloud.aip.de/index.php/s/iPj7LGxbRedYnqa/download/iraf-macintel.tar.gz | tar -C $iraf -x -z
           (cd $iraf ; ./install < /dev/null || true)
-          echo "PATH=${iraf}links:$PATH" >> $GITHUB_ENV
+          export PATH=${HOME}/.iraf/bin:${PATH}
+          mkiraf -t=$TERM -n
+          echo "PATH=$PATH" >> $GITHUB_ENV
           echo "host=${iraf}unix/" >> $GITHUB_ENV
-          $iraf/unix/hlib/mkiraf.sh -t=$TERM -n
           pip3 install pytest
 
       - name: Build PyRAF locally
