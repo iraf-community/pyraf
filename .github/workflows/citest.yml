@@ -41,7 +41,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends iraf iraf-noao iraf-dev build-essential libx11-dev
           sudo apt-get install --no-install-recommends python3-dev python3-pip python3-astropy python3-numpy-dev python3-setuptools python3-setuptools-scm python3-tk python3-pytest python3-pytest-cov ipython3
-          pip3 install "stsci.tools>=4.0.1"
+          pip3 install "stsci.tools>=4.0.1" coveragepy
 
       - name: Setup dependencies
         if: startsWith(matrix.os, 'ubuntu') && matrix.method == 'pip'
@@ -83,3 +83,9 @@ jobs:
         run: |
           if [ $RUNNER_OS = 'macOS' ] ; then export IRAFARCH=macintel ; fi
           python3 -m pytest -s --pyargs pyraf
+
+      - name: "Upload coverage to Codecov"
+        if: startsWith(matrix.os, 'ubuntu') && matrix.method == 'native'
+        uses: codecov/codecov-action@v1
+        with:
+          fail_ci_if_error: false
