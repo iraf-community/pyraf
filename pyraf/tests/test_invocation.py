@@ -108,8 +108,8 @@ def test_invoke_command_direct(_with_pyraf, test_input, expected, use_ecl):
     if '/' in test_input:
         pytest.xfail('Integer division is different as the Python 3 '
                      'parser is used here')
-    result = _with_pyraf.run(['-s'], use_ecl=use_ecl
-                             , stdin=test_input + '\n.exit')
+    result = _with_pyraf.run(['-m'], use_ecl=use_ecl,
+                             stdin=test_input + '\n.exit')
     assert result.stdout.strip().endswith(expected)
     # assert not result.stderr  # BUG: Why is there a single newline on stderr?
     assert not result.code, result.stderr
@@ -143,8 +143,8 @@ def test_invoke_command_ipython(_with_pyraf, test_input, expected, use_ecl):
 
 
 @pytest.mark.parametrize('test_input', [
-    '--commandwrapper=yes',
-    '-i',
+    '--commandwrapper',
+    '--no-commandwrapper',
     '--ipython',
 ])
 def test_invoke_nosilent(_with_pyraf, test_input):
