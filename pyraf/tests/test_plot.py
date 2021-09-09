@@ -21,19 +21,19 @@ graphics = ['tkplot', 'matplotlib']
 
 @pytest.fixture(autouse=True)
 def setup():
+    orig_graphics = capable.OF_GRAPHICS
     capable.OF_GRAPHICS = True
-    open('.hushiraf', 'a').close()
     iraf.plot()  # load plot pkg
 #    gki._resetGraphicsKernel()
     # clean slate
-    if 'PYRAFGRAPHICS' in os.environ:
+    graphenv = os.environ.get('PYRAFGRAPHICS')
+    if graphenv is not None:
         del os.environ['PYRAFGRAPHICS']
-    os.environ['PYRAF_GRAPHICS_ALWAYS_ON_TOP'] = '1'
     yield
     gki.kernel.clear()
-    if os.path.exists('.hushiraf'):
-        os.remove('.hushiraf')
-
+    capable.OF_GRAPHICS = orig_graphics
+    if graphenv is not None:
+        os.environ['PYRAFGRAPHICS'] = graphenv
 
 @pytest.mark.parametrize('marker', markers)
 @pytest.mark.parametrize('graphics', graphics)

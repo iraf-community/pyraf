@@ -8,6 +8,8 @@ import time
 
 import pytest
 
+from stsci.tools import capable
+
 from .utils import HAS_IRAF, DATA_DIR
 
 if HAS_IRAF:
@@ -21,17 +23,17 @@ else:
 PSDEV = 'psdump'
 EXP2IGNORE = '(NOAO/IRAF '
 
+def without_graphics(func):
+    """Decorator to run a test without turning graphics on"""
+    def wrapper(*args, **kwargs):
+        orig_flag = capable.OF_GRAPHICS
+        try:
+            capable.OF_GRAPHICS = False
+            func(*args, **kwargs)
+        finally:
+            capable.OF_GRAPHICS = orig_flag
 
-def setup_module():
-    """ Does not work under Darwin, because c.OF_GRAPHICS is True
-    TODO: ^Investigate^
-    """
-    # TODO: Related to test_gki_prow_to_different_devices
-    # os.environ['LPDEST'] = "hp_dev_null"
-    # os.environ['PRINTER'] = "hp_dev_null"
-
-    # first turn off display
-    os.environ['PYRAF_NO_DISPLAY'] = '1'
+    return wrapper
 
 
 def diffit(exp2ig, f_new, f_ref, cleanup=True):
@@ -142,6 +144,7 @@ def getNewTmpPskFile(theBeforeList, title, preferred=None):
     return flistAft[0]
 
 
+@without_graphics
 def test_dumpspecs():
     # get dumpspecs output
     out_f = io.StringIO()
@@ -153,8 +156,6 @@ def test_dumpspecs():
     out_str = '\n'.join(
         [l for l in out_str.split('\n') if 'python exec =' not in l])
     # modify out_str to handle old versions which printed Tkinter as camel-case
-    out_str = out_str.replace('Tkinter', 'tkinter')
-
     # verify it (is version dependent)
     expected = f"""python ver = {sys.version_info.major}.{sys.version_info.minor}
 platform = {sys.platform}
@@ -162,7 +163,6 @@ c.OF_GRAPHICS = False
 /dev/console owner = <skipped>
 tkinter use unattempted.
 """
-
     assert expected.strip() == out_str.strip(), \
         f'Unexpected output from wutil.dumpspecs: {out_str}'
 
