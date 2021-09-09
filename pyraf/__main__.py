@@ -155,7 +155,10 @@ def main():
     else:
         # run the standard Python interpreter
         import code
-        code.interact(local=locals())
+        if args.silent:
+            code.interact(banner='', local=locals(), exitmsg='')
+        else:
+            code.interact(local=locals())
 
 
 if __name__ == '__main__':
