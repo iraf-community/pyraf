@@ -13,8 +13,8 @@ from . import pyrafglobals
 from . import sqliteshelve
 
 
-if 'CLCACHE_PATH' in os.environ:
-    clcache_path = os.environ['CLCACHE_PATH'].split(':')
+if 'PYRAF_CLCACHE_PATH' in os.environ:
+    clcache_path = os.environ['PYRAF_CLCACHE_PATH'].split(':')
     if 'disable' in clcache_path:
         clcache_path = []
 else:
