@@ -46,14 +46,9 @@ else:
 # with changes of the CL file contents when the script is
 # being developed.
 
-_versionKey = 'CACHE_VERSION'
-
 
 def _currentVersion():
-    if not pyrafglobals._use_ecl:
-        return "v2"
-    else:
-        return "v3"
+    return "v3" if pyrafglobals._use_ecl else "v2"
 
 
 class _FileContentsCache(filecache.FileCacheDict):
@@ -103,7 +98,7 @@ class _CodeCache:
         the cache.
         """
         # filenames to try, open flags to use
-        filelist = [(f'{filename}.{_currentVersion()}', "w")]
+        filelist = [(f'{filename}', "w")]
         msg = []
         for fname, flag in filelist:
             # first try opening the cache read-write
@@ -119,26 +114,7 @@ class _CodeCache:
                     # give up on this file and try the next one
                     msg.append(f"Unable to open CL script cache {fname}")
                     continue
-            # check version of cache -- don't use it if version mismatch
-            if len(fh) == 0:
-                fh[_versionKey] = _currentVersion()
-            oldVersion = fh.get(_versionKey, 'v0')
-            if oldVersion == _currentVersion():
-                # normal case -- cache version is as expected
-                return (writeflag, fh, fname)
-            elif fname.endswith(_currentVersion()):
-                # uh-oh, something is seriously wrong
-                msg.append(f"CL script cache {fname} has version mismatch, "
-                           "may be corrupt?")
-            elif oldVersion > _currentVersion():
-                msg.append(f"CL script cache {fname} was created by a newer "
-                           f"version of pyraf (cache {repr(oldVersion)}, "
-                           f"this pyraf {repr(_currentVersion())})")
-            else:
-                msg.append(f"CL script cache {fname} is obsolete version "
-                           f"(old {repr(oldVersion)}, "
-                           f"current {repr(_currentVersion())})")
-            fh.close()
+            return (writeflag, fh, fname)
         # failed to open either cache
         self.warning("\n".join(msg))
         return None
@@ -184,13 +160,13 @@ class _CodeCache:
         """Get cache key for a file or filehandle"""
 
         if filename:
-            return self.clFileDict.get(filename)
+            return self.clFileDict.get(filename) + _currentVersion()
         elif source:
             # there is no filename, but return md5 digest of source as key
             h = hashlib.md5()
 
             h.update(source.encode())
-            return h.hexdigest()
+            return h.hexdigest() + _currentVersion()
 
     def add(self, index, pycode):
         """Add pycode to cache with key = index.  Ignores if index=None."""
