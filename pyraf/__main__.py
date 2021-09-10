@@ -39,7 +39,8 @@ def main():
     parser.add_argument('-m','--commandwrapper',
                         help='Run command line wrapper to provide extra'
                              ' capabilities (default)',
-                        action='store_true', dest='commandwrapper')
+                        action='store_true', dest='commandwrapper',
+                        default=True)
     parser.add_argument('-i','--no-commandwrapper',
                         help='No command line wrapper, just run standard'
                              ' interactive Python shell',
