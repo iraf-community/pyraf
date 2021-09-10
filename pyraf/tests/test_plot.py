@@ -6,13 +6,14 @@ from stsci.tools import capable
 
 if HAS_IRAF:
     from pyraf import iraf
+else:
+    pytestmark = pytest.mark.skip('Need IRAF to run')
 
-no_graphics = False
 try:
     import tkinter
     tkinter.Tk().destroy()
 except Exception:
-    no_graphics = True
+    pytestmark = pytest.mark.skip('No graphics available')
 
 markers = [None, 'point', 'box', 'plus', 'cross', 'circle']
 graphics = ['tkplot', 'matplotlib']
@@ -20,22 +21,20 @@ graphics = ['tkplot', 'matplotlib']
 
 @pytest.fixture(autouse=True)
 def setup():
+    orig_graphics = capable.OF_GRAPHICS
     capable.OF_GRAPHICS = True
-    open('.hushiraf', 'a').close()
     iraf.plot()  # load plot pkg
 #    gki._resetGraphicsKernel()
     # clean slate
-    if 'PYRAFGRAPHICS' in os.environ:
+    graphenv = os.environ.get('PYRAFGRAPHICS')
+    if graphenv is not None:
         del os.environ['PYRAFGRAPHICS']
-    os.environ['PYRAF_GRAPHICS_ALWAYS_ON_TOP'] = '1'
     yield
     gki.kernel.clear()
-    if os.path.exists('.hushiraf'):
-        os.remove('.hushiraf')
+    capable.OF_GRAPHICS = orig_graphics
+    if graphenv is not None:
+        os.environ['PYRAFGRAPHICS'] = graphenv
 
-
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-@pytest.mark.skipif(no_graphics, reason='No graphics available')
 @pytest.mark.parametrize('marker', markers)
 @pytest.mark.parametrize('graphics', graphics)
 def test_plot_prow(marker, graphics):
@@ -50,8 +49,6 @@ def test_plot_prow(marker, graphics):
         apd = True
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-@pytest.mark.skipif(no_graphics, reason='No graphics available')
 @pytest.mark.parametrize('marker', markers)
 @pytest.mark.parametrize('graphics', graphics)
 def test_plot_graph(marker, graphics):
@@ -66,16 +63,12 @@ def test_plot_graph(marker, graphics):
         iraf.graph(tstr, wy2=400, pointmode=True, marker=marker)
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-@pytest.mark.skipif(no_graphics, reason='No graphics available')
 @pytest.mark.parametrize('graphics', graphics)
 def test_plot_contour(graphics):
     os.environ['PYRAFGRAPHICS'] = graphics
     iraf.contour("dev$pix", Stderr='/dev/null')
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-@pytest.mark.skipif(no_graphics, reason='No graphics available')
 @pytest.mark.parametrize('graphics', graphics)
 def test_plot_surface(graphics):
     os.environ['PYRAFGRAPHICS'] = graphics

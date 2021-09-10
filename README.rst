@@ -2,7 +2,7 @@
 PyRAF
 =====
 
-|CI Status| |Release|
+|CI Status| |Coverage Status| |Release|
 
 PyRAF is a command language for running IRAF tasks in a Python like
 environment. It works very similar to IRAF, but has been updated to
@@ -31,6 +31,10 @@ PyRAF is licensed under a 3-clause BSD style license - see the
     :target: https://github.com/iraf-community/pyraf/actions
     :alt: Pyraf CI Status
 
+.. |Coverage Status| image:: https://codecov.io/gh/iraf-community/pyraf/branch/main/graph/badge.svg
+    :target: https://codecov.io/gh/iraf-community/pyraf
+    :alt: PyRAF Coverage Status
+	  
 .. |Release| image:: https://img.shields.io/github/release/iraf-community/pyraf.svg
     :target: https://github.com/iraf.community/pyraf/releases/latest
     :alt: Pyraf release

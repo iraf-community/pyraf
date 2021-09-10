@@ -5,9 +5,10 @@ from stsci.tools.irafglobals import INDEF
 
 if HAS_IRAF:
     from pyraf import iraf
+else:
+    pytestmark = pytest.mark.skip('Need IRAF to run')
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.parametrize('pkg', [
     'clpackage', 'dataio', 'images', 'lists', 'plot', 'system',
     'utilities', 'softools', 'noao', 'imcoords', 'imfilter', 'imfit',
@@ -18,7 +19,6 @@ def test_load_package(pkg):
     iraf.load(pkg, doprint=False, hush=False)
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.parametrize('task', [
     'imcoords.mkcwcs', 'imcoords.mkcwwcs', 'imgeom.imlintran',
     'imgeom.rotate', 'immatch.gregister', 'immatch.imalign',
@@ -35,14 +35,12 @@ def test_load_cl_task(task):
     t.initTask()
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.parametrize('task', ['user.date', 'softools.xc'])
 def test_exec_foreign_task(task):
     t = iraf.getTask(task)
     t(Stdout="/dev/null")
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
 @pytest.mark.parametrize('task, pars', [
     ('obsutil.specpars', {'xdispersion': INDEF, 'xbin': 1, 'filter': ''}),
 ])

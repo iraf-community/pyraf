@@ -21,12 +21,11 @@ def main():
 
     # command-line options
     desc = '''
-    PyRAF is a command language for running IRAF tasks in a Python like
+    PyRAF is a command language for running IRAF tasks in a Python
     environment.
     '''
     epilog = '''
-    Copyright (C) 2003 Association of Universities for Research in
-    Astronomy (AURA).
+    For more info on PyRAF and IRAF see https://iraf-community.github.io
     '''
     parser = argparse.ArgumentParser(prog='pyraf', description=desc,
                                      epilog=epilog)
@@ -37,17 +36,14 @@ def main():
     parser.add_argument('-e', '--ecl',
                         help='Turn on ECL mode',
                         action='store_true', default=False)
-    parser.add_argument('-i',
-                        help='No command line wrapper, just run standard'
-                             ' interactive Python shell',
-                        action='store_false', dest='commandwrapper')
-    parser.add_argument('-m',
+    parser.add_argument('-m','--commandwrapper',
                         help='Run command line wrapper to provide extra'
                              ' capabilities (default)',
                         action='store_true', dest='commandwrapper')
-    parser.add_argument('--commandwrapper',
-                        help='Use of command line wrapper',
-                        metavar='y|n', type=bool, default=True)
+    parser.add_argument('-i','--no-commandwrapper',
+                        help='No command line wrapper, just run standard'
+                             ' interactive Python shell',
+                        action='store_false', dest='commandwrapper')
     parser.add_argument('-n', '--nosplash',
                         help='No splash screen during startup (also see -x)',
                         action='store_true', default=not capable.OF_GRAPHICS)
@@ -92,7 +88,9 @@ def main():
 
     # allow them to specifiy no graphics, done before any imports
     if args.nographics:
-        os.environ['PYRAF_NO_DISPLAY'] = '1'  # what the rest of PyRAF triggers on
+        os.environ['PYRAF_NO_DISPLAY'] = '1'  # triggers on the rest of PyRAF
+        capable.OF_GRAPHICS = False
+        args.nosplash = True
 
     from . import pyrafglobals
     pyrafglobals._use_ecl = args.ecl

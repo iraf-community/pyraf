@@ -1,9 +1,9 @@
 """These were tests under cli in pandokia."""
-
-
+import io
+from contextlib import contextmanager
 import pytest
 
-from .utils import diff_outputs, HAS_IRAF
+from .utils import HAS_IRAF
 
 if HAS_IRAF:
     from .. import iraf
@@ -16,124 +16,157 @@ if HAS_IRAF:
     irafexecute.test_probe = False
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-@pytest.mark.parametrize('use_ecl', [False, True])
-def test_division(use_ecl, tmpdir):
-    pyrafglobals.use_ecl = use_ecl
-    outfile = str(tmpdir.join('output.txt'))
-
-    # First show straight Python
-    case1 = 9 / 5
-    case2 = 9 / 5.
-    case3 = 9 // 5
-    case4 = 9 // 5.
-    iraf.printf('a: 9/5 ->   ' + str(case1) + '\n', StdoutAppend=outfile)
-    iraf.printf('b: 9/5. ->  ' + str(case2) + '\n', StdoutAppend=outfile)
-    iraf.printf('c: 9//5 ->  ' + str(case3) + '\n', StdoutAppend=outfile)
-    iraf.printf('d: 9//5. -> ' + str(case4) + '\n', StdoutAppend=outfile)
-    iraf.printf('\n', StdoutAppend=outfile)
-
-    # Then show how a .cl script would be run
-    iraf.task(xyz='print "e: " (9/5)\nprint "f: " (9/5.)\n'
-              'print "g: " (9//5)\nprint "h: " (9//5.)',
-              IsCmdString=1)
-    iraf.xyz(StdoutAppend=outfile)
-    iraf.printf('\n', StdoutAppend=outfile)
-
-    # Then show how pyraf executes command-line instructions via cl2py
-    iraf.clExecute('print "i: " (9/5)', StdoutAppend=outfile)
-    iraf.clExecute('print "j: " (9/5.)', StdoutAppend=outfile)
-    iraf.clExecute('print "k: " (9//5)', StdoutAppend=outfile)
-    iraf.clExecute('print "l: " (9//5.)', StdoutAppend=outfile)
-
-    # Quick step to strip whitespace from lines in output.
-    # Much easier this way than messing with ancient comparator code.
-    with open(outfile) as f_in:
-        stripped = [
-            l.replace('   ', ' ').replace('  ', ' ').strip()
-            for l in f_in.readlines()
-        ]
-
-    diff_outputs(stripped, 'data/cli_div_output.ref')
+@contextmanager
+def use_ecl(flag):
+    old_ecl = pyrafglobals._use_ecl
+    pyrafglobals._use_ecl = flag
+    yield
+    pyrafglobals._use_ecl = old_ecl
 
 
-@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-def test_sscanf(tmpdir):
+def test_division_task(tmpdir):
+    # Show how a .cl script would be run
+    with use_ecl(False):
+        stdout = io.StringIO()
+        iraf.task(xyz='print "e: " (9/5)\nprint "f: " (9/5.)\n'
+                  'print "g: " (9//5)\nprint "h: " (9//5.)',
+                  IsCmdString=True)
+        iraf.xyz(StdoutAppend=stdout)
+        assert stdout.getvalue() == "e: 1\nf: 1.8\ng: 95\nh: 95.0\n"
+
+
+def test_division_task_ecl(tmpdir):
+    with use_ecl(True):
+        # Show how a .cl script would be run
+        stdout = io.StringIO()
+        iraf.task(xyzecl='print "e: " (9/5)\nprint "f: " (9/5.)\n'
+                  'print "g: " (9//5)\nprint "h: " (9//5.)',
+                  IsCmdString=1)
+        iraf.xyzecl(StdoutAppend=stdout)
+        assert stdout.getvalue() == "e: 1\nf: 1.8\ng: 95\nh: 95.0\n"
+
+
+@pytest.mark.parametrize('arg,expected', [
+    ('9/5', '1'),
+    ('9/5.', '1.8'),
+    ('9//5', '95'),     # string concatenation
+    ('9//5.', '95.0'),  # string concatenation
+])
+@pytest.mark.parametrize('ecl_flag', [False, True])
+def test_division(arg, expected, ecl_flag, tmpdir):
+    with use_ecl(ecl_flag):
+        stdout = io.StringIO()
+        iraf.clExecute(f'print "i: " ({arg})', StdoutAppend=stdout)
+        assert stdout.getvalue().strip() == f'i: {expected}'
+
+
+@pytest.mark.parametrize('arg,fmt,expected', [
+    ("seven 6 4.0 -7", "%s %d %g %d", ['seven', 6, 4.0, -7]), # aliveness
+    ("seven", "%d", []),
+    ("seven", "%c%3c%99c", ['s', 'eve', 'n']),
+    ("0xabc90", "%x", [703632]),
+])  
+def test_sscanf(arg, fmt, expected, tmpdir):
     """A basic unit test that sscanf was built/imported correctly and
     can run.
     """
-    # aliveness
-    l = sscanf.sscanf("seven 6 4.0 -7", "%s %d %g %d")
-    assert l == ['seven', 6, 4.0, -7]
+    l = sscanf.sscanf(arg, fmt)
+    assert l == expected
 
-    # bad format
-    l = sscanf.sscanf("seven", "%d")
-    assert l == []
 
-    # %c
-    l = sscanf.sscanf("seven", "%c%3c%99c")
-    assert l == ['s', 'eve', 'n']
-
-    # hex
-    l = sscanf.sscanf("0xabc90", "%x")
-    assert l == [703632]
-
+def test_sscanf_error(tmpdir):
     # API error
     with pytest.raises(TypeError):
         sscanf.sscanf()
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-def test_whereis(tmpdir):
+@pytest.mark.parametrize('arg,expected', [
+    ("pw", "user.pwd"),
+    ("lang", "clpackage.language"),
+    ("st", "plot.stdplot plot.stdgraph user.strings imcoords.starfind"),
+    ("std", "plot.stdplot plot.stdgraph"),
+    ("stdg", "plot.stdgraph"),
+    ("stdpl", "plot.stdplot"),
+    ("star", "imcoords.starfind"),
+    ("star man", "imcoords.starfind user.man"),
+    ("vi", "tv.vimexam user.vi"),
+    ("noao", "clpackage.noao"),
+    ("impl", "plot.implot"),
+    ("ls", "user.ls"),
+    ("surf", "plot.surface noao.surfphot utilities.surfit"),
+    ("surf man", "plot.surface noao.surfphot utilities.surfit user.man"),
+    ("smart man", "user.man"),
+    ("img", "imutil.imgets images.imgeom"),
+    ("prot", "system.protect clpackage.proto"),
+    ("pro", "plot.prows plot.prow system.protect clpackage.proto"),
+    ("prow", "plot.prows plot.prow"),
+    ("prows", "plot.prows"),
+    ("prowss", None),
+    ("dis", "tv.display system.diskspace"),
+    ("no", "noao.nobsolete clpackage.noao"),
+])
+def test_whereis(arg, expected, tmpdir):
     iraf.plot(_doprint=0)
     iraf.images(_doprint=0)
-    outfile = str(tmpdir.join('output.txt'))
 
-    cases = ("pw", "lang", "st", "std", "stdg", "stdpl", "star", "star man",
-             "vi", "noao", "impl", "ls", "surf", "surf man", "smart man",
-             "img", "prot", "pro", "prow", "prows", "prowss", "dis", "no")
+    stdout = io.StringIO()
+    args = arg.split(" ")  # convert to a list
+    kw = {'StderrAppend': stdout}
+    iraf.whereis(*args, **kw)  # catches stdout+err
 
-    # Test the whereis function
-    for arg in cases:
-        args = arg.split(" ")  # convert to a list
-        iraf.printf("--> whereis " + arg + '\n', StdoutAppend=outfile)
-        kw = {'StderrAppend': outfile}
-        iraf.whereis(*args, **kw)  # catches stdout+err
+    # Check that we get one line per argument
+    assert len(stdout.getvalue().splitlines()) == len(args)
 
-    with open(outfile) as f:
-        for line in f:
-            if 'task not found' in line:
-                continue
+    # Check that each argument appears in the coresponding line
+    for res, a in zip(stdout.getvalue().splitlines(), args):
+        assert a in res
 
-            row = line.split()
-            if line.startswith('-->'):
-                cmd = row[2]
-                if len(row) > 3:
-                    cmd2 = row[3]
-            elif row[0] == 'user.man' and cmd2 == 'man':
-                pass
-            else:
-                assert all([s.split('.')[1].startswith(cmd) for s in row]), \
-                    f'{row}'
+    # If task not found
+    if expected is None:
+        assert f"{arg}: task not found." in stdout.getvalue()
+    else:
+        # Check that all expected found places are returned
+        for f in expected.split():
+            assert f in stdout.getvalue()
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
-def test_which(tmpdir):
+@pytest.mark.parametrize('arg, expected', [
+    ("pw", "user"),
+    ("lang", "clpackage"),
+    ("stdg", "plot"),
+    ("stdp", "plot"),
+    ("star", "imcoords"),
+    ("star man", "imcoords\nuser"),
+    ("vi", "user"),
+    ("noao", "clpackage"),
+    ("impl", "plot"),
+    ("ls", "user"),
+    ("surf", "\"Task `surf' is ambiguous, could be "
+             "utilities.surfit, noao.surfphot, plot.surface\""),
+    ("surface", "plot"),
+    ("img", "\"Task `img' is ambiguous, could be "
+            "images.imgeom, imutil.imgets\""),
+    ("pro", "\"Task `pro' is ambiguous, could be "
+            "clpackage.proto, system.protect, plot.prow, ...\""),
+    ("prot", "\"Task `prot' is ambiguous, could be "
+             "clpackage.proto, system.protect\""),
+    ("prow", "plot"),
+    ("prows", "plot"),
+    ("prowss", "prowss: task not found."),
+    ("dis", "\"Task `dis' is ambiguous, could be "
+            "system.diskspace, tv.display\""),
+])
+def test_which(tmpdir, arg, expected):
     iraf.plot(_doprint=0)
     iraf.images(_doprint=0)
-    outfile = str(tmpdir.join('output.txt'))
 
     # To Test: normal case, disambiguation, ambiguous, not found, multiple
     #          inputs for a single command
-    cases = ("pw", "lang", "stdg", "stdp", "star", "star man", "vi", "noao",
-             "impl", "ls", "surf", "surface", "img", "pro", "prot", "prow",
-             "prows", "prowss", "dis")
 
-    # Test the which function
-    for arg in cases:
-        args = arg.split(" ")  # convert to a list
-        iraf.printf("--> which " + arg + '\n', StdoutAppend=outfile)
-        kw = {"StderrAppend": outfile}
-        iraf.which(*args, **kw)  # catches stdout+err
-
-    diff_outputs(outfile, 'data/cli_which_output.ref')
+    stdout = io.StringIO()
+    args = arg.split(" ")  # convert to a list
+    kw = {"StderrAppend": stdout}
+    iraf.which(*args, **kw)  # catches stdout+err
+    assert stdout.getvalue().strip() == expected
