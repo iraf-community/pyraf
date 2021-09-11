@@ -5,7 +5,7 @@ project = 'PyRAF'
 release = '2.2'
 version = '.'.join(release.split('.')[:2])
 
-master_doc = 'pyraf_tutorial'
+master_doc = 'index'
 extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.autosectionlabel',
