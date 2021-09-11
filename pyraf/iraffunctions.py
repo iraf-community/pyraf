@@ -179,6 +179,17 @@ Also be sure to run the "mkiraf" command to create a logion.cl
 """)
 
         arch = _os.environ.get('IRAFARCH', '')
+
+        # stacksize problem on linux
+        # https://iraf-community.github.io/iraf-v216/issues/61
+        if arch in ('redhat', 'linux', 'linuxppc', 'suse'):
+            import resource
+            try:
+                hardlimit = resource.getrlimit(resource.RLIMIT_STACK)[1]
+                resource.setrlimit(resource.RLIMIT_STACK, (hardlimit, hardlimit))
+            except (ValueError, OSError):
+                pass  # Ignore the error and hope the best...
+
         # ensure trailing slash is present
         iraf = _os.path.join(iraf, '')
         host = _os.environ.get('host', _os.path.join(iraf, 'unix', ''))
