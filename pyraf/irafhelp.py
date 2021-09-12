@@ -438,7 +438,7 @@ def _irafHelp(taskname, irafkw):
         return 0
 
 
-_HelpURL = "http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?task="
+_HelpURL = "https://iraf.readthedocs.io"
 _Browser = "netscape"
 
 
@@ -448,6 +448,6 @@ def _htmlHelp(taskname):
 
     if isinstance(taskname, IrafTask):
         taskname = taskname.getName()
-    url = _HelpURL + taskname
+    url = f"{_HelpURL}/{taskname}.html"
 
     irafutils.launchBrowser(url, brow_bin=_Browser, subj=taskname)
