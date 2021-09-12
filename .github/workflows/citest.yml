@@ -49,7 +49,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends iraf iraf-noao iraf-dev build-essential libx11-dev
           sudo apt-get install --no-install-recommends python3-dev python3-pip
-          pip3 install pytest ipython
+          pip3 install ipython
 
       - name: Setup dependencies, Mac
         if: startsWith(matrix.os, 'macos') && matrix.method == 'pip'
@@ -60,7 +60,6 @@ jobs:
           export PATH=${HOME}/.iraf/bin:${PATH}
           mkiraf -t=$TERM -n
           echo "PATH=$PATH" >> $GITHUB_ENV
-          pip3 install pytest
 
       - name: Build PyRAF locally
         if: matrix.method == 'native'
@@ -70,7 +69,7 @@ jobs:
       - name: Install PyRAF via pip
         if: matrix.method == 'pip'
         run: |
-          pip3 install git+$GITHUB_SERVER_URL/$GITHUB_REPOSITORY@$GITHUB_SHA
+          pip3 install git+$GITHUB_SERVER_URL/$GITHUB_REPOSITORY@$GITHUB_SHA#egg=pyraf[test]
 
       - name: Run tests (locally built)
         if: matrix.method == 'native'
