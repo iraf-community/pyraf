@@ -3,7 +3,7 @@ The PyRAF Tutorial
 ******************
 :Authors: - Richard L. White
 	  - Perry Greenfield
-:Date: 2002-05-02
+	  - Ole Streicher
 :Abstract: PyRAF, based on the Python scripting language, is a command
   language for IRAF that can be used in place of the existing
   IRAF CL. This document provides a tutorial introduction to the PyRAF
@@ -19,7 +19,7 @@ Introduction
 Why a New IRAF CL?
 ------------------
 
-The current IRAF CL has some shortcomings as a scripting language that
+The IRAF_ CL has some shortcomings as a scripting language that
 make it difficult to use in writing scripts, particularly complex
 scripts. The major problem is that the IRAF CL has no error or
 exception handling. If an error occurs, the script halts immediately
@@ -29,32 +29,16 @@ impossible to program around errors that can be anticipated, and
 difficult to provide useful error messages to the user.
 
 But there are other important reasons for wanting to replace
-the CL. We want to develop a command language that is a stronger
+the CL. We want to use a command language that is a stronger
 environment for general programming and that provides more tools than
-the existing IRAF CL. Python (http://www.python.org), like Perl and
-Tcl, is a free, popular scripting language that is useful for a very
-wide range of applications (e.g., writing CGI scripts, text
-processing, file manipulation, graphical programming, etc.). Python is
-also an open system that can be easily extended by writing new modules
-in Python, C, or Fortran. By developing a Python interface to IRAF
-tasks, we open up the IRAF system and make it possible to write
-scripts that combine IRAF tasks with the numerous other capabilities
-of Python.
-
-Ultimately, we plan for PyRAF to have command-line data access and
-manipulation facilities comparable to those of IDL (the Interactive
-Data Language, http://www.rsinc.com, which has extensive
-array-processing and image manipulation capabilities). It should soon
-be possible to write applications in PyRAF that can manipulate the
-data directly in memory and display it much as IDL does. The data
-access and computation abilities are already present, and we are
-currently working on a new scientific graphics modules for Python.
-
-We are hoping that Python and PyRAF will become the programming
-language of first resort, so that programmers and astronomers will
-only infrequently need to write programs in C or Fortran. Moreover,
-when it is necessary to use compiled languages, programs written in C,
-C++, and Fortran can be easily linked with and integrated into PyRAF.
+the existing IRAF CL. Python_ is a free, popular scripting language
+that is useful for a very wide range of applications (e.g., scientific
+analysis, text processing, file manipulation, graphical programming,
+etc.). Python is also an open system that can be easily extended by
+writing new modules in Python, C, or Fortran. By developing a Python
+interface to IRAF tasks, we open up the IRAF system and make it
+possible to write scripts that combine IRAF tasks with the numerous
+other capabilities of Python.
 
 
 Why Should I Use PyRAF?
@@ -62,7 +46,7 @@ Why Should I Use PyRAF?
 
 PyRAF can run the vast majority of IRAF tasks without any
 problems. You can display graphics and use interactive graphics and
-image display tasks as well. You can even run more than 90% of IRAF CL
+image display tasks as well. You can even run almost all IRAF CL
 scripts! While many things work the same way as they do in the IRAF
 CL, there are some differences in how things are done, usually for the
 better.
@@ -102,49 +86,67 @@ recall and editing using the arrow keys, tab-completion of commands
 and filenames, a GUI equivalent to the epar parameter editor, the
 ability to display help in a separate window, and a variety of tools
 for manipulation of graphics. We believe the new environment is
-already in many ways more convenient for interactive use than the IRAF
-CL, and further enhancements are planned.
+in many ways more convenient for interactive use than the IRAF CL.
 
 
-Python Prerequisites
---------------------
+Prerequisites
+-------------
 
-This guide will not attempt to serve as a complete Python
-introduction, tutorial or guide. There are a number of other documents
-that serve that role well. At some point we recommend spending a few
-hours familiarizing yourself with Python basics. Which Python
-documentation or books to start with depends on your programming
-background and preferences. We have written *A Quick Tour of Python*
-that may be helpful for IRAF users. Some people will find quick
-introductions like the Python tutorial (see our list of available
-Python documentation for sources for this and other books and
-documentation) or the *Essential Python Reference* all they
-need. Others may prefer the slower-paced introductions found in the
-*Learning Python* or *Quick Python* books.  In any case, do not spend
-too much time reading before actually starting to run PyRAF and use
-Python. The Python environment is an interactive one and one can learn
-quite a bit by just trying different things after a short bit of
-reading.  In fact, you may prefer to try many of the examples given in
-this guide before reading even a single Python document.  We will give
-enough information for you to get started in trying the examples. Our
+This guide will not attempt to serve as a Python introduction,
+tutorial or guide. There are a number of other documents that serve
+that role well. At some point we recommend spending a few hours
+familiarizing yourself with Python basics. Which Python documentation
+or books to start with depends on your programming background and
+preferences.  Some people will find quick introductions like the
+`Python tutorial`_ all they need.  In any case, do not spend too much
+time reading before actually starting to run PyRAF and use Python. The
+Python environment is an interactive one and one can learn quite a bit
+by just trying different things after a short bit of reading.  In
+fact, you may prefer to try many of the examples given in this guide
+before reading even a single Python document.  We will give enough
+information for you to get started in trying the examples. Our
 approach will be largely based on examples.
-
-
-IRAF Prerequisites
-------------------
 
 This guide also is not intended to be an introduction to IRAF. We
 assume that current PyRAF users are relatively experienced with
-IRAF. We plan to prepare documentation (and user tools) intended for
-first-time IRAF users, but this beta release targets those who are
-already using IRAF and are looking for a better command language.
+IRAF. Check the `Beginner’s Guide to Using IRAF`_ for an (outdated)
+introduction.
+
+
+Installation
+============
+
+To install PyRAF, it is required to have both IRAF_ and Python_
+already installed. For the IRAF installation, it is recommended to use
+a version from iraf-community_, as these include many bugs fixed for
+current Linux and macOS versions and architectures. Both a
+self-compiled and a binary IRAF package (f.e. in Ubuntu_) will work.
+
+The IRAF installation should have a properly configured environment,
+especially the ``iraf`` environment variable must be set to point to
+the IRAF installation directory (i.e. to ``/usr/lib/iraf/`` on Ubuntu
+or Debian systems). On multi-arch IRAF installations, the ``IRAFARCH``
+environment variable should specify the architecture to use. This is
+usually already set during the IRAF installation procedure.
+
+The minimal Python required for PyRAF is 3.6, but it is recommended to
+use the latest available version. An installation in an virtual
+environment like venv_ or conda_ is possible.
+
+On some Linux distributions, PyRAF is readily available as a binary
+package and can be installed with the package installer, like ``sudo
+apt install python3-pyraf`` on Debian or Ubuntu. On all other systems,
+the package can be installed via PyPI_ with the command ``pip3 install
+pyraf``. Note that if no binary installation is available on PyPI, the
+package requires a compilation, so aside from pip3, the C compiler and
+development libraries (on Linux ``libx11-dev``) should be installed.
 
 
 Starting and Using PyRAF Interactively
 ======================================
 
 If PyRAF is installed (and your environment is properly configured),
-typing pyraf will start up PyRAF using the front-end
+typing ``pyraf`` will start up PyRAF using the front-end
 interpreter. (There are a few command line options, described in
 :ref:`Command Line Options`, that can be listed using ``pyraf
 --help``.) Here is an illustration of starting PyRAF and running some
@@ -192,31 +194,29 @@ IRAF tasks using the CL emulation syntax.
 
 You may notice a great similarity between the PyRAF login banner and
 the IRAF login banner. That’s because PyRAF reads your normal
-‘login.cl’ file and goes through exactly the same startup steps as
-IRAF when a session begins. If you have customized your ‘login.cl’ or
-‘loginuser.cl’ files to load certain packages, define tasks, etc.,
-then those customizations will also take effect in your PyRAF
-environment.
+:file:`login.cl` file and goes through exactly the same startup steps
+as IRAF when a session begins. If you have customized your
+:file:`login.cl` or :file:`loginuser.cl` files to load certain
+packages, define tasks, etc., then those customizations will also take
+effect in your PyRAF environment.
 
 You can start up PyRAF from any directory; unlike the IRAF CL, you are
 not required to change to your IRAF home directory. PyRAF determines
 the location of your IRAF home directory by looking for your
-‘login.cl’ file, first in your current working directory and then in a
-directory named ‘iraf’ in your home directory. So as long as your IRAF
-home directory is ‘~/iraf’, you can start up PyRAF from any working
-directory. (You can start from other directories as well, but without
-access to ‘login.cl’ your IRAF environment will be only partly
-initialized. We expect to add a startup configuration file,
-‘.pyrafrc’, that allows you customize your initial PyRAF configuration
-including your IRAF home directory.)
+:file:`login.cl` file, first in your current working directory and
+then in a directory named :file:`iraf` in your home directory. So as
+long as your IRAF home directory is :file:`~/iraf` or :file:`~/.iraf`,
+you can start up PyRAF from any working directory. (You can start from
+other directories as well, but without access to :file:`login.cl` your
+IRAF environment will be only partly initialized. We expect to add a
+startup configuration file, :file:`.pyrafrc`, that allows you
+customize your initial PyRAF configuration including your IRAF home
+directory.)
 
-The first time you run PyRAF, it creates a ‘pyraf’ directory in your
-IRAF home directory. At the moment all it stores there is a directory
-named ‘clcache’, which is used to save translated versions of your own
-custom CL scripts. (The files in that directory have cryptic names
-that actually encode the contents of the corresponding CL scripts,
-thus allowing the translation to be used regardless of the CL script
-name.)
+The first time you run PyRAF, it creates a :file:`pyraf` directory in
+your IRAF home directory. All it stores there is a file named
+:file:`clcache.sqlite3`, which is used to save translated versions of
+your own custom CL scripts.
 
 Note that the task syntax shown above is identical to that of the
 IRAF CL. But there is no escaping that you are really running in a
@@ -242,9 +242,7 @@ or should you use other CL-style commands,
   SyntaxError: invalid syntax
 
 then you’ll see a Python error message. At this stage, this is the
-most likely error you will see aside from IRAF-related ones. (We plan
-to improve some of these messages in the future to make them more
-self-explanatory for new PyRAF users.)
+most likely error you will see aside from IRAF-related ones.
 
 Aside from some noticeable delays (on startup, loading graphics
 modules, or in translating CL scripts not previously encountered),
@@ -258,25 +256,27 @@ New Capabilities in PyRAF
 Several capabilities in the PyRAF interpreter make it very convenient
 for interactive use. The up-arrow key can be used to recall previous
 commands (no need to type ``ehis``!), and once recalled the left and
-right arrow keys can be used to edit it. The control-R key does
-pattern-matching on the history. Just type part of the command (not
-necessarily at the beginning of the line) and you’ll see the matched
-command echoed on the command line. Type ^R again to see other
-matches. Hit return to re-execute a command, or other line-editing
-keys (left/right arrow, ^E, ^A, etc.) to edit the recalled
-command. There are many other ways to search and manipulate the
-history – see the gnu readline documentation for more information.
+right arrow keys can be used to edit it. The :kbd:`Ctrl`-:kbd:`R` key
+does pattern-matching on the history. Just type part of the command
+(not necessarily at the beginning of the line) and you’ll see the
+matched command echoed on the command line. Type :kbd:`Ctrl`-:kbd:`R`
+again to see other matches. Hit return to re-execute a command, or
+other line-editing keys (left/right arrow, :kbd:`Ctrl`-:kbd:`E`,
+:kbd:`Ctrl`-:kbd:`A`, etc.) to edit the recalled command. There are
+many other ways to search and manipulate the history – see the gnu
+readline documentation for more information.
 
 The tab key can be used to complete commands, in a way familiar to
 users of tcsh and similar shells. At the start of the command line,
-type ``imhe<tab>`` and PyRAF fills in ``imheader``. Then type part of
-a filename ``<tab>`` and PyRAF fills in the rest of the name (or fills
-in the unambiguous parts and prints a list of alternatives). This can
-be a great timesaver for those long HST filenames! You can also use
-tab to complete IRAF task keyword names (e.g., ``imheader lon<tab>``
-fills in ``longheader``, to which you can add ``=yes`` or something
-similar). And when using Python syntax (see below), tab can be used to
-complete Python variable names, object attributes, etc.
+type ``imhe``:kbd:`Tab` and PyRAF fills in ``imheader``. Then type
+part of a filename :kbd:`Tab` and PyRAF fills in the rest of the name
+(or fills in the unambiguous parts and prints a list of
+alternatives). This can be a great timesaver for those long HST
+filenames! You can also use tab to complete IRAF task keyword names
+(e.g., ``imheader lon``:kbd:`Tab` fills in ``longheader``, to which
+you can add ``=yes`` or something similar). And when using Python
+syntax (see below), tab can be used to complete Python variable names,
+object attributes, etc.
 
 The function
 
@@ -286,7 +286,7 @@ The function
 
 saves the current state of your PyRAF session to a file (including
 package, task, and IRAF environment variable definitions and the
-current values of all task parameters.) The function
+current values of all task parameters). The function
 
 ::
 
@@ -304,29 +304,28 @@ Differences from the CL and Unimplemented CL Features
 
 Some differences in behavior between PyRAF and the CL are worth
 noting. PyRAF uses its own interactive graphics kernel when the CL
-stdgraph variable is set to a device handled by the CL itself (e.g.,
-xgterm). If stdgraph is set to other values (e.g. stdplot or the imd
-devices), the appropriate CL task is called to create non-interactive
-plots. Currently only the default PyRAF graphics window supports
-interactive graphics (so you can’t do interactive graphics on image
-display plots, for example.) Graphics output redirection is not
-implemented at the moment. Both full interactive support of additional
-graphics devices and graphics redirection are being considered for
-future development.
+``stdgraph`` variable is set to a device handled by the CL itself
+(e.g., xgterm). If ``stdgraph`` is set to other values
+(e.g. ``stdplot`` or the imd devices), the appropriate CL task is
+called to create non-interactive plots. Only the default PyRAF
+graphics window supports interactive graphics (so you can’t do
+interactive graphics on image display plots, for example.) Graphics
+output redirection is not implemented.
 
 Some IRAF CL commands have the same names as Python commands; when you
 use them in PyRAF, you get the Python version. The ones most likely to
-be encountered by users are ``print`` and ``del``. If you want to use
-the IRAF print command (which should rarely be needed), use
-``clPrint`` instead. If you want the IRAF ``delete`` command, just
-type more of the command (either ``dele`` or ``delete`` will work).
+be encountered by users are :func:`print` and :keyword:`del`. If
+you want to use the IRAF print command (which should rarely be
+needed), use ``clPrint`` instead. If you want the IRAF ``delete``
+command, just type more of the command (either ``dele`` or ``delete``
+will work).
 
 Another similar conflict is that when an IRAF task name is identical
 to a reserved keyword in Python (to see a list, do ``import keyword;
-print(keyword.kwlist)``), then it is necessary to prepend a ’PY’ (yes, in
-capital letters) to the IRAF task name. Such conflicts should be
-relatively rare, but note that ’lambda’ and ’in’ are both Python
-keywords.
+print(keyword.kwlist)``), then it is necessary to prepend a ``PY`` (yes,
+in capital letters) to the IRAF task name. Such conflicts should be
+relatively rare, but note that :keyword:`lambda` and :keyword:`in` are
+both Python keywords.
 
 The PyRAF help command is a little different than the IRAF version. If
 given a string argument, it looks up the CL help and uses it if
@@ -334,8 +333,7 @@ available. For other Python argument types, ``help`` gives information
 on the variable. E.g., ``help(module)`` gives information on the
 contents of a module. There are some optional arguments that are
 useful in Python programs (type ``help(help)`` for more
-information). We plan further enhancements of the help system in the
-near future.
+information).
 
 If you need to access the standard IRAF help command without the
 additional PyRAF features, use ``system.help taskname options``.  Note
@@ -344,38 +342,32 @@ reflect the special characteristics of PyRAF.  For example, if you say
 ``help while``, you get help on the CL while loop rather than the
 Python while statement.  The login message on startup also comes
 directly from IRAF and may mention features not available (or
-superseded) in PyRAF. We will eventually remove some of these
-inconsistencies, but for the moment users will occasionally encounter
-such conflicts.
+superseded) in PyRAF.
 
 There are a few features of the CL environment and CL scripts that are
 not yet implemented:
 
 Packages cannot be unloaded.
-  Currently there is no way to unload a
-  loaded IRAF package. The bye command exists but does not do
-  anything; the keep command also does nothing (effectively all
-  modifications to loaded tasks and IRAF environment variables are
-  kept). This will be added in a future version, although we are also
-  considering alternative ways to organize the namespace of tasks and
-  packages that may be more “Pythonic”.
+  There is no way to unload a loaded IRAF package. The bye command
+  exists but does not do anything; the keep command also does nothing
+  (effectively all modifications to loaded tasks and IRAF environment
+  variables are kept).
 
 No GOTO statements in CL scripts.
-  Python does not have a goto statement, so converting CL scripts that
-  use goto’s to Python is difficult. At the moment we have made no
+  Python does not have a :keyword:`goto` statement, so converting CL
+  scripts that use goto’s to Python is difficult. We have made no
   effort to do such a conversion, so CL scripts with GOTO’s raise
   exceptions. GOTOs may not ever get implemented.  Background
   execution is not available. Background execution in CL scripts is
-  ignored. This will get added if there is sufficient demand.
+  ignored.
 
 Error tracebacks in CL scripts do not print CL line numbers.
   When errors occur in CL scripts, the error message and traceback
   refer to the line number in the Python translation of the CL code,
-  not to the original CL code. We plan to add the CL code itself to
-  the error messages eventually. (If you want to see the Python
+  not to the original CL code. (If you want to see the Python
   equivalent to a CL task, use the getCode method –
   e.g. ``print(iraf.spy.getCode())`` to see the code for the ``spy``
-  task)..
+  task).
 
 
 The EPAR Parameter Editor
@@ -399,6 +391,7 @@ box. If there are more parameters than can fit in the displayed
 window, they will appear in a scrolling region.
 
 .. image:: epar.png
+
 
 Action Buttons
 --------------
@@ -460,28 +453,29 @@ Parameters may be editted using the usual mouse operations (select
 choices from pop-up menus, click to type in entry boxes, and so on.)
 It is also possible to edit parameter without the mouse at all, using
 only the keyboard. When the editor starts, the first parameter is
-selected. To select another parameter, use the Tab or Return key
-(Shift-Tab or Shift-Return to go backwards) to move the focus from
-item to item. The Up and Down arrow keys also move between fields. Use
-the space bar to “push” buttons, activate pop-up menus, and toggle
-boolean values.
+selected. To select another parameter, use the :kbd:`Tab` or
+:kbd:`Return` key (:kbd:`Shift`-:kbd:`Tab` or
+:kbd:`Shift`-:kbd:`Return` to go backwards) to move the focus from
+item to item. The :kbd:`↑` and :kbd:`↓` arrow keys also move
+between fields. Use the :kbd:`space` bar to “push” buttons, activate
+pop-up menus, and toggle boolean values.
 
 The toolbar buttons are also accessible from the keyboard using the
-Tab and Shift-Tab keys. They are located in sequence before the first
-parameter and after the last parameter (since the item order wraps
-around at the end.) If the first parameter is selected, Shift-Tab
-backs up to the “Task Help” button, and if the last parameter is
-selected then Tab wraps around and selects the “Execute” button. See
-the **Help->Epar Help** menu item for more information on keyboard
-shortcuts.
+:kbd:`Tab` and :kbd:`Shift`-:kbd:`Tab` keys. They are located in
+sequence before the first parameter and after the last parameter
+(since the item order wraps around at the end.) If the first parameter
+is selected, Shift-Tab backs up to the “Task Help” button, and if the
+last parameter is selected then Tab wraps around and selects the
+“Execute” button. See the **Help→Epar Help** menu item for more
+information on keyboard shortcuts.
 
 Parameters entered using entry boxes (strings and numbers) are checked
 for correctness when the focus shifts to another parameter (either via
-the Tab key or the mouse.) The parameter values are also checked when
-either the Save or Execute button is clicked. Any resulting errors are
-either displayed in the status area at the bottom (upon validation
-after return or tab) or in a pop-up window (for Save/Execute
-validation).
+the :kbd:`Tab` key or the mouse.) The parameter values are also
+checked when either the Save or Execute button is clicked. Any
+resulting errors are either displayed in the status area at the bottom
+(upon validation after return or tab) or in a pop-up window (for
+Save/Execute validation).
 
 For parameters other than PSETs, the user can click the right-most
 mouse button within the entry box or choice list to generate a pop-up
@@ -503,6 +497,7 @@ Finally, the bottom portion of the EPAR GUI is a status line that
 displays help information for the action buttons and error messages
 generated when the parameter values are checked for validity.
 
+
 PyRAF Graphics and Image Display
 ================================
 
@@ -515,31 +510,29 @@ identical to IRAF’s but offers much the same functionality — it lacks
 some features but adds others. If you specify a device that uses other
 IRAF graphics kernels (e.g., for printers or image display plots),
 PyRAF will use the IRAF graphics kernel to render those plots. There
-are currently some limitations when using IRAF kernels. For example,
-it is not possible to use interactive graphics tasks with those
-kernels. But otherwise, most of their functionality is available.
+are some limitations when using IRAF kernels. For example, it is not
+possible to use interactive graphics tasks with those kernels. But
+otherwise, most of their functionality is available.
 
-Currently the PyRAF built-in graphics kernel is based on OpenGL and
-Tkinter (other alternatives will probably be added in the
-future). Graphics windows are created from PyRAF directly. One can run
+The PyRAF built-in graphics kernel is based on OpenGL and
+Tkinter. Graphics windows are created from PyRAF directly. One can run
 a graphics task like any other.  For example, typing
 
 ::
 
   --> prow dev$pix 256
 
-will (after some delay in loading the graphics modules) create a
-graphics window and render a plot in it. The graphics window is
-responsive at all times, not just while an IRAF task is in interactive
-graphics mode. If the window is resized, the plot is redrawn to fit
-the new window. There is a menu bar with commands allowing previous
-plots to be recalled, printed, saved, etc. The **Edit->Undo** menu
-command can remove certain graphics elements (e.g., text annotations
-and cursor marks.) It is possible to create multiple graphics windows
-and switch between them using the **Window** menu.  See the **Help**
-menu for more information on the capabilities of the PyRAF graphics
-window. At present, few of the options (such as the default colors)
-are easily configurable, but future versions will improve on this.
+will create a graphics window and render a plot in it. The graphics
+window is responsive at all times, not just while an IRAF task is in
+interactive graphics mode. If the window is resized, the plot is
+redrawn to fit the new window. There is a menu bar with commands
+allowing previous plots to be recalled, printed, saved, etc. The
+**Edit→Undo** menu command can remove certain graphics elements (e.g.,
+text annotations and cursor marks.) It is possible to create multiple
+graphics windows and switch between them using the **Window** menu.
+See the **Help** menu for more information on the capabilities of the
+PyRAF graphics window. Some options (such as the default colors) are
+easily configurable.
 
 .. image:: prow.png
 
@@ -549,10 +542,10 @@ mode. The usual graphics keystroke (gcur) commands recognized by the
 task will work (e.g., lowercase letter commands such as c) and colon
 commands will work as they do in IRAF. Most CL-level (capital letter)
 keystroke commands have not yet been implemented; the following CL
-level commands are currently available:
+level commands are available:
 
-* The arrow keys move the interactive cursor one pixel. Shift combined
-  with the arrow keys moves the cursor 5 pixels.
+* The arrow keys move the interactive cursor one pixel. :kbd:`Shift`
+  combined with the arrow keys moves the cursor 5 pixels.
 
 * **C** prints the current cursor position on the status line.
 
@@ -560,14 +553,14 @@ level commands are currently available:
   to control-C).
 
 * **R** redraws the plot with annotations removed (also available
-  through the **Edit->Undo All** menu item.)
+  through the **Edit→Undo All** menu item.)
 
 * **T** annotates the plot at the current cursor position, using a
   dialog box to enter the text.
 
 * **U** undoes the last “edit” to a plot (annotations or cursor
   markers). This can be repeated until only the original plot
-  remains. (Also available using **Edit->Undo**.)
+  remains. (Also available using **Edit→Undo**.)
 
 * A colon (**:**) prompts on the status line for the rest of the colon
   command. Other input from interactive graphics tasks may also be
@@ -575,19 +568,13 @@ level commands are currently available:
 
 * The **:.markcur** directive is recognized. It toggles the cursor
   marking mode (**:.markcur+** enables it, **:.markcur-** disables
-  it). Currently this directive cannot be abbreviated.
+  it). This directive cannot be abbreviated.
 
 Help for interactive IRAF tasks can usually be invoked by typing
 **?**; the output appears in the terminal window. Output produced
 while in cursor-mode (e.g., readouts of the cursor position) appear on
 the status line at the bottom of the graphics window. Note that the
 status line has scrollbars allowing previous output to be recalled.
-
-It is likely much of the additional functionality of CL level gcur
-commands (zooming, etc.) will also find its way into menus or other
-GUI elements of the PyRAF graphics window. Where possible we also will
-try to make these available through the keystroke commands familiar to
-expert IRAF users.
 
 PyRAF attempts to manipulate the window focus and the cursor location
 in a sensible way. For example, if you start an interactive graphics
@@ -601,7 +588,7 @@ Printing Graphics Hardcopy
 --------------------------
 
 It is possible to generate hard copy of the plotted display by using
-the **File->Print** menu item or, in gcur mode, the equal-sign (=)
+the **File→Print** menu item or, in gcur mode, the equal-sign (=)
 key. PyRAF will use the current value of stdplot as the device to plot
 to for hardcopy. Inside scripts, a hardcopy can be printed by
 
@@ -619,9 +606,9 @@ Multiple Graphics Windows
 -------------------------
 
 It is possible to display several graphics windows simultaneously. The
-**Window->New** menu item can create windows, and the **Window** menu
+**Window→New** menu item can create windows, and the **Window** menu
 can also be used to select an existing window to be the active
-graphics window. Windows can be destroyed using the **File->Quit
+graphics window. Windows can be destroyed using the **File→Quit
 Window** menu item or directly using the facilities of the desktop
 window manager (close boxes, frame menus, etc.)
 
@@ -634,13 +621,12 @@ type:
   --> gwm.window("My Special Graphic")
 
 you will create a new graphics window which becomes the current
-plotting window for PyRAF graphics. The
-``gwm.window("GraphicsWindowName")`` function makes the named window
-the active graphics window. If a graphics window with that name does
-not yet exist, a new one is created. Windows can be deleted by closing
-them directly or using ``gwm.delete("GraphicsWindowName")``. Using
-these commands, one can write a script to display several plots
-simultaneously on your workstation.
+plotting window for PyRAF graphics. The :func:`gwm.window()` function
+makes the named window the active graphics window. If a graphics
+window with that name does not yet exist, a new one is
+created. Windows can be deleted by closing them directly or using
+:func:`gwm.delete()`. Using these commands, one can write a script to
+display several plots simultaneously on your workstation.
 
 
 Other Graphics Devices
@@ -655,11 +641,11 @@ can
   --> iraf.stdgraph.device = "xgterm"
 
 or whatever device you wish to use.  [Note the Python version of the
-set statement is ``iraf.set(stdgraph="stgkern")``.] In this way it is
+set statement is ``iraf.set(stdgraph="stgkern")``]. In this way it is
 possible to generate plots from a remote graphics terminal without an
 Xwindows display. The drawback is that is is not possible to run
 interactive graphics tasks (e.g., ``implot`` or ``splot``) using this
-approach. It may be necessary to call ``iraf.gflush()`` to get the
+approach. It may be necessary to call :func:`iraf.gflush()` to get the
 plot to appear.
 
 One can generate plots to other devices simply by setting ``stdgraph``
@@ -670,8 +656,8 @@ use the “magic” value ``stgkern`` for ``stdgraph``.
 IRAF tasks such as ``tv.display`` that use the standard image display
 servers (**ximtool**, **SAOImageDS9**) should work fine. Interactive
 image display tasks such as ``imexamine`` work as well (as long as you
-are using the PyRAF graphics window for plotting.) Graphics output to
-the image display (allowing plots to overlay the image) is currently
+are using the PyRAF graphics window for plotting). Graphics output to
+the image display (allowing plots to overlay the image) is 
 supported only through the IRAF kernel, but a PyRAF built-in kernel is
 under development.
 
@@ -686,7 +672,7 @@ features of the Python language. CL emulation mode may be comfortable
 for IRAF users, but when the time comes to write new scripts you
 should learn how to run IRAF tasks using native Python syntax.
 
-Currently there are a number of ways of running tasks and setting
+There are a number of ways of running tasks and setting
 parameters. The system is still under development, and depending on
 user feedback, we may decide to eliminate some of them. Below we
 identify our preferred methods, which we do not intend to eliminate
@@ -708,7 +694,7 @@ and the like which are not available in the default Python
 interpreter.
 
 It is also possible to use PyRAF from a standard Python session, which
-is typically started by simply typing **python** at the Unix shell
+is typically started by simply typing **python3** at the Unix shell
 prompt. In that case the simple CL syntax for calling tasks is not
 available and tab-completion, logging, etc., are not active. For
 interactive use, the conveniences that come with the PyRAF interpreter
@@ -730,23 +716,23 @@ syntax) to run IRAF tasks.
 Even in Python mode, task and parameter names can be abbreviated and,
 for the most part, the minimum matching used by IRAF still applies. As
 described above, when an IRAF task name is identical to a reserved
-keyword in Python, it is necessary to prepend a ’PY’ to the IRAF task
-name (i.e., use ``iraf.PYlambda``, not ``iraf.lambda``). In Python
-mode, when task parameters conflict with keywords, they must be
+keyword in Python, it is necessary to prepend a ``PY`` to the IRAF
+task name (i.e., use ``iraf.PYlambda``, not ``iraf.lambda``). In
+Python mode, when task parameters conflict with keywords, they must be
 similarly modified. The statement ``iraf.imcalc(in="filename")`` will
 generate a syntax error and must be changed either to
-``iraf.imcalc(PYin="filename")`` or to
-``iraf.imcalc(input="filename")``. This keyword/parameter conflict is
-handled automatically in CL emulation mode.  Some of the differences
-between the PyRAF interpreter and the regular Python interpreter
-besides the availability of CL emulation mode:
+``iraf.imcalc(PYin="filename")`` or to ``iraf.imcalc(input="filename")``.
+This keyword/parameter conflict is handled automatically in CL
+emulation mode.  Some of the differences between the PyRAF interpreter
+and the regular Python interpreter besides the availability of CL
+emulation mode:
 
 ====================== ============================ =============================
 command                PyRAF interpreter            Python default interpreter
 ====================== ============================ =============================
 prompt                 ``-->``                      ``>>>``
 print interpreter help ``.help``                    n/a
-exit interpreter       ``.exit``                    EOF (control-D) or ``sys.exit()``
+exit interpreter       ``.exit``                    EOF (:kbd:`Ctrl`-:kbd:`D`) or ``sys.exit()``
 start logging input    ``.logfile`` filename        n/a
 append to log file     ``.logfile`` filename append n/a
 stop logging input     ``.logfile``                 n/a
@@ -765,8 +751,8 @@ illustrate some variants.
 
 ::
 
-  $ pyraf -s
-
+  $ pyraf
+   …
   --> iraf.imheader("dev$pix", long=yes)
   dev$pix[512,512][short]: m51 B 600s
   No bad pixels, min=-1., max=19936.
@@ -793,24 +779,20 @@ illustrate some variants.
 The mapping of IRAF CL syntax to Python syntax is generally quite
 straightforward. The most notable requirements are:
 
-* The task or package name must be prefixed with iraf. because they
-  come from the iraf module. In scripts, use
+* The task or package name must be prefixed with ``iraf.`` because
+  they come from the iraf module. In scripts, use
 
   ::
 
     from pyraf import iraf
 
   to load the iraf module. Note that the first time PyRAF is imported,
-  the normal IRAF startup process is executed (which can take a
-  while). We are working on techniques to do fast, lightweight
-  startups for stand-alone Python scripts that use PyRAF. At the
-  moment the only such approach is to startup in a directory with a
-  custom version of login.cl that defines a minimal IRAF environment.
-  It is also possible to import tasks and packages directly using
+  the normal IRAF startup process is executed.  It is also possible to
+  import tasks and packages directly using
 
   ::
 
-    from pyraf.iraf import stsdas, imcalc
+    from pyraf.iraf import noao, onedspec
 
   With this approach, packages are automatically loaded if necessary
   and tasks can be used without the iraf.  prefix. Like the IRAF CL,
@@ -823,15 +805,15 @@ straightforward. The most notable requirements are:
 
 * String arguments such as filenames must be quoted.
 
-Another change is that boolean keywords cannot be set using appended +
-or - symbols. Instead, it is necessary to use the more verbose
-``keyword=value`` form (e.g., ``long=yes`` in the example above). We
-have defined Python variables ``yes`` and ``no`` for convenience, but
-you can also simply say ``long=True`` to set the (abbreviated)
-``longheader`` keyword to true.
+Another change is that boolean keywords cannot be set using appended
+``+`` or ``-`` symbols. Instead, it is necessary to use the more
+verbose ``keyword=value`` form (e.g., ``long=yes`` in the example
+above). We have defined Python variables ``yes`` and ``no`` for
+convenience, but you can also simply say ``long=True`` to set the
+(abbreviated) ``longheader`` keyword to true.
 
 Emulating pipes in Python mode is also relatively simple. If a
-parameter ``Stdout=1`` is passed to a task, the task output is
+parameter ``Stdout=True`` is passed to a task, the task output is
 captured and returned as a list of Python strings, with one string for
 each line of output. This list can then be processed using Pythons
 sophisticated string utilities, or it can be passed to another task
@@ -849,28 +831,27 @@ using the Stdin parameter:
 
 ``Stdin`` and ``Stdout`` can also be set to a filename or a Python
 filehandle object to redirect output to or from a file.  ``Stderr`` is
-also available for redirection. Note the capital ’S’ in these names –
-it is used to eliminate possible conflicts with task parameter names,
-but in the future we may decide to simplify these names by eliminating
-the uppercase ’S’.
+also available for redirection. Note the capital ``S`` in these names
+– it is used to eliminate possible conflicts with task parameter
+names.
 
 
 Setting IRAF Task or Package Parameters
 ---------------------------------------
 
-Currently there are multiple ways of setting parameters. The most
-familiar is simply to provide parameters as positional arguments to
-the task function. For example
+There are multiple ways of setting parameters. The most familiar is
+simply to provide parameters as positional arguments to the task
+function. For example
 
 ::
 
-  --> iraf.imcopy("dev$pix","mycopy.fits")
+  --> iraf.imcopy("dev$pix", "mycopy.fits")
 
 Alternatively, one can set the same parameters using keyword syntax:
 
 ::
 
-  --> iraf.imcopy(input="dev$pix",output="mycopy.fits")
+  --> iraf.imcopy(input="dev$pix", output="mycopy.fits")
 
 Hidden parameters can only be set in the argument list this way
 (analogous to IRAF). As in the IRAF CL, the parameter values are
@@ -952,13 +933,14 @@ commands:
   --> iraf.epar(’imcopy’)
 
 Tasks appear as attributes of packages, with nested packages also
-found. For example, if you load the ``stsdas`` package and the restore
-subpackage, then the ``mem`` task can be accessed through several
-different means: ``iraf.mem``, ``iraf.stsdas.mem``, or
-``iraf.restore.mem`` will all work. Ordinarily the simple ``iraf.mem``
-is used, but if tasks with the same name appear in different packages,
-it may be necessary to add a package name to ensure the proper version
-of the task is found.
+found. For example, if you load the ``noao`` package and the
+``onedspec`` subpackage, then the ``identify`` task can be accessed
+through several different means: ``iraf.identify``,
+``iraf.noao.identify``, or ``iraf.onedspec.identfy`` will all
+work. Ordinarily the simple ``iraf.identify`` is used, but if tasks
+with the same name appear in different packages, it may be necessary
+to add a package name to ensure the proper version of the task is
+found.
 
 
 Other Ways of Running IRAF Tasks
@@ -971,8 +953,8 @@ alias for the iraf module after it is loaded. One can simply type:
 ::
 
   --> i = iraf
-  --> i.imcopy(’dev$pix’,’mycopy.fits’)
-  --> i.imstat(’mycopy.fits’)
+  --> i.imcopy("dev$pix", "mycopy.fits")
+  --> i.imstat("mycopy.fits")
 
 But don’t use i for a counter variable and then try doing the same!
 E.g.,
@@ -988,7 +970,7 @@ will give you the following error message AttributeError:
 
    ’int’ object has no attribute ’imcopy’
 
-since the integer ’1’ has no imcopy attribute.
+since the integer `1` has no imcopy attribute.
 
 
 Command Line Options
@@ -996,28 +978,61 @@ Command Line Options
 
 There are a few command-line options available for PyRAF:
 
--s
-  Silent initialization (does not print startup messages)
+-h
+  List the available options. There are long versions of some options
+  (e.g., ``--help`` instead of ``-h``) which are also described.
 
--n
-  No splash screen during startup
+-c command
+  Command passed in as string (any valid PyRAF command)
 
--v
-  Set verbosity (repeated ’v’ increases the level; mainly useful for system debugging)
-
+-e
+  Turn on ECL mode
+  
 -m
-  Run the PyRAF command line interpreter to provide extra capabilities (default)
+  Run the PyRAF command line interpreter to provide extra capabilities
+  (default)
 
 -i
   Do not start the special PyRAF interpreter; just run a standard
   Python interactive session
 
--h
-  List the available options. There are long versions of all options
-  (e.g., ``--help`` instead of ``-h``) which are also described.
+-n
+  No splash screen during startup
 
+-s
+  Silent initialization (does not print startup messages)
+
+-v
+  Set verbosity (repeated ’v’ increases the level; mainly useful for
+  system debugging)
+
+-x
+  No graphics will be attempted/loaded during session
+
+-y
+  Run the IPython shell instead of the normal PyRAF command shell
+  (only if IPython is installed)
+  
 A save filename (see :ref:`New Capabilities in PyRAF`) can be given as
 a command line argument when starting up PyRAF, in which case PyRAF is
 initialized to the state given in that file. This allows you to start
 up in a particular state (preserving the packages, tasks, and
 variables that have been defined) and also reduces the startup time.
+
+.. _Python: https://www.python.org/
+
+.. _Python tutorial: https://docs.python.org/3/tutorial/
+
+.. _venv: https://docs.python.org/3/library/venv.html
+
+.. _conda: https://docs.conda.io/
+
+.. _PyPI: https://pypi.org/project/pyraf
+
+.. _IRAF: https://iraf-community.github.io
+
+.. _iraf-community: https://iraf-community.github.io
+
+.. _Beginner’s Guide to Using IRAF: https://iraf-community.github.io/doc/beguide.pdf
+
+.. _Ubuntu: https://www.ubuntu.com/
