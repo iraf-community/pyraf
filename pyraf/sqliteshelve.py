@@ -59,6 +59,8 @@ class Shelf:
                            " where type = 'table' and tbl_name = 'shelf'")
             rows = cursor.fetchall()
             if len(rows) == 0:
+                if self.readonly:
+                    raise OSError(f'No table "shelf" in {fname}')
                 cursor.execute("create table shelf"
                                " (id integer primary key autoincrement,"
                                " key_str text,"

@@ -3337,8 +3337,8 @@ _clExecuteCount = 0
 def clExecute(s,
               locals=None,
               mode="proc",
-              local_vars_dict={},
-              local_vars_list=[],
+              local_vars_dict=None,
+              local_vars_list=None,
               verbose=0,
               **kw):
     """Execute a single cl statement"""

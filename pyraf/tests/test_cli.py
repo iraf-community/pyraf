@@ -18,31 +18,34 @@ if HAS_IRAF:
 
 @contextmanager
 def use_ecl(flag):
-    old_ecl = pyrafglobals._use_ecl
-    pyrafglobals._use_ecl = flag
+    """Temporary enable/disable usage of ECL"""
+    # This is a quite dirty hack that is adjusted to do just enough to
+    # let the tests here pass. It is not meant to be used outside.
+    # Re-initialization of IRAF takes more that what is done here.
+    if flag != pyrafglobals._use_ecl:
+        old_ecl = pyrafglobals._use_ecl
+        pyrafglobals._use_ecl = flag
+        from .. import iraffunctions
+        iraffunctions._pkgs.clear()
+        iraffunctions._tasks.clear()
+        iraf.Init(doprint=False, hush=True)
     yield
-    pyrafglobals._use_ecl = old_ecl
+    if flag != pyrafglobals._use_ecl:
+        pyrafglobals._use_ecl = old_ecl
+        iraffunctions._pkgs.clear()
+        iraffunctions._tasks.clear()
+        iraf.Init(doprint=False, hush=True)
 
 
-def test_division_task(tmpdir):
+@pytest.mark.parametrize('ecl_flag', [False, True])
+def test_division_task(ecl_flag, tmpdir):
     # Show how a .cl script would be run
-    with use_ecl(False):
+    with use_ecl(ecl_flag):
         stdout = io.StringIO()
         iraf.task(xyz='print "e: " (9/5)\nprint "f: " (9/5.)\n'
                   'print "g: " (9//5)\nprint "h: " (9//5.)',
                   IsCmdString=True)
         iraf.xyz(StdoutAppend=stdout)
-        assert stdout.getvalue() == "e: 1\nf: 1.8\ng: 95\nh: 95.0\n"
-
-
-def test_division_task_ecl(tmpdir):
-    with use_ecl(True):
-        # Show how a .cl script would be run
-        stdout = io.StringIO()
-        iraf.task(xyzecl='print "e: " (9/5)\nprint "f: " (9/5.)\n'
-                  'print "g: " (9//5)\nprint "h: " (9//5.)',
-                  IsCmdString=1)
-        iraf.xyzecl(StdoutAppend=stdout)
         assert stdout.getvalue() == "e: 1\nf: 1.8\ng: 95\nh: 95.0\n"
 
 
