@@ -60,7 +60,6 @@ jobs:
           export PATH=${HOME}/.iraf/bin:${PATH}
           mkiraf -t=$TERM -n
           echo "PATH=$PATH" >> $GITHUB_ENV
-          echo "host=${iraf}unix/" >> $GITHUB_ENV
           pip3 install pytest
 
       - name: Build PyRAF locally
@@ -81,7 +80,6 @@ jobs:
       - name: Run tests (installed package)
         if: matrix.method == 'pip'
         run: |
-          if [ $RUNNER_OS = 'macOS' ] ; then export IRAFARCH=macintel ; fi
           python3 -m pytest -s --pyargs pyraf
 
       - name: "Upload coverage to Codecov"
