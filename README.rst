@@ -2,7 +2,7 @@
 PyRAF
 =====
 
-|CI Status| |Coverage Status| |Release| |Documentation|
+|Release| |CI Status| |Coverage Status| |Documentation|
 
 PyRAF is a command language for running IRAF tasks in a Python like
 environment. It works very similar to IRAF, but has been updated to
@@ -10,6 +10,29 @@ allow such things as importing Python modules, starting in any
 directory, GUI parameter editing and help. Most importantly, it can be
 imported into Python allowing you to run IRAF commands from within a
 larger script.
+
+Installation
+------------
+
+To install PyRAF, it is required to have both IRAF_ and Python_
+already installed. For the IRAF installation, both a self-compiled and
+a binary IRAF package (f.e. in Ubuntu_) will work.
+
+The IRAF installation should have a properly configured environment,
+especially the ``iraf`` environment variable must be set to point to
+the IRAF installation directory (i.e. to ``/usr/lib/iraf/`` on Ubuntu
+or Debian systems). On multi-arch IRAF installations, the ``IRAFARCH``
+environment variable should specify the architecture to use. This is
+usually already set during the IRAF installation procedure.
+
+The minimal Python required for PyRAF is 3.6, but it is recommended to
+use the latest available version. An installation in an virtual
+environment like venv_ or conda_ is possible.
+
+The package can be installed from the Git repository with the command
+``pip3 install .``. Note that the package requires a compilation, so
+aside from pip3, the C compiler and development libraries
+(on Linux ``libx11-dev``) should be installed.
 
 Contributing Code, Documentation, or Feedback
 ---------------------------------------------
@@ -48,3 +71,17 @@ Documentation
 .. |Documentation| image:: https://readthedocs.org/projects/pyraf/badge/?version=latest
     :target: https://pyraf.readthedocs.io/en/latest/
     :alt: Documentation Status
+
+.. _Python: https://www.python.org/
+
+.. _venv: https://docs.python.org/3/library/venv.html
+
+.. _conda: https://docs.conda.io/
+
+.. _PyPI: https://pypi.org/project/pyraf
+
+.. _IRAF: https://iraf-community.github.io
+
+.. _iraf-community: https://iraf-community.github.io
+
+.. _Ubuntu: https://www.ubuntu.com/
