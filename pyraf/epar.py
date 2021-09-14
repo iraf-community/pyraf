@@ -6,7 +6,7 @@ M.D. De La Pena, 2000 February 04
 
 from stsci.tools import capable
 if capable.OF_GRAPHICS:
-    from Tkinter.tkMessageBox import askokcancel, showwarning, showerror
+    from tkinter.messagebox import askokcancel, showwarning, showerror
     import os
     import io
     from stsci.tools import listdlg, eparoption, editpar, irafutils

@@ -5,7 +5,9 @@ import shutil
 import argparse
 
 from stsci.tools import capable
+from stsci.tools.irafglobals import yes, no, INDEF, EOF
 from . import iraf
+from .irafpar import makeIrafPar
 
 try:
     import IPython
@@ -39,7 +41,8 @@ def main():
     parser.add_argument('-m','--commandwrapper',
                         help='Run command line wrapper to provide extra'
                              ' capabilities (default)',
-                        action='store_true', dest='commandwrapper')
+                        action='store_true', dest='commandwrapper',
+                        default=True)
     parser.add_argument('-i','--no-commandwrapper',
                         help='No command line wrapper, just run standard'
                              ' interactive Python shell',
