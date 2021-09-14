@@ -1,0 +1,8 @@
+div.topbar a.brand {
+  background: url("pyraflogo.png") no-repeat 10px 4px;
+  background-size: 32px 32px;
+}
+
+div.topbar ul li a.homelink {
+  display: none;
+}
