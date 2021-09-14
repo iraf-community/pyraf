@@ -8,6 +8,13 @@ import time
 
 import pytest
 
+try:
+    host_arch = sys.implementation._multiarch.split("-")[0]
+except AttributeError:
+    import platform
+    host_arch = platform.machine()
+is_i386 = host_arch in ('i386', 'i486', 'i586', 'i686')
+
 from stsci.tools import capable
 
 from .utils import HAS_IRAF, DATA_DIR
@@ -206,6 +213,7 @@ def test_gki_control_codes():
         assert gki.control2name[ctl] == 'control_unknown'
 
 
+@pytest.mark.skipif(is_i386, reason='diff is not identical on i386')
 def test_gki_single_prow():
     """ Test a prow-plot of a single row from dev$pix to .ps """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -220,6 +228,7 @@ def test_gki_single_prow():
     diffit(EXP2IGNORE, psOut, os.path.join(DATA_DIR, PSDEV + "_prow_256.ps"))
 
 
+@pytest.mark.skipif(is_i386, reason='diff is not identical on i386')
 def test_gki_prow_1_append():
     """ Test a prow-plot with 1 append (2 rows total, dev$pix) to .ps """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -236,6 +245,7 @@ def test_gki_prow_1_append():
                                            PSDEV + "_prow_256_250.ps"))
 
 
+@pytest.mark.skipif(is_i386, reason='diff is not identical on i386')
 def test_gki_prow_2_appends():
     """ Test a prow-plot with 2 appends (3 rows total, dev$pix) to .ps """
     iraf.plot(_doprint=0)  # load plot for prow
@@ -253,6 +263,7 @@ def test_gki_prow_2_appends():
            os.path.join(DATA_DIR, PSDEV + "_prow_256_250_200.ps"))
 
 
+@pytest.mark.skipif(is_i386, reason='diff is not identical on i386')
 def test_gki_2_prows_no_append():
     """ Test 2 prow calls with no append (2 dev$pix rows) to 2 .ps's """
     iraf.plot(_doprint=0)  # load plot for prow
