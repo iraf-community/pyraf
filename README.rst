@@ -53,7 +53,7 @@ PyRAF is licensed under a 3-clause BSD style license - see the
 Documentation
 -------------
 
-* `The PyRAF Tutorial <pyraf.readthedocs.io>`_
+* `The PyRAF Tutorial <https://pyraf.readthedocs.io>`_
 
 
 .. |CI Status| image:: https://github.com/iraf-community/pyraf/actions/workflows/citest.yml/badge.svg
