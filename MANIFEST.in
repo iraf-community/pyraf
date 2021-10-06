@@ -5,5 +5,5 @@ include setup.cfg
 include MANIFEST.in
 recursive-include pyraf *
 recursive-include tools *.py
-global-exclude *.pyc *.o
+global-exclude *.pyc *.o *.so *.sqlite3
 recursive-inclulde docs *
