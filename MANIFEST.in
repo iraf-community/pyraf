@@ -1,4 +1,9 @@
-include setup.py MANIFEST MANIFEST.in
+include LICENSE.txt
+include README.rst
+include setup.py
+include setup.cfg
+include MANIFEST.in
 recursive-include pyraf *
-recursive-include docs pyraf_tutorial.pdf pyraf_tutorial.ps.gz pyraf_install_src.ps pyraf_install_src.pdf
 recursive-include tools *.py
+global-exclude *.pyc *.o
+recursive-inclulde docs *
