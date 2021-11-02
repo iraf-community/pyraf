@@ -3,7 +3,7 @@ matplotlib.use('TkAgg')  # set backend
 import matplotlib.backends.backend_tkagg as tkagg
 from .Ptkplot import hideTkCursor
 from .Ptkplot import FullWindowCursor
-import tk
+import tkinter
 from .wutil import moveCursorTo, WUTIL_USING_X
 
 
@@ -84,9 +84,9 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         self.figure.set_size_inches(winch, hinch, forward=False)
 
         self._tkcanvas.delete(self._tkphoto)
-        self._tkphoto = tk.PhotoImage(master=self._tkcanvas,
-                                      width=int(width),
-                                      height=int(height))
+        self._tkphoto = tkinter.PhotoImage(master=self._tkcanvas,
+                                           width=int(width),
+                                           height=int(height))
         self._tkcanvas.create_image(int(width / 2),
                                     int(height / 2),
                                     image=self._tkphoto)
