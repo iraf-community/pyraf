@@ -32,7 +32,7 @@ def test_subproc_write_readline(_proc):
     """
     _proc.write(b'test string one\n')
     _proc.write(b'test string two\n')
-    time.sleep(0.01)
+    time.sleep(0.1)
 
     assert _proc.readline() == b'test string one\n'
     assert _proc.readline() == b'test string two\n'
@@ -44,7 +44,7 @@ def test_subproc_write_readPendingChars(_proc):
     test_inputs = (b'one', b'two', b'three')
     for test_input in test_inputs:
         _proc.write(test_input + b'\n')
-        time.sleep(0.01)
+        time.sleep(0.1)
 
     expected = tuple(_proc.readPendingChars().splitlines())
     assert test_inputs == expected

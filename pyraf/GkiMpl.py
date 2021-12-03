@@ -476,7 +476,7 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # add the text
         x = gki.ndc(arg[0])
         y = gki.ndc(arg[1])
-        text = arg[3:].astype(numpy.int8).tobytes().encode('ascii')
+        text = arg[3:].astype(numpy.int8).tobytes().decode('ascii')
         ta = self.textAttributes
 
         # For now, force this to be non-bold for decent looking plots.  It

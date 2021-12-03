@@ -29,10 +29,11 @@ The minimal Python required for PyRAF is 3.6, but it is recommended to
 use the latest available version. An installation in an virtual
 environment like venv_ or conda_ is possible.
 
-The package can be installed from the Git repository with the command
-``pip3 install .``. Note that the package requires a compilation, so
-aside from pip3, the C compiler and development libraries
-(on Linux ``libx11-dev``) should be installed.
+The package can be installed from PyPI_ with the command ``pip3
+install pyraf``. Note that if no binary installation is available on
+PyPI, the package requires a compilation, so aside from pip3, the C
+compiler and development libraries (on Linux ``libx11-dev``) should be
+installed.
 
 Contributing Code, Documentation, or Feedback
 ---------------------------------------------

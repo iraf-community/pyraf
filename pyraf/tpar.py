@@ -21,18 +21,11 @@ import re
 # Fake out import of urwid if it fails, to keep tpar from bringing down
 # all of PyRAF.
 class FakeModule:
-
-    def __init__(*args, **keys):
-        pass
-
+    pass
 
 class FakeClass:
+    pass
 
-    def __init__(*args, **keys):
-        pass
-
-
-URWID_PRE_9P9 = False
 
 try:
     import urwid.curses_display
@@ -41,10 +34,7 @@ try:
     from . import urwutil
     from . import urwfiledlg
     urwid.set_encoding("ascii")  # gives better performance than 'utf8'
-    if 0 == urwid.__version__.find('0.9.8') or 0 == urwid.__version__.find(
-            '0.9.7'):
-        URWID_PRE_9P9 = True
-except Exception as e:
+except ImportException as e:
     urwid = FakeModule()
     urwid.Edit = FakeClass()
     urwid.Columns = FakeClass()
@@ -715,10 +705,7 @@ class TparDisplay(Binder):
 
         self.escape = False
 
-        if URWID_PRE_9P9:
-            self._createButtonsOld()
-        else:
-            self._createButtons()
+        self._createButtons()
 
         self.colon_edit = PyrafEdit("",
                                     "",
@@ -748,58 +735,6 @@ class TparDisplay(Binder):
             BINDINGS.update(TPAR_BINDINGS_EMACS)
             MODE_KEYS = MODE_KEYS_EMACS
         Binder.__init__(self, BINDINGS, self.inform, MODE_KEYS)
-
-    def _createButtonsOld(self):
-        """ Set up all the bottom row buttons and their spacings """
-
-        isPset = isinstance(self.taskObject, iraftask.IrafPset)
-
-        self.help_button = urwid.Padding(urwid.Button("Help", self.HELP),
-                                         align="center",
-                                         width=('fixed', 8))
-        self.cancel_button = urwid.Padding(urwid.Button("Cancel", self.QUIT),
-                                           align="center",
-                                           width=('fixed', 10))
-        if not isPset:
-            self.save_as_button = urwid.Padding(urwid.Button(
-                "Save As", self.SAVEAS),
-                                                align="center",
-                                                width=('fixed', 11))
-        self.save_button = urwid.Padding(urwid.Button("Save", self.EXIT),
-                                         align="center",
-                                         width=('fixed', 8))
-        self.exec_button = urwid.Padding(urwid.Button("Exec", self.go),
-                                         align="center",
-                                         width=('fixed', 8))
-        if self.__areAnyToLoad:
-            self.open_button = urwid.Padding(urwid.Button("Open", self.PFOPEN),
-                                             align="center",
-                                             width=('fixed', 8))
-
-        # GUI button layout - weightings
-        if isPset:  # show no Open nor Save As buttons
-            self.buttons = urwid.Columns([('weight', 0.2, self.exec_button),
-                                          ('weight', 0.2, self.save_button),
-                                          ('weight', 0.2, self.cancel_button),
-                                          ('weight', 0.4, self.help_button)])
-        else:
-            if not self.__areAnyToLoad:  # show Save As but not Open
-                self.buttons = urwid.Columns([
-                    ('weight', 0.175, self.exec_button),
-                    ('weight', 0.175, self.save_button),
-                    ('weight', 0.175, self.save_as_button),
-                    ('weight', 0.175, self.cancel_button),
-                    ('weight', 0.3, self.help_button)
-                ])
-            else:  # show all possible buttons (iterated on this spacing)
-                self.buttons = urwid.Columns([
-                    ('weight', 0.20, self.open_button),
-                    ('weight', 0.15, self.exec_button),
-                    ('weight', 0.15, self.save_button),
-                    ('weight', 0.15, self.save_as_button),
-                    ('weight', 0.18, self.cancel_button),
-                    ('weight', 0.20, self.help_button)
-                ])
 
     def _createButtons(self):
         """ Set up all the bottom row buttons and their spacings """
@@ -1397,12 +1332,10 @@ class TparDisplay(Binder):
 
 def tpar(taskName):
     if isinstance(urwid, FakeModule):
-        print(
-            "The urwid package isn't found on your Python system so tpar can't be used.",
-            file=sys.stderr)
-        print('    (the error given: "' + urwid.the_error + '")',
-              file=sys.stderr)
-        print("Please install urwid version >= 0.9.7 or use epar instead.",
-              file=sys.stderr)
+        print(f'''
+The urwid package isn't found on your Python system so tpar can't be used.'
+    (the error given: "{urwid.the_error}")'
+Please install urwid or use epar instead.
+''', file=sys.stderr)
         return
     TparDisplay(taskName).main()
