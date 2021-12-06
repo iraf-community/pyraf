@@ -66,7 +66,7 @@ Documentation
     :alt: PyRAF Coverage Status
 	  
 .. |Release| image:: https://img.shields.io/github/release/iraf-community/pyraf.svg
-    :target: https://github.com/iraf.community/pyraf/releases/latest
+    :target: https://github.com/iraf-community/pyraf/releases/latest
     :alt: Pyraf release
 
 .. |Documentation| image:: https://readthedocs.org/projects/pyraf/badge/?version=latest
