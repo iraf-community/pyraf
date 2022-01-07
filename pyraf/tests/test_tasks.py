@@ -27,7 +27,7 @@ def test_load_package(pkg):
     'lists.average', 'lists.raverage', 'system.allocate',
     'system.deallocate', 'system.devstatus', 'system.diskspace',
     'system.devices', 'system.references', 'system.phelp',
-    'tv.bpmedit', 'softools.mkmanpage', 'color.rgbdisplay',
+    'tv.bpmedit', 'softools.mkhelpdb', 'color.rgbdisplay',
     'astutil.astradius',
 ])
 def test_load_cl_task(task):
