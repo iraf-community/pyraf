@@ -86,7 +86,7 @@ def test_invoke_version(_with_pyraf, test_input):
     """Ensure version reported by command-line options originates in __version__
     """
     result = _with_pyraf.run(test_input)
-    assert not result.code
+    assert not result.code, result.stderr
     assert pyraf.__version__ in result.stdout
 
 
@@ -96,8 +96,8 @@ def test_invoke_command(_with_pyraf, test_input, expected, use_ecl):
     """Issue basic commands to CL parser
     """
     result = _with_pyraf.run(['-c', test_input], use_ecl=use_ecl)
-    assert result.stdout.startswith(expected)
     assert not result.code, result.stderr
+    assert result.stdout.startswith(expected)
 
 
 @pytest.mark.parametrize('test_input,expected', cl_cases)
@@ -110,9 +110,9 @@ def test_invoke_command_direct(_with_pyraf, test_input, expected, use_ecl):
                      'parser is used here')
     result = _with_pyraf.run(['-m'], use_ecl=use_ecl,
                              stdin=test_input + '\n.exit')
+    assert not result.code, result.stderr
     assert result.stdout.strip().endswith(expected)
     # assert not result.stderr  # BUG: Why is there a single newline on stderr?
-    assert not result.code, result.stderr
 
 
 @pytest.mark.parametrize('test_input,expected', python_cases)
@@ -126,8 +126,8 @@ def test_invoke_command_no_wrapper_direct(_with_pyraf, test_input, expected, use
     output = ''.join(
         [x.replace('>>>', '').strip() for x in _output[begin:].splitlines()])
 
-    assert output == expected
     assert not result.code, result.stderr
+    assert output == expected
 
 
 @pytest.mark.skipif(not HAS_IPYTHON,
@@ -138,8 +138,8 @@ def test_invoke_command_ipython(_with_pyraf, test_input, expected, use_ecl):
     """Issue basic commands on pyraf's ipython shell wrapper
     """
     result = _with_pyraf.run('-y', use_ecl=use_ecl, stdin=test_input)
-    assert expected in result.stdout
     assert not result.code, result.stderr
+    assert expected in result.stdout
 
 
 @pytest.mark.parametrize('test_input', [
@@ -153,7 +153,7 @@ def test_invoke_nosilent(_with_pyraf, test_input):
     if test_input in ('--ipython', '-y') and not HAS_IPYTHON:
         pytest.skip('IPython must be installed to run')
     result = _with_pyraf.run(test_input, silent=False)
-    assert not result.code
+    assert not result.code, result.stderr
     assert "Welcome to IRAF." in result.stdout
     assert "clpackage" in result.stdout
     assert f"PyRAF {pyraf.__version__}" in result.stdout
