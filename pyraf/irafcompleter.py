@@ -158,12 +158,12 @@ class IrafCompleter(Completer):
         """Return matches when text is at beginning of the line"""
         matches = []
         n = len(text)
-        for list in [
+        for list_ in [
                 keyword.kwlist,
                 builtins.__dict__.keys(),
                 __main__.__dict__.keys()
         ]:
-            for word in list:
+            for word in list_:
                 if word[:n] == text:
                     matches.append(word)
         # IRAF module functions
