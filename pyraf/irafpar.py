@@ -909,7 +909,7 @@ class IrafParList(taskpars.TaskPars):
     def setParList(self, *args, **kw):
         """Set value of multiple parameters from list"""
         # first undo translations that were applied to keyword names
-        for key in kw.keys():
+        for key in list(kw.keys()):
             okey = key
             key = irafutils.untranslateName(key)
             if okey != key:

@@ -389,7 +389,7 @@ def saveToFile(savefile, **kw):
     # make a shallow copy of the dictionary and edit out
     # functions, modules, and objects named in _unsavedVarsDict
     gdict = globals().copy()
-    for key in gdict.keys():
+    for key in list(gdict.keys()):
         item = gdict[key]
         if isinstance(item, (_types.FunctionType, _types.ModuleType)) or \
                 key in _unsavedVarsDict:
