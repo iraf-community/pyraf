@@ -173,3 +173,15 @@ def test_which(tmpdir, arg, expected):
     kw = {"StderrAppend": stdout}
     iraf.which(*args, **kw)  # catches stdout+err
     assert stdout.getvalue().strip() == expected
+
+
+def test_parse_cl_array_subscripts():
+    # Check that square brackets are parsed correctly
+    # https://github.com/iraf-community/pyraf/issues/115
+    stdout = io.StringIO()
+    iraf.task(xyz='char cenwavvalue[4]\n'
+              'cenwavvalue[1] = "580"\n'
+              'print(cenwavvalue[1])',
+              IsCmdString=True)
+    iraf.xyz(StdoutAppend=stdout)
+    assert stdout.getvalue() == "580\n"

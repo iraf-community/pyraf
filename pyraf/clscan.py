@@ -268,6 +268,12 @@ class _StartScanner(_LaxScanner, _StrictStartScanner):
 
 class _CommandScanner_1(_BasicScanner_1):
 
+    def t_lbracket(self, s, m, parent):
+        r'\['
+        parent.addToken(type=s)
+        # push to compute mode
+        parent.current.append(_COMPUTE_MODE)
+
     def t_string(self, s, m, parent):
         r'[^ \t\n()\\;{}&]+(\\(.|\n)[^ \t\n()\\;{}&]*)*'
         # What other characters are forbidden in unquoted strings?
@@ -283,12 +289,6 @@ class _CommandScanner_1(_BasicScanner_1):
         s = irafutils.removeEscapes(s).replace('\\', '\\\\')
         parent.addToken(type='STRING', attr=s)
         parent.lineno = parent.lineno + nline
-
-    def t_lbracket(self, s, m, parent):
-        r'\['
-        parent.addToken(type=s)
-        # push to compute mode
-        parent.current.append(_COMPUTE_MODE)
 
     def t_lparen(self, s, m, parent):
         r'\('
