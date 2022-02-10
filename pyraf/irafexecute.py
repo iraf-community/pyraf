@@ -1031,7 +1031,7 @@ class IrafProcess:
 
 def Asc2IrafString(ascii_string):
     """translate ascii to IRAF 16-bit string format"""
-    inarr = numpy.frombuffer(ascii_string.encode('ascii'), numpy.int8)
+    inarr = numpy.frombuffer(ascii_string.encode(), numpy.int8)
     retval = inarr.astype(numpy.int16).tobytes()
     #   log_task_comm('Asc2IrafString (write to task)', retval, False)
     return retval
@@ -1040,7 +1040,7 @@ def Asc2IrafString(ascii_string):
 def Iraf2AscString(iraf_string):
     """translate 16-bit IRAF characters to ascii"""
     inarr = numpy.frombuffer(iraf_string, numpy.int16)
-    retval = inarr.astype(numpy.int8).tobytes().decode('ascii')
+    retval = inarr.astype(numpy.int8).tobytes().decode()
     #   log_task_comm('Iraf2AscString', retval, True)
     return retval
 

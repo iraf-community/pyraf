@@ -306,7 +306,7 @@ class IrafParL(_StringMixin, IrafPar):
             # non-null value means we're reading from a file
             try:
                 if not self.fh:
-                    self.fh = open(iraf.Expand(self.value))
+                    self.fh = open(iraf.Expand(self.value), errors="ignore")
                     if self.fh.isatty():
                         self.lines = None
                     else:
@@ -1312,9 +1312,8 @@ def _updateSpecialParFileDict(dirToCheck=None, strict=False):
     for supfname in flist:
         buf = []
         try:
-            supfile = open(supfname)
-            buf = supfile.readlines()
-            supfile.close()
+            with open(supfname, errors="ignore") as supfile:
+                buf = supfile.readlines()
         except OSError:
             pass
         if len(buf) < 1:
@@ -1465,9 +1464,8 @@ def _readpar(filename, strict=0):
 
     param_dict = {}
     param_list = []
-    fh = open(os.path.expanduser(filename))
-    lines = fh.readlines()
-    fh.close()
+    with open(os.path.expanduser(filename), errors="ignore") as fh:
+        lines = fh.readlines()
     # reverse order of lines so we can use pop method
     lines.reverse()
     while lines:

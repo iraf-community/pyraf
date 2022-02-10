@@ -262,7 +262,8 @@ def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
         return {'iraf': '/iraf/is/not/here/', 'IRAFARCH': 'arch_is_unused'}
     if not _os.path.exists(file):
         raise OSError(f"CL startup file {file} does not exist")
-    lines = open(file).readlines()
+    with open(file, errors="ignore") as fh:
+        lines = fh.readlines()
     # replace commands that exec cl with commands to print environment vars
     pat = _re.compile(r'^\s*exec\s+')
     newlines = []
@@ -3724,16 +3725,16 @@ def redirProcess(kw):
                         # output file
                         # check to see if it is dev$null
                         if isNullFile(value):
-                            if _sys.platform.startswith('win'):
-                                value = 'NUL'
-                            else:
-                                value = '/dev/null'
+                            value = _os.devnull
                         elif "w" in openArgs and \
                                 envget("clobber", "") != yes and \
                                 _os.path.exists(value):
                             # don't overwrite unless clobber is set
                             raise OSError(f"Output file `{value}' already exists")
-                    fh = open(value, openArgs)
+                    openArgs = {'mode': openArgs}
+                    if 'b' not in openArgs['mode']:
+                        openArgs['errors'] = 'ignore'
+                    fh = open(value, **openArgs)
                     # close this when we're done
                     closeFHList.append(fh)
             elif isinstance(value, int):

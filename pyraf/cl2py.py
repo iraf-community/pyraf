@@ -90,13 +90,12 @@ def cl2py(filename=None,
                     return pycode
             else:
                 index = None
-            fh = open(efilename)
-            clInput = fh.read()
-            fh.close()
+            with open(efilename, errors="ignore") as fh:
+                clInput = fh.read()
         elif hasattr(filename, 'read'):
             clInput = filename.read()
             if usecache:
-                index, pycode = codeCache.get(filename,
+                index, pycode = codeCache.get(getattr(filename, 'name', None),
                                               mode=mode,
                                               source=clInput)
                 if pycode is not None:
@@ -105,10 +104,7 @@ def cl2py(filename=None,
                     return pycode
             else:
                 index = None
-            if hasattr(filename, 'name'):
-                efilename = filename.name
-            else:
-                efilename = ''
+            efilename = getattr(filename, 'name', '')
         else:
             raise TypeError('filename must be a string or a filehandle')
     elif string is not None:
