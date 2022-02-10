@@ -239,3 +239,22 @@ def test_intrinsic_functions(call, expected):
         assert int(stdout.getvalue().strip()) == expected
     else:
         assert stdout.getvalue().strip() == expected
+
+
+@pytest.mark.parametrize('ecl_flag', [False, True])
+@pytest.mark.parametrize('encoding', ['utf-8', 'iso-8859-1'])
+@pytest.mark.parametrize('code,expected', [
+    ('print AA #  Ångström\n', 'AA\n'),
+])
+def test_clfile(tmpdir, ecl_flag, encoding, code, expected):
+    # Check proper reading of CL files with different encodings
+    fname = tmpdir / 'cltestfile.cl'
+    with fname.open("w", encoding=encoding) as fp:
+        fp.write(code)
+
+    stdout = io.StringIO()
+
+    with use_ecl(ecl_flag):
+        iraf.task(xyz=str(fname))
+        iraf.xyz(StdoutAppend=stdout)
+        assert stdout.getvalue() == expected

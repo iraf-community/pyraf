@@ -386,7 +386,8 @@ class EclTraceback(EclBase):
         lineno = self._ecl_get_lineno(frame=raising_frame)
         cl_file = self.getFilename()
         try:
-            cl_code = open(cl_file).readlines()[lineno - 1].strip()
+            with open(cl_file, errors="ignore") as fh:
+                cl_code = fh.readlines()[lineno - 1].strip()
         except OSError:
             cl_code = "<source code not available>"
         if hasattr(e, "_ecl_suppress_first_trace") and \
@@ -400,8 +401,8 @@ class EclTraceback(EclBase):
             parent_lineno = self._ecl_get_lineno()
             parent_file = parent.getFilename()
             try:
-                parent_code = open(parent_file).readlines()[parent_lineno -
-                                                            1].strip()
+                with open(parent_file, errors="ignore") as fh:
+                    parent_code = fh.readlines()[parent_lineno - 1].strip()
                 self._ecl_trace("      called as:", repr(parent_code))
             except:
                 pass
