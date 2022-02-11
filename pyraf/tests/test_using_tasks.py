@@ -288,7 +288,7 @@ def test_pset_msstatistics_save_data(_iraf_pset_init, _data):
     assert iraf.egstp.sum == 28394234.0, str(iraf.egstp.sum)
 
 
-def test_dqbits_mscombine(_iraf_dqbits_init, _data, tmpdir):
+def test_dqbits_mscombine(_iraf_dqbits_init, _data):
     """Expect dqbits unaltered after combining data
     """
     # reset PSET dqbits' values

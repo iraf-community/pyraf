@@ -74,7 +74,7 @@ class PyrafEx:
 
 
 @pytest.fixture
-def _with_pyraf(tmpdir):
+def _with_pyraf():
     return PyrafEx()
 
 

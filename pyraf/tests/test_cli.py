@@ -38,7 +38,7 @@ def use_ecl(flag):
 
 
 @pytest.mark.parametrize('ecl_flag', [False, True])
-def test_division_task(ecl_flag, tmpdir):
+def test_division_task(ecl_flag):
     # Show how a .cl script would be run
     with use_ecl(ecl_flag):
         stdout = io.StringIO()
@@ -56,7 +56,7 @@ def test_division_task(ecl_flag, tmpdir):
     ('9//5.', '95.0'),  # string concatenation
 ])
 @pytest.mark.parametrize('ecl_flag', [False, True])
-def test_division(arg, expected, ecl_flag, tmpdir):
+def test_division(arg, expected, ecl_flag):
     with use_ecl(ecl_flag):
         stdout = io.StringIO()
         iraf.clExecute(f'print "i: " ({arg})', StdoutAppend=stdout)
@@ -69,7 +69,7 @@ def test_division(arg, expected, ecl_flag, tmpdir):
     ("seven", "%c%3c%99c", ['s', 'eve', 'n']),
     ("0xabc90", "%x", [703632]),
 ])  
-def test_sscanf(arg, fmt, expected, tmpdir):
+def test_sscanf(arg, fmt, expected):
     """A basic unit test that sscanf was built/imported correctly and
     can run.
     """
@@ -77,7 +77,7 @@ def test_sscanf(arg, fmt, expected, tmpdir):
     assert l == expected
 
 
-def test_sscanf_error(tmpdir):
+def test_sscanf_error():
     # API error
     with pytest.raises(TypeError):
         sscanf.sscanf()
@@ -109,7 +109,7 @@ def test_sscanf_error(tmpdir):
     ("dis", "tv.display system.diskspace"),
     ("no", "noao.nobsolete clpackage.noao"),
 ])
-def test_whereis(arg, expected, tmpdir):
+def test_whereis(arg, expected):
     iraf.plot(_doprint=0)
     iraf.images(_doprint=0)
 
@@ -161,7 +161,7 @@ def test_whereis(arg, expected, tmpdir):
     ("dis", "\"Task `dis' is ambiguous, could be "
             "system.diskspace, tv.display\""),
 ])
-def test_which(tmpdir, arg, expected):
+def test_which(arg, expected):
     iraf.plot(_doprint=0)
     iraf.images(_doprint=0)
 
