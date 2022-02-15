@@ -213,10 +213,12 @@ class Subprocess:
     ### Write input to subprocess ###
 
     def write(self, strval, timeout=10, printtime=2):
-        """Write a STRING to the subprocess.  Times out (and raises an
-        exception) if the process is not ready in timeout seconds.
-        Prints a message indicating that it is waiting every
-        printtime seconds."""
+        """Write a bytes or string to the subprocess.  Times out (and raises
+        an exception) if the process is not ready in timeout seconds.
+        Prints a message indicating that it is waiting every printtime
+        seconds.
+
+        """
 
         if not self.pid:
             raise SubprocessError(f"No child process for '{self.cmd}'")
@@ -240,6 +242,8 @@ class Subprocess:
                 ## if totalwait: print "waiting for subprocess..."
                 totalwait = totalwait + printtime
                 if select.select([], self.toChild_fdlist, [], printtime)[1]:
+                    if not isinstance(strval, bytes):
+                        strval = strval.encode()
                     if os.write(self.toChild, strval) != len(strval):
                         raise SubprocessError(f"Write error to {self}")
                     return  # ===>
