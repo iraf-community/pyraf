@@ -826,7 +826,10 @@ class RedirProcess(Subprocess):
                     # stderr
                     s = self.readPendingErrChars()  # returns bytes
                     if s:
-                        sys.stderr.write(s.decode())
+                        if hasattr(sys.stderr, "buffer"):
+                            sys.stderr.buffer.write(s)
+                        else:
+                            sys.stderr.write(s.decode())
                         sys.stderr.flush()
                     else:
                         # EOF
@@ -839,7 +842,10 @@ class RedirProcess(Subprocess):
                     # stdout
                     s = self.readPendingChars()  # returns bytes
                     if s:
-                        sys.stdout.write(s.decode())
+                        if hasattr(sys.stdout, "buffer"):
+                            sys.stdout.buffer.write(s)
+                        else:
+                            sys.stdout.write(s.decode())
                         sys.stdout.flush()
                     else:
                         # EOF
@@ -856,7 +862,10 @@ class RedirProcess(Subprocess):
             elif writable:
                 # stdin
                 try:
-                    s = sys.stdin.read(self.maxChunkSize)  # s is 'str' in PY3K
+                    if hasattr(sys.stdin, "buffer"):
+                        s = sys.stdin.buffer.read(self.maxChunkSize)
+                    else:
+                        s = sys.stdin.read(self.maxChunkSize)
                     if s:
                         try:
                             self.write(s)  # inside, converts PY3K str to bytes

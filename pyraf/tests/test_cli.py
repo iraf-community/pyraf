@@ -258,3 +258,42 @@ def test_clfile(tmpdir, ecl_flag, encoding, code, expected):
         iraf.task(xyz=str(fname))
         iraf.xyz(StdoutAppend=stdout)
         assert stdout.getvalue() == expected
+
+
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+@pytest.mark.parametrize('ecl_flag', [False, True])
+@pytest.mark.parametrize('code', [
+    'cat {datafile}',                     # foreign
+    'type {datafile} map_cc=no',          # internal
+    'concatenate {datafile} out_type=t',  # system
+])
+@pytest.mark.parametrize('data', [
+    b'test for plain ASCII',
+    'Unicode Ångström'.encode('utf-8'),
+    b'\x8fq\x96\x7f\xe6\xfd\xf8\x12\xb03{U\x81\x11\x014',  # some random data
+])
+@pytest.mark.parametrize('redir_stdin', [False, True])
+@pytest.mark.parametrize('redir_stdout', [False, True])
+def test_redir_data(tmpdir, ecl_flag, code, data, redir_stdin, redir_stdout):
+    datafile = tmpdir / 'cltestdata.dat'
+    with datafile.open('wb') as fp:
+        fp.write(data)
+    if redir_stdin:
+        code = code.format(datafile='') + f' < {str(datafile)}'
+    else:
+        code = code.format(datafile=str(datafile))
+
+    if redir_stdout:
+        outfile = tmpdir / 'cltestoutput.dat'
+        code += f' > {str(outfile)}'
+
+    with use_ecl(ecl_flag):
+        iraf.task(xyz=code, IsCmdString=True)
+        stdout = io.TextIOWrapper(io.BytesIO())  # Emulate a "real" stdout
+        iraf.xyz(Stdout=stdout)
+
+    if redir_stdout:
+        with open(outfile, 'rb') as fp:
+            assert fp.read() == data
+    else:
+        assert stdout.buffer.getvalue() == data
