@@ -245,6 +245,7 @@ def test_intrinsic_functions(call, expected):
 @pytest.mark.parametrize('encoding', ['utf-8', 'iso-8859-1'])
 @pytest.mark.parametrize('code,expected', [
     ('print AA #  Ångström\n', 'AA\n'),
+    ('print("test") | cat', 'test\n'),
 ])
 def test_clfile(tmpdir, ecl_flag, encoding, code, expected):
     # Check proper reading of CL files with different encodings
