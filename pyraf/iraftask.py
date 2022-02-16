@@ -1566,6 +1566,13 @@ class IrafCLTask(IrafTask):
         return 1
 
 
+    def isConsistent(self, other):
+        """Returns true if this task is consistent with another task object"""
+        if self.getFilename() is not None or other.getFilename() is not None:
+            return IrafTask.isConsistent(self, other)
+        else:
+            return self._pycode == other._pycode
+
 # -----------------------------------------------------
 # IRAF package class
 # -----------------------------------------------------
