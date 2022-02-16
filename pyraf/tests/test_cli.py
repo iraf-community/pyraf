@@ -1,6 +1,7 @@
 """These were tests under cli in pandokia."""
 import io
-from contextlib import contextmanager
+import math
+from contextlib import contextmanager, redirect_stderr
 import pytest
 
 from .utils import HAS_IRAF
@@ -185,3 +186,58 @@ def test_parse_cl_array_subscripts():
               IsCmdString=True)
     iraf.xyz(StdoutAppend=stdout)
     assert stdout.getvalue() == "580\n"
+
+
+@pytest.mark.parametrize('call, expected', [
+    ('acos(0.67)', math.acos(0.67)),
+    ('asin(0.67)', math.asin(0.67)),
+    ('atan2(2.,3.)', math.atan2(2.,3.)),
+    ('cos(1.2)', math.cos(1.2)),
+    ('dacos(0.67)', math.degrees(math.acos(0.67))),
+    ('dasin(0.67)', math.degrees(math.asin(0.67))),
+    ('datan2(2.,3.)', math.degrees(math.atan2(2.,3.))),
+    ('dcos(12.)', math.cos(math.radians(12.))),
+    ('deg(1.2)', math.degrees(1.2)),
+    ('dsin(12.)', math.sin(math.radians(12.))),
+    ('dtan(12.)', math.tan(math.radians(12.))),
+    ('exp(1.2)', math.exp(1.2)),
+    ('frac(1.2)', 1.2 % 1),
+    ('hypot(2.,3.)', math.hypot(2.,3.)),
+    ('int(-1.2)', int(-1.2)),
+    ('isindef(0)', False),
+    ('isindef(INDEF)', True),
+    ('log(1.2)', math.log(1.2)),
+    ('log10(1.2)', math.log10(1.2)),
+    ('max(2,3,4,2)', max(2,3,4,2)),
+    ('min(2,3,4,2)', min(2,3,4,2)),
+    ('mod(123, 7)', 123 % 7),
+    ('rad(12)', math.radians(12)),
+    ('real("1.23")', 1.23),
+    ('sign(-1.2)', -1),
+    ('sign(1.2)', 1),
+    ('sin(1.2)', math.sin(1.2)),
+    ('sqrt(1.2)', math.sqrt(1.2)),
+    ('stridx("fd", "abcdefg")', 4),
+    ('strldx("fd", "abcdefg")', 6),
+    ('strlen("abcdefg")', 7),
+    ('strlstr("def", "abcdefg")', 4),
+    ('strlwr("aBcDeF")', "abcdef"),
+    ('strstr("def", "abcdefg")', 4),
+    ('strupr("aBcDeF")', "ABCDEF"),
+    ('substr("abcdefg", 2, 5)', "bcde"),
+    ('tan(1.2)', math.tan(1.2)),
+    ('trim("--abcdefg---", "-")', "abcdefg"),
+    ('triml("--abcdefg---", "-")', "abcdefg---"),
+    ('trimr("--abcdefg---", "-")', "--abcdefg"),
+    ])
+def test_intrinsic_functions(call, expected):
+    with redirect_stderr(io.StringIO()):  # silence task redefinition warnings
+        iraf.task(xyz=f'print({call})', IsCmdString=True)
+    stdout = io.StringIO()
+    iraf.xyz(Stdout=stdout)
+    if isinstance(expected, float):
+        assert float(stdout.getvalue().strip()) == pytest.approx(expected, 1e-8)
+    elif isinstance(expected, int):
+        assert int(stdout.getvalue().strip()) == expected
+    else:
+        assert stdout.getvalue().strip() == expected
