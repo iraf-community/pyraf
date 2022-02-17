@@ -42,10 +42,10 @@ import os
 import sys
 import types
 import io
+from inspect import signature
 
 from stsci.tools import minmatch, irafutils
 from stsci.tools.irafglobals import IrafError, IrafTask, IrafPkg
-from . import describe
 from . import iraf
 
 import numpy
@@ -377,15 +377,15 @@ def _valueString(value, verbose=0):
     vstr = t.__name__
     if issubclass(t, str):
         if len(value) > 42:
-            vstr = vstr + ", value = " + repr(value[:39]) + '...'
+            vstr += ", value = " + repr(value[:39]) + '...'
         else:
-            vstr = vstr + ", value = " + repr(value)
+            vstr += ", value = " + repr(value)
     elif issubclass(t, _listTypes):
         return f"{vstr} [{len(value):d} entries]"
     elif issubclass(t, io.IOBase):
-        vstr = vstr + ", " + repr(value)
+        vstr += ", " + repr(value)
     elif issubclass(t, _numericTypes):
-        vstr = vstr + ", value = " + repr(value)
+        vstr += ", value = " + repr(value)
     elif _isinstancetype(value):
         cls = value.__class__
         if cls.__module__ == '__main__':
@@ -393,25 +393,21 @@ def _valueString(value, verbose=0):
         else:
             vstr = 'instance of class ' + cls.__module__ + '.' + cls.__name__
     elif issubclass(t, _functionTypes + _methodTypes):
-        # try using Fredrik Lundh's describe on functions
         try:
-            vstr = vstr + ' ' + describe.describe(value)
-            try:
-                if verbose and value.__doc__:
-                    vstr = vstr + "\n" + value.__doc__
-            except AttributeError:
-                pass
+            vstr += ' ' + value.__name__ + str(signature(value))
+            if verbose and value.__doc__:
+                vstr += "\n" + value.__doc__
         except (AttributeError, TypeError):
             # oh well, just have to live with type string alone
             pass
     elif issubclass(t, _numpyArrayType):
-        vstr = vstr + " " + str(value.dtype) + "["
+        vstr += " " + str(value.dtype) + "["
         for k in range(len(value.shape)):
             if k:
-                vstr = vstr + "," + repr(value.shape[k])
+                vstr += "," + repr(value.shape[k])
             else:
-                vstr = vstr + repr(value.shape[k])
-        vstr = vstr + "]"
+                vstr += repr(value.shape[k])
+        vstr += "]"
     else:
         # default -- just return the type
         pass
