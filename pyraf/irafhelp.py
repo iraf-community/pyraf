@@ -435,7 +435,7 @@ def _irafHelp(taskname, irafkw):
         return 0
 
 
-_HelpURL = "https://iraf.readthedocs.io"
+_HelpURL = "https://iraf.readthedocs.io/en/latest/tasks/by-name"
 
 
 def _htmlHelp(taskname):
