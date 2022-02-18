@@ -1,0 +1,6 @@
+# Dummy system parameter file
+#
+# This file is used when no IRAF is available.
+#
+version,s,h,"12-Nov-83"
+mode,s,h,ql

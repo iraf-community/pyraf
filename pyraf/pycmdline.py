@@ -288,9 +288,6 @@ Set debugging flag.  If argument is omitted, default is 1 (debugging on.)
         except (ImportError, OSError):
             pass
 
-        # any irafinst tmp files?
-        irafinst.cleanup()  # any irafinst tmp files?
-
         # graphics
         wutil.closeGraphics()
 

@@ -169,10 +169,7 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         orig = self._filename
         base = os.path.basename(self._filename)
         base = base[1 + base.rfind('$'):]
-        if base and base.endswith('.par'):
-            self._filename = irafinst.tmpParFile(base)
-        else:
-            self._filename = irafinst.NO_IRAF_PFX + base  # to be built on the fly
+        self._filename = f'{irafinst.NO_IRAF_PFX}/{base}'
         if Verbose > 1:
             print('Task "' + self._name + '" needed "' + orig + '" got: ' +
                   self._filename)
@@ -1428,24 +1425,9 @@ class IrafCLTask(IrafTask):
         IrafTask.initTask(self)
 
         if filehandle is None:
-            filehandle = self._fullpath
+            filehandle = self._fullpath or self._filename
 
-        justMade = False
-        fcopy = self._filename
-        if not irafinst.EXISTS and fcopy.startswith(irafinst.NO_IRAF_PFX):
-            # translate code to python
-            if Verbose > 0:
-                print("Compiling No-IRAF CL task: " + self._name,
-                      file=sys.stderr)
-            fcopy = os.path.basename(fcopy)
-            self._codeObject = None
-            self._pycode = cl2py.cl2py(None,
-                                       string=irafinst.getNoIrafClFor(fcopy),
-                                       parlist=self._defaultParList,
-                                       parfile=self._defaultParpath)
-            justMade = True
-
-        if not justMade and not cl2py.checkCache(filehandle, self._pycode):
+        if not cl2py.checkCache(filehandle, self._pycode):
             # File has changed, force recompilation
             self._pycode = None
             if Verbose > 1:
