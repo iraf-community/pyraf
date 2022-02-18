@@ -6,15 +6,9 @@ import pytest
 
 from .utils import HAS_IRAF
 
-if HAS_IRAF:
-    from .. import iraf
-    from .. import pyrafglobals
-    from .. import sscanf
-
-    # Turn off the test probe output since it comes with
-    # path info that is ever changing
-    from .. import irafexecute
-    irafexecute.test_probe = False
+from .. import iraf
+from .. import sscanf
+from .. import pyrafglobals
 
 
 @contextmanager
