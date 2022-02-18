@@ -298,3 +298,26 @@ def test_redir_data(tmpdir, ecl_flag, code, data, redir_stdin, redir_stdout):
             assert fp.read() == data
     else:
         assert stdout.buffer.getvalue() == data
+
+
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+def test_binary_stdout(tmpdir):
+    # Test writing binary data to STDOUT, one of several issues mentioned in
+    # https://github.com/iraf-community/pyraf/issues/117
+    outfile = str(tmpdir / 'testout.gki')
+    expected = [
+        f"METAFILE '{outfile}':",
+        '[1] (2855 words) The SINC Function',
+        '[2] (5701 words) .2',
+        '[3] (2525 words) Line 250 of dev$pix[200:300,*]',
+        '[4] (7637 words) Log Scaling',
+        '[5] (97781 words) NOAO/IRAF V2.3 tody@lyra Fri 23:30:27 08-Aug-86',
+        '[6] (2501 words) The Sinc Function'
+    ]
+    iraf.gkiextract('dev$vdm.gki', '2-7', iraf.yes, verify=False,
+                    Stdout=outfile)
+    stdout = io.StringIO()
+    iraf.gkidir(outfile, Stdout=stdout)
+    # Require gkidir output to match list above, ignoring spacing:
+    assert [' '.join(line.split())
+            for line in stdout.getvalue().splitlines() if line] == expected
