@@ -11,6 +11,7 @@ jobs:
       tmp: /tmp/
       iraf:  ${{ matrix.iraf }}
       TERM: dumb
+      PYRAF_NO_DISPLAY: no
 
     strategy:
       matrix:
@@ -19,6 +20,11 @@ jobs:
             os: ubuntu-20.04
             method: native
             iraf: /usr/lib/iraf/
+            upload_coverage: yes
+
+          - name: Ubuntu 20.04 (Python-3.8.2), native, without IRAF
+            os: ubuntu-20.04
+            method: native
 
           - name: Ubuntu 18.04 (Python-3.7), pip
             os: ubuntu-18.04
@@ -39,7 +45,12 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu') && matrix.method == 'native'
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends iraf iraf-noao iraf-dev build-essential libx11-dev
+          if [ "$iraf" ]; then
+              sudo apt-get install --no-install-recommends iraf iraf-noao iraf-dev
+          else
+              echo "PYRAF_NO_IRAF=yes" >> $GITHUB_ENV
+          fi
+          sudo apt-get install --no-install-recommends build-essential libx11-dev
           sudo apt-get install --no-install-recommends python3-dev python3-pip python3-astropy python3-numpy-dev python3-setuptools python3-setuptools-scm python3-tk python3-pytest python3-pytest-cov ipython3
           pip3 install "stsci.tools>=4.0.1" coveragepy
 
@@ -82,7 +93,7 @@ jobs:
           python3 -m pytest -s --pyargs pyraf
 
       - name: "Upload coverage to Codecov"
-        if: startsWith(matrix.os, 'ubuntu') && matrix.method == 'native'
+        if: matrix.upload_coverage == 'yes'
         uses: codecov/codecov-action@v1
         with:
           fail_ci_if_error: false
