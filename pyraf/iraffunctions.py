@@ -90,9 +90,6 @@ except OSError:
     print("Warning: sscanf library not installed on " + sys.platform)
 
 
-# Number of bits per long
-BITS_PER_LONG = _struct.calcsize('l') * 8  # is 64 on a 64-bit machine
-
 # FP_EPSILON is the smallest number such that: 1.0 + epsilon > 1.0;  Use None
 # in the finfo ctor to make it use the default precision for a Python float.
 FP_EPSILON = _numpy.finfo(None).eps
@@ -305,7 +302,6 @@ def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
 # initialized when this module is imported)
 
 unsavedVars = [
-    'BITS_PER_LONG',
     'EOF',
     'FP_EPSILON',
     'IrafError',
@@ -1296,23 +1292,16 @@ def radix(value, base=10, length=0):
     if ivalue == 0:
         # handle specially so don't have to worry about it below
         return f'{ivalue:0{length:d}d}'
-    # convert to an unsigned long integer
-    hexIvalue = hex(ivalue)  # hex() can return a string for an int or a long
-    isLong = hexIvalue[-1] == 'L'
-    if not isLong:
-        hexIvalue += 'L'
-    lvalue = eval(hexIvalue)
+    if abs(ivalue) < 2**32 - 1:
+        ivalue = ivalue & 0xffffffff
+    else:
+        ivalue = ivalue & 0xffffffffffffffff
     outdigits = []
-    while lvalue > 0 or lvalue < -1:
-        lvalue, digit = divmod(lvalue, base)
+    while ivalue > 0 or ivalue < -1:
+        ivalue, digit = divmod(ivalue, base)
         outdigits.append(int(digit))
     outdigits = [_radixDigits[index] for index in outdigits]
-    # zero-pad if needed (automatically do so for negative numbers)
-    if ivalue < 0:
-        maxlen = 32
-        if isLong:
-            maxlen = BITS_PER_LONG
-        outdigits.extend((maxlen - len(outdigits)) * ["1"])
+    # zero-pad if needed
     if length > len(outdigits):
         outdigits.extend((length - len(outdigits)) * ["0"])
     outdigits.reverse()
