@@ -42,6 +42,7 @@ import os
 import sys
 import types
 import io
+import webbrowser
 from inspect import signature
 
 from stsci.tools import minmatch, irafutils
@@ -434,8 +435,7 @@ def _irafHelp(taskname, irafkw):
         return 0
 
 
-_HelpURL = "https://iraf.readthedocs.io"
-_Browser = "netscape"
+_HelpURL = "https://iraf.readthedocs.io/en/latest/tasks/by-name"
 
 
 def _htmlHelp(taskname):
@@ -446,4 +446,4 @@ def _htmlHelp(taskname):
         taskname = taskname.getName()
     url = f"{_HelpURL}/{taskname}.html"
 
-    irafutils.launchBrowser(url, brow_bin=_Browser, subj=taskname)
+    webbrowser.open(url)
