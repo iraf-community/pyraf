@@ -8,13 +8,10 @@ import pytest
 
 from .utils import HAS_IRAF
 
-if HAS_IRAF:
-    from ..irafpar import IrafParList
-    from ..subproc import Subprocess
-    from stsci.tools import basicpar
-    from stsci.tools.basicpar import parFactory
-else:
-    pytestmark = pytest.mark.skip('IRAF must be installed to run')
+from ..irafpar import IrafParList
+from ..subproc import Subprocess
+from stsci.tools import basicpar
+from stsci.tools.basicpar import parFactory
 
 
 @pytest.fixture

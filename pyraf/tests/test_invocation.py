@@ -6,26 +6,26 @@ import pytest
 import pyraf
 from .utils import HAS_IRAF
 
-pytestmark = pytest.mark.skipif(not HAS_IRAF,
-                                reason='IRAF must be installed to run')
-
 HAS_IPYTHON = True
 try:
     import IPython
 except ImportError:
     HAS_IPYTHON = False
 
-cl_cases = (
+cl_cases = [
     (('print(1)'), '1'),
     (('print(1)'), '1'),
     (('print(1 + 2)'), '3'),
     (('print(6 - 1)'), '5'),
     (('print(14 / 3))'), '4'),
     (('print(3 * 3)'), '9'),
-    (('imhead("dev$pix")'), 'dev$pix[512,512][short]: m51  B  600s'),
     (('unlearn imcoords'), ''),
     (('bye'), ''),
-)
+]
+if HAS_IRAF:
+    cl_cases.append((('imhead("dev$pix")'),
+                     'dev$pix[512,512][short]: m51  B  600s'))
+
 
 ipython_cases = (
     ('print("ipython test")', 'In [1]: ipython test'),
@@ -154,6 +154,7 @@ def test_invoke_nosilent(_with_pyraf, test_input):
         pytest.skip('IPython must be installed to run')
     result = _with_pyraf.run(test_input, silent=False)
     assert not result.code, result.stderr
-    assert "Welcome to IRAF." in result.stdout
+    if HAS_IRAF:
+        assert "Welcome to IRAF." in result.stdout
     assert "clpackage" in result.stdout
     assert f"PyRAF {pyraf.__version__}" in result.stdout
