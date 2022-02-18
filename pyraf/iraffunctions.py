@@ -2818,33 +2818,9 @@ def task(*args, **kw):
     s = list(kw.keys())[0]
     value = kw[s]
     # To handle when actual CL code is given, not a file name, we will
-    # replace the code with the name of the tmp file that we write it to.
+    # replace the code with a reader
     if iscmdstring:
-        # write it to a temp file in the home$ dir, then use filename
-        (fd, tmpCl) = _tempfile.mkstemp(suffix=".cl",
-                                        prefix=str(s) + '_',
-                                        dir=userIrafHome,
-                                        text=True)
-        _os.close(fd)
-        # Check basename for invalid chars as far as python func. names go.
-        # yes this goes against the use of mkstemp from a purity point
-        # of view but it can't much be helped.  verify later is it unique
-        orig_tmpCl = tmpCl
-        tmpClPath, tmpClFname = _os.path.split(tmpCl)
-        tmpClFname = tmpClFname.replace('-', '_')
-        tmpClFname = tmpClFname.replace('+', '_')
-        tmpCl = _os.path.join(tmpClPath, tmpClFname)
-        assert tmpCl == orig_tmpCl or not _os.path.exists(tmpCl), \
-            'Abused mkstemp usage in some way; fname: '+tmpCl
-        # write inline code to .cl file; len(kw) is checked below
-        f = open(tmpCl, 'w')
-        f.write(value + '\n')
-        # Add text at end to auto-delete this temp file
-        f.write('#\n# this last section automatically added\n')
-        f.write('delete ' + tmpCl + ' verify-\n')
-        f.close()
-        # exchange for tmp .cl file name
-        value = tmpCl
+        value = _io.StringIO(value)
 
     # untranslateName
     s = _irafutils.untranslateName(s)
@@ -3527,7 +3503,11 @@ def IrafTaskFactory(prefix='',
                               pkgbinary,
                               redefine=redefine)
 
-    root, ext = _os.path.splitext(value)
+    if isinstance(value, str):
+        ext = _os.path.splitext(value)[1]
+    else:   # Handle the case of CL command strings (no file, but StringIO)
+        ext = '.cl'
+
     if ext == '.par' and function is None:
         return IrafPsetFactory(prefix,
                                taskname,
