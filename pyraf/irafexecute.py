@@ -19,16 +19,6 @@ from . import irafukey
 from . import irafgwcs
 from . import iraf
 
-# test_probe is a flag that a testing system can use to tell pyraf
-# (when used as a library, e.g. in stsci_regtest) to print various
-# diagnostic information that we think might be useful in test logs.
-# This is different from verbose, because it is more selective.
-#
-# There is no interface to activate this feature.  Use:
-#   from . import irafexecute
-#   irafexecute.test_probe = True
-test_probe = False
-
 # stdgraph = None
 
 IPC_PREFIX = b'P\x02'
@@ -400,9 +390,6 @@ class IrafProcess:
     def __init__(self, executable):
         """Start IRAF task executable."""
 
-        if test_probe:
-            sys.stdout.write(f"Starting IRAF process for {executable}\n")
-
         self.executable = executable
         self.process = subproc.Subprocess(executable + ' -c')
         self.running = 0  # flag indicating whether process is active
@@ -453,9 +440,6 @@ class IrafProcess:
         getParObject(param): get parameter object
         """
 
-        if test_probe:
-            sys.stdout.write(f"Running IRAF task {task} "
-                             f"from {self.executable}\n")
         self.task = task
         # set IO streams
         stdin = pstdin or sys.stdin
