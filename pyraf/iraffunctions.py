@@ -207,8 +207,13 @@ Also be sure to run the "mkiraf" command to create a logion.cl
             clProcedure(Stdin='hlib$zzsetenv.def')
 
         # define clpackage
+        if _irafinst.EXISTS:
+            fname = 'hlib$clpackage.cl'
+        else:
+            fname = f'{_irafinst.NO_IRAF_PFX}/clpackage.cl'
+
         global clpkg
-        clpkg = IrafTaskFactory('', 'clpackage', '.pkg', 'hlib$clpackage.cl',
+        clpkg = IrafTaskFactory('', 'clpackage', '.pkg', fname,
                                 'clpackage', 'bin$')
 
         # add the cl as a task, because its parameters are sometimes needed,
@@ -226,7 +231,9 @@ Also be sure to run the "mkiraf" command to create a logion.cl
         # load clpackage
         clpkg.run(_doprint=0, _hush=hush, _save=1)
 
-        if access('login.cl'):
+        if not _irafinst.EXISTS:
+            fname = f'{_irafinst.NO_IRAF_PFX}/login.cl'
+        elif access('login.cl'):
             fname = _os.path.abspath('login.cl')
         elif access('home$login.cl'):
             fname = 'home$login.cl'
@@ -234,8 +241,6 @@ Also be sure to run the "mkiraf" command to create a logion.cl
             fname = _os.path.expanduser('~/.iraf/login.cl')
         elif access('/etc/iraf/login.cl'):
             fname = '/etc/iraf/login.cl'
-        elif not _irafinst.EXISTS:
-            fname = _irafinst.getNoIrafClFor('login.cl', useTmpFile=True)
         else:
             fname = None
 
