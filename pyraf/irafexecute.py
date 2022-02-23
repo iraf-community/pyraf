@@ -552,14 +552,15 @@ class IrafProcess:
         self.terminate()
 
     def writeString(self, s):
-        """Convert ascii string to IRAF form and write to IRAF process"""
-
-        self.write(Asc2IrafString(s))
+        """Convert string or bytes to IRAF form and write to IRAF process"""
+        if isinstance(s, str):
+            s = s.encode()
+        self.write(Bytes2Iraf(s))
 
     def readString(self):
         """Read IRAF string from process and convert to ascii string"""
 
-        return Iraf2AscString(self.read())
+        return Iraf2Bytes(self.read()).decode()
 
     def write(self, data):
         """write binary data to IRAF process in blocks of <= 4096 bytes"""
@@ -602,7 +603,7 @@ class IrafProcess:
         Raises an IrafProcessError if an error occurs."""
 
         self.msg = ''
-        self.xferline = ''
+        self.xferline = b''
         # try to speed up loop a bit
         re_match = _re_msg.match
         xfer = self.xfer
@@ -783,29 +784,35 @@ class IrafProcess:
                 txdata = xdata
             else:
                 # normally stdout is translated text data
-                txdata = Iraf2AscString(xdata)
+                txdata = Iraf2Bytes(xdata)
 
             if checkForEscapeSeq:
-                if (txdata[0:5] == "\033+rAw"):
+                if (txdata[0:5] == b"\033+rAw"):
                     # Turn on RAW mode for STDIN
                     self.stdinIsraw = True
                     return
 
-                if (txdata[0:5] == "\033-rAw"):
+                if (txdata[0:5] == b"\033-rAw"):
                     # Turn off RAW mode for STDIN
                     self.stdinIsraw = False
                     return
 
-                if (txdata[0:5] == "\033=rDw"):
+                if (txdata[0:5] == b"\033=rDw"):
                     # ignore IRAF io escape sequences for now
                     # This mode enables screen redraw code
                     return
 
-            self.stdout.write(txdata)
+            if hasattr(self.stdout, "buffer"):
+                self.stdout.buffer.write(txdata)
+            else:
+                self.stdout.write(txdata.decode())
             self.stdout.flush()
         elif chan == 5:
             sys.stdout.flush()
-            self.stderr.write(Iraf2AscString(xdata))
+            if hasattr(self.stderr, "buffer"):
+                self.stderr.buffer.write(Iraf2Bytes(xdata))
+            else:
+                self.stderr.write(Iraf2Bytes(xdata).decode())
             self.stderr.flush()
         elif chan == 6:
             gki.kernel.append(numpy.frombuffer(xdata, dtype=numpy.int16))
@@ -887,8 +894,10 @@ class IrafProcess:
                     # small messages (due to the overhead of handshaking
                     # between the CL task and this main process.)  That's
                     # why it is done this way.
-
-                    line = self.stdin.read(nchars)
+                    if hasattr(self.stdin, 'buffer'):
+                        line = self.stdin.buffer.read(nchars)
+                    else:
+                        line = self.stdin.read(nchars)
                 self.xferline = line
             # Send two messages, the first with the number of characters
             # in the line and the second with the line itself.
@@ -1013,18 +1022,18 @@ class IrafProcess:
 # IRAF string conversions using numpy module
 
 
-def Asc2IrafString(ascii_string):
-    """translate ascii to IRAF 16-bit string format"""
-    inarr = numpy.frombuffer(ascii_string.encode('ascii'), numpy.int8)
+def Bytes2Iraf(b):
+    """translate bytes to IRAF 16-bit string format"""
+    inarr = numpy.frombuffer(b, numpy.int8)
     retval = inarr.astype(numpy.int16).tobytes()
     #   log_task_comm('Asc2IrafString (write to task)', retval, False)
     return retval
 
 
-def Iraf2AscString(iraf_string):
+def Iraf2Bytes(iraf_string):
     """translate 16-bit IRAF characters to ascii"""
     inarr = numpy.frombuffer(iraf_string, numpy.int16)
-    retval = inarr.astype(numpy.int8).tobytes().decode('ascii')
+    retval = inarr.astype(numpy.int8).tobytes()
     #   log_task_comm('Iraf2AscString', retval, True)
     return retval
 

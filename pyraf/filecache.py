@@ -49,13 +49,11 @@ class FileCache:
         Usually this is not called directly by the user (use the
         get() method instead.)
         """
-
-        return self.value
+        raise NotImplementedError
 
     def updateValue(self):
         """Called when file has changed."""
-
-        self.value = self._getFileHandle().read()
+        raise NotImplementedError
 
     # method that may be changed in extended class
 
@@ -88,38 +86,12 @@ class FileCache:
                 self.attributes = newattr
         return self.getValue()
 
-    # internal utility methods
-
-    def _getFileHandle(self, filename=None):
-        """Get file handle for a filename or filehandle instance"""
-
-        if filename is None:
-            filename = self.filename
-        if isinstance(filename, str):
-            fh = open(filename)
-        elif hasattr(filename, 'read'):
-            fh = filename
-            if hasattr(filename, 'seek'):
-                fh.seek(0)
-        else:
-            raise TypeError(
-                "Argument to _getFileHandle must be name or file handle")
-        return fh
-
-    def _getAttributes(self, filename=None):
+    def _getAttributes(self):
         """Get file attributes for a file or filehandle"""
 
-        if filename is None:
-            filename = self.filename
-        if not filename:
+        if not self.filename:
             return None
-        elif isinstance(filename, str):
-            st = os.stat(filename)
-        elif hasattr(filename, 'fileno') and hasattr(filename, 'name'):
-            fh = filename
-            st = os.fstat(fh.fileno())
-        else:
-            return None
+        st = os.stat(self.filename)
         # file attributes are size, creation, and modification times
         return st[stat.ST_SIZE], st[stat.ST_CTIME], st[stat.ST_MTIME]
 
@@ -142,10 +114,11 @@ class MD5Cache(FileCache):
     def updateValue(self):
         """Called when file has changed."""
 
-        contents = self._getFileHandle().read()
+        with open(self.filename, mode="rb") as fh:
+            contents = fh.read()
         # md5 digest is the value associated with the file
         h = hashlib.md5()
-        h.update(contents.encode())
+        h.update(contents)
         self.value = h.hexdigest()
 
 

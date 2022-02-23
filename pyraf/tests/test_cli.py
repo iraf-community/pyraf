@@ -239,3 +239,85 @@ def test_intrinsic_functions(call, expected):
         assert int(stdout.getvalue().strip()) == expected
     else:
         assert stdout.getvalue().strip() == expected
+
+
+@pytest.mark.parametrize('ecl_flag', [False, True])
+@pytest.mark.parametrize('encoding', ['utf-8', 'iso-8859-1'])
+@pytest.mark.parametrize('code,expected', [
+    ('print AA #  Ångström\n', 'AA\n'),
+    ('print("test") | cat', 'test\n'),
+])
+def test_clfile(tmpdir, ecl_flag, encoding, code, expected):
+    # Check proper reading of CL files with different encodings
+    fname = tmpdir / 'cltestfile.cl'
+    with fname.open("w", encoding=encoding) as fp:
+        fp.write(code)
+
+    stdout = io.StringIO()
+
+    with use_ecl(ecl_flag):
+        iraf.task(xyz=str(fname))
+        iraf.xyz(StdoutAppend=stdout)
+        assert stdout.getvalue() == expected
+
+
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+@pytest.mark.parametrize('ecl_flag', [False, True])
+@pytest.mark.parametrize('code', [
+    'cat {datafile}',                     # foreign
+    'type {datafile} map_cc=no',          # internal
+    'concatenate {datafile} out_type=t',  # system
+])
+@pytest.mark.parametrize('data', [
+    b'test for plain ASCII',
+    'Unicode Ångström'.encode('utf-8'),
+    b'\x8fq\x96\x7f\xe6\xfd\xf8\x12\xb03{U\x81\x11\x014',  # some random data
+])
+@pytest.mark.parametrize('redir_stdin', [False, True])
+@pytest.mark.parametrize('redir_stdout', [False, True])
+def test_redir_data(tmpdir, ecl_flag, code, data, redir_stdin, redir_stdout):
+    datafile = tmpdir / 'cltestdata.dat'
+    with datafile.open('wb') as fp:
+        fp.write(data)
+    if redir_stdin:
+        code = code.format(datafile='') + f' < {str(datafile)}'
+    else:
+        code = code.format(datafile=str(datafile))
+
+    if redir_stdout:
+        outfile = tmpdir / 'cltestoutput.dat'
+        code += f' > {str(outfile)}'
+
+    with use_ecl(ecl_flag):
+        iraf.task(xyz=code, IsCmdString=True)
+        stdout = io.TextIOWrapper(io.BytesIO())  # Emulate a "real" stdout
+        iraf.xyz(Stdout=stdout)
+
+    if redir_stdout:
+        with open(outfile, 'rb') as fp:
+            assert fp.read() == data
+    else:
+        assert stdout.buffer.getvalue() == data
+
+
+@pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
+def test_binary_stdout(tmpdir):
+    # Test writing binary data to STDOUT, one of several issues mentioned in
+    # https://github.com/iraf-community/pyraf/issues/117
+    outfile = str(tmpdir / 'testout.gki')
+    expected = [
+        f"METAFILE '{outfile}':",
+        '[1] (2855 words) The SINC Function',
+        '[2] (5701 words) .2',
+        '[3] (2525 words) Line 250 of dev$pix[200:300,*]',
+        '[4] (7637 words) Log Scaling',
+        '[5] (97781 words) NOAO/IRAF V2.3 tody@lyra Fri 23:30:27 08-Aug-86',
+        '[6] (2501 words) The Sinc Function'
+    ]
+    iraf.gkiextract('dev$vdm.gki', '2-7', iraf.yes, verify=False,
+                    Stdout=outfile)
+    stdout = io.StringIO()
+    iraf.gkidir(outfile, Stdout=stdout)
+    # Require gkidir output to match list above, ignoring spacing:
+    assert [' '.join(line.split())
+            for line in stdout.getvalue().splitlines() if line] == expected

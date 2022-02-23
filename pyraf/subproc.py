@@ -213,10 +213,12 @@ class Subprocess:
     ### Write input to subprocess ###
 
     def write(self, strval, timeout=10, printtime=2):
-        """Write a STRING to the subprocess.  Times out (and raises an
-        exception) if the process is not ready in timeout seconds.
-        Prints a message indicating that it is waiting every
-        printtime seconds."""
+        """Write a bytes or string to the subprocess.  Times out (and raises
+        an exception) if the process is not ready in timeout seconds.
+        Prints a message indicating that it is waiting every printtime
+        seconds.
+
+        """
 
         if not self.pid:
             raise SubprocessError(f"No child process for '{self.cmd}'")
@@ -240,6 +242,8 @@ class Subprocess:
                 ## if totalwait: print "waiting for subprocess..."
                 totalwait = totalwait + printtime
                 if select.select([], self.toChild_fdlist, [], printtime)[1]:
+                    if not isinstance(strval, bytes):
+                        strval = strval.encode()
                     if os.write(self.toChild, strval) != len(strval):
                         raise SubprocessError(f"Write error to {self}")
                     return  # ===>
@@ -826,7 +830,10 @@ class RedirProcess(Subprocess):
                     # stderr
                     s = self.readPendingErrChars()  # returns bytes
                     if s:
-                        sys.stderr.write(s.decode())
+                        if hasattr(sys.stderr, "buffer"):
+                            sys.stderr.buffer.write(s)
+                        else:
+                            sys.stderr.write(s.decode())
                         sys.stderr.flush()
                     else:
                         # EOF
@@ -839,7 +846,10 @@ class RedirProcess(Subprocess):
                     # stdout
                     s = self.readPendingChars()  # returns bytes
                     if s:
-                        sys.stdout.write(s.decode())
+                        if hasattr(sys.stdout, "buffer"):
+                            sys.stdout.buffer.write(s)
+                        else:
+                            sys.stdout.write(s.decode())
                         sys.stdout.flush()
                     else:
                         # EOF
@@ -856,7 +866,10 @@ class RedirProcess(Subprocess):
             elif writable:
                 # stdin
                 try:
-                    s = sys.stdin.read(self.maxChunkSize)  # s is 'str' in PY3K
+                    if hasattr(sys.stdin, "buffer"):
+                        s = sys.stdin.buffer.read(self.maxChunkSize)
+                    else:
+                        s = sys.stdin.read(self.maxChunkSize)
                     if s:
                         try:
                             self.write(s)  # inside, converts PY3K str to bytes
