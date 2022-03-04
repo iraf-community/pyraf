@@ -72,6 +72,7 @@ import stsci.tools.minmatch as _minmatch
 import stsci.tools.irafutils as _irafutils
 import stsci.tools.teal as _teal
 import numpy as _numpy
+from decimal import Decimal as _Decimal, ROUND_HALF_UP as _ROUND_HALF_UP
 from . import subproc as _subproc
 from . import wutil as _wutil
 from . import irafnames as _irafnames
@@ -1276,7 +1277,7 @@ def nint(x):
     """Return nearest integer of x"""
     if x == INDEF:
         return INDEF
-    return int(round(x))
+    return int(_Decimal(x).to_integral_value(rounding=_ROUND_HALF_UP))
 
 
 _radixDigits = list(_string.digits + _string.ascii_uppercase)
