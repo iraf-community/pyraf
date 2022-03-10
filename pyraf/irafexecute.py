@@ -9,7 +9,7 @@ import struct
 import sys
 import numpy
 import io
-from stsci.tools import irafutils
+from .tools import irafutils
 from stsci.tools.irafglobals import IrafError, IrafTask, Verbose
 from . import subproc
 from . import filecache

@@ -60,7 +60,7 @@ def closeGraphics():
 # On OSX, a terminal with no display causes us to fail pretty abruptly:
 # "INIT_Processeses(), could not establish the default connection to the WindowServer.Abort".
 # Give the user (Mac or other) a way to still run remotely with no display.
-from stsci.tools import capable
+from .tools import capable
 _skipDisplay = not capable.OF_GRAPHICS
 
 # Are we on MacOS X ?  Windows ?

@@ -28,7 +28,7 @@
 #
 
 from stsci.tools.irafglobals import INDEF
-from stsci.tools import compmixin
+from .tools import compmixin
 
 verbose = 0
 

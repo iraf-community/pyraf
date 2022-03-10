@@ -16,7 +16,7 @@ del dirname
 _TK_HAS_NONE_CURSOR = True  # assume True until we learn otherwise
 
 if _default_root is None:
-    from stsci.tools import irafutils
+    from .tools import irafutils
     _default_root = irafutils.init_tk_default_root()
 
 # This code is needed to avoid faults on sys.exit()

@@ -10,7 +10,7 @@ from .cgeneric import ContextSensitiveScanner
 from .generic import GenericScanner
 from .cltoken import Token
 import re
-from stsci.tools import irafutils
+from .tools import irafutils
 from . import pyrafglobals
 
 # contexts for scanner

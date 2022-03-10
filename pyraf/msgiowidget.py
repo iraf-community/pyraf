@@ -9,7 +9,7 @@
 import tkinter
 
 # Our modules
-from stsci.tools import tkrotext
+from .tools import tkrotext
 
 
 def is_USING_X():

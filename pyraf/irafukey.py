@@ -7,7 +7,7 @@ import os
 import sys
 import termios
 from . import wutil
-from stsci.tools import capable, irafutils
+from .tools import capable, irafutils
 
 # This class emulates the IRAF ukey parameter mechanism. IRAF calls for
 # a ukey parameter and expects that the user will type a character in

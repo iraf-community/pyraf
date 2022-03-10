@@ -14,7 +14,7 @@ R. White, 1999 August 17
 
 import builtins
 import sys
-from stsci.tools import minmatch
+from .tools import minmatch
 
 IMPORT_DEBUG = False
 

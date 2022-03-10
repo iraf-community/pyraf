@@ -68,8 +68,8 @@ import tempfile as _tempfile
 import linecache as _linecache
 import pickle as _pickle
 import io as _io
-import stsci.tools.minmatch as _minmatch
-import stsci.tools.irafutils as _irafutils
+from .tools import minmatch as _minmatch
+from .tools import irafutils as _irafutils
 import stsci.tools.teal as _teal
 import numpy as _numpy
 from decimal import Decimal as _Decimal, ROUND_HALF_UP as _ROUND_HALF_UP

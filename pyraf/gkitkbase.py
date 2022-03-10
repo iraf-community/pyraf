@@ -11,7 +11,7 @@ import tkinter
 from . import msgiobuffer
 from . import msgiowidget
 from . import wutil
-from stsci.tools import capable, filedlg, irafutils
+from .tools import capable, filedlg, irafutils
 from stsci.tools.irafglobals import IrafError, userWorkingHome
 from . import gki
 from . import irafgwcs

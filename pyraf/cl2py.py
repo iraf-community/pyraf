@@ -16,7 +16,8 @@ from . import clparse
 from .clcache import codeCache
 
 from stsci.tools.irafglobals import Verbose
-from stsci.tools import basicpar, minmatch, irafutils
+from stsci.tools import basicpar
+from .tools import minmatch, irafutils
 from . import irafpar
 from . import pyrafglobals
 
