@@ -4,7 +4,8 @@ $Id$
 import os
 import sys
 import traceback
-from . import configobj, cfgpars, editpar, vtor_checks
+import configobj
+from . import cfgpars, editpar, vtor_checks
 from .cfgpars import APP_NAME
 from .irafutils import printColsAuto, rglob, setWritePrivs
 from . import capable

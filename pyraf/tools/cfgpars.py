@@ -2,14 +2,13 @@
 
 $Id$
 """
+import configobj
 import copy
 import glob
 import os
 import stat
 import sys
-
-# ConfigObj modules
-from . import configobj, validate
+import validate
 
 # Local modules
 from . import basicpar, eparoption, irafutils, taskpars, vtor_checks

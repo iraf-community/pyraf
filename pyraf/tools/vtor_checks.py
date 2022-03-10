@@ -6,7 +6,9 @@
 
 $Id$
 """
-from . import configobj, validate
+import configobj
+import validate
+
 from . import irafutils
 
 STANDARD_KEYS = ['min', 'max', 'missing', 'default']
