@@ -5,7 +5,7 @@ import shutil
 import argparse
 
 from .tools import capable
-from stsci.tools.irafglobals import yes, no, INDEF, EOF
+from .tools.irafglobals import yes, no, INDEF, EOF
 from . import iraf
 from .irafpar import makeIrafPar
 

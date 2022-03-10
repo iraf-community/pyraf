@@ -7,7 +7,7 @@ CL scripts have special filename "<CL script taskname>"
 import linecache
 import os
 from stat import ST_SIZE, ST_MTIME
-from stsci.tools.irafglobals import IrafError
+from .tools.irafglobals import IrafError
 
 
 def checkcache(filename=None, orig_checkcache=linecache.checkcache):

@@ -41,7 +41,7 @@ graphics kernels as directed by commands embedded in the metacode stream.
 import numpy
 import sys
 import re
-from stsci.tools.irafglobals import IrafError
+from .tools.irafglobals import IrafError
 from . import wutil
 from . import graphcap
 from . import irafgwcs

@@ -6,7 +6,7 @@ import os
 import sys
 import hashlib
 
-from stsci.tools.irafglobals import Verbose, userIrafHome
+from .tools.irafglobals import Verbose, userIrafHome
 
 from . import filecache
 from . import pyrafglobals

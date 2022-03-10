@@ -10,7 +10,7 @@ import sys
 import numpy
 import io
 from .tools import irafutils
-from stsci.tools.irafglobals import IrafError, IrafTask, Verbose
+from .tools.irafglobals import IrafError, IrafTask, Verbose
 from . import subproc
 from . import filecache
 from . import wutil

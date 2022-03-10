@@ -8,7 +8,7 @@ imcur parameter.
 
 import sys
 from .tools import irafutils
-from stsci.tools.irafglobals import Verbose, IrafError
+from .tools.irafglobals import Verbose, IrafError
 from . import irafdisplay
 from . import gwm
 from . import iraf

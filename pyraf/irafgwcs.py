@@ -9,7 +9,7 @@ only commit the change when it appears to really be applicable.
 
 import numpy
 import math
-from stsci.tools.irafglobals import IrafError
+from .tools.irafglobals import IrafError
 from . import irafinst
 
 # global vars

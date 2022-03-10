@@ -1,7 +1,7 @@
 import pytest
 
 from .utils import HAS_IRAF
-from stsci.tools.irafglobals import INDEF
+from ..tools.irafglobals import INDEF
 
 if HAS_IRAF:
     from pyraf import iraf

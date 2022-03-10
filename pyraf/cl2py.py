@@ -15,9 +15,8 @@ from . import clscan
 from . import clparse
 from .clcache import codeCache
 
-from stsci.tools.irafglobals import Verbose
-from stsci.tools import basicpar
-from .tools import minmatch, irafutils
+from .tools.irafglobals import Verbose
+from .tools import basicpar, minmatch, irafutils
 from . import irafpar
 from . import pyrafglobals
 
@@ -1670,7 +1669,7 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.write("from pyraf import iraf")
             self.writeIndent(
                 "from pyraf.irafpar import makeIrafPar, IrafParList")
-            self.writeIndent("from stsci.tools.irafglobals import *")
+            self.writeIndent("from pyraf.tools.irafglobals import *")
             self.writeIndent("from pyraf.pyrafglobals import *")
             self.write("\n")
 

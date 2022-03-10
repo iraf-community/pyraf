@@ -12,7 +12,7 @@ from . import msgiobuffer
 from . import msgiowidget
 from . import wutil
 from .tools import capable, filedlg, irafutils
-from stsci.tools.irafglobals import IrafError, userWorkingHome
+from .tools.irafglobals import IrafError, userWorkingHome
 from . import gki
 from . import irafgwcs
 from .pyrafglobals import pyrafDir

@@ -16,7 +16,7 @@ R. White, 2000 January 20
 
 # define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
 
-from stsci.tools.irafglobals import *
+from .tools.irafglobals import *
 from .subproc import SubprocessError
 
 # -----------------------------------------------------
@@ -70,7 +70,7 @@ import pickle as _pickle
 import io as _io
 from .tools import minmatch as _minmatch
 from .tools import irafutils as _irafutils
-import stsci.tools.teal as _teal
+from .tools import teal as _teal
 import numpy as _numpy
 from decimal import Decimal as _Decimal, ROUND_HALF_UP as _ROUND_HALF_UP
 from . import subproc as _subproc
@@ -442,7 +442,7 @@ def restoreFromFile(savefile, doprint=1, **kw):
     # replace INDEF everywhere we can find it
     # this does not replace references in parameters, unfortunately
     INDEF = udict['INDEF']
-    from stsci.tools import irafglobals
+    from .tools import irafglobals
     import __main__
     import pyraf
     from . import irafpar
@@ -2691,7 +2691,7 @@ def _clProcedure(*args, **kw):
     theLocals = {}
     exec('from pyraf import iraf', theLocals)
     exec('from pyraf.irafpar import makeIrafPar', theLocals)
-    exec('from stsci.tools.irafglobals import *', theLocals)
+    exec('from pyraf.tools.irafglobals import *', theLocals)
     exec('from pyraf.pyrafglobals import *', theLocals)
 
     # feed the input to clExecute
@@ -3222,7 +3222,7 @@ def clCompatibilityMode(verbose=0, _save=0):
     # initialize environment
     exec('from pyraf import iraf', theLocals)
     exec('from pyraf.irafpar import makeIrafPar', theLocals)
-    exec('from stsci.tools.irafglobals import *', theLocals)
+    exec('from pyraf.tools.irafglobals import *', theLocals)
     exec('from pyraf.pyrafglobals import *', theLocals)
     exec('from pyraf.irafecl import EclState', theLocals)
     prompt2 = '>>> '

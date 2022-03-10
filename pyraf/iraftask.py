@@ -14,8 +14,8 @@ import os
 import sys
 import copy
 import re
-from stsci.tools import basicpar, irafglobals
-from stsci.tools.irafglobals import IrafError, Verbose
+from .tools import basicpar, irafglobals
+from .tools.irafglobals import IrafError, Verbose
 from . import subproc
 from . import irafinst
 from . import irafpar

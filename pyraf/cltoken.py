@@ -27,7 +27,7 @@
 #       Token class for IRAF CL parsing
 #
 
-from stsci.tools.irafglobals import INDEF
+from .tools.irafglobals import INDEF
 from .tools import compmixin
 
 verbose = 0

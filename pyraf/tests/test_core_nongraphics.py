@@ -10,8 +10,8 @@ from .utils import HAS_IRAF
 
 from ..irafpar import IrafParList
 from ..subproc import Subprocess
-from stsci.tools import basicpar
-from stsci.tools.basicpar import parFactory
+from ..tools import basicpar
+from ..tools.basicpar import parFactory
 
 
 @pytest.fixture
