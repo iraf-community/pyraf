@@ -205,6 +205,8 @@ def test_parse_cl_array_subscripts():
     ('max(2,3,4,2)', max(2,3,4,2)),
     ('min(2,3,4,2)', min(2,3,4,2)),
     ('mod(123, 7)', 123 % 7),
+    ('nint(1.5)', 2),
+    ('nint(2.5)', 3),
     ('rad(12)', math.radians(12)),
     ('radix(123, 10)', '123'),
     ('radix(123, 16)', '7B'),
