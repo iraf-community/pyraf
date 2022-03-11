@@ -21,7 +21,7 @@ import keyword
 import glob
 import os
 from . import iraf
-from stsci.tools import minmatch
+from .tools import minmatch
 try:
     import readline
     from rlcompleter import Completer

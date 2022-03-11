@@ -14,7 +14,7 @@ R. White, 1999 August 17
 
 import builtins
 import sys
-from stsci.tools import minmatch
+from .tools import minmatch
 
 IMPORT_DEBUG = False
 
@@ -79,25 +79,6 @@ def _irafImport(name, globals={}, locals={}, fromlist=[], level=-1):
     # e.g. "import pyraf" or "from pyraf import wutil, gki"
     # e.g. Note! "import os, sys, re, glob" calls this 4 separate times, but
     #            "from . import gki, gwm, iraf" is only a single call here!
-
-    # !!! TEMPORARY KLUDGE !!! keep this code until cache files are updated
-    if name:
-        for module in [
-                'minmatch', 'irafutils', 'dialog', 'listdlg', 'filedlg',
-                'alert', 'irafglobals'
-        ]:
-            if name == f'pyraf.{module}':
-                name = f'stsci.tools.{module}'
-        # Replace any instances of 'pytools' with 'stsci.tools' -- the
-        # new name of the former pytools package
-        name = name.replace('pytools.', 'stsci.tools.')
-
-    # Same for everything in fromlist (which is a tuple in PY3K)
-    if fromlist:
-        fromlist = tuple(
-            item.replace('pytools', 'stsci.tools') for item in fromlist)
-    # !!! END TEMPORARY KLUDGE !!!
-
     hadIrafInList = fromlist and 'iraf' in fromlist and name == '' and level > 0
 
     if IMPORT_DEBUG:

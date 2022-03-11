@@ -6,7 +6,7 @@ use by python plotting
 
 
 import os
-from stsci.tools import capable
+from .tools import capable
 if capable.OF_GRAPHICS:
     import tkinter
 from . import wutil

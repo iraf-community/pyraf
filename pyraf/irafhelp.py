@@ -45,9 +45,9 @@ import io
 import webbrowser
 from inspect import signature
 
-from stsci.tools import minmatch, irafutils
-from stsci.tools.irafglobals import IrafError, IrafTask, IrafPkg
+from .tools.irafglobals import IrafError, IrafTask, IrafPkg
 from . import iraf
+from .tools import minmatch, irafutils
 
 import numpy
 _numpyArrayType = numpy.ndarray

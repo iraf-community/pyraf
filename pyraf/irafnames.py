@@ -7,8 +7,8 @@ R. White, 1999 March 26
 
 
 import __main__
-from stsci.tools import irafglobals
 
+from .tools import irafglobals
 from . import iraf
 
 

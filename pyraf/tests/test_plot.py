@@ -2,7 +2,7 @@ import pytest
 import os
 from .utils import HAS_IRAF
 from pyraf import gki
-from stsci.tools import capable
+from ..tools import capable
 
 if HAS_IRAF:
     from pyraf import iraf

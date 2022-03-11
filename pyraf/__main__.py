@@ -4,8 +4,8 @@ import os
 import shutil
 import argparse
 
-from stsci.tools import capable
-from stsci.tools.irafglobals import yes, no, INDEF, EOF
+from .tools import capable
+from .tools.irafglobals import yes, no, INDEF, EOF
 from . import iraf
 from .irafpar import makeIrafPar
 

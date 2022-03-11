@@ -27,7 +27,7 @@ while _os.path.islink(thisfile):
 pyrafDir = _os.path.dirname(thisfile)
 del thisfile
 
-from stsci.tools.irafglobals import userWorkingHome
+from .tools.irafglobals import userWorkingHome
 if not pyrafDir:
     pyrafDir = userWorkingHome
 # change relative directory paths to absolute and normalize path

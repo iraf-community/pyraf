@@ -31,7 +31,7 @@ import numpy
 import socket
 import sys
 import fcntl
-from stsci.tools import irafutils
+from .tools import irafutils
 
 _default_imtdev = ("unix:/tmp/.IMT%d", "fifo:/dev/imt1i:/dev/imt1o")
 

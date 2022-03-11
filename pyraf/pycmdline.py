@@ -32,10 +32,10 @@ import code
 import keyword
 import traceback
 import linecache
-from stsci.tools import capable, minmatch
 from . import iraf
 from . import irafinst
 from . import wutil
+from .tools import minmatch, capable
 from .pyrafglobals import pyrafDir
 
 

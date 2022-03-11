@@ -9,7 +9,7 @@ larger script.
 import os
 import sys
 
-from stsci.tools import irafglobals  # noqa: F401
+from .tools import irafglobals  # noqa: F401
 
 from .version import version as __version__  # noqa: F401
 

@@ -15,7 +15,7 @@ except AttributeError:
     host_arch = platform.machine()
 is_i386 = host_arch in ('i386', 'i486', 'i586', 'i686')
 
-from stsci.tools import capable
+from ..tools import capable
 
 from .utils import HAS_IRAF, DATA_DIR
 

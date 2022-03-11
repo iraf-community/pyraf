@@ -9,12 +9,12 @@ import glob
 import os
 import re
 import types
-from stsci.tools import basicpar, minmatch, irafutils, taskpars
-from stsci.tools.irafglobals import INDEF, Verbose, yes, no
-from stsci.tools.basicpar import (warning, _StringMixin, IrafPar, IrafParS,
+from .tools import minmatch, irafutils, taskpars, basicpar
+from .tools.irafglobals import INDEF, Verbose, yes, no
+from .tools.basicpar import (warning, _StringMixin, IrafPar, IrafParS,
                                   _cmdlineFlag)
 # also import basicpar.IrafPar* class names for cached scripts
-from stsci.tools.basicpar import (IrafParB, IrafParI, IrafParR, IrafParAB,
+from .tools.basicpar import (IrafParB, IrafParI, IrafParR, IrafParAB,
                                   IrafParAI, IrafParAR, IrafParAS)
 from . import iraf
 

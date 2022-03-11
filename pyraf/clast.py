@@ -27,7 +27,7 @@
 #  Minimal AST class -- N-ary trees.
 #
 
-from stsci.tools import compmixin
+from .tools import compmixin
 
 
 class AST(compmixin.ComparableMixin):

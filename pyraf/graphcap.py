@@ -2,7 +2,7 @@
 """
 
 
-from stsci.tools import compmixin
+from .tools import compmixin
 from . import filecache
 
 

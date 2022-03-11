@@ -14,14 +14,15 @@ import os
 import sys
 import copy
 import re
-from stsci.tools import basicpar, minmatch, irafutils, irafglobals, taskpars
-from stsci.tools.irafglobals import IrafError, Verbose
+from .tools import basicpar, irafglobals
+from .tools.irafglobals import IrafError, Verbose
 from . import subproc
 from . import irafinst
 from . import irafpar
 from . import irafexecute
 from . import cl2py
 from . import iraf
+from .tools import minmatch, irafutils, taskpars
 
 # may be set to function to monitor task execution
 # function gets called for every task execution

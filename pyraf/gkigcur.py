@@ -5,7 +5,7 @@ implement IRAF gcur functionality
 
 import sys
 import tkinter
-from stsci.tools import irafutils
+from .tools import irafutils
 from . import wutil
 
 # The following class attempts to emulate the standard IRAF gcursor

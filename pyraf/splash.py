@@ -8,7 +8,7 @@ R. White, 2001 Dec 15
 import os
 import sys
 import tkinter
-from stsci.tools.irafglobals import IrafPkg
+from .tools.irafglobals import IrafPkg
 from . import wutil
 
 logo = "pyraflogo_rgb_web.gif"

@@ -5,7 +5,7 @@
 
 
 # local modules
-from stsci.tools import eparoption
+from .tools import eparoption
 from . import epar
 
 

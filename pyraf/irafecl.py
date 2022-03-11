@@ -4,7 +4,7 @@
 
 import inspect
 import sys
-from stsci.tools.irafglobals import Verbose
+from .tools.irafglobals import Verbose
 from . import pyrafglobals
 from . import iraftask
 from . import irafexecute
