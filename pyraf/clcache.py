@@ -48,7 +48,7 @@ else:
 
 
 def _currentVersion():
-    return "v3" if pyrafglobals._use_ecl else "v2"
+    return "4e" if pyrafglobals._use_ecl else "4c"
 
 
 class _FileContentsCache(filecache.FileCacheDict):
