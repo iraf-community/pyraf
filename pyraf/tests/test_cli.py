@@ -323,3 +323,21 @@ def test_binary_stdout(tmpdir):
     # Require gkidir output to match list above, ignoring spacing:
     assert [' '.join(line.split())
             for line in stdout.getvalue().splitlines() if line] == expected
+
+def test_real_parameter_str_precision():
+    # Check that PyRAF uses the same precision for real parameters on Python 3
+    # as on 2 (see https://github.com/iraf-community/pyraf/issues/127)
+    iraf.task(
+        print_real='''procedure print_real(value)
+                      real value
+                      begin
+                          print(value)
+                      end''',
+        IsCmdString=True
+    )
+    stdout = io.StringIO()
+    iraf.print_real(1.2345678901234567, Stdout=stdout)
+    assert stdout.getvalue() == "1.23456789012\n"
+    stdout = io.StringIO()
+    iraf.print_real(1000000000000000.0, Stdout=stdout)
+    assert stdout.getvalue() == "1e+15\n"

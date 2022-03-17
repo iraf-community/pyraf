@@ -6,7 +6,7 @@ $Id$
 import re
 import sys
 from . import irafutils, minmatch
-from .irafglobals import INDEF, Verbose, yes, no
+from .irafglobals import INDEF, Verbose, yes, no, clFloat
 
 int_types = (int, )
 
@@ -1463,15 +1463,18 @@ class _RealMixin:
             self.choice = None
 
     # coerce value to real
+    # using clFloat in Py3 reproduces same numerical values as on Py2
     def _coerceOneValue(self,value,strict=0):
         if value == INDEF:
             return INDEF
-        elif value is None or isinstance(value,float):
+        elif value is None or isinstance(value,clFloat):
             return value
+        elif isinstance(value,float):
+            return clFloat(value)
         elif value in ("", "None", "NONE"):
             return None
         elif isinstance(value, int_types):
-            return float(value)
+            return clFloat(value)
         elif isinstance(value,str):
             s2 = irafutils.stripQuotes(value.strip())
             if s2 == "INDEF" or \
@@ -1502,16 +1505,16 @@ class _RealMixin:
             mm = _re_d.search(s2,i1)
             try:
                 if mm is None:
-                    return vsign*(fvalue + float(s2[i1:])/vscale)
+                    return clFloat(vsign*(fvalue + float(s2[i1:])/vscale))
                 else:
-                    return vsign*(fvalue + \
-                            float(s2[i1:mm.start()]+"E"+s2[mm.end():])/vscale)
+                    return clFloat(vsign*(fvalue + \
+                            float(s2[i1:mm.start()]+"E"+s2[mm.end():])/vscale))
             except ValueError:
                 pass
         else:
             # maybe it has a float method
             try:
-                return float(value)
+                return clFloat(value)
             except ValueError:
                 pass
         raise ValueError("Parameter %s: illegal float value %s" %
@@ -1557,10 +1560,12 @@ class _StrictRealMixin(_RealMixin):
 
     # coerce value to real
     def _coerceOneValue(self,value,strict=0):
-        if value is None or isinstance(value,float):
+        if value is None or isinstance(value,clFloat):
             return value
+        elif isinstance(value,float):
+            return clFloat(value)
         elif isinstance(value, int_types):
-            return float(value)
+            return clFloat(value)
         elif isinstance(value,str):
             s2 = irafutils.stripQuotes(value.strip())
             if s2 == '':
@@ -1588,15 +1593,15 @@ class _StrictRealMixin(_RealMixin):
             mm = _re_d.search(s2,i1)
             try:
                 if mm is None:
-                    return vsign*(fvalue + float(s2[i1:])/vscale)
+                    return clFloat(vsign*(fvalue + float(s2[i1:])/vscale))
                 else:
-                    return vsign*(fvalue + \
-                            float(s2[i1:mm.start()]+"E"+s2[mm.end():])/vscale)
+                    return clFloat(vsign*(fvalue + \
+                            float(s2[i1:mm.start()]+"E"+s2[mm.end():])/vscale))
             except ValueError:
                 pass
             # see if it's a stringified float
             try:
-                return float(s2)
+                return clFloat(s2)
             except ValueError:
                 raise ValueError("Parameter %s: illegal float value %s" %
                                  (self.name, repr(value)))

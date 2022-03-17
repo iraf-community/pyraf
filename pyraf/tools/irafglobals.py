@@ -426,6 +426,26 @@ epsilon = _EPSILONClass()
 epsilon.setvalue()
 
 # -----------------------------------------------------
+# Float class that reproduces Py2 str precision on Py3
+# -----------------------------------------------------
+
+class clFloat(float):
+    def __str__(self):
+        return '{:.12}'.format(self)
+    for op in ('__add__', '__radd__', '__sub__', '__rsub__',
+               '__mul__', '__rmul__', '__div__', '__rdiv__',
+               '__truediv__', '__rtruediv__', '__floordiv__', '__rfloordiv__',
+               '__pow__', '__rpow__', '__mod__', '__abs__',
+               '__neg__', '__pos__'):
+        exec(f'def {op}(self, *args):\n'
+             f'    val = super(clFloat, self).{op}(*args)\n'
+              '    return val if val is NotImplemented else clFloat(val)')
+    def __divmod__(self, other):
+        return tuple(clFloat(v) for v in super().__divmod__(other))
+    def __rdivmod__(self, other):
+        return tuple(clFloat(v) for v in super().__rdivmod__(other))
+
+# -----------------------------------------------------
 # tag classes
 # -----------------------------------------------------
 
