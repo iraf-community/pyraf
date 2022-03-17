@@ -83,6 +83,19 @@ class IrafCompleter(Completer):
         # executive commands dictionary (must be set by user)
         self.executiveDict = minmatch.MinMatchDict()
 
+    def complete(self, text, state):
+        """Return the next possible completion for 'text'."""
+        # Overwrite weird behaviour in rlcompleter.Completer with
+        # empty input
+        if not text.strip():
+            if state == 0:
+                self.matches = self.global_matches('')
+            try:
+                return self.matches[state]
+            except IndexError:
+                return None
+        return Completer.complete(self, text, state)
+
     def activate(self, char="\t"):
         """Turn on completion using the specified character"""
         if readline is None:
