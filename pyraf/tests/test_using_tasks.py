@@ -194,10 +194,10 @@ def test_pset_msstatistics_science_array(_iraf_pset_init, _data):
                       clarray='science')
     iraf.egstp.lParam()
 
-    assert iraf.egstp.npix == 277704, str(iraf.egstp.npix)
-    _assertApproxEqual(iraf.egstp.min, 1116.0)
-    _assertApproxEqual(iraf.egstp.max, 14022.0)
-    _assertApproxEqual(iraf.egstp.sum, 321415936.0)
+    assert iraf.egstp.npix == 16384, str(iraf.egstp.npix)
+    _assertApproxEqual(iraf.egstp.min, 1141.0)
+    _assertApproxEqual(iraf.egstp.max, 4065.0)
+    _assertApproxEqual(iraf.egstp.sum, 18998468.0)
 
 
 def test_pset_msstatistics_zeroed_error_array(_iraf_pset_init, _data):
@@ -231,10 +231,10 @@ def test_pset_msstatistics_191(_iraf_pset_init, _data):
     iraf.msstat(_data['pset']['input1'], arrays='science', clarray='science')
     iraf.egstp.lParam()
 
-    assert iraf.egstp.npix == 277704, str(iraf.egstp.npix)
-    _assertApproxEqual(iraf.egstp.min, 1116.0)
-    _assertApproxEqual(iraf.egstp.max, 14022.0)
-    _assertApproxEqual(iraf.egstp.sum, 321415936.0)
+    assert iraf.egstp.npix == 16384, str(iraf.egstp.npix)
+    _assertApproxEqual(iraf.egstp.min, 1141.0)
+    _assertApproxEqual(iraf.egstp.max, 4065.0)
+    _assertApproxEqual(iraf.egstp.sum, 18998468.0)
 
     _unlearn_egstp(iraf.egstp)
     iraf.msstatistics(_data['pset']['input1'],
@@ -251,10 +251,10 @@ def test_pset_msstatistics_191(_iraf_pset_init, _data):
     iraf.msstat(_data['pset']['input1'], arrays='science', clarray='science')
     iraf.egstp.lParam()
 
-    assert iraf.egstp.npix == 277704, str(iraf.egstp.npix)
-    _assertApproxEqual(iraf.egstp.min, 1116.0)
-    _assertApproxEqual(iraf.egstp.max, 14022.0)
-    _assertApproxEqual(iraf.egstp.sum, 321415936.0)
+    assert iraf.egstp.npix == 16384, str(iraf.egstp.npix)
+    _assertApproxEqual(iraf.egstp.min, 1141.0)
+    _assertApproxEqual(iraf.egstp.max, 4065.0)
+    _assertApproxEqual(iraf.egstp.sum, 18998468.0)
 
 
 def test_pset_msstatistics_save_data(_iraf_pset_init, _data):
