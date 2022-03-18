@@ -83,6 +83,19 @@ class IrafCompleter(Completer):
         # executive commands dictionary (must be set by user)
         self.executiveDict = minmatch.MinMatchDict()
 
+    def complete(self, text, state):
+        """Return the next possible completion for 'text'."""
+        # Overwrite weird behaviour in rlcompleter.Completer with
+        # empty input
+        if not text.strip():
+            if state == 0:
+                self.matches = self.global_matches('')
+            try:
+                return self.matches[state]
+            except IndexError:
+                return None
+        return Completer.complete(self, text, state)
+
     def activate(self, char="\t"):
         """Turn on completion using the specified character"""
         if readline is None:
@@ -247,26 +260,26 @@ class IrafCompleter(Completer):
         if line[-1] == '$':
             # preceded by IRAF environment variable
             m = re.search(r'\w*\$$', line)
-            dir = iraf.Expand(m.group())
+            dir_ = iraf.Expand(m.group())
         elif line[-1] == os.sep:
             # filename is preceded by path separator
             # match filenames with letters, numbers, $, ~, ., -, +,  and
             # directory separator
             m = re.search(fr'[\w.~$+-{os.sep}]*$', line)
-            dir = iraf.Expand(m.group())
+            dir_ = iraf.Expand(m.group())
         else:
-            dir = ''
-        return self._dir_matches(text, dir)
+            dir_ = ''
+        return self._dir_matches(text, dir_)
 
-    def _dir_matches(self, text, dir):
+    def _dir_matches(self, text, dir_):
         """Return list of files matching text in the given directory"""
         # note this works whether the expanded dir variable is
         # actually a directory (with a slash at the end) or not
 
-        flist = glob.glob(dir + text + '*')
+        flist = glob.glob(dir_ + text + '*')
 
         # Strip path and append / to directories
-        l = len(dir)
+        l = len(dir_)
         for i in range(len(flist)):
             s = flist[i]
             if os.path.isdir(s):
@@ -286,7 +299,7 @@ class IrafCompleter(Completer):
         # ticket #113.  Will comment out but leave code here.
 
         #       if len(flist)==1 and flist[0][-1] == os.sep:
-        #           flist.extend(self._dir_matches(flist[0], dir))
+        #           flist.extend(self._dir_matches(flist[0], dir_))
         # ---------------------------------------------------------------------
 
         return flist
