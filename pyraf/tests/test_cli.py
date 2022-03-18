@@ -167,7 +167,18 @@ def test_which(arg, expected):
     args = arg.split(" ")  # convert to a list
     kw = {"StderrAppend": stdout}
     iraf.which(*args, **kw)  # catches stdout+err
-    assert stdout.getvalue().strip() == expected
+    actual_lines = stdout.getvalue().strip().splitlines()
+    expected_lines = expected.splitlines()
+    assert len(actual_lines) == len(expected_lines)
+    for arg, actual_line, expected_line in zip(args, actual_lines,
+                                               expected_lines):
+        if 'ambiguous' in actual_line:
+            if 'ambiguous' in expected_line:
+                assert actual_line.startswith(expected_line.rstrip('"'))
+            else:
+                assert f'{expected_line}.{arg}' in actual_line
+        else:
+            assert actual_line == expected_line
 
 
 def test_parse_cl_array_subscripts():
