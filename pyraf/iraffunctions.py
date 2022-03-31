@@ -180,7 +180,7 @@ Also be sure to run the "mkiraf" command to create a logion.cl
 
         # stacksize problem on linux
         # https://iraf-community.github.io/iraf-v216/issues/61
-        if arch in ('redhat', 'linux', 'linuxppc', 'suse'):
+        if arch in ('redhat', 'linux', 'linuxppc', 'suse', 'macosx'):
             import resource
             try:
                 hardlimit = resource.getrlimit(resource.RLIMIT_STACK)[1]
