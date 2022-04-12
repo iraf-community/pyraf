@@ -75,7 +75,7 @@ class Shelf:
         """
         if self.readonly:
             raise OSError("Readonly database")
-        pdata = pickle.dumps(value, pickle.HIGHEST_PROTOCOL)
+        pdata = pickle.dumps(value, protocol=4)
         cursor = self.db.cursor()
         try:
             cursor.execute("insert or replace into shelf (key_str, value_str)"
