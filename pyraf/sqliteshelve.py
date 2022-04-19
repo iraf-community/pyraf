@@ -27,6 +27,10 @@ import sqlite3
 import os
 
 
+pickle_protocol = 4
+"""Protocol version to use for pickling objects"""
+
+
 class Shelf:
     """An SQLite implementation of the Python Shelf interface
 
@@ -75,7 +79,7 @@ class Shelf:
         """
         if self.readonly:
             raise OSError("Readonly database")
-        pdata = pickle.dumps(value, pickle.HIGHEST_PROTOCOL)
+        pdata = pickle.dumps(value, protocol=pickle_protocol)
         cursor = self.db.cursor()
         try:
             cursor.execute("insert or replace into shelf (key_str, value_str)"

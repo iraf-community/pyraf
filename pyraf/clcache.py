@@ -48,7 +48,8 @@ else:
 
 
 def _currentVersion():
-    return "4e" if pyrafglobals._use_ecl else "4c"
+    v = "4e" if pyrafglobals._use_ecl else "4c"
+    return v + str(sqliteshelve.pickle_protocol)
 
 
 class _FileContentsCache(filecache.FileCacheDict):
