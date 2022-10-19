@@ -4,22 +4,22 @@ $Id$
 
 Taken from pyraf/lib/epar.py, originally signed "M.D. De La Pena, 2000 Feb. 4"
 """
-import os
-import sys
-import tempfile
-import time
+import os # isort: skip
+import sys # isort: skip
+import tempfile # isort: skip
+import time # isort: skip
 
-from . import capable
+from . import capable # isort: skip
 
 if capable.OF_GRAPHICS:
-    from tkinter import  _default_root
-    from tkinter import *
-    from tkinter.filedialog import asksaveasfilename
-    from tkinter.messagebox import askokcancel, askyesno, showwarning
+    from tkinter import  _default_root # isort: skip
+    from tkinter import * # isort: skip
+    from tkinter.filedialog import asksaveasfilename # isort: skip
+    from tkinter.messagebox import askokcancel, askyesno, showwarning # isort: skip
 
 # stsci.tools modules
-from .irafglobals import userWorkingHome
-from . import basicpar, eparoption, irafutils, taskpars
+from .irafglobals import userWorkingHome # isort: skip
+from . import basicpar, eparoption, irafutils, taskpars # isort: skip
 
 # Constants
 MINVIEW     = 500
@@ -311,7 +311,7 @@ class EditParDialog:
         self.makeEntries(canvas.entries, self.top.status)
 
         # Force an update of the entry Frame
-        canvas.entries.update()
+        canvas.entries.update_idletasks()
 
         # Determine the size of the entry Frame
         width = canvas.entries.winfo_width()
@@ -334,7 +334,7 @@ class EditParDialog:
         canvas.config(width=width, height=viewHeight)
 
         # Force an update of the Canvas
-        canvas.update()
+        canvas.update_idletasks()
 
         # Associate deletion of the main window to a Abort
         self.top.protocol("WM_DELETE_WINDOW", self.abort)
@@ -347,7 +347,7 @@ class EditParDialog:
         self.setViewAtTop()
 
         # Finally show it
-        self.top.update()
+        self.top.update_idletasks()
         self.top.deiconify()
 
         # Enable interactive resizing in height
@@ -1133,7 +1133,7 @@ class EditParDialog:
         else:
             # Prompt. (could use tkinter's FileDialog, but this one is prettier)
             # initWProtState is only used in the 1st call of a session
-            from . import filedlg
+            from . import filedlg # isort: skip
             fd = filedlg.PersistSaveFileDialog(self.top,
                          "Save Parameter File As", self._getSaveAsFilter(),
                          initWProtState=writeProtChoice)
