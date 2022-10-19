@@ -4,22 +4,22 @@ $Id$
 
 Taken from pyraf/lib/epar.py, originally signed "M.D. De La Pena, 2000 Feb. 4"
 """
-import os # isort: skip
-import sys # isort: skip
-import tempfile # isort: skip
-import time # isort: skip
+import os
+import sys
+import tempfile
+import time
 
-from . import capable # isort: skip
+from . import capable
 
 if capable.OF_GRAPHICS:
-    from tkinter import  _default_root # isort: skip
-    from tkinter import * # isort: skip
-    from tkinter.filedialog import asksaveasfilename # isort: skip
-    from tkinter.messagebox import askokcancel, askyesno, showwarning # isort: skip
+    from tkinter import  _default_root
+    from tkinter import *
+    from tkinter.filedialog import asksaveasfilename
+    from tkinter.messagebox import askokcancel, askyesno, showwarning
 
 # stsci.tools modules
-from .irafglobals import userWorkingHome # isort: skip
-from . import basicpar, eparoption, irafutils, taskpars # isort: skip
+from .irafglobals import userWorkingHome
+from . import basicpar, eparoption, irafutils, taskpars
 
 # Constants
 MINVIEW     = 500
@@ -1133,7 +1133,7 @@ class EditParDialog:
         else:
             # Prompt. (could use tkinter's FileDialog, but this one is prettier)
             # initWProtState is only used in the 1st call of a session
-            from . import filedlg # isort: skip
+            from . import filedlg
             fd = filedlg.PersistSaveFileDialog(self.top,
                          "Save Parameter File As", self._getSaveAsFilter(),
                          initWProtState=writeProtChoice)
