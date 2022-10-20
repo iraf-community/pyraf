@@ -311,7 +311,7 @@ class EditParDialog:
         self.makeEntries(canvas.entries, self.top.status)
 
         # Force an update of the entry Frame
-        canvas.entries.update()
+        canvas.entries.update_idletasks()
 
         # Determine the size of the entry Frame
         width = canvas.entries.winfo_width()
@@ -334,7 +334,7 @@ class EditParDialog:
         canvas.config(width=width, height=viewHeight)
 
         # Force an update of the Canvas
-        canvas.update()
+        canvas.update_idletasks()
 
         # Associate deletion of the main window to a Abort
         self.top.protocol("WM_DELETE_WINDOW", self.abort)
@@ -347,7 +347,7 @@ class EditParDialog:
         self.setViewAtTop()
 
         # Finally show it
-        self.top.update()
+        self.top.update_idletasks()
         self.top.deiconify()
 
         # Enable interactive resizing in height
