@@ -242,6 +242,8 @@ Also be sure to run the "mkiraf" command to create a logion.cl
             fname = _os.path.expanduser('~/.iraf/login.cl')
         elif access('/etc/iraf/login.cl'):
             fname = '/etc/iraf/login.cl'
+        elif access('hlib$login.cl'):
+            fname = 'hlib$login.cl'
         else:
             fname = None
 
