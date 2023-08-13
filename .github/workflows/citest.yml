@@ -16,23 +16,23 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Ubuntu 20.04 (Python-3.8.2), native
-            os: ubuntu-20.04
+          - name: Ubuntu 22.04 (Python-3.10), native
+            os: ubuntu-22.04
             method: native
             iraf: /usr/lib/iraf/
             upload_coverage: yes
 
-          - name: Ubuntu 20.04 (Python-3.8.2), native, without IRAF
-            os: ubuntu-20.04
+          - name: Ubuntu 22.04 (Python-3.10), native, without IRAF
+            os: ubuntu-22.04
             method: native
 
-          - name: Ubuntu 18.04 (Python-3.7), pip
-            os: ubuntu-18.04
+          - name: Ubuntu 20.04 (Python-3.8.2), pip
+            os: ubuntu-20.04
             method: pip
             iraf: /usr/lib/iraf/
 
-          - name: macOS 10.15, pip
-            os: macos-10.15
+          - name: macOS 13, pip
+            os: macos-13
             method: pip
             iraf: /Users/runner/work/iraf/
 
