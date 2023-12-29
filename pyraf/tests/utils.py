@@ -1,8 +1,6 @@
 import os
 import sys
 
-from distutils.spawn import find_executable
-
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
 try:
