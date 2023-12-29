@@ -1,0 +1,52 @@
+[project]
+name = "pyraf"
+dynamic = [ "version" ]
+license = {text = "BSD 3-Clause"}
+authors = [
+  {name = "Rick White"},
+  {name = "Perry Greenfield"},
+  {name = "Chris Sontag"},
+  {name = "Ole Streicher"}
+]
+keywords = ["astronomy", "astrophysics", "utility", "iraf"]
+requires-python = ">=3.6"
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: BSD License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Astronomy"
+]
+description = "Pythonic interface to IRAF that can be used in place of the existing IRAF CL"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+dependencies = [
+  "configobj",
+  "numpy",
+  "pyobjc; sys_platform == 'darwin'"
+]
+
+[project.optional-dependencies]
+docs = ["astropy-sphinx-theme", "numpydoc", "sphinx"]
+test = ["astropy", "pytest"]
+
+[project.scripts]
+pyraf = "pyraf:main"
+
+[build-system]
+requires = ["setuptools", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-s"
+
+[tool.coverage.run]
+source = "pyraf"
+omit = [ "pyraf/tests/*" ]
+
+[tool.yapf]
+based_on_style = "google"
+column_limit = 79
+
+[tool.flake8]
+ignore = ""
