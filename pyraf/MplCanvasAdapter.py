@@ -1,6 +1,7 @@
 import matplotlib
 matplotlib.use('TkAgg')  # set backend
 import matplotlib.backends.backend_tkagg as tkagg
+from matplotlib.backend_bases import ResizeEvent
 from .Ptkplot import hideTkCursor
 from .Ptkplot import FullWindowCursor
 import tkinter
@@ -90,7 +91,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         self._tkcanvas.create_image(int(width / 2),
                                     int(height / 2),
                                     image=self._tkphoto)
-        self.resize_event()
+        self.callbacks.process('resize_event', ResizeEvent('resize_event', self))
 
     def flush(self):
 
