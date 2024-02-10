@@ -92,6 +92,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
                                     int(height / 2),
                                     image=self._tkphoto)
         self.callbacks.process('resize_event', ResizeEvent('resize_event', self))
+        self.draw_idle()
 
     def flush(self):
 
