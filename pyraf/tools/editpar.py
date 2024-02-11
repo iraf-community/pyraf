@@ -12,8 +12,8 @@ import time
 from . import capable
 
 if capable.OF_GRAPHICS:
+    import tkinter
     from tkinter import  _default_root
-    from tkinter import *
     from tkinter.filedialog import asksaveasfilename
     from tkinter.messagebox import askokcancel, askyesno, showwarning
 
@@ -159,7 +159,7 @@ class EditParDialog:
         self.lastFocusWidget = None
 
         # Generate the top epar window
-        self.top = top = Toplevel(self.parent,bg=self._frmeColor,visual="best")
+        self.top = top = tkinter.Toplevel(self.parent,bg=self._frmeColor,visual="best")
         self.top.withdraw() # hide it while we fill it up with stuff
 
         if len(self.pkgName):
@@ -172,17 +172,17 @@ class EditParDialog:
         try:
             # User's current directory
             self.top.option_readfile(os.path.join(os.curdir, self._optFile))
-        except TclError:
+        except tkinter.TclError:
             try:
                 # User's startup directory
                 self.top.option_readfile(os.path.join(userWorkingHome,
                                                       self._optFile))
-            except TclError:
+            except tkinter.TclError:
                 try:
                     # App default
                     self.top.option_readfile(os.path.join(self._rcDir,
                                                           self._optFile))
-                except TclError:
+                except tkinter.TclError:
                     if self._optFile != DFT_OPT_FILE:
                         pass
                     else:
@@ -201,35 +201,35 @@ class EditParDialog:
         self.makeMenuBar(self.top)
 
         # Create a spacer
-        Frame(self.top, bg=self._taskColor, height=10).pack(side=TOP, fill=X)
+        tkinter.Frame(self.top, bg=self._taskColor, height=10).pack(side=tkinter.TOP, fill=tkinter.X)
 
         # Print the package and task names
         self.printNames(self.top, self.taskName, self.pkgName)
 
         # Insert a spacer between the static text and the buttons
-        Frame(self.top, bg=self._taskColor, height=15).pack(side=TOP, fill=X)
+        tkinter.Frame(self.top, bg=self._taskColor, height=15).pack(side=tkinter.TOP, fill=tkinter.X)
 
         # Set control buttons at the top of the frame
         self.buttonBox(self.top)
 
         # Insert a spacer between the static text and the buttons
-        Frame(self.top, bg=self._entsColor, height=15).pack(side=TOP, fill=X)
+        tkinter.Frame(self.top, bg=self._entsColor, height=15).pack(side=tkinter.TOP, fill=tkinter.X)
 
         # Set up an information Frame at the bottom of the EPAR window
         # RESIZING is currently disabled.
         # Do this here so when resizing to a smaller sizes, the parameter
         # panel is reduced - not the information frame.
-        self.top.status = Label(self.top, text="", relief=SUNKEN,
-                                borderwidth=1, anchor=W, bg=self._frmeColor)
-        self.top.status.pack(side=BOTTOM, fill=X, padx=0, pady=3, ipady=3)
+        self.top.status = tkinter.Label(self.top, text="", relief=tkinter.SUNKEN,
+                                borderwidth=1, anchor=tkinter.W, bg=self._frmeColor)
+        self.top.status.pack(side=tkinter.BOTTOM, fill=tkinter.X, padx=0, pady=3, ipady=3)
 
         # Set up a Frame to hold a scrollable Canvas
-        self.top.f = frame = Frame(self.top, relief=RIDGE, borderwidth=1,
+        self.top.f = frame = tkinter.Frame(self.top, relief=tkinter.RIDGE, borderwidth=1,
                                    bg=self._entsColor)
 
         # Overlay a Canvas which will hold a Frame
-        self.top.f.canvas = canvas = Canvas(self.top.f, width=100, height=100,
-            takefocus=FALSE, bg=self._entsColor,
+        self.top.f.canvas = canvas = tkinter.Canvas(self.top.f, width=100, height=100,
+            takefocus=tkinter.FALSE, bg=self._entsColor,
             highlightbackground=self._entsColor)
 #           highlightcolor="black" # black must be the default, since it is blk
 
@@ -237,14 +237,14 @@ class EditParDialog:
         # to allow window to be resized.
 
         # Attach a vertical Scrollbar to the Frame/Canvas
-        self.top.f.vscroll = Scrollbar(self.top.f, orient=VERTICAL,
-             width=11, relief=SUNKEN, activerelief=RAISED,
-             takefocus=FALSE, bg=self._entsColor)
+        self.top.f.vscroll = tkinter.Scrollbar(self.top.f, orient=tkinter.VERTICAL,
+             width=11, relief=tkinter.SUNKEN, activerelief=tkinter.RAISED,
+             takefocus=tkinter.FALSE, bg=self._entsColor)
         canvas['yscrollcommand'] = self.top.f.vscroll.set
         self.top.f.vscroll['command'] = canvas.yview
 
         # Pack the Scrollbar
-        self.top.f.vscroll.pack(side=RIGHT, fill=Y)
+        self.top.f.vscroll.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
         # enable Page Up/Down keys
         scroll = canvas.yview_scroll
@@ -262,25 +262,25 @@ class EditParDialog:
         try:
             # special shift-tab binding needed for (some? all?) linux systems
             top.bind('<KeyPress-ISO_Left_Tab>', self.focusPrev)
-        except TclError:
+        except tkinter.TclError:
             # Ignore exception here, the binding can't be relevant
             # if ISO_Left_Tab is unknown.
             pass
 
         # Pack the Frame and Canvas
-        canvas.pack(side=TOP, expand=TRUE, fill=BOTH)
-        self.top.f.pack(side=TOP, expand=TRUE, fill=BOTH)
+        canvas.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.BOTH)
+        self.top.f.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.BOTH)
 
         # Define a Frame to contain the parameter information
-        canvas.entries = Frame(canvas, bg=self._entsColor)
+        canvas.entries = tkinter.Frame(canvas, bg=self._entsColor)
 
         # Generate the window to hold the Frame which sits on the Canvas
         cWindow = canvas.create_window(0, 0,
-                           anchor=NW,
+                           anchor=tkinter.NW,
                            window=canvas.entries)
 
         # Insert a spacer between the Canvas and the information frame
-        Frame(self.top, bg=self._entsColor, height=4).pack(side=TOP, fill=X)
+        tkinter.Frame(self.top, bg=self._entsColor, height=4).pack(side=tkinter.TOP, fill=tkinter.X)
 
         # The parent has the control, unless there are children
         # Fix the geometry of where the windows first appear on the screen
@@ -351,7 +351,7 @@ class EditParDialog:
         self.top.deiconify()
 
         # Enable interactive resizing in height
-        self.top.resizable(width=FALSE, height=TRUE)
+        self.top.resizable(width=tkinter.FALSE, height=tkinter.TRUE)
 
         # Limit maximum window height
         width = self.top.winfo_width()
@@ -482,10 +482,10 @@ class EditParDialog:
         canvas = self.top.f.canvas
         widgetWithFocus = event.widget
         if widgetWithFocus is self.lastFocusWidget:
-            return FALSE
+            return tkinter.FALSE
         self.lastFocusWidget = widgetWithFocus
         if widgetWithFocus is None:
-            return TRUE
+            return tkinter.TRUE
         # determine distance of widget from top & bottom edges of canvas
         y1 = widgetWithFocus.winfo_rooty()
         y2 = y1 + widgetWithFocus.winfo_height()
@@ -499,7 +499,7 @@ class EditParDialog:
         elif cy2<y2:
             sdist = int((y2-cy2+yinc-1.)/yinc)
             canvas.yview_scroll(sdist, "units")
-        return TRUE
+        return tkinter.TRUE
 
 
     def _handleParListMismatch(self, probStr, extra=False):
@@ -657,32 +657,32 @@ class EditParDialog:
     # button for the choice of the display for the task help page
     def printNames(self, top, taskName, pkgName):
 
-        topbox = Frame(top, bg=self._taskColor)
-        textbox = Frame(topbox, bg=self._taskColor)
-#       helpbox = Frame(topbox, bg=self._taskColor)
+        topbox = tkinter.Frame(top, bg=self._taskColor)
+        textbox = tkinter.Frame(topbox, bg=self._taskColor)
+#       helpbox = tkinter.Frame(topbox, bg=self._taskColor)
 
         # Set up the information strings
         if self._isUnpackagedTask():
             # label for a parameter list is just filename
             packString = " "+self._unpackagedTaskTitle+" = "+taskName
-            Label(textbox, text=packString, bg=self._taskColor).pack(side=TOP,
-                  anchor=W)
+            tkinter.Label(textbox, text=packString, bg=self._taskColor).pack(side=tkinter.TOP,
+                  anchor=tkinter.W)
         else:
             # labels for task
             packString = "  Package = " + pkgName.upper()
-            Label(textbox, text=packString, bg=self._taskColor).pack(side=TOP,
-                  anchor=W)
+            tkinter.Label(textbox, text=packString, bg=self._taskColor).pack(side=tkinter.TOP,
+                  anchor=tkinter.W)
 
             taskString = "       Task = " + taskName.upper()
-            Label(textbox, text=taskString, bg=self._taskColor).pack(side=TOP,
-                  anchor=W)
-        textbox.pack(side=LEFT, anchor=W)
-        topbox.pack(side=TOP, expand=FALSE, fill=X)
+            tkinter.Label(textbox, text=taskString, bg=self._taskColor).pack(side=tkinter.TOP,
+                  anchor=tkinter.W)
+        textbox.pack(side=tkinter.LEFT, anchor=tkinter.W)
+        topbox.pack(side=tkinter.TOP, expand=tkinter.FALSE, fill=tkinter.X)
 
     # Method to set up the parent menu bar
     def makeMenuBar(self, top):
 
-        menubar = Frame(top, bd=1, relief=GROOVE, bg=self._frmeColor)
+        menubar = tkinter.Frame(top, bd=1, relief=tkinter.GROOVE, bg=self._frmeColor)
 
         # Generate the menus
         fileMenu = self.makeFileMenu(menubar)
@@ -697,23 +697,23 @@ class EditParDialog:
 
         helpMenu = self.makeHelpMenu(menubar)
 
-        menubar.pack(fill=X)
+        menubar.pack(fill=tkinter.X)
 
 
     # Method to generate a "File" menu
     def makeFileMenu(self, menubar):
 
-        fileButton = Menubutton(menubar, text='File', bg=self._frmeColor)
-        fileButton.pack(side=LEFT, padx=2)
+        fileButton = tkinter.Menubutton(menubar, text='File', bg=self._frmeColor)
+        fileButton.pack(side=tkinter.LEFT, padx=2)
 
-        fileButton.menu = Menu(fileButton, tearoff=0)
+        fileButton.menu = tkinter.Menu(fileButton, tearoff=0)
 
 #       fileButton.menu.add_command(label="Open...", command=self.pfopen)
 
         if self._showExecuteButton:
             fileButton.menu.add_command(label="Execute", command=self.execute)
             if self.isChild:
-                fileButton.menu.entryconfigure(0, state=DISABLED)
+                fileButton.menu.entryconfigure(0, state=tkinter.DISABLED)
 
         saqlbl ="Save"
         if self._useSimpleAutoClose: saqlbl += " & Quit"
@@ -766,21 +766,21 @@ class EditParDialog:
     # Method to generate an "Open" menu
     def makeOpenMenu(self, menubar):
 
-        self._openMenuChoice = StringVar() # this is used till GUI closes
+        self._openMenuChoice = tkinter.StringVar() # this is used till GUI closes
         self._numOpenMenuItems = 1 # see dummy
 
-        openBtn = Menubutton(menubar, text='Open...', bg=self._frmeColor)
+        openBtn = tkinter.Menubutton(menubar, text='Open...', bg=self._frmeColor)
         openBtn.bind("<Enter>", self.printOpenInfo)
-        openBtn.pack(side=LEFT, padx=2)
+        openBtn.pack(side=tkinter.LEFT, padx=2)
 
-        openBtn.menu = Menu(openBtn, tearoff=0, postcommand=self._updateOpen)
+        openBtn.menu = tkinter.Menu(openBtn, tearoff=0, postcommand=self._updateOpen)
         openBtn.menu.bind("<Enter>", self.printOpenInfo)
         openBtn.menu.add_radiobutton(label=' ', # dummy, no command
                                      variable=self._openMenuChoice)
                                      # value=fname ... (same as label)
 
         if self.isChild:
-            openBtn.menu.entryconfigure(0, state=DISABLED)
+            openBtn.menu.entryconfigure(0, state=tkinter.DISABLED)
 
         # Associate the menu with the menu button
         openBtn["menu"] = openBtn.menu
@@ -794,19 +794,19 @@ class EditParDialog:
     def makeOptionsMenu(self, menubar):
 
         # Set up the menu for the various choices they have
-        self._helpChoice = StringVar()
+        self._helpChoice = tkinter.StringVar()
         if self._showHelpInBrowser:
             self._helpChoice.set("BROWSER")
         else:
             self._helpChoice.set("WINDOW")
 
         if self._showSaveCloseOnExec:
-            self._execChoice = IntVar()
+            self._execChoice = tkinter.IntVar()
             self._execChoice.set(int(self._saveAndCloseOnExec))
 
-        optionButton = Menubutton(menubar, text="Options", bg=self._frmeColor)
-        optionButton.pack(side=LEFT, padx=2)
-        optionButton.menu = Menu(optionButton, tearoff=0)
+        optionButton = tkinter.Menubutton(menubar, text="Options", bg=self._frmeColor)
+        optionButton.pack(side=tkinter.LEFT, padx=2)
+        optionButton.menu = tkinter.Menu(optionButton, tearoff=0)
         optionButton.menu.add_radiobutton(label="Display Task Help in a Window",
                                      value="WINDOW", command=self.setHelpType,
                                      variable=self._helpChoice)
@@ -820,7 +820,7 @@ class EditParDialog:
                                               command=self.setExecOpt,
                                               variable=self._execChoice)
         if self._showFlaggingChoice:
-            self._flagChoice = IntVar()
+            self._flagChoice = tkinter.IntVar()
             self._flagChoice.set(int(self._flagNonDefaultVals))
             optionButton.menu.add_separator()
             optionButton.menu.add_checkbutton(label="Flag Non-default Values",
@@ -838,10 +838,10 @@ class EditParDialog:
 
     def makeHelpMenu(self, menubar):
 
-        button = Menubutton(menubar, text='Help', bg=self._frmeColor)
+        button = tkinter.Menubutton(menubar, text='Help', bg=self._frmeColor)
         button.bind("<Enter>", self.printHelpInfo)
-        button.pack(side=RIGHT, padx=2)
-        button.menu = Menu(button, tearoff=0)
+        button.pack(side=tkinter.RIGHT, padx=2)
+        button.menu = tkinter.Menu(button, tearoff=0)
         button.menu.bind("<Enter>", self.printHelpInfo)
         button.menu.add_command(label=self.capTaskName()+" Help",
                                 command=self.showTaskHelp)
@@ -857,7 +857,7 @@ class EditParDialog:
     # Create the buttons in an order for good navigation
     def buttonBox(self, top):
 
-        box = Frame(top, bg=self._bboxColor, bd=1, relief=SUNKEN)
+        box = tkinter.Frame(top, bg=self._bboxColor, bd=1, relief=tkinter.SUNKEN)
 
         # When the Button is exited, the information clears, and the
         # Button goes back to the nonactive color.
@@ -865,66 +865,66 @@ class EditParDialog:
 
         # Execute the task
         if self._showExecuteButton:
-            buttonExecute = Button(box, text="Execute", bg=self._bboxColor,
-                                   relief=RAISED, command=self.execute,
+            buttonExecute = tkinter.Button(box, text="Execute", bg=self._bboxColor,
+                                   relief=tkinter.RAISED, command=self.execute,
                                    highlightbackground=self._bboxColor)
-            buttonExecute.pack(side=LEFT, padx=5, pady=7)
+            buttonExecute.pack(side=tkinter.LEFT, padx=5, pady=7)
             buttonExecute.bind("<Enter>", self.printExecuteInfo)
             if not self._useSimpleAutoClose:
                 # separate this button from the others - it's unusual
-                strut = Label(box, text="", bg=self._bboxColor)
-                strut.pack(side=LEFT, padx=20)
+                strut = tkinter.Label(box, text="", bg=self._bboxColor)
+                strut.pack(side=tkinter.LEFT, padx=20)
 
             # EXECUTE button is disabled for child windows
             if self.isChild:
-                buttonExecute.configure(state=DISABLED)
+                buttonExecute.configure(state=tkinter.DISABLED)
 
         # Save the parameter settings and exit from epar
         saqlbl ="Save"
         if self._useSimpleAutoClose: saqlbl += " & Quit"
-        btn = Button(box, text=saqlbl, relief=RAISED, command=self.saveAndClose,
+        btn = tkinter.Button(box, text=saqlbl, relief=tkinter.RAISED, command=self.saveAndClose,
                      bg=self._bboxColor, highlightbackground=self._bboxColor)
-        btn.pack(side=LEFT, padx=5, pady=7)
+        btn.pack(side=tkinter.LEFT, padx=5, pady=7)
         btn.bind("<Enter>", self.printSaveQuitInfo)
 
         # Unlearn all the parameter settings (set back to the defaults)
-        buttonUnlearn = Button(box, text=self._defaultsButtonTitle,
-                               relief=RAISED, command=self.unlearn,
+        buttonUnlearn = tkinter.Button(box, text=self._defaultsButtonTitle,
+                               relief=tkinter.RAISED, command=self.unlearn,
                                bg=self._bboxColor,
                                highlightbackground=self._bboxColor)
         if self._showExtraHelpButton:
-            buttonUnlearn.pack(side=LEFT, padx=5, pady=7)
+            buttonUnlearn.pack(side=tkinter.LEFT, padx=5, pady=7)
         else:
-            buttonUnlearn.pack(side=RIGHT, padx=5, pady=7)
+            buttonUnlearn.pack(side=tkinter.RIGHT, padx=5, pady=7)
         buttonUnlearn.bind("<Enter>", self.printUnlearnInfo)
 
 
         # Buttons to close versus abort this edit session.
         if not self._useSimpleAutoClose:
-            buttonClose = Button(box, text="Close",
-                                 relief=RAISED, command=self.closeGui,
+            buttonClose = tkinter.Button(box, text="Close",
+                                 relief=tkinter.RAISED, command=self.closeGui,
                                  bg=self._bboxColor,
                                  highlightbackground=self._bboxColor)
-            buttonClose.pack(side=LEFT, padx=5, pady=7)
+            buttonClose.pack(side=tkinter.LEFT, padx=5, pady=7)
             buttonClose.bind("<Enter>", self.printCloseInfo)
 
-        buttonAbort = Button(box, text="Cancel", bg=self._bboxColor,
-                             relief=RAISED, command=self.abort,
+        buttonAbort = tkinter.Button(box, text="Cancel", bg=self._bboxColor,
+                             relief=tkinter.RAISED, command=self.abort,
                              highlightbackground=self._bboxColor)
-        buttonAbort.pack(side=LEFT, padx=5, pady=7)
+        buttonAbort.pack(side=tkinter.LEFT, padx=5, pady=7)
         buttonAbort.bind("<Enter>", self.printAbortInfo)
 
         # Generate the Help button
         if self._showExtraHelpButton:
-            buttonHelp = Button(box, text=self.capTaskName()+" Help",
-                                relief=RAISED, command=self.showTaskHelp,
+            buttonHelp = tkinter.Button(box, text=self.capTaskName()+" Help",
+                                relief=tkinter.RAISED, command=self.showTaskHelp,
                                 bg=self._bboxColor,
                                 highlightbackground=self._bboxColor)
-            buttonHelp.pack(side=RIGHT, padx=5, pady=7)
+            buttonHelp.pack(side=tkinter.RIGHT, padx=5, pady=7)
             buttonHelp.bind("<Enter>", self.printHelpInfo)
 
         # Pack
-        box.pack(fill=X, expand=FALSE)
+        box.pack(fill=tkinter.X, expand=tkinter.FALSE)
 
     def setExecOpt(self, event=None):
         self._saveAndCloseOnExec = bool(self._execChoice.get())
@@ -1346,11 +1346,11 @@ class EditParDialog:
                 'log': self.logHistWin, }
         window = wins[kind]
         try:
-            if window.state() != NORMAL:
+            if window.state() != tkinter.NORMAL:
                 window.deiconify()
             window.tkraise()
             return
-        except (AttributeError, TclError):
+        except (AttributeError, tkinter.TclError):
             pass
 
         #---------------------------------------------------------
@@ -1391,40 +1391,40 @@ class EditParDialog:
 
         # Generate a new Toplevel window for the browser
         # hb = Toplevel(self.top, bg="SlateGray3")
-        hb = Toplevel(self.top, bg=None)
+        hb = tkinter.Toplevel(self.top, bg=None)
         hb.title(title)
         hb.iconLabel = title
 
         # Set up the Menu Bar
-        hb.menubar = Frame(hb, relief=RIDGE, borderwidth=0)
-        hb.menubar.button = Button(hb.menubar, text="Close",
-                                     relief=RAISED,
+        hb.menubar = tkinter.Frame(hb, relief=tkinter.RIDGE, borderwidth=0)
+        hb.menubar.button = tkinter.Button(hb.menubar, text="Close",
+                                     relief=tkinter.RAISED,
                                      command=hb.destroy)
         hb.menubar.button.pack()
-        hb.menubar.pack(side=BOTTOM, padx=5, pady=5)
+        hb.menubar.pack(side=tkinter.BOTTOM, padx=5, pady=5)
 
         # Define the Frame for the scrolling Listbox
-        hb.frame = Frame(hb, relief=RIDGE, borderwidth=1)
+        hb.frame = tkinter.Frame(hb, relief=tkinter.RIDGE, borderwidth=1)
 
         # Attach a vertical Scrollbar to the Frame
-        hb.frame.vscroll = Scrollbar(hb.frame, orient=VERTICAL,
-                 width=11, relief=SUNKEN, activerelief=RAISED,
-                 takefocus=FALSE)
+        hb.frame.vscroll = tkinter.Scrollbar(hb.frame, orient=tkinter.VERTICAL,
+                 width=11, relief=tkinter.SUNKEN, activerelief=tkinter.RAISED,
+                 takefocus=tkinter.FALSE)
 
         # Define the Listbox and setup the Scrollbar
-        hb.frame.list = Listbox(hb.frame,
-                                relief=FLAT,
+        hb.frame.list = tkinter.Listbox(hb.frame,
+                                relief=tkinter.FLAT,
                                 height=25,
                                 width=80,
-                                takefocus=FALSE,
-                                selectmode=SINGLE,
+                                takefocus=tkinter.FALSE,
+                                selectmode=tkinter.SINGLE,
                                 selectborderwidth=0)
         hb.frame.list['yscrollcommand'] = hb.frame.vscroll.set
 
         hb.frame.vscroll['command'] = hb.frame.list.yview
-        hb.frame.vscroll.pack(side=RIGHT, fill=Y)
-        hb.frame.list.pack(side=TOP, expand=TRUE, fill=BOTH)
-        hb.frame.pack(side=TOP, fill=BOTH, expand=TRUE)
+        hb.frame.vscroll.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+        hb.frame.list.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.BOTH)
+        hb.frame.pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=tkinter.TRUE)
 
         # Insert each line of the helpString onto the Frame
         listing = helpString.split('\n')
@@ -1436,7 +1436,7 @@ class EditParDialog:
             line = line.replace("\f", "")
 
             # Insert the text into the Listbox
-            hb.frame.list.insert(END, line)
+            hb.frame.list.insert(tkinter.END, line)
 
         # When the Listbox appears, the listing will be at the beginning
         y = hb.frame.vscroll.get()[0]

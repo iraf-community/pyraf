@@ -9,14 +9,14 @@ $Id$
 """
 import sys
 
-from tkinter import *  # noqa
+import tkinter
 
 
 class Dialog:
 
     def __init__(self, master):
         self.master = master
-        self.top = Toplevel(self.master)
+        self.top = tkinter.Toplevel(self.master)
         self.top.title(self.__class__.__name__)
         self.top.minsize(1, 1)
         self.myWaitVar = str(self.top) + 'EndDialogVar'
@@ -67,7 +67,7 @@ class ModalDialog(Dialog):
         self.CenterDialog()
         try:
             self.top.grab_set() # make it modal
-        except TclError:
+        except tkinter.TclError:
             # This fails on Linux, but does it really HAVE to be modal
             if sys.platform.lower().find('linux') >= 0:
                 pass

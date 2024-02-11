@@ -26,9 +26,9 @@ from . import capable
 from subprocess import getoutput  # nosec
 
 if capable.OF_GRAPHICS:
-    import tkinter as TKNTR
+    import tkinter
+    from . import dialog
     from . import alert
-    from .dialog import *  # noqa
 else:
     ModalDialog = object
 
@@ -56,7 +56,7 @@ class FileDialog(ModalDialog):
             self.cwd = os.path.dirname(self.filter)
             self.filter = os.path.basename(self.filter) # do this second!
         # main Dialog code
-        Dialog.__init__(self, widget)
+        dialog.Dialog.__init__(self, widget)
 
     # setup routine called back from Dialog
 
@@ -64,24 +64,24 @@ class FileDialog(ModalDialog):
 
         # directory label
 
-        self.dirFrame = Frame(self.top)
+        self.dirFrame = tkinter.Frame(self.top)
         self.dirFrame['relief'] = 'raised'
         self.dirFrame['bd']      = '2'
         self.dirFrame.pack({'expand':'no', 'side':'top', 'fill':'both'})
-        self.dirLabel = Label(self.dirFrame)
+        self.dirLabel = tkinter.Label(self.dirFrame)
         self.dirLabel["text"] = "Directory:"
         self.dirLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
 
         # editable filter
 
-        self.filterFrame = Frame(self.top)
+        self.filterFrame = tkinter.Frame(self.top)
         self.filterFrame['relief'] = 'raised'
         self.filterFrame['bd']   = '2'
         self.filterFrame.pack({'expand':'no', 'side':'top', 'fill':'both'})
-        self.filterLabel = Label(self.filterFrame)
+        self.filterLabel = tkinter.Label(self.filterFrame)
         self.filterLabel["text"] = "Filter:"
         self.filterLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
-        self.filterEntry = Entry(self.filterFrame)
+        self.filterEntry = tkinter.Entry(self.filterFrame)
         self.filterEntry.bind('<Return>', self.FilterReturnKey)
         self.filterEntry["width"]  = "40"
         self.filterEntry["relief"] = "ridge"
@@ -90,7 +90,7 @@ class FileDialog(ModalDialog):
 
         # the directory and file listboxes
 
-        self.listBoxFrame = Frame(self.top)
+        self.listBoxFrame = tkinter.Frame(self.top)
         self.listBoxFrame['relief'] = 'raised'
         self.listBoxFrame['bd']  = '2'
         self.listBoxFrame.pack({'expand':'yes', 'side' :'top',
@@ -104,13 +104,13 @@ class FileDialog(ModalDialog):
         junk = FileDialog.lastWrtPrtChoice
         if junk is None:
             junk = 0
-        self.wpVar = IntVar(value=junk) # use class attr
+        self.wpVar = tkinter.IntVar(value=junk) # use class attr
         if self.showChmod:
-            self.writeProtFrame = Frame(self.top)
+            self.writeProtFrame = tkinter.Frame(self.top)
             self.writeProtFrame['relief'] = 'raised'
             self.writeProtFrame['bd'] = '2'
             self.writeProtFrame.pack({'expand':'no','side':'top','fill':'both'})
-            self.wpButton = Checkbutton(self.writeProtFrame,
+            self.wpButton = tkinter.Checkbutton(self.writeProtFrame,
                                         text="Write-protect after save",
                                         command=self.wrtPrtClick,
                                         var=self.wpVar)
@@ -118,14 +118,14 @@ class FileDialog(ModalDialog):
 
         # editable filename
 
-        self.fileNameFrame = Frame(self.top)
+        self.fileNameFrame = tkinter.Frame(self.top)
         self.fileNameFrame.pack({'expand':'no', 'side':'top', 'fill':'both'})
         self.fileNameFrame['relief'] = 'raised'
         self.fileNameFrame['bd']         = '2'
-        self.fileNameLabel = Label(self.fileNameFrame)
+        self.fileNameLabel = tkinter.Label(self.fileNameFrame)
         self.fileNameLabel["text"] = "File:"
         self.fileNameLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
-        self.fileNameEntry = Entry(self.fileNameFrame)
+        self.fileNameEntry = tkinter.Entry(self.fileNameFrame)
         self.fileNameEntry["width"]  = "40"
         self.fileNameEntry["relief"] = "ridge"
         self.fileNameEntry.pack({'expand':'yes', 'side':'right', 'fill':'x',
@@ -134,21 +134,21 @@ class FileDialog(ModalDialog):
 
         # buttons - ok, filter, cancel
 
-        self.buttonFrame = Frame(self.top)
+        self.buttonFrame = tkinter.Frame(self.top)
         self.buttonFrame['relief'] = 'raised'
         self.buttonFrame['bd']   = '2'
         self.buttonFrame.pack({'expand':'no', 'side':'top', 'fill':'x'})
-        self.okButton = Button(self.buttonFrame)
+        self.okButton = tkinter.Button(self.buttonFrame)
         self.okButton["text"]     = "OK"
         self.okButton["command"]   = self.OkPressed
         self.okButton["width"] = 8
         self.okButton.pack({'expand':'yes', 'pady':'2', 'side':'left'})
-        self.filterButton = Button(self.buttonFrame)
+        self.filterButton = tkinter.Button(self.buttonFrame)
         self.filterButton["text"]         = "Filter"
         self.filterButton["command"]   = self.FilterPressed
         self.filterButton["width"] = 8
         self.filterButton.pack({'expand':'yes', 'pady':'2', 'side':'left'})
-        button = Button(self.buttonFrame)
+        button = tkinter.Button(self.buttonFrame)
         button["text"] = "Cancel"
         button["command"] = self.CancelPressed
         button["width"] = 8
@@ -157,22 +157,22 @@ class FileDialog(ModalDialog):
     # create the directory list box
 
     def CreateDirListBox(self):
-        frame = Frame(self.listBoxFrame)
+        frame = tkinter.Frame(self.listBoxFrame)
         frame.pack({'expand':'yes', 'side' :'left', 'pady' :'1',
                 'fill' :'both'})
         frame['relief'] = 'raised'
         frame['bd']      = '2'
-        filesFrame = Frame(frame)
+        filesFrame = tkinter.Frame(frame)
         filesFrame['relief'] = 'flat'
         filesFrame['bd']         = '2'
         filesFrame.pack({'side':'top', 'expand':'no', 'fill':'x'})
-        label = Label(filesFrame)
+        label = tkinter.Label(filesFrame)
         label['text'] = 'Directories:'
         label.pack({'side':'left', 'expand':'yes', 'anchor':'w',
                 'fill':'none'})
-        scrollBar = Scrollbar(frame, {'orient':'vertical'})
+        scrollBar = tkinter.Scrollbar(frame, {'orient':'vertical'})
         scrollBar.pack({'expand':'no', 'side':'right', 'fill':'y'})
-        self.dirLb = Listbox(frame, {'yscroll':scrollBar.set})
+        self.dirLb = tkinter.Listbox(frame, {'yscroll':scrollBar.set})
         self.dirLb.pack({'expand':'yes', 'side' :'top', 'pady' :'1',
                 'fill' :'both'})
         self.dirLb.bind('<1>', self.DoSelection)
@@ -182,22 +182,22 @@ class FileDialog(ModalDialog):
     # create the files list box
 
     def CreateFileListBox(self):
-        frame = Frame(self.listBoxFrame)
+        frame = tkinter.Frame(self.listBoxFrame)
         frame['relief'] = 'raised'
         frame['bd']      = '2'
         frame.pack({'expand':'yes', 'side' :'left', 'pady' :'1', 'padx' :'1',
                 'fill' :'both'})
-        filesFrame = Frame(frame)
+        filesFrame = tkinter.Frame(frame)
         filesFrame['relief'] = 'flat'
         filesFrame['bd']         = '2'
         filesFrame.pack({'side':'top', 'expand':'no', 'fill':'x'})
-        label = Label(filesFrame)
+        label = tkinter.Label(filesFrame)
         label['text'] = 'Files:'
         label.pack({'side':'left', 'expand':'yes', 'anchor':'w',
                 'fill':'none'})
-        scrollBar = Scrollbar(frame, {'orient':'vertical'})
+        scrollBar = tkinter.Scrollbar(frame, {'orient':'vertical'})
         scrollBar.pack({'side':'right', 'fill':'y'})
-        self.fileLb = Listbox(frame, {'yscroll':scrollBar.set})
+        self.fileLb = tkinter.Listbox(frame, {'yscroll':scrollBar.set})
         self.fileLb.pack({'expand':'yes', 'side' :'top', 'pady' :'0',
                 'fill' :'both'})
         self.fileLb.bind('<1>', self.DoSelection)
@@ -237,7 +237,7 @@ class FileDialog(ModalDialog):
         field = self.fileNameEntry
         field.delete(0, AtEnd())
         field.insert(0, os.path.join(self.cwd_print(), lb.get(lb.nearest(event.y))))
-        if TKNTR.TkVersion >= 4.0:
+        if tkinter.TkVersion >= 4.0:
             lb.select_clear(0, "end")
             lb.select_anchor(lb.nearest(event.y))
         else:

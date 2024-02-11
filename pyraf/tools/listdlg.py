@@ -9,7 +9,7 @@ $Id$
 from . import capable, irafutils
 
 if capable.OF_GRAPHICS:
-    from tkinter import *  # noqa
+    import tkinter
     from tkinter.simpledialog import Dialog
 else:
     Dialog = object
@@ -63,29 +63,29 @@ class ListSingleSelectDialog(Dialog):
 
     def body(self, master):
 
-        label = Label(master, text=self.__prompt, justify=LEFT)
+        label = tkinter.Label(master, text=self.__prompt, justify=tkinter.LEFT)
 #       label.grid(row=0, padx=8, sticky=W)
-        label.pack(side=TOP, fill=X, padx=10, pady=8)
+        label.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=8)
 
-        frame = Frame(master)
+        frame = tkinter.Frame(master)
 #       frame.grid(row=1, padx=8, sticky=W+E)
-        frame.pack(side=TOP, fill=X, padx=10, pady=8)
+        frame.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=8)
 
-        vscrollbar = Scrollbar(frame, orient=VERTICAL)
-        hscrollbar = Scrollbar(frame, orient=HORIZONTAL)
-        self.__lb = Listbox(frame,
-                            selectmode=BROWSE,
+        vscrollbar = tkinter.Scrollbar(frame, orient=tkinter.VERTICAL)
+        hscrollbar = tkinter.Scrollbar(frame, orient=tkinter.HORIZONTAL)
+        self.__lb = tkinter.Listbox(frame,
+                            selectmode=tkinter.BROWSE,
                             xscrollcommand=hscrollbar.set,
                             yscrollcommand=vscrollbar.set)
 #                           activestyle='none', # none = dont underline items
         hscrollbar.config(command=self.__lb.xview)
-        hscrollbar.pack(side=BOTTOM, fill=X)
+        hscrollbar.pack(side=tkinter.BOTTOM, fill=tkinter.X)
         vscrollbar.config(command=self.__lb.yview)
-        vscrollbar.pack(side=RIGHT, fill=Y)
-        self.__lb.pack(side=LEFT, fill=BOTH, expand=1)
+        vscrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+        self.__lb.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=1)
 
         for itm in self.__choices:
-            self.__lb.insert(END, str(itm))
+            self.__lb.insert(tkinter.END, str(itm))
 
         self.__lb.bind("<Double-Button-1>", self.ok) # dbl clk
 #       self.__lb.selection_set(0,0)
@@ -102,7 +102,7 @@ class ListSingleSelectDialog(Dialog):
 
 if __name__ == "__main__":
     """This is for manual testing only because it is interactive."""
-    root = Tk()
+    root = tkinter.Tk()
     root.withdraw()
     root.update()
     x = ListSingleSelectDialog("Select Parameter File", \

@@ -19,30 +19,31 @@
 """
 $Id$
 """
-from .dialog import *
+import .dialog
+import tkinter
 
 
-class AlertDialog(ModalDialog):
+class AlertDialog(dialog.ModalDialog):
 
     def __init__(self, widget, msg):
         self.widget = widget
         self.msgString = msg
-        Dialog.__init__(self, widget)
+        dialog.Dialog.__init__(self, widget)
 
     def SetupDialog(self):
-        upperFrame = Frame(self.top)
+        upperFrame = tkinter.Frame(self.top)
         upperFrame['relief'] = 'raised'
         upperFrame['bd']         = 1
         upperFrame.pack({'expand':'yes', 'side':'top', 'fill':'both' })
-        self.bitmap = Label(upperFrame)
+        self.bitmap = tkinter.Label(upperFrame)
         self.bitmap.pack({'side':'left'})
         msgList = self.msgString.split("\n")
         for i in range(len(msgList)):
-            msgText = Label(upperFrame)
+            msgText = tkinter.Label(upperFrame)
             msgText["text"]   = msgList[i]
             msgText.pack({'expand':'yes', 'side':'top', 'anchor':'nw',
                     'fill':'x' })
-        self.lowerFrame = Frame(self.top)
+        self.lowerFrame = tkinter.Frame(self.top)
         self.lowerFrame['relief'] = 'raised'
         self.lowerFrame['bd']    = 1
         self.lowerFrame.pack({'expand':'yes', 'side':'top', 'pady':'2',
@@ -58,7 +59,7 @@ class AlertDialog(ModalDialog):
         self.TerminateDialog(2)
 
     def CreateButton(self, text, command):
-        self.button = Button(self.lowerFrame)
+        self.button = tkinter.Button(self.lowerFrame)
         self.button["text"]       = text
         self.button["command"]   = command
         self.button.pack({'expand':'yes', 'pady':'2', 'side':'left'})
