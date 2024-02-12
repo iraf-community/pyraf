@@ -101,7 +101,7 @@ class MsgIOWidget(tkinter.Frame):
         self._histScrl.pack(side="right", fill="y")
 
         self._histText = tkrotext.ROText(self._histFrame,
-                                         wrap="w"ORD,
+                                         wrap="word",
                                          takefocus=False,
                                          height=10,
                                          yscrollcommand=self._histScrl.set)

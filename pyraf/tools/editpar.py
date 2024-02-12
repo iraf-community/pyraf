@@ -229,7 +229,7 @@ class EditParDialog:
 
         # Overlay a Canvas which will hold a Frame
         self.top.f.canvas = canvas = tkinter.Canvas(self.top.f, width=100, height=100,
-            takefocus=tkinter.FALSE, bg=self._entsColor,
+            takefocus=False, bg=self._entsColor,
             highlightbackground=self._entsColor)
 #           highlightcolor="black" # black must be the default, since it is blk
 
@@ -239,7 +239,7 @@ class EditParDialog:
         # Attach a vertical Scrollbar to the Frame/Canvas
         self.top.f.vscroll = tkinter.Scrollbar(self.top.f, orient="vertical",
              width=11, relief="sunken", activerelief="raised",
-             takefocus=tkinter.FALSE, bg=self._entsColor)
+             takefocus=False, bg=self._entsColor)
         canvas['yscrollcommand'] = self.top.f.vscroll.set
         self.top.f.vscroll['command'] = canvas.yview
 
@@ -268,8 +268,8 @@ class EditParDialog:
             pass
 
         # Pack the Frame and Canvas
-        canvas.pack(side="top", expand=tkinter.TRUE, fill="both")
-        self.top.f.pack(side="top", expand=tkinter.TRUE, fill="both")
+        canvas.pack(side="top", expand=True, fill="both")
+        self.top.f.pack(side="top", expand=True, fill="both")
 
         # Define a Frame to contain the parameter information
         canvas.entries = tkinter.Frame(canvas, bg=self._entsColor)
@@ -351,7 +351,7 @@ class EditParDialog:
         self.top.deiconify()
 
         # Enable interactive resizing in height
-        self.top.resizable(width=tkinter.FALSE, height=tkinter.TRUE)
+        self.top.resizable(width=False, height=True)
 
         # Limit maximum window height
         width = self.top.winfo_width()
@@ -482,10 +482,10 @@ class EditParDialog:
         canvas = self.top.f.canvas
         widgetWithFocus = event.widget
         if widgetWithFocus is self.lastFocusWidget:
-            return tkinter.FALSE
+            return False
         self.lastFocusWidget = widgetWithFocus
         if widgetWithFocus is None:
-            return tkinter.TRUE
+            return True
         # determine distance of widget from top & bottom edges of canvas
         y1 = widgetWithFocus.winfo_rooty()
         y2 = y1 + widgetWithFocus.winfo_height()
@@ -499,7 +499,7 @@ class EditParDialog:
         elif cy2<y2:
             sdist = int((y2-cy2+yinc-1.)/yinc)
             canvas.yview_scroll(sdist, "units")
-        return tkinter.TRUE
+        return True
 
 
     def _handleParListMismatch(self, probStr, extra=False):
@@ -677,7 +677,7 @@ class EditParDialog:
             tkinter.Label(textbox, text=taskString, bg=self._taskColor).pack(side="top",
                   anchor="w")
         textbox.pack(side="left", anchor="w")
-        topbox.pack(side="top", expand=tkinter.FALSE, fill="x")
+        topbox.pack(side="top", expand=False, fill="x")
 
     # Method to set up the parent menu bar
     def makeMenuBar(self, top):
@@ -924,7 +924,7 @@ class EditParDialog:
             buttonHelp.bind("<Enter>", self.printHelpInfo)
 
         # Pack
-        box.pack(fill="x", expand=tkinter.FALSE)
+        box.pack(fill="x", expand=False)
 
     def setExecOpt(self, event=None):
         self._saveAndCloseOnExec = bool(self._execChoice.get())
@@ -1409,22 +1409,22 @@ class EditParDialog:
         # Attach a vertical Scrollbar to the Frame
         hb.frame.vscroll = tkinter.Scrollbar(hb.frame, orient="vertical",
                  width=11, relief="sunken", activerelief="raised",
-                 takefocus=tkinter.FALSE)
+                 takefocus=False)
 
         # Define the Listbox and setup the Scrollbar
         hb.frame.list = tkinter.Listbox(hb.frame,
                                 relief="flat",
                                 height=25,
                                 width=80,
-                                takefocus=tkinter.FALSE,
+                                takefocus=False,
                                 selectmode="single",
                                 selectborderwidth=0)
         hb.frame.list['yscrollcommand'] = hb.frame.vscroll.set
 
         hb.frame.vscroll['command'] = hb.frame.list.yview
         hb.frame.vscroll.pack(side="right", fill="y")
-        hb.frame.list.pack(side="top", expand=tkinter.TRUE, fill="both")
-        hb.frame.pack(side="top", fill="both", expand=tkinter.TRUE)
+        hb.frame.list.pack(side="top", expand=True, fill="both")
+        hb.frame.pack(side="top", fill="both", expand=True)
 
         # Insert each line of the helpString onto the Frame
         listing = helpString.split('\n')

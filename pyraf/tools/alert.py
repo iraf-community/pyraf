@@ -19,7 +19,7 @@
 """
 $Id$
 """
-import .dialog
+from . import dialog
 import tkinter
 
 

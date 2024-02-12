@@ -102,7 +102,7 @@ class EparOption:
         if 0 and indent:
             self.spacer = tkinter.Label(self.master_frame, anchor="w", takefocus=0,
                                 text="", width=3, bg=self.bkgColor)
-            self.spacer.pack(side="left", fill="x", expand=tkinter.TRUE)
+            self.spacer.pack(side="left", fill="x", expand=True)
 
         # Generate the input label
         if self.paramInfo.get(field = "p_mode") == "h":
@@ -113,7 +113,7 @@ class EparOption:
             self.inputLabel = tkinter.Label(self.master_frame, anchor = "w",
                                     text  = self.getShowName(),
                                     width = self.inputWidth, bg=self.bkgColor)
-        self.inputLabel.pack(side = "left", fill = "x", expand = tkinter.TRUE)
+        self.inputLabel.pack(side = "left", fill = "x", expand = True)
 
         # Get the prompt string and determine if special handling is needed
         # Use the prompt/description from the default version, in case they
@@ -148,7 +148,7 @@ class EparOption:
         self.promptLabel = tkinter.Label(self.master_frame, anchor="w", fg=fgColor,
                                  text=promptLines, width=self.promptWidth,
                                  bg=self.bkgColor)
-        self.promptLabel.pack(side="right", fill="x", expand=tkinter.TRUE)
+        self.promptLabel.pack(side="right", fill="x", expand=True)
 
         # Settings for subclasses to override in the makeInputWidget method
         self.isSelectable = True # ie widget has text (num or str) to select
@@ -431,7 +431,7 @@ class EparOption:
     def fileBrowser(self):
         """Invoke a tkinter file dialog"""
         if capable.OF_TKFD_IN_EPAR:
-           fname = askopenfilename(parent=self.entry, title="Select File")
+            fname = askopenfilename(parent=self.entry, title="Select File")
         else:
             from . import filedlg
             self.fd = filedlg.PersistLoadFileDialog(self.entry,
@@ -700,7 +700,7 @@ class BooleanEparOption(EparOption):
         if not USING_X:
             spacerL= tkinter.Label(self.entry, takefocus=0, text="", width=2,
                            bg=self.bkgColor)
-            spacerL.pack(side="left", fill="x", expand=tkinter.TRUE)
+            spacerL.pack(side="left", fill="x", expand=True)
         self.rbyes = tkinter.Radiobutton(self.entry, text = "Yes",
                                  variable    = self.choice,
                                  value       = "yes",
@@ -713,10 +713,10 @@ class BooleanEparOption(EparOption):
         if not USING_X:
             spacerM= tkinter.Label(self.entry, takefocus=0, text="", width=3,
                            bg=self.bkgColor)
-            spacerM.pack(side="left", fill="x", expand=tkinter.TRUE)
+            spacerM.pack(side="left", fill="x", expand=True)
             spacerR = tkinter.Label(self.entry, takefocus=0, text="", width=2,
                            bg=self.bkgColor)
-            spacerR.pack(side="right", fill="x", expand=tkinter.TRUE)
+            spacerR.pack(side="right", fill="x", expand=True)
         self.rbno  = tkinter.Radiobutton(self.entry, text = "No",
                                  variable    = self.choice,
                                  value       = "no",
@@ -798,7 +798,7 @@ class StringEparOption(EparOption):
         self.choice.set(self.value)
         self.entry = tkinter.Entry(self.master_frame, width = self.valueWidth,
                      textvariable = self.choice) # , bg=self.bkgColor)
-        self.entry.pack(side = "left", fill = "x", expand = tkinter.TRUE)
+        self.entry.pack(side = "left", fill = "x", expand = True)
 #       self.extraBindingsForSelectableText() # do not use yet
 
 

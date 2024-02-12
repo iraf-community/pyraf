@@ -415,7 +415,7 @@ def getHelpFileAsString(taskname,taskpath):
         helpname = taskname
     localdir = pathsplit[0]
     if localdir == '':
-       localdir = '.'
+        localdir = '.'
     helpfile=rglob(localdir,helpname+".help")[0]
 
     if os.access(helpfile,os.R_OK):
@@ -696,7 +696,7 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                     # warn for invalid values
                     for w in whenlist:
                         if not w in editpar.GROUP_ACTIONS and w != 'always':
-                           print('WARNING: skipping bad value for when kwd: "'+\
+                            print('WARNING: skipping bad value for when kwd: "'+\
                                   w+'" in trigger/rule: '+triggerName)
                     # finally, do the correlation
                     greenlight = 'always' in whenlist or action in whenlist
