@@ -194,7 +194,8 @@ class IrafGWcs:
             # if the padding doesn't bring the size out to exactly the
             # correct length (_WCS_RECORD_SIZE)
             wcsStruct[_WCS_RECORD_SIZE*i:_WCS_RECORD_SIZE*(i+1)] = \
-                numpy.frombuffer(farr.tobytes()+iarr.tobytes()+pad, numpy.int16)
+                numpy.frombuffer(
+                    farr.tobytes()+iarr.tobytes()+pad, numpy.int16)
         return wcsStruct.tobytes()
 
     def transform(self, x, y, wcsID):

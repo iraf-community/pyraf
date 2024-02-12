@@ -3,7 +3,6 @@ matplotlib implementation of the gki kernel class
 """
 
 
-
 import math
 import numpy
 import tkinter

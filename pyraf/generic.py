@@ -34,7 +34,6 @@
 # - Add check for assertion error in ambiguity resolution.
 
 
-
 __version__ = 'SPARK-0.6.1rlw'
 
 import re

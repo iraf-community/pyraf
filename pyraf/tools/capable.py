@@ -71,12 +71,13 @@ def which_darwin_linkage(force_otool_check=False):
     import subprocess  # nosec
     try:
         tk_dyn_lib = TKNTR._tkinter.__file__
-    except AttributeError: # happens on Ureka
+    except AttributeError:  # happens on Ureka
         if 'UR_DIR' in os.environ:
             return 'aqua'
         else:
             return 'unknown'
-    libs = subprocess.check_output(('/usr/bin/otool', '-L', tk_dyn_lib)).decode('ascii')  # nosec
+    libs = subprocess.check_output(
+        ('/usr/bin/otool', '-L', tk_dyn_lib)).decode('ascii')  # nosec
     if libs.find('/libX11.') >= 0:
         return "x11"
     else:
@@ -91,7 +92,7 @@ def get_dc_owner(raises, mask_if_self):
     try:
         from pwd import getpwuid
         owner_uid = os.stat('/dev/console').st_uid
-        self_uid  = os.getuid()
+        self_uid = os.getuid()
         if mask_if_self and owner_uid == self_uid:
             return "<self>"
         owner_name = getpwuid(owner_uid).pw_name
@@ -130,7 +131,8 @@ if OF_GRAPHICS and sys.platform == 'darwin':
         # the use of PYRAF_YES_DISPLAY is a temporary override while we
         # debug why a user might have no read-acces to /dev/console
         dc_owner = get_dc_owner(False, False)
-        OF_GRAPHICS = dc_owner == 'sysadmin' or os.access("/dev/console", os.R_OK)
+        OF_GRAPHICS = dc_owner == 'sysadmin' or os.access(
+            "/dev/console", os.R_OK)
 
     # Add a double-check for remote X11 users.  We *think* this is a smaller
     # set of cases, so we do it last minute here:
@@ -147,10 +149,10 @@ if OF_GRAPHICS and sys.platform == 'darwin':
 # After all that, we may have decided that we want graphics.  Now
 # that we know it is ok to try to import tkinter, we can test if it
 # is there.  If it is not, we are not capable of graphics.
-if OF_GRAPHICS :
-    try :
+if OF_GRAPHICS:
+    try:
         import tkinter as TKNTR
-    except ImportError :
+    except ImportError:
         TKINTER_IMPORT_FAILED = 1
         OF_GRAPHICS = False
 
@@ -158,5 +160,5 @@ if OF_GRAPHICS :
 # itself on OSX only.  Allow on Linux.  Mac: use this until PyRAF #171 fixed.
 OF_TKFD_IN_EPAR = True
 if sys.platform == 'darwin' and OF_GRAPHICS and \
-   not is_darwin_and_x(): # if framework ver
+   not is_darwin_and_x():  # if framework ver
     OF_TKFD_IN_EPAR = 'TEAL_TRY_TKFD' in list(os.environ.keys())

@@ -1,3 +1,4 @@
+import atexit
 import os
 from tkinter import _default_root
 from tkinter import TclError, Canvas
@@ -41,7 +42,6 @@ def cleanup():
         pass
 
 
-import atexit
 atexit.register(cleanup)
 # [end DAA]
 

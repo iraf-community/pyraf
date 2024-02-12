@@ -99,7 +99,7 @@ def _isinstancetype(an_obj):
         return False
     typstr = str(type(an_obj))
     # the following logic works, as PyRAF users expect, in both v2 and v3
-    return typstr=="<type 'instance'>" or \
+    return typstr == "<type 'instance'>" or \
         (typstr.startswith("<class '") and ('.' in typstr))
 
 
@@ -327,7 +327,7 @@ def _getContents(vlist, regexp, an_obj):
                 sortlist[vorder].append((vname, value))
                 namedict[vname] = 1
     # add methods from base classes if this is a class
-    if isinstance(an_obj, type(object)): # i.e. "<class 'type'>"
+    if isinstance(an_obj, type(object)):  # i.e. "<class 'type'>"
         classlist = list(an_obj.__bases__)
         for c in classlist:
             classlist.extend(list(c.__bases__))

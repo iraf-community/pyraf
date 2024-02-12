@@ -19,7 +19,6 @@ Created 1999 September 10 by R. White
 """
 
 
-
 class ContextSensitiveScanner:
     """Context-sensitive scanner"""
 

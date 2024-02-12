@@ -51,12 +51,12 @@ def getObjectFromTaskArg(theTask, strict, setAllToDefaults):
     # Already in the form we need (instance of us or of subclass)
     if isinstance(theTask, ConfigObjPars):
         if setAllToDefaults:
-            raise RuntimeError('Called getObjectFromTaskArg with existing'+\
-                  ' object AND setAllToDefaults - is unexpected use case.')
+            raise RuntimeError('Called getObjectFromTaskArg with existing' +
+                               ' object AND setAllToDefaults - is unexpected use case.')
         # If it is an existing object, make sure it's internal param list is
         # up to date with it's ConfigObj dict, since the user may have manually
         # edited the dict before calling us.
-        theTask.syncParamList(False) # use strict somehow?
+        theTask.syncParamList(False)  # use strict somehow?
         # Note - some validation is done here in IrafPar creation, but it is
         # not the same validation done by the ConfigObj s/w (no check funcs).
         # Do we want to do that too here?
@@ -70,8 +70,8 @@ def getObjectFromTaskArg(theTask, strict, setAllToDefaults):
         except KeyError:
             # this might just be caused by a file sitting in the local cwd with
             # the same exact name as the package we want to import, let's see
-            if theTask.find('.') > 0: # it has an extension, like '.cfg'
-                raise # this really was an error
+            if theTask.find('.') > 0:  # it has an extension, like '.cfg'
+                raise  # this really was an error
             # else we drop down to the next step - try it as a pkg name
 
     # Else it must be a Python package name to load
@@ -95,10 +95,10 @@ def getEmbeddedKeyVal(cfgFileName, kwdName, dflt=None):
         junkObj = configobj.ConfigObj(cfgFileName, list_values=False)
     except:
         if kwdName == TASK_NAME_KEY:
-            raise KeyError('Can not parse as a parameter config file: '+ \
+            raise KeyError('Can not parse as a parameter config file: ' +
                            '\n\t'+os.path.realpath(cfgFileName))
         else:
-            raise KeyError('Unfound key "'+kwdName+'" while parsing: '+ \
+            raise KeyError('Unfound key "'+kwdName+'" while parsing: ' +
                            '\n\t'+os.path.realpath(cfgFileName))
 
     if kwdName in junkObj:
@@ -111,10 +111,10 @@ def getEmbeddedKeyVal(cfgFileName, kwdName, dflt=None):
         return dflt
     else:
         if kwdName == TASK_NAME_KEY:
-            raise KeyError('Can not parse as a parameter config file: '+ \
+            raise KeyError('Can not parse as a parameter config file: ' +
                            '\n\t'+os.path.realpath(cfgFileName))
         else:
-            raise KeyError('Unfound key "'+kwdName+'" while parsing: '+ \
+            raise KeyError('Unfound key "'+kwdName+'" while parsing: ' +
                            '\n\t'+os.path.realpath(cfgFileName))
 
 
@@ -127,7 +127,8 @@ def findCfgFileForPkg(pkgName, theExt, pkgObj=None, taskName=None):
     Returns a tuple of (package-object, cfg-file-name). """
     # arg check
     ext = theExt
-    if ext[0] != '.': ext = '.'+theExt
+    if ext[0] != '.':
+        ext = '.'+theExt
 
     # Do the import, if needed
     pkgsToTry = {}
@@ -138,7 +139,7 @@ def findCfgFileForPkg(pkgName, theExt, pkgObj=None, taskName=None):
         try:
             fl = []
             if pkgName.find('.') > 0:
-                fl = [ pkgName[:pkgName.rfind('.')], ]
+                fl = [pkgName[:pkgName.rfind('.')], ]
             pkgsToTry[str(pkgName)] = __import__(str(pkgName), fromlist=fl)
         except:
             throwIt = True
@@ -148,12 +149,12 @@ def findCfgFileForPkg(pkgName, theExt, pkgObj=None, taskName=None):
             if isinstance(pkgName, str) and pkgName.find('.') < 0:
                 matches = [x for x in sys.modules.keys()
                            if x.endswith("."+pkgName)]
-                if len(matches)>0:
+                if len(matches) > 0:
                     throwIt = False
                     for mmm in matches:
                         pkgsToTry[mmm] = sys.modules[mmm]
             if throwIt:
-                raise NoCfgFileError("Unfound package or "+ext+" file via: "+\
+                raise NoCfgFileError("Unfound package or "+ext+" file via: " +
                                      "import "+str(pkgName))
 
     # Now that we have the package object (or a few of them to try), for each
@@ -162,7 +163,8 @@ def findCfgFileForPkg(pkgName, theExt, pkgObj=None, taskName=None):
     for aPkgName in pkgsToTry:
         aPkg = pkgsToTry[aPkgName]
         path = os.path.dirname(aPkg.__file__)
-        if len(path) < 1: path = '.'
+        if len(path) < 1:
+            path = '.'
         flist = irafutils.rglob(path, "*"+ext)
         if len(flist) < 1:
             continue
@@ -177,8 +179,8 @@ def findCfgFileForPkg(pkgName, theExt, pkgObj=None, taskName=None):
             # will have a string check function signature as the val.
             if ext == '.cfg':
                 itsTask = getEmbeddedKeyVal(f, TASK_NAME_KEY, '')
-            else: # .cfgspc
-                sigStr  = getEmbeddedKeyVal(f, TASK_NAME_KEY, '')
+            else:  # .cfgspc
+                sigStr = getEmbeddedKeyVal(f, TASK_NAME_KEY, '')
                 # .cfgspc file MUST have an entry for TASK_NAME_KEY w/ a default
                 itsTask = vtor_checks.sigStrToKwArgsDict(sigStr)['default']
             if itsTask == taskName:
@@ -187,7 +189,7 @@ def findCfgFileForPkg(pkgName, theExt, pkgObj=None, taskName=None):
                 return aPkg, f
 
     # What, are you still here?
-    raise NoCfgFileError('No valid '+ext+' files found in package: "'+ \
+    raise NoCfgFileError('No valid '+ext+' files found in package: "' +
                          str(pkgName)+'" for task: "'+str(taskName)+'"')
 
 
@@ -245,19 +247,19 @@ def getParsObjForPyPkg(pkgName, strict):
     if theFile is None:
         flist = getCfgFilesInDirForTask(os.getcwd(), tname)
         if len(flist) > 0:
-            if len(flist) == 1: # can skip file times sort
+            if len(flist) == 1:  # can skip file times sort
                 theFile = flist[0]
             else:
                 # There are a few different choices.  In the absence of
                 # requirements to the contrary, just take the latest.  Set up a
                 # list of tuples of (mtime, fname) so we can sort by mtime.
-                ftups = [ (os.stat(f)[stat.ST_MTIME], f) for f in flist]
+                ftups = [(os.stat(f)[stat.ST_MTIME], f) for f in flist]
                 ftups.sort()
                 theFile = ftups[-1][1]
 
     # See if the user has any of their own app-dir .cfg files for this task
     if theFile is None:
-        flist = getCfgFilesInDirForTask(getAppDir(), tname) # verifies tname
+        flist = getCfgFilesInDirForTask(getAppDir(), tname)  # verifies tname
         flist = [f for f in flist if os.path.basename(f) == tname+'.cfg']
         if len(flist) > 0:
             theFile = flist[0]
@@ -290,14 +292,14 @@ def getUsrCfgFilesForPyPkg(pkgName):
     return flist
 
 
-def checkSetReadOnly(fname, raiseOnErr = False):
+def checkSetReadOnly(fname, raiseOnErr=False):
     """ See if we have write-privileges to this file.  If we do, and we
     are not supposed to, then fix that case. """
     if os.access(fname, os.W_OK):
         # We can write to this but it is supposed to be read-only. Fix it.
         # Take away usr-write, leave group and other alone, though it
         # may be simpler to just force/set it to: r--r--r-- or r--------
-        irafutils.setWritePrivs(fname, False, ignoreErrors= not raiseOnErr)
+        irafutils.setWritePrivs(fname, False, ignoreErrors=not raiseOnErr)
 
 
 def flattenDictTree(aDict):
@@ -312,18 +314,18 @@ def flattenDictTree(aDict):
             # This val is a dict, get its data (recursively) into a flat dict
             subDict = flattenDictTree(val)
             # Merge its dict of data into ours, watching for NO collisions
-            rvKeySet  = set(retval.keys())
+            rvKeySet = set(retval.keys())
             sdKeySet = set(subDict.keys())
             intr = rvKeySet.intersection(sdKeySet)
             if len(intr) > 0:
-                raise DuplicateKeyError("Flattened dict already has "+ \
-                    "key(s): "+str(list(intr))+" - cannot flatten this.")
+                raise DuplicateKeyError("Flattened dict already has " +
+                                        "key(s): "+str(list(intr))+" - cannot flatten this.")
 
             else:
                 retval.update(subDict)
         else:
             if k in retval:
-                raise DuplicateKeyError("Flattened dict already has key: "+\
+                raise DuplicateKeyError("Flattened dict already has key: " +
                                         k+" - cannot flatten this.")
             else:
                 retval[k] = val
@@ -338,7 +340,7 @@ def countKey(theDict, name):
     for key in theDict:
         val = theDict[key]
         if isinstance(val, dict):
-            retval += countKey(val, name) # recurse
+            retval += countKey(val, name)  # recurse
         else:
             if key == name:
                 retval += 1
@@ -357,7 +359,7 @@ def findFirstPar(theDict, name, _depth=0):
         val = theDict[key]
 #       print _depth*'   ', key, str(val)[:40]
         if isinstance(val, dict):
-            retval = findFirstPar(val, name, _depth=_depth+1) # recurse
+            retval = findFirstPar(val, name, _depth=_depth+1)  # recurse
             if retval is not None:
                 return retval
             # else keep looking
@@ -378,8 +380,8 @@ def findScopedPar(theDict, scope, name):
     # Do not search (like findFirstPar), but go right to the correct
     # sub-section, and pick it up.  Assume it is there as stated.
     if len(scope):
-        theDict = theDict[scope] # ! only goes one level deep - enhance !
-    return theDict, theDict[name] # KeyError if unfound
+        theDict = theDict[scope]  # ! only goes one level deep - enhance !
+    return theDict, theDict[name]  # KeyError if unfound
 
 
 def setPar(theDict, name, value):
@@ -420,8 +422,8 @@ def integrityTestAllPkgCfgFiles(pkgObj, output=True):
         try:
             if taskName:
                 if output:
-                    print('In '+pkgObj.__name__+', checking task: '+
-                           taskName+', file: '+fname)
+                    print('In '+pkgObj.__name__+', checking task: ' +
+                          taskName+', file: '+fname)
                 integrityTestTaskCfgFile(taskName, fname)
         except Exception as e:
             errors.append(str(e))
@@ -438,13 +440,14 @@ def integrityTestTaskCfgFile(taskName, cfgFileName=None):
     found in the installed .cfgspc file.  They should be the same.
     If the file name is not given, the installed one is found and used. """
 
-    from . import teal # don't import above, to avoid circular import (may need to mv)
+    # don't import above, to avoid circular import (may need to mv)
+    from . import teal
     if not cfgFileName:
         ignored, cfgFileName = findCfgFileForPkg(taskName, '.cfg')
     diffDict = teal.diffFromDefaults(cfgFileName, report=False)
     if len(diffDict) < 1:
-        return # no error
-    msg = 'The following par:value pairs from "'+cfgFileName+ \
+        return  # no error
+    msg = 'The following par:value pairs from "'+cfgFileName + \
           '" are not the correct defaults: '+str(diffDict)
     raise RuntimeError(msg)
 
@@ -466,9 +469,9 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
 
         self._forUseWithEpar = forUseWithEpar
         self._rcDir = getAppDir()
-        self._allTriggers = None # all known triggers in this object
+        self._allTriggers = None  # all known triggers in this object
         self._allDepdcs = None   # all known dependencies in this object
-        self._allExecutes = None # all known codes-to-execute in this object
+        self._allExecutes = None  # all known codes-to-execute in this object
         self._neverWrite = []    # all keys which are NOT written out to .cfg
         self._debugLogger = None
         self._debugYetToPost = []
@@ -491,12 +494,12 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
                 # have it imported in _findAssociatedConfigSpecFile()
                 self.__taskName = setAllToDefaults
                 setAllToDefaults = True
-                cfgFileName = '' # ignore any given .cfg file, don't need one
+                cfgFileName = ''  # ignore any given .cfg file, don't need one
             else:
                 possible = os.path.splitext(os.path.basename(cfgFileName))[0]
                 if os.path.isfile(cfgFileName):
                     self.__taskName = getEmbeddedKeyVal(cfgFileName,
-                                      TASK_NAME_KEY, possible)
+                                                        TASK_NAME_KEY, possible)
                 else:
                     self.__taskName = possible
         else:
@@ -514,15 +517,16 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
             cfgSpecPath = os.path.realpath(cfgFileName)
             setAllToDefaults = True
             cfgFileName = ''
-            sigStr  = getEmbeddedKeyVal(cfgSpecPath, TASK_NAME_KEY, '')
+            sigStr = getEmbeddedKeyVal(cfgSpecPath, TASK_NAME_KEY, '')
             self.__taskName = vtor_checks.sigStrToKwArgsDict(sigStr)['default']
         else:
             cfgSpecPath = self._findAssociatedConfigSpecFile(cfgFileName)
         if not os.path.exists(cfgSpecPath):
-            raise ValueError("Matching configspec not found!  Expected: " + cfgSpecPath)
+            raise ValueError(
+                "Matching configspec not found!  Expected: " + cfgSpecPath)
 
-        self.debug('ConfigObjPars: .cfg='+str(cfgFileName)+ \
-                   ', .cfgspc='+str(cfgSpecPath)+ \
+        self.debug('ConfigObjPars: .cfg='+str(cfgFileName) +
+                   ', .cfgspc='+str(cfgSpecPath) +
                    ', defaults='+str(setAllToDefaults)+', strict='+str(strict))
 
         # Run the ConfigObj ctor.  The result of this (if !setAllToDefaults)
@@ -536,7 +540,7 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
 
         # Before we validate (and fill in missing pars), find any lost pars
         # via this (somewhat kludgy) method suggested by ConfigObj folks.
-        missing = '' # assume no .cfg file
+        missing = ''  # assume no .cfg file
         if strict and (not setAllToDefaults):
             # don't even populate this if not strict
             missing = findTheLost(os.path.abspath(cfgFileName), cfgSpecPath)
@@ -584,13 +588,13 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
             msg = "Validation warnings for: "
             if hasTypeErr or (strict and extra):
                 msg = "Validation errors for: "
-            msg = msg+os.path.realpath(cfgFileName)+\
-                  "\n\n"+flatStr.strip('\n')
+            msg = msg+os.path.realpath(cfgFileName) +\
+                "\n\n"+flatStr.strip('\n')
             if hasTypeErr or (strict and extra):
                 raise RuntimeError(msg)
             else:
                 # just inform them, but don't throw anything
-                print(msg.replace('\n\n','\n'))
+                print(msg.replace('\n\n', '\n'))
 
         # get the initial param list out of the ConfigObj dict
         self.syncParamList(True)
@@ -607,7 +611,6 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
             if hasattr(self.__assocPkg, 'getHelpAsString'):
                 self._helpFunc = self.__assocPkg.getHelpAsString
 
-
     def setDebugLogger(self, obj):
         # set the object we can use to post debugging info
         self._debugLogger = obj
@@ -623,7 +626,7 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         else:
             # else just hold onto it until we do have a logger -during the
             # init phase we may not yet have a logger, yet have stuff to log
-            self._debugYetToPost.append(msg) # add to our little cache
+            self._debugYetToPost.append(msg)  # add to our little cache
 
     def getDefaultSaveFilename(self, stub=False):
         """ Return name of file where we are expected to be saved if no files
@@ -642,10 +645,10 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         # Get latest par values from dict.  Make sure we do not
         # change the id of the __paramList pointer here.
         new_list = self._getParamsFromConfigDict(self, initialPass=firstTime)
-                                               # dumpCfgspcTo=sys.stdout)
+        # dumpCfgspcTo=sys.stdout)
         # Have to add this odd last one for the sake of the GUI (still?)
         if self._forUseWithEpar:
-            new_list.append(basicpar.IrafParS(['$nargs','s','h','N']))
+            new_list.append(basicpar.IrafParS(['$nargs', 's', 'h', 'N']))
 
         if len(self.__paramList) > 0 and preserve_order:
             # Here we have the most up-to-date data from the actual data
@@ -658,20 +661,21 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
                     'Mismatch in num pars, had: ' + str(len(namesInOrder)) +
                     ', now we have: ' + str(len(new_list)) + ', ' +
                     str([p.fullName() for p in new_list]))
-            self.__paramList[:] = [] # clear list, keep same pointer
+            self.__paramList[:] = []  # clear list, keep same pointer
             # create a flat dict view of new_list, for ease of use in next step
-            new_list_dict = {} # can do in one step in v2.7
-            for par in new_list: new_list_dict[par.fullName()] = par
+            new_list_dict = {}  # can do in one step in v2.7
+            for par in new_list:
+                new_list_dict[par.fullName()] = par
             # populate
             for fn in namesInOrder:
                 self.__paramList.append(new_list_dict[fn])
         else:
             # Here we just take the data in whatever order it came.
-            self.__paramList[:] = new_list # keep same list pointer
+            self.__paramList[:] = new_list  # keep same list pointer
 
     def getName(self): return self.__taskName
 
-    def getPkgname(self):  return '' # subclasses override w/ a sensible value
+    def getPkgname(self): return ''  # subclasses override w/ a sensible value
 
     def getParList(self, docopy=False):
         """ Return a list of parameter objects.  docopy is ignored as the
@@ -733,11 +737,13 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         # (somehow elegantly) only check this one item. For now, the best
         # shortcut is to only validate this section.
         if check:
-            ans=self.validate(self._vtor, preserve_errors=True, section=theDict)
+            ans = self.validate(
+                self._vtor, preserve_errors=True, section=theDict)
             if ans != True:
                 flatStr = "All values are invalid!"
                 if ans != False:
-                    flatStr = flattened2str(configobj.flatten_errors(self, ans))
+                    flatStr = flattened2str(
+                        configobj.flatten_errors(self, ans))
                 raise RuntimeError("Validation error: "+flatStr)
 
         # Note - this design needs work.  Right now there are two copies
@@ -761,23 +767,26 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         if not filename:
             raise ValueError("No filename specified to save parameters")
 
-        if hasattr(filename,'write'):
+        if hasattr(filename, 'write'):
             fh = filename
             absFileName = os.path.abspath(fh.name)
         else:
             absFileName = os.path.expanduser(filename)
             absDir = os.path.dirname(absFileName)
-            if len(absDir) and not os.path.isdir(absDir): os.makedirs(absDir)
-            fh = open(absFileName,'w')
+            if len(absDir) and not os.path.isdir(absDir):
+                os.makedirs(absDir)
+            fh = open(absFileName, 'w')
         numpars = len(self.__paramList)
-        if self._forUseWithEpar: numpars -= 1
-        if not self.final_comment: self.final_comment = [''] # force \n at EOF
+        if self._forUseWithEpar:
+            numpars -= 1
+        if not self.final_comment:
+            self.final_comment = ['']  # force \n at EOF
         # Empty the ConfigObj version of section.defaults since that is based
         # on an assumption incorrect for us, and override with our own list.
         # THIS IS A BIT OF MONKEY-PATCHING!  WATCH FUTURE VERSION CHANGES!
         # See Trac ticket #762.
         while len(self.defaults):
-            self.defaults.pop(-1) # empty it, keeping ref
+            self.defaults.pop(-1)  # empty it, keeping ref
         for key in self._neverWrite:
             self.defaults.append(key)
         # Note also that we are only overwriting the top/main section's
@@ -788,7 +797,7 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         self.write(fh)
         fh.close()
         retval = str(numpars) + " parameters written to " + absFileName
-        self.filename = absFileName # reset our own ConfigObj filename attr
+        self.filename = absFileName  # reset our own ConfigObj filename attr
         self.debug('Keys not written: '+str(self.defaults))
         return retval
 
@@ -796,14 +805,16 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         """ This may be overridden by a subclass. """
         if self._runFunc is not None:
             # remove the two args sent by EditParDialog which we do not use
-            if 'mode' in kw: kw.pop('mode')
-            if '_save' in kw: kw.pop('_save')
+            if 'mode' in kw:
+                kw.pop('mode')
+            if '_save' in kw:
+                kw.pop('_save')
             return self._runFunc(self, *args, **kw)
         else:
-            raise taskpars.NoExecError('No way to run task "'+self.__taskName+\
-                '". You must either override the "run" method in your '+ \
-                'ConfigObjPars subclass, or you must supply a "run" '+ \
-                'function in your package.')
+            raise taskpars.NoExecError('No way to run task "'+self.__taskName +
+                                       '". You must either override the "run" method in your ' +
+                                       'ConfigObjPars subclass, or you must supply a "run" ' +
+                                       'function in your package.')
 
     def triggerLogicToStr(self):
         """ Print all the trigger logic to a string and return it. """
@@ -817,16 +828,15 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         retval += "\n"
         return retval
 
-
     def getHelpAsString(self):
         """ This may be overridden by a subclass. """
         if self._helpFunc is not None:
             return self._helpFunc()
         else:
-            return 'No help string found for task "'+self.__taskName+ \
-            '".  \n\nThe developer must either override the '+\
-            'getHelpAsString() method in their ConfigObjPars \n'+ \
-            'subclass, or they must supply such a function in their package.'
+            return 'No help string found for task "'+self.__taskName + \
+                '".  \n\nThe developer must either override the ' +\
+                'getHelpAsString() method in their ConfigObjPars \n' + \
+                'subclass, or they must supply such a function in their package.'
 
     def _findAssociatedConfigSpecFile(self, cfgFileName):
         """ Given a config file, find its associated config-spec file, and
@@ -834,34 +844,36 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
 
         # Handle simplest 2 cases first: co-located or local .cfgspc file
         retval = "."+os.sep+self.__taskName+".cfgspc"
-        if os.path.isfile(retval): return retval
+        if os.path.isfile(retval):
+            return retval
 
         retval = os.path.dirname(cfgFileName)+os.sep+self.__taskName+".cfgspc"
-        if os.path.isfile(retval): return retval
+        if os.path.isfile(retval):
+            return retval
 
         # Also try the resource dir
-        retval = self.getDefaultSaveFilename()+'spc' # .cfgspc
-        if os.path.isfile(retval): return retval
+        retval = self.getDefaultSaveFilename()+'spc'  # .cfgspc
+        if os.path.isfile(retval):
+            return retval
 
         # Now try and see if there is a matching .cfgspc file in/under an
         # associated package, if one is defined.
         if self.__assocPkg is not None:
             x, theFile = findCfgFileForPkg(None, '.cfgspc',
-                                           pkgObj = self.__assocPkg,
-                                           taskName = self.__taskName)
+                                           pkgObj=self.__assocPkg,
+                                           taskName=self.__taskName)
             return theFile
 
         # Finally try to import the task name and see if there is a .cfgspc
         # file in that directory
         x, theFile = findCfgFileForPkg(self.__taskName, '.cfgspc',
-                                       taskName = self.__taskName)
+                                       taskName=self.__taskName)
         if os.path.exists(theFile):
             return theFile
 
         # unfound
-        raise NoCfgFileError('Unfound config-spec file for task: "'+ \
+        raise NoCfgFileError('Unfound config-spec file for task: "' +
                              self.__taskName+'"')
-
 
     def _getParamsFromConfigDict(self, cfgObj, scopePrefix='',
                                  initialPass=False, dumpCfgspcTo=None):
@@ -872,7 +884,8 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         # init
         retval = []
         if initialPass and len(scopePrefix) < 1:
-            self._posArgs = [] # positional args [2-tuples]: (index,scopedName)
+            # positional args [2-tuples]: (index,scopedName)
+            self._posArgs = []
             # FOR SECURITY: the following 3 chunks of data,
             #     _allTriggers, _allDepdcs, _allExecutes,
             # are collected ONLY from the .cfgspc file
@@ -897,7 +910,7 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
             # a section
             if isinstance(val, dict):
                 if not toBeHidden:
-                    if len(list(val.keys()))>0 and len(retval)>0:
+                    if len(list(val.keys())) > 0 and len(retval) > 0:
                         # Here is where we sneak in the section comment
                         # This is so incredibly kludgy (as the code was), it
                         # MUST be revamped eventually! This is for the epar GUI.
@@ -911,16 +924,16 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
                     pfx = scopePrefix+'.'+key
                     pfx = pfx.strip('.')
                     retval = retval + self._getParamsFromConfigDict(val, pfx,
-                                      initialPass, dumpCfgspcTo) # recurse
+                                                                    initialPass, dumpCfgspcTo)  # recurse
             else:
                 # a param
                 fields = []
                 choicesOrMin = None
-                fields.append(key) # name
+                fields.append(key)  # name
                 dtype = 's'
                 cspc = None
                 if cfgObj.configspec:
-                    cspc = cfgObj.configspec.get(key) # None if not found
+                    cspc = cfgObj.configspec.get(key)  # None if not found
                 chk_func_name = ''
                 chk_args_dict = {}
                 if cspc:
@@ -929,57 +942,66 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
                 if chk_func_name.find('option') >= 0:
                     dtype = 's'
                     # convert the choices string to a list (to weed out kwds)
-                    x = cspc[cspc.find('(')+1:-1] # just the options() args
+                    x = cspc[cspc.find('(')+1:-1]  # just the options() args
 # cspc e.g.: option_kw("poly5","nearest","linear", default="poly5", comment="Interpolant (poly5,nearest,linear)")
-                    x = x.split(',') # tokenize
+                    x = x.split(',')  # tokenize
                     # but! comment value may have commas in it, find it
                     # using it's equal sign, rm all after it
-                    has_eq = [i for i in x if i.find('=')>=0]
+                    has_eq = [i for i in x if i.find('=') >= 0]
                     if len(has_eq) > 0:
-                        x = x[: x.index(has_eq[0]) ]
+                        x = x[: x.index(has_eq[0])]
                     # rm spaces, extra quotes; rm kywd arg pairs
-                    x = [i.strip("' ") for i in x if i.find('=')<0]
-                    choicesOrMin = '|'+'|'.join(x)+'|' # IRAF format for enums
-                elif chk_func_name.find('boolean') >= 0:     dtype = 'b'
-                elif chk_func_name.find('float_or_') >= 0:   dtype = 'r'
-                elif chk_func_name.find('float') >= 0:       dtype = 'R'
-                elif chk_func_name.find('integer_or_') >= 0: dtype = 'i'
-                elif chk_func_name.find('integer') >= 0:     dtype = 'I'
-                elif chk_func_name.find('action') >= 0:      dtype = 'z'
+                    x = [i.strip("' ") for i in x if i.find('=') < 0]
+                    choicesOrMin = '|'+'|'.join(x)+'|'  # IRAF format for enums
+                elif chk_func_name.find('boolean') >= 0:
+                    dtype = 'b'
+                elif chk_func_name.find('float_or_') >= 0:
+                    dtype = 'r'
+                elif chk_func_name.find('float') >= 0:
+                    dtype = 'R'
+                elif chk_func_name.find('integer_or_') >= 0:
+                    dtype = 'i'
+                elif chk_func_name.find('integer') >= 0:
+                    dtype = 'I'
+                elif chk_func_name.find('action') >= 0:
+                    dtype = 'z'
                 fields.append(dtype)
                 fields.append('a')
-                if type(val)==bool:
-                    if val: fields.append('yes')
-                    else:   fields.append('no')
+                if type(val) == bool:
+                    if val:
+                        fields.append('yes')
+                    else:
+                        fields.append('no')
                 else:
                     fields.append(val)
                 fields.append(choicesOrMin)
                 fields.append(None)
                 # Primarily use description from .cfgspc file (0). But, allow
                 # overrides from .cfg file (1) if different.
-                dscrp0 = chk_args_dict.get('comment','').strip() # ok if missing
+                dscrp0 = chk_args_dict.get(
+                    'comment', '').strip()  # ok if missing
                 dscrp1 = cfgObj.inline_comments[key]
                 if dscrp1 is None:
                     dscrp1 = ''
 
-                while len(dscrp1) > 0 and dscrp1[0] in (' ','#'):
-                    dscrp1 = dscrp1[1:] # .cfg file comments start with '#'
+                while len(dscrp1) > 0 and dscrp1[0] in (' ', '#'):
+                    dscrp1 = dscrp1[1:]  # .cfg file comments start with '#'
 
                 dscrp1 = dscrp1.strip()
                 # Now, decide what to do/say about the descriptions
                 if len(dscrp1) > 0:
                     dscrp = dscrp0
-                    if dscrp0 != dscrp1: # allow override if different
-                        dscrp = dscrp1+eparoption.DSCRPTN_FLAG # flag it
+                    if dscrp0 != dscrp1:  # allow override if different
+                        dscrp = dscrp1+eparoption.DSCRPTN_FLAG  # flag it
                         if initialPass:
                             if dscrp0 == '' and cspc is None:
                                 # this is a case where this par isn't in the
                                 # .cfgspc; ignore, it is caught/error later
                                 pass
                             else:
-                                self.debug('Description of "'+key+ \
-                                    '" overridden, from:  '+repr(dscrp0)+\
-                                    '  to:  '+repr(dscrp1))
+                                self.debug('Description of "'+key +
+                                           '" overridden, from:  '+repr(dscrp0) +
+                                           '  to:  '+repr(dscrp1))
                     fields.append(dscrp)
                 else:
                     # set the field for the GUI
@@ -991,52 +1013,54 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
                 if dumpCfgspcTo:
                     junk = cspc
                     junk = key+' = '+junk.strip()
-                    if junk.find(' comment=')<0:
-                        junk = junk[:-1]+", comment="+ \
-                               repr(irafutils.stripQuotes(dscrp1.strip()))+")"
+                    if junk.find(' comment=') < 0:
+                        junk = junk[:-1]+", comment=" + \
+                            repr(irafutils.stripQuotes(dscrp1.strip()))+")"
                     dumpCfgspcTo.write(junk+'\n')
                 # Create the par
-                if not toBeHidden or chk_func_name.find('action')==0:
+                if not toBeHidden or chk_func_name.find('action') == 0:
                     par = basicpar.parFactory(fields, True)
                     par.setScope(scopePrefix)
                     retval.append(par)
                 # else this is a hidden key
 
                 # The next few items require a fully scoped name
-                absKeyName = scopePrefix+'.'+key # assumed to be unique
+                absKeyName = scopePrefix+'.'+key  # assumed to be unique
                 # Check for pars marked to be positional args
                 if initialPass:
                     pos = chk_args_dict.get('pos')
                     if pos:
                         # we'll sort them later, on demand
-                        self._posArgs.append( (int(pos), scopePrefix, key) )
+                        self._posArgs.append((int(pos), scopePrefix, key))
                 # Check for triggers and/or dependencies
                 if initialPass:
                     # What triggers what? (thats why theres an 's' in the kwd)
                     # try "trigger" (old)
                     if chk_args_dict.get('trigger'):
-                        print("WARNING: outdated version of .cfgspc!! for "+
-                              self.__taskName+", 'trigger' unused for "+
+                        print("WARNING: outdated version of .cfgspc!! for " +
+                              self.__taskName+", 'trigger' unused for " +
                               absKeyName)
                     # try "triggers"
                     trgs = chk_args_dict.get('triggers')
-                    if trgs and len(trgs)>0:
+                    if trgs and len(trgs) > 0:
                         # eg. _allTriggers['STEP2.xy'] == ('_rule1_','_rule3_')
                         if absKeyName in self._allTriggers:
-                            raise ValueError('More than 1 of these in .cfgspc?: ' + absKeyName)
+                            raise ValueError(
+                                'More than 1 of these in .cfgspc?: ' + absKeyName)
                         # we force this to always be a sequence
-                        if isinstance(trgs, (list,tuple)):
+                        if isinstance(trgs, (list, tuple)):
                             self._allTriggers[absKeyName] = trgs
                         else:
                             self._allTriggers[absKeyName] = (trgs,)
                     # try "executes"
                     excs = chk_args_dict.get('executes')
-                    if excs and len(excs)>0:
+                    if excs and len(excs) > 0:
                         # eg. _allExecutes['STEP2.xy'] == ('_rule1_','_rule3_')
                         if absKeyName in self._allExecutes:
-                            raise ValueError('More than 1 of these in .cfgspc?: ' + absKeyName)
+                            raise ValueError(
+                                'More than 1 of these in .cfgspc?: ' + absKeyName)
                         # we force this to always be a sequence
-                        if isinstance(excs, (list,tuple)):
+                        if isinstance(excs, (list, tuple)):
                             self._allExecutes[absKeyName] = excs
                         else:
                             self._allExecutes[absKeyName] = (excs,)
@@ -1046,7 +1070,8 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
                     depName = None
                     if not depName:
                         depType = 'active_if'
-                        depName = chk_args_dict.get(depType) # e.g. =='_rule1_'
+                        depName = chk_args_dict.get(
+                            depType)  # e.g. =='_rule1_'
                     if not depName:
                         depType = 'inactive_if'
                         depName = chk_args_dict.get(depType)
@@ -1083,10 +1108,9 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
                                     str({absKeyName: depType}))
                             thisRulesDict[absKeyName] = depType
                         else:
-                            self._allDepdcs[depName] = {absKeyName:depType}
+                            self._allDepdcs[depName] = {absKeyName: depType}
                     # else no dependencies found for this chk_args_dict
         return retval
-
 
     def getTriggerStrings(self, parScope, parName):
         """ For a given item (scope + name), return all strings (in a tuple)
@@ -1094,8 +1118,7 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         # The data structure of _allTriggers was chosen for how easily/quickly
         # this particular access can be made here.
         fullName = parScope+'.'+parName
-        return self._allTriggers.get(fullName) # returns None if unfound
-
+        return self._allTriggers.get(fullName)  # returns None if unfound
 
     def getParsWhoDependOn(self, ruleName):
         """ Find any parameters which depend on the given trigger name. Returns
@@ -1104,20 +1127,19 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         # this particular access can be made here.
         return self._allDepdcs.get(ruleName)
 
-
     def getExecuteStrings(self, parScope, parName):
         """ For a given item (scope + name), return all strings (in a tuple)
         that it is meant to execute, if any exist.  Returns None is none. """
         # The data structure of _allExecutes was chosen for how easily/quickly
         # this particular access can be made here.
         fullName = parScope+'.'+parName
-        return self._allExecutes.get(fullName) # returns None if unfound
-
+        return self._allExecutes.get(fullName)  # returns None if unfound
 
     def getPosArgs(self):
         """ Return a list, in order, of any parameters marked with "pos=N" in
             the .cfgspc file. """
-        if len(self._posArgs) < 1: return []
+        if len(self._posArgs) < 1:
+            return []
         # The first item in the tuple is the index, so we now sort by it
         self._posArgs.sort()
         # Build a return list
@@ -1127,18 +1149,17 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
             retval.append(val)
         return retval
 
-
-    def getKwdArgs(self, flatten = False):
+    def getKwdArgs(self, flatten=False):
         """ Return a dict of all normal dict parameters - that is, all
             parameters NOT marked with "pos=N" in the .cfgspc file.  This will
             also exclude all hidden parameters (metadata, rules, etc). """
 
         # Start with a full deep-copy.  What complicates this method is the
         # idea of sub-sections.  This dict can have dicts as values, and so on.
-        dcopy = self.dict() # ConfigObj docs say this is a deep-copy
+        dcopy = self.dict()  # ConfigObj docs say this is a deep-copy
 
         # First go through the dict removing all positional args
-        for idx,scope,name in self._posArgs:
+        for idx, scope, name in self._posArgs:
             theDict, val = findScopedPar(dcopy, scope, name)
             # 'theDict' may be dcopy, or it may be a dict under it
             theDict.pop(name)
@@ -1158,17 +1179,14 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         # with name collisions at the top level as a result of this.
         return flattenDictTree(dcopy)
 
-
     def canPerformValidation(self):
         """ Override this so we can do our own validation. tryValue() will
             be called as a result. """
         return True
 
-
     def knowAsNative(self):
         """ Override so we can keep native types in the internal dict. """
         return True
-
 
     def tryValue(self, name, val, scope=''):
         """ For the given item name (and scope), we are being asked to try
@@ -1182,13 +1200,14 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         # Set the value, even if invalid.  It needs to be set before
         # the validation step (next).
         theDict, oldVal = findScopedPar(self, scope, name)
-        if oldVal == val: return (True, None) # assume oldVal is valid
+        if oldVal == val:
+            return (True, None)  # assume oldVal is valid
         theDict[name] = val
 
         # Check the proposed value.  Ideally, we'd like to
         # (somehow elegantly) only check this one item. For now, the best
         # shortcut is to only validate this section.
-        ans=self.validate(self._vtor, preserve_errors=True, section=theDict)
+        ans = self.validate(self._vtor, preserve_errors=True, section=theDict)
 
         # No matter what ans is, immediately return the item to its original
         # value since we are only checking the value here - not setting.
@@ -1200,12 +1219,13 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
             flatStr = "All values are invalid!"
             if ans != False:
                 flatStr = flattened2str(configobj.flatten_errors(self, ans))
-            errStr = "Validation error: "+flatStr # for now this info is unused
+            errStr = "Validation error: "+flatStr  # for now this info is unused
 
         # Done
-        if len(errStr): return (False, oldVal) # was an error
-        else:           return (True, None)    # val is OK
-
+        if len(errStr):
+            return (False, oldVal)  # was an error
+        else:
+            return (True, None)    # val is OK
 
     def listTheExtras(self, deleteAlso):
         """ Use ConfigObj's get_extra_values() call to find any extra/unknown
@@ -1221,8 +1241,8 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
         # whether that extra item is a section (1) or just a single par (0)
         #
         # simplified, this is:  expanded = [ (x+(abool,)) for x in extras]
-        expanded = [ (x+ \
-                       ( bool(len(x[0])<1 and hasattr(self[x[1]], 'keys')), ) \
+        expanded = [(x +
+                     (bool(len(x[0]) < 1 and hasattr(self[x[1]], 'keys')), )
                      ) for x in extras]
         retval = ''
         if expanded:
@@ -1235,7 +1255,8 @@ class ConfigObjPars(taskpars.TaskPars, configobj.ConfigObj):
                 # (this works because target is not a copy (because the dict
                 #  type is mutable))
                 location = tup_to_del[0]
-                for subdict in location: target = target[subdict]
+                for subdict in location:
+                    target = target[subdict]
                 # delete it
                 target.pop(tup_to_del[1])
 
@@ -1273,7 +1294,7 @@ def findTheLost(config_file, configspec_file, skipHidden=True):
         for tup in flattened:
             keep = True
             # hidden section
-            if len(tup[0])>0 and isHiddenName(tup[0][-1]):
+            if len(tup[0]) > 0 and isHiddenName(tup[0][-1]):
                 keep = False
             # hidden par (in a section, or at the top level)
             elif tup[1] is not None and isHiddenName(tup[1]):
@@ -1317,20 +1338,20 @@ def flattened2str(flattened, missing=False, extra=False):
                 # a whole section is missing at the top-level; see if hidden
                 junk = sections[0]
                 if isHiddenName(junk):
-                    continue # this missing or extra section is not an error
+                    continue  # this missing or extra section is not an error
                 else:
                     retval += '\tSection "'+sections[0]+'"'
             else:
                 retval += '\t"'+sections[0]+'.'+key+'"'
-        else: # len > 1
+        else:  # len > 1
             joined = '.'.join(sections)
             joined = '"'+joined+'"'
             if key is None:
-                retval +=  '\tSection '+joined
+                retval += '\tSection '+joined
             else:
-                retval +=  '\t"'+key+'" from '+joined
+                retval += '\t"'+key+'" from '+joined
         # End the msg line with "what seems to be the trouble" with this one
-        if missing and result==False:
+        if missing and result == False:
             retval += ' is missing.'
         elif extra:
             if result:

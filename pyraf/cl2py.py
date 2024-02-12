@@ -796,10 +796,10 @@ class VarList(GenericASTTraversal, ErrorTracker):
 
         self.addSpecial("$nargs", 'int', 0)
 
-        ##         self.addSpecial("$errno", 'int', 0)
-        ##         self.addSpecial("$errmsg", 'string', "")
-        ##         self.addSpecial("$errtask", 'string',"")
-        ##         self.addSpecial("$err_dzvalue", 'int', 1)
+        # self.addSpecial("$errno", 'int', 0)
+        # self.addSpecial("$errmsg", 'string', "")
+        # self.addSpecial("$errtask", 'string',"")
+        # self.addSpecial("$err_dzvalue", 'int', 1)
 
         for parg, ivalue in _SpecialArgs.items():
             if parg not in self.proc_args_dict:
@@ -1110,8 +1110,8 @@ class TypeCheck(GenericASTTraversal):
         assert len(node) == 3
         node.exprType = _arithType(node[0], node[2])
         node.requireType = node.exprType
-        if node[0].exprType=='int' and node[2].exprType=='int' and \
-           node[1].type=='/':
+        if node[0].exprType == 'int' and node[2].exprType == 'int' and \
+           node[1].type == '/':
             # mark this node, we want it to use integer division (truncating)
             node[1].trunc_int_div = True  # only place we add this attr
 
@@ -2032,19 +2032,19 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
             self.preorder(node[1])
             self.prune()
         else:
-            ##             if self._ecl_iferr_entered:
-            ##                 self.writeIndent("try:")
-            ##                 self.incrIndent()
-            ##                 self.writeIndent()
-            ##                 for kid in node:
-            ##                     self.preorder(kid)
-            ##                 self.decrIndent()
-            ##                 self.writeIndent("except Exception, e:")
-            ##                 self.incrIndent()
-            ##                 self.writeIndent("taskObj._ecl_record_error(e)")
-            ##                 self.decrIndent()
-            ##                 self.prune()
-            ##             else:
+            # if self._ecl_iferr_entered:
+            # self.writeIndent("try:")
+            # self.incrIndent()
+            # self.writeIndent()
+            # for kid in node:
+            # self.preorder(kid)
+            # self.decrIndent()
+            # self.writeIndent("except Exception, e:")
+            # self.incrIndent()
+            # self.writeIndent("taskObj._ecl_record_error(e)")
+            # self.decrIndent()
+            # self.prune()
+            # else:
             self._ecl_clline = FindLineNumber(node).lineno
             self.writeIndent()
 
@@ -2124,18 +2124,18 @@ class Tree2Python(GenericASTTraversal, ErrorTracker):
         self.prune()
 
 
-##         self.writeIndent("try:")
-##         self.incrIndent()
-##         self._ecl_iferr_entered += 1
-##         self.preorder(guarded_stmt)
-##         self._ecl_iferr_entered -= 1
-##         self.decrIndent()
-##         self.writeIndent("except")
-##         self.preorder(except_action)
-##         if else_action:
-##             self.writeIndent("else")
-##             self.preorder(else_action)
-##         self.prune()
+# self.writeIndent("try:")
+# self.incrIndent()
+# self._ecl_iferr_entered += 1
+# self.preorder(guarded_stmt)
+# self._ecl_iferr_entered -= 1
+# self.decrIndent()
+# self.writeIndent("except")
+# self.preorder(except_action)
+# if else_action:
+# self.writeIndent("else")
+# self.preorder(else_action)
+# self.prune()
 
     def n_while_stmt(self, node):
         """we've got a 'while' statement"""

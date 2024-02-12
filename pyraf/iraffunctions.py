@@ -16,6 +16,36 @@ R. White, 2000 January 20
 
 # define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
 
+from .irafhelp import help
+from . import irafecl
+from . import gki
+from . import cl2py as _cl2py
+from . import irafexecute as _irafexecute
+from . import iraftask as _iraftask
+from . import irafpar as _irafpar
+from . import irafinst as _irafinst
+from . import irafnames as _irafnames
+from . import wutil as _wutil
+from . import subproc as _subproc
+from decimal import Decimal as _Decimal, ROUND_HALF_UP as _ROUND_HALF_UP
+import numpy as _numpy
+from .tools import teal as _teal
+from .tools import irafutils as _irafutils
+from .tools import minmatch as _minmatch
+import io as _io
+import pickle as _pickle
+import linecache as _linecache
+import tempfile as _tempfile
+import glob as _glob
+import fnmatch as _fnmatch
+import time as _time
+import types as _types
+import struct as _struct
+import math as _math
+import re as _re
+import string as _string
+import os as _os
+import sys as _sys
 from .tools.irafglobals import *
 from .subproc import SubprocessError
 
@@ -54,35 +84,6 @@ def _writeError(msg):
 # -----------------------------------------------------
 
 # hide these modules so we can use 'from iraffunctions import *'
-import sys as _sys
-import os as _os
-import string as _string
-import re as _re
-import math as _math
-import struct as _struct
-import types as _types
-import time as _time
-import fnmatch as _fnmatch
-import glob as _glob
-import tempfile as _tempfile
-import linecache as _linecache
-import pickle as _pickle
-import io as _io
-from .tools import minmatch as _minmatch
-from .tools import irafutils as _irafutils
-from .tools import teal as _teal
-import numpy as _numpy
-from decimal import Decimal as _Decimal, ROUND_HALF_UP as _ROUND_HALF_UP
-from . import subproc as _subproc
-from . import wutil as _wutil
-from . import irafnames as _irafnames
-from . import irafinst as _irafinst
-from . import irafpar as _irafpar
-from . import iraftask as _iraftask
-from . import irafexecute as _irafexecute
-from . import cl2py as _cl2py
-from . import gki
-from . import irafecl
 try:
     from . import sscanf
 except OSError:
@@ -133,7 +134,6 @@ cl = None
 # help: implemented in irafhelp.py
 # -----------------------------------------------------
 
-from .irafhelp import help
 
 # -----------------------------------------------------
 # Init: basic initialization
@@ -184,7 +184,8 @@ Also be sure to run the "mkiraf" command to create a logion.cl
             import resource
             try:
                 hardlimit = resource.getrlimit(resource.RLIMIT_STACK)[1]
-                resource.setrlimit(resource.RLIMIT_STACK, (hardlimit, hardlimit))
+                resource.setrlimit(resource.RLIMIT_STACK,
+                                   (hardlimit, hardlimit))
             except (ValueError, OSError):
                 pass  # Ignore the error and hope the best...
 
@@ -294,7 +295,8 @@ def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
     fh = _io.StringIO()
     status = clOscmd(newfile, Stdout=fh)
     if status:
-        raise OSError(f"Execution error in script {newfile} (derived from {file})")
+        raise OSError(
+            f"Execution error in script {newfile} (derived from {file})")
     _os.remove(newfile)
     result = fh.getvalue().split('\n')
     fh.close()
@@ -1767,7 +1769,7 @@ def imaccess(filename):
         # This approach, while adaptable, is brittle in its dependency on
         # IRAF error strings
         if ((errstr.find('must specify which fits extension') >= 0) or
-            (errstr.find('ambiguous')) >= 0):
+                (errstr.find('ambiguous')) >= 0):
             return 1
         else:
             return 0
@@ -1945,7 +1947,8 @@ def fscan(theLocals, line, *namelist, **kw):
                 pat = ''.join(pat)
                 mm = _re.match(pat, line)
                 if mm is None:
-                    raise RuntimeError(f"Bug: line '{line}' pattern '{pat}' failed")
+                    raise RuntimeError(
+                        f"Bug: line '{line}' pattern '{pat}' failed")
                 iend = mm.end()
             if line[-1:] == '\n':
                 cmd = namelist[i] + ' = ' + repr(line[iend:-1])
@@ -2390,7 +2393,8 @@ def lparam(*args):
             try:
                 getTask(taskname).lParam()
             except (KeyError, TypeError):
-                _writeError(f"Warning: Could not find task {taskname} for lpar\n")
+                _writeError(
+                    f"Warning: Could not find task {taskname} for lpar\n")
 
 
 @handleRedirAndSaveKwdsPlus
@@ -2411,7 +2415,8 @@ def dparam(*args, **kw):
             try:
                 getTask(taskname).dParam(cl=cl)
             except (KeyError, TypeError):
-                _writeError(f"Warning: Could not find task {taskname} for dpar\n")
+                _writeError(
+                    f"Warning: Could not find task {taskname} for dpar\n")
 
 
 @handleRedirAndSaveKwds
@@ -2449,7 +2454,8 @@ def unlearn(*args, **kw):
                         + '\n\t'.join(ans)
                         + f'\n\nor type "unlearn {taskname} force=yes"')
             except _teal.cfgpars.NoCfgFileError:
-                _writeError(f"Warning: Could not find task {taskname} to unlearn")
+                _writeError(
+                    f"Warning: Could not find task {taskname} to unlearn")
 
 
 @handleRedirAndSaveKwdsPlus
@@ -3638,14 +3644,15 @@ def IrafPkgFactory(prefix,
                             pkgbinary)
     if pkg is not None:
         if pkg.getFilename() != newpkg.getFilename() or \
-           pkg.hasParfile()  != newpkg.hasParfile():
+           pkg.hasParfile() != newpkg.hasParfile():
             if pkg.isLoaded():
                 _writeError("Warning: currently loaded package "
                             f"`{taskname}' was not redefined")
                 return pkg
             else:
                 if not redefine:
-                    _writeError(f"Warning: `{taskname}' is a task redefinition")
+                    _writeError(
+                        f"Warning: `{taskname}' is a task redefinition")
                 _addPkg(newpkg)
                 return newpkg
         if pkg.getPkgbinary() != newpkg.getPkgbinary():
@@ -3727,7 +3734,8 @@ def redirProcess(kw):
                                 envget("clobber", "") != yes and \
                                 _os.path.exists(value):
                             # don't overwrite unless clobber is set
-                            raise OSError(f"Output file `{value}' already exists")
+                            raise OSError(
+                                f"Output file `{value}' already exists")
                     openArgs = {'mode': openArgs}
                     if 'b' not in openArgs['mode']:
                         openArgs['errors'] = 'ignore'

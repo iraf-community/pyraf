@@ -51,13 +51,15 @@ class IrafError(Exception):
 
 class _VerboseClass(_compmixin.ComparableIntBaseMixin):
     """Container class for verbosity (or other) value"""
+
     def __init__(self, value=0): self.value = value
     def set(self, value): self.value = value
     def get(self): return self.value
     def _cmpkey(self): return self.value
     def __nonzero__(self): return self.value != 0
-    def __bool__(self):    return self.value != 0
+    def __bool__(self): return self.value != 0
     def __str__(self): return str(self.value)
+
 
 Verbose = _VerboseClass()
 
@@ -75,21 +77,23 @@ userWorkingHome = _os.getcwd()
 # Otherwise look for ~/iraf.
 
 if _os.path.exists('./login.cl'):
-    userIrafHome = _os.path.join(userWorkingHome,'')
+    userIrafHome = _os.path.join(userWorkingHome, '')
 elif _os.path.exists(_os.path.expanduser('~/.iraf/login.cl')):
     userIrafHome = _os.path.expanduser('~/.iraf')
 else:
-    userIrafHome = _os.path.join(_os.getenv('HOME','.'),'iraf','')
+    userIrafHome = _os.path.join(_os.getenv('HOME', '.'), 'iraf', '')
     if not _os.path.exists(userIrafHome):
         # no ~/iraf, just use '.' as home
-        userIrafHome = _os.path.join(userWorkingHome,'')
+        userIrafHome = _os.path.join(userWorkingHome, '')
 
 # -----------------------------------------------------
 # Boolean constant class
 # -----------------------------------------------------
 
+
 class _Boolean(_compmixin.ComparableMixin):
     """Class of boolean constant object"""
+
     def __init__(self, value=None):
         # change value to 1 or 0
         if value:
@@ -116,7 +120,7 @@ class _Boolean(_compmixin.ComparableMixin):
         # Also allows single letter abbrevation "y" or "n".
         if isinstance(other, str):
             ovalue = other.lower()
-            if len(ovalue)==1:
+            if len(ovalue) == 1:
                 return method(self.__strvalue[0], ovalue)
             else:
                 return method(self.__strvalue, ovalue)
@@ -125,13 +129,14 @@ class _Boolean(_compmixin.ComparableMixin):
         return method(self.__value, other)
 
     def __nonzero__(self): return self.__value != 0
-    def __bool__(self):    return self.__value != 0
+    def __bool__(self): return self.__value != 0
     def __repr__(self): return self.__strvalue
     def __str__(self): return self.__strvalue
     def __int__(self): return self.__value
     def __float__(self): return float(self.__value)
 
 # create yes, no boolean values
+
 
 yes = _Boolean(1)
 no = _Boolean(0)
@@ -147,6 +152,7 @@ no = _Boolean(0)
 
 class _EOFClass(_compmixin.ComparableMixin):
     """Class of singleton EOF (end-of-file) object"""
+
     def __init__(self):
         global EOF
         if EOF is not None:
@@ -221,7 +227,7 @@ class _INDEFClass:
         # Despite trying to create only one INDEF object, there
         # could be more than one.  All INDEFs are equal.
         # Also allow "INDEF" - CDS 17Nov2011
-        return isinstance(other, _INDEFClass) or (other and str(other)=="INDEF")
+        return isinstance(other, _INDEFClass) or (other and str(other) == "INDEF")
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -239,44 +245,45 @@ class _INDEFClass:
     def __long__(self): return _INDEF_int
     def __float__(self): return _INDEF_float
 
-    def __nonzero__(self): return False # need bool return type
+    def __nonzero__(self): return False  # need bool return type
 
     # all operations on INDEF return INDEF
 
     def __add__(self, other): return INDEF
 
-    __sub__    = __add__
-    __mul__    = __add__
-    __rmul__   = __add__
-    __div__    = __add__
-    __mod__    = __add__
+    __sub__ = __add__
+    __mul__ = __add__
+    __rmul__ = __add__
+    __div__ = __add__
+    __mod__ = __add__
     __divmod__ = __add__
-    __pow__    = __add__
+    __pow__ = __add__
     __lshift__ = __add__
     __rshift__ = __add__
-    __and__    = __add__
-    __xor__    = __add__
-    __or__     = __add__
+    __and__ = __add__
+    __xor__ = __add__
+    __or__ = __add__
 
-    __radd__    = __add__
-    __rsub__    = __add__
-    __rmul__    = __add__
-    __rrmul__   = __add__
-    __rdiv__    = __add__
-    __rmod__    = __add__
+    __radd__ = __add__
+    __rsub__ = __add__
+    __rmul__ = __add__
+    __rrmul__ = __add__
+    __rdiv__ = __add__
+    __rmod__ = __add__
     __rdivmod__ = __add__
-    __rpow__    = __add__
+    __rpow__ = __add__
     __rlshift__ = __add__
     __rrshift__ = __add__
-    __rand__    = __add__
-    __rxor__    = __add__
-    __ror__     = __add__
+    __rand__ = __add__
+    __rxor__ = __add__
+    __ror__ = __add__
 
     def __neg__(self): return INDEF
 
-    __pos__    = __neg__
-    __abs__    = __neg__
+    __pos__ = __neg__
+    __abs__ = __neg__
     __invert__ = __neg__
+
 
 INDEF = _INDEFClass()
 
@@ -287,14 +294,22 @@ INDEF = _INDEFClass()
 # used sparingly and replaced with standard INDEF whereever
 # possible.
 
-class _INDEFClass_int(_INDEFClass, int): pass
-class _INDEFClass_float(_INDEFClass, float): pass
+
+class _INDEFClass_int(_INDEFClass, int):
+    pass
+
+
+class _INDEFClass_float(_INDEFClass, float):
+    pass
+
+
 _INDEF_int = _INDEFClass_int()
 _INDEF_float = _INDEFClass_float()
 
 # -----------------------------------------------------
 # define IRAF-like EPSILON object
 # -----------------------------------------------------
+
 
 class _EPSILONClass(_compmixin.ComparableFloatBaseMixin):
     """Class of singleton EPSILON object, for floating-point comparison"""
@@ -368,7 +383,7 @@ class _EPSILONClass(_compmixin.ComparableFloatBaseMixin):
     def __long__(self): return 0
     def __float__(self): return self._value
 
-    def __nonzero__(self): return True # need bool return type
+    def __nonzero__(self): return True  # need bool return type
 
     def __add__(self, other):
         return self._value + other
@@ -422,12 +437,14 @@ class _EPSILONClass(_compmixin.ComparableFloatBaseMixin):
     def __rpow__(self, other):
         return other ** self._value
 
+
 epsilon = _EPSILONClass()
 epsilon.setvalue()
 
 # -----------------------------------------------------
 # Float class that reproduces Py2 str precision on Py3
 # -----------------------------------------------------
+
 
 class clFloat(float):
     def __str__(self):
@@ -439,9 +456,11 @@ class clFloat(float):
                '__neg__', '__pos__'):
         exec(f'def {op}(self, *args):\n'
              f'    val = super(clFloat, self).{op}(*args)\n'
-              '    return val if val is NotImplemented else clFloat(val)')
+             '    return val if val is NotImplemented else clFloat(val)')
+
     def __divmod__(self, other):
         return tuple(clFloat(v) for v in super().__divmod__(other))
+
     def __rdivmod__(self, other):
         return tuple(clFloat(v) for v in super().__rdivmod__(other))
 
@@ -449,8 +468,10 @@ class clFloat(float):
 # tag classes
 # -----------------------------------------------------
 
+
 class IrafTask:
     pass
+
 
 class IrafPkg(IrafTask):
     pass

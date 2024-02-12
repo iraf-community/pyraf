@@ -4,7 +4,6 @@ R. White, 2001 Dec 15
 """
 
 
-
 import os
 import sys
 import tkinter
@@ -28,10 +27,10 @@ class SplashScreen(tkinter.Toplevel):
 
     def __init__(self, master=None, borderwidth=4, relief="raised", **kw):
         tkinter.Toplevel.__init__(self,
-                                master,
-                                relief=relief,
-                                borderwidth=borderwidth,
-                                **kw)
+                                  master,
+                                  relief=relief,
+                                  borderwidth=borderwidth,
+                                  **kw)
         if self.master.master is not None:  # Why?
             self.master.master.withdraw()
         self.master.withdraw()
@@ -103,9 +102,9 @@ class PyrafSplash(SplashScreen):
         iheight = self.img.height()
         height = iheight + 10 + 15 * self.nlines
         self.canvas = tkinter.Canvas(self,
-                                   width=width,
-                                   height=height,
-                                   background=self["background"])
+                                     width=width,
+                                     height=height,
+                                     background=self["background"])
         self.image = self.canvas.create_image(width // 2,
                                               5 + iheight // 2,
                                               image=self.img)
@@ -151,8 +150,8 @@ class PyrafSplash(SplashScreen):
         if event:
             # make sure button release occurred in window
             # tkinter should take care of this but doesn't
-            if event.x<0 or event.x>=self.winfo_width() or \
-               event.y<0 or event.y>=self.winfo_height():
+            if event.x < 0 or event.x >= self.winfo_width() or \
+               event.y < 0 or event.y >= self.winfo_height():
                 self['cursor'] = self.defaultCursor
                 return
         self.destroy()

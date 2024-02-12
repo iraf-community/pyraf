@@ -14,12 +14,12 @@ try:
 except ImportError:
     IPython = None
 
+
 def main():
     if "." not in sys.path:
         sys.path.insert(0, ".")
 
     from . import __version__
-
 
     # command-line options
     desc = '''
@@ -38,12 +38,12 @@ def main():
     parser.add_argument('-e', '--ecl',
                         help='Turn on ECL mode',
                         action='store_true', default=False)
-    parser.add_argument('-m','--commandwrapper',
+    parser.add_argument('-m', '--commandwrapper',
                         help='Run command line wrapper to provide extra'
                              ' capabilities (default)',
                         action='store_true', dest='commandwrapper',
                         default=True)
-    parser.add_argument('-i','--no-commandwrapper',
+    parser.add_argument('-i', '--no-commandwrapper',
                         help='No command line wrapper, just run standard'
                              ' interactive Python shell',
                         action='store_false', dest='commandwrapper')

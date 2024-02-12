@@ -9,6 +9,7 @@ Broken out from irafglobals.py which was signed "R. White, 2000 January 5"
 """
 
 
+from .tools.irafglobals import userWorkingHome
 import os as _os
 import sys as _sys
 
@@ -27,7 +28,6 @@ while _os.path.islink(thisfile):
 pyrafDir = _os.path.dirname(thisfile)
 del thisfile
 
-from .tools.irafglobals import userWorkingHome
 if not pyrafDir:
     pyrafDir = userWorkingHome
 # change relative directory paths to absolute and normalize path

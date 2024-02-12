@@ -29,15 +29,16 @@ def sigStrToKwArgsDict(checkFuncSig):
         argSpl = argPair.split('=', 1)
         if len(argSpl) > 1:
             if argSpl[0] in retval:
-                if isinstance(retval[argSpl[0]], (list,tuple)):
-                    retval[argSpl[0]]+=(irafutils.stripQuotes(argSpl[1]),) # 3rd
-                else: # 2nd in, so convert to tuple
+                if isinstance(retval[argSpl[0]], (list, tuple)):
+                    # 3rd
+                    retval[argSpl[0]] += (irafutils.stripQuotes(argSpl[1]),)
+                else:  # 2nd in, so convert to tuple
                     retval[argSpl[0]] = (retval[argSpl[0]],
                                          irafutils.stripQuotes(argSpl[1]),)
             else:
-                retval[argSpl[0]] = irafutils.stripQuotes(argSpl[1]) # 1st in
+                retval[argSpl[0]] = irafutils.stripQuotes(argSpl[1])  # 1st in
         else:
-            retval[argSpl[0]] = None #  eg. found "triggers=, max=6, ..."
+            retval[argSpl[0]] = None  # eg. found "triggers=, max=6, ..."
     return retval
 
 
@@ -49,9 +50,9 @@ def separateKeywords(kwArgsDict):
     ourKws = {}
     for k in kwArgsDict:
         if k in STANDARD_KEYS:
-            standardKws[k]=kwArgsDict[k]
+            standardKws[k] = kwArgsDict[k]
         else:
-            ourKws[k]=kwArgsDict[k]
+            ourKws[k] = kwArgsDict[k]
     return (standardKws, ourKws)
 
 
@@ -59,9 +60,10 @@ def addKwdArgsToSig(sigStr, kwArgsDict):
     """ Alter the passed function signature string to add the given kewords """
     retval = sigStr
     if len(kwArgsDict) > 0:
-        retval = retval.strip(' ,)') # open up the r.h.s. for more args
+        retval = retval.strip(' ,)')  # open up the r.h.s. for more args
         for k in kwArgsDict:
-            if retval[-1] != '(': retval += ", "
+            if retval[-1] != '(':
+                retval += ", "
             retval += str(k)+"="+str(kwArgsDict[k])
         retval += ')'
     retval = retval
@@ -69,67 +71,85 @@ def addKwdArgsToSig(sigStr, kwArgsDict):
 
 
 def boolean_check_kw(val, *args, **kw):
-    if OVCDBG: print("boolean_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
+    if OVCDBG:
+        print("boolean_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
     vtor = validate.Validator()
     checkFuncStr = "boolean"+str(tuple(args))
     checkFuncStr = addKwdArgsToSig(checkFuncStr, separateKeywords(kw)[0])
-    if OVCDBG: print("CFS: "+checkFuncStr+'\n')
+    if OVCDBG:
+        print("CFS: "+checkFuncStr+'\n')
     return vtor.check(checkFuncStr, val)
 
 
 def option_check_kw(val, *args, **kw):
-    if OVCDBG: print("option_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
+    if OVCDBG:
+        print("option_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
     vtor = validate.Validator()
     checkFuncStr = "option"+str(tuple(args))
     checkFuncStr = addKwdArgsToSig(checkFuncStr, separateKeywords(kw)[0])
-    if OVCDBG: print("CFS: "+checkFuncStr+'\n')
+    if OVCDBG:
+        print("CFS: "+checkFuncStr+'\n')
     return vtor.check(checkFuncStr, val)
 
 
 def integer_check_kw(val, *args, **kw):
-    if OVCDBG: print("integer_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
+    if OVCDBG:
+        print("integer_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
     vtor = validate.Validator()
     checkFuncStr = "integer"+str(tuple(args))
     checkFuncStr = addKwdArgsToSig(checkFuncStr, separateKeywords(kw)[0])
-    if OVCDBG: print("CFS: "+checkFuncStr+'\n')
+    if OVCDBG:
+        print("CFS: "+checkFuncStr+'\n')
     return vtor.check(checkFuncStr, val)
 
 
 def integer_or_none_check_kw(val, *args, **kw):
-    if OVCDBG: print("integer_or_none_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
-    if val in (None,'','None','NONE','INDEF'): return None # only difference
+    if OVCDBG:
+        print("integer_or_none_kw for: "+str(val) +
+              ", args: "+str(args)+", kw: "+str(kw))
+    if val in (None, '', 'None', 'NONE', 'INDEF'):
+        return None  # only difference
     vtor = validate.Validator()
     checkFuncStr = "integer"+str(tuple(args))
     checkFuncStr = addKwdArgsToSig(checkFuncStr, separateKeywords(kw)[0])
-    if OVCDBG: print("CFS: "+checkFuncStr+'\n')
+    if OVCDBG:
+        print("CFS: "+checkFuncStr+'\n')
     return vtor.check(checkFuncStr, val)
 
 
 def float_check_kw(val, *args, **kw):
-    if OVCDBG: print("float_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
+    if OVCDBG:
+        print("float_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
     vtor = validate.Validator()
     checkFuncStr = "float"+str(tuple(args))
     checkFuncStr = addKwdArgsToSig(checkFuncStr, separateKeywords(kw)[0])
-    if OVCDBG: print("CFS: "+checkFuncStr+'\n')
+    if OVCDBG:
+        print("CFS: "+checkFuncStr+'\n')
     return vtor.check(checkFuncStr, val)
 
 
 def float_or_none_check_kw(val, *args, **kw):
-    if OVCDBG: print("float_or_none_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
-    if val in (None,'','None','NONE','INDEF'): return None # only difference
+    if OVCDBG:
+        print("float_or_none_kw for: "+str(val) +
+              ", args: "+str(args)+", kw: "+str(kw))
+    if val in (None, '', 'None', 'NONE', 'INDEF'):
+        return None  # only difference
     vtor = validate.Validator()
     checkFuncStr = "float"+str(tuple(args))
     checkFuncStr = addKwdArgsToSig(checkFuncStr, separateKeywords(kw)[0])
-    if OVCDBG: print("CFS: "+checkFuncStr+'\n')
+    if OVCDBG:
+        print("CFS: "+checkFuncStr+'\n')
     return vtor.check(checkFuncStr, val)
 
 
 def string_check_kw(val, *args, **kw):
-    if OVCDBG: print("string_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
+    if OVCDBG:
+        print("string_kw for: "+str(val)+", args: "+str(args)+", kw: "+str(kw))
     vtor = validate.Validator()
     checkFuncStr = "string"+str(tuple(args))
     checkFuncStr = addKwdArgsToSig(checkFuncStr, separateKeywords(kw)[0])
-    if OVCDBG: print("CFS: "+checkFuncStr+'\n')
+    if OVCDBG:
+        print("CFS: "+checkFuncStr+'\n')
     return vtor.check(checkFuncStr, val)
 
 
@@ -140,4 +160,4 @@ FUNC_DICT = {'boolean_kw':         boolean_check_kw,
              'float_kw':           float_check_kw,
              'float_or_none_kw':   float_or_none_check_kw,
              'string_kw':          string_check_kw,
-             'action_kw':          string_check_kw }
+             'action_kw':          string_check_kw}

@@ -47,7 +47,7 @@ from . import graphcap
 from . import irafgwcs
 from . import fontdata
 from .textattrib import (CHARPATH_RIGHT, JUSTIFIED_NORMAL, FONT_ROMAN,
-                        FQUALITY_NORMAL)
+                         FQUALITY_NORMAL)
 from . import iraf
 
 nIrafColors = 16
@@ -425,7 +425,7 @@ class GkiBuffer:
                 arg = buffer[ip + 3:ip + arglen].astype(int)
                 ip = ip + arglen
                 if ((opcode < 0) or (opcode > GKI_MAX_OP_CODE) or
-                    (opcode in GKI_ILLEGAL_LIST)):
+                        (opcode in GKI_ILLEGAL_LIST)):
                     print("WARNING: Illegal graphics opcode = ", opcode)
                 else:
                     # normal return
@@ -510,7 +510,7 @@ class GkiKernel:
         # set this without knowing what you are doing - it breaks some commonly
         # used command-line redirection within PyRAF. (thus default = False)
         if self.gkiPreferTtyIpc is None:
-            self.gkiPreferTtyIpc = iraf.envget('gkiprefertty','') == 'yes'
+            self.gkiPreferTtyIpc = iraf.envget('gkiprefertty', '') == 'yes'
         return self.gkiPreferTtyIpc
 
     def createFunctionTables(self):
@@ -1033,7 +1033,7 @@ class GkiController(GkiProxy):
                     s.append(next)
                 s.reverse()
                 raise IrafError("Circular definition in graphcap for device\n"
-                                +' -> '.join(s))
+                                + ' -> '.join(s))
             else:
                 tried[devstr] = pdevstr
         return devstr

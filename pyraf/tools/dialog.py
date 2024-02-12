@@ -57,6 +57,7 @@ class Dialog:
 #       Base class for many modal dialog box classes.
 ####
 
+
 class ModalDialog(Dialog):
 
     def __init__(self, master):
@@ -66,7 +67,7 @@ class ModalDialog(Dialog):
         self.SetupDialog()
         self.CenterDialog()
         try:
-            self.top.grab_set() # make it modal
+            self.top.grab_set()  # make it modal
         except tkinter.TclError:
             # This fails on Linux, but does it really HAVE to be modal
             if sys.platform.lower().find('linux') >= 0:

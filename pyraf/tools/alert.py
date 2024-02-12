@@ -33,21 +33,21 @@ class AlertDialog(dialog.ModalDialog):
     def SetupDialog(self):
         upperFrame = tkinter.Frame(self.top)
         upperFrame['relief'] = 'raised'
-        upperFrame['bd']         = 1
-        upperFrame.pack({'expand':'yes', 'side':'top', 'fill':'both' })
+        upperFrame['bd'] = 1
+        upperFrame.pack({'expand': 'yes', 'side': 'top', 'fill': 'both'})
         self.bitmap = tkinter.Label(upperFrame)
-        self.bitmap.pack({'side':'left'})
+        self.bitmap.pack({'side': 'left'})
         msgList = self.msgString.split("\n")
         for i in range(len(msgList)):
             msgText = tkinter.Label(upperFrame)
-            msgText["text"]   = msgList[i]
-            msgText.pack({'expand':'yes', 'side':'top', 'anchor':'nw',
-                    'fill':'x' })
+            msgText["text"] = msgList[i]
+            msgText.pack({'expand': 'yes', 'side': 'top', 'anchor': 'nw',
+                          'fill': 'x'})
         self.lowerFrame = tkinter.Frame(self.top)
         self.lowerFrame['relief'] = 'raised'
-        self.lowerFrame['bd']    = 1
-        self.lowerFrame.pack({'expand':'yes', 'side':'top', 'pady':'2',
-                'fill':'both' })
+        self.lowerFrame['bd'] = 1
+        self.lowerFrame.pack({'expand': 'yes', 'side': 'top', 'pady': '2',
+                              'fill': 'both'})
 
     def OkPressed(self):
         self.TerminateDialog(1)
@@ -60,9 +60,9 @@ class AlertDialog(dialog.ModalDialog):
 
     def CreateButton(self, text, command):
         self.button = tkinter.Button(self.lowerFrame)
-        self.button["text"]       = text
-        self.button["command"]   = command
-        self.button.pack({'expand':'yes', 'pady':'2', 'side':'left'})
+        self.button["text"] = text
+        self.button["command"] = command
+        self.button.pack({'expand': 'yes', 'pady': '2', 'side': 'left'})
 
 ####
 #       Class ErrorDialog
@@ -72,6 +72,7 @@ class AlertDialog(dialog.ModalDialog):
 #
 #       To pop up an error message
 ####
+
 
 class ErrorDialog(AlertDialog):
 
@@ -88,6 +89,7 @@ class ErrorDialog(AlertDialog):
 #
 #       To pop up a warning message.
 ####
+
 
 class WarningDialog(AlertDialog):
 
@@ -106,6 +108,7 @@ class WarningDialog(AlertDialog):
 #       To pop up a simple question
 ####
 
+
 class QuestionDialog(AlertDialog):
 
     def SetupDialog(self):
@@ -123,6 +126,7 @@ class QuestionDialog(AlertDialog):
 #
 #       To pop up a message.
 ####
+
 
 class MessageDialog(AlertDialog):
 

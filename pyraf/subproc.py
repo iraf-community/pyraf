@@ -239,7 +239,7 @@ class Subprocess:
         totalwait = 0
         try:
             while totalwait <= timeout:
-                ## if totalwait: print "waiting for subprocess..."
+                # if totalwait: print "waiting for subprocess..."
                 totalwait = totalwait + printtime
                 if select.select([], self.toChild_fdlist, [], printtime)[1]:
                     if not isinstance(strval, bytes):
@@ -459,7 +459,8 @@ class Subprocess:
             os.kill(self.pid, signal.SIGCONT)
         except os.error:
             if verbose:
-                print(f"Continue failed for '{self.cmd}' - '{sys.exc_info()[1]}'")
+                print(
+                    f"Continue failed for '{self.cmd}' - '{sys.exc_info()[1]}'")
             return 0
         if verbose:
             print(f"Continued '{self.cmd}'")

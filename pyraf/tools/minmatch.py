@@ -32,12 +32,13 @@ class AmbiguousKeyError(KeyError):
 
 class MinMatchDict(UserDict):
 
-    def __init__(self,indict=None,minkeylength=1):
+    def __init__(self, indict=None, minkeylength=1):
         self.data = {}
         # use lazy instantiation for min-match dictionary
         # it may never be created if full keys are always used
         self.mmkeys = None
-        if minkeylength<1: minkeylength = 1
+        if minkeylength < 1:
+            minkeylength = 1
         self.minkeylength = minkeylength
         if indict is not None:
             add = self.add
@@ -47,7 +48,7 @@ class MinMatchDict(UserDict):
     def __deepcopy__(self, memo=None):
         """Deep copy of dictionary"""
         # this is about twice as fast as the default implementation
-        return self.__class__(copy.deepcopy(self.data,memo), self.minkeylength)
+        return self.__class__(copy.deepcopy(self.data, memo), self.minkeylength)
 
     def __getinitargs__(self):
         """Return __init__ args for pickle"""
@@ -63,34 +64,37 @@ class MinMatchDict(UserDict):
             # add abbreviations as short as minkeylength
             # always add at least one entry (even for key="")
             lenkey = len(key)
-            start = min(minkeylength,lenkey)
-            for i in range(start,lenkey+1):
-                mmkeysGet(key[0:i],[]).append(key)
+            start = min(minkeylength, lenkey)
+            for i in range(start, lenkey+1):
+                mmkeysGet(key[0:i], []).append(key)
         self.mmkeys = mmkeys
 
     def getfullkey(self, key, new=0):
         # check for exact match first
         # ambiguous key is ok if there is exact match
-        if key in self.data: return key
+        if key in self.data:
+            return key
         if not isinstance(key, str):
             raise KeyError("MinMatchDict keys must be strings")
         # no exact match, so look for unique minimum match
-        if self.mmkeys is None: self._mmInit()
+        if self.mmkeys is None:
+            self._mmInit()
         keylist = self.mmkeys.get(key)
         if keylist is None:
             # no such key -- ok only if new flag is set
-            if new: return key
+            if new:
+                return key
             raise KeyError("Key "+key+" not found")
         elif len(keylist) == 1:
             # unambiguous key
             return keylist[0]
         else:
-            return self.resolve(key,keylist)
+            return self.resolve(key, keylist)
 
     def resolve(self, key, keylist):
         """Hook to resolve ambiguities in selected keys"""
-        raise AmbiguousKeyError("Ambiguous key "+ repr(key) +
-                ", could be any of " + str(sorted(keylist)))
+        raise AmbiguousKeyError("Ambiguous key " + repr(key) +
+                                ", could be any of " + str(sorted(keylist)))
 
     def add(self, key, item):
         """Add a new key/item pair to the dictionary.  Resets an existing
@@ -100,11 +104,11 @@ class MinMatchDict(UserDict):
             # add abbreviations as short as minkeylength
             # always add at least one entry (even for key="")
             lenkey = len(key)
-            start = min(self.minkeylength,lenkey)
+            start = min(self.minkeylength, lenkey)
             # cache references to speed up loop a bit
             mmkeysGet = mmkeys.setdefault
-            for i in range(start,lenkey+1):
-                mmkeysGet(key[0:i],[]).append(key)
+            for i in range(start, lenkey+1):
+                mmkeysGet(key[0:i], []).append(key)
         self.data[key] = item
 
     def __setitem__(self, key, item):
@@ -125,19 +129,19 @@ class MinMatchDict(UserDict):
     def get(self, key, failobj=None, exact=0):
         """Raises exception if key is ambiguous"""
         if not exact:
-            key = self.getfullkey(key,new=1)
-        return self.data.get(key,failobj)
+            key = self.getfullkey(key, new=1)
+        return self.data.get(key, failobj)
 
     def get_exact_key(self, key, failobj=None):
         """Returns failobj if key does not match exactly"""
-        return self.data.get(key,failobj)
+        return self.data.get(key, failobj)
 
     def __delitem__(self, key):
         key = self.getfullkey(key)
         del self.data[key]
         if self.mmkeys is not None:
-            start = min(self.minkeylength,len(key))
-            for i in range(start,len(key)+1):
+            start = min(self.minkeylength, len(key))
+            for i in range(start, len(key)+1):
                 s = key[0:i]
                 value = self.mmkeys.get(s)
                 value.remove(key)
@@ -158,7 +162,7 @@ class MinMatchDict(UserDict):
     def _has(self, key, exact=0):
         """Raises an exception if key is ambiguous"""
         if not exact:
-            key = self.getfullkey(key,new=1)
+            key = self.getfullkey(key, new=1)
         return key in self.data
 
     def has_exact_key(self, key):
@@ -176,18 +180,20 @@ class MinMatchDict(UserDict):
         # now do the update from 'other'
         if type(other) is type(self.data):
             for key in other.keys():
-                self.add(key,other[key])
+                self.add(key, other[key])
         else:
             for key, value in other.items():
-                self.add(key,value)
+                self.add(key, value)
 
     def getall(self, key, failobj=None):
         """Returns a list of all the matching values for key,
         containing a single entry for unambiguous matches and
         multiple entries for ambiguous matches."""
-        if self.mmkeys is None: self._mmInit()
+        if self.mmkeys is None:
+            self._mmInit()
         k = self.mmkeys.get(key)
-        if not k: return failobj
+        if not k:
+            return failobj
         return list(map(self.data.get, k))
 
     def getallkeys(self, key, failobj=None):
@@ -195,7 +201,8 @@ class MinMatchDict(UserDict):
         for all the matching values for key.  The list will
         contain a single entry for unambiguous matches and
         multiple entries for ambiguous matches."""
-        if self.mmkeys is None: self._mmInit()
+        if self.mmkeys is None:
+            self._mmInit()
         return self.mmkeys.get(key, failobj)
 
 
@@ -212,7 +219,6 @@ class QuietMinMatchDict(MinMatchDict):
     """
 
     def get(self, key, failobj=None, exact=0):
-
         """Returns failobj if key is not found or is ambiguous"""
 
         if not exact:
@@ -220,11 +226,9 @@ class QuietMinMatchDict(MinMatchDict):
                 key = self.getfullkey(key)
             except KeyError:
                 return failobj
-        return self.data.get(key,failobj)
-
+        return self.data.get(key, failobj)
 
     def _has(self, key, exact=0):
-
         """Returns false if key is not found or is ambiguous"""
 
         if not exact:

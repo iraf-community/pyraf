@@ -4,6 +4,7 @@ R. White, 2000 January 7
 """
 
 
+from . import filecache
 import copy
 import glob
 import os
@@ -12,10 +13,10 @@ import types
 from .tools import minmatch, irafutils, taskpars, basicpar
 from .tools.irafglobals import INDEF, Verbose, yes, no
 from .tools.basicpar import (warning, _StringMixin, IrafPar, IrafParS,
-                                  _cmdlineFlag)
+                             _cmdlineFlag)
 # also import basicpar.IrafPar* class names for cached scripts
 from .tools.basicpar import (IrafParB, IrafParI, IrafParR, IrafParAB,
-                                  IrafParAI, IrafParAR, IrafParAS)
+                             IrafParAI, IrafParAR, IrafParAS)
 from . import iraf
 
 # -----------------------------------------------------
@@ -455,8 +456,6 @@ class IrafParUKey(IrafParL):
 # -----------------------------------------------------
 # IRAF parameter list synchronized to disk file
 # -----------------------------------------------------
-
-from . import filecache
 
 
 class ParCache(filecache.FileCache):
@@ -935,7 +934,7 @@ class IrafParList(taskpars.TaskPars):
                 # assume results_dict[''].name.startswith(key) or .name==key
                 # recall that key might be shortened version of par's .name
                 param = (results_dict[''].name, ''
-                        )  # this means (paramname, [unused])
+                         )  # this means (paramname, [unused])
                 results_dict.pop('')
 
                 # if there are others, then they are pars with the same name

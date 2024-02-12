@@ -13,6 +13,11 @@ Todd Miller, 2006 May 30  derived from epar.py and IRAF CL epar.
 
 # XXXX Debugging tip:  uncomment self.inform() in the debug() method below
 
+from . import iraffunctions
+from . import iraftask
+from . import irafhelp
+from . import irafpar
+from . import iraf
 import os
 import sys
 import re
@@ -22,6 +27,7 @@ import re
 # all of PyRAF.
 class FakeModule:
     pass
+
 
 class FakeClass:
     pass
@@ -43,11 +49,6 @@ except ImportException as e:
     urwid.the_error = str(e)
 
 # PyRAF modules
-from . import iraf
-from . import irafpar
-from . import irafhelp
-from . import iraftask
-from . import iraffunctions
 
 TPAR_HELP_EMACS = """                                EDIT COMMANDS (emacs)
 
@@ -252,7 +253,7 @@ class PyrafEdit(urwid.Edit):
         del keys["inform"]
         self.reset_del_buffers()
         urwid.Edit.__init__(self, *args, **keys)
-        EDIT_BINDINGS  = {  # single field bindings
+        EDIT_BINDINGS = {  # single field bindings
             "delete": self.DEL_CHAR,
             "del_line": self.DEL_LINE,
             "del_word": self.DEL_WORD,
@@ -752,8 +753,8 @@ class TparDisplay(Binder):
         if not isPset:
             self.save_as_button = urwid.Padding(urwid.Button(
                 "Save As", self.SAVEAS),
-                                                align="center",
-                                                width=11)
+                align="center",
+                width=11)
         self.save_button = urwid.Padding(urwid.Button("Save", self.EXIT),
                                          align="center",
                                          width=8)
@@ -951,11 +952,11 @@ class TparDisplay(Binder):
             if par.type == "pset":
                 pars.append(par.name)
         if len(pars):
-            msg = "If you have made any changes to the PSET "+ \
+            msg = "If you have made any changes to the PSET " + \
                   "values for:\n\n"
             for p in pars:
                 msg += "     " + p + "\n"
-            msg = msg+"\nthose changes will NOT be explicitly saved to:"+ \
+            msg = msg+"\nthose changes will NOT be explicitly saved to:" + \
                 '\n\n"'+fname+'"'
             # title='PSET Save-As Not Yet Supported
             okdlg = urwutil.DialogDisplay(msg, 0, 0)
@@ -1007,7 +1008,7 @@ class TparDisplay(Binder):
 
         fname = None
         if len(flist) == 1:
-            msg = "One special-purpose parameter file found.\n"+ \
+            msg = "One special-purpose parameter file found.\n" + \
                   "Load file?\n\n"+flist[0]
             yesnodlg = urwutil.DialogDisplay(msg, 12, 0)
             yesnodlg.add_buttons([("OK", 0), ("Cancel", 1)])
@@ -1234,9 +1235,9 @@ class TparDisplay(Binder):
                                     width=8)
         frame = urwid.Frame(urwid.Filler(urwid.AttrWrap(
             urwid.Text(msg), "help"),
-                                         valign="top"),
-                            header=self.header,
-                            footer=exit_button)
+            valign="top"),
+            header=self.header,
+            footer=exit_button)
         canvas = frame.render(size)
         self.ui.draw_screen(size, canvas)
         self.get_keys()  # wait for keypress

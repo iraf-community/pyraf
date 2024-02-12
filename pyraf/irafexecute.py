@@ -921,7 +921,8 @@ class IrafProcess:
                 self.writeString(line)
                 self.xferline = ''
         else:
-            raise IrafProcessError(f"xfer request for unknown channel {chan:d}")
+            raise IrafProcessError(
+                f"xfer request for unknown channel {chan:d}")
 
     def chanbytes(self):
         """Parse xmit(chan,nbytes) and return integer tuple

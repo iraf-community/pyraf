@@ -13,6 +13,7 @@ Code derived from pyraf.pycmdline.py
 # *****************************************************************************
 
 
+from .irafcompleter import IrafCompleter
 from IPython.core import release
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
@@ -40,7 +41,6 @@ if '-nobanner' not in sys.argv and '--no-banner' not in sys.argv:
 # Keep the command-line object in namespace too for access to history
 
 # --------------------------------------------------------------------------
-from .irafcompleter import IrafCompleter
 
 
 class IPythonIrafCompleter(IrafCompleter):
@@ -89,7 +89,8 @@ class IPythonIrafCompleter(IrafCompleter):
         TerminalInteractiveShell.init_readline = pyraf_init_readline  # Override class method
 
     def uninstall_init_readline_hack(self):
-        TerminalInteractiveShell.init_readline = self._ipython_init_readline  # restore class method
+        # restore class method
+        TerminalInteractiveShell.init_readline = self._ipython_init_readline
         del self._ipython_init_readline
 
 
@@ -104,6 +105,7 @@ class IPython_PyRAF_Integrator:
     3. PyRAF exception traceback simplification
 
     """
+
     def __init__(self, clemulate=1, cmddict={}, cmdchars=("a-zA-Z_.", "0-9")):
         import re
         import os

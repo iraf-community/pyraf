@@ -44,8 +44,8 @@ def printColsAuto(in_strings, term_width=80, min_pad=1):
         raise ValueError('Unexpected: ' + repr(in_strings))
 
     # get max width in input
-    maxWidth = len(max(in_strings, key=len)) + (2*min_pad) # width with pad
-    numCols = term_width//maxWidth # integer div
+    maxWidth = len(max(in_strings, key=len)) + (2*min_pad)  # width with pad
+    numCols = term_width//maxWidth  # integer div
     # set numCols so we take advantage of the whole line width
     numCols = min(numCols, len(in_strings))
 
@@ -56,18 +56,17 @@ def printColsAuto(in_strings, term_width=80, min_pad=1):
         return '\n'.join(lines)
 
     # normal case - 2 or more columns
-    colWidth = term_width//numCols # integer div
+    colWidth = term_width//numCols  # integer div
     # colWidth is guaranteed to be larger than all items in input
     retval = ''
     for i in range(len(in_strings)):
-        retval+=in_strings[i].center(colWidth)
-        if (i+1)%numCols == 0:
+        retval += in_strings[i].center(colWidth)
+        if (i+1) % numCols == 0:
             retval += '\n'
     return retval.rstrip()
 
 
-def printCols(strlist,cols=5,width=80):
-
+def printCols(strlist, cols=5, width=80):
     """Print elements of list in cols columns"""
 
     # This may exist somewhere in the Python standard libraries?
@@ -76,20 +75,21 @@ def printCols(strlist,cols=5,width=80):
     nlines = (len(strlist)+cols-1)//cols
     line = nlines*[""]
     for i in range(len(strlist)):
-        c, r = divmod(i,nlines)
+        c, r = divmod(i, nlines)
         nwid = c*width//cols - len(line[r])
-        if nwid>0:
+        if nwid > 0:
             line[r] = line[r] + nwid*" " + strlist[i]
         else:
             line[r] = line[r] + " " + strlist[i]
     for s in line:
         print(s)
 
+
 _re_doubleq2 = re.compile('""')
 _re_singleq2 = re.compile("''")
 
-def stripQuotes(value):
 
+def stripQuotes(value):
     """Strip single or double quotes off string; remove embedded quote pairs"""
 
     if value[:1] == '"':
@@ -105,6 +105,7 @@ def stripQuotes(value):
         # replace '' with '
         value = re.sub(_re_singleq2, "'", value)
     return value
+
 
 def csvSplit(line, delim=',', allowEol=True):
     """ Take a string as input (e.g. a line in a csv text file), and break
@@ -162,7 +163,7 @@ def csvSplit(line, delim=',', allowEol=True):
             if tok[-ldl:] == delim:
                 tokens.append(tok[:-ldl])
             else:
-                tokens.append(tok) # tok goes to EOL - has no delimiter
+                tokens.append(tok)  # tok goes to EOL - has no delimiter
                 keepOnRollin = False
             line = line[len(tok):]
         else:
@@ -170,6 +171,7 @@ def csvSplit(line, delim=',', allowEol=True):
             tokens.append('')
             keepOnRollin = False
     return tokens
+
 
 # We'll often need to search a string for 3 possible characters.  We could
 # loop and check each one ourselves; we could do 3 separate find() calls;
@@ -183,21 +185,27 @@ _re_sq = re.compile(r"'")
 _re_dq = re.compile(r'"')
 _re_comma_sq_dq = re.compile(r'[,\'"]')
 
+
 def _getCharsUntil(buf, stopChar, branchForQuotes, allowEol):
 
     # Sanity checks
-    if buf is None: return None
-    if len(buf) <= 0: return ''
+    if buf is None:
+        return None
+    if len(buf) <= 0:
+        return ''
 
     # Search chars left-to-right looking for stopChar
     sought = (stopChar,)
     theRe = None
     if branchForQuotes:
-        sought = (stopChar,"'",'"') # see later, we'll handle '"""' too
-        if stopChar == ',': theRe = _re_comma_sq_dq # pre-compiled common case
+        sought = (stopChar, "'", '"')  # see later, we'll handle '"""' too
+        if stopChar == ',':
+            theRe = _re_comma_sq_dq  # pre-compiled common case
     else:
-        if stopChar == '"': theRe = _re_dq # pre-compiled common case
-        if stopChar == "'": theRe = _re_sq # pre-compiled common case
+        if stopChar == '"':
+            theRe = _re_dq  # pre-compiled common case
+        if stopChar == "'":
+            theRe = _re_sq  # pre-compiled common case
 
     if theRe is None:
         theRe = re.compile('['+''.join(sought)+']')
@@ -208,7 +216,7 @@ def _getCharsUntil(buf, stopChar, branchForQuotes, allowEol):
     if mo is None:
         if not stopChar in ('"', "'"):
             # this is a primary search, not a branch into quoted text
-            return buf # searched until we hit the EOL, must be last token
+            return buf  # searched until we hit the EOL, must be last token
         else:
             # this is a branch into a quoted string - do we allow EOL here?
             if allowEol:
@@ -218,11 +226,12 @@ def _getCharsUntil(buf, stopChar, branchForQuotes, allowEol):
 
     # The expected match was found. Stop.
     if mo.group() == stopChar:
-        return buf[:1 + mo.start()] # return token plus stopChar at end
+        return buf[:1 + mo.start()]  # return token plus stopChar at end
 
     # Should not get to this point unless in a branch-for-quotes situation.
     if not branchForQuotes:
-        raise RuntimeError("Programming error! Shouldn't be here w/out branching")
+        raise RuntimeError(
+            "Programming error! Shouldn't be here w/out branching")
 
     # Quotes were found.
     # There are two kinds, but double quotes could be the start of
@@ -232,7 +241,8 @@ def _getCharsUntil(buf, stopChar, branchForQuotes, allowEol):
     #
     preQuote = buf[:mo.start()]
     if mo.group() == "'":
-        quotedPart = "'"+_getCharsUntil(buf[1+mo.start():],"'",False,allowEol)
+        quotedPart = "'" + \
+            _getCharsUntil(buf[1+mo.start():], "'", False, allowEol)
     else:
         # first double quote (are there 3 in a row?)
         idx = mo.start()
@@ -248,7 +258,8 @@ def _getCharsUntil(buf, stopChar, branchForQuotes, allowEol):
             else:
                 quotedPart = buf[idx:idx+3+end_t_q+1]
         else:
-            quotedPart = '"'+_getCharsUntil(buf[1+mo.start():],'"',False,allowEol)
+            quotedPart = '"' + \
+                _getCharsUntil(buf[1+mo.start():], '"', False, allowEol)
     lenSoFar = len(preQuote)+len(quotedPart)
     if lenSoFar < len(buf):
         # now get back to looking for end delimiter
@@ -256,7 +267,8 @@ def _getCharsUntil(buf, stopChar, branchForQuotes, allowEol):
                                    branchForQuotes, allowEol)
         return preQuote+quotedPart+postQuote
     else:
-        return buf # at end
+        return buf  # at end
+
 
 def rglob(root, pattern):
     """ Same thing as glob.glob, but recursively checks subdirs. """
@@ -267,6 +279,7 @@ def rglob(root, pattern):
             goodfiles = fnmatch.filter(files, pattern)
             retlist.extend(os.path.join(base, f) for f in goodfiles)
     return retlist
+
 
 def setWritePrivs(fname, makeWritable, ignoreErrors=False):
     """ Set a file named fname to be writable (or not) by user, with the
@@ -280,13 +293,12 @@ def setWritePrivs(fname, makeWritable, ignoreErrors=False):
             os.chmod(fname, privs & (~ stat.S_IWUSR))
     except OSError:
         if ignoreErrors:
-            pass # just try, don't whine
+            pass  # just try, don't whine
         else:
             raise
 
 
 def removeEscapes(value, quoted=0):
-
     r"""Remove escapes from in front of quotes (which IRAF seems to
     just stick in for fun sometimes.)  Remove \-newline too.
     If quoted is true, removes all blanks following \-newline
@@ -296,16 +308,16 @@ def removeEscapes(value, quoted=0):
     """
 
     i = value.find(r'\"')
-    while i>=0:
+    while i >= 0:
         value = value[:i] + value[i+1:]
-        i = value.find(r'\"',i+1)
+        i = value.find(r'\"', i+1)
     i = value.find(r"\'")
-    while i>=0:
+    while i >= 0:
         value = value[:i] + value[i+1:]
-        i = value.find(r"\'",i+1)
+        i = value.find(r"\'", i+1)
     # delete backslash-newlines
     i = value.find("\\\n")
-    while i>=0:
+    while i >= 0:
         j = i+2
         if quoted:
             # ignore blanks and tabs following \-newline in quoted strings
@@ -314,15 +326,15 @@ def removeEscapes(value, quoted=0):
                     break
                 j = j+1
         value = value[:i] + value[j:]
-        i = value.find("\\\n",i+1)
+        i = value.find("\\\n", i+1)
     return value
 
 # Must modify Python keywords to make Python code legal.  I add 'PY' to
 # beginning of Python keywords (and some other illegal Python identifiers).
 # It will be stripped off where appropriate.
 
-def translateName(s, dot=0):
 
+def translateName(s, dot=0):
     """Convert CL parameter or variable name to Python-acceptable name
 
     Translate embedded dollar signs to 'DOLLAR'
@@ -335,28 +347,29 @@ def translateName(s, dot=0):
     sparts = s.split('.')
     for i in range(len(sparts)):
         if sparts[i] == "" or sparts[i][0] in string.digits or \
-          keyword.iskeyword(sparts[i]):
+                keyword.iskeyword(sparts[i]):
             sparts[i] = 'PY' + sparts[i]
     if dot:
         return 'DOT'.join(sparts)
     else:
         return '.'.join(sparts)
 
-def untranslateName(s):
 
+def untranslateName(s):
     """Undo Python conversion of CL parameter or variable name"""
 
     s = s.replace('DOT', '.')
     s = s.replace('DOLLAR', '$')
     # delete 'PY' at start of name components
-    if s[:2] == 'PY': s = s[2:]
+    if s[:2] == 'PY':
+        s = s[2:]
     s = s.replace('.PY', '.')
     return s
 
 # procedures to read while still allowing Tk widget updates
 
-def init_tk_default_root(withdraw=True):
 
+def init_tk_default_root(withdraw=True):
     """ In case the _default_root value is required, you may
     safely call this ahead of time to ensure that it has been
     initialized.  If it has already been, this is a no-op.
@@ -364,7 +377,7 @@ def init_tk_default_root(withdraw=True):
     if not capable.OF_GRAPHICS:
         raise RuntimeError("Cannot run this command without graphics")
 
-    if not TKNTR._default_root: # TKNTR imported above
+    if not TKNTR._default_root:  # TKNTR imported above
         junk = TKNTR.Tk()
 
     # tkinter._default_root is now populated (== junk)
@@ -376,7 +389,6 @@ def init_tk_default_root(withdraw=True):
 
 
 def tkread(file, n=0):
-
     """Read n bytes from file (or socket) while running Tk mainloop.
 
     If n=0 then this runs the mainloop until some input is ready on
@@ -386,8 +398,8 @@ def tkread(file, n=0):
 
     return _TkRead().read(file, n)
 
-def tkreadline(file=None):
 
+def tkreadline(file=None):
     """Read a line from file while running Tk mainloop.
 
     If the file is not line-buffered then the Tk mainloop will stop
@@ -420,9 +432,10 @@ def tkreadline(file=None):
         tkread(fd, 0)
         # if EOF was encountered on a tty, avoid reading again because
         # it actually requests more data
-        if not select.select([fd],[],[],0)[0]:
+        if not select.select([fd], [], [], 0)[0]:
             return ''
     return file.readline()
+
 
 class _TkRead:
 
@@ -440,14 +453,15 @@ class _TkRead:
                 fd = file.fileno()
 
             except:
-                raise TypeError("file must be an integer or a filehandle/socket")
-        init_tk_default_root() # harmless if already done
+                raise TypeError(
+                    "file must be an integer or a filehandle/socket")
+        init_tk_default_root()  # harmless if already done
         self.widget = TKNTR._default_root
         if not self.widget:
             # no Tk widgets yet, so no need for mainloop
             # (shouldnt happen now with init_tk_default_root)
             s = []
-            while nbytes>0:
+            while nbytes > 0:
                 snew = os.read(fd, nbytes)
                 if snew:
                     snew = snew.decode('ascii', 'replace')
@@ -461,21 +475,20 @@ class _TkRead:
             self.nbytes = nbytes
             self.value = []
             self.widget.tk.createfilehandler(fd,
-                                    TKNTR.READABLE | TKNTR.EXCEPTION,
-                                    self._read)
+                                             TKNTR.READABLE | TKNTR.EXCEPTION,
+                                             self._read)
             try:
                 self.widget.mainloop()
             finally:
                 self.widget.tk.deletefilehandler(fd)
             return "".join(self.value)
 
-
     def _read(self, fd, mask):
         """Read waiting data and terminate Tk mainloop if done"""
         try:
             # if EOF was encountered on a tty, avoid reading again because
             # it actually requests more data
-            if select.select([fd],[],[],0)[0]:
+            if select.select([fd], [], [], 0)[0]:
                 snew = os.read(fd, self.nbytes)
                 snew = snew.decode('ascii', 'replace')
                 self.value.append(snew)
@@ -499,7 +512,7 @@ def launchBrowser(url, brow_bin='mozilla', subj=None):
 
     # Tries to use webbrowser module on most OSes, unless a system command
     # is needed.  (E.g. win, linux, sun, etc)
-    if sys.platform not in ('os2warp, iphone'): # try webbrowser w/ everything?
+    if sys.platform not in ('os2warp, iphone'):  # try webbrowser w/ everything?
         import webbrowser
         if not webbrowser.open(url):
             print("Error opening URL: "+url)
@@ -509,9 +522,9 @@ def launchBrowser(url, brow_bin='mozilla', subj=None):
 
     # Go ahead and fork a subprocess to call the correct binary
     pid = os.fork()
-    if pid == 0: # child
+    if pid == 0:  # child
         if sys.platform == 'darwin':
-            if os.system('open "'+url+'"'): # does not seem to keep '#.*'  # nosec
+            if os.system('open "'+url+'"'):  # does not seem to keep '#.*'  # nosec
                 print("Error opening URL: "+url)
         os._exit(0)
 #       The following retries if "-remote" doesnt work, opening a new browser
@@ -521,7 +534,7 @@ def launchBrowser(url, brow_bin='mozilla', subj=None):
 #           os.execvp(brow_bin,[brow_bin,url])
 #       os._exit(0)
 
-    else: # parent
+    else:  # parent
         if not subj:
             subj = url
         print('Help on "'+subj+'" is now being displayed in a browser')

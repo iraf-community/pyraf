@@ -34,13 +34,13 @@ class MsgIOWidget(tkinter.Frame):
         # Create two sub-frames, one to hold the 1-liner msg I/O, and
         # the other one to hold the whole scrollable history.
         self._nowFrame = tkinter.Frame(self,
-                                     bd=2,
-                                     relief="sunken",
-                                     takefocus=False)
+                                       bd=2,
+                                       relief="sunken",
+                                       takefocus=False)
         self._histFrame = tkinter.Frame(self,
-                                      bd=2,
-                                      relief="sunken",
-                                      takefocus=False)
+                                        bd=2,
+                                        relief="sunken",
+                                        takefocus=False)
 
         # Put in the expand/collapse button (determine it's sizes)
         self._expBttnHasTxt = True
@@ -56,12 +56,12 @@ class MsgIOWidget(tkinter.Frame):
                 btxt = ''
                 self._expBttnHasTxt = False
         self._expBttn = tkinter.Checkbutton(self._nowFrame,
-                                          command=self._expand,
-                                          padx=px,
-                                          pady=py,
-                                          text=btxt,
-                                          indicatoron=0,
-                                          state="disabled")
+                                            command=self._expand,
+                                            padx=px,
+                                            pady=py,
+                                            text=btxt,
+                                            indicatoron=0,
+                                            state="disabled")
         self._expBttn.pack(side="left", padx=3)  # , ipadx=0)
 
         # Overlay a label on the frame
@@ -70,21 +70,21 @@ class MsgIOWidget(tkinter.Frame):
         self._msgLabelMaxWidth = 65  # 70 works but causes plot redraws when
         # the history panel is opened/closed
         self._msgLabel = tkinter.Label(self._nowFrame,
-                                     textvariable=self._msgLabelVar,
-                                     anchor="w",
-                                     justify="left",
-                                     width=self._msgLabelMaxWidth,
-                                     wraplength=width - 100,
-                                     takefocus=False)
+                                       textvariable=self._msgLabelVar,
+                                       anchor="w",
+                                       justify="left",
+                                       width=self._msgLabelMaxWidth,
+                                       wraplength=width - 100,
+                                       takefocus=False)
         self._msgLabel.pack(side="left", fill="x", expand=False)
         self._msgLabel.bind('<Double-Button-1>', self._lblDblClk)
 
         self._entry = tkinter.Entry(self._nowFrame,
-                                  state="disabled",
-                                  width=1,
-                                  takefocus=False,
-                                  relief="flat",
-                                  highlightthickness=0)
+                                    state="disabled",
+                                    width=1,
+                                    takefocus=False,
+                                    relief="flat",
+                                    highlightthickness=0)
         self._entry.pack(side="left", fill="x", expand=True)
         self._entry.bind('<Return>', self._enteredText)
         self._entryTyping = tkinter.BooleanVar()

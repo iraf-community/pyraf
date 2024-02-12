@@ -315,11 +315,11 @@ class PyrafEparDialog(editpar.EditParDialog):
             if par.type == "pset":
                 pars.append(par.name)
         if len(pars):
-            msg = "If you have made any changes to the PSET "+ \
+            msg = "If you have made any changes to the PSET " + \
                   "values for:\n\n"
             for p in pars:
                 msg += "\t\t" + p + "\n"
-            msg = msg+"\nthose changes will NOT be explicitly saved to:"+ \
+            msg = msg+"\nthose changes will NOT be explicitly saved to:" + \
                 '\n\n"'+fnameToBeUsed+'"'
             showwarning(message=msg, title='PSET Save-As Not Yet Supported')
 

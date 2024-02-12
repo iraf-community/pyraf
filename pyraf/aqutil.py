@@ -4,7 +4,6 @@ bridging package so that compiling another C extension is not needed.
 """
 
 
-
 import os
 import struct
 import time

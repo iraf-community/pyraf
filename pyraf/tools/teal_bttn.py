@@ -51,7 +51,7 @@ class TealActionParButton(eparoption.ActionEparButton):
                 if '_RULES_' in tpo and exname in tpo['_RULES_'].configspec:
                     ruleSig = tpo['_RULES_'].configspec[exname]
                     chkArgsDict = vtor_checks.sigStrToKwArgsDict(ruleSig)
-                    code = chkArgsDict.get('code') # a string or None
+                    code = chkArgsDict.get('code')  # a string or None
                     # now go ahead and execute it
                     teal.execEmbCode(pscope, pname, self.getButtonLabel(),
                                      tealGui, code)
@@ -62,10 +62,12 @@ class TealActionParButton(eparoption.ActionEparButton):
             msg = 'Error executing: {}\n{}"'.format(
                 self.getButtonLabel(), ex.args[0])
             msgFull = msg+'\n'+''.join(traceback.format_exc())
-            msgFull+= "CODE:\n"+code
+            msgFull += "CODE:\n"+code
             if tealGui:
-                if teal: teal.popUpErr(tealGui.top, msg, "Action Button Error")
+                if teal:
+                    teal.popUpErr(tealGui.top, msg, "Action Button Error")
                 tealGui.debug(msgFull)
             else:
-                if teal: teal.popUpErr(None, msg, "Action Button Error")
+                if teal:
+                    teal.popUpErr(None, msg, "Action Button Error")
                 print(msgFull)

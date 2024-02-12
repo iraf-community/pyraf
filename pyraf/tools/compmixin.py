@@ -30,28 +30,29 @@ class ComparableMixin:
             return NotImplemented
 
     def __lt__(self, other):
-        return self._compare(other, lambda s,o: s < o)
+        return self._compare(other, lambda s, o: s < o)
 
     def __le__(self, other):
-        return self._compare(other, lambda s,o: s <= o)
+        return self._compare(other, lambda s, o: s <= o)
 
     def __eq__(self, other):
-        return self._compare(other, lambda s,o: s == o)
+        return self._compare(other, lambda s, o: s == o)
 
     def __ge__(self, other):
-        return self._compare(other, lambda s,o: s >= o)
+        return self._compare(other, lambda s, o: s >= o)
 
     def __gt__(self, other):
-        return self._compare(other, lambda s,o: s > o)
+        return self._compare(other, lambda s, o: s > o)
 
     def __ne__(self, other):
-        return self._compare(other, lambda s,o: s != o)
+        return self._compare(other, lambda s, o: s != o)
 
 
 class ComparableIntBaseMixin(ComparableMixin):
     """ For those classes which, at heart, are comparable to integers. """
+
     def _compare(self, other, method):
-        if isinstance(other, self.__class__): # two objects of same class
+        if isinstance(other, self.__class__):  # two objects of same class
             return method(self._cmpkey(), other._cmpkey())
         else:
             return method(int(self._cmpkey()), int(other))
@@ -59,8 +60,9 @@ class ComparableIntBaseMixin(ComparableMixin):
 
 class ComparableFloatBaseMixin(ComparableMixin):
     """ For those classes which, at heart, are comparable to floats. """
+
     def _compare(self, other, method):
-        if isinstance(other, self.__class__): # two objects of same class
+        if isinstance(other, self.__class__):  # two objects of same class
             return method(self._cmpkey(), other._cmpkey())
         else:
             return method(float(self._cmpkey()), float(other))

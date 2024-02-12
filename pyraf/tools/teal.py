@@ -163,23 +163,24 @@ the "Execute" button.
 def teal(theTask, parent=None, loadOnly=False, returnAs="dict",
          canExecute=True, strict=False, errorsToTerm=False,
          autoClose=True, defaults=False):
-#        overrides=None):
+    #        overrides=None):
     """ Start the GUI session, or simply load a task's ConfigObj. """
-    if loadOnly: # this forces returnAs="dict"
+    if loadOnly:  # this forces returnAs="dict"
         obj = None
         try:
             obj = cfgpars.getObjectFromTaskArg(theTask, strict, defaults)
 #           obj.strictUpdate(overrides) # ! would need to re-verify after this !
-        except Exception as re: # catches RuntimeError and KeyError and ...
+        except Exception as re:  # catches RuntimeError and KeyError and ...
             # Since we are loadOnly, don't pop up the GUI for this
             if strict:
                 raise
             else:
-                print(re.message.replace('\n\n','\n'))
+                print(re.message.replace('\n\n', '\n'))
         return obj
     else:
         if returnAs not in ("dict", "status", None):
-            raise ValueError("Invalid value for returnAs arg: " + str(returnAs))
+            raise ValueError(
+                "Invalid value for returnAs arg: " + str(returnAs))
         dlg = None
         try:
             # if setting to all defaults, go ahead and load it here, pre-GUI
@@ -194,13 +195,13 @@ def teal(theTask, parent=None, loadOnly=False, returnAs="dict",
         except cfgpars.NoCfgFileError as ncf:
             log_last_error()
             if errorsToTerm:
-                print(str(ncf).replace('\n\n','\n'))
+                print(str(ncf).replace('\n\n', '\n'))
             else:
-                popUpErr(parent=parent,message=str(ncf),title="Unfound Task")
-        except Exception as re: # catches RuntimeError and KeyError and ...
+                popUpErr(parent=parent, message=str(ncf), title="Unfound Task")
+        except Exception as re:  # catches RuntimeError and KeyError and ...
             log_last_error()
             if errorsToTerm:
-                print(re.message.replace('\n\n','\n'))
+                print(re.message.replace('\n\n', '\n'))
             else:
                 popUpErr(parent=parent, message=re.message,
                          title="Bad Parameters")
@@ -220,7 +221,7 @@ def teal(theTask, parent=None, loadOnly=False, returnAs="dict",
             return -1
         if dlg.executed():
             return 1
-        return 0 # save/closed
+        return 0  # save/closed
         # Note that you should be careful not to use "status" and
         # autoClose=False, because the user can Save then Cancel
 
@@ -235,7 +236,7 @@ def load(theTask, canExecute=True, strict=True, defaults=False):
 
 def log_last_error():
     import time
-    f = open(cfgpars.getAppDir()+os.sep+'last_error.txt','w')
+    f = open(cfgpars.getAppDir()+os.sep+'last_error.txt', 'w')
     f.write(time.asctime()+'\n\n')
     f.write(traceback.format_exc()+'\n')
     f.close()
@@ -251,7 +252,7 @@ def unlearn(taskPkgName, deleteAll=False):
     This does not prompt the user or print to the screen. """
 
     # this WILL throw an exception if the taskPkgName isn't found
-    flist = cfgpars.getUsrCfgFilesForPyPkg(taskPkgName) # can raise
+    flist = cfgpars.getUsrCfgFilesForPyPkg(taskPkgName)  # can raise
     if flist is None or len(flist) == 0:
         return 0
     if len(flist) == 1:
@@ -263,7 +264,7 @@ def unlearn(taskPkgName, deleteAll=False):
             os.remove(f)
         return 0
     else:
-        return flist # let the caller know this is an issue
+        return flist  # let the caller know this is an issue
 
 
 def diffFromDefaults(theTask, report=False):
@@ -272,42 +273,47 @@ def diffFromDefaults(theTask, report=False):
     is set, print to stdout the differences. """
     # get the 2 dicts (trees: dicts of dicts)
     defaultTree = load(theTask, canExecute=False, strict=True, defaults=True)
-    thisTree    = load(theTask, canExecute=False, strict=True, defaults=False)
+    thisTree = load(theTask, canExecute=False, strict=True, defaults=False)
     # they must be flattenable
     defaultFlat = cfgpars.flattenDictTree(defaultTree)
-    thisFlat    = cfgpars.flattenDictTree(thisTree)
+    thisFlat = cfgpars.flattenDictTree(thisTree)
     # use the "set" operations till there is a dict.diff()
     # thanks to:  http://stackoverflow.com/questions/715234
-    diffFlat = dict( set(thisFlat.items()) - \
-                     set(defaultFlat.items()) )
+    diffFlat = dict(set(thisFlat.items()) -
+                    set(defaultFlat.items()))
     if report:
         defaults_of_diffs_only = {}
 #       { k:defaultFlat[k] for k in diffFlat.keys() }
         for k in diffFlat:
             defaults_of_diffs_only[k] = defaultFlat[k]
-        msg = 'Non-default values of "'+str(theTask)+'":\n'+ \
-              _flat2str(diffFlat)+ \
-              '\n\nDefault values:\n'+ \
+        msg = 'Non-default values of "'+str(theTask)+'":\n' + \
+              _flat2str(diffFlat) + \
+              '\n\nDefault values:\n' + \
               _flat2str(defaults_of_diffs_only)
         print(msg)
     return diffFlat
 
-def _flat2str(fd): # waiting for a nice pretty-print
+
+def _flat2str(fd):  # waiting for a nice pretty-print
     rv = '{\n'
-    for k in fd.keys(): rv += repr(k)+': '+repr(fd[k])+'\n'
+    for k in fd.keys():
+        rv += repr(k)+': '+repr(fd[k])+'\n'
     return rv+'}'
+
 
 def _isInstalled(fullFname):
     """ Return True if the given file name is located in an
     installed area (versus a user-owned file) """
-    if not fullFname: return False
-    if not os.path.exists(fullFname): return False
+    if not fullFname:
+        return False
+    if not os.path.exists(fullFname):
+        return False
 
     import site
     instAreas = site.getsitepackages()
 
     if len(instAreas) < 1:
-        instAreas = [ os.path.dirname(os.__file__) ]
+        instAreas = [os.path.dirname(os.__file__)]
     for ia in instAreas:
         if fullFname.find(ia) >= 0:
             return True
@@ -363,23 +369,25 @@ def print_tasknames(pkgName, aDir, term_width=80, always=False,
     # Check for tasks
     taskDict = cfgpars.findAllCfgTasksUnderDir(aDir)
     tasks = [x for x in taskDict.values() if len(x) > 0]
-    if hidden: # could even account for a single taskname as input here if needed
+    if hidden:  # could even account for a single taskname as input here if needed
         for x in hidden:
-            if x in tasks: tasks.remove(x)
+            if x in tasks:
+                tasks.remove(x)
     # only be verbose if there something found
     if len(tasks) > 0:
         sortedUniqTasks = sorted(set(tasks))
         if len(sortedUniqTasks) == 1:
-            tlines = 'The following task in the '+pkgName+\
+            tlines = 'The following task in the '+pkgName +\
                      ' package can be run with TEAL:\n'
         else:
-            tlines = 'The following tasks in the '+pkgName+\
+            tlines = 'The following tasks in the '+pkgName +\
                      ' package can be run with TEAL:\n'
         tlines += printColsAuto(sortedUniqTasks, term_width=term_width,
                                 min_pad=2)
         print(tlines)
 
-def getHelpFileAsString(taskname,taskpath):
+
+def getHelpFileAsString(taskname, taskpath):
     """
     This functions will return useful help as a string read from a file
     in the task's installed directory called "<module>.help".
@@ -407,26 +415,27 @@ def getHelpFileAsString(taskname,taskpath):
         multi-line string read from the file '<taskname>.help'
 
     """
-    #get the local library directory where the code is stored
-    pathsplit=os.path.split(taskpath) # taskpath should be task's __file__
-    if taskname.find('.') > -1: # if taskname is given as package.taskname...
-        helpname=taskname.split(".")[1]    # taskname should be __taskname__ from task's module
+    # get the local library directory where the code is stored
+    pathsplit = os.path.split(taskpath)  # taskpath should be task's __file__
+    if taskname.find('.') > -1:  # if taskname is given as package.taskname...
+        # taskname should be __taskname__ from task's module
+        helpname = taskname.split(".")[1]
     else:
         helpname = taskname
     localdir = pathsplit[0]
     if localdir == '':
         localdir = '.'
-    helpfile=rglob(localdir,helpname+".help")[0]
+    helpfile = rglob(localdir, helpname+".help")[0]
 
-    if os.access(helpfile,os.R_OK):
-        fh=open(helpfile,'r')
-        ss=fh.readlines()
+    if os.access(helpfile, os.R_OK):
+        fh = open(helpfile, 'r')
+        ss = fh.readlines()
         fh.close()
-        helpString=""
+        helpString = ""
         for line in ss:
-            helpString+=line
+            helpString += line
     else:
-        helpString= ''
+        helpString = ''
 
     return helpString
 
@@ -440,7 +449,7 @@ def cfgGetBool(theObj, name, dflt):
 
 
 # Main class
-class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
+class ConfigObjEparDialog(editpar.EditParDialog):  # i.e. TEAL
     """ The TEAL GUI. """
 
     FALSEVALS = (None, False, '', 0, 0.0, '0', '0.0', 'OFF', 'Off', 'off',
@@ -449,7 +458,7 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
     def __init__(self, theTask, parent=None, title=APP_NAME,
                  isChild=0, childList=None, autoClose=False,
                  strict=False, canExecute=True):
-#                overrides=None,
+        #                overrides=None,
         self._do_usac = autoClose
 
         # Keep track of any passed-in args before creating the _taskParsObj
@@ -464,28 +473,28 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                                        resourceDir=cfgpars.getAppDir())
         # We don't return from this until the GUI is closed
 
-
     def _overrideMasterSettings(self):
         """ Override so that we can run in a different mode. """
         # config-obj dict of defaults
         cod = self._getGuiSettings()
 
         # our own GUI setup
-        self._appName              = APP_NAME
-        self._appHelpString        = tealHelpString
-        self._useSimpleAutoClose   = self._do_usac
-        self._showExtraHelpButton  = False
-        self._saveAndCloseOnExec   = cfgGetBool(cod, 'saveAndCloseOnExec', True)
-        self._showHelpInBrowser    = cfgGetBool(cod, 'showHelpInBrowser', False)
-        self._writeProtectOnSaveAs = cfgGetBool(cod, 'writeProtectOnSaveAsOpt', True)
-        self._flagNonDefaultVals   = cfgGetBool(cod, 'flagNonDefaultVals', None)
-        self._optFile              = APP_NAME.lower()+".optionDB"
+        self._appName = APP_NAME
+        self._appHelpString = tealHelpString
+        self._useSimpleAutoClose = self._do_usac
+        self._showExtraHelpButton = False
+        self._saveAndCloseOnExec = cfgGetBool(cod, 'saveAndCloseOnExec', True)
+        self._showHelpInBrowser = cfgGetBool(cod, 'showHelpInBrowser', False)
+        self._writeProtectOnSaveAs = cfgGetBool(
+            cod, 'writeProtectOnSaveAsOpt', True)
+        self._flagNonDefaultVals = cfgGetBool(cod, 'flagNonDefaultVals', None)
+        self._optFile = APP_NAME.lower()+".optionDB"
 
         # our own colors
         # prmdrss teal: #00ffaa, pure cyan (teal) #00ffff (darker) #008080
         # "#aaaaee" is a darker but good blue, but "#bbbbff" pops
-        ltblu = "#ccccff" # light blue
-        drktl = "#008888" # darkish teal
+        ltblu = "#ccccff"  # light blue
+        drktl = "#008888"  # darkish teal
         self._frmeColor = cod.get('frameColor', drktl)
         self._taskColor = cod.get('taskBoxColor', ltblu)
         self._bboxColor = cod.get('buttonBoxColor', ltblu)
@@ -493,7 +502,7 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         self._flagColor = cod.get('flaggedColor', 'brown')
 
         # double check _canExecute, but only if it is still set to the default
-        if self._canExecute and self._taskParsObj: # default _canExecute=True
+        if self._canExecute and self._taskParsObj:  # default _canExecute=True
             self._canExecute = self._taskParsObj.canExecute()
         self._showExecuteButton = self._canExecute
 
@@ -507,34 +516,34 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
             elif hhh.startswith('http:') or hhh.startswith('https:'):
                 self._knowTaskHelpIsHtml = True
             elif hhh.startswith('file:') and \
-                 (hhh.endswith('.htm') or hhh.endswith('.html')):
+                    (hhh.endswith('.htm') or hhh.endswith('.html')):
                 self._knowTaskHelpIsHtml = True
-
 
     def _preMainLoop(self):
         """ Override so that we can do some things right before activating. """
         # Put the fname in the title. EditParDialog doesn't do this by default
         self.updateTitle(self._taskParsObj.filename)
 
-
     def _doActualSave(self, fname, comment, set_ro=False, overwriteRO=False):
         """ Override this so we can handle case of file not writable, as
             well as to make our _lastSavedState copy. """
-        self.debug('Saving, file name given: '+str(fname)+', set_ro: '+\
+        self.debug('Saving, file name given: '+str(fname)+', set_ro: ' +
                    str(set_ro)+', overwriteRO: '+str(overwriteRO))
         cantWrite = False
         inInstArea = False
-        if fname in (None, ''): fname = self._taskParsObj.getFilename()
+        if fname in (None, ''):
+            fname = self._taskParsObj.getFilename()
         # now do some final checks then save
         try:
-            if _isInstalled(fname): # check: may be installed but not read-only
+            if _isInstalled(fname):  # check: may be installed but not read-only
                 inInstArea = cantWrite = True
             else:
                 # in case of save-as, allow overwrite of read-only file
                 if overwriteRO and os.path.exists(fname):
-                    setWritePrivs(fname, True, True) # try make writable
+                    setWritePrivs(fname, True, True)  # try make writable
                 # do the save
-                rv=self._taskParsObj.saveParList(filename=fname,comment=comment)
+                rv = self._taskParsObj.saveParList(
+                    filename=fname, comment=comment)
         except IOError:
             cantWrite = True
 
@@ -546,18 +555,18 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
             msg = 'Read-only config file for task "'
             if inInstArea:
                 msg = 'Installed config file for task "'
-            msg += self._taskParsObj.getName()+'" is not to be overwritten.'+\
-                  '  Values will be saved to: \n\n\t"'+fname+'".'
+            msg += self._taskParsObj.getName()+'" is not to be overwritten.' +\
+                '  Values will be saved to: \n\n\t"'+fname+'".'
             showwarning(message=msg, title="Will not overwrite!")
             # Try saving to their local copy
-            rv=self._taskParsObj.saveParList(filename=fname, comment=comment)
+            rv = self._taskParsObj.saveParList(filename=fname, comment=comment)
 
         # Treat like a save-as (update title for ALL save ops)
         self._saveAsPostSave_Hook(fname)
 
         # Limit write privs if requested (only if not in the rc dir)
         if set_ro and os.path.dirname(os.path.abspath(fname)) != \
-                                      os.path.abspath(self._rcDir):
+                os.path.abspath(self._rcDir):
             cfgpars.checkSetReadOnly(fname)
 
         # Before returning, make a copy so we know what was last saved.
@@ -565,11 +574,9 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         self._lastSavedState = self._taskParsObj.dict()
         return rv
 
-
     def _saveAsPostSave_Hook(self, fnameToBeUsed_UNUSED):
         """ Override this so we can update the title bar. """
-        self.updateTitle(self._taskParsObj.filename) # _taskParsObj is correct
-
+        self.updateTitle(self._taskParsObj.filename)  # _taskParsObj is correct
 
     def hasUnsavedChanges(self):
         """ Determine if there are any edits in the GUI that have not yet been
@@ -577,7 +584,8 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
 
         # Sanity check - this case shouldn't occur
         if self._lastSavedState is None:
-            raise RuntimeError("BUG: Please report this as it should never occur.")
+            raise RuntimeError(
+                "BUG: Please report this as it should never occur.")
 
         # Force the current GUI values into our model in memory, but don't
         # change anything.  Don't save to file, don't even convert bad
@@ -594,8 +602,8 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         # comparison only.
         return self._lastSavedState != self._taskParsObj
 
-
     # Employ an edited callback for a given item?
+
     def _defineEditedCallbackObjectFor(self, parScope, parName):
         """ Override to allow us to use an edited callback. """
 
@@ -608,7 +616,6 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         else:
             return None
 
-
     def _nonStandardEparOptionFor(self, paramTypeStr):
         """ Override to allow use of TealActionParButton.
         Return None or a class which derives from EparOption. """
@@ -619,7 +626,6 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         else:
             return None
 
-
     def updateTitle(self, atitle):
         """ Override so we can append read-only status. """
         if atitle and os.path.exists(atitle):
@@ -628,7 +634,6 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
             elif not os.access(atitle, os.W_OK):
                 atitle += '  [read only]'
         super(ConfigObjEparDialog, self).updateTitle(atitle)
-
 
     def edited(self, scope, name, lastSavedVal, newVal, action):
         """ This is the callback function invoked when an item is edited.
@@ -640,14 +645,15 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         # Get name(s) of any triggers that this par triggers
         triggerNamesTup = self._taskParsObj.getTriggerStrings(scope, name)
         if not triggerNamesTup:
-            raise ValueError('Empty trigger name for: "' + name + '", consult the .cfgspc file.')
+            raise ValueError('Empty trigger name for: "' +
+                             name + '", consult the .cfgspc file.')
 
         # Loop through all trigger names - each one is a trigger to kick off -
         # in the order that they appear in the tuple we got.  Most cases will
         # probably only have a single trigger in the tuple.
         for triggerName in triggerNamesTup:
             # First handle the known/canned trigger names
-#           print (scope, name, newVal, action, triggerName) # DBG: debug line
+            #           print (scope, name, newVal, action, triggerName) # DBG: debug line
 
             # _section_switch_
             if triggerName == '_section_switch_':
@@ -677,13 +683,13 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                 # make sure this is an action that is allowed to cause a trigger
                 ruleSig = self._taskParsObj['_RULES_'].configspec[triggerName]
                 chkArgsDict = vtor_checks.sigStrToKwArgsDict(ruleSig)
-                codeStr = chkArgsDict.get('code') # or None if didn't specify
-                when2run = chkArgsDict.get('when') # or None if didn't specify
+                codeStr = chkArgsDict.get('code')  # or None if didn't specify
+                when2run = chkArgsDict.get('when')  # or None if didn't specify
 
-                greenlight = False # do we have a green light to eval the rule?
+                greenlight = False  # do we have a green light to eval the rule?
                 if when2run is None:
-                    greenlight = True # means run rule for any possible action
-                else: # 'when' was set to something so we need to check action
+                    greenlight = True  # means run rule for any possible action
+                else:  # 'when' was set to something so we need to check action
                     # check value of action (poor man's enum)
                     if action not in editpar.GROUP_ACTIONS:
                         raise ValueError("Unknown action: " + str(action) +
@@ -696,7 +702,7 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                     # warn for invalid values
                     for w in whenlist:
                         if not w in editpar.GROUP_ACTIONS and w != 'always':
-                            print('WARNING: skipping bad value for when kwd: "'+\
+                            print('WARNING: skipping bad value for when kwd: "' +
                                   w+'" in trigger/rule: '+triggerName)
                     # finally, do the correlation
                     greenlight = 'always' in whenlist or action in whenlist
@@ -706,12 +712,14 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                 # which is intended to only ever be root-installed w/ the pkg.
                 if codeStr:
                     if not greenlight:
-                        continue # not an error, just skip this one
-                    self.showStatus("Evaluating "+triggerName+' ...') #dont keep
-                    self.top.update_idletasks() #allow msg to draw prior to exec
+                        continue  # not an error, just skip this one
+                    self.showStatus("Evaluating "+triggerName +
+                                    ' ...')  # dont keep
+                    self.top.update_idletasks()  # allow msg to draw prior to exec
                     # execute it and retrieve the outcome
                     try:
-                        outval = execEmbCode(scope, name, newVal, self, codeStr)
+                        outval = execEmbCode(
+                            scope, name, newVal, self, codeStr)
                     except Exception as ex:
                         outval = 'ERROR in '+triggerName+': '+str(ex)
                         print(outval)
@@ -723,7 +731,8 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                     # Leave this debug line in until it annoys someone
                     msg = 'Value of "'+name+'" triggered "'+triggerName+'"'
                     stroutval = str(outval)
-                    if len(stroutval) < 30: msg += '  -->  "'+stroutval+'"'
+                    if len(stroutval) < 30:
+                        msg += '  -->  "'+stroutval+'"'
                     self.showStatus(msg, keep=0)
                     # Now that we have triggerName evaluated to outval, we need
                     # to look through all the parameters and see if there are
@@ -732,9 +741,8 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                     continue
 
             # If we get here, we have an unknown/unusable trigger
-            raise RuntimeError('Unknown trigger for: "'+name+'", named: "'+ \
-                  str(triggerName)+'".  Please consult the .cfgspc file.')
-
+            raise RuntimeError('Unknown trigger for: "'+name+'", named: "' +
+                               str(triggerName)+'".  Please consult the .cfgspc file.')
 
     def findNextSection(self, scope, name):
         """ Starts with given par (scope+name) and looks further down the list
@@ -758,13 +766,12 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         # else didn't find it
         return (None, None)
 
-
     def _setTaskParsObj(self, theTask):
         """ Overridden version for ConfigObj. theTask can be either
             a .cfg file name or a ConfigObjPars object. """
         # Create the ConfigObjPars obj
         self._taskParsObj = cfgpars.getObjectFromTaskArg(theTask,
-                                    self._strict, False)
+                                                         self._strict, False)
         # Tell it that we can be used for catching debug lines
         self._taskParsObj.setDebugLogger(self)
 
@@ -773,7 +780,6 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         self._lastSavedState = self._taskParsObj.dict()
         # do this here ??!! or before _lastSavedState ??!!
 #       self._taskParsObj.strictUpdate(self._overrides)
-
 
     def _getSaveAsFilter(self):
         """ Return a string to be used as the filter arg to the save file
@@ -789,21 +795,22 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         envVarName = APP_NAME.upper()+'_CFG'
         if envVarName in os.environ:
             upx = os.environ[envVarName]
-            if len(upx) > 0:  filt = upx+"/*.cfg"
+            if len(upx) > 0:
+                filt = upx+"/*.cfg"
         # done
         return filt
-
 
     def _getOpenChoices(self):
         """ Go through all possible sites to find applicable .cfg files.
             Return as an iterable. """
         tsk = self._taskParsObj.getName()
         taskFiles = set()
-        dirsSoFar = [] # this helps speed this up (skip unneeded globs)
+        dirsSoFar = []  # this helps speed this up (skip unneeded globs)
 
         # last dir
         aDir = os.path.dirname(self._taskParsObj.filename)
-        if len(aDir) < 1: aDir = os.curdir
+        if len(aDir) < 1:
+            aDir = os.curdir
         dirsSoFar.append(aDir)
         taskFiles.update(cfgpars.getCfgFilesInDirForTask(aDir, tsk))
 
@@ -816,10 +823,10 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         # task's python pkg dir (if tsk == python pkg name)
         try:
             x, pkgf = cfgpars.findCfgFileForPkg(tsk, '.cfg', taskName=tsk,
-                              pkgObj=self._taskParsObj.getAssocPkg())
-            taskFiles.update( (pkgf,) )
+                                                pkgObj=self._taskParsObj.getAssocPkg())
+            taskFiles.update((pkgf,))
         except cfgpars.NoCfgFileError:
-            pass # no big deal - maybe there is no python package
+            pass  # no big deal - maybe there is no python package
 
         # user's own resourceDir
         aDir = self._rcDir
@@ -828,23 +835,24 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
             taskFiles.update(cfgpars.getCfgFilesInDirForTask(aDir, tsk))
 
         # extra loc - see if they used the app's env. var
-        aDir = dirsSoFar[0] # flag to skip this if no env var found
+        aDir = dirsSoFar[0]  # flag to skip this if no env var found
         envVarName = APP_NAME.upper()+'_CFG'
-        if envVarName in os.environ: aDir = os.environ[envVarName]
+        if envVarName in os.environ:
+            aDir = os.environ[envVarName]
         if aDir not in dirsSoFar:
             dirsSoFar.append(aDir)
             taskFiles.update(cfgpars.getCfgFilesInDirForTask(aDir, tsk))
 
         # At the very end, add an option which we will later interpret to mean
         # to open the file dialog.
-        taskFiles = list(taskFiles) # so as to keep next item at end of seq
+        taskFiles = list(taskFiles)  # so as to keep next item at end of seq
         taskFiles.sort()
         taskFiles.append("Other ...")
 
         return taskFiles
 
-
     # OPEN: load parameter settings from a user-specified file
+
     def pfopen(self, event=None):
         """ Load the parameter settings from a user-specified file. """
 
@@ -868,24 +876,25 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                 fname = fd.GetFileName()
                 fd.DialogCleanup()
 
-        if not fname: return # canceled
+        if not fname:
+            return  # canceled
         self.debug('Loading from: '+fname)
 
         # load it into a tmp object (use associatedPkg if we have one)
         try:
-            tmpObj = cfgpars.ConfigObjPars(fname, associatedPkg=\
-                                           self._taskParsObj.getAssocPkg(),
+            tmpObj = cfgpars.ConfigObjPars(fname, associatedPkg=self._taskParsObj.getAssocPkg(),
                                            strict=self._strict)
         except Exception as ex:
-            showerror(message=ex.message, title='Error in '+os.path.basename(fname))
+            showerror(message=ex.message, title='Error in ' +
+                      os.path.basename(fname))
             self.debug('Error in '+os.path.basename(fname))
             self.debug(traceback.format_exc())
             return
 
         # check it to make sure it is a match
         if not self._taskParsObj.isSameTaskAs(tmpObj):
-            msg = 'The current task is "'+self._taskParsObj.getName()+ \
-                  '", but the selected file is for task "'+ \
+            msg = 'The current task is "'+self._taskParsObj.getName() + \
+                  '", but the selected file is for task "' + \
                   str(tmpObj.getName())+'".  This file was not loaded.'
             showerror(message=msg, title="Error in "+os.path.basename(fname))
             self.debug(msg)
@@ -896,16 +905,17 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         newParList = tmpObj.getParList()
         try:
             self.setAllEntriesFromParList(newParList, updateModel=True)
-                # go ahead and updateModel, even though it will take longer,
-                # we need it updated for the copy of the dict we make below
+            # go ahead and updateModel, even though it will take longer,
+            # we need it updated for the copy of the dict we make below
         except editpar.UnfoundParamError as pe:
-            showwarning(message=str(pe), title="Error in "+os.path.basename(fname))
+            showwarning(message=str(pe), title="Error in " +
+                        os.path.basename(fname))
         # trip any triggers
         self.checkAllTriggers('fopen')
 
         # This new fname is our current context
         self.updateTitle(fname)
-        self._taskParsObj.filename = fname # !! maybe try setCurrentContext() ?
+        self._taskParsObj.filename = fname  # !! maybe try setCurrentContext() ?
         self.freshenFocus()
         self.showStatus("Loaded values from: "+fname, keep=2)
 
@@ -914,13 +924,11 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         # The dict() method returns a deep-copy dict of the keyvals.
         self._lastSavedState = self._taskParsObj.dict()
 
-
     def unlearn(self, event=None):
         """ Override this so that we can set to default values our way. """
         self.debug('Clicked defaults')
         self._setToDefaults()
         self.freshenFocus()
-
 
     def _handleParListMismatch(self, probStr, extra=False):
         """ Override to include ConfigObj filename and specific errors.
@@ -929,21 +937,20 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
 
         # keep down the duplicate errors
         if extra:
-            return True # the base class is already stating it will be ignored
+            return True  # the base class is already stating it will be ignored
 
         # find the actual errors, and then add that to the generic message
         errmsg = 'Warning: '
         if self._strict:
             errmsg = 'ERROR: '
         errmsg = errmsg+'mismatch between default and current par lists ' + \
-                 'for task "'+self.taskName+'".'
+            'for task "'+self.taskName+'".'
         if probStr:
             errmsg += '\n\t'+probStr
         errmsg += '\nTry editing/deleting: "' + \
                   self._taskParsObj.filename+'").'
         print(errmsg)
-        return True # as we said, not that big a deal
-
+        return True  # as we said, not that big a deal
 
     def _setToDefaults(self):
         """ Load the default parameter settings into the GUI. """
@@ -951,24 +958,25 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         # Create an empty object, where every item is set to it's default value
         try:
             tmpObj = cfgpars.ConfigObjPars(self._taskParsObj.filename,
-                                           associatedPkg=\
-                                           self._taskParsObj.getAssocPkg(),
+                                           associatedPkg=self._taskParsObj.getAssocPkg(),
                                            setAllToDefaults=self.taskName,
                                            strict=False)
         except Exception as ex:
             msg = "Error Determining Defaults"
-            showerror(message=msg+'\n\n'+ex.message, title="Error Determining Defaults")
+            showerror(message=msg+'\n\n'+ex.message,
+                      title="Error Determining Defaults")
             return
 
         # Set the GUI entries to these values (let the user Save after)
-        tmpObj.filename = self._taskParsObj.filename = '' # name it later
+        tmpObj.filename = self._taskParsObj.filename = ''  # name it later
         newParList = tmpObj.getParList()
         try:
-            self.setAllEntriesFromParList(newParList) # needn't updateModel yet
+            self.setAllEntriesFromParList(
+                newParList)  # needn't updateModel yet
             self.checkAllTriggers('defaults')
             self.updateTitle('')
-            self.showStatus("Loaded default "+self.taskName+" values via: "+ \
-                 os.path.basename(tmpObj._original_configspec), keep=1)
+            self.showStatus("Loaded default "+self.taskName+" values via: " +
+                            os.path.basename(tmpObj._original_configspec), keep=1)
         except editpar.UnfoundParamError as pe:
             showerror(message=str(pe), title="Error Setting to Default Values")
 
@@ -1004,11 +1012,11 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                                           updateModel=True)
             self.checkAllTriggers('fopen')
             self.freshenFocus()
-            self.showStatus('Loaded '+str(len(theDict))+ \
-                ' user par values for: '+self.taskName, keep=1)
+            self.showStatus('Loaded '+str(len(theDict)) +
+                            ' user par values for: '+self.taskName, keep=1)
         except Exception as ex:
-            showerror(message=ex.message, title="Error Setting to Loaded Values")
-
+            showerror(message=ex.message,
+                      title="Error Setting to Loaded Values")
 
     def _getGuiSettings(self):
         """ Return a dict (ConfigObj) of all user settings found in rcFile. """
@@ -1025,32 +1033,32 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         else:
             return {}
 
-
     def _saveGuiSettings(self):
         """ The base class doesn't implement this, so we will - save settings
         (only GUI stuff, not task related) to a file. """
         # Put the settings into a ConfigObj dict (don't use a config-spec)
         rcFile = self._rcDir+os.sep+APP_NAME.lower()+'.cfg'
         #
-        if os.path.exists(rcFile): os.remove(rcFile)
-        co = configobj.ConfigObj(rcFile) # can skip try-block, won't read file
+        if os.path.exists(rcFile):
+            os.remove(rcFile)
+        co = configobj.ConfigObj(rcFile)  # can skip try-block, won't read file
 
-        co['showHelpInBrowser']       = self._showHelpInBrowser
-        co['saveAndCloseOnExec']      = self._saveAndCloseOnExec
+        co['showHelpInBrowser'] = self._showHelpInBrowser
+        co['saveAndCloseOnExec'] = self._saveAndCloseOnExec
         co['writeProtectOnSaveAsOpt'] = self._writeProtectOnSaveAs
-        co['flagNonDefaultVals']      = self._flagNonDefaultVals
-        co['frameColor']              = self._frmeColor
-        co['taskBoxColor']            = self._taskColor
-        co['buttonBoxColor']          = self._bboxColor
-        co['entriesColor']            = self._entsColor
-        co['flaggedColor']            = self._flagColor
+        co['flagNonDefaultVals'] = self._flagNonDefaultVals
+        co['frameColor'] = self._frmeColor
+        co['taskBoxColor'] = self._taskColor
+        co['buttonBoxColor'] = self._bboxColor
+        co['entriesColor'] = self._entsColor
+        co['flaggedColor'] = self._flagColor
 
-        co.initial_comment = ['Automatically generated by '+\
-            APP_NAME+'.  All edits will eventually be overwritten.']
-        co.initial_comment.append('To use platform default colors, delete each color line below.')
-        co.final_comment = [''] # ensure \n at EOF
+        co.initial_comment = ['Automatically generated by ' +
+                              APP_NAME+'.  All edits will eventually be overwritten.']
+        co.initial_comment.append(
+            'To use platform default colors, delete each color line below.')
+        co.final_comment = ['']  # ensure \n at EOF
         co.write()
-
 
     def _applyTriggerValue(self, triggerName, outval):
         """ Here we look through the entire .cfgspc to see if any parameters
@@ -1060,8 +1068,10 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
         # First find which items are dependent upon this trigger (cached)
         # e.g. { scope1.name1 : dep'cy-type, scope2.name2 : dep'cy-type, ... }
         depParsDict = self._taskParsObj.getParsWhoDependOn(triggerName)
-        if not depParsDict: return
-        if 0: print("Dependent parameters:\n"+str(depParsDict)+"\n")
+        if not depParsDict:
+            return
+        if 0:
+            print("Dependent parameters:\n"+str(depParsDict)+"\n")
 
         # Get model data, the list of pars
         theParamList = self._taskParsObj.getParList()
@@ -1072,8 +1082,9 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
             used = False
             # For each dep par, loop to find the widget for that scope.name
             for i in range(self.numParams):
-                scopedName = theParamList[i].scope+'.'+theParamList[i].name # diff from makeFullName!!
-                if absName == scopedName: # a match was found
+                # diff from makeFullName!!
+                scopedName = theParamList[i].scope+'.'+theParamList[i].name
+                if absName == scopedName:  # a match was found
                     depType = depParsDict[absName]
                     if depType == 'active_if':
                         self.entryNo[i].setActiveState(outval)
@@ -1082,21 +1093,25 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                     elif depType == 'is_set_by':
                         self.entryNo[i].forceValue(outval, noteEdited=True)
                         # WARNING! noteEdited=True may start recursion!
-                        if len(settingMsg) > 0: settingMsg += ", "
-                        settingMsg += '"'+theParamList[i].name+'" to "'+\
+                        if len(settingMsg) > 0:
+                            settingMsg += ", "
+                        settingMsg += '"'+theParamList[i].name+'" to "' +\
                                       outval+'"'
                     elif depType in ('set_yes_if', 'set_no_if'):
                         if bool(outval):
                             newval = 'yes'
-                            if depType == 'set_no_if': newval = 'no'
+                            if depType == 'set_no_if':
+                                newval = 'no'
                             self.entryNo[i].forceValue(newval, noteEdited=True)
                             # WARNING! noteEdited=True may start recursion!
-                            if len(settingMsg) > 0: settingMsg += ", "
-                            settingMsg += '"'+theParamList[i].name+'" to "'+\
+                            if len(settingMsg) > 0:
+                                settingMsg += ", "
+                            settingMsg += '"'+theParamList[i].name+'" to "' +\
                                           newval+'"'
                         else:
-                            if len(settingMsg) > 0: settingMsg += ", "
-                            settingMsg += '"'+theParamList[i].name+\
+                            if len(settingMsg) > 0:
+                                settingMsg += ", "
+                            settingMsg += '"'+theParamList[i].name +\
                                           '" (no change)'
                     elif depType == 'is_disabled_by':
                         # this one is only used with boolean types
@@ -1112,11 +1127,12 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
                             # we'd need this if the par had no _section_switch_
 #                           self._toggleSectionActiveState(
 #                                theParamList[i].scope, False, None)
-                            if len(settingMsg) > 0: settingMsg += ", "
-                            settingMsg += '"'+theParamList[i].name+'" to "'+\
+                            if len(settingMsg) > 0:
+                                settingMsg += ", "
+                            settingMsg += '"'+theParamList[i].name+'" to "' +\
                                           outval+'"'
                     else:
-                        raise RuntimeError('Unknown dependency: "'+depType+ \
+                        raise RuntimeError('Unknown dependency: "'+depType +
                                            '" for par: "'+scopedName+'"')
                     used = True
                     break
@@ -1133,9 +1149,9 @@ class ConfigObjEparDialog(editpar.EditParDialog): # i.e. TEAL
 
             # Help to debug the .cfgspc rules
             if not used:
-                raise RuntimeError('UNUSED "'+triggerName+'" dependency: '+ \
-                      str({absName:depParsDict[absName]}))
+                raise RuntimeError('UNUSED "'+triggerName+'" dependency: ' +
+                                   str({absName: depParsDict[absName]}))
 
         if len(settingMsg) > 0:
-# why ?!    self.freshenFocus()
+            # why ?!    self.freshenFocus()
             self.showStatus('Automatically set '+settingMsg, keep=1)

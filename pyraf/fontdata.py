@@ -135,13 +135,13 @@ font1 = [
         array([
             14, 5, 1, 1, 5, 14, 18, 18, 16, 14, 13, 13, 11, 8, 6, 6, 8, 11, 13
         ],
-              dtype=int8)
+            dtype=int8)
     ], [
         array([
             12, 12, 16, 27, 31, 31, 27, 19, 17, 17, 19, 23, 26, 26, 23, 19, 17,
             17, 19
         ],
-              dtype=int8)
+            dtype=int8)
     ]),
     ([array([1, 7, 11, 17], dtype=int8),
       array([3, 15], dtype=int8)],
@@ -308,7 +308,7 @@ font1 = [
       array([8, 9, 9], dtype=int8)], [
           array([29, 27, 27, 29, 29, 27], dtype=int8),
           array([21, 21, 8], dtype=int8)
-      ]),
+    ]),
     ([
         array([8, 8, 10, 10, 8, 10], dtype=int8),
         array([8, 9, 9, 7, 4, 2], dtype=int8)

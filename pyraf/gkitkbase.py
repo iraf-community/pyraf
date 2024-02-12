@@ -289,7 +289,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         curdir = os.getcwd()
         if capable.OF_TKFD_IN_EPAR:
             fname = tkinter.filedialog.asksaveasfilename(parent=self.top,
-                                                   title="Save Metacode")
+                                                         title="Save Metacode")
         else:
             fd = filedlg.PersistSaveFileDialog(self.top, "Save Metacode", "*")
             if fd.Show() != 1:
@@ -311,7 +311,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         if not fname:
             if capable.OF_TKFD_IN_EPAR:
                 fname = tkinter.filedialog.askopenfilename(parent=self.top,
-                                                     title="Load Metacode")
+                                                           title="Load Metacode")
             else:
                 fd = filedlg.PersistLoadFileDialog(self.top, "Load Metacode",
                                                    "*")
@@ -339,8 +339,8 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         button = tkinter.Menubutton(menubar, text='Edit')
         button.pack(side="left", padx=2)
         button.menu = tkinter.Menu(button,
-                                 tearoff=0,
-                                 postcommand=self.editMenuInit)
+                                   tearoff=0,
+                                   postcommand=self.editMenuInit)
         num = 0
         button.menu.add_command(label="Undo", command=self.undoN)
         button.undoNum = num
@@ -448,8 +448,8 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         button = tkinter.Menubutton(menubar, text='Page')
         button.pack(side="left", padx=2)
         button.menu = tkinter.Menu(button,
-                                 tearoff=1,
-                                 postcommand=self.pageMenuInit)
+                                   tearoff=1,
+                                   postcommand=self.pageMenuInit)
         num = 1  # tearoff is entry 0 on menu
         button.nextNum = num
         num = num + 1
@@ -584,8 +584,8 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         button = tkinter.Menubutton(menubar, text='Window')
         button.pack(side="left", padx=2)
         button.menu = tkinter.Menu(button,
-                                 tearoff=0,
-                                 postcommand=self.windowMenuInit)
+                                   tearoff=0,
+                                   postcommand=self.windowMenuInit)
         button.menu.add_command(label="New...", command=self.createNewWindow)
         # need to add separator here because menu.delete always
         # deletes at least one item
@@ -635,19 +635,19 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         # Set up the Menu Bar with 'Close' button
         hb.menubar = tkinter.Frame(hb, relief="ridge", borderwidth=0)
         hb.menubar.button = tkinter.Button(hb.menubar,
-                                         text="Close",
-                                         relief="raised",
-                                         command=hb.destroy)
+                                           text="Close",
+                                           relief="raised",
+                                           command=hb.destroy)
         hb.menubar.button.pack()
         hb.menubar.pack(side="bottom", padx=5, pady=5)
 
         # Define the Listbox and setup the Scrollbar
         hb.list = tkinter.Listbox(hb,
-                                relief="flat",
-                                height=25,
-                                width=80,
-                                selectmode="single",
-                                selectborderwidth=0)
+                                  relief="flat",
+                                  height=25,
+                                  width=80,
+                                  selectmode="single",
+                                  selectborderwidth=0)
 
         scroll = tkinter.Scrollbar(hb, command=hb.list.yview)
         hb.list.configure(yscrollcommand=scroll.set)

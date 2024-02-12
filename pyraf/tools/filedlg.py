@@ -54,7 +54,7 @@ class FileDialog(ModalDialog):
         # Allow a start-directory as part of the given filter
         if self.filter.find(os.sep) >= 0:
             self.cwd = os.path.dirname(self.filter)
-            self.filter = os.path.basename(self.filter) # do this second!
+            self.filter = os.path.basename(self.filter)  # do this second!
         # main Dialog code
         dialog.Dialog.__init__(self, widget)
 
@@ -66,35 +66,35 @@ class FileDialog(ModalDialog):
 
         self.dirFrame = tkinter.Frame(self.top)
         self.dirFrame['relief'] = 'raised'
-        self.dirFrame['bd']      = '2'
-        self.dirFrame.pack({'expand':'no', 'side':'top', 'fill':'both'})
+        self.dirFrame['bd'] = '2'
+        self.dirFrame.pack({'expand': 'no', 'side': 'top', 'fill': 'both'})
         self.dirLabel = tkinter.Label(self.dirFrame)
         self.dirLabel["text"] = "Directory:"
-        self.dirLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
+        self.dirLabel.pack({'expand': 'no', 'side': 'left', 'fill': 'none'})
 
         # editable filter
 
         self.filterFrame = tkinter.Frame(self.top)
         self.filterFrame['relief'] = 'raised'
-        self.filterFrame['bd']   = '2'
-        self.filterFrame.pack({'expand':'no', 'side':'top', 'fill':'both'})
+        self.filterFrame['bd'] = '2'
+        self.filterFrame.pack({'expand': 'no', 'side': 'top', 'fill': 'both'})
         self.filterLabel = tkinter.Label(self.filterFrame)
         self.filterLabel["text"] = "Filter:"
-        self.filterLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
+        self.filterLabel.pack({'expand': 'no', 'side': 'left', 'fill': 'none'})
         self.filterEntry = tkinter.Entry(self.filterFrame)
         self.filterEntry.bind('<Return>', self.FilterReturnKey)
-        self.filterEntry["width"]  = "40"
+        self.filterEntry["width"] = "40"
         self.filterEntry["relief"] = "ridge"
-        self.filterEntry.pack({'expand':'yes', 'side':'right', 'fill':'x'})
+        self.filterEntry.pack({'expand': 'yes', 'side': 'right', 'fill': 'x'})
         self.filterEntry.insert(0, self.filter)
 
         # the directory and file listboxes
 
         self.listBoxFrame = tkinter.Frame(self.top)
         self.listBoxFrame['relief'] = 'raised'
-        self.listBoxFrame['bd']  = '2'
-        self.listBoxFrame.pack({'expand':'yes', 'side' :'top',
-                'pady' :'2', 'padx': '0', 'fill' :'both'})
+        self.listBoxFrame['bd'] = '2'
+        self.listBoxFrame.pack({'expand': 'yes', 'side': 'top',
+                                'pady': '2', 'padx': '0', 'fill': 'both'})
         self.CreateDirListBox()
         self.CreateFileListBox()
         self.UpdateListBoxes()
@@ -104,31 +104,34 @@ class FileDialog(ModalDialog):
         junk = FileDialog.lastWrtPrtChoice
         if junk is None:
             junk = 0
-        self.wpVar = tkinter.IntVar(value=junk) # use class attr
+        self.wpVar = tkinter.IntVar(value=junk)  # use class attr
         if self.showChmod:
             self.writeProtFrame = tkinter.Frame(self.top)
             self.writeProtFrame['relief'] = 'raised'
             self.writeProtFrame['bd'] = '2'
-            self.writeProtFrame.pack({'expand':'no','side':'top','fill':'both'})
+            self.writeProtFrame.pack(
+                {'expand': 'no', 'side': 'top', 'fill': 'both'})
             self.wpButton = tkinter.Checkbutton(self.writeProtFrame,
-                                        text="Write-protect after save",
-                                        command=self.wrtPrtClick,
-                                        var=self.wpVar)
-            self.wpButton.pack({'expand':'no', 'side':'left'})
+                                                text="Write-protect after save",
+                                                command=self.wrtPrtClick,
+                                                var=self.wpVar)
+            self.wpButton.pack({'expand': 'no', 'side': 'left'})
 
         # editable filename
 
         self.fileNameFrame = tkinter.Frame(self.top)
-        self.fileNameFrame.pack({'expand':'no', 'side':'top', 'fill':'both'})
+        self.fileNameFrame.pack(
+            {'expand': 'no', 'side': 'top', 'fill': 'both'})
         self.fileNameFrame['relief'] = 'raised'
-        self.fileNameFrame['bd']         = '2'
+        self.fileNameFrame['bd'] = '2'
         self.fileNameLabel = tkinter.Label(self.fileNameFrame)
         self.fileNameLabel["text"] = "File:"
-        self.fileNameLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
+        self.fileNameLabel.pack(
+            {'expand': 'no', 'side': 'left', 'fill': 'none'})
         self.fileNameEntry = tkinter.Entry(self.fileNameFrame)
-        self.fileNameEntry["width"]  = "40"
+        self.fileNameEntry["width"] = "40"
         self.fileNameEntry["relief"] = "ridge"
-        self.fileNameEntry.pack({'expand':'yes', 'side':'right', 'fill':'x',
+        self.fileNameEntry.pack({'expand': 'yes', 'side': 'right', 'fill': 'x',
                                  'pady': '2'})
         self.fileNameEntry.bind('<Return>', self.FileNameReturnKey)
 
@@ -136,45 +139,45 @@ class FileDialog(ModalDialog):
 
         self.buttonFrame = tkinter.Frame(self.top)
         self.buttonFrame['relief'] = 'raised'
-        self.buttonFrame['bd']   = '2'
-        self.buttonFrame.pack({'expand':'no', 'side':'top', 'fill':'x'})
+        self.buttonFrame['bd'] = '2'
+        self.buttonFrame.pack({'expand': 'no', 'side': 'top', 'fill': 'x'})
         self.okButton = tkinter.Button(self.buttonFrame)
-        self.okButton["text"]     = "OK"
-        self.okButton["command"]   = self.OkPressed
+        self.okButton["text"] = "OK"
+        self.okButton["command"] = self.OkPressed
         self.okButton["width"] = 8
-        self.okButton.pack({'expand':'yes', 'pady':'2', 'side':'left'})
+        self.okButton.pack({'expand': 'yes', 'pady': '2', 'side': 'left'})
         self.filterButton = tkinter.Button(self.buttonFrame)
-        self.filterButton["text"]         = "Filter"
-        self.filterButton["command"]   = self.FilterPressed
+        self.filterButton["text"] = "Filter"
+        self.filterButton["command"] = self.FilterPressed
         self.filterButton["width"] = 8
-        self.filterButton.pack({'expand':'yes', 'pady':'2', 'side':'left'})
+        self.filterButton.pack({'expand': 'yes', 'pady': '2', 'side': 'left'})
         button = tkinter.Button(self.buttonFrame)
         button["text"] = "Cancel"
         button["command"] = self.CancelPressed
         button["width"] = 8
-        button.pack({'expand':'yes', 'pady':'2', 'side':'left'})
+        button.pack({'expand': 'yes', 'pady': '2', 'side': 'left'})
 
     # create the directory list box
 
     def CreateDirListBox(self):
         frame = tkinter.Frame(self.listBoxFrame)
-        frame.pack({'expand':'yes', 'side' :'left', 'pady' :'1',
-                'fill' :'both'})
+        frame.pack({'expand': 'yes', 'side': 'left', 'pady': '1',
+                    'fill': 'both'})
         frame['relief'] = 'raised'
-        frame['bd']      = '2'
+        frame['bd'] = '2'
         filesFrame = tkinter.Frame(frame)
         filesFrame['relief'] = 'flat'
-        filesFrame['bd']         = '2'
-        filesFrame.pack({'side':'top', 'expand':'no', 'fill':'x'})
+        filesFrame['bd'] = '2'
+        filesFrame.pack({'side': 'top', 'expand': 'no', 'fill': 'x'})
         label = tkinter.Label(filesFrame)
         label['text'] = 'Directories:'
-        label.pack({'side':'left', 'expand':'yes', 'anchor':'w',
-                'fill':'none'})
-        scrollBar = tkinter.Scrollbar(frame, {'orient':'vertical'})
-        scrollBar.pack({'expand':'no', 'side':'right', 'fill':'y'})
-        self.dirLb = tkinter.Listbox(frame, {'yscroll':scrollBar.set})
-        self.dirLb.pack({'expand':'yes', 'side' :'top', 'pady' :'1',
-                'fill' :'both'})
+        label.pack({'side': 'left', 'expand': 'yes', 'anchor': 'w',
+                    'fill': 'none'})
+        scrollBar = tkinter.Scrollbar(frame, {'orient': 'vertical'})
+        scrollBar.pack({'expand': 'no', 'side': 'right', 'fill': 'y'})
+        self.dirLb = tkinter.Listbox(frame, {'yscroll': scrollBar.set})
+        self.dirLb.pack({'expand': 'yes', 'side': 'top', 'pady': '1',
+                         'fill': 'both'})
         self.dirLb.bind('<1>', self.DoSelection)
         self.dirLb.bind('<Double-Button-1>', self.DoDoubleClickDir)
         scrollBar['command'] = self.dirLb.yview
@@ -184,22 +187,22 @@ class FileDialog(ModalDialog):
     def CreateFileListBox(self):
         frame = tkinter.Frame(self.listBoxFrame)
         frame['relief'] = 'raised'
-        frame['bd']      = '2'
-        frame.pack({'expand':'yes', 'side' :'left', 'pady' :'1', 'padx' :'1',
-                'fill' :'both'})
+        frame['bd'] = '2'
+        frame.pack({'expand': 'yes', 'side': 'left', 'pady': '1', 'padx': '1',
+                    'fill': 'both'})
         filesFrame = tkinter.Frame(frame)
         filesFrame['relief'] = 'flat'
-        filesFrame['bd']         = '2'
-        filesFrame.pack({'side':'top', 'expand':'no', 'fill':'x'})
+        filesFrame['bd'] = '2'
+        filesFrame.pack({'side': 'top', 'expand': 'no', 'fill': 'x'})
         label = tkinter.Label(filesFrame)
         label['text'] = 'Files:'
-        label.pack({'side':'left', 'expand':'yes', 'anchor':'w',
-                'fill':'none'})
-        scrollBar = tkinter.Scrollbar(frame, {'orient':'vertical'})
-        scrollBar.pack({'side':'right', 'fill':'y'})
-        self.fileLb = tkinter.Listbox(frame, {'yscroll':scrollBar.set})
-        self.fileLb.pack({'expand':'yes', 'side' :'top', 'pady' :'0',
-                'fill' :'both'})
+        label.pack({'side': 'left', 'expand': 'yes', 'anchor': 'w',
+                    'fill': 'none'})
+        scrollBar = tkinter.Scrollbar(frame, {'orient': 'vertical'})
+        scrollBar.pack({'side': 'right', 'fill': 'y'})
+        self.fileLb = tkinter.Listbox(frame, {'yscroll': scrollBar.set})
+        self.fileLb.pack({'expand': 'yes', 'side': 'top', 'pady': '0',
+                          'fill': 'both'})
         self.fileLb.bind('<1>', self.DoSelection)
         self.fileLb.bind('<Double-Button-1>', self.DoDoubleClickFile)
         scrollBar['command'] = self.fileLb.yview
@@ -236,7 +239,8 @@ class FileDialog(ModalDialog):
         lb = event.widget
         field = self.fileNameEntry
         field.delete(0, AtEnd())
-        field.insert(0, os.path.join(self.cwd_print(), lb.get(lb.nearest(event.y))))
+        field.insert(0, os.path.join(
+            self.cwd_print(), lb.get(lb.nearest(event.y))))
         if tkinter.TkVersion >= 4.0:
             lb.select_clear(0, "end")
             lb.select_anchor(lb.nearest(event.y))
@@ -256,7 +260,7 @@ class FileDialog(ModalDialog):
         self.TerminateDialog(1)
 
     def wrtPrtClick(self):
-        FileDialog.lastWrtPrtChoice = self.wpVar.get() # update class attr
+        FileDialog.lastWrtPrtChoice = self.wpVar.get()  # update class attr
 
     def FileNameReturnKey(self, event):
         # if its a relative path then include the cwd in the name
@@ -304,6 +308,7 @@ class FileDialog(ModalDialog):
 #       Specialisation of FileDialog for loading files.
 ####
 
+
 class LoadFileDialog(FileDialog):
 
     def __init__(self, master, title, filter):
@@ -329,6 +334,7 @@ class LoadFileDialog(FileDialog):
 #       Specialisation of FileDialog for saving files.
 ####
 
+
 class SaveFileDialog(FileDialog):
 
     def __init__(self, master, title, filter):
@@ -346,7 +352,7 @@ class SaveFileDialog(FileDialog):
             warningDlg.DialogCleanup()
         FileDialog.OkPressed(self)
 
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 #############################################################################
 #
@@ -362,6 +368,7 @@ class SaveFileDialog(FileDialog):
 #
 #############################################################################
 
+
 class PersistFileDialog(FileDialog):
 
     # Define a class variable to track the last accessed directory
@@ -374,7 +381,7 @@ class PersistFileDialog(FileDialog):
         # If the last accessed directory were not None, start up
         # the file browser in the last accessed directory.
         if self.__class__.lastAccessedDir:
-            self.cwd      = self.__class__.lastAccessedDir
+            self.cwd = self.__class__.lastAccessedDir
 
     # Override the OkPressed method from the parent in order to
     # update the class variable.

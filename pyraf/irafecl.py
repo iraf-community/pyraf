@@ -1,7 +1,6 @@
 """This module adds IRAF ECL style error handling to PyRAF."""
 
 
-
 import inspect
 import sys
 from .tools.irafglobals import Verbose
@@ -408,9 +407,9 @@ class EclTraceback(EclBase):
                 pass
 
 
-## The following classes exist as "ECL enabled" drop in replacements for the original
-## PyRAF task classes.  I factored things this way in an attempt to minimize the impact
-## of ECL changes on ordinary PyRAF CL.
+# The following classes exist as "ECL enabled" drop in replacements for the original
+# PyRAF task classes.  I factored things this way in an attempt to minimize the impact
+# of ECL changes on ordinary PyRAF CL.
 
 
 class EclTask(EclBase, iraftask.IrafTask):

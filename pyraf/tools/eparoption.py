@@ -41,9 +41,9 @@ if sys.platform == 'darwin':
     del junk
 
 # Constants
-MAXLIST  =  15
+MAXLIST = 15
 MAXLINES = 100
-XSHIFT   = 110
+XSHIFT = 110
 DSCRPTN_FLAG = ' (***)'
 
 
@@ -71,23 +71,23 @@ class EparOption:
         # Hook to allow scroll when this widget gets focus
         self.doScroll = doScroll
         # Track selection at the last FocusOut event
-        self.lastSelection = (0,"end")
+        self.lastSelection = (0, "end")
 
         # A new Frame is created for each parameter entry
-        self.master       = master
-        self.bkgColor     = bg
+        self.master = master
+        self.bkgColor = bg
         self.master_frame = tkinter.Frame(self.master, bg=self.bkgColor)
-        self.paramInfo    = paramInfo
+        self.paramInfo = paramInfo
         self.defaultParamInfo = defaultParamInfo
         self.defaultsVerb = defaultsVerb
-        self.inputWidth   = fieldWidths.get('inputWidth')
-        self.valueWidth   = fieldWidths.get('valueWidth')
-        self.promptWidth  = fieldWidths.get('promptWidth')
+        self.inputWidth = fieldWidths.get('inputWidth')
+        self.valueWidth = fieldWidths.get('valueWidth')
+        self.promptWidth = fieldWidths.get('promptWidth')
 
         self.choice = self.choiceClass(self.master_frame)
         self.name = self.paramInfo.name
-        self.value = self.paramInfo.get(field = "p_filename", native = 0,
-                                        prompt = 0)
+        self.value = self.paramInfo.get(field="p_filename", native=0,
+                                        prompt=0)
         self.previousValue = self.value
         self._editedCallbackObj = None
         self._helpCallbackObj = helpCallbackObj
@@ -101,19 +101,19 @@ class EparOption:
         # because it messes with the total width of the window...
         if 0 and indent:
             self.spacer = tkinter.Label(self.master_frame, anchor="w", takefocus=0,
-                                text="", width=3, bg=self.bkgColor)
+                                        text="", width=3, bg=self.bkgColor)
             self.spacer.pack(side="left", fill="x", expand=True)
 
         # Generate the input label
-        if self.paramInfo.get(field = "p_mode") == "h":
-            self.inputLabel = tkinter.Label(self.master_frame, anchor = "w",
-                                    text  = "("+self.getShowName()+")",
-                                    width = self.inputWidth, bg=self.bkgColor)
+        if self.paramInfo.get(field="p_mode") == "h":
+            self.inputLabel = tkinter.Label(self.master_frame, anchor="w",
+                                            text="("+self.getShowName()+")",
+                                            width=self.inputWidth, bg=self.bkgColor)
         else:
-            self.inputLabel = tkinter.Label(self.master_frame, anchor = "w",
-                                    text  = self.getShowName(),
-                                    width = self.inputWidth, bg=self.bkgColor)
-        self.inputLabel.pack(side = "left", fill = "x", expand = True)
+            self.inputLabel = tkinter.Label(self.master_frame, anchor="w",
+                                            text=self.getShowName(),
+                                            width=self.inputWidth, bg=self.bkgColor)
+        self.inputLabel.pack(side="left", fill="x", expand=True)
 
         # Get the prompt string and determine if special handling is needed
         # Use the prompt/description from the default version, in case they
@@ -122,10 +122,10 @@ class EparOption:
                                                 prompt=0)
 
         # Check the prompt to determine how many lines of valid text exist
-        lines       = self.prompt.split("\n")
-        nlines      = len(lines)
+        lines = self.prompt.split("\n")
+        nlines = len(lines)
         promptLines = " " + lines[0]
-        infoLines   = ""
+        infoLines = ""
         blankLineNo = MAXLINES
         if (nlines > 1):
             # Keep all the lines of text before the blank line for the prompt
@@ -146,12 +146,12 @@ class EparOption:
 
         # Generate the prompt label
         self.promptLabel = tkinter.Label(self.master_frame, anchor="w", fg=fgColor,
-                                 text=promptLines, width=self.promptWidth,
-                                 bg=self.bkgColor)
+                                         text=promptLines, width=self.promptWidth,
+                                         bg=self.bkgColor)
         self.promptLabel.pack(side="right", fill="x", expand=True)
 
         # Settings for subclasses to override in the makeInputWidget method
-        self.isSelectable = True # ie widget has text (num or str) to select
+        self.isSelectable = True  # ie widget has text (num or str) to select
 
         # Default is none of items on popup menu are activated
         # These can be changed by the makeInputWidget method to customize
@@ -211,11 +211,11 @@ class EparOption:
 
             # Assign the informational text to the label and pack
             self.master.infoText.label = tkinter.Label(self.master.infoText,
-                                               text = infoLines,
-                                               anchor = "w",
-                                               bg = self.bkgColor)
-            self.master.infoText.label.pack(side = "left")
-            self.master.infoText.pack(side = "top", anchor = "w")
+                                                       text=infoLines,
+                                                       anchor="w",
+                                                       bg=self.bkgColor)
+            self.master.infoText.label.pack(side="left")
+            self.master.infoText.pack(side="top", anchor="w")
 
     def setFlaggedColor(self, colorstr):
         self._flaggedColor = colorstr
@@ -225,7 +225,7 @@ class EparOption:
         if redrawImmediately:
             if self._flagNonDefaultVals:
                 curVal = self.choice.get()
-            else: # otheriwse we don't care; use None; is ok and faster
+            else:  # otheriwse we don't care; use None; is ok and faster
                 curVal = None
             self.flagThisPar(curVal, True)
 
@@ -267,7 +267,7 @@ class EparOption:
             except AttributeError:
                 pass
             if USING_X and sys.platform == 'darwin':
-                pass # do nothing here - we need it left selected for cut/paste
+                pass  # do nothing here - we need it left selected for cut/paste
             else:
                 entry.selection_clear()
         else:
@@ -280,7 +280,7 @@ class EparOption:
         # Note that this isn't perfect - it is a key click behind when
         # selections are made via shift-arrow.  If this becomes important, it
         # can likely be fixed with after().
-        if self.entry.selection_present(): # entry must be text entry type
+        if self.entry.selection_present():  # entry must be text entry type
             i1 = self.entry.index("sel.first")
             i2 = self.entry.index("sel.last")
             if i1 >= 0 and i2 >= 0 and i2 > i1:
@@ -300,7 +300,8 @@ class EparOption:
             # scrolls and text selection when the focus moves in and out
             # of the window.
             if self.doScroll(event):
-                self.entry.selection_range(0, "end") # select all text in widget
+                # select all text in widget
+                self.entry.selection_range(0, "end")
             else:
                 # restore selection to what it was on the last FocusOut
                 if self.lastSelection:
@@ -330,12 +331,11 @@ class EparOption:
                 self.status.bell()
             errorMsg = str(exceptionInfo)
             if event is not None:
-                self.status.config(text = errorMsg)
+                self.status.config(text=errorMsg)
             # highlight the text again and terminate processing so
             # focus stays in this widget
             self.focusIn(event)
             return "break"
-
 
     def widgetEdited(self, event=None, val=None, action='entry', skipDups=True):
         """ A general method for firing any applicable triggers when
@@ -353,7 +353,7 @@ class EparOption:
             return
 
         # get the current value
-        curVal = val # take this first, if it is given
+        curVal = val  # take this first, if it is given
         if curVal is None:
             curVal = self.choice.get()
 
@@ -361,10 +361,12 @@ class EparOption:
         self.flagThisPar(curVal, False)
 
         # see if this is a duplicate successive call for the same value
-        if skipDups and curVal==self._lastWidgetEditedVal: return
+        if skipDups and curVal == self._lastWidgetEditedVal:
+            return
 
         # pull trigger
-        if not self._editedCallbackObj: return
+        if not self._editedCallbackObj:
+            return
         self._editedCallbackObj.edited(self.paramInfo.scope,
                                        self.paramInfo.name,
                                        self.previousValue, curVal,
@@ -372,13 +374,12 @@ class EparOption:
         # for our duplicate checker
         self._lastWidgetEditedVal = curVal
 
-
     def focus_set(self, event=None):
         """Set focus to input widget"""
         self.entry.focus_set()
 
-
     # Generate the the input widget as appropriate to the parameter datatype
+
     def makeInputWidget(self):
         pass
 
@@ -390,34 +391,34 @@ class EparOption:
         """
         # don't bother if all items are disabled
         if "normal" not in (self.browserEnabled, self.clearEnabled,
-                          self.unlearnEnabled, self.helpEnabled):
+                            self.unlearnEnabled, self.helpEnabled):
             return
 
-        self.menu = tkinter.Menu(self.entry, tearoff = 0)
+        self.menu = tkinter.Menu(self.entry, tearoff=0)
         if self.browserEnabled != "disabled":
             # Handle file and directory in different functions (tkFileDialog)
             if capable.OF_TKFD_IN_EPAR:
-                self.menu.add_command(label   = "File Browser",
-                                      state   = self.browserEnabled,
-                                      command = self.fileBrowser)
-                self.menu.add_command(label   = "Directory Browser",
-                                      state   = self.browserEnabled,
-                                      command = self.dirBrowser)
+                self.menu.add_command(label="File Browser",
+                                      state=self.browserEnabled,
+                                      command=self.fileBrowser)
+                self.menu.add_command(label="Directory Browser",
+                                      state=self.browserEnabled,
+                                      command=self.dirBrowser)
             # Handle file and directory in the same function (filedlg)
             else:
-                self.menu.add_command(label   = "File/Directory Browser",
-                                      state   = self.browserEnabled,
-                                      command = self.fileBrowser)
+                self.menu.add_command(label="File/Directory Browser",
+                                      state=self.browserEnabled,
+                                      command=self.fileBrowser)
             self.menu.add_separator()
-        self.menu.add_command(label   = "Clear",
-                              state   = self.clearEnabled,
-                              command = self.clearEntry)
-        self.menu.add_command(label   = self.defaultsVerb,
-                              state   = self.unlearnEnabled,
-                              command = self.unlearnValue)
-        self.menu.add_command(label   = 'Help',
-                              state   = self.helpEnabled,
-                              command = self.helpOnParam)
+        self.menu.add_command(label="Clear",
+                              state=self.clearEnabled,
+                              command=self.clearEntry)
+        self.menu.add_command(label=self.defaultsVerb,
+                              state=self.unlearnEnabled,
+                              command=self.unlearnValue)
+        self.menu.add_command(label='Help',
+                              state=self.helpEnabled,
+                              command=self.helpOnParam)
 
         # Get the current y-coordinate of the Entry
         ycoord = self.entry.winfo_rooty()
@@ -435,13 +436,14 @@ class EparOption:
         else:
             from . import filedlg
             self.fd = filedlg.PersistLoadFileDialog(self.entry,
-                              "Select File", "*")
+                                                    "Select File", "*")
             if self.fd.Show() != 1:
                 self.fd.DialogCleanup()
                 return
             fname = self.fd.GetFileName()
             self.fd.DialogCleanup()
-        if not fname: return # canceled
+        if not fname:
+            return  # canceled
 
         self.choice.set(fname)
         # don't select when we go back to widget to reduce risk of
@@ -456,7 +458,7 @@ class EparOption:
             raise NotImplementedError('Fix popupChoices() logic.')
 
         if not fname:
-            return # canceled
+            return  # canceled
 
         self.choice.set(fname)
         # don't select when we go back to widget to reduce risk of
@@ -483,8 +485,8 @@ class EparOption:
 
     def unlearnValue(self):
         """Unlearn a parameter value by setting it back to its default"""
-        defaultValue = self.defaultParamInfo.get(field = "p_filename",
-                            native = 0, prompt = 0)
+        defaultValue = self.defaultParamInfo.get(field="p_filename",
+                                                 native=0, prompt=0)
         self.choice.set(defaultValue)
 
     def helpOnParam(self):
@@ -501,7 +503,8 @@ class EparOption:
     def setActiveState(self, active):
         """ Use this to enable or disable (grey out) a parameter. """
         st = "disabled"
-        if active: st = "normal"
+        if active:
+            st = "normal"
         self.entry.configure(state=st)
         self.inputLabel.configure(state=st)
         self.promptLabel.configure(state=st)
@@ -516,7 +519,8 @@ class EparOption:
         of sync and need to be fixed. """
 
         # Get out ASAP if we can
-        if (not force) and (not self._flagNonDefaultVals): return
+        if (not force) and (not self._flagNonDefaultVals):
+            return
 
         # handle simple case before comparing values (quick return)
         if force and not self._flagNonDefaultVals:
@@ -533,8 +537,8 @@ class EparOption:
         if currentNative != defaultNative:
             if not self._flagged or force:
                 self._flagged = True
-                self.promptLabel.configure(fg=self._flaggedColor) # was red
-        else: # same as def
+                self.promptLabel.configure(fg=self._flaggedColor)  # was red
+        else:  # same as def
             if self._flagged or force:
                 self._flagged = False
                 self.promptLabel.configure(fg="black")
@@ -561,22 +565,22 @@ class EnumEparOption(EparOption):
 
         # Generate the button
         self.entry = tkinter.Menubutton(self.master_frame,
-                                 width  = self.valueWidth,
-                                 text   = self.choice.get(),      # label
-                                 relief = "raised",
-                                 anchor = "w",                      # alignment
-                                 textvariable = self.choice,      # var to sync
-                                 indicatoron  = 1,
-                                 takefocus    = 1,
-                                 highlightthickness = 1,
-                                 activeforeground='black',
-                                 fg='black',
-                                 bg=self.bkgColor)
+                                        width=self.valueWidth,
+                                        text=self.choice.get(),      # label
+                                        relief="raised",
+                                        anchor="w",                      # alignment
+                                        textvariable=self.choice,      # var to sync
+                                        indicatoron=1,
+                                        takefocus=1,
+                                        highlightthickness=1,
+                                        activeforeground='black',
+                                        fg='black',
+                                        bg=self.bkgColor)
 
         self.entry.menu = tkinter.Menu(self.entry, tearoff=0,
-                               postcommand=self.postcmd,
-                               fg = 'black',
-                               bg=self.bkgColor)
+                                       postcommand=self.postcmd,
+                                       fg='black',
+                                       bg=self.bkgColor)
 
         # Generate the dictionary of shortcuts using first letter,
         # second if first not available, etc.
@@ -611,18 +615,19 @@ class EnumEparOption(EparOption):
         # Generate the menu options with shortcuts underlined
         for option in self.paramInfo.choice:
             lbl = option
-            if lbl=='-': lbl = ' -' # Tk treats '-' as a separator request
-            self.entry.menu.add_radiobutton(label       = lbl,
-                                            value       = option,
-                                            variable    = self.choice,
-                                            command     = self.selected,
-                                            indicatoron = 0,
-                                            underline   = underline[option])
+            if lbl == '-':
+                lbl = ' -'  # Tk treats '-' as a separator request
+            self.entry.menu.add_radiobutton(label=lbl,
+                                            value=option,
+                                            variable=self.choice,
+                                            command=self.selected,
+                                            indicatoron=0,
+                                            underline=underline[option])
 
         # set up a pointer from the menubutton back to the menu
         self.entry['menu'] = self.entry.menu
 
-        self.entry.pack(side = "left")
+        self.entry.pack(side="left")
 
         # shortcut keys jump to items
         for letter in self.shortcuts:
@@ -652,7 +657,7 @@ class EnumEparOption(EparOption):
 
     def selected(self):
         """They have chosen an enumerated option."""
-        self.widgetEdited(action='entry') # kick off any checks that need doin
+        self.widgetEdited(action='entry')  # kick off any checks that need doin
 
 #   def setActiveState(self, active):
 #       [...]
@@ -661,16 +666,16 @@ class EnumEparOption(EparOption):
 #       [...]
 
 
-
 class BooleanEparOption(EparOption):
 
     def convertToNative(self, aVal):
         """ Convert to native bool; interpret certain strings. """
         if aVal is None:
             return None
-        if isinstance(aVal, bool): return aVal
+        if isinstance(aVal, bool):
+            return aVal
         # otherwise interpret strings
-        return str(aVal).lower() in ('1','on','yes','true')
+        return str(aVal).lower() in ('1', 'on', 'yes', 'true')
 
     def makeInputWidget(self):
 
@@ -681,9 +686,9 @@ class BooleanEparOption(EparOption):
         # the adjoining labels are aligned properly
         self.valueWidth = self.valueWidth + 10
         if USING_X:
-            self.padWidth = (self.valueWidth // 2) + 5 # looks right
+            self.padWidth = (self.valueWidth // 2) + 5  # looks right
         else:
-            self.padWidth = 2 # looks right on Aqua
+            self.padWidth = 2  # looks right on Aqua
 
         # boolean parameters have 3 values: yes, no & undefined
         # Just display two choices (but variable may initially be
@@ -691,42 +696,42 @@ class BooleanEparOption(EparOption):
         self.choice.set(self.value)
 
         self.entry = tkinter.Frame(self.master_frame,
-                           relief    = "flat",
-                           width     = self.valueWidth,
-                           takefocus = 1,
-                           highlightthickness = 1,
-                           bg=self.bkgColor,
-                           highlightbackground=self.bkgColor)
+                                   relief="flat",
+                                   width=self.valueWidth,
+                                   takefocus=1,
+                                   highlightthickness=1,
+                                   bg=self.bkgColor,
+                                   highlightbackground=self.bkgColor)
         if not USING_X:
-            spacerL= tkinter.Label(self.entry, takefocus=0, text="", width=2,
-                           bg=self.bkgColor)
+            spacerL = tkinter.Label(self.entry, takefocus=0, text="", width=2,
+                                    bg=self.bkgColor)
             spacerL.pack(side="left", fill="x", expand=True)
-        self.rbyes = tkinter.Radiobutton(self.entry, text = "Yes",
-                                 variable    = self.choice,
-                                 value       = "yes",
-                                 anchor      = "w",
-                                 takefocus   = 0,
-                                 underline   = 0,
-                                 bg = self.bkgColor,
-                                 highlightbackground=self.bkgColor)
+        self.rbyes = tkinter.Radiobutton(self.entry, text="Yes",
+                                         variable=self.choice,
+                                         value="yes",
+                                         anchor="w",
+                                         takefocus=0,
+                                         underline=0,
+                                         bg=self.bkgColor,
+                                         highlightbackground=self.bkgColor)
         self.rbyes.pack(side="left", ipadx=self.padWidth)
         if not USING_X:
-            spacerM= tkinter.Label(self.entry, takefocus=0, text="", width=3,
-                           bg=self.bkgColor)
+            spacerM = tkinter.Label(self.entry, takefocus=0, text="", width=3,
+                                    bg=self.bkgColor)
             spacerM.pack(side="left", fill="x", expand=True)
             spacerR = tkinter.Label(self.entry, takefocus=0, text="", width=2,
-                           bg=self.bkgColor)
+                                    bg=self.bkgColor)
             spacerR.pack(side="right", fill="x", expand=True)
-        self.rbno  = tkinter.Radiobutton(self.entry, text = "No",
-                                 variable    = self.choice,
-                                 value       = "no",
-                                 anchor      = "w",
-                                 takefocus   = 0,
-                                 underline   = 0,
-                                 bg = self.bkgColor,
-                                 highlightbackground=self.bkgColor)
-        self.rbno.pack(side = "right", ipadx = self.padWidth)
-        self.entry.pack(side = "left")
+        self.rbno = tkinter.Radiobutton(self.entry, text="No",
+                                        variable=self.choice,
+                                        value="no",
+                                        anchor="w",
+                                        takefocus=0,
+                                        underline=0,
+                                        bg=self.bkgColor,
+                                        highlightbackground=self.bkgColor)
+        self.rbno.pack(side="right", ipadx=self.padWidth)
+        self.entry.pack(side="left")
 
         # keyboard accelerators
         # Y/y sets yes, N/n sets no, space toggles selection
@@ -780,7 +785,8 @@ class BooleanEparOption(EparOption):
 
     def setActiveState(self, active):
         st = "disabled"
-        if active: st = "normal"
+        if active:
+            st = "normal"
         self.rbyes.configure(state=st)
         self.rbno.configure(state=st)
         self.inputLabel.configure(state=st)
@@ -796,9 +802,9 @@ class StringEparOption(EparOption):
         self.unlearnEnabled = "normal"
 
         self.choice.set(self.value)
-        self.entry = tkinter.Entry(self.master_frame, width = self.valueWidth,
-                     textvariable = self.choice) # , bg=self.bkgColor)
-        self.entry.pack(side = "left", fill = "x", expand = True)
+        self.entry = tkinter.Entry(self.master_frame, width=self.valueWidth,
+                                   textvariable=self.choice)  # , bg=self.bkgColor)
+        self.entry.pack(side="left", fill="x", expand=True)
 #       self.extraBindingsForSelectableText() # do not use yet
 
 
@@ -808,7 +814,7 @@ class ActionEparButton(EparOption):
         return self.value
 
     def makeInputWidget(self):
-#       self.choice.set(self.value)
+        #       self.choice.set(self.value)
 
         self.browserEnabled = "disabled"
         self.clearEnabled = "disabled"
@@ -825,13 +831,13 @@ class ActionEparButton(EparOption):
 
         # Generate the button
         self.entry = tkinter.Button(self.master_frame,
-                            width   = self.valueWidth,
-                            text    = self.getButtonLabel(),
-                            relief  = "raised",
-                            background = self.bkgColor,
-                            highlightbackground = self.bkgColor,
-                            command = self.clicked)
-        self.entry.pack(side = "left")
+                                    width=self.valueWidth,
+                                    text=self.getButtonLabel(),
+                                    relief="raised",
+                                    background=self.bkgColor,
+                                    highlightbackground=self.bkgColor,
+                                    command=self.clicked)
+        self.entry.pack(side="left")
 
     def clicked(self):
         raise NotImplementedError('clicked() must be implemented')
@@ -846,7 +852,8 @@ class NumberEparOption(EparOption):
 
     def convertToNative(self, aVal):
         """ Natively as an int. """
-        if aVal in (None, '', 'None', 'NONE', 'INDEF'): return None
+        if aVal in (None, '', 'None', 'NONE', 'INDEF'):
+            return None
         return int(aVal)
 
     def notNull(self, value):
@@ -863,42 +870,45 @@ class NumberEparOption(EparOption):
         self.previousValue = self.value
 
         self.choice.set(self.value)
-        self.entry = tkinter.Entry(self.master_frame, width = self.valueWidth,
-                           textvariable = self.choice) #, bg=self.bkgColor)
-        self.entry.pack(side = "left")
+        self.entry = tkinter.Entry(self.master_frame, width=self.valueWidth,
+                                   textvariable=self.choice)  # , bg=self.bkgColor)
+        self.entry.pack(side="left")
 #       self.extraBindingsForSelectableText() # do not use yet
 
     # Check the validity of the entry
     # Note that doing this using the parameter set method automatically
     # checks max, min, special value (INDEF, parameter indirection), etc.
-    def entryCheck(self, event = None, repair = True):
+    def entryCheck(self, event=None, repair=True):
         """ Ensure any INDEF entry is uppercase, before base class behavior """
         valupr = self.choice.get().upper()
         if valupr.strip() == 'INDEF':
             self.choice.set(valupr)
-        return EparOption.entryCheck(self, event, repair = repair)
+        return EparOption.entryCheck(self, event, repair=repair)
 
 # numeric widget class specific to floats
+
 
 class FloatEparOption(NumberEparOption):
 
     def convertToNative(self, aVal):
         """ Natively as a float. """
-        if aVal in (None, '', 'None', 'NONE', 'INDEF'): return None
+        if aVal in (None, '', 'None', 'NONE', 'INDEF'):
+            return None
         return float(aVal)
 
 
 # EparOption values for non-string types
-_eparOptionDict = { "b": BooleanEparOption,
-                    "r": FloatEparOption,
-                    "R": FloatEparOption,
-                    "d": FloatEparOption,
-                    "I": NumberEparOption,
-                    "i": NumberEparOption,
-                    "z": ActionEparButton,
-                    "ar": FloatEparOption,
-                    "ai": NumberEparOption,
-                  }
+_eparOptionDict = {"b": BooleanEparOption,
+                   "r": FloatEparOption,
+                   "R": FloatEparOption,
+                   "d": FloatEparOption,
+                   "I": NumberEparOption,
+                   "i": NumberEparOption,
+                   "z": ActionEparButton,
+                   "ar": FloatEparOption,
+                   "ai": NumberEparOption,
+                   }
+
 
 def eparOptionFactory(master, statusBar, param, defaultParam,
                       doScroll, fieldWidths,
@@ -906,7 +916,6 @@ def eparOptionFactory(master, statusBar, param, defaultParam,
                       helpCallbackObj=None, mainGuiObj=None,
                       defaultsVerb="Default", bg=None, indent=False,
                       flagging=False, flaggedColor=None):
-
     """Return EparOption item of appropriate type for the parameter param"""
 
     # Allow passed-in overrides

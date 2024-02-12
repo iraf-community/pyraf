@@ -319,9 +319,9 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
         """Returns true if this task is consistent with another task object"""
         return self.__class__ == other.__class__ and \
             self.getFilename() == other.getFilename() and \
-            self.hasParfile()  == other.hasParfile() and \
-            self.getForeign()  == other.getForeign() and \
-            self.getTbflag()   == other.getTbflag()
+            self.hasParfile() == other.hasParfile() and \
+            self.getForeign() == other.getForeign() and \
+            self.getTbflag() == other.getTbflag()
 
     # ---------------------------------------------------------
     # run the task
@@ -1129,8 +1129,8 @@ class IrafTask(irafglobals.IrafTask, taskpars.TaskPars):
             codePath = 'b'
 
         assert self._defaultParList._dlen() == \
-            self._currentParList._dlen(), "Bad deep copy? "+ \
-            str(self._defaultParList._dlen())+" != "+ \
+            self._currentParList._dlen(), "Bad deep copy? " + \
+            str(self._defaultParList._dlen())+" != " + \
             str(self._currentParList._dlen())+", cpath="+codePath
 
     def _isConsistentPar(self):
@@ -1548,7 +1548,6 @@ class IrafCLTask(IrafTask):
         # XXX This is a bit lax, eh?  Need something a bit stricter.
         return 1
 
-
     def isConsistent(self, other):
         """Returns true if this task is consistent with another task object"""
         if self.getFilename() is not None or other.getFilename() is not None:
@@ -1580,7 +1579,7 @@ class IrafPkg(IrafCLTask, irafglobals.IrafPkg):
 
     def __str__(self):
         """ Describe this object. """
-        retval = "IrafPkg:  name="+self.getName()+", pkg="+self.getPkgname()+ \
+        retval = "IrafPkg:  name="+self.getName()+", pkg="+self.getPkgname() + \
                  ", file="+self.getFilename()+"\n"
         retval += "tasks: " + str(self._tasks) + "\n"
         retval += "subtasks: " + str(self._subtasks) + "\n"

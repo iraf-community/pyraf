@@ -11,6 +11,7 @@ versions of urwid.  Many thanks to author Rebecca Breu.
 """
 
 
+import urwid
 from urwid import (Text, AttrWrap, WidgetWrap, BoxAdapter, ListBox, AttrWrap,
                    Columns, Edit, Button, GridFlow, CheckBox, Pile,
                    SimpleListWalker)
@@ -270,8 +271,6 @@ class FileChooser(WidgetWrap):
 ######################################################################
 # End of module part
 ######################################################################
-
-import urwid
 
 
 def main():

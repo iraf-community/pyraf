@@ -2,7 +2,6 @@
 iraf gki metacode (primarily for interactive graphics)"""
 
 
-
 from . import gki
 from . import gwm
 import numpy

@@ -35,6 +35,7 @@ class Shelf:
     """An SQLite implementation of the Python Shelf interface
 
     """
+
     def __init__(self, fname, mode):
         """Open or create an existing sqlite3_shelf
 

@@ -245,7 +245,7 @@ class MenuItem(urwid.Text):
     # The change below (in the if) was made by STScI !
     def keypress(self, size, key):
         if key == "enter" or \
-           key == "ctrl m" or key == " ": # is ctrl-m on OSX; also allow space
+           key == "ctrl m" or key == " ":  # is ctrl-m on OSX; also allow space
             self.state = True
             raise DialogExit(0)
         return key

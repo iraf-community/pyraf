@@ -12,6 +12,7 @@ R. White, 1999 August 17
 """
 
 
+import importlib
 import builtins
 import sys
 from .tools import minmatch
@@ -20,7 +21,6 @@ IMPORT_DEBUG = False
 
 # Save the original hooks;  replaced at bottom of module...
 _originalImport = builtins.__import__
-import importlib
 _originalReload = importlib.reload
 
 

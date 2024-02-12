@@ -24,9 +24,9 @@ by a system-wide configuration state. See gkiopengl.py
 import numpy
 import math
 from .textattrib import (CHARPATH_LEFT, CHARPATH_RIGHT, CHARPATH_UP,
-                        CHARPATH_DOWN, JUSTIFIED_CENTER, JUSTIFIED_RIGHT,
-                        JUSTIFIED_LEFT, JUSTIFIED_NORMAL, JUSTIFIED_TOP,
-                        JUSTIFIED_BOTTOM)
+                         CHARPATH_DOWN, JUSTIFIED_CENTER, JUSTIFIED_RIGHT,
+                         JUSTIFIED_LEFT, JUSTIFIED_NORMAL, JUSTIFIED_TOP,
+                         JUSTIFIED_BOTTOM)
 
 
 def softText(win, x, y, textstr):
@@ -134,7 +134,7 @@ def softText(win, x, y, textstr):
             xf = size * charstrokes[0][i] / 27. - fsize * hsize / 2.
             yf = size * charstrokes[1][
                 i] * fontAspect / 27. - fsize * vsize / 2.
-            vertex[:, 0]= cosrot*(xf + nchar*dx) \
+            vertex[:, 0] = cosrot*(xf + nchar*dx) \
                 - sinrot*(yf + nchar*dy) + xNetOffset + xwin*x
             vertex[:, 1] = ywin - (sinrot * (xf + nchar * dx) + cosrot *
                                    (yf + nchar * dy) + yNetOffset + ywin * y)

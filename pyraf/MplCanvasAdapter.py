@@ -1,11 +1,11 @@
+from .wutil import moveCursorTo, WUTIL_USING_X
+import tkinter
+from .Ptkplot import FullWindowCursor
+from .Ptkplot import hideTkCursor
+from matplotlib.backend_bases import ResizeEvent
+import matplotlib.backends.backend_tkagg as tkagg
 import matplotlib
 matplotlib.use('TkAgg')  # set backend
-import matplotlib.backends.backend_tkagg as tkagg
-from matplotlib.backend_bases import ResizeEvent
-from .Ptkplot import hideTkCursor
-from .Ptkplot import FullWindowCursor
-import tkinter
-from .wutil import moveCursorTo, WUTIL_USING_X
 
 
 class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
@@ -91,7 +91,8 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
         self._tkcanvas.create_image(int(width / 2),
                                     int(height / 2),
                                     image=self._tkphoto)
-        self.callbacks.process('resize_event', ResizeEvent('resize_event', self))
+        self.callbacks.process(
+            'resize_event', ResizeEvent('resize_event', self))
         self.draw_idle()
 
     def flush(self):
@@ -102,6 +103,7 @@ class MplCanvasAdapter(tkagg.FigureCanvasTkAgg):
 
 
 #   def draw(self):  tkagg.FigureCanvasTkAgg.draw(self)
+
 
     def wrappedRedrawOrResize(self, w=None, h=None):
         """Wrap the redraw (or resize) with a deactivate and then re-activate
