@@ -199,7 +199,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         self.makeGWidget()
         self.makeStatus()
         self.gwidget.redraw = self.redraw
-        self.gwidget.pack(side=tkinter.TOP, expand=1, fill=tkinter.BOTH)
+        self.gwidget.pack(side="top", expand=1, fill="both")
         self.gwidget.bind('<Enter>', self.focusOnGwidget)  # if mouse enters gw
 
         self.colorManager.setColors(self.gwidget)
@@ -243,10 +243,10 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
         if 'PYRAF_OLD_STATUS' in os.environ:
             self.top.status = msgiobuffer.MsgIOBuffer(self.top, width=600)
-            self.top.status.msgIO.pack(side=tkinter.BOTTOM, fill=tkinter.X)
+            self.top.status.msgIO.pack(side="bottom", fill="x")
         else:
             self.top.status = msgiowidget.MsgIOWidget(self.top, width=600)
-            self.top.status.pack(side=tkinter.BOTTOM, fill=tkinter.X)
+            self.top.status.pack(side="bottom", fill="x")
 
     # -----------------------------------------------
     # Menu bar definitions
@@ -254,18 +254,18 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     def makeMenuBar(self):
         """Make menu bar at top of window"""
 
-        self.menubar = tkinter.Frame(self.top, bd=1, relief=tkinter.FLAT)
+        self.menubar = tkinter.Frame(self.top, bd=1, relief="flat")
         self.fileMenu = self.makeFileMenu(self.menubar)
         self.editMenu = self.makeEditMenu(self.menubar)
         self.pageMenu = self.makePageMenu(self.menubar)
         self.windowMenu = self.makeWindowMenu(self.menubar)
         self.helpMenu = self.makeHelpMenu(self.menubar)
-        self.menubar.pack(side=tkinter.TOP, fill=tkinter.X)
+        self.menubar.pack(side="top", fill="x")
 
     def makeFileMenu(self, menubar):
 
         button = tkinter.Menubutton(menubar, text='File')
-        button.pack(side=tkinter.LEFT, padx=2)
+        button.pack(side="left", padx=2)
         button.menu = tkinter.Menu(button, tearoff=0)
         button.menu.add_command(label="Print", command=self.doprint)
         button.menu.add_command(label="Save...", command=self.save)
@@ -337,7 +337,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     def makeEditMenu(self, menubar):
 
         button = tkinter.Menubutton(menubar, text='Edit')
-        button.pack(side=tkinter.LEFT, padx=2)
+        button.pack(side="left", padx=2)
         button.menu = tkinter.Menu(button,
                                  tearoff=0,
                                  postcommand=self.editMenuInit)
@@ -385,32 +385,32 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         buffer = self.getBuffer()
         if buffer.isUndoable():
             self.editMenu.menu.entryconfigure(button.undoNum,
-                                              state=tkinter.NORMAL)
+                                              state="normal")
             self.editMenu.menu.entryconfigure(button.redrawOriginalNum,
-                                              state=tkinter.NORMAL)
+                                              state="normal")
         else:
             self.editMenu.menu.entryconfigure(button.undoNum,
-                                              state=tkinter.DISABLED)
+                                              state="disabled")
             self.editMenu.menu.entryconfigure(button.redrawOriginalNum,
-                                              state=tkinter.DISABLED)
+                                              state="disabled")
         # disable Redo item if not redoable
         if buffer.isRedoable():
             self.editMenu.menu.entryconfigure(button.redoNum,
-                                              state=tkinter.NORMAL)
+                                              state="normal")
         else:
             self.editMenu.menu.entryconfigure(button.redoNum,
-                                              state=tkinter.DISABLED)
+                                              state="disabled")
         # disable Delete items if no plots
         if len(self.history) == 1 and self.isPageBlank():
             self.editMenu.menu.entryconfigure(button.deleteNum,
-                                              state=tkinter.DISABLED)
+                                              state="disabled")
             self.editMenu.menu.entryconfigure(button.deleteAllNum,
-                                              state=tkinter.DISABLED)
+                                              state="disabled")
         else:
             self.editMenu.menu.entryconfigure(button.deleteNum,
-                                              state=tkinter.NORMAL)
+                                              state="normal")
             self.editMenu.menu.entryconfigure(button.deleteAllNum,
-                                              state=tkinter.NORMAL)
+                                              state="normal")
 
     def deletePlot(self):
 
@@ -446,7 +446,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     def makePageMenu(self, menubar):
 
         button = tkinter.Menubutton(menubar, text='Page')
-        button.pack(side=tkinter.LEFT, padx=2)
+        button.pack(side="left", padx=2)
         button.menu = tkinter.Menu(button,
                                  tearoff=1,
                                  postcommand=self.pageMenuInit)
@@ -478,24 +478,24 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         page = self._currentPage
         # Next
         if page < len(self.history) - 1:
-            menu.entryconfigure(button.nextNum, state=tkinter.NORMAL)
+            menu.entryconfigure(button.nextNum, state="normal")
         else:
-            menu.entryconfigure(button.nextNum, state=tkinter.DISABLED)
+            menu.entryconfigure(button.nextNum, state="disabled")
         # Back
         if page > 0:
-            menu.entryconfigure(button.backNum, state=tkinter.NORMAL)
+            menu.entryconfigure(button.backNum, state="normal")
         else:
-            menu.entryconfigure(button.backNum, state=tkinter.DISABLED)
+            menu.entryconfigure(button.backNum, state="disabled")
         # First
         if page > 0:
-            menu.entryconfigure(button.firstNum, state=tkinter.NORMAL)
+            menu.entryconfigure(button.firstNum, state="normal")
         else:
-            menu.entryconfigure(button.firstNum, state=tkinter.DISABLED)
+            menu.entryconfigure(button.firstNum, state="disabled")
         # Last
         if page < len(self.history) - 1:
-            menu.entryconfigure(button.lastNum, state=tkinter.NORMAL)
+            menu.entryconfigure(button.lastNum, state="normal")
         else:
-            menu.entryconfigure(button.lastNum, state=tkinter.DISABLED)
+            menu.entryconfigure(button.lastNum, state="disabled")
         # Delete everything past the separator
         menu.delete(str(button.sepNum), '10000')
         menu.add_separator()
@@ -582,7 +582,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     def makeWindowMenu(self, menubar):
 
         button = tkinter.Menubutton(menubar, text='Window')
-        button.pack(side=tkinter.LEFT, padx=2)
+        button.pack(side="left", padx=2)
         button.menu = tkinter.Menu(button,
                                  tearoff=0,
                                  postcommand=self.windowMenuInit)
@@ -619,7 +619,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
     def makeHelpMenu(self, menubar):
 
         button = tkinter.Menubutton(menubar, text='Help')
-        button.pack(side=tkinter.RIGHT, padx=2)
+        button.pack(side="right", padx=2)
         button.menu = tkinter.Menu(button, tearoff=0)
         button.menu.add_command(label="Help...", command=self.getHelp)
         button["menu"] = button.menu
@@ -633,31 +633,31 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         hb.iconname("PyRAF Graphics Help")
 
         # Set up the Menu Bar with 'Close' button
-        hb.menubar = tkinter.Frame(hb, relief=tkinter.RIDGE, borderwidth=0)
+        hb.menubar = tkinter.Frame(hb, relief="ridge", borderwidth=0)
         hb.menubar.button = tkinter.Button(hb.menubar,
                                          text="Close",
-                                         relief=tkinter.RAISED,
+                                         relief="raised",
                                          command=hb.destroy)
         hb.menubar.button.pack()
-        hb.menubar.pack(side=tkinter.BOTTOM, padx=5, pady=5)
+        hb.menubar.pack(side="bottom", padx=5, pady=5)
 
         # Define the Listbox and setup the Scrollbar
         hb.list = tkinter.Listbox(hb,
-                                relief=tkinter.FLAT,
+                                relief="flat",
                                 height=25,
                                 width=80,
-                                selectmode=tkinter.SINGLE,
+                                selectmode="single",
                                 selectborderwidth=0)
 
         scroll = tkinter.Scrollbar(hb, command=hb.list.yview)
         hb.list.configure(yscrollcommand=scroll.set)
-        hb.list.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=1)
-        scroll.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+        hb.list.pack(side="left", fill="both", expand=1)
+        scroll.pack(side="right", fill="y")
 
         # Insert each line of the helpString into the box
         listing = helpString.split('\n')
         for line in listing:
-            hb.list.insert(tkinter.END, line)
+            hb.list.insert("end", line)
 
     # -----------------------------------------------
     # start general functionality (independent of graphics panel
@@ -846,7 +846,7 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
 
     def raiseWindow(self):
 
-        if self.top.state() != tkinter.NORMAL:
+        if self.top.state() != "normal":
             self.top.deiconify()
         if self._slowraise == 0:
             # Get start time for tkraise...

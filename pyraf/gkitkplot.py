@@ -140,7 +140,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.clear()
         # This is needed to clear all the previously plotted objects
         # within tkinter (it has its own buffer it uses to replot)
-        # self.gwidget.delete(tkinter.ALL)
+        # self.gwidget.delete("all")
 
     def gki_cancel(self, arg):
 
@@ -262,7 +262,7 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         # finally ready to do the drawing
         self.activate()
         # Have Tk remove all previously plotted objects
-        self.gwidget.delete(tkinter.ALL)
+        self.gwidget.delete("all")
         # Clear the screen
         self.tkplot_faset(0, 0)
         self.tkplot_fillarea(numpy.array([0., 0., 1., 0., 1., 1., 0., 1.]))

@@ -26,7 +26,7 @@ class SplashScreen(tkinter.Toplevel):
     Based closely on news posting by Alexander Schliep, 07 Apr 1999
     """
 
-    def __init__(self, master=None, borderwidth=4, relief=tkinter.RAISED, **kw):
+    def __init__(self, master=None, borderwidth=4, relief="raised", **kw):
         tkinter.Toplevel.__init__(self,
                                 master,
                                 relief=relief,

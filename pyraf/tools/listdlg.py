@@ -63,29 +63,29 @@ class ListSingleSelectDialog(Dialog):
 
     def body(self, master):
 
-        label = tkinter.Label(master, text=self.__prompt, justify=tkinter.LEFT)
+        label = tkinter.Label(master, text=self.__prompt, justify="left")
 #       label.grid(row=0, padx=8, sticky=W)
-        label.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=8)
+        label.pack(side="top", fill="x", padx=10, pady=8)
 
         frame = tkinter.Frame(master)
 #       frame.grid(row=1, padx=8, sticky=W+E)
-        frame.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=8)
+        frame.pack(side="top", fill="x", padx=10, pady=8)
 
-        vscrollbar = tkinter.Scrollbar(frame, orient=tkinter.VERTICAL)
-        hscrollbar = tkinter.Scrollbar(frame, orient=tkinter.HORIZONTAL)
+        vscrollbar = tkinter.Scrollbar(frame, orient="vertical")
+        hscrollbar = tkinter.Scrollbar(frame, orient="horizontal")
         self.__lb = tkinter.Listbox(frame,
-                            selectmode=tkinter.BROWSE,
+                            selectmode="browse",
                             xscrollcommand=hscrollbar.set,
                             yscrollcommand=vscrollbar.set)
 #                           activestyle='none', # none = dont underline items
         hscrollbar.config(command=self.__lb.xview)
-        hscrollbar.pack(side=tkinter.BOTTOM, fill=tkinter.X)
+        hscrollbar.pack(side="bottom", fill="x")
         vscrollbar.config(command=self.__lb.yview)
-        vscrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-        self.__lb.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=1)
+        vscrollbar.pack(side="right", fill="y")
+        self.__lb.pack(side="left", fill="both", expand=1)
 
         for itm in self.__choices:
-            self.__lb.insert(tkinter.END, str(itm))
+            self.__lb.insert("end", str(itm))
 
         self.__lb.bind("<Double-Button-1>", self.ok) # dbl clk
 #       self.__lb.selection_set(0,0)
