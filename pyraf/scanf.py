@@ -14,10 +14,17 @@ For more information see
   * http://en.wikipedia.org/wiki/Scanf
 
 Original code from:
-    http://code.activestate.com/recipes/502213-simple-scanf-implementation/
+    https://github.com/joshburnett/scanf (version 1.5.2)
 
-Modified original to make the %f more robust, as well as added %* modifier to
-skip fields.
+Modified for the needs of PyRAF:
+ * all fields may have a max width (not a fixed width)
+ * add "l" (for [outdated] long ints)
+ * allow "0x" and "0" prefixes in ints for hexa/octal numbers
+
+Differences to the original PyRAF sscanf module:
+ * "n" coversion missing (number of characters so far)
+
+
 """
 import re
 import sys
@@ -33,38 +40,63 @@ __all__ = ["scanf", 'extractdata', 'scanf_translate', 'scanf_compile']
 
 DEBUG = False
 
+def sint(s):
+    if s.startswith("0x"):
+        return int(s[2:], 16)
+    elif s.startswith("0"):
+        return int(s[1:], 8)
+    else:
+        return int(s)
 
 # As you can probably see it is relatively easy to add more format types.
 # Make sure you add a second entry for each new item that adds the extra
 #   few characters needed to handle the field ommision.
 scanf_translate = [
     (re.compile(_token), _pattern, _cast) for _token, _pattern, _cast in [
-        ("%c", "(.)", lambda x:x),
-        ("%\*c", "(?:.)", None),
+        (r"%c", r"(.)", lambda x:x),
+        (r"%\*c", r"(?:.)", None),
 
-        ("%(\d)c", "(.{%s})", lambda x:x),
-        ("%\*(\d)c", "(?:.{%s})", None),
+        (r"%(\d+)c", r"(.{0,%s})", lambda x:x),
+        (r"%\*(\d+)c", r"(?:.{0,%s})", None),
 
-        ("%(\d)[di]", "([+-]?\d{%s})", int),
-        ("%\*(\d)[di]", "(?:[+-]?\d{%s})", None),
+        (r"%s", r"(\S+)", lambda x: x),
+        (r"%\*s", r"(?:\S+)", None),
 
-        ("%[di]", "([+-]?\d+)", int),
-        ("%\*[di]", "(?:[+-]?\d+)", None),
+        (r"%(\d+)s", r"(\S{1,%s})", lambda x:x),
+        (r"%\*(\d+)s", r"(?:\S{1,%s})", None),
 
-        ("%u", "(\d+)", int),
-        ("%\*u", "(?:\d+)", None),
+        (r"%\[([^\]]+)\]", r"([%s]+)", lambda x:x),
+        (r"%\*\[([^\]]+)\]", r"(?:[%s]+)", None),
 
-        ("%[fgeE]", "([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
-        ("%\*[fgeE]", "(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
+        (r"%l?[dil]", r"([+-]?\d+)", sint),
+        (r"%\*l?[dil]", r"(?:[+-]?\d+)", None),
 
-        ("%s", "(\S+)", lambda x:x),
-        ("%\*s", "(?:\S+)", None),
+        (r"%(\d+)l?[dil]", r"([+-]?\d{1,%s})", sint),
+        (r"%\*(\d+)l?[dil]", r"(?:[+-]?\d{1,%s})", None),
 
-        ("%([xX])", "(0%s[\dA-Za-f]+)", lambda x:int(x, 16)),
-        ("%\*([xX])", "(?:0%s[\dA-Za-f]+)", None),
+        (r"%l?u", r"(\d+)", int),
+        (r"%\*l?u", r"(?:\d+)", None),
 
-        ("%o", "(0[0-7]*)", lambda x:int(x, 8)),
-        ("%\*o", "(?:0[0-7]*)", None),
+        (r"%(\d+)l?u", r"(\d{1,%s})", int),
+        (r"%\*(\d+)l?u", r"(?:\d{1,%s})", None),
+
+        (r"%[fgeE]", r"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
+        (r"%\*[fgeE]", r"(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
+
+        (r"%(\d+)[fgeE]", r"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
+        (r"%\*(\d+)[fgeE]", r"(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
+
+        (r"%l?[xX]", r"((?:0[xX])?[\dA-Za-f]+)", lambda x: int(x, 16)),
+        (r"%\*l?[xX]", r"(?:(?:0[xX])?[\dA-Za-f]+)", None),
+
+        (r"%(\d+)l?[xX]", r"((?:0[xX])?[\dA-Za-f]{1,%s})", lambda x: int(x, 16)),
+        (r"%\*(\d+)l?[xX]", r"(?:(?:0[xX])?[\dA-Za-f]{1,%s})", None),
+
+        (r"%l?o", r"([0-7]*)", lambda x:int(x, 8)),
+        (r"%\*l?o", r"(?:[0-7]*)", None),
+
+        (r"%(\d+)l?o", r"([0-7]{1,%s})", lambda x: int(x, 8)),
+        (r"%\*(\d+)l?o", r"(?:[0-7]{1,%s})", None),
     ]]
 
 
@@ -78,9 +110,10 @@ def scanf_compile(format, collapseWhitespace=True):
     Translate the format into a regular expression
 
     For example:
-    >>> format_re, casts = scanf_compile('%s - %d errors, %d warnings')
-    >>> print format_re.pattern
-    (\S+) \- ([+-]?\d+) errors, ([+-]?\d+) warnings
+
+        >>> format_re, casts = scanf_compile('%s - %d errors, %d warnings')
+        >>> print format_re.pattern
+        (\\S+) \- ([+-]?\\d+) errors, ([+-]?\\d+) warnings
 
     Translated formats are cached for faster reuse
     """
@@ -119,26 +152,25 @@ def scanf_compile(format, collapseWhitespace=True):
 
 
 def scanf(format, s=None, collapseWhitespace=True):
-    """
-    scanf supports the following formats:
-      %c        One character
-      %5c       5 characters
-      %d, %i    int value
-      %7d, %7i  int value with length 7
-      %f        float value
-      %o        octal value
-      %X, %x    hex value
-      %s        string terminated by whitespace
+    """Conversion specification are of the form:
 
-    Examples:
-    >>> scanf("%s - %d errors, %d warnings", "/usr/sbin/sendmail - 0 errors, 4 warnings")
-    ('/usr/sbin/sendmail', 0, 4)
-    >>> scanf("%o %x %d", "0123 0x123 123")
-    (83, 291, 123)
+        %[*][<max_width>]['l']<type_character>.
 
+    The following format conversions are supported:
 
-    scanf.scanf returns a tuple of found values
-    or None if the format does not match.
+    %c            Fixed width character string.
+    %s            String of non-whitespace characters with leading
+                     whitespace skipped.
+    %d, %i, %l    Signed integer (leading 0 => octal, 0x => hex).
+    %o            Octal integer.
+    %u            Unsigned integer.
+    %x            Hexadecimal integer.
+    %f, %g, %e    Python float
+    %[]           Character scan set
+
+    scanf.scanf returns a tuple of found values or None if the format
+    does not match.
+
     """
 
     if s is None:
