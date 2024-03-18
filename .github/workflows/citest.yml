@@ -34,7 +34,9 @@ jobs:
           - name: macOS 13, pip
             os: macos-13
             method: pip
-            iraf: /Users/runner/work/iraf/
+            iraf: /usr/local/lib/iraf/
+            irafpkg: https://github.com/iraf-community/iraf-mac-build/releases/download/v2.17.1-beta/iraf-2.17.1-beta-x86_64.pkg
+
 
     steps:
       - name: Checkout repository
@@ -65,12 +67,8 @@ jobs:
       - name: Setup dependencies, Mac
         if: startsWith(matrix.os, 'macos') && matrix.method == 'pip'
         run: |
-          mkdir $iraf
-          curl https://cloud.aip.de/index.php/s/iPj7LGxbRedYnqa/download/iraf-macintel.tar.gz | tar -C $iraf -x -z
-          (cd $iraf ; ./install < /dev/null || true)
-          export PATH=${HOME}/.iraf/bin:${PATH}
-          mkiraf -t=$TERM -n
-          echo "PATH=$PATH" >> $GITHUB_ENV
+          wget ${{ matrix.irafpkg }}
+          sudo installer -pkg iraf-*.pkg -target /
 
       - name: Build PyRAF locally
         if: matrix.method == 'native'
