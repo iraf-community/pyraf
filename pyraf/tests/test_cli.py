@@ -7,7 +7,7 @@ import pytest
 from .utils import HAS_IRAF
 
 from .. import iraf
-from .. import sscanf
+from .. import scanf
 from .. import pyrafglobals
 
 
@@ -59,23 +59,18 @@ def test_division(arg, expected, ecl_flag):
 
 
 @pytest.mark.parametrize('arg,fmt,expected', [
-    ("seven 6 4.0 -7", "%s %d %g %d", ['seven', 6, 4.0, -7]), # aliveness
-    ("seven", "%d", []),
-    ("seven", "%c%3c%99c", ['s', 'eve', 'n']),
-    ("0xabc90", "%x", [703632]),
+    ("seven 6 4.0 -7", "%s %d %g %d", ('seven', 6, 4.0, -7)), # aliveness
+    ("seven", "%d", None),
+    ("seven", "%c%3c%99c", ('s', 'eve', 'n')),
+    ("seven", "%[sev]", ('seve', )),
+    ("0xabc90", "%x", (703632, )),
 ])  
-def test_sscanf(arg, fmt, expected):
+def test_scanf(arg, fmt, expected):
     """A basic unit test that sscanf was built/imported correctly and
     can run.
     """
-    l = sscanf.sscanf(arg, fmt)
+    l = scanf.scanf(fmt, arg)
     assert l == expected
-
-
-def test_sscanf_error():
-    # API error
-    with pytest.raises(TypeError):
-        sscanf.sscanf()
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')
