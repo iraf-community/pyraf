@@ -83,7 +83,7 @@ from . import irafexecute as _irafexecute
 from . import cl2py as _cl2py
 from . import gki
 from . import irafecl
-from . import scanf
+from . import scanf as sscanf
 
 
 # FP_EPSILON is the smallest number such that: 1.0 + epsilon > 1.0;  Use None
@@ -1983,7 +1983,7 @@ def fscanf(theLocals, line, format, *namelist, **kw):
         _weirdEOF(theLocals, namelist)
         _nscan = 0
         return EOF
-    f = scanf.scanf(format, line)
+    f = sscanf.scanf(format, line)
     # if list is null, add a null string
     # ugly but should be right most of the time
     if f is None and namelist:
