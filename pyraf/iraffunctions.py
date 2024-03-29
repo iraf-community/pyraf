@@ -83,12 +83,7 @@ from . import irafexecute as _irafexecute
 from . import cl2py as _cl2py
 from . import gki
 from . import irafecl
-try:
-    from . import sscanf
-except OSError:
-    # basic usage does not actually require sscanf
-    sscanf = None
-    print("Warning: sscanf library not installed on " + sys.platform)
+from . import scanf as sscanf
 
 
 # FP_EPSILON is the smallest number such that: 1.0 + epsilon > 1.0;  Use None
@@ -1988,15 +1983,12 @@ def fscanf(theLocals, line, format, *namelist, **kw):
         _weirdEOF(theLocals, namelist)
         _nscan = 0
         return EOF
-    if sscanf is None:
-        raise RuntimeError("fscanf is not supported on this platform")
-    f = sscanf.sscanf(line, format)
-    n = min(len(f), len(namelist))
+    f = sscanf.scanf(format, line)
     # if list is null, add a null string
     # ugly but should be right most of the time
-    if n == 0 and namelist:
-        f = ['']
-        n = 1
+    if f is None and namelist:
+        f = ('')
+    n = min(len(f), len(namelist))
     if len(kw):
         raise TypeError('unexpected keyword argument: ' +
                         repr(list(kw.keys())))

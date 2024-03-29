@@ -4,7 +4,7 @@ import platform
 
 from setuptools import setup, Extension
 
-modules = [Extension('pyraf.sscanf', ['pyraf/sscanfmodule.c'])]
+modules = []
 
 # On a Mac, xutil is not required since the graphics is done directly with Aqua.
 # If one still wants to include it, the parameters
