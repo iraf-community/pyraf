@@ -17,63 +17,39 @@ import AppKit
 WIN_ID_TERM = 101
 WIN_ID_GUI = 102
 
-# There are different calling sequences/requirements in 10.4 vs. 10.5.
-# See what the Darwin major version number is.
-__objcReqsVoids = os.uname()[2]  # str: darwin num
-__objcReqsVoids = int(__objcReqsVoids.split('.')[0])  # int: darwin maj
-__objcReqsVoids = __objcReqsVoids > 8  # bool: if 9+
-
 # module variables
-__thisPSN = None
-__termPSN = None
+__thisApp = None
+__termApp = None
 __screenHeight = 0
 __initialized = False
 
 
 def focusOnGui():
     """ Set focus to GUI """
-    global __thisPSN
-    err = SetFrontProcess(__thisPSN)
-    if err:
-        raise Exception("SetFrontProcess: " + str(err))
+    global __thisApp
+    __thisApp.activateWithOptions_(2)
 
 
 def focusOnTerm(after=0):
     """ Set focus to terminal """
-    global __termPSN
+    global __termApp
     if after > 0:
         time.sleep(after)
-    err = SetFrontProcess(__termPSN)
-    if err:
-        raise Exception("SetFrontProcess: " + str(err))
+    __termApp.activateWithOptions_(2)
 
 
 def guiHasFocus(after=0):
     """ Return True if GUI has focus """
-    global __objcReqsVoids
+    global __thisApp
     if after > 0:
         time.sleep(after)
-    if __objcReqsVoids:
-        err, aPSN = GetFrontProcess(None)
-    else:
-        err, aPSN = GetFrontProcess()
-
-    if err:
-        raise Exception("GetFrontProcess: " + str(err))
-    return aPSN == __thisPSN
+    return __thisApp.isActive()
 
 
 def termHasFocus():
     """ Return True if terminal has focus """
-    global __objcReqsVoids
-    if __objcReqsVoids:
-        err, aPSN = GetFrontProcess(None)
-    else:
-        err, aPSN = GetFrontProcess()
-
-    if err:
-        raise Exception("GetFrontProcess: " + str(err))
-    return aPSN == __termPSN
+    global __termApp
+    return __termApp.isActive()
 
 
 def getTopIdFor(winId):
@@ -147,15 +123,8 @@ def redeclareTerm():
     """ Sometimes the terminal process isn't chosen correctly.  This is used
     to fix that by declaring again which process is the terminal.  Call this
     from the terminal ONLY when it is foremost on the desktop. """
-    global __termPSN, __objcReqsVoids
-    oldval = __termPSN
-    if __objcReqsVoids:
-        err, __termPSN = GetFrontProcess(None)
-    else:
-        err, __termPSN = GetFrontProcess()
-    if err:
-        __termPSN = oldval
-        raise Exception("GetFrontProcess: " + str(err))
+    global __termApp
+    __termApp = AppKit.NSWorkspace.shared.frontmostApplication()
 
 
 def __doPyobjcWinInit():
@@ -167,7 +136,7 @@ def __doPyobjcWinInit():
     # and
     #   http://www.raywenderlich.com/10209/my-app-crashed-now-what-part-1
 
-    global __thisPSN, __termPSN, __screenHeight, __initialized, __objcReqsVoids
+    global __thisApp, __termApp, __screenHeight, __initialized
     # Guard against accidental second calls
     if __initialized:
         return
@@ -190,19 +159,11 @@ def __doPyobjcWinInit():
         WARPSIG = b'v{CGPoint=dd}'
 
     FUNCTIONS = [
-        # These are public API
-        ('GetCurrentProcess', OSErr + OUTPSN),
-        ('GetFrontProcess', OSErr + OUTPSN),
-        #        ( u'GetProcessPID', OSStat+INPSN+OUTPID), # see OUTPID note
-        ('SetFrontProcess', OSErr + INPSN),
         ('CGWarpMouseCursorPosition', WARPSIG),
         ('CGMainDisplayID', objc._C_PTR + objc._C_VOID),
         ('CGDisplayPixelsHigh', objc._C_ULNG + objc._C_ULNG),
         ('CGDisplayHideCursor', CGErr + objc._C_ULNG),
         ('CGDisplayShowCursor', CGErr + objc._C_ULNG),
-        # This is undocumented API
-        ('CPSSetProcessName', OSErr + INPSN + objc._C_CHARPTR),
-        ('CPSEnableForegroundOperation', OSErr + INPSN),
     ]
 
     bndl = AppKit.NSBundle.bundleWithPath_(
@@ -219,33 +180,13 @@ def __doPyobjcWinInit():
 
     # Get terminal's PSN (on OSX assume terminal is now frontmost process)
     # Do this before even setting the PyRAF process to a FG app.
-    # Or use GetProcessInformation w/ __thisPSN, then pinfo.processLauncher
-    if __objcReqsVoids:
-        err, __termPSN = GetFrontProcess(None)
-    else:
-        err, __termPSN = GetFrontProcess()
-    if err:
-        raise Exception("GetFrontProcess: " + str(err))
+    __termApp = AppKit.NSWorkspace.sharedWorkspace().frontmostApplication()
 
     # Get our PSN
-    # [debug PSN numbers (get pid's) via psn2pid, or use GetProcessPID()]
-    if __objcReqsVoids:
-        err, __thisPSN = GetCurrentProcess(None)
-    else:
-        err, __thisPSN = GetCurrentProcess()
-    if err:
-        raise Exception("GetCurrentProcess: " + str(err))
+    __thisApp = AppKit.NSRunningApplication.currentApplication()
 
     # Set Proc name
-    err = CPSSetProcessName(__thisPSN, b'PyRAF')
-    if err:
-        raise Exception("CPSSetProcessName: " + str(err))
-    # Make us a FG app (need to be in order to use SetFrontProcess on us)
-    # This must be done unless we are called with pythonw.
-    # Apparently the 1010 error is more of a warning...
-    err = CPSEnableForegroundOperation(__thisPSN)
-    if err and err != 1010:
-        raise Exception("CPSEnableForegroundOperation: " + str(err))
+    AppKit.NSProcessInfo.processInfo().setProcessName_("PyRAF")
 
     # Get the display's absolute height (pixels).
     # The next line assumes the tkinter root window has already been created
