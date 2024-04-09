@@ -39,7 +39,7 @@ jobs:
     steps:
       - name: Checkout repository
         if: matrix.method == 'native'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup dependencies
         if: startsWith(matrix.os, 'ubuntu') && matrix.method == 'native'
