@@ -94,6 +94,6 @@ jobs:
 
       - name: "Upload coverage to Codecov"
         if: matrix.upload_coverage == 'yes'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: false
