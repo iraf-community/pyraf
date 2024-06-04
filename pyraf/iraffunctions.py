@@ -13,6 +13,7 @@ initialization is complete.
 R. White, 2000 January 20
 """
 
+import re
 
 # define INDEF, yes, no, EOF, Verbose, IrafError, userIrafHome
 
@@ -146,32 +147,16 @@ def Init(doprint=1, hush=0, savefile=None):
         restoreFromFile(savefile, doprint=doprint)
         return
     if len(_pkgs) == 0:
-        try:
-            iraf = _os.environ['iraf']
-        except KeyError:
-            # iraf or IRAFARCH environment variable not defined
-            # try to get them from cl startup file
-            try:
-                d = _getIrafEnv()
-                for key, value in d.items():
-                    if key not in _os.environ:
-                        _os.environ[key] = value
-                iraf = _os.environ['iraf']
-            except OSError:
-                raise OSError("""
-Your "iraf" environment variable is not defined and could not be
-determined from /usr/local/bin/cl.  This is are needed to find IRAF
-tasks.  Before starting pyraf, define ot by doing (for example):
+        if "iraf" not in _os.environ:
+            _os.environ["iraf"] = _getIrafEnv()
+        iraf = _os.environ['iraf']
 
-    export iraf=/iraf/iraf/
-
-at the Unix command line. Actual values will depend on your IRAF installation,
-and they are set during the IRAF user installation (see https://iraf-community.github.io).
-Also be sure to run the "mkiraf" command to create a logion.cl
-(http://www.google.com/search?q=mkiraf).
-""")
-
-        arch = _os.environ.get('IRAFARCH', '')
+        if "IRAFARCH" not in _os.environ:
+            arch = _getIrafArch(iraf)
+            if arch:
+                _os.environ["IRAFARCH"] = arch
+        else:
+            arch = _os.environ["IRAFARCH"]
 
         # stacksize problem on linux
         # https://iraf-community.github.io/iraf-v216/issues/61
@@ -256,51 +241,81 @@ Also be sure to run the "mkiraf" command to create a logion.cl
             listTasks('clpackage')
 
 
-def _getIrafEnv(file='/usr/local/bin/cl', vars=('IRAFARCH', 'iraf')):
-    """Returns dictionary of environment vars defined in cl startup file"""
+def _getIrafEnv():
+    """Retrieve the iraf root path from the configuration"""
     if not _irafinst.EXISTS:
-        return {'iraf': '/iraf/is/not/here/', 'IRAFARCH': 'arch_is_unused'}
-    if not _os.path.exists(file):
-        raise OSError(f"CL startup file {file} does not exist")
-    with open(file, errors="ignore") as fh:
-        lines = fh.readlines()
-    # replace commands that exec cl with commands to print environment vars
-    pat = _re.compile(r'^\s*exec\s+')
-    newlines = []
-    nfound = 0
-    for line in lines:
-        if pat.match(line):
-            nfound += 1
-            for var in vars:
-                newlines.append(f'echo "{var}=${var}"\n')
-            newlines.append('exit 0\n')
-        else:
-            newlines.append(line)
-    if nfound == 0:
-        raise OSError(f"No exec statement found in script {file}")
-    # write new script to temporary file
-    (fd, newfile) = _tempfile.mkstemp()
-    _os.close(fd)
-    f = open(newfile, 'w')
-    f.writelines(newlines)
-    f.close()
-    _os.chmod(newfile, 0o700)
-    # run new script and capture output
-    fh = _io.StringIO()
-    status = clOscmd(newfile, Stdout=fh)
-    if status:
-        raise OSError(f"Execution error in script {newfile} (derived from {file})")
-    _os.remove(newfile)
-    result = fh.getvalue().split('\n')
-    fh.close()
-    # extract environment variables from the output
-    d = {}
-    for entry in result:
-        if entry.find('=') >= 0:
-            key, value = entry.split('=', 1)
-            d[key] = value
-    return d
+        return _irafinst.NO_IRAF_PFX
 
+    # Community IRAF defines it in ~/.iraf/irafroot or /etc/iraf/irafroot
+    for irafroot in [_os.path.expanduser("~/.iraf/irafroot"),
+                     "/etc/iraf/irafroot"]:
+        if _os.path.exists(irafroot):
+            with open(irafroot) as fp:
+                line = fp.readline().strip()
+            if line.startswith("/"):
+                return line
+
+    # NOIRLAB and NOAO personal installs have a setup.sh in the homedir
+    irafsetup = _os.path.expanduser("~/.iraf/setup.sh")
+    if _os.path.exists(irafsetup):
+        iraf_re = r"\s*export\s+iraf=\s*/\^S+/"
+        with open("/usr/include/iraf.h") as fp:
+            for line in fp.readlines():
+                m = iraf_re.match(line)
+                if m is not None:
+                    return m[1]
+
+    # NOAO IRAF defines it in /usr/include/iraf.h
+    irafinc = "/usr/include/iraf.h"
+    if _os.path.exists(irafinc):
+        iraf_re = re.compile(r'\s*#define\s+iraf\s+"(/\S+/)"')
+        with open(irafinc) as fp:
+            for line in fp.readlines():
+                m = iraf_re.match(line)
+                if m is not None:
+                    return m[1]
+
+    # Check some hardcoded directories as last resort
+    for irafdir in [
+            "/usr/local/lib/iraf/",
+            "/usr/local/iraf/",
+            "/usr/lib/iraf/",
+            "/usr/iraf/",
+            "/opt/iraf/iraf/",
+            "/opt/iraf/",
+            "/iraf/iraf/",
+            "/Applications/IRAF.app/Contents/iraf-v218/",
+    ]:
+        if _os.path.exists(irafdir):
+            return irafdir
+
+    raise OSError("""
+Your "iraf" environment variable is not defined and could not be
+determined from the installation.  This is are needed to find IRAF
+tasks.  Before starting pyraf, define ot by doing (for example):
+
+    export iraf=/usr/local/lib/iraf/
+
+at the Unix command line. Actual values will depend on your IRAF installation.
+""")
+
+    
+def _getIrafArch(iraf):
+    """Retrieve the iraf architecture path from the configuration"""
+
+    # NOAO/NOIRLAB user installation
+    fname = _os.path.expanduser("~/.iraf/arch")
+    if _os.path.exists(fname):
+        with open(fname) as fp:
+            return fp.readline().strip()
+
+    # Check for standard iraf bindirs
+    bindir = _os.path.realpath(_os.path.join(iraf, "bin"))
+    m = re.match(r".*/bin\.(\w+)/?$", bindir)
+    if m is not None:
+        return m[1]
+
+    return ""
 
 # module variables that don't get saved (they get
 # initialized when this module is imported)
@@ -3349,7 +3364,11 @@ def clExecute(s,
             locals = {}
         exec(codeObject, locals)
         if pycode.vars.proc_name:
-            exec(pycode.vars.proc_name + "(taskObj=iraf.cl)", locals)
+            try:
+                exec(pycode.vars.proc_name + "(taskObj=iraf.cl)", locals)
+            except TypeError as e:
+                e.add_note(f"While executing\n\n{code}")
+                raise
         return code
     finally:
         _clExecuteCount = _clExecuteCount - 1
