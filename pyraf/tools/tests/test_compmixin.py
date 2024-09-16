@@ -35,6 +35,9 @@ class AnyType(ComparableMixin):
         elif other is None:
             # coerce to str compare
             return method(str(self.val), '')
+        elif self.val is None:
+            # coerce to str compare
+            return method('', str(other))
         elif isinstance(other, int):
             # handle ONLY case where self.val is a single char or an int
             if isinstance(self.val, str) and len(self.val) == 1:
