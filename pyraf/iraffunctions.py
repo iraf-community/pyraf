@@ -89,7 +89,7 @@ from . import scanf as sscanf
 
 # FP_EPSILON is the smallest number such that: 1.0 + epsilon > 1.0;  Use None
 # in the finfo ctor to make it use the default precision for a Python float.
-FP_EPSILON = _numpy.finfo(None).eps
+FP_EPSILON = _numpy.finfo(_numpy.float64).eps
 
 # -----------------------------------------------------
 # private dictionaries:
