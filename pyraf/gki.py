@@ -1404,54 +1404,6 @@ class IrafLineStyles:
         self.patterns = [0x0000, 0xFFFF, 0x00FF, 0x5555, 0x33FF]
 
 
-class IrafHatchFills:
-
-    def __init__(self):
-
-        # Each fill pattern is a 32x4 ubyte array (represented as 1-d).
-        # These are computed on initialization rather than using a
-        # 'data' type initialization since they are such simple patterns.
-        # these arrays are stored in a pattern list. Pattern entries
-        # 0-2 should never be used since they are not hatch patterns.
-
-        # so much for these, currently PyOpenGL does not support
-        # glPolygonStipple()! But adding it probably is not too hard.
-
-        self.patterns = [None] * 7
-        # pattern 3, vertical stripes
-        p = numpy.zeros(128, numpy.int8)
-        p[0:4] = [0x92, 0x49, 0x24, 0x92]
-        for i in range(31):
-            p[(i + 1) * 4:(i + 2) * 4] = p[0:4]
-        self.patterns[3] = p
-        # pattern 4, horizontal stripes
-        p = numpy.zeros(128, numpy.int8)
-        p[0:4] = [0xFF, 0xFF, 0xFF, 0xFF]
-        for i in range(10):
-            p[(i + 1) * 12:(i + 1) * 12 + 4] = p[0:4]
-        self.patterns[4] = p
-        # pattern 5, close diagonal striping
-        p = numpy.zeros(128, numpy.int8)
-        p[0:12] = [
-            0x92, 0x49, 0x24, 0x92, 0x24, 0x92, 0x49, 0x24, 0x49, 0x24, 0x92,
-            0x49
-        ]
-        for i in range(9):
-            p[(i + 1) * 12:(i + 2) * 12] = p[0:12]
-        p[120:128] = p[0:8]
-        self.patterns[5] = p
-        # pattern 6, diagonal stripes the other way
-        p = numpy.zeros(128, numpy.int8)
-        p[0:12] = [
-            0x92, 0x49, 0x24, 0x92, 0x49, 0x24, 0x92, 0x49, 0x24, 0x92, 0x49,
-            0x24
-        ]
-        for i in range(9):
-            p[(i + 1) * 12:(i + 2) * 12] = p[0:12]
-        p[120:128] = p[0:8]
-        self.patterns[6] = p
-
-
 class LineAttributes:
 
     def __init__(self):

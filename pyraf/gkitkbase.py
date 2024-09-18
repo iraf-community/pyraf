@@ -205,7 +205,6 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         self.colorManager.setColors(self.gwidget)
         self.wcs = irafgwcs.IrafGWcs()
         self.linestyles = gki.IrafLineStyles()
-        self.hatchfills = gki.IrafHatchFills()
         self.textAttributes = gki.TextAttributes()
         self.lineAttributes = gki.LineAttributes()
         self.fillAttributes = gki.FillAttributes()
