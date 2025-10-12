@@ -16,23 +16,23 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Ubuntu 22.04 (Python-3.10), native
-            os: ubuntu-22.04
+          - name: Ubuntu 24.04 (Python-3.12.3), native
+            os: ubuntu-24.04
             method: native
             iraf: /usr/lib/iraf/
             upload_coverage: yes
 
-          - name: Ubuntu 22.04 (Python-3.10), native, without IRAF
-            os: ubuntu-22.04
+          - name: Ubuntu 24.04 (Python-3.12.3), native, without IRAF
+            os: ubuntu-24.04
             method: native
 
-          - name: Ubuntu 20.04 (Python-3.8.2), pip
-            os: ubuntu-20.04
+          - name: Ubuntu 22.04 (Python-3.10), pip
+            os: ubuntu-22.04
             method: pip
             iraf: /usr/lib/iraf/
 
-          - name: macOS 13, pip
-            os: macos-13
+          - name: macOS 26, pip
+            os: macos-26
             method: pip
             iraf: /Users/runner/work/iraf/
 
@@ -59,7 +59,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends iraf iraf-noao iraf-dev build-essential libx11-dev
-          sudo apt-get install --no-install-recommends python3-dev python3-pip
+          sudo apt-get install --no-install-recommends python3-dev python3-pip python3-venv
           pip3 install ipython
 
       - name: Setup dependencies, Mac
@@ -67,7 +67,7 @@ jobs:
         run: |
           mkdir $iraf
           curl https://cloud.aip.de/index.php/s/iPj7LGxbRedYnqa/download/iraf-macintel.tar.gz | tar -C $iraf -x -z
-          (cd $iraf ; ./install < /dev/null || true)
+          (cd $iraf ; IRAFARCH=macintel ./install < /dev/null || true)
           export PATH=${HOME}/.iraf/bin:${PATH}
           mkiraf -t=$TERM -n
           echo "PATH=$PATH" >> $GITHUB_ENV
@@ -80,7 +80,9 @@ jobs:
       - name: Install PyRAF via pip
         if: matrix.method == 'pip'
         run: |
-          pip3 install git+$GITHUB_SERVER_URL/$GITHUB_REPOSITORY@$GITHUB_SHA#egg=pyraf[test]
+          python3 -m venv /tmp/pyraf-venv
+          source /tmp/pyraf-venv/bin/activate
+          python3 -m pip install pytest git+$GITHUB_SERVER_URL/$GITHUB_REPOSITORY@$GITHUB_SHA#egg=pyraf[test]
 
       - name: Run tests (locally built)
         if: matrix.method == 'native'
@@ -90,6 +92,7 @@ jobs:
       - name: Run tests (installed package)
         if: matrix.method == 'pip'
         run: |
+          source /tmp/pyraf-venv/bin/activate
           python3 -m pytest -s --pyargs pyraf
 
       - name: "Upload coverage to Codecov"
