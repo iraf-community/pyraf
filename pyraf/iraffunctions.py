@@ -276,7 +276,7 @@ def _getIrafEnv():
                     return m[1]
 
     # Check some hardcoded directories as last resort
-    for irafdir in [
+    irafdirs = [
             "/usr/local/lib/iraf/",
             "/usr/local/iraf/",
             "/usr/lib/iraf/",
@@ -285,7 +285,11 @@ def _getIrafEnv():
             "/opt/iraf/",
             "/iraf/iraf/",
             "/Applications/IRAF.app/Contents/iraf-v218/",
-    ]:
+    ]
+    if "HOMEBREW_PREFIX" in _os.environ:
+        irafdirs.append(
+            "{HOMEBREW_PREFIX}/opt/iraf/libexec/".format(**_os.environ))
+    for irafdir in irafdirs:
         if _os.path.exists(irafdir):
             return irafdir
 
