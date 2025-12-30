@@ -113,7 +113,7 @@ def scanf_compile(format, collapseWhitespace=True):
 
         >>> format_re, casts = scanf_compile('%s - %d errors, %d warnings')
         >>> print format_re.pattern
-        (\\S+) \- ([+-]?\\d+) errors, ([+-]?\\d+) warnings
+        (\\S+) \\- ([+-]?\\d+) errors, ([+-]?\\d+) warnings
 
     Translated formats are cached for faster reuse
     """
