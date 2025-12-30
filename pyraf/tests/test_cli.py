@@ -60,10 +60,11 @@ def test_division(arg, expected, ecl_flag):
 
 @pytest.mark.parametrize('arg,fmt,expected', [
     ("seven 6 4.0 -7", "%s %d %g %d", ('seven', 6, 4.0, -7)), # aliveness
+    ("0 0xf2 0o23 095", "%d %d %d %d", (0, 0xf2, 0o23, 95)),
     ("seven", "%d", None),
     ("seven", "%c%3c%99c", ('s', 'eve', 'n')),
     ("seven", "%[sev]", ('seve', )),
-    ("0xabc90", "%x", (703632, )),
+    ("0xabc90", "%x", (0xabc90, )),
 ])  
 def test_scanf(arg, fmt, expected):
     """A basic unit test that sscanf was built/imported correctly and
