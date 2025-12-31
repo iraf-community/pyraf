@@ -417,7 +417,7 @@ class GkiBuffer:
                 if ip + 2 >= lenMC:
                     break
                 opcode = int(buffer[ip + 1])
-                arglen = buffer[ip + 2]
+                arglen = int(buffer[ip + 2])
                 if (ip + arglen) > lenMC:
                     break
                 self.lastTranslate = ip
