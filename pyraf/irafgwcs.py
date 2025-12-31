@@ -102,7 +102,7 @@ class IrafGWcs:
     def set(self, arg=None):
         """Set wcs from metacode stream"""
         init_wcs_sizes()
-        if arg is None:
+        if arg is None or len(arg) == 0:
             # commit immediately if arg=None
             self.wcs = _setWCSDefault()
             self.pending = None
