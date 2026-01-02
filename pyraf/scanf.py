@@ -19,7 +19,7 @@ Original code from:
 Modified for the needs of PyRAF:
  * all fields may have a max width (not a fixed width)
  * add "l" (for [outdated] long ints)
- * allow "0x" and "0" prefixes in ints for hexa/octal numbers
+ * allow "0x" and "0o" prefixes in ints for hexa/octal numbers
 
 Differences to the original PyRAF sscanf module:
  * "n" coversion missing (number of characters so far)
@@ -41,10 +41,10 @@ __all__ = ["scanf", 'scanf_translate', 'scanf_compile']
 DEBUG = False
 
 def sint(s):
-    if s.startswith("0x"):
+    if s.startswith("0o"):
+        return int(s[2:], 8)
+    elif s.startswith("0x"):
         return int(s[2:], 16)
-    elif s.startswith("0"):
-        return int(s[1:], 8)
     else:
         return int(s)
 
@@ -68,11 +68,11 @@ scanf_translate = [
         (r"%\[([^\]]+)\]", r"([%s]+)", lambda x:x),
         (r"%\*\[([^\]]+)\]", r"(?:[%s]+)", None),
 
-        (r"%l?[dil]", r"([+-]?\d+)", sint),
-        (r"%\*l?[dil]", r"(?:[+-]?\d+)", None),
+        (r"%l?[dil]", r"([+-]?(?:0o[0-7]+|0x[\da-fA-F]+|\d+))", sint),
+        (r"%\*l?[dil]", r"(?:[+-]?0o[0-7]+|0x[\da-fA-F]+|\d+)", None),
 
-        (r"%(\d+)l?[dil]", r"([+-]?\d{1,%s})", sint),
-        (r"%\*(\d+)l?[dil]", r"(?:[+-]?\d{1,%s})", None),
+        (r"%(\d+)l?[dil]", r"([+-]?(?:0o[0-7]+|0x[\da-fA-F]+|\d+)", sint),
+        (r"%\*(\d+)l?[dil]", r"(?:[+-]?(?:0o[0-7]+|0x[\da-fA-F]+|\d+)", None),
 
         (r"%l?u", r"(\d+)", int),
         (r"%\*l?u", r"(?:\d+)", None),
@@ -113,7 +113,7 @@ def scanf_compile(format, collapseWhitespace=True):
 
         >>> format_re, casts = scanf_compile('%s - %d errors, %d warnings')
         >>> print format_re.pattern
-        (\\S+) \- ([+-]?\\d+) errors, ([+-]?\\d+) warnings
+        (\\S+) \\- ([+-]?\\d+) errors, ([+-]?\\d+) warnings
 
     Translated formats are cached for faster reuse
     """
