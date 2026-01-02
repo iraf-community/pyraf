@@ -147,7 +147,8 @@ class ImageDisplay:
     def _writeHeader(self, tid, subunit, thingct, x, y, z, t):
         """Write request to image display"""
 
-        a = numpy.array([tid, thingct, subunit, 0, x, y, z, t], numpy.int16)
+        a = numpy.array([tid, thingct, subunit, 0, x, y, z, t],
+                        dtype=int).astype(numpy.uint16)
         # Compute the checksum
         sum = numpy.add.reduce(a)
         sum = 0xffff - (sum & 0xffff)
