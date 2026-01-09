@@ -71,8 +71,8 @@ scanf_translate = [
         (r"%l?[dil]", r"([+-]?(?:0o[0-7]+|0x[\da-fA-F]+|\d+))", sint),
         (r"%\*l?[dil]", r"(?:[+-]?0o[0-7]+|0x[\da-fA-F]+|\d+)", None),
 
-        (r"%(\d+)l?[dil]", r"([+-]?(?:0o[0-7]+|0x[\da-fA-F]+|\d+)", sint),
-        (r"%\*(\d+)l?[dil]", r"(?:[+-]?(?:0o[0-7]+|0x[\da-fA-F]+|\d+)", None),
+        (r"%(\d+)l?[dil]", r"([+-]?(?:0o[0-7]|0x[\da-fA-F]|\d{1,%s}))", sint),
+        (r"%\*(\d+)l?[dil]", r"(?:[+-]?(?:0o[0-7]+|0x[\da-fA-F]+|\d{1,%s})", None),
 
         (r"%l?u", r"(\d+)", int),
         (r"%\*l?u", r"(?:\d+)", None),
