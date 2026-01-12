@@ -40,14 +40,6 @@ __all__ = ["scanf", 'scanf_translate', 'scanf_compile']
 
 DEBUG = False
 
-def sint(s):
-    if s.startswith("0o"):
-        return int(s[2:], 8)
-    elif s.startswith("0x"):
-        return int(s[2:], 16)
-    else:
-        return int(s)
-
 # As you can probably see it is relatively easy to add more format types.
 # Make sure you add a second entry for each new item that adds the extra
 #   few characters needed to handle the field ommision.
@@ -68,11 +60,11 @@ scanf_translate = [
         (r"%\[([^\]]+)\]", r"([%s]+)", lambda x:x),
         (r"%\*\[([^\]]+)\]", r"(?:[%s]+)", None),
 
-        (r"%l?[dil]", r"([+-]?(?:0o[0-7]+|0x[\da-fA-F]+|\d+))", sint),
-        (r"%\*l?[dil]", r"(?:[+-]?0o[0-7]+|0x[\da-fA-F]+|\d+)", None),
+        (r"%l?[dil]", r"([+-]?\d+)", int),
+        (r"%\*l?[dil]", r"(?:[+-]?\d+)", None),
 
-        (r"%(\d+)l?[dil]", r"([+-]?(?:0o[0-7]|0x[\da-fA-F]|\d{1,%s}))", sint),
-        (r"%\*(\d+)l?[dil]", r"(?:[+-]?(?:0o[0-7]+|0x[\da-fA-F]+|\d{1,%s})", None),
+        (r"%(\d+)l?[dil]", r"([+-]?\d{1,%s})", int),
+        (r"%\*(\d+)l?[dil]", r"(?:[+-]?\d{1,%s})", None),
 
         (r"%l?u", r"(\d+)", int),
         (r"%\*l?u", r"(?:\d+)", None),
