@@ -60,32 +60,26 @@ scanf_translate = [
         (r"%\[([^\]]+)\]", r"([%s]+)", lambda x:x),
         (r"%\*\[([^\]]+)\]", r"(?:[%s]+)", None),
 
-        (r"%l?[dil]", r"([+-]?\d+)", int),
-        (r"%\*l?[dil]", r"(?:[+-]?\d+)", None),
+        (r"%l?d", r"([+-]?\d+)", int),
+        (r"%\*l?d", r"(?:[+-]?\d+)", None),
 
-        (r"%(\d+)l?[dil]", r"([+-]?\d{1,%s})", int),
-        (r"%\*(\d+)l?[dil]", r"(?:[+-]?\d{1,%s})", None),
+        (r"%(\d+)l?d", r"([+-]?\d{1,%s})", int),
+        (r"%\*(\d+)l?d", r"(?:[+-]?\d{1,%s})", None),
 
-        (r"%l?u", r"(\d+)", int),
-        (r"%\*l?u", r"(?:\d+)", None),
+        (r"%[fge]", r"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
+        (r"%\*[fge]", r"(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
 
-        (r"%(\d+)l?u", r"(\d{1,%s})", int),
-        (r"%\*(\d+)l?u", r"(?:\d{1,%s})", None),
+        (r"%(\d+)[fge]", r"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
+        (r"%\*(\d+)[fge]", r"(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
 
-        (r"%[fgeE]", r"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
-        (r"%\*[fgeE]", r"(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
+        (r"%l?x", r"([\dA-Za-f]+)", lambda x: int(x, 16)),
+        (r"%\*l?x", r"[\dA-Za-f]+)", None),
 
-        (r"%(\d+)[fgeE]", r"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
-        (r"%\*(\d+)[fgeE]", r"(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
+        (r"%(\d+)l?x", r"([\dA-Za-f]{1,%s})", lambda x: int(x, 16)),
+        (r"%\*(\d+)l?x", r"[\dA-Za-f]{1,%s})", None),
 
-        (r"%l?[xX]", r"((?:0[xX])?[\dA-Za-f]+)", lambda x: int(x, 16)),
-        (r"%\*l?[xX]", r"(?:(?:0[xX])?[\dA-Za-f]+)", None),
-
-        (r"%(\d+)l?[xX]", r"((?:0[xX])?[\dA-Za-f]{1,%s})", lambda x: int(x, 16)),
-        (r"%\*(\d+)l?[xX]", r"(?:(?:0[xX])?[\dA-Za-f]{1,%s})", None),
-
-        (r"%l?o", r"([0-7]*)", lambda x:int(x, 8)),
-        (r"%\*l?o", r"(?:[0-7]*)", None),
+        (r"%l?o", r"([0-7]+)", lambda x:int(x, 8)),
+        (r"%\*l?o", r"(?:[0-7]+)", None),
 
         (r"%(\d+)l?o", r"([0-7]{1,%s})", lambda x: int(x, 8)),
         (r"%\*(\d+)l?o", r"(?:[0-7]{1,%s})", None),
@@ -153,11 +147,10 @@ def scanf(format, s=None, collapseWhitespace=True):
     %c            Fixed width character string.
     %s            String of non-whitespace characters with leading
                      whitespace skipped.
-    %d, %i, %l    Signed integer (leading 0 => octal, 0x => hex).
+    %d            Signed integer
     %o            Octal integer.
-    %u            Unsigned integer.
     %x            Hexadecimal integer.
-    %f, %g, %e    Python float
+    %f, %g, %e    Float
     %[]           Character scan set
 
     scanf.scanf returns a tuple of found values or None if the format

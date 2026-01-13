@@ -65,7 +65,7 @@ def test_division(arg, expected, ecl_flag):
     ("seven", "%d", None),
     ("seven", "%c%3c%99c", ('s', 'eve', 'n')),
     ("seven", "%[sev]", ('seve', )),
-    ("0xabc90", "%x", (0xabc90, )),
+    ("abc90 177", "%x %o", (0xabc90, 0o177)),
 ])  
 def test_scanf(arg, fmt, expected):
     """A basic unit test that sscanf was built/imported correctly and
