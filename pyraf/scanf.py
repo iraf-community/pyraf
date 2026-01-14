@@ -51,11 +51,11 @@ scanf_translate = [
         (r"%(\d+)c", r"(.{0,%s})", lambda x:x),
         (r"%\*(\d+)c", r"(?:.{0,%s})", None),
 
-        (r"%s", r"(\S+)", lambda x: x),
-        (r"%\*s", r"(?:\S+)", None),
+        (r"%s", r"(\S*)", lambda x: x),
+        (r"%\*s", r"(?:\S*)", None),
 
-        (r"%(\d+)s", r"(\S{1,%s})", lambda x:x),
-        (r"%\*(\d+)s", r"(?:\S{1,%s})", None),
+        (r"%(\d+)s", r"(\S{0,%s})", lambda x:x),
+        (r"%\*(\d+)s", r"(?:\S{0,%s})", None),
 
         (r"%\[([^\]]+)\]", r"([%s]+)", lambda x:x),
         (r"%\*\[([^\]]+)\]", r"(?:[%s]+)", None),
