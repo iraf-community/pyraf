@@ -172,7 +172,7 @@ def scanf(format, s=None, collapseWhitespace=True):
             if cast:
                 res.append(cast(found.groups()[0]))
             i = found.end()
-        else:
+        if not found or i == len(s):
             break
 
     if len(res) > 0:
