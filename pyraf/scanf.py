@@ -36,46 +36,31 @@ __all__ = ["scanf", 'scanf_translate', 'scanf_compile']
 # As you can probably see it is relatively easy to add more format types.
 # Make sure you add a second entry for each new item that adds the extra
 #   few characters needed to handle the field ommision.
+
+# The first group item in the match is always for the optional "*"
+# indicating that the field shall be skipped. Optional other item is
+# the length which will replace the "%s" in the pattern.
 scanf_translate = [
     (re.compile(_token), _pattern, _cast) for _token, _pattern, _cast in [
-        (r"%c", r"(.)", lambda x:x),
-        (r"%\*c", r"(?:.)", None),
+        (r"%(\*)?c", r"(.)", lambda x:x),
+        (r"%(\*)?(\d+)c", r"(.{0,%s})", lambda x:x),
 
-        (r"%(\d+)c", r"(.{0,%s})", lambda x:x),
-        (r"%\*(\d+)c", r"(?:.{0,%s})", None),
+        (r"%(\*)?s", r"\s*(\S*)", lambda x: x),
+        (r"%(\*)?(\d+)s", r"\s*(\S{0,%s})", lambda x:x),
 
-        (r"%s", r"\s*(\S*)", lambda x: x),
-        (r"%\*s", r"\s*(?:\S*)", None),
+        (r"%(\*)?\[([^\]]+)\]", r"\s*([%s]+)", lambda x:x),
 
-        (r"%(\d+)s", r"\s*(\S{0,%s})", lambda x:x),
-        (r"%\*(\d+)s", r"\s*(?:\S{0,%s})", None),
+        (r"%(\*)?l?d", r"\s*([+-]?\d+)", int),
+        (r"%(\*)?(\d+)l?d", r"\s*([+-]?\d{1,%s})", int),
 
-        (r"%\[([^\]]+)\]", r"\s*([%s]+)", lambda x:x),
-        (r"%\*\[([^\]]+)\]", r"\s*(?:[%s]+)", None),
+        (r"%(\*)?[fge]", r"\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
+        (r"%(\*)?(\d+)[fge]", r"\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
 
-        (r"%l?d", r"\s*([+-]?\d+)", int),
-        (r"%\*l?d", r"\s*(?:[+-]?\d+)", None),
+        (r"%(\*)?l?x", r"\s*([\dA-Za-f]+)", lambda x: int(x, 16)),
+        (r"%(\*)?(\d+)l?x", r"\s*([\dA-Za-f]{1,%s})", lambda x: int(x, 16)),
 
-        (r"%(\d+)l?d", r"\s*([+-]?\d{1,%s})", int),
-        (r"%\*(\d+)l?d", r"\s*(?:[+-]?\d{1,%s})", None),
-
-        (r"%[fge]", r"\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
-        (r"%\*[fge]", r"\s*(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
-
-        (r"%(\d+)[fge]", r"\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
-        (r"%\*(\d+)[fge]", r"\s*(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
-
-        (r"%l?x", r"\s*([\dA-Za-f]+)", lambda x: int(x, 16)),
-        (r"%\*l?x", r"\s*[\dA-Za-f]+)", None),
-
-        (r"%(\d+)l?x", r"\s*([\dA-Za-f]{1,%s})", lambda x: int(x, 16)),
-        (r"%\*(\d+)l?x", r"\s*[\dA-Za-f]{1,%s})", None),
-
-        (r"%l?o", r"\s*([0-7]+)", lambda x:int(x, 8)),
-        (r"%\*l?o", r"(?:[0-7]+)", None),
-
-        (r"%(\d+)l?o", r"\s*([0-7]{1,%s})", lambda x: int(x, 8)),
-        (r"%\*(\d+)l?o", r"\s*(?:[0-7]{1,%s})", None),
+        (r"%(\*)?l?o", r"\s*([0-7]+)", lambda x:int(x, 8)),
+        (r"%(\*)?(\d+)l?o", r"\s*([0-7]{1,%s})", lambda x: int(x, 8)),
     ]]
 
 
@@ -111,9 +96,16 @@ def scanf_compile(format):
         for token, pattern, cast in scanf_translate:
             found = token.match(format, i)
             if found:
-                groups = found.groupdict() or found.groups()
-                if groups:
-                    pattern = pattern % groups
+                groups = found.groups()
+
+                # Add optional argument (length) to pattern
+                if len(groups) > 1:
+                    pattern = pattern % groups[1:]
+
+                # Ignore this format pattern
+                if groups[0] == "*":
+                    cast = None
+
                 pat_list.append([pattern, cast])
                 i = found.end()
                 break
