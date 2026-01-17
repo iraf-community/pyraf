@@ -1,9 +1,4 @@
-"""
-Small scanf implementation.
-
-Python has powerful regular expressions but sometimes they are totally overkill
-when you just want to parse a simple-formatted string.
-C programmers use the scanf-function for these tasks (see link below).
+"""Small scanf implementation.
 
 This implementation of scanf translates the simple scanf-format into
 regular expressions. Unlike C you can be sure that there are no buffer overflows
@@ -20,10 +15,10 @@ Modified for the needs of PyRAF:
  * all fields may have a max width (not a fixed width)
  * add "l" (for [outdated] long ints)
  * allow "0x" and "0o" prefixes in ints for hexa/octal numbers
+ * return partial results for partially matching strings
 
 Differences to the original PyRAF sscanf module:
  * "n" coversion missing (number of characters so far)
-
 
 """
 import re
@@ -33,56 +28,41 @@ try:
 except ImportError:
     from backports.functools_lru_cache import lru_cache
 
-__version__ = '1.5.2'
 
 __all__ = ["scanf", 'scanf_translate', 'scanf_compile']
 
 
-DEBUG = False
 
 # As you can probably see it is relatively easy to add more format types.
 # Make sure you add a second entry for each new item that adds the extra
 #   few characters needed to handle the field ommision.
+
+# The first group item in the match is always for the optional "*"
+# indicating that the field shall be skipped. Optional other item is
+# the length which will replace the "%s" in the pattern.
 scanf_translate = [
     (re.compile(_token), _pattern, _cast) for _token, _pattern, _cast in [
-        (r"%c", r"(.)", lambda x:x),
-        (r"%\*c", r"(?:.)", None),
+        (r"%(\*)?c", r"(.)", lambda x:x),
+        (r"%(\*)?(\d+)c", r"(.{1,%s})", lambda x:x),
 
-        (r"%(\d+)c", r"(.{0,%s})", lambda x:x),
-        (r"%\*(\d+)c", r"(?:.{0,%s})", None),
+        (r"%(\*)?s", r"\s*(\S+)", lambda x: x),
+        (r"%(\*)?(\d+)s", r"\s*(\S{1,%s})", lambda x:x),
 
-        (r"%s", r"(\S+)", lambda x: x),
-        (r"%\*s", r"(?:\S+)", None),
+        (r"%(\*)?\[([^\]]+)\]", r"\s*([%s]+)", lambda x:x),
 
-        (r"%(\d+)s", r"(\S{1,%s})", lambda x:x),
-        (r"%\*(\d+)s", r"(?:\S{1,%s})", None),
+        (r"%(\*)?l?d", r"\s*([+-]?\d+)", int),
+        (r"%(\*)?(\d+)l?d", r"\s*([+-]?\d{1,%s})", int),
 
-        (r"%\[([^\]]+)\]", r"([%s]+)", lambda x:x),
-        (r"%\*\[([^\]]+)\]", r"(?:[%s]+)", None),
+        (r"%(\*)?[fge]", r"\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
+        (r"%(\*)?(\d+)[fge]", r"\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
 
-        (r"%l?d", r"([+-]?\d+)", int),
-        (r"%\*l?d", r"(?:[+-]?\d+)", None),
+        (r"%(\*)?l?x", r"\s*([-+]?[\da-fA-F]+)", lambda x: int(x, 16)),
+        (r"%(\*)?(\d+)l?x", r"\s*([-+]?[\dA-Fa-f]{1,%s})", lambda x: int(x, 16)),
 
-        (r"%(\d+)l?d", r"([+-]?\d{1,%s})", int),
-        (r"%\*(\d+)l?d", r"(?:[+-]?\d{1,%s})", None),
+        (r"%(\*)?l?o", r"\s*([-+]?[0-7]+)", lambda x:int(x, 8)),
+        (r"%(\*)?(\d+)l?o", r"\s*([-+]?[0-7]{1,%s})", lambda x: int(x, 8)),
 
-        (r"%[fge]", r"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
-        (r"%\*[fge]", r"(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
-
-        (r"%(\d+)[fge]", r"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
-        (r"%\*(\d+)[fge]", r"(?:[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", None),
-
-        (r"%l?x", r"([\dA-Za-f]+)", lambda x: int(x, 16)),
-        (r"%\*l?x", r"[\dA-Za-f]+)", None),
-
-        (r"%(\d+)l?x", r"([\dA-Za-f]{1,%s})", lambda x: int(x, 16)),
-        (r"%\*(\d+)l?x", r"[\dA-Za-f]{1,%s})", None),
-
-        (r"%l?o", r"([0-7]+)", lambda x:int(x, 8)),
-        (r"%\*l?o", r"(?:[0-7]+)", None),
-
-        (r"%(\d+)l?o", r"([0-7]{1,%s})", lambda x: int(x, 8)),
-        (r"%\*(\d+)l?o", r"(?:[0-7]{1,%s})", None),
+        (r"%(%)", r"%", None)
     ]]
 
 
@@ -91,21 +71,26 @@ SCANF_CACHE_SIZE = 1000
 
 
 @lru_cache(maxsize=SCANF_CACHE_SIZE)
-def scanf_compile(format, collapseWhitespace=True):
+def scanf_compile(format):
     """
     Translate the format into a regular expression
 
     For example:
 
-        >>> format_re, casts = scanf_compile('%s - %d errors, %d warnings')
-        >>> print format_re.pattern
-        (\\S+) \\- ([+-]?\\d+) errors, ([+-]?\\d+) warnings
+        >>> re_list = scanf_compile('%s - %d errors, %d warnings')
+        >>> for pattern, cast in re_list:
+        ...     print(pattern, cast)
+        re.compile('(\\S*)') <function <lambda> at 0x7f5da8f1b060>
+        re.compile('\\s+\\-\\s+') None
+        re.compile('([+-]?(?:0o[0-7]+|0x[\\da-fA-F]+|\\d+))') int
+        re.compile('\\s+errors,\\s+') None
+        re.compile('([+-]?(?:0o[0-7]+|0x[\\da-fA-F]+|\\d+))') int
+        re.compile('\\s+warnings') None
 
     Translated formats are cached for faster reuse
     """
 
-    format_pat = ""
-    cast_list = []
+    pat_list = []
     i = 0
     length = len(format)
     while i < length:
@@ -113,28 +98,38 @@ def scanf_compile(format, collapseWhitespace=True):
         for token, pattern, cast in scanf_translate:
             found = token.match(format, i)
             if found:
-                if cast: # cast != None
-                    cast_list.append(cast)
-                groups = found.groupdict() or found.groups()
-                if groups:
-                    pattern = pattern % groups
-                format_pat += pattern
+                groups = found.groups()
+
+                # Add optional argument (length) to pattern
+                if len(groups) > 1:
+                    pattern = pattern % groups[1:]
+
+                # Ignore this format pattern
+                if groups[0] == "*":
+                    cast = None
+
+                pat_list.append([pattern, cast])
                 i = found.end()
                 break
-        if not found:
+        else:
             char = format[i]
             # escape special characters
             if char in "|^$()[]-.+*?{}<>\\":
-                format_pat += "\\"
-            format_pat += char
+                char = "\\" + char
+            if len(pat_list) and pat_list[-1][1] is None:
+                pat_list[-1][0] += char
+            else:
+                pat_list.append([char, None])
             i += 1
-    if DEBUG:
-        print("DEBUG: %r -> %s" % (format, format_pat))
-    if collapseWhitespace:
-        format_pat = re.sub(r'\s+', r'\\s+', format_pat)
 
-    format_re = re.compile(format_pat)
-    return format_re, cast_list
+    # Compile all patterns, collapsing whitespaces
+    re_list = []
+    for pattern, cast in pat_list:
+        if cast is None:
+            pattern = re.sub(r'\s+', r'\\s*', pattern)
+        re_list.append((re.compile(pattern), cast))
+
+    return re_list
 
 
 def scanf(format, s=None, collapseWhitespace=True):
@@ -157,16 +152,21 @@ def scanf(format, s=None, collapseWhitespace=True):
     does not match.
 
     """
-
     if s is None:
         s = sys.stdin
 
     if hasattr(s, "readline"):
         s = s.readline()
 
-    format_re, casts = scanf_compile(format, collapseWhitespace)
+    i = 0
+    res = []
+    for format_re, cast in scanf_compile(format):
+        found = format_re.match(s, i)
+        if found:
+            if cast:
+                res.append(cast(found.groups()[0]))
+            i = found.end()
+        if not found or i == len(s):
+            break
 
-    found = format_re.search(s)
-    if found:
-        groups = found.groups()
-        return tuple([casts[i](groups[i]) for i in range(len(groups))])
+    return res
