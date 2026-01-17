@@ -43,10 +43,10 @@ __all__ = ["scanf", 'scanf_translate', 'scanf_compile']
 scanf_translate = [
     (re.compile(_token), _pattern, _cast) for _token, _pattern, _cast in [
         (r"%(\*)?c", r"(.)", lambda x:x),
-        (r"%(\*)?(\d+)c", r"(.{0,%s})", lambda x:x),
+        (r"%(\*)?(\d+)c", r"(.{1,%s})", lambda x:x),
 
-        (r"%(\*)?s", r"\s*(\S*)", lambda x: x),
-        (r"%(\*)?(\d+)s", r"\s*(\S{0,%s})", lambda x:x),
+        (r"%(\*)?s", r"\s*(\S+)", lambda x: x),
+        (r"%(\*)?(\d+)s", r"\s*(\S{1,%s})", lambda x:x),
 
         (r"%(\*)?\[([^\]]+)\]", r"\s*([%s]+)", lambda x:x),
 
@@ -56,11 +56,13 @@ scanf_translate = [
         (r"%(\*)?[fge]", r"\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
         (r"%(\*)?(\d+)[fge]", r"\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
 
-        (r"%(\*)?l?x", r"\s*([\dA-Za-f]+)", lambda x: int(x, 16)),
-        (r"%(\*)?(\d+)l?x", r"\s*([\dA-Za-f]{1,%s})", lambda x: int(x, 16)),
+        (r"%(\*)?l?x", r"\s*([-+]?[\da-fA-F]+)", lambda x: int(x, 16)),
+        (r"%(\*)?(\d+)l?x", r"\s*([-+]?[\dA-Fa-f]{1,%s})", lambda x: int(x, 16)),
 
-        (r"%(\*)?l?o", r"\s*([0-7]+)", lambda x:int(x, 8)),
-        (r"%(\*)?(\d+)l?o", r"\s*([0-7]{1,%s})", lambda x: int(x, 8)),
+        (r"%(\*)?l?o", r"\s*([-+]?[0-7]+)", lambda x:int(x, 8)),
+        (r"%(\*)?(\d+)l?o", r"\s*([-+]?[0-7]{1,%s})", lambda x: int(x, 8)),
+
+        (r"%(%)", r"%", None)
     ]]
 
 
