@@ -257,6 +257,13 @@ def test_division(arg, expected, ecl_flag):
     ("%s%d", "   123", ['123',]),
     ("%d", "", []),
     ("%s", "", []),
+
+    # === More tests found in real scripts ======
+    ("%s%s", "a b", ["a","b"]),
+    ("%*d %d", "12 34", [34,]),
+    ("%f %f %d %s", "1.25 -0.5 10 Dinsdale!", [1.25, -0.5, 10, 'Dinsdale!']),
+    ("%f", "-5e-1", [-0.5,]),
+    ("%2d:%2d:%2d", "12:34:56", [12, 34, 56]),
 ])
 def test_scanf(fmt, arg, expected):
     """A basic unit test that sscanf was built/imported correctly and
