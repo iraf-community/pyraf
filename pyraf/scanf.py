@@ -167,7 +167,4 @@ def scanf(format, s=None, collapseWhitespace=True):
         if not found or i == len(s):
             break
 
-    if len(res) > 0:
-        return tuple(res)
-    else:
-        return None
+    return res
