@@ -1,24 +1,29 @@
-"""Small scanf implementation.
+"""PyRAF scanf module
 
-This implementation of scanf translates the simple scanf-format into
-regular expressions. Unlike C you can be sure that there are no buffer overflows
-possible.
+Implements a subset of C-style scanf functionality in Python using regular expressions.
 
-For more information see
-  * http://www.python.org/doc/current/lib/node49.html
-  * http://en.wikipedia.org/wiki/Scanf
+Features:
 
-Original code from:
-    https://github.com/joshburnett/scanf (version 1.5.2)
+ - Supports %d, %f, %g, %e, %x, %o, %s, %c, %% and %[...] scan sets
+ - Handles optional field widths and suppressed assignments (%*d, etc.)
+ - Returns parsed values as Python types (int, float, str)
+ - Partial matches are allowed; parsing stops at first mismatch
+ - Leading whitespace is consumed for most numeric and string conversions
 
-Modified for the needs of PyRAF:
- * all fields may have a max width (not a fixed width)
- * add "l" (for [outdated] long ints)
- * allow "0x" and "0o" prefixes in ints for hexa/octal numbers
- * return partial results for partially matching strings
+Differences from IRAF scanf:
 
-Differences to the original PyRAF sscanf module:
- * "n" coversion missing (number of characters so far)
+ - Sexagesimal numbers (hh:mm:ss) are not supported
+ - no INDEF handling
+
+Differences from original PyRAF implementation (on purpose, to
+establish more conformity to IRAF scanf):
+
+ - "0x" prefix is not allowed when parsing integer values
+ - leading zero does not indicate octal when parsing integer values
+ - %i, %l, %u, %E, %X are not implemented
+
+Original code was taken from https://github.com/joshburnett/scanf
+(version 1.5.2) and heavily modified.
 
 """
 import re
@@ -32,14 +37,19 @@ except ImportError:
 __all__ = ["scanf", 'scanf_translate', 'scanf_compile']
 
 
-
-# As you can probably see it is relatively easy to add more format types.
-# Make sure you add a second entry for each new item that adds the extra
-#   few characters needed to handle the field ommision.
-
-# The first group item in the match is always for the optional "*"
-# indicating that the field shall be skipped. Optional other item is
-# the length which will replace the "%s" in the pattern.
+# Each tuple is: (format_regex, regex_pattern, cast_function)
+#
+# - format_regex: regex to identify the format specifier in the format string.
+#   The first group item is always for the optional "*" to suppress conversion.
+#   All other groups are used to replace the placeholders in the second pattern.
+#
+# - regex_pattern: regex to match the corresponding input field.
+#   As replacement placeholder, %s is used.
+#
+# - cast_function: Python callable to convert matched string to int/float/str
+#   Setting to None indicates that the match is ignored for the result, otherwise
+#   it is called with the first group of the match from the regexp_pattern.
+#
 scanf_translate = [
     (re.compile(_token), _pattern, _cast) for _token, _pattern, _cast in [
         # %c - Fixed width character string
@@ -83,11 +93,7 @@ scanf_translate = [
     ]]
 
 
-# Cache formats
-SCANF_CACHE_SIZE = 1000
-
-
-@lru_cache(maxsize=SCANF_CACHE_SIZE)
+@lru_cache(maxsize=1000)
 def scanf_compile(format):
     """
     Translate the format into a regular expression
@@ -106,7 +112,11 @@ def scanf_compile(format):
 
     Translated formats are cached for faster reuse
     """
-
+    # Iterate over the format string, identifying literal text and conversion specifiers
+    # For each conversion:
+    # - Determine width, suppression, and conversion type
+    # - Translate to regex pattern with proper field width
+    # - Append regex and cast function to compiled pattern list
     pat_list = []
     i = 0
     length = len(format)
@@ -121,7 +131,8 @@ def scanf_compile(format):
                 if len(groups) > 1:
                     pattern = pattern % groups[1:]
 
-                # Ignore this format pattern
+                # If the assignment is suppressed (indicated by *), the cast function
+                # is set to None. This allows regex matching without capturing a value.
                 if len(groups) > 0 and groups[0] == "*":
                     cast = None
 
@@ -135,15 +146,11 @@ def scanf_compile(format):
         else:
             raise ValueError(f"Unknown char '{format[i]}' in pos {i} of format string \"{format}\"")
 
-    # Compile all patterns
-    re_list = []
-    for pattern, cast in pat_list:
-        re_list.append((re.compile(pattern), cast))
-
-    return re_list
+    # Return compiled list of all patterns
+    return [(re.compile(pattern), cast) for pattern, cast in pat_list]
 
 
-def scanf(format, s=None, collapseWhitespace=True):
+def scanf(format, s):
     """Conversion specification are of the form:
 
         %[*][<max_width>]['l']<type_character>.
@@ -158,25 +165,26 @@ def scanf(format, s=None, collapseWhitespace=True):
     %f, %g, %e    Float
     %[]           Character scan set
 
-    scanf.scanf returns a tuple of found values or None if the format
-    does not match.
+    scanf returns a tuple of found values or None if the format does
+    not match.
 
     """
-    if s is None:
-        s = sys.stdin
-
-    if hasattr(s, "readline"):
-        s = s.readline()
-
+    # Start scanning input at index 0
+    # For each compiled pattern:
+    # 1. Apply regex match at current position
+    # 2. If no match: break loop and return parsed values so far
+    # 3. If match:
+    #    - Apply cast function (unless suppressed)
+    #    - Advance current index to end of matched substring
     i = 0
     res = []
     for format_re, cast in scanf_compile(format):
         found = format_re.match(s, i)
         if found:
-            if cast:
+            if cast is not None:
                 res.append(cast(found.groups()[0]))
             i = found.end()
-        if not found or i == len(s):
+        else:
             break
 
     return res
