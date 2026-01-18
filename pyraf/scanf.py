@@ -42,27 +42,44 @@ __all__ = ["scanf", 'scanf_translate', 'scanf_compile']
 # the length which will replace the "%s" in the pattern.
 scanf_translate = [
     (re.compile(_token), _pattern, _cast) for _token, _pattern, _cast in [
+        # %c - Fixed width character string
         (r"%(\*)?c", r"(.)", lambda x:x),
         (r"%(\*)?(\d+)c", r"(.{1,%s})", lambda x:x),
 
+        # %s - String of non-whitespace characters
         (r"%(\*)?s", r"\s*(\S+)", lambda x: x),
         (r"%(\*)?(\d+)s", r"\s*(\S{1,%s})", lambda x:x),
 
+        # %[] - Character scan set
         (r"%(\*)?\[([^\]]+)\]", r"\s*([%s]+)", lambda x:x),
 
+        # %d - Signed integer
         (r"%(\*)?l?d", r"\s*([+-]?\d+)", int),
         (r"%(\*)?(\d+)l?d", r"\s*([+-]?\d{1,%s})", int),
 
+        # %f, %g, %e - Float
         (r"%(\*)?[fge]", r"\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
         (r"%(\*)?(\d+)[fge]", r"\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", float),
 
+        # %x - Hexadecimal integer.
         (r"%(\*)?l?x", r"\s*([-+]?[\da-fA-F]+)", lambda x: int(x, 16)),
         (r"%(\*)?(\d+)l?x", r"\s*([-+]?[\dA-Fa-f]{1,%s})", lambda x: int(x, 16)),
 
+        # %o - Octal integer.
         (r"%(\*)?l?o", r"\s*([-+]?[0-7]+)", lambda x:int(x, 8)),
         (r"%(\*)?(\d+)l?o", r"\s*([-+]?[0-7]{1,%s})", lambda x: int(x, 8)),
 
-        (r"%(%)", r"%", None)
+        # %% - single percent sign
+        (r"%%", r"%", None),
+
+        # white spaces
+        (r"\s+", r"\s*", None),
+
+        # special chars in regexps
+        (r"()([\\^$.|?*+()[\]{}-])", r"\%s", None),
+
+        # All other non-whitespaces
+        (r"()([^\s\\^$.|?*+()[\]{}%-]+)", r"%s", None),
     ]]
 
 
@@ -105,28 +122,22 @@ def scanf_compile(format):
                     pattern = pattern % groups[1:]
 
                 # Ignore this format pattern
-                if groups[0] == "*":
+                if len(groups) > 0 and groups[0] == "*":
                     cast = None
 
-                pat_list.append([pattern, cast])
+                if cast is None and len(pat_list) > 0 and pat_list[-1][1] is None:
+                    # Combine all subsequent non-consuming patterns into one
+                    pat_list[-1][0] += pattern
+                else:
+                    pat_list.append([pattern, cast])
                 i = found.end()
                 break
         else:
-            char = format[i]
-            # escape special characters
-            if char in "|^$()[]-.+*?{}<>\\":
-                char = "\\" + char
-            if len(pat_list) and pat_list[-1][1] is None:
-                pat_list[-1][0] += char
-            else:
-                pat_list.append([char, None])
-            i += 1
+            raise ValueError(f"Unknown char '{format[i]}' in pos {i} of format string \"{format}\"")
 
-    # Compile all patterns, collapsing whitespaces
+    # Compile all patterns
     re_list = []
     for pattern, cast in pat_list:
-        if cast is None:
-            pattern = re.sub(r'\s+', r'\\s*', pattern)
         re_list.append((re.compile(pattern), cast))
 
     return re_list
@@ -140,8 +151,7 @@ def scanf(format, s=None, collapseWhitespace=True):
     The following format conversions are supported:
 
     %c            Fixed width character string.
-    %s            String of non-whitespace characters with leading
-                     whitespace skipped.
+    %s            String of non-whitespace characters
     %d            Signed integer
     %o            Octal integer.
     %x            Hexadecimal integer.
