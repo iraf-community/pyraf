@@ -1,0 +1,2 @@
+psstrpar,s,h,"foobar",,,"String par in pset"
+psintpar,i,h,-1,,,"Integer par in pset"

@@ -1,0 +1,5 @@
+strpar,s,h,"foo",,,"String parameter"
+intpar,i,h,1,-10,10,"Integer parameter"
+fltpar,r,h,1.0,-100,100,"Floating point parameter"
+boolpar,b,h,no,,,"Boolean parameter"
+
