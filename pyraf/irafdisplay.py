@@ -150,7 +150,7 @@ class ImageDisplay:
         a = numpy.array([tid, thingct, subunit, 0, x, y, z, t],
                         dtype=int).astype(numpy.uint16)
         # Compute the checksum
-        sum = numpy.add.reduce(a)
+        sum = numpy.add.reduce(a, dtype=numpy.uint16)
         sum = 0xffff - (sum & 0xffff)
         a[3] = sum
         self._write(a.tobytes())
