@@ -58,21 +58,218 @@ def test_division(arg, expected, ecl_flag):
         assert stdout.getvalue().strip() == f'i: {expected}'
 
 
-@pytest.mark.parametrize('arg,fmt,expected', [
-    ("seven 6 4.0 -7", "%s %d %g %d", ('seven', 6, 4.0, -7)), # aliveness
-    ("0 095", "%d %d", (0, 95)),
-    ("1234", "%2d%2d", (12,34)),
-    ("seven", "%d", None),
-    ("seven", "%c%3c%99c", ('s', 'eve', 'n')),
-    ("seven", "%[sev]", ('seve', )),
-    ("abc90 177", "%x %o", (0xabc90, 0o177)),
-])  
-def test_scanf(arg, fmt, expected):
+
+@pytest.mark.parametrize('fmt,arg,expected', [
+    # ===== Basic / aliveness =====
+    ("%s %d %g %d", "seven 6 4.0 -7", ['seven', 6, 4.0, -7]),
+
+    # ===== %c (character) =====
+    ("%c", "a", ['a',]),
+    ("%c", "x", ['x',]),
+    ("%c", " ", [' ',]),
+    ("%c", "123", ['1',]),
+    ("%c%c%c", "abc", ['a', 'b', 'c']),
+    ("%3c", "seven", ['sev',]),
+    ("%1c", "seven", ['s',]),
+    ("%99c", "seven", ['seven',]),
+    ("%c%3c%99c", "seven", ['s', 'eve', 'n']),
+    ("%c%2c", "a bcde", ['a', ' b']),
+    ("%2c%2c", "ab cd", ['ab', ' c']),
+    ("%3c%3c", "ab ", ['ab ',]),   # first %3c consumes all 3 chars; second absent -> single item
+
+    # ===== %s (string of non-whitespace) =====
+    ("%s", "hello", ['hello',]),
+    ("%s %s", "hello world", ['hello', 'world']),
+    ("%s", "  hello", ['hello',]),
+    ("%s %s", "  hello  world  ", ['hello', 'world']),
+    ("%3s", "hello", ['hel',]),
+    ("%5s", "hello", ['hello',]),
+    ("%10s", "hello", ['hello',]),
+    ("%5s %5s", "hello world", ['hello', 'world']),
+    ("%s%s", "one two three", ['one', 'two']),   # subsequent tokens remain unparsed
+    ("%s%s", "hello world", ['hello', 'world']),
+    ("%s%s%s", "one two three", ['one', 'two', 'three']),
+
+    # %s failing when no non-whitespace -> no assigned items (empty tuple)
+    ("%s", " ", []),
+    ("%s", "", []),
+
+    # ===== %d (signed integer) =====
+    ("%d", "123", [123,]),
+    ("%d", "0", [0,]),
+    ("%d", "-42", [-42,]),
+    ("%d", "+99", [99,]),
+    ("%d", "  42", [42,]),
+    ("%d %d %d", "1 2 3", [1, 2, 3]),
+    ("%d %d", "0 75", [0, 75]),
+    ("%2d%2d", "1234", [12, 34]),
+    ("%3d%3d", "123456", [123, 456]),
+    ("%1d", "42", [4,]),
+    ("%d", "42", [42,]),
+    ("%ld", "999", [999,]),
+    ("%ld", "12345", [12345,]),
+    ("%3ld", "789", [789,]),
+
+    # ===== Floating (%f, %g, %e) =====
+    ("%f", "3.25", [3.25,]),
+    ("%f", ".5", [0.5]),
+    ("%f", "+.5", [0.5]),
+    ("%g", "0.5", [0.5,]),
+    ("%e", "1.5625e-2", [1.5625e-2,]),
+    ("%f", "-2.5", [-2.5,]),
+    ("%g", "+1.0", [1.0,]),
+    ("%f", "  4.0", [4.0,]),
+    ("%g", "4.0", [4.0,]),
+    ("%f %f %f", "1.0 2.5 3.25", [1.0, 2.5, 3.25]),
+    ("%e", "1e10", [1e10,]),
+    ("%g", "3.125E-2", [3.125E-2,]),
+    ("%e", "-3.2768e+4", [-3.2768e+4,]),
+    ("%f", "42", [42.0,]),
+    ("%g", "42.", [42.0,]),
+    ("%g", "123", [123.0,]),
+
+    # ===== %x (hexadecimal) =====
+    ("%x", "abc90", [0xabc90,]),
+    ("%x", "ABC90", [0xABC90,]),
+    ("%x", "FF", [0xFF,]),
+    ("%x", "-FF", [-0xFF,]),
+    ("%x", "0", [0,]),
+    ("%x", "  1a2b", [0x1a2b,]),
+    ("%x %x %x", "abc 123 def", [0xabc, 0x123, 0xdef]),
+    ("%3x", "abcdef", [0xabc,]),
+    ("%2x", "1234", [0x12,]),
+    # %x with optional 0x prefix and optional sign is accepted by C extension
+    ("%x", "0x0", [0,]),
+    ("%lx", "DEADBEEF", [0xDEADBEEF,]),
+
+    # ===== %o (octal) =====
+    ("%o", "177", [0o177,]),
+    ("%o", "-755", [-0o755,]),
+    ("%o", "0", [0,]),
+    ("%o", "  377", [0o377,]),
+    ("%o %o %o", "123 456 777", [0o123, 0o456, 0o777]),
+    ("%x %o", "abc90 177", [0xabc90, 0o177]),
+    ("%3o", "12345", [0o123,]),
+    ("%2o", "777", [0o77,]),
+    ("%lo", "7777777777", [0o7777777777,]),
+
+    # ===== %[... ] (character scan set) =====
+    ("%[sev]", "seven", ['seve',]),
+    ("%[abc]", "abcdef", ['abc',]),
+    ("%[aeiou]", "hello", []),            # input begins at 'h' -> not in set -> conversion fails -> ()
+    ("%[^aeiou]%[aeiou]", "hello", ['h', 'e']),  # negated + positive scanset
+    ("%*[^aeiou]%[aeiou]", "hello", ['e',]),
+    ("%[a-z]", "abcXYZ", ['abc',]),
+
+    # ===== Skipping fields (%*) =====
+    ("%s %*d %s", "hello 42 world", ['hello', 'world']),
+    ("%s %*s %s", "foo bar baz", ['foo', 'baz']),
+    ("%f %*f %f", "1.0 2.5 3.0", [1.0, 3.0]),
+    ("%c %*d %c %*d %c", "a 1 b 2 c", ['a', 'b', 'c']),
+    ("%*d", "123", []),                        # suppressed assignment -> no items appended -> empty result
+    ("%*3c%3c", "abcdef", ['def',]),
+    ("%*3s%s", "foobar", ['bar',]),
+
+    # ===== Whitespace handling =====
+    ("%s %s", "hello   world", ['hello', 'world']),
+    ("%d %d %d", "1     2     3", [1, 2, 3]),
+    ("%s %s", "hello\tworld", ['hello', 'world']),
+    ("%d %d", "42\t99", [42, 99]),
+    ("%s", "  hello  ", ['hello',]),
+    ("%d", "  42  ", [42,]),
+    ("%f", "  3.25  ", [3.25,]),
+
+    # ===== Partial matches (incomplete conversions / failures) =====
+    ("%d", "seven", []),                        # first conversion fails -> no assignments -> ()
+    ("%d", "", []),                             # empty input -> no assignments
+    ("%d%d", "1 2x3", [1, 2]),                  # third fails -> partial (1,2)
+    ("%d %d", "42 x", [42,]),                   # second fails -> partial (42,)
+    ("%d-%d", "42 -x", [42,]),                  # literal present then conversion fails -> partial (42,)
+    ("%d%d", "123", [123,]),                    # second missing -> partial (123,)
+    ("%s%d%d", "a 1 x", ['a', 1]),              # third fails -> partial first two
+    ("%d%d", "a12", []),                        # first fails -> no assignments -> ()
+    ("%d %s", "x hello", []),                   # first fails -> ()
+    ("%2d%2d", "12 ", [12,]),                   # second has no digits -> partial (12,)
+    ("%3c%3c", "abc", ['abc',]),                # second missing -> partial ('abc',)
+    ("%3c%3c", "ab ", ['ab ',]),                # first consumed all available chars -> partial ('ab ',)
+    ("%s%d", "   123", ['123',]),               # %s consumes digits -> second has nothing -> partial ('123',)
+    ("%d %d", "42", [42,]),                     # missing second -> partial (42,)
+    ("%d %d", "", []),
+    ("%s %d", "    ", []),
+
+    # ===== Literal matching & edge cases =====
+    ("%d (int)", "42 (int)", [42,]),
+    ("result: %f", "result:  3.25", [3.25,]),
+    ("%s world", "hello world", ['hello',]),
+    ("%s world", "hello  world", ['hello',]),
+    ("%% %d", "% 42", [42,]),                   # literal '%' then %d
+    ("%s   -   %d", "a - 1", ['a', 1]),
+    ("ID:%d", "ID: 10", [10,]),
+    ("foo%dbar", "foo 7 bar", [7,]),
+    ("%%%d%%", "%42%", [42]),
+    ("foo", "foo", []),
+    ("foo", "bar", []),
+
+    # ===== Mixed conversions / realistic combos =====
+    ("%s %d %s %f", "John 25 Engineer 75000.50", ['John', 25, 'Engineer', 75000.50]),
+    ("ID: 0x%x version: %f", "ID: 0x1A2B version: 2.5", [0x1A2B, 2.5]),  # %x accepts 0x prefix in C ext
+    ("count: %d status: %2s", "count: 100 status: OK", [100, 'OK']),
+    ("%d %f %s %x", "1 2.5 three F", [1, 2.5, 'three', 0xF]),
+    ("%o %x %g", "0755 ABC 3.25", [0o755, 0xABC, 3.25]),
+
+    # ===== Sign handling =====
+    ("%d", "-123", [-123,]),
+    ("%d", "+456", [456,]),
+    ("%f", "-3.25", [-3.25,]),
+    ("%g", "+2.5", [2.5,]),
+    ("%x", "-AB", [-0xAB,]),                 # C extension accepts sign for hex conversion
+
+    # ===== Special & zero cases =====
+    ("%d", "0", [0,]),
+    ("%f", "0.0", [0.0,]),
+    ("%x", "0x0", [0,]),
+    ("%o", "0o0", [0,]),                       # note: here %o expects octal digits "0o0" -> C's %o expects "0" or digits 0-7;
+                                               # using "0o0" would parse leading '0' then stop at 'o' -> results (0,)
+                                               # included here for parity with user expectations -> C behavior is (0,)
+    ("%e", "1e0", [1.0,]),
+
+    # ===== Width specification combinations =====
+    ("%1d%2d%3d%3d", "123456789", [1, 23, 456, 789]),
+    ("%1s%2s%3s%2s", "abcdefgh", ['a', 'bc', 'def', 'gh']),
+
+    # ===== Concatenated formats with whitespace in input =====
+    ("%d%d", "1 2", [1, 2]),
+    ("%d%d", "1\t2", [1, 2]),
+    ("%s%s", "hello world", ['hello', 'world']),
+    ("%s%d", "abc 123", ['abc', 123]),
+    ("%s%d", "abc   123", ['abc', 123]),
+    ("%c%c", "a b", ['a', ' ']),
+    ("%s%s%s", "one two three", ['one', 'two', 'three']),
+
+    # ===== Additional partial-match focused cases =====
+    ("%d%d%d", "1 2x3", [1, 2]),
+    ("%d%d", "123", [123,]),
+    ("%d-%d", "42 -x", [42,]),
+    ("%d %d", "42 x", [42,]),
+    ("%s%d%d", "a 1 x", ['a', 1]),
+    ("%2d%2d", "12 ", [12,]),
+    ("%3c%3c", "ab ", ['ab ',]),
+    ("%s%d", "   123", ['123',]),
+    ("%d", "", []),
+    ("%s", "", []),
+
+    # === More tests found in real scripts ======
+    ("%s%s", "a b", ["a","b"]),
+    ("%*d %d", "12 34", [34,]),
+    ("%f %f %d %s", "1.25 -0.5 10 Dinsdale!", [1.25, -0.5, 10, 'Dinsdale!']),
+    ("%f", "-5e-1", [-0.5,]),
+    ("%2d:%2d:%2d", "12:34:56", [12, 34, 56]),
+])
+def test_scanf(fmt, arg, expected):
     """A basic unit test that sscanf was built/imported correctly and
     can run.
     """
-    l = scanf.scanf(fmt, arg)
-    assert l == expected
+    assert scanf.scanf(fmt, arg) == expected
 
 
 @pytest.mark.skipif(not HAS_IRAF, reason='Need IRAF to run')

@@ -2003,11 +2003,12 @@ def fscanf(theLocals, line, format, *namelist, **kw):
         _nscan = 0
         return EOF
     f = sscanf.scanf(format, line)
+    n = min(len(f), len(namelist))
     # if list is null, add a null string
     # ugly but should be right most of the time
-    if f is None and namelist:
-        f = ('')
-    n = min(len(f), len(namelist))
+    if n == 0 and namelist:
+        f = ['']
+        n = 1
     if len(kw):
         raise TypeError('unexpected keyword argument: ' +
                         repr(list(kw.keys())))
