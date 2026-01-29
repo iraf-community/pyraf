@@ -1042,6 +1042,8 @@ class IrafParList(taskpars.TaskPars):
                 # The original parameter in the pardict is not linked
                 # to the child Pset, so we need to retrieve the
                 # pardict one.
+                p.set(value)
+                p.setFlags(_cmdlineFlag)
                 try:
                     p = self.getParObject(p.name)
                 except KeyError:
