@@ -1038,6 +1038,18 @@ class IrafParList(taskpars.TaskPars):
                 p = p.get().getParObject(tail)
                 # what if *this* p is a IrafParPset ? skip for now,
                 # since we think no one is doubly nesting PSETs
+
+                # The original parameter in the pardict is not linked
+                # to the child Pset, so we need to retrieve the
+                # pardict one.
+                p.set(value)
+                p.setFlags(_cmdlineFlag)
+                try:
+                    p = self.getParObject(p.name)
+                except KeyError:
+                    p = copy.deepcopy(p)
+                    self.addParam(p)
+
             p.set(value)
             p.setFlags(_cmdlineFlag)
             if p.mode != "h":
