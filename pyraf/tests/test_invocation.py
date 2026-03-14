@@ -62,12 +62,12 @@ class PyrafEx:
                                 stdin=subprocess.PIPE)
 
         if stdin is not None:
-            stdin = stdin.encode('ascii')
+            stdin = stdin.encode('ascii', errors='ignore')
 
         self.stdout, self.stderr = proc.communicate(stdin)
 
-        self.stdout = self.stdout.decode('ascii')
-        self.stderr = self.stderr.decode('ascii')
+        self.stdout = self.stdout.decode('ascii', errors='ignore')
+        self.stderr = self.stderr.decode('ascii', errors='ignore')
 
         self.code = proc.returncode
         return self
