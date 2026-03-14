@@ -41,7 +41,7 @@ minversion = "6.0"
 addopts = "-s"
 
 [tool.coverage.run]
-source = "pyraf"
+source = [ "pyraf" ]
 omit = [ "pyraf/tests/*" ]
 
 [tool.yapf]
