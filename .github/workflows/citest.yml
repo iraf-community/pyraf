@@ -76,7 +76,7 @@ jobs:
         run: |
           python3 -m venv /tmp/pyraf-venv
           source /tmp/pyraf-venv/bin/activate
-          python3 -m pip install pytest git+$GITHUB_SERVER_URL/$GITHUB_REPOSITORY@$GITHUB_SHA#egg=pyraf[test]
+          python3 -m pip install pytest pyraf[test]@git+$GITHUB_SERVER_URL/$GITHUB_REPOSITORY@$GITHUB_SHA
 
       - name: Run tests (locally built)
         if: matrix.method == 'native'
