@@ -64,6 +64,7 @@ jobs:
         if: startsWith(matrix.os, 'macos') && matrix.method == 'pip'
         run: |
           brew tap iraf-community/tap
+          brew trust iraf-community/tap
           brew install iraf
 
       - name: Build PyRAF locally
