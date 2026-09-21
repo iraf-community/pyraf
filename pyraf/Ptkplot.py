@@ -111,7 +111,6 @@ class PyrafCanvas(Canvas):
         self.height = self.winfo_height()
 
         # Basic bindings for the virtual trackball
-        self.bind('<Expose>', self.tkExpose)
         self.bind('<Configure>', self.tkExpose)
         # self.after_idle(self.refresh_cursor)
 
@@ -236,8 +235,8 @@ class PyrafCanvas(Canvas):
 
 
 class FullWindowCursor:
-    """This implements a full window crosshair cursor.  This class can
-       operate in the xutil-wrapping mode or in a tkinter-only mode. """
+    """This implements a full window crosshair cursor, drawn as Tk canvas
+       items so that Tk repaints it along with the rest of the canvas. """
 
     # Perhaps this should inherit from an abstract Cursor class eventually
 
@@ -247,7 +246,6 @@ class FullWindowCursor:
 
         self.lastx = x
         self.lasty = y
-        self.__useX11 = wutil.WUTIL_USING_X and (not wutil.WUTIL_ON_MAC)
         self.__window = window
         self.__isVisible = 0
         self.isLastSWmove = 1  # indicates if last position driven by
@@ -257,11 +255,6 @@ class FullWindowCursor:
         self.__tkHorLine = None
         self.__tkVerLine = None
         self.draw()
-
-    def _xutilXorDraw(self):
-
-        wutil.drawCursor(self.__window.winfo_id(), self.lastx, self.lasty,
-                         int(self.__window.width), int(self.__window.height))
 
     def _tkDrawCursor(self):
 
@@ -292,19 +285,13 @@ class FullWindowCursor:
     def erase(self):
 
         if self.__isVisible:
-            if self.__useX11:
-                self._xutilXorDraw()
-            else:
-                self._tkEraseCursor()
+            self._tkEraseCursor()
         self.__isVisible = 0
 
     def draw(self):
 
         if not self.__isVisible:
-            if self.__useX11:
-                self._xutilXorDraw()
-            else:
-                self._tkDrawCursor()
+            self._tkDrawCursor()
         self.__isVisible = 1
 
     def moveTo(self, x, y, SWmove=0):
