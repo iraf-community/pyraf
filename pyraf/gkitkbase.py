@@ -159,6 +159,11 @@ class GkiInteractiveTkBase(gki.GkiKernel, wutil.FocusEntity):
         gki.GKI_FLUSH,
     ]
 
+    # GKI commands that are not picture content: they are executed when the
+    # task sends them, but a replay must not move the pointer again (#110).
+    # They are compared by name since the buffer holds bound methods.
+    _notReplayed = ('gki_setcursor', 'tkplot_setcursor')
+
     # maximum number of error messages for a plot
     MAX_ERROR_COUNT = 3
 
