@@ -717,6 +717,8 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # Plot the current buffer
         self.__skipPlotAppends = True
         for (function, args) in self.drawBuffer.get():
+            if function.__name__ in self._notReplayed:
+                continue
             function(*args)
         self.__skipPlotAppends = False
         self.gki_flush(None, force=frc)  # does: resize-calc's; draw; flush

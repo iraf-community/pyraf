@@ -268,6 +268,8 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
         self.tkplot_fillarea(numpy.array([0., 0., 1., 0., 1., 1., 0., 1.]))
         # Plot the current buffer
         for (function, args) in self.drawBuffer.get():
+            if function.__name__ in self._notReplayed:
+                continue
             function(*args)
         self.gwidget.flush()
 
