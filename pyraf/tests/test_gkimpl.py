@@ -1,8 +1,18 @@
+import sys
+import types
+
 import numpy
 from matplotlib.lines import Line2D
+import pytest
 
 from pyraf import gki
-from pyraf import GkiMpl
+
+
+@pytest.fixture
+def fake_tk_root(monkeypatch):
+    """Provide a fake Tk root for tests that require Tk to be initialized."""
+    import tkinter
+    monkeypatch.setattr(tkinter, "_default_root", object())
 
 
 # Minimal stand-ins for GUI and plotting objects used by GkiMplKernel.
@@ -18,10 +28,12 @@ class DummyColorManager:
         return "black"
 
 
-def make_kernel():
-    """Create a minimal GkiMplKernel without opening a Tk window."""
-    kernel = object.__new__(GkiMpl.GkiMplKernel)
+@pytest.fixture
+def fake_gkimplkernel(fake_tk_root):
+    """Create a minimally initialized GkiMplKernel for headless tests."""
+    from pyraf import GkiMpl
 
+    kernel = object.__new__(GkiMpl.GkiMplKernel)
     kernel._GkiMplKernel__normLines = []
     kernel._GkiMplKernel__normPatches = []
     kernel._GkiMplKernel__skipPlotAppends = False
@@ -56,9 +68,9 @@ def plset_arg(linestyle):
     )
 
 
-def test_clear_polyline():
+def test_clear_polyline(fake_gkimplkernel):
     """Regression test for #206"""
-    kernel = make_kernel()
+    kernel = fake_gkimplkernel
 
     line = polyline_arg((1000, 2000), (3000, 4000))
 
@@ -73,9 +85,9 @@ def test_clear_polyline():
     assert kernel._GkiMplKernel__normLines == []
 
 
-def test_clear_polyline_keeps_other_lines():
+def test_clear_polyline_keeps_other_lines(fake_gkimplkernel):
     """Regression test for #206"""
-    kernel = make_kernel()
+    kernel = fake_gkimplkernel
 
     line_a = polyline_arg((1000, 2000), (3000, 4000))
     line_b = polyline_arg((5000, 6000), (7000, 8000))
@@ -98,9 +110,10 @@ def test_clear_polyline_keeps_other_lines():
     numpy.testing.assert_array_equal(lines[0].get_ydata(), expected[:, 1])
 
 
-def test_clear_polyline_does_not_remove_marker():
+def test_clear_polyline_does_not_remove_marker(fake_gkimplkernel):
     """Regression test for #206"""
-    kernel = make_kernel()
+    kernel = fake_gkimplkernel
+
     line = polyline_arg((1000, 2000), (3000, 4000))
 
     kernel.gki_polymarker(line)
@@ -115,9 +128,10 @@ def test_clear_polyline_does_not_remove_marker():
     assert lines[0] is marker
 
 
-def test_clear_polyline_survives_redraw():
+def test_clear_polyline_survives_redraw(fake_gkimplkernel):
     """Regression test for #206"""
-    kernel = make_kernel()
+    kernel = fake_gkimplkernel
+
     line = polyline_arg((1000, 2000), (3000, 4000))
 
     kernel.gki_plset(plset_arg(1))
