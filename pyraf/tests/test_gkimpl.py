@@ -28,6 +28,36 @@ class DummyColorManager:
         return "black"
 
 
+class DummyFigure:
+    def clear(self):
+        pass
+
+
+class DummyWidget:
+    def winfo_width(self):
+        return 100
+
+    def winfo_height(self):
+        return 100
+
+    def winfo_rootx(self):
+        return 10
+
+    def winfo_rooty(self):
+        return 20
+
+    def winfo_id(self):
+        return 42
+
+
+class DummyCursor:
+    def __init__(self):
+        self.moves = []
+
+    def moveTo(self, x, y, SWmove=0):
+        self.moves.append((x, y, SWmove))
+
+
 @pytest.fixture
 def fake_gkimplkernel(fake_tk_root):
     """Create a minimally initialized GkiMplKernel for headless tests."""
@@ -38,6 +68,8 @@ def fake_gkimplkernel(fake_tk_root):
     kernel._GkiMplKernel__normPatches = []
     kernel._GkiMplKernel__skipPlotAppends = False
     kernel._GkiMplKernel__allowDrawing = True
+    kernel._forceNextDraw = False
+    kernel._GkiMplKernel__fig = DummyFigure()
     kernel.drawBuffer = gki.DrawBuffer()
     kernel.wcs = DummyWcs()
     kernel.colorManager = DummyColorManager()
@@ -201,3 +233,40 @@ def test_full_window_cursor_draw_erase(monkeypatch, fake_tk_root):
     assert canvas.deleted == [1, 2]
     assert xor_draws == []
 
+
+def test_cursor_position_not_replayed(monkeypatch, fake_gkimplkernel):
+    """Regression test for #207"""
+    from pyraf import GkiMpl
+
+    kernel = fake_gkimplkernel
+
+    cursor = DummyCursor()
+    kernel._GkiMplKernel__mca = types.SimpleNamespace(
+        getSWCursor=lambda: cursor,
+    )
+    kernel.gwidget = DummyWidget()
+    kernel.gki_flush = lambda arg, force=False: None
+
+    move_calls = []
+    monkeypatch.setattr(
+        GkiMpl,
+        "moveCursorTo",
+        lambda *args: move_calls.append(args),
+    )
+
+    arg = numpy.array([1, 1000, 2000], dtype=numpy.int16)
+
+    kernel.gki_setcursor(arg)
+
+    assert len(move_calls) == 1
+    assert len(cursor.moves) == 1
+    assert len(kernel.drawBuffer.get()) == 1
+    assert len(move_calls) == 1
+    assert len(cursor.moves) == 1
+
+    # The cursor command is retained in the draw buffer, but must not
+    # move the physical cursor again when the buffer is replayed.
+    kernel.redraw()
+
+    assert len(move_calls) == 1
+    assert len(cursor.moves) == 1
