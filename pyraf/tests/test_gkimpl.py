@@ -270,3 +270,33 @@ def test_cursor_position_not_replayed(monkeypatch, fake_gkimplkernel):
 
     assert len(move_calls) == 1
     assert len(cursor.moves) == 1
+
+
+@pytest.mark.xfail(
+    reason="Tk does not accept a float as the line width (issue #153)",
+    strict=True,
+)
+def test_tkplot_polyline_uses_integer_linewidth(fake_gkimplkernel):
+    from pyraf import gkitkplot
+
+    class DummyWidget:
+        def winfo_width(self):
+            return 100
+
+        def winfo_height(self):
+            return 100
+
+        def create_line(self, *args, **kwargs):
+            assert kwargs["width"] == 1
+            assert isinstance(kwargs["width"], int)
+
+    kernel = object.__new__(gkitkplot.GkiTkplotKernel)
+    kernel.gwidget = DummyWidget()
+    kernel.colorManager = DummyColorManager()
+    kernel.lineAttributes = gki.LineAttributes()
+    kernel.drawBuffer = gki.DrawBuffer()
+
+    kernel.gki_plset(plset_arg(1))
+    kernel.tkplot_polyline(
+        gki.ndc(polyline_arg((1000, 2000), (3000, 4000))[1:])
+    )
