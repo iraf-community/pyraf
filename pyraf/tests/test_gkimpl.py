@@ -151,3 +151,53 @@ def test_clear_polyline_survives_redraw(fake_gkimplkernel):
         function(*args)
 
     assert kernel._GkiMplKernel__normLines == []
+
+
+def test_full_window_cursor_draw_erase(monkeypatch, fake_tk_root):
+    """Regression test for #208"""
+    from pyraf import Ptkplot
+
+    class DummyCanvas:
+        width = 100
+        height = 200
+
+        def __init__(self):
+            self.created = []
+            self.deleted = []
+
+        def create_line(self, *args, **kwargs):
+            item = len(self.created) + 1
+            self.created.append((item, args, kwargs))
+            return item
+
+        def delete(self, item):
+            self.deleted.append(item)
+
+    canvas = DummyCanvas()
+    xor_draws = []
+
+    def xor_draw(*args):
+        xor_draws.append(args)
+
+    monkeypatch.setattr(Ptkplot.wutil, "drawCursor", xor_draw)
+
+    cursor = Ptkplot.FullWindowCursor(0.25, 0.75, canvas)
+
+    assert cursor.isVisible()
+    assert len(canvas.created) == 2
+    assert canvas.deleted == []
+    assert xor_draws == []
+
+    cursor.erase()
+
+    assert not cursor.isVisible()
+    assert canvas.deleted == [1, 2]
+    assert xor_draws == []
+
+    cursor.draw()
+
+    assert cursor.isVisible()
+    assert len(canvas.created) == 4
+    assert canvas.deleted == [1, 2]
+    assert xor_draws == []
+
