@@ -34,6 +34,11 @@ GKI_TO_MPL_LINEWIDTH = 0.65
 # GKI seems to use: 0: clear, 1: solid, 2: dash, 3: dot, 4: dot-dash, 5: ?
 GKI_TO_MPL_LINESTYLE = ['None', '-', '--', ':', '-.', 'steps']
 
+# Attribute set on Line2D objects created by gki_polyline.  A clear polyline is
+# defined to erase a previously drawn polyline, so only objects carrying this
+# attribute are considered as erase targets (never marker dots).
+GKI_POLYLINE_ATTR = 'gkiFromPolyline'
+
 # Convert GKI alignment int values to MPL (idx 0 = default), 0 is invalid
 GKI_TO_MPL_HALIGN = ['left', 'center', 'left', 'right', 0, 0, 0, 0]
 GKI_TO_MPL_VALIGN = ['bottom', 'center', 0, 0, 0, 0, 'top', 'bottom']
@@ -371,6 +376,18 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         # Note this explicitly (not for redrawing) since _plotAppend isn't used
 #       self._noteGkiCmd(self.gki_flush)
 
+    def _erasePolyline(self, xs, ys):
+        """Remove the most recently drawn line matching a clear polyline.  Only
+        lines created by gki_polyline are candidates, since a clear polyline
+        erases a polyline and not, say, a marker dot drawn at the same spot."""
+        for i in range(len(self.__normLines) - 1, -1, -1):
+            line = self.__normLines[i]
+            if (getattr(line, GKI_POLYLINE_ATTR, False)
+                    and numpy.array_equal(line.get_xdata(True), xs)
+                    and numpy.array_equal(line.get_ydata(True), ys)):
+                del self.__normLines[i]
+                return
+
     def gki_polyline(self, arg):
         """ Instructed to draw a GKI polyline """
         # record this operation as a tuple in the draw buffer
@@ -386,21 +403,31 @@ class GkiMplKernel(gkitkbase.GkiInteractiveTkBase):
         xs = rshpd[:, 0]
         ys = rshpd[:, 1]
 
-        # Put the normalized data into a Line2D object, append to our list.
-        # Later we will scale it and append it to the fig.  For the sake of
-        # performance, don't draw now, it slows things down.
-        # Note that for each object we make and store here (which is
-        # normalized), there will be a second (sized) copy of the same object
-        # created in resizeGraphics().  We could consider storing this data
-        # in some other way for speed, but perf. tests for #122 showed
-        # that this use of multiple object creation wasn't a big hit at all.
-        ll = Line2D(xs,
-                    ys,
-                    linestyle=self.lineAttributes.linestyle,
-                    linewidth=GKI_TO_MPL_LINEWIDTH *
-                    self.lineAttributes.linewidth,
-                    color=self.lineAttributes.color)
-        self.__normLines.append(ll)
+        # GKI linetype zero is an erase operation, not an invisible line.
+        # Matplotlib has no equivalent retained-mode primitive, so remove the
+        # matching line from our normalized cache instead.  This is used by
+        # identify when deleting a feature marker.
+        if self.lineAttributes.linestyle == GKI_TO_MPL_LINESTYLE[0]:
+            self._erasePolyline(xs, ys)
+        else:
+            # Put the normalized data into a Line2D object, append to our list.
+            # Later we will scale it and append it to the fig.  For the sake of
+            # performance, don't draw now, it slows things down.
+            # Note that for each object we make and store here (which is
+            # normalized), there will be a second (sized) copy of the same object
+            # created in resizeGraphics().  We could consider storing this data
+            # in some other way for speed, but perf. tests for #122 showed
+            # that this use of multiple object creation wasn't a big hit at all.
+            ll = Line2D(xs,
+                        ys,
+                        linestyle=self.lineAttributes.linestyle,
+                        linewidth=GKI_TO_MPL_LINEWIDTH *
+                        self.lineAttributes.linewidth,
+                        color=self.lineAttributes.color)
+            # Remember that this object came from a polyline so that a later
+            # clear polyline can pick it out as an erase target.
+            setattr(ll, GKI_POLYLINE_ATTR, True)
+            self.__normLines.append(ll)
 
         # While we are here and obviously getting drawing commands from the
         # task, set our draw-saving flag.  This covers the case of the
