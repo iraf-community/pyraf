@@ -27,7 +27,7 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = ["astropy-sphinx-theme", "numpydoc", "sphinx"]
-test = ["astropy", "pytest"]
+test = ["astropy", "pytest", "matplotlib"]
 
 [project.scripts]
 pyraf = "pyraf:main"
