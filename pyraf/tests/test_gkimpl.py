@@ -272,11 +272,8 @@ def test_cursor_position_not_replayed(monkeypatch, fake_gkimplkernel):
     assert len(cursor.moves) == 1
 
 
-@pytest.mark.xfail(
-    reason="Tk does not accept a float as the line width (issue #153)",
-    strict=True,
-)
 def test_tkplot_polyline_uses_integer_linewidth(fake_gkimplkernel):
+    """Regression test for #210"""
     from pyraf import gkitkplot
 
     class DummyWidget:
