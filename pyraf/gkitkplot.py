@@ -292,7 +292,8 @@ class GkiTkplotKernel(gkitkbase.GkiInteractiveTkBase):
             color = self.colorManager.setDrawingColor(0)
         else:
             color = self.colorManager.setDrawingColor(la.color)
-        options = {"fill": color, "width": la.linewidth}
+        width = max(1, round(la.linewidth))
+        options = {"fill": color, "width": width}
         if la.linestyle > 1:
             options['dash'] = TK_LINE_STYLE_PATTERNS[la.linestyle]
         # scale coordinates
